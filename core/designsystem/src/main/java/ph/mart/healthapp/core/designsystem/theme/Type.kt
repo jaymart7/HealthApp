@@ -1,10 +1,10 @@
-package ph.mart.healthapp.ui.theme
+package ph.mart.healthapp.core.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont
-import ph.mart.healthapp.R
+import ph.mart.healthapp.core.designsystem.R
 
 val provider = GoogleFont.Provider(
     providerAuthority = "com.google.android.gms.fonts",

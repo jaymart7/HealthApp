@@ -24,4 +24,13 @@ dependencyResolutionManagement {
 
 rootProject.name = "HealthApp"
 include(":app")
+include(":core:designsystem")
+include(":core:data")
+include(":core:camera")
+include(":core:navigation")
+include(":feature:onboarding")
+include(":feature:home")
+include(":feature:food")
+include(":feature:progress")
+include(":feature:profile")
  

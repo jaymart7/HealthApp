@@ -1,4 +1,4 @@
-package ph.mart.healthapp.ui.theme
+package ph.mart.healthapp.core.designsystem.theme
 
 import androidx.compose.ui.graphics.Color
 
