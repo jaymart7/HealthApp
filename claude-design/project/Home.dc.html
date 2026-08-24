@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="./image-slot.js"></script>
+  <style>
+    body { margin: 0; background: #eef1ec; font-family: 'Inter', sans-serif; }
+    a { color: #37693D; }
+    a:hover { color: #1E5027; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:20px;padding:32px 16px;">
+
+  <!-- Dev-only preview controls (not part of the app UI) -->
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;font-family:'Inter',sans-serif;max-width:520px;">
+    <span style="font-size:12px;color:#727970;letter-spacing:0.5px;text-transform:uppercase;">Preview</span>
+    <button onClick="{{ toggleTheme }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid #727970;background:{{ themeToggleBg }};color:{{ themeToggleColor }};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">{{ themeToggleLabel }}</button>
+    <button onClick="{{ resetShell }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid #727970;background:transparent;color:#424940;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">Reset</button>
+    <button onClick="{{ toggleSimDayOne }}" style="{{ simDayOneBtnStyle }}">Simulate: Day one</button>
+    <button onClick="{{ toggleSimEmptyDiary }}" style="{{ simEmptyDiaryBtnStyle }}">Simulate: Empty diary</button>
+    <button onClick="{{ toggleSimNoGoalWeight }}" style="{{ simNoGoalWeightBtnStyle }}">Simulate: No goal weight</button>
+  </div>
+
+  <!-- Phone frame: 412x915dp -->
+  <div style="width:412px;height:915px;border-radius:32px;border:8px solid #2b2b2b;box-shadow:0 30px 70px rgba(0,0,0,0.28);overflow:hidden;background:{{ t.surface }};display:flex;flex-direction:column;">
+
+    <div style="height:48px;min-height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:{{ t.surface }};">
+      <span style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:{{ t.onSurface }};">9:41</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:16px;height:10px;border:1.5px solid {{ t.onSurface }};border-radius:2px;position:relative;"><div style="position:absolute;right:-3px;top:2px;width:2px;height:4px;background:{{ t.onSurface }};border-radius:1px;"></div></div>
+        <div style="width:18px;height:10px;border-radius:2px;background:{{ t.onSurface }};"></div>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column;background:{{ t.surface }};">
+
+      <div style="flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden;">
+
+        <!-- ===================== HOME TAB ===================== -->
+        <sc-if value="{{ isHomeTab }}" hint-placeholder-val="{{ true }}">
+
+          <!-- CANONICAL SOURCE: fullScreenState.js — do not edit here. Day-one empty state, mascot Idle -->
+          <sc-if value="{{ showHomeEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;">
+              <div style="width:{{ mascotSmallPx }};height:{{ mascotSmallPx }};border-radius:{{ mascotSmallRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+                <div style="display:flex;gap:10px;"><div style="{{ mascotEyeLeftStyle }}"></div><div style="{{ mascotEyeRightStyle }}"></div></div>
+                <div style="{{ mascotMouthStyle }}"></div>
+              </div>
+              <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:{{ t.onSurface }};text-align:center;">Let's log your first meal</h2>
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};text-align:center;">Tap Log below to add food by photo or search.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showHomeDashboard }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:12px;padding:16px 16px 12px;">
+
+              <!--
+                // Component: MascotGreetingCard
+                // Type: Screen-specific
+                // Used in: Home dashboard
+                // Build priority: High
+                // Props: none (reads time of day)
+                // Reuses: MascotAvatar, MascotSpeechBubble
+              -->
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;align-items:center;gap:12px;">
+                <div style="width:{{ mascotSmallPx }};height:{{ mascotSmallPx }};border-radius:{{ mascotSmallRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0;">
+                  <div style="display:flex;gap:10px;"><div style="{{ mascotEyeLeftStyle }}"></div><div style="{{ mascotEyeRightStyle }}"></div></div>
+                  <div style="{{ mascotMouthStyle }}"></div>
+                </div>
+                <div style="position:relative;background:{{ t.surfaceContainerHigh }};border-radius:16px;padding:8px 12px;flex:1;">
+                  <div style="position:absolute;left:-5px;top:16px;width:10px;height:10px;background:{{ t.surfaceContainerHigh }};transform:rotate(45deg);"></div>
+                  <p style="margin:0;font-family:'Inter',sans-serif;font-size:13px;line-height:18px;color:{{ t.onSurface }};">{{ greetingText }}</p>
+                </div>
+              </div>
+
+              <!--
+                // Component: AIInsightCard
+                // Type: Screen-specific
+                // Used in: Home dashboard (the ONLY tertiaryContainer card on this screen)
+                // Build priority: Medium
+                // Props: dismissible
+                // Reuses: AIChip, variant="onAccent" (surfaceContainerLowest bg — tertiaryContainer
+                //   would be invisible on this card's tertiaryContainer background). Same
+                //   font-size/padding as the default variant (Session 2, PhotoLogging.dc.html) —
+                //   only bg/text color and label differ between variants.
+              -->
+              <sc-if value="{{ showAIInsight }}" hint-placeholder-val="{{ true }}">
+                <div style="background:{{ t.tertiaryContainer }};border-radius:20px;padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="display:inline-flex;align-items:center;gap:4px;background:{{ t.surfaceContainerLowest }};color:{{ t.onTertiaryContainer }};font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:4px 10px;border-radius:8px;">✦ Insight</span>
+                    <button onClick="{{ dismissInsight }}" aria-label="Dismiss" style="border:none;background:transparent;color:{{ t.onTertiaryContainer }};font-size:14px;cursor:pointer;opacity:0.7;padding:2px;">✕</button>
+                  </div>
+                  <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;line-height:19px;color:{{ t.onTertiaryContainer }};">You lose weight faster on high-protein weeks.</p>
+                </div>
+              </sc-if>
+
+              <!--
+                // Component: CalorieRingCard
+                // Type: Screen-specific
+                // Used in: Home dashboard
+                // Build priority: High
+                // Props: consumed, goal (from calcDailyTargets())
+              -->
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;align-items:center;gap:16px;">
+                <div style="width:96px;height:96px;border-radius:50%;background:{{ ringGradient }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <div style="width:76px;height:76px;border-radius:50%;background:{{ t.surfaceContainerLow }};display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:18px;font-weight:600;color:{{ t.onSurface }};">{{ remainingCalories }}</span>
+                    <span style="font-family:'Inter',sans-serif;font-size:10px;color:{{ t.onSurfaceVariant }};">left</span>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Consumed</span>
+                  <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:20px;font-weight:600;color:{{ t.onSurface }};">{{ consumedCalories }} <span style="font-family:'Inter',sans-serif;font-size:13px;font-weight:400;color:{{ t.onSurfaceVariant }};">/ {{ calorieGoal }} kcal</span></span>
+                </div>
+              </div>
+
+              <!--
+                // Component: WeightMetricCard
+                // Type: Screen-specific
+                // Used in: Home dashboard
+                // Build priority: High
+                // Props: currentWeight, trend vs 7 days ago
+              -->
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Weight</span>
+                  <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:22px;font-weight:600;color:{{ t.onSurface }};">{{ currentWeightDisplay }} {{ weightUnitLabel }}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="font-size:16px;color:{{ trendColor }};">{{ trendArrow }}</span>
+                  <span style="font-family:'Inter',sans-serif;font-size:13px;color:{{ trendColor }};">{{ trendDeltaText }}</span>
+                </div>
+              </div>
+
+              <!--
+                // Component: MacroBar
+                // Type: Screen-specific
+                // Used in: Home dashboard — visually matches Onboarding Step 5's macro bar
+                // Build priority: High
+                // Props: proteinG, carbsG, fatG consumed/goal
+              -->
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+                <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Macros</span>
+                <div style="display:flex;width:100%;height:8px;border-radius:4px;overflow:hidden;">
+                  <div style="width:{{ proteinPct }};background:{{ t.primary }};border-right:2px solid {{ t.surfaceContainerLow }};box-sizing:border-box;"></div>
+                  <div style="width:{{ carbsPct }};background:{{ t.tertiary }};border-right:2px solid {{ t.surfaceContainerLow }};box-sizing:border-box;"></div>
+                  <div style="width:{{ fatPct }};background:{{ t.secondary }};"></div>
+                </div>
+                <div style="display:flex;gap:16px;">
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.primary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Protein {{ proteinLegend }}</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.tertiary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Carbs {{ carbsLegend }}</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.secondary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Fat {{ fatLegend }}</span></div>
+                </div>
+              </div>
+
+              <!--
+                // Component: ProgressPhotoReminderCard
+                // Type: Screen-specific
+                // Used in: Home dashboard
+                // Build priority: Low
+                // Props: daysSinceLastPhoto, onTakePhoto
+              -->
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <span style="font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurface }};">Progress photo</span>
+                  <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Last photo {{ lastPhotoDays }} days ago</span>
+                </div>
+                <button onClick="{{ takePhoto }}" style="height:36px;padding:0 16px;border:none;border-radius:999px;background:{{ t.primaryContainer }};color:{{ t.onPrimaryContainer }};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;">Take one</button>
+              </div>
+
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <!-- ===================== FOOD TAB ===================== -->
+        <sc-if value="{{ isFoodTab }}" hint-placeholder-val="{{ false }}">
+
+          <!-- CANONICAL SOURCE: fullScreenState.js — do not edit here. Empty diary state, mascot Sleepy -->
+          <sc-if value="{{ showDiaryEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;">
+              <div style="width:{{ mascotSmallPx }};height:{{ mascotSmallPx }};border-radius:{{ mascotSmallRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+                <div style="display:flex;gap:10px;"><div style="{{ mascotEyeLeftStyle }}"></div><div style="{{ mascotEyeRightStyle }}"></div></div>
+                <div style="{{ mascotMouthStyle }}"></div>
+              </div>
+              <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:{{ t.onSurface }};text-align:center;">Nothing logged yet today</h2>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showDiaryContent }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+              <!-- Search bar + barcode -->
+              <div style="display:flex;align-items:center;gap:8px;padding:16px 16px 8px;flex-shrink:0;">
+                <!--
+                  // Component: AppTextField
+                  // Type: Reusable (Session 2)
+                  // Used in: Food diary search
+                -->
+                <input value="{{ searchQuery }}" onChange="{{ onSearchChange }}" placeholder="Search foods…" style="flex:1;height:44px;border-radius:12px;border:1px solid {{ t.outline }};background:transparent;padding:0 14px;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};" />
+                <!-- Barcode icon: visual only, navigates nowhere -->
+                <button onMouseDown="{{ pressBarcode }}" onMouseUp="{{ releaseBarcode }}" onMouseLeave="{{ releaseBarcode }}" aria-label="Scan barcode (not wired up)" style="{{ barcodeBtnStyle }}">
+                  <div style="display:flex;align-items:flex-end;gap:1.5px;height:16px;">
+                    <div style="width:2px;height:16px;background:{{ t.onSurfaceVariant }};"></div>
+                    <div style="width:1.5px;height:11px;background:{{ t.onSurfaceVariant }};"></div>
+                    <div style="width:2.5px;height:16px;background:{{ t.onSurfaceVariant }};"></div>
+                    <div style="width:1.5px;height:9px;background:{{ t.onSurfaceVariant }};"></div>
+                    <div style="width:2px;height:16px;background:{{ t.onSurfaceVariant }};"></div>
+                  </div>
+                </button>
+              </div>
+
+              <!-- Calorie summary -->
+              <div style="flex-shrink:0;padding:0 16px 12px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;">
+                  <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ consumedCalories }} / {{ calorieGoal }} kcal</span>
+                  <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;color:{{ t.onSurface }};">{{ remainingCalories }} left</span>
+                </div>
+                <div style="display:flex;width:100%;height:6px;border-radius:3px;overflow:hidden;">
+                  <div style="width:{{ proteinPct }};background:{{ t.primary }};border-right:1.5px solid {{ t.surfaceContainerLow }};box-sizing:border-box;"></div>
+                  <div style="width:{{ carbsPct }};background:{{ t.tertiary }};border-right:1.5px solid {{ t.surfaceContainerLow }};box-sizing:border-box;"></div>
+                  <div style="width:{{ fatPct }};background:{{ t.secondary }};"></div>
+                </div>
+              </div>
+
+              <div style="flex:1;overflow:auto;display:flex;flex-direction:column;padding:4px 0 8px;">
+                <sc-for list="{{ mealsList }}" as="meal" hint-placeholder-count="4">
+                  <div style="display:flex;flex-direction:column;">
+                    <button onClick="{{ meal.toggleOpen }}" style="display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:none;background:transparent;cursor:pointer;width:100%;text-align:left;">
+                      <span style="font-size:11px;color:{{ t.onSurfaceVariant }};width:12px;">{{ meal.chevron }}</span>
+                      <span style="flex:1;font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:{{ t.onSurface }};">{{ meal.label }}</span>
+                      <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ meal.subtotal }} kcal</span>
+                      <span onClick="{{ meal.onAdd }}" role="button" aria-label="Add to {{ meal.label }}" style="width:24px;height:24px;border-radius:50%;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;">+</span>
+                    </button>
+
+                    <sc-if value="{{ meal.expanded }}" hint-placeholder-val="{{ true }}">
+                      <sc-if value="{{ meal.isEmpty }}" hint-placeholder-val="{{ false }}">
+                        <p style="margin:0;padding:4px 16px 12px 38px;font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Nothing logged for {{ meal.label }} yet.</p>
+                      </sc-if>
+                      <sc-for list="{{ meal.rowsList }}" as="row" hint-placeholder-count="0">
+                        <!--
+                          // Component: FoodItemRow (Display variant, from Session 2)
+                          // Reused as-is — swipe-to-delete added via a translating wrapper
+                        -->
+                        <div style="position:relative;overflow:hidden;border-bottom:1px solid {{ t.outlineVariant }};">
+                          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-end;background:{{ t.error }};">
+                            <button onClick="{{ row.onDelete }}" style="width:88px;height:100%;border:none;background:transparent;color:{{ t.onError }};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">Delete</button>
+                          </div>
+                          <div
+                            onPointerDown="{{ row.onPointerDown }}" onPointerMove="{{ row.onPointerMove }}" onPointerUp="{{ row.onPointerUp }}" onPointerCancel="{{ row.onPointerUp }}"
+                            style="{{ row.wrapStyle }}">
+                            <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;">
+                              <span style="font-family:'Inter',sans-serif;font-size:16px;color:{{ t.onSurface }};">{{ row.name }}</span>
+                              <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ row.portionAmount }} {{ row.portionUnit }} · {{ row.macroLine }}</span>
+                            </div>
+                            <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};flex-shrink:0;">{{ row.calories }} kcal</span>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <!-- ===================== PROGRESS TAB (Session 4) ===================== -->
+        <sc-if value="{{ isProgressTab }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ showProgressList }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:16px;padding:16px 16px 12px;">
+            <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;font-weight:500;color:{{ t.onSurface }};">Progress</h2>
+
+            <!--
+              // Component: SegmentedToggle (3-option)
+              // Reuses: Onboarding's units/sex pill-track pattern, generalized to N options
+            -->
+            <div style="display:flex;background:{{ t.surfaceContainerLow }};border-radius:999px;padding:4px;">
+              <sc-for list="{{ progressViewOptions }}" as="opt" hint-placeholder-count="3">
+                <button onClick="{{ opt.onSelect }}" style="{{ opt.style }}">{{ opt.label }}</button>
+              </sc-for>
+            </div>
+
+            <!-- ============ WEIGHT VIEW ============ -->
+            <sc-if value="{{ isWeightView }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:8px;">
+                <sc-for list="{{ rangeChipsList }}" as="chip" hint-placeholder-count="4">
+                  <button onClick="{{ chip.onSelect }}" style="{{ chip.style }}">{{ chip.label }}</button>
+                </sc-for>
+              </div>
+
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+                <svg viewBox="0 0 328 150" style="width:100%;height:150px;display:block;">
+                  <sc-for list="{{ chartGridLines }}" as="gl" hint-placeholder-count="4">
+                    <line x1="{{ gl.x1 }}" y1="{{ gl.y }}" x2="{{ gl.x2 }}" y2="{{ gl.y }}" stroke="{{ t.outlineVariant }}" stroke-width="1"></line>
+                  </sc-for>
+                  <sc-if value="{{ showGoalMarker }}" hint-placeholder-val="{{ false }}">
+                    <line x1="{{ chartMarginLeft }}" y1="{{ goalY }}" x2="{{ chartRight }}" y2="{{ goalY }}" stroke="{{ t.tertiary }}" stroke-width="1.5" stroke-dasharray="4 3"></line>
+                  </sc-if>
+                  <path d="{{ maPathD }}" fill="none" stroke="{{ t.secondary }}" stroke-width="2"></path>
+                  <path d="{{ linePathD }}" fill="none" stroke="{{ t.primary }}" stroke-width="2.5"></path>
+                  <sc-for list="{{ chartPoints }}" as="pt" hint-placeholder-count="10">
+                    <circle cx="{{ pt.x }}" cy="{{ pt.y }}" r="3" fill="{{ t.primary }}"></circle>
+                  </sc-for>
+                </svg>
+                <div style="display:flex;gap:16px;">
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:2.5px;background:{{ t.primary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Weight</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:2.5px;background:{{ t.secondary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">7-day avg</span></div>
+                  <sc-if value="{{ showGoalMarker }}" hint-placeholder-val="{{ false }}">
+                    <div style="display:flex;align-items:center;gap:6px;"><span style="width:12px;height:0;border-top:2px dashed {{ t.tertiary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Goal</span></div>
+                  </sc-if>
+                </div>
+              </div>
+
+              <div style="display:flex;background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;">
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Current</span>
+                  <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;color:{{ t.onSurface }};">{{ weightCurrentDisplay }}</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                  <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Change</span>
+                  <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;color:{{ weightChangeColor }};">{{ weightChangeDisplay }}</span>
+                </div>
+                <sc-if value="{{ showGoalMarker }}" hint-placeholder-val="{{ false }}">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                    <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">To goal</span>
+                    <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;color:{{ t.onSurface }};">{{ weightToGoalDisplay }}</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <!-- ============ PHOTOS VIEW ============ -->
+            <sc-if value="{{ isPhotosView }}" hint-placeholder-val="{{ false }}">
+              <sc-if value="{{ photosEmpty }}" hint-placeholder-val="{{ false }}">
+                <!-- CANONICAL SOURCE: fullScreenState.js — do not edit here. Mascot Sleepy -->
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;">
+                  <div style="width:{{ mascotSmallPx }};height:{{ mascotSmallPx }};border-radius:{{ mascotSmallRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+                    <div style="display:flex;gap:10px;"><div style="{{ sleepyEyeStyle }}"></div><div style="{{ sleepyEyeStyle }}"></div></div>
+                    <div style="{{ sleepyMouthStyle }}"></div>
+                  </div>
+                  <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:{{ t.onSurface }};text-align:center;">No progress photos yet</h2>
+                </div>
+              </sc-if>
+              <sc-if value="{{ photosNotEmpty }}" hint-placeholder-val="{{ true }}">
+                <sc-for list="{{ photoMonthGroups }}" as="grp" hint-placeholder-count="2">
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};text-transform:uppercase;letter-spacing:0.5px;">{{ grp.month }}</span>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                      <sc-for list="{{ grp.photos }}" as="ph" hint-placeholder-count="3">
+                        <div onClick="{{ ph.toggleSelect }}" style="position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;outline:{{ ph.outline }};">
+                          <image-slot id="{{ ph.slotId }}" shape="rect" placeholder="Progress photo" style="width:100%;height:100%;"></image-slot>
+                          <sc-if value="{{ ph.selected }}" hint-placeholder-val="{{ false }}">
+                            <div style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:{{ t.primary }};color:{{ t.onPrimary }};display:flex;align-items:center;justify-content:center;font-size:12px;">✓</div>
+                          </sc-if>
+                          <div style="position:absolute;bottom:0;left:0;right:0;padding:4px 6px;background:linear-gradient(transparent, rgba(0,0,0,0.55));">
+                            <span style="font-family:'Inter',sans-serif;font-size:11px;color:#fff;">{{ ph.dateLabel }}</span>
+                          </div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ canCompare }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ openCompare }}" style="height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">Compare (2)</button>
+                </sc-if>
+              </sc-if>
+            </sc-if>
+
+            <!-- ============ MEASUREMENTS VIEW ============ -->
+            <sc-if value="{{ isMeasurementsView }}" hint-placeholder-val="{{ false }}">
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;display:flex;flex-direction:column;">
+                <sc-for list="{{ measurementRows }}" as="m" hint-placeholder-count="5">
+                  <button onClick="{{ m.onTap }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:none;border-bottom:1px solid {{ t.outlineVariant }};background:transparent;width:100%;text-align:left;cursor:pointer;">
+                    <span style="flex:1;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">{{ m.name }}</span>
+                    <svg viewBox="0 0 48 24" style="width:48px;height:24px;flex-shrink:0;">
+                      <polyline points="{{ m.sparklinePoints }}" fill="none" stroke="{{ t.tertiary }}" stroke-width="1.5"></polyline>
+                    </svg>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:56px;">
+                      <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;color:{{ t.onSurface }};">{{ m.currentDisplay }}</span>
+                      <span style="font-family:'Inter',sans-serif;font-size:11px;color:{{ m.deltaColor }};">{{ m.deltaDisplay }}</span>
+                    </div>
+                  </button>
+                </sc-for>
+                <button onClick="{{ addMeasurement }}" style="height:48px;border:none;background:transparent;color:{{ t.primary }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">+ Add measurement</button>
+              </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <!-- ============ PHOTO COMPARISON (static side-by-side; slider deferred) ============ -->
+          <sc-if value="{{ comparePhotosOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:16px;overflow:auto;">
+              <button onClick="{{ closeCompare }}" style="align-self:flex-start;height:36px;padding:0 14px;border:none;border-radius:999px;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;">← Back</button>
+              <div style="display:flex;gap:8px;">
+                <sc-for list="{{ comparePhotos }}" as="cp" hint-placeholder-count="2">
+                  <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                    <image-slot id="{{ cp.slotId }}" shape="rect" placeholder="Progress photo" style="width:100%;aspect-ratio:3/4;border-radius:12px;"></image-slot>
+                    <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};text-align:center;">{{ cp.dateLabel }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <span style="font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Weight change:</span>
+                <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:14px;font-weight:600;color:{{ compareDeltaColor }};">{{ compareDeltaDisplay }}</span>
+              </div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <!-- ===================== PROFILE TAB (Session 4) ===================== -->
+        <sc-if value="{{ isProfileTab }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow:auto;display:flex;flex-direction:column;gap:20px;padding:16px 16px 24px;">
+            <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;font-weight:500;color:{{ t.onSurface }};">Profile</h2>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};text-transform:uppercase;letter-spacing:0.5px;">Goals</span>
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">Calorie target</span>
+                  <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;font-weight:600;color:{{ t.onSurface }};">{{ calorieGoal }} kcal</span>
+                </div>
+                <div style="display:flex;width:100%;height:8px;border-radius:4px;overflow:hidden;">
+                  <div style="width:{{ proteinPct }};background:{{ t.primary }};border-right:2px solid {{ t.surfaceContainerLow }};box-sizing:border-box;"></div>
+                  <div style="width:{{ carbsPct }};background:{{ t.tertiary }};border-right:2px solid {{ t.surfaceContainerLow }};box-sizing:border-box;"></div>
+                  <div style="width:{{ fatPct }};background:{{ t.secondary }};"></div>
+                </div>
+                <div style="display:flex;gap:16px;">
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.primary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Protein {{ macroTargetProtein }}g</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.tertiary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Carbs {{ macroTargetCarbs }}g</span></div>
+                  <div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:2px;background:{{ t.secondary }};"></span><span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Fat {{ macroTargetFat }}g</span></div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:4px;border-top:1px solid {{ t.outlineVariant }};">
+                  <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">Activity level</span>
+                  <span style="font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">{{ activityLabel }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};text-transform:uppercase;letter-spacing:0.5px;">Units</span>
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">Weight</span>
+                  <div style="display:flex;background:{{ t.surfaceContainerHigh }};border-radius:999px;padding:4px;">
+                    <button onClick="{{ setWeightUnitKg }}" style="{{ weightUnitKgStyle }}">kg</button>
+                    <button onClick="{{ setWeightUnitLb }}" style="{{ weightUnitLbStyle }}">lb</button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">Height</span>
+                  <div style="display:flex;background:{{ t.surfaceContainerHigh }};border-radius:999px;padding:4px;">
+                    <button onClick="{{ setHeightUnitCm }}" style="{{ heightUnitCmStyle }}">cm</button>
+                    <button onClick="{{ setHeightUnitIn }}" style="{{ heightUnitInStyle }}">in</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};text-transform:uppercase;letter-spacing:0.5px;">Reminders</span>
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:4px 16px;display:flex;flex-direction:column;">
+                <sc-for list="{{ reminderRows }}" as="r" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid {{ t.outlineVariant }};">
+                    <div style="display:flex;flex-direction:column;gap:2px;">
+                      <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">{{ r.label }}</span>
+                      <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ r.sublabel }}</span>
+                    </div>
+                    <button onClick="{{ r.onToggle }}" style="{{ r.switchStyle }}"><div style="{{ r.knobStyle }}"></div></button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};text-transform:uppercase;letter-spacing:0.5px;">Data</span>
+              <button onClick="{{ exportData }}" style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;border:none;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;">
+                <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">Export data (JSON)</span>
+                <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Photos are not included in exports</span>
+              </button>
+              <button onClick="{{ triggerImport }}" style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;border:none;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;">
+                <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">Import data (JSON)</span>
+                <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">Replaces your current profile and food entries</span>
+              </button>
+              <input ref="{{ importInputRef }}" type="file" accept="application/json" onChange="{{ handleImportFile }}" style="display:none;" />
+              <sc-if value="{{ importError }}" hint-placeholder-val="{{ false }}">
+                <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.error }};">{{ importError }}</span>
+              </sc-if>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};text-transform:uppercase;letter-spacing:0.5px;">About</span>
+              <div style="background:{{ t.surfaceContainerLow }};border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};">Version</span>
+                  <span style="font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">1.0.0 (prototype)</span>
+                </div>
+                <p style="margin:0;font-family:'Inter',sans-serif;font-size:12px;line-height:16px;color:{{ t.onSurfaceVariant }};">Estimates based on your inputs, not medical advice.</p>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!--
+          // Component: AppScaffold
+          // CANONICAL SOURCE: appScaffold.js — do not edit this block in isolation
+        -->
+        <div style="height:104px;min-height:104px;display:flex;flex-direction:column;background:{{ t.surfaceContainer }};">
+          <div style="flex:1;display:flex;align-items:center;">
+            <sc-for list="{{ tabsList }}" as="tabItem" hint-placeholder-count="4">
+              <button onClick="{{ tabItem.onSelect }}" style="flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:none;background:transparent;cursor:pointer;">
+                <div style="{{ tabItem.pillStyle }}">
+                  <span style="{{ tabItem.iconStyle }}">{{ tabItem.icon }}</span>
+                </div>
+                <span style="{{ tabItem.labelStyle }}">{{ tabItem.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="height:24px;"></div>
+        </div>
+
+        <button onClick="{{ openSheet }}" style="position:absolute;right:16px;bottom:108px;height:56px;padding:0 20px;border:none;border-radius:999px;background:{{ t.primaryContainer }};color:{{ t.onPrimaryContainer }};display:flex;align-items:center;gap:8px;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 8px 20px rgba(0,0,0,0.25);">
+          <span style="font-size:18px;">+</span> Log
+        </button>
+
+        <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:{{ scrimColor }};display:flex;flex-direction:column;justify-content:flex-end;" onClick="{{ closeSheet }}">
+            <div style="background:{{ t.surfaceContainerLow }};border-radius:28px 28px 0 0;padding:12px 16px 24px;display:flex;flex-direction:column;gap:4px;" onClick="{{ stopProp }}">
+              <div style="width:32px;height:4px;border-radius:2px;background:{{ t.onSurfaceVariant }};align-self:center;margin-bottom:12px;"></div>
+              <button onClick="{{ openStub_LogFood }}" style="{{ sheetRowStyle }}">Log food</button>
+              <button onClick="{{ openLogWeight }}" style="{{ sheetRowStyle }}">Log weight</button>
+              <button onClick="{{ openAddPhoto }}" style="{{ sheetRowStyle }}">Add photo</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ stubSheetOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:{{ scrimColor }};display:flex;flex-direction:column;justify-content:flex-end;" onClick="{{ closeStubSheet }}">
+            <div style="background:{{ t.surfaceContainerLow }};border-radius:28px 28px 0 0;padding:20px 16px 32px;display:flex;flex-direction:column;gap:12px;align-items:center;">
+              <div style="width:32px;height:4px;border-radius:2px;background:{{ t.onSurfaceVariant }};"></div>
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};text-align:center;">{{ stubSheetText }}</p>
+              <button onClick="{{ closeStubSheet }}" style="height:40px;padding:0 20px;border:none;border-radius:999px;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;">Close</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!--
+          // Component: LogWeightSheet
+          // Type: Screen-specific (bottom sheet)
+          // Reuses: QuickActionSheet chrome, NumericStepperField, AppTextField, PrimaryButton, TextButton
+        -->
+        <sc-if value="{{ logWeightOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:{{ scrimColor }};display:flex;flex-direction:column;justify-content:flex-end;" onClick="{{ closeLogWeight }}">
+            <div style="background:{{ t.surfaceContainerLow }};border-radius:28px 28px 0 0;padding:12px 16px 24px;display:flex;flex-direction:column;gap:14px;" onClick="{{ stopProp }}">
+              <div style="width:32px;height:4px;border-radius:2px;background:{{ t.onSurfaceVariant }};align-self:center;"></div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <sc-if value="{{ logWeightCalendarOpen }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ calendarBack }}" aria-label="Back" style="width:32px;height:32px;border:none;background:transparent;color:{{ t.onSurface }};font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;">←</button>
+                </sc-if>
+                <h3 style="margin:0;font-family:'Poppins',sans-serif;font-size:18px;font-weight:500;color:{{ t.onSurface }};">{{ logWeightHeaderTitle }}</h3>
+              </div>
+
+              <div style="position:relative;overflow:hidden;transition:height 0.28s ease;height:{{ logWeightPanelHeight }}px;">
+                <div style="display:flex;width:200%;transform:translateX({{ logWeightSlideOffset }});transition:transform 0.28s ease;">
+                  <div style="width:50%;flex-shrink:0;box-sizing:border-box;padding-right:6px;display:flex;flex-direction:column;gap:14px;">
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <button onClick="{{ openLogWeightCalendar }}" style="display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 16px;border:none;border-radius:12px;background:{{ t.surfaceContainerHigh }};cursor:pointer;">
+                        <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};">Date</span>
+                        <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:{{ t.onSurface }};">{{ logWeightDateLabel }}</span>
+                      </button>
+                      <sc-if value="{{ logWeightDuplicateDate }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.tertiary }};">Replacing your entry for this date.</span>
+                      </sc-if>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Weight</span>
+                      <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerHigh }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+                        <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ logWeightValueDisplay }}</span>
+                        <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ weightUnitLabel }}</span>
+                        <button onClick="{{ decLogWeight }}" style="{{ stepperBtnStyle }}">−</button>
+                        <button onClick="{{ incLogWeight }}" style="{{ stepperBtnStyle }}">+</button>
+                      </div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Note (optional)</span>
+                      <input value="{{ logWeightNote }}" onChange="{{ onLogWeightNoteChange }}" placeholder="e.g. after workout" style="height:48px;border-radius:12px;border:1px solid {{ t.outline }};background:transparent;padding:0 16px;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};" />
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:2px;">
+                      <button onClick="{{ saveLogWeight }}" style="width:100%;height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Save</button>
+                      <button onClick="{{ closeLogWeight }}" style="height:44px;padding:0 16px;border:none;background:transparent;color:{{ t.onSurfaceVariant }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">Cancel</button>
+                    </div>
+                  </div>
+
+                  <div style="width:50%;flex-shrink:0;box-sizing:border-box;padding-left:6px;display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                      <button onClick="{{ calendarPrevMonth }}" aria-label="Previous month" style="width:32px;height:32px;border:none;border-radius:50%;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};cursor:pointer;">‹</button>
+                      <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:{{ t.onSurface }};">{{ calendarMonthLabel }}</span>
+                      <button onClick="{{ calendarNextMonth }}" aria-label="Next month" style="{{ calendarNextBtnStyle }}">›</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+                      <sc-for list="{{ calendarWeekdays }}" as="wd" hint-placeholder-count="7">
+                        <span style="text-align:center;font-family:'Inter',sans-serif;font-size:11px;color:{{ t.onSurfaceVariant }};padding:2px 0;">{{ wd }}</span>
+                      </sc-for>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+                      <sc-for list="{{ calendarCells }}" as="cell" hint-placeholder-count="35">
+                        <sc-if value="{{ cell.blank }}" hint-placeholder-val="{{ false }}">
+                          <div style="min-width:44px;min-height:44px;"></div>
+                        </sc-if>
+                        <sc-if value="{{ cell.filled }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ cell.onSelect }}" style="{{ cell.cellStyle }}">
+                            <span style="{{ cell.textStyle }}">{{ cell.day }}</span>
+                            <sc-if value="{{ cell.hasEntry }}" hint-placeholder-val="{{ false }}">
+                              <span style="{{ cell.dotStyle }}"></span>
+                            </sc-if>
+                          </button>
+                        </sc-if>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!--
+          // Component: AddPhotoSheet
+          // Type: Screen-specific (bottom sheet, 2 steps)
+          // Reuses: QuickActionSheet chrome, image-slot (PhotoLogging's shared-camera-feed pattern)
+        -->
+        <sc-if value="{{ addPhotoOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:{{ scrimColor }};display:flex;flex-direction:column;justify-content:flex-end;" onClick="{{ closeAddPhoto }}">
+            <div style="background:{{ t.surfaceContainerLow }};border-radius:28px 28px 0 0;padding:12px 16px 24px;display:flex;flex-direction:column;gap:14px;" onClick="{{ stopProp }}">
+              <div style="width:32px;height:4px;border-radius:2px;background:{{ t.onSurfaceVariant }};align-self:center;"></div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <sc-if value="{{ addPhotoCalendarOpen }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ calendarBack }}" aria-label="Back" style="width:32px;height:32px;border:none;background:transparent;color:{{ t.onSurface }};font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;">←</button>
+                </sc-if>
+                <h3 style="margin:0;font-family:'Poppins',sans-serif;font-size:18px;font-weight:500;color:{{ t.onSurface }};">{{ addPhotoHeaderTitle }}</h3>
+              </div>
+
+              <sc-if value="{{ addPhotoChooseStep }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;gap:12px;">
+                  <button onClick="{{ chooseTakePhoto }}" style="flex:1;height:96px;border:none;border-radius:16px;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">
+                    <span style="font-size:24px;">📷</span>Take photo
+                  </button>
+                  <button onClick="{{ chooseGalleryPhoto }}" style="flex:1;height:96px;border:none;border-radius:16px;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">
+                    <span style="font-size:24px;">🖼</span>Choose from gallery
+                  </button>
+                </div>
+                <button onClick="{{ closeAddPhoto }}" style="height:44px;padding:0 16px;border:none;background:transparent;color:{{ t.onSurfaceVariant }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;align-self:center;">Cancel</button>
+              </sc-if>
+
+              <sc-if value="{{ addPhotoPreviewStep }}" hint-placeholder-val="{{ false }}">
+                <div style="position:relative;overflow:hidden;transition:height 0.28s ease;height:{{ addPhotoPanelHeight }}px;">
+                  <div style="display:flex;width:200%;transform:translateX({{ addPhotoSlideOffset }});transition:transform 0.28s ease;">
+                    <div style="width:50%;flex-shrink:0;box-sizing:border-box;padding-right:6px;display:flex;flex-direction:column;gap:14px;">
+                      <div style="display:flex;gap:12px;align-items:center;">
+                        <image-slot id="progress-photo-new-preview" shape="rounded" radius="12" placeholder="New progress photo" style="width:80px;height:80px;flex-shrink:0;"></image-slot>
+                        <span style="font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Drop a photo here to preview it.</span>
+                      </div>
+
+                      <div style="display:flex;flex-direction:column;gap:4px;">
+                        <button onClick="{{ openAddPhotoCalendar }}" style="display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 16px;border:none;border-radius:12px;background:{{ t.surfaceContainerHigh }};cursor:pointer;">
+                          <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};">Date</span>
+                          <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:{{ t.onSurface }};">{{ addPhotoDateLabel }}</span>
+                        </button>
+                      </div>
+
+                      <div style="display:flex;flex-direction:column;gap:4px;">
+                        <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Weight (optional)</span>
+                        <input value="{{ addPhotoWeight }}" onChange="{{ onAddPhotoWeightChange }}" placeholder="e.g. 79.0 {{ addPhotoWeightUnitLabel }}" style="height:48px;border-radius:12px;border:1px solid {{ t.outline }};background:transparent;padding:0 16px;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurface }};" />
+                      </div>
+
+                      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:2px;">
+                        <button onClick="{{ saveAddPhoto }}" style="width:100%;height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Save</button>
+                        <button onClick="{{ closeAddPhoto }}" style="height:44px;padding:0 16px;border:none;background:transparent;color:{{ t.onSurfaceVariant }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">Cancel</button>
+                      </div>
+                    </div>
+
+                    <div style="width:50%;flex-shrink:0;box-sizing:border-box;padding-left:6px;display:flex;flex-direction:column;gap:8px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <button onClick="{{ calendarPrevMonth }}" aria-label="Previous month" style="width:32px;height:32px;border:none;border-radius:50%;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};cursor:pointer;">‹</button>
+                        <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:{{ t.onSurface }};">{{ calendarMonthLabel }}</span>
+                        <button onClick="{{ calendarNextMonth }}" aria-label="Next month" style="{{ calendarNextBtnStyle }}">›</button>
+                      </div>
+                      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+                        <sc-for list="{{ calendarWeekdays }}" as="wd" hint-placeholder-count="7">
+                          <span style="text-align:center;font-family:'Inter',sans-serif;font-size:11px;color:{{ t.onSurfaceVariant }};padding:2px 0;">{{ wd }}</span>
+                        </sc-for>
+                      </div>
+                      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+                        <sc-for list="{{ calendarCells }}" as="cell" hint-placeholder-count="35">
+                          <sc-if value="{{ cell.blank }}" hint-placeholder-val="{{ false }}">
+                            <div style="min-width:44px;min-height:44px;"></div>
+                          </sc-if>
+                          <sc-if value="{{ cell.filled }}" hint-placeholder-val="{{ true }}">
+                            <button onClick="{{ cell.onSelect }}" style="{{ cell.cellStyle }}">
+                              <span style="{{ cell.textStyle }}">{{ cell.day }}</span>
+                              <sc-if value="{{ cell.hasEntry }}" hint-placeholder-val="{{ false }}">
+                                <span style="{{ cell.dotStyle }}"></span>
+                              </sc-if>
+                            </button>
+                          </sc-if>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!--
+          // Component: AddMeasurementSheet
+          // Type: Screen-specific (bottom sheet)
+          // Reuses: QuickActionSheet chrome, NumericStepperField, SheetDatePicker, PrimaryButton, TextButton
+        -->
+        <sc-if value="{{ measurementSheetOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:{{ scrimColor }};display:flex;flex-direction:column;justify-content:flex-end;" onClick="{{ closeMeasurementSheet }}">
+            <div style="background:{{ t.surfaceContainerLow }};border-radius:28px 28px 0 0;padding:12px 16px 24px;display:flex;flex-direction:column;gap:14px;" onClick="{{ stopProp }}">
+              <div style="width:32px;height:4px;border-radius:2px;background:{{ t.onSurfaceVariant }};align-self:center;"></div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <sc-if value="{{ measurementCalendarOpen }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ calendarBack }}" aria-label="Back" style="width:32px;height:32px;border:none;background:transparent;color:{{ t.onSurface }};font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;">←</button>
+                </sc-if>
+                <h3 style="margin:0;font-family:'Poppins',sans-serif;font-size:18px;font-weight:500;color:{{ t.onSurface }};">{{ measurementHeaderTitle }}</h3>
+              </div>
+
+              <div style="position:relative;overflow:hidden;transition:height 0.28s ease;height:{{ measurementPanelHeight }}px;">
+                <div style="display:flex;width:200%;transform:translateX({{ measurementSlideOffset }});transition:transform 0.28s ease;">
+                  <div style="width:50%;flex-shrink:0;box-sizing:border-box;padding-right:6px;display:flex;flex-direction:column;gap:14px;">
+
+                    <sc-if value="{{ measurementIsNewPart }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex;flex-direction:column;gap:6px;">
+                        <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Body part</span>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                          <sc-for list="{{ measurementPartOptions }}" as="p" hint-placeholder-count="5">
+                            <button onClick="{{ p.onSelect }}" style="{{ p.chipStyle }}">{{ p.name }}</button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <button onClick="{{ openMeasurementCalendar }}" style="display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 16px;border:none;border-radius:12px;background:{{ t.surfaceContainerHigh }};cursor:pointer;">
+                        <span style="font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};">Date</span>
+                        <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:{{ t.onSurface }};">{{ measurementDateLabel }}</span>
+                      </button>
+                      <sc-if value="{{ measurementDuplicateDate }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.tertiary }};">Replacing your entry for this date.</span>
+                      </sc-if>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:4px;">
+                      <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">{{ measurementPartName }}</span>
+                      <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerHigh }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+                        <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ measurementValueDisplay }}</span>
+                        <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ measurementUnitLabel }}</span>
+                        <button onClick="{{ decMeasurement }}" style="{{ stepperBtnStyle }}">−</button>
+                        <button onClick="{{ incMeasurement }}" style="{{ stepperBtnStyle }}">+</button>
+                      </div>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:2px;">
+                      <button onClick="{{ saveMeasurement }}" style="{{ measurementSaveBtnStyle }}">Save</button>
+                      <button onClick="{{ closeMeasurementSheet }}" style="height:44px;padding:0 16px;border:none;background:transparent;color:{{ t.onSurfaceVariant }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">Cancel</button>
+                    </div>
+                  </div>
+
+                  <div style="width:50%;flex-shrink:0;box-sizing:border-box;padding-left:6px;display:flex;flex-direction:column;gap:8px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                      <button onClick="{{ calendarPrevMonth }}" aria-label="Previous month" style="width:32px;height:32px;border:none;border-radius:50%;background:{{ t.surfaceContainerHigh }};color:{{ t.onSurface }};cursor:pointer;">‹</button>
+                      <span style="font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:{{ t.onSurface }};">{{ calendarMonthLabel }}</span>
+                      <button onClick="{{ calendarNextMonth }}" aria-label="Next month" style="{{ calendarNextBtnStyle }}">›</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+                      <sc-for list="{{ calendarWeekdays }}" as="wd" hint-placeholder-count="7">
+                        <span style="text-align:center;font-family:'Inter',sans-serif;font-size:11px;color:{{ t.onSurfaceVariant }};padding:2px 0;">{{ wd }}</span>
+                      </sc-for>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">
+                      <sc-for list="{{ calendarCells }}" as="cell" hint-placeholder-count="35">
+                        <sc-if value="{{ cell.blank }}" hint-placeholder-val="{{ false }}">
+                          <div style="min-width:44px;min-height:44px;"></div>
+                        </sc-if>
+                        <sc-if value="{{ cell.filled }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ cell.onSelect }}" style="{{ cell.cellStyle }}">
+                            <span style="{{ cell.textStyle }}">{{ cell.day }}</span>
+                            <sc-if value="{{ cell.hasEntry }}" hint-placeholder-val="{{ false }}">
+                              <span style="{{ cell.dotStyle }}"></span>
+                            </sc-if>
+                          </button>
+                        </sc-if>
+                      </sc-for>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="height:24px;min-height:24px;display:flex;align-items:center;justify-content:center;background:{{ t.surface }};">
+      <div style="width:108px;height:4px;border-radius:2px;background:{{ t.onSurface }};opacity:0.35;"></div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;weightUnit&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;kg&quot;,&quot;options&quot;:[&quot;kg&quot;,&quot;lb&quot;],&quot;tsType&quot;:&quot;'kg'|'lb'&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;macroBarShowPercent&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;aiInsightVisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+class Component extends DCLogic {
+  TABS = [
+    { id: 'home', label: 'Home', icon: '⌂' },
+    { id: 'food', label: 'Food', icon: '◍' },
+    { id: 'progress', label: 'Progress', icon: '↗' },
+    { id: 'profile', label: 'Profile', icon: '☺' },
+  ];
+  MEALS = [
+    { key: 'breakfast', label: 'Breakfast' },
+    { key: 'lunch', label: 'Lunch' },
+    { key: 'dinner', label: 'Dinner' },
+    { key: 'snacks', label: 'Snacks' },
+  ];
+  // Real hand-off: Onboarding.dc.html writes the completed profile to this localStorage key
+  // before navigating here (separate top-level DCs share no runtime state, but DO share
+  // localStorage). This is the fallback used only when that key is missing — e.g. Home opened
+  // directly without completing onboarding in this browser session.
+  STORAGE_KEY = 'healthtrack_onboarding_profile';
+  DEFAULT_PROFILE = { sex: 'male', age: 26, heightCm: 170, weightKg: 55.5, activity: 'sedentary', goal: 'maintain' };
+  BASE_DATE = new Date(2026, 5, 1); // seed date for weigh-ins/photos
+  WEIGHT_DATA = [
+    { day: 0, weight: 82.4 }, { day: 7, weight: 81.9 }, { day: 14, weight: 81.5 }, { day: 21, weight: 81.6 },
+    { day: 28, weight: 80.8 }, { day: 35, weight: 80.4 }, { day: 42, weight: 80.1 }, { day: 49, weight: 79.5 },
+    { day: 56, weight: 79.7 }, { day: 63, weight: 79.0 },
+  ];
+  GOAL_WEIGHT_KG = 75.0;
+  FIELDS_HEIGHT_LOGWEIGHT = 320;
+  FIELDS_HEIGHT_ADDPHOTO_PREVIEW = 340;
+  CALENDAR_HEIGHT = 440;
+  WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  RANGE_DAYS = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 };
+  BODY_PARTS = [
+    { key: 'chest', name: 'Chest' },
+    { key: 'waist', name: 'Waist' },
+    { key: 'hips', name: 'Hips' },
+    { key: 'arms', name: 'Arms' },
+    { key: 'thighs', name: 'Thighs' },
+  ];
+  MEASUREMENT_SEED = [
+    { key: 'chest', values: [98, 97.5, 97, 96.5, 96] },
+    { key: 'waist', values: [92, 90.5, 89, 88, 87] },
+    { key: 'hips', values: [104, 103.5, 103, 102.5, 102] },
+  ];
+  FIELDS_HEIGHT_MEASUREMENT_NEW = 400;
+  FIELDS_HEIGHT_MEASUREMENT_EXISTING = 300;
+  INITIAL_ENTRIES = [
+    { id: 1, mealKey: 'breakfast', name: 'Greek yogurt', portionAmount: 1, portionUnit: 'cup', calories: 150, proteinG: 20, carbsG: 8, fatG: 4 },
+    { id: 2, mealKey: 'breakfast', name: 'Oatmeal with berries', portionAmount: 1, portionUnit: 'bowl', calories: 320, proteinG: 10, carbsG: 58, fatG: 6 },
+    { id: 3, mealKey: 'lunch', name: 'Grilled chicken breast', portionAmount: 150, portionUnit: 'g', calories: 210, proteinG: 32, carbsG: 2, fatG: 8 },
+    { id: 4, mealKey: 'lunch', name: 'Steamed rice', portionAmount: 200, portionUnit: 'g', calories: 260, proteinG: 5, carbsG: 57, fatG: 1 },
+    { id: 5, mealKey: 'snacks', name: 'Almonds', portionAmount: 28, portionUnit: 'g', calories: 170, proteinG: 6, carbsG: 6, fatG: 15 },
+  ];
+
+  state = {
+    themeMod: null, isDark: false,
+    tab: 'home', sheetOpen: false, stubSheetText: null,
+    insightDismissed: false,
+    simDayOne: false, simEmptyDiary: false,
+    expandedMeals: { breakfast: true, lunch: true, dinner: true, snacks: true },
+    searchQuery: '', barcodePressed: false,
+    foodEntries: null,
+    swipe: {}, draggingId: null, dragStartX: 0, dragBaseX: 0,
+    progressView: 'weight', weightRange: '3M', simNoGoalWeight: false,
+    selectedPhotoIds: [], comparePhotosOpen: false,
+    unitsWeight: null, unitsHeight: null,
+    reminderToggles: { meals: true, weighIn: true, photo: false },
+    weightData: null, photos: null,
+    logWeightOpen: false, logWeightValue: null, logWeightNote: '', logWeightDate: null,
+    addPhotoOpen: false, addPhotoStep: 'choose', addPhotoDate: null, addPhotoWeight: '',
+    calendarTarget: null, calendarMonth: null,
+    measurementData: null, measurementSheetOpen: false, measurementPartKey: null,
+    measurementIsNewPart: false, measurementValue: null, measurementDate: null,
+  };
+
+  componentDidMount() {
+    import('./theme.js').then(mod => {
+      const weightData = this.WEIGHT_DATA.map(d => ({ ...d, date: this.dateFromDay(d.day) }));
+      const photos = this.WEIGHT_DATA.map(d => {
+        const date = this.dateFromDay(d.day);
+        return { id: d.day, weight: d.weight, date, month: date.toLocaleString('en-US', { month: 'long' }), dateLabel: date.toLocaleString('en-US', { month: 'short', day: 'numeric' }), slotId: `progress-photo-${d.day}` };
+      });
+      const measurementData = this.MEASUREMENT_SEED.map(m => ({
+        key: m.key,
+        name: this.BODY_PARTS.find(p => p.key === m.key).name,
+        entries: m.values.map((v, i) => ({ day: i * 7, value: v, date: this.dateFromDay(i * 7) })),
+      }));
+      this.setState({ themeMod: mod, weightData, photos, measurementData });
+    });
+    this.setState({ foodEntries: this.INITIAL_ENTRIES.map(e => ({ ...e })), profile: this.loadProfile() });
+  }
+
+  dateFromDay(day) { const d = new Date(this.BASE_DATE); d.setDate(d.getDate() + day); return d; }
+  dayOffsetFromDate(date) { return Math.round((date - this.BASE_DATE) / 86400000); }
+  computeLastPhotoDays(photos) {
+    const latest = [...photos].sort((a, b) => b.date - a.date)[0];
+    return latest ? Math.max(0, Math.round((Date.now() - latest.date.getTime()) / 86400000)) : null;
+  }
+  toDateInputValue(date) { const y = date.getFullYear(), m = String(date.getMonth() + 1).padStart(2, '0'), d = String(date.getDate()).padStart(2, '0'); return `${y}-${m}-${d}`; }
+  clampToToday(date) { const today = new Date(); today.setHours(0, 0, 0, 0); return date > today ? today : date; }
+
+  // Reusable sheet-internal date picker: swaps the sheet's own content between its fields
+  // and a calendar view (no nested sheet/scrim). openCalendarFor/closeCalendar/selectCalendarDate
+  // are shared by LogWeightSheet and AddPhotoSheet.
+  openCalendarFor = (target) => {
+    const s = this.state;
+    const current = target === 'logWeight' ? s.logWeightDate : target === 'addPhoto' ? s.addPhotoDate : s.measurementDate;
+    this.setState({ calendarTarget: target, calendarMonth: new Date(current.getFullYear(), current.getMonth(), 1) });
+  };
+  closeCalendar = () => this.setState({ calendarTarget: null });
+  calendarPrevMonth = () => this.setState(s => ({ calendarMonth: new Date(s.calendarMonth.getFullYear(), s.calendarMonth.getMonth() - 1, 1) }));
+  calendarNextMonth = () => this.setState(s => {
+    const today = new Date();
+    const todayMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const next = new Date(s.calendarMonth.getFullYear(), s.calendarMonth.getMonth() + 1, 1);
+    return { calendarMonth: next > todayMonth ? s.calendarMonth : next };
+  });
+  selectCalendarDate = (date) => {
+    const s = this.state;
+    const clamped = this.clampToToday(date);
+    if (s.calendarTarget === 'logWeight') this.setState({ logWeightDate: clamped, calendarTarget: null });
+    else if (s.calendarTarget === 'addPhoto') this.setState({ addPhotoDate: clamped, calendarTarget: null });
+    else if (s.calendarTarget === 'measurement') this.setState({ measurementDate: clamped, calendarTarget: null });
+  };
+  buildCalendarVals(s, t) {
+    if (!s.calendarTarget || !s.calendarMonth) {
+      return { calendarCells: [], calendarMonthLabel: '', calendarWeekdays: this.WEEKDAY_LABELS, calendarPrevMonth: this.calendarPrevMonth, calendarNextMonth: this.calendarNextMonth, calendarNextBtnStyle: '', calendarBack: this.closeCalendar };
+    }
+    const month = s.calendarMonth;
+    const year = month.getFullYear(), mi = month.getMonth();
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const firstWeekday = new Date(year, mi, 1).getDay();
+    const daysInMonth = new Date(year, mi + 1, 0).getDate();
+    const measurementSeries = s.calendarTarget === 'measurement' ? s.measurementData.find(m => m.key === s.measurementPartKey) : null;
+    const markedDays = new Set(
+      s.calendarTarget === 'logWeight' ? s.weightData.map(d => this.toDateInputValue(d.date))
+      : s.calendarTarget === 'addPhoto' ? s.photos.map(p => this.toDateInputValue(p.date))
+      : (measurementSeries ? measurementSeries.entries.map(e => this.toDateInputValue(e.date)) : [])
+    );
+    const selectedDate = s.calendarTarget === 'logWeight' ? s.logWeightDate : s.calendarTarget === 'addPhoto' ? s.addPhotoDate : s.measurementDate;
+    const selectedKey = selectedDate ? this.toDateInputValue(selectedDate) : null;
+    const todayKey = this.toDateInputValue(today);
+    const cells = [];
+    for (let i = 0; i < firstWeekday; i++) cells.push({ blank: true, key: `b${i}` });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, mi, d);
+      const key = this.toDateInputValue(date);
+      const isFuture = date > today;
+      const isToday = key === todayKey;
+      const isSelected = key === selectedKey;
+      const hasEntry = markedDays.has(key);
+      cells.push({
+        blank: false, filled: true, key, day: d, isFuture,
+        onSelect: isFuture ? (() => {}) : (() => this.selectCalendarDate(date)),
+        cellStyle: `width:100%;aspect-ratio:1;min-width:44px;min-height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;position:relative;background:${isSelected ? t.primary : 'transparent'};box-shadow:${isToday && !isSelected ? `inset 0 0 0 1.5px ${t.primary}` : 'none'};cursor:${isFuture ? 'default' : 'pointer'};`,
+        textStyle: `font-family:'Inter',sans-serif;font-size:14px;font-weight:${isSelected || isToday ? '600' : '400'};color:${isFuture ? t.outlineVariant : (isSelected ? t.onPrimary : t.onSurface)};`,
+        hasEntry,
+        dotStyle: `width:4px;height:4px;border-radius:50%;background:${isSelected ? t.onPrimary : t.primary};position:absolute;bottom:5px;left:50%;transform:translateX(-50%);`,
+      });
+    }
+    const todayMonthKey = `${today.getFullYear()}-${today.getMonth()}`;
+    const calMonthKey = `${year}-${mi}`;
+    const nextDisabled = calMonthKey === todayMonthKey;
+    return {
+      calendarCells: cells,
+      calendarMonthLabel: month.toLocaleString('en-US', { month: 'long', year: 'numeric' }),
+      calendarWeekdays: this.WEEKDAY_LABELS,
+      calendarPrevMonth: this.calendarPrevMonth,
+      calendarNextMonth: nextDisabled ? (() => {}) : this.calendarNextMonth,
+      calendarNextBtnStyle: `width:32px;height:32px;border:none;border-radius:50%;background:${t.surfaceContainerHigh};color:${nextDisabled ? t.outlineVariant : t.onSurface};cursor:${nextDisabled ? 'default' : 'pointer'};`,
+      calendarBack: this.closeCalendar,
+    };
+  }
+
+  loadProfile() {
+    try {
+      const raw = localStorage.getItem(this.STORAGE_KEY);
+      if (!raw) return this.DEFAULT_PROFILE;
+      const p = JSON.parse(raw);
+      const complete = p && p.sex && p.age && p.heightCm && p.weightKg && p.activity && p.goal;
+      return complete ? p : this.DEFAULT_PROFILE;
+    } catch (e) { return this.DEFAULT_PROFILE; }
+  }
+
+  toggleTheme = () => this.setState(s => ({ isDark: !s.isDark }));
+  resetShell = () => this.setState({
+    tab: 'home', sheetOpen: false, stubSheetText: null, insightDismissed: false,
+    simDayOne: false, simEmptyDiary: false,
+    expandedMeals: { breakfast: true, lunch: true, dinner: true, snacks: true },
+    searchQuery: '', foodEntries: this.INITIAL_ENTRIES.map(e => ({ ...e })), swipe: {},
+  });
+  toggleSimDayOne = () => this.setState(s => ({ simDayOne: !s.simDayOne }));
+  toggleSimEmptyDiary = () => this.setState(s => ({ simEmptyDiary: !s.simEmptyDiary }));
+  dismissInsight = () => this.setState({ insightDismissed: true });
+  toggleMeal = (key) => this.setState(s => ({ expandedMeals: { ...s.expandedMeals, [key]: !s.expandedMeals[key] } }));
+  openSheet = () => this.setState({ sheetOpen: true });
+  closeSheet = () => this.setState({ sheetOpen: false });
+  closeStubSheet = () => this.setState({ stubSheetText: null });
+  takePhoto = () => this.openAddPhoto();
+  toggleSimNoGoalWeight = () => this.setState(s => ({ simNoGoalWeight: !s.simNoGoalWeight }));
+  setProgressView = (v) => this.setState({ progressView: v, selectedPhotoIds: [], comparePhotosOpen: false });
+  setWeightRange = (r) => this.setState({ weightRange: r });
+  togglePhotoSelect = (id) => this.setState(s => {
+    const has = s.selectedPhotoIds.includes(id);
+    let next = has ? s.selectedPhotoIds.filter(x => x !== id) : [...s.selectedPhotoIds, id];
+    if (next.length > 2) next = next.slice(1);
+    return { selectedPhotoIds: next };
+  });
+  openCompare = () => this.setState({ comparePhotosOpen: true });
+  closeCompare = () => this.setState({ comparePhotosOpen: false });
+  currentMeasurementUnit() { return this.state.unitsHeight || 'cm'; }
+  openAddMeasurement = () => {
+    const s = this.state;
+    const tracked = s.measurementData.map(m => m.key);
+    const available = this.BODY_PARTS.filter(p => !tracked.includes(p.key));
+    const firstKey = available.length ? available[0].key : null;
+    this.setState({
+      sheetOpen: false, measurementSheetOpen: true, measurementIsNewPart: true,
+      measurementPartKey: firstKey, measurementValue: 0, measurementDate: new Date(), calendarTarget: null,
+    });
+  };
+  openMeasurementForPart = (key) => {
+    const s = this.state;
+    const series = s.measurementData.find(m => m.key === key);
+    const unit = this.currentMeasurementUnit();
+    const cmPerIn = s.themeMod.CM_PER_IN;
+    const latestCm = series.entries[series.entries.length - 1].value;
+    const value = unit === 'in' ? this.round1(latestCm / cmPerIn) : this.round1(latestCm);
+    this.setState({ sheetOpen: false, measurementSheetOpen: true, measurementIsNewPart: false, measurementPartKey: key, measurementValue: value, measurementDate: new Date(), calendarTarget: null });
+  };
+  closeMeasurementSheet = () => this.setState({ measurementSheetOpen: false, calendarTarget: null });
+  selectMeasurementPart = (key) => this.setState({ measurementPartKey: key, measurementValue: 0 });
+  incMeasurement = () => this.setState(s => ({ measurementValue: this.round1((s.measurementValue || 0) + 0.5) }));
+  decMeasurement = () => this.setState(s => ({ measurementValue: this.round1(Math.max(0, (s.measurementValue || 0) - 0.5)) }));
+  saveMeasurement = () => {
+    const s = this.state;
+    if (!s.measurementPartKey || s.measurementValue == null) return;
+    const unit = this.currentMeasurementUnit();
+    const cmPerIn = s.themeMod.CM_PER_IN;
+    const valueCm = unit === 'in' ? this.round1(s.measurementValue * cmPerIn) : s.measurementValue;
+    const day = this.dayOffsetFromDate(s.measurementDate);
+    const entry = { day, value: valueCm, date: new Date(s.measurementDate) };
+    const idx = s.measurementData.findIndex(m => m.key === s.measurementPartKey);
+    let measurementData;
+    if (idx >= 0) {
+      const existingIdx = s.measurementData[idx].entries.findIndex(e => e.day === day);
+      const entries = existingIdx >= 0
+        ? s.measurementData[idx].entries.map((e, i) => i === existingIdx ? entry : e)
+        : [...s.measurementData[idx].entries, entry];
+      entries.sort((a, b) => a.day - b.day);
+      measurementData = s.measurementData.map((m, i) => i === idx ? { ...m, entries } : m);
+    } else {
+      const part = this.BODY_PARTS.find(p => p.key === s.measurementPartKey);
+      measurementData = [...s.measurementData, { key: part.key, name: part.name, entries: [entry] }];
+    }
+    this.setState({ measurementData, measurementSheetOpen: false });
+  };
+  setWeightUnit = (u) => this.setState({ unitsWeight: u });
+  setHeightUnit = (u) => this.setState({ unitsHeight: u });
+  toggleReminder = (key) => this.setState(s => ({ reminderToggles: { ...s.reminderToggles, [key]: !s.reminderToggles[key] } }));
+
+  currentWeightUnit() { const s = this.state; return s.unitsWeight || (this.props.weightUnit ?? 'kg'); }
+  openLogWeight = () => {
+    const s = this.state;
+    const unit = this.currentWeightUnit();
+    const km = s.themeMod.KG_PER_LB;
+    const latestKg = s.weightData[s.weightData.length - 1].weight;
+    const value = unit === 'lb' ? this.round1(latestKg / km) : this.round1(latestKg);
+    this.setState({ sheetOpen: false, logWeightOpen: true, logWeightValue: value, logWeightNote: '', logWeightDate: new Date(), calendarTarget: null });
+  };
+  closeLogWeight = () => this.setState({ logWeightOpen: false, calendarTarget: null });
+  incLogWeight = () => this.setState(s => ({ logWeightValue: this.round1(s.logWeightValue + 0.1) }));
+  decLogWeight = () => this.setState(s => ({ logWeightValue: this.round1(Math.max(0, s.logWeightValue - 0.1)) }));
+  onLogWeightNoteChange = e => this.setState({ logWeightNote: e.target.value });
+  saveLogWeight = () => {
+    const s = this.state;
+    const unit = this.currentWeightUnit();
+    const km = s.themeMod.KG_PER_LB;
+    const kg = unit === 'lb' ? this.round1(s.logWeightValue * km) : s.logWeightValue;
+    const day = this.dayOffsetFromDate(s.logWeightDate);
+    const entry = { day, weight: kg, note: s.logWeightNote || undefined, date: new Date(s.logWeightDate) };
+    const existingIdx = s.weightData.findIndex(d => d.day === day);
+    const weightData = existingIdx >= 0
+      ? s.weightData.map((d, i) => i === existingIdx ? entry : d)
+      : [...s.weightData, entry];
+    weightData.sort((a, b) => a.day - b.day);
+    this.setState({ weightData, logWeightOpen: false });
+  };
+
+  openAddPhoto = () => this.setState({ sheetOpen: false, addPhotoOpen: true, addPhotoStep: 'choose', addPhotoDate: new Date(), addPhotoWeight: '', calendarTarget: null });
+  closeAddPhoto = () => this.setState({ addPhotoOpen: false, calendarTarget: null });
+  chooseAddPhotoSource = (source) => this.setState({ addPhotoStep: 'preview', addPhotoSource: source });
+  onAddPhotoWeightChange = e => this.setState({ addPhotoWeight: e.target.value });
+  saveAddPhoto = () => {
+    const s = this.state;
+    const id = Date.now();
+    const date = new Date(s.addPhotoDate);
+    const weight = s.addPhotoWeight ? parseFloat(s.addPhotoWeight) : undefined;
+    const photos = [...s.photos, { id, date, weight, month: date.toLocaleString('en-US', { month: 'long' }), dateLabel: date.toLocaleString('en-US', { month: 'short', day: 'numeric' }), slotId: `progress-photo-${id}` }];
+    this.setState({ photos, addPhotoOpen: false });
+  };
+
+  exportData = () => {
+    const s = this.state;
+    const blob = new Blob([JSON.stringify({ profile: s.profile, foodEntries: s.foodEntries }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'healthtrack-export.json'; document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  importInputRef = React.createRef();
+  triggerImport = () => { this.setState({ importError: null }); this.importInputRef.current?.click(); };
+  handleImportFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data || typeof data !== 'object') throw new Error();
+        const next = {};
+        if (data.profile) next.profile = data.profile;
+        if (Array.isArray(data.foodEntries)) next.foodEntries = data.foodEntries;
+        if (!next.profile && !next.foodEntries) throw new Error();
+        if (next.profile) localStorage.setItem(this.STORAGE_KEY, JSON.stringify(next.profile));
+        this.setState({ ...next, importError: null });
+      } catch (err) {
+        this.setState({ importError: 'Could not read that file. Expected JSON exported from this app.' });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  deleteEntry = (id) => this.setState(s => {
+    const swipe = { ...s.swipe }; delete swipe[id];
+    return { foodEntries: s.foodEntries.filter(e => e.id !== id), swipe };
+  });
+  onRowPointerDown = (id, e) => {
+    const base = this.state.swipe[id] || 0;
+    this.setState({ draggingId: id, dragStartX: e.clientX, dragBaseX: base });
+  };
+  onRowPointerMove = (id, e) => {
+    if (this.state.draggingId !== id) return;
+    let nx = this.state.dragBaseX + (e.clientX - this.state.dragStartX);
+    nx = Math.max(-88, Math.min(0, nx));
+    this.setState(s => ({ swipe: { ...s.swipe, [id]: nx } }));
+  };
+  onRowPointerUp = (id) => {
+    if (this.state.draggingId !== id) return;
+    const x = this.state.swipe[id] || 0;
+    this.setState(s => ({ swipe: { ...s.swipe, [id]: x < -44 ? -88 : 0 }, draggingId: null }));
+  };
+
+  renderVals() {
+    const s = this.state;
+    if (!s.themeMod || !s.foodEntries) {
+      return { t: {}, isHomeTab: true, isFoodTab: false, isOtherTab: false, showHomeEmpty: false, showHomeDashboard: true, showDiaryEmpty: false, showDiaryContent: true, showAIInsight: false, sheetOpen: false, stubSheetOpen: false, tabsList: [], mealsList: [] };
+    }
+    const t = s.themeMod.THEMES[s.isDark ? 'dark' : 'light'];
+    const weightUnitProp = this.props.weightUnit ?? 'kg';
+    const weightUnit = s.unitsWeight || weightUnitProp;
+    const heightUnit = s.unitsHeight || 'cm';
+    const showPercentLegend = this.props.macroBarShowPercent ?? false;
+    const aiInsightVisible = (this.props.aiInsightVisible ?? true) && !s.insightDismissed;
+
+    const profile = s.profile || this.DEFAULT_PROFILE;
+    const targets = s.themeMod.calcDailyTargets(profile);
+    const entries = s.simEmptyDiary ? [] : s.foodEntries;
+    const consumed = entries.reduce((a, e) => ({
+      calories: a.calories + e.calories, proteinG: a.proteinG + e.proteinG, carbsG: a.carbsG + e.carbsG, fatG: a.fatG + e.fatG,
+    }), { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 });
+    const remaining = targets.calories - consumed.calories;
+    const ringPct = targets.calories > 0 ? Math.min(100, Math.max(0, Math.round(consumed.calories / targets.calories * 100))) : 0;
+    const ringGradient = `conic-gradient(${t.primary} 0% ${ringPct}%, ${t.surfaceContainerHigh} ${ringPct}% 100%)`;
+
+    const macroCal = targets.protein * 4 + targets.carbs * 4 + targets.fat * 9;
+    const pct = g => macroCal > 0 ? Math.round((g / macroCal) * 100) + '%' : '0%';
+    const legend = (consumedG, goalG) => showPercentLegend
+      ? `${goalG > 0 ? Math.round(consumedG / goalG * 100) : 0}%`
+      : `${consumedG}/${goalG}g`;
+
+    // weight trend: reads the same weightData the Progress chart reads (Log weight sheet
+    // appends here — never a separate array). Direction "on track" depends on goal.
+    const latestWeightEntry = s.weightData[s.weightData.length - 1];
+    const priorWeightCandidates = s.weightData.filter(d => d.day <= latestWeightEntry.day - 7);
+    const priorWeightEntry = priorWeightCandidates.length ? priorWeightCandidates[priorWeightCandidates.length - 1] : null;
+    const deltaKg = priorWeightEntry ? latestWeightEntry.weight - priorWeightEntry.weight : 0;
+    const absDelta = Math.abs(deltaKg);
+    let trendColor = t.onSurfaceVariant, trendArrow = '—';
+    if (priorWeightEntry && absDelta >= 0.2) {
+      trendArrow = deltaKg < 0 ? '▼' : '▲';
+      const losing = deltaKg < 0;
+      if (profile.goal === 'lose') trendColor = losing ? t.primary : t.error;
+      else if (profile.goal === 'build') trendColor = !losing ? t.primary : t.error;
+      else trendColor = absDelta > 1 ? t.error : t.onSurfaceVariant;
+    }
+    const toUnit = kg => weightUnit === 'lb' ? this.round1(kg / s.themeMod.KG_PER_LB) : this.round1(kg);
+    const currentWeightDisplay = toUnit(latestWeightEntry.weight);
+    const deltaDisplay = toUnit(absDelta);
+
+    // mascot eyes/mouth: idle for dashboard, sleepy for empty states
+    const mascotState = (s.simDayOne || s.simEmptyDiary) ? 'sleepy' : 'idle';
+    const eyeBase = `background:${t.onPrimaryContainer};border-radius:50%;`;
+    let eyeLeft = `${eyeBase}width:10px;height:10px;`;
+    let eyeRight = `${eyeBase}width:10px;height:10px;`;
+    let mouth = `background:${t.onPrimaryContainer};width:20px;height:3px;border-radius:2px;`;
+    if (mascotState === 'sleepy') {
+      eyeLeft = `${eyeBase}width:10px;height:3px;border-radius:2px;`;
+      eyeRight = `${eyeBase}width:10px;height:3px;border-radius:2px;`;
+      mouth = `background:${t.onPrimaryContainer};width:10px;height:3px;border-radius:2px;`;
+    }
+
+    const tabsList = this.TABS.map(tb => {
+      const selected = s.tab === tb.id;
+      return {
+        ...tb,
+        onSelect: () => this.setState({ tab: tb.id }),
+        pillStyle: `padding:6px 20px;border-radius:16px;background:${selected ? t.secondaryContainer : 'transparent'};`,
+        iconStyle: `font-size:20px;color:${selected ? t.onSecondaryContainer : t.onSurfaceVariant};`,
+        labelStyle: `font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:${selected ? t.onSurface : t.onSurfaceVariant};`,
+      };
+    });
+
+    const mealsList = this.MEALS.map(m => {
+      const items = entries.filter(e => e.mealKey === m.key);
+      const subtotal = items.reduce((a, e) => a + e.calories, 0);
+      const expanded = s.expandedMeals[m.key];
+      const rowsList = items.map(item => {
+        const swipeX = s.swipe[item.id] || 0;
+        return {
+          ...item,
+          macroLine: `P ${item.proteinG}g · C ${item.carbsG}g · F ${item.fatG}g`,
+          wrapStyle: `display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 16px 12px 38px;background:${t.surface};transform:translateX(${swipeX}px);transition:${this.state.draggingId === item.id ? 'none' : 'transform 0.2s ease'};touch-action:pan-y;cursor:grab;`,
+          onDelete: () => this.deleteEntry(item.id),
+          onPointerDown: e => this.onRowPointerDown(item.id, e),
+          onPointerMove: e => this.onRowPointerMove(item.id, e),
+          onPointerUp: () => this.onRowPointerUp(item.id),
+        };
+      });
+      return {
+        ...m, subtotal, expanded, isEmpty: items.length === 0, rowsList,
+        chevron: expanded ? '▾' : '▸',
+        toggleOpen: () => this.toggleMeal(m.key),
+        onAdd: (e) => { e.stopPropagation(); window.location.href = './PhotoLogging.dc.html'; },
+      };
+    });
+
+    return {
+      t, isDark: s.isDark,
+      themeToggleLabel: s.isDark ? 'Dark mode' : 'Light mode',
+      themeToggleBg: s.isDark ? '#2b2b2b' : '#ffffff',
+      themeToggleColor: s.isDark ? '#ffffff' : '#181D18',
+      toggleTheme: this.toggleTheme, resetShell: this.resetShell,
+      simDayOneBtnStyle: `height:32px;padding:0 12px;border-radius:999px;border:1px solid ${s.simDayOne ? t.primary : '#727970'};background:${s.simDayOne ? t.primaryContainer : 'transparent'};color:${s.simDayOne ? t.onPrimaryContainer : '#424940'};font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;`,
+      simEmptyDiaryBtnStyle: `height:32px;padding:0 12px;border-radius:999px;border:1px solid ${s.simEmptyDiary ? t.primary : '#727970'};background:${s.simEmptyDiary ? t.primaryContainer : 'transparent'};color:${s.simEmptyDiary ? t.onPrimaryContainer : '#424940'};font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;`,
+      toggleSimDayOne: this.toggleSimDayOne, toggleSimEmptyDiary: this.toggleSimEmptyDiary,
+      simNoGoalWeightBtnStyle: `height:32px;padding:0 12px;border-radius:999px;border:1px solid ${s.simNoGoalWeight ? t.primary : '#727970'};background:${s.simNoGoalWeight ? t.primaryContainer : 'transparent'};color:${s.simNoGoalWeight ? t.onPrimaryContainer : '#424940'};font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;`,
+      toggleSimNoGoalWeight: this.toggleSimNoGoalWeight,
+      scrimColor: 'rgba(0,0,0,0.32)', stopProp: e => e.stopPropagation(),
+
+      isHomeTab: s.tab === 'home', isFoodTab: s.tab === 'food', isProgressTab: s.tab === 'progress', isProfileTab: s.tab === 'profile',
+      showHomeEmpty: s.simDayOne, showHomeDashboard: !s.simDayOne,
+      showDiaryEmpty: s.simEmptyDiary, showDiaryContent: !s.simEmptyDiary,
+      tabsList,
+      mascotSmallPx: '64px', mascotSmallRadiusPx: '22px',
+      mascotEyeLeftStyle: eyeLeft, mascotEyeRightStyle: eyeRight, mascotMouthStyle: mouth,
+
+      greetingText: this.greeting(),
+      showAIInsight: aiInsightVisible, dismissInsight: this.dismissInsight,
+
+      ringGradient, remainingCalories: remaining, consumedCalories: consumed.calories, calorieGoal: targets.calories,
+      currentWeightDisplay, weightUnitLabel: weightUnit,
+      trendColor, trendArrow, trendDeltaText: priorWeightEntry ? `${deltaDisplay} ${weightUnit} vs 7d ago` : 'No prior data',
+      proteinPct: pct(targets.protein * 4), carbsPct: pct(targets.carbs * 4), fatPct: pct(targets.fat * 9),
+      proteinLegend: legend(consumed.proteinG, targets.protein), carbsLegend: legend(consumed.carbsG, targets.carbs), fatLegend: legend(consumed.fatG, targets.fat),
+      macroTargetProtein: targets.protein, macroTargetCarbs: targets.carbs, macroTargetFat: targets.fat,
+      activityLabel: ({ sedentary: 'Sedentary', light: 'Light', moderate: 'Moderate', very: 'Very active' })[profile.activity] || '—',
+      ...this.progressAndProfileVals(s, t, weightUnit, heightUnit),
+      lastPhotoDays: this.computeLastPhotoDays(s.photos), takePhoto: this.takePhoto,
+      triggerImport: this.triggerImport, handleImportFile: this.handleImportFile, importInputRef: this.importInputRef, importError: s.importError,
+
+      searchQuery: s.searchQuery, onSearchChange: e => this.setState({ searchQuery: e.target.value }),
+      barcodeBtnStyle: `width:44px;height:44px;border-radius:12px;border:1px solid ${t.outlineVariant};background:${s.barcodePressed ? t.surfaceContainerHigh : 'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;`,
+      pressBarcode: () => this.setState({ barcodePressed: true }),
+      releaseBarcode: () => this.setState({ barcodePressed: false }),
+      mealsList,
+
+      sheetOpen: s.sheetOpen, openSheet: this.openSheet, closeSheet: this.closeSheet,
+      sheetRowStyle: `height:56px;border:none;background:transparent;text-align:left;padding:0 8px;font-family:'Inter',sans-serif;font-size:15px;color:${t.onSurface};cursor:pointer;`,
+      openStub_LogFood: () => { window.location.href = './PhotoLogging.dc.html'; },
+      openLogWeight: this.openLogWeight, openAddPhoto: this.openAddPhoto,
+      stubSheetOpen: !!s.stubSheetText, stubSheetText: s.stubSheetText, closeStubSheet: this.closeStubSheet,
+
+      logWeightOpen: s.logWeightOpen, closeLogWeight: this.closeLogWeight,
+      logWeightCalendarOpen: s.calendarTarget === 'logWeight',
+      logWeightHeaderTitle: s.calendarTarget === 'logWeight' ? 'Select date' : 'Log weight',
+      logWeightSlideOffset: s.calendarTarget === 'logWeight' ? '-50%' : '0%',
+      logWeightPanelHeight: s.calendarTarget === 'logWeight' ? this.CALENDAR_HEIGHT : this.FIELDS_HEIGHT_LOGWEIGHT,
+      openLogWeightCalendar: () => this.openCalendarFor('logWeight'),
+      logWeightDateLabel: s.logWeightDate ? s.logWeightDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+      logWeightDuplicateDate: !!(s.logWeightDate && s.weightData && s.weightData.some(d => d.day === this.dayOffsetFromDate(s.logWeightDate))),
+      logWeightValueDisplay: s.logWeightValue != null ? s.logWeightValue.toFixed(1) : '',
+      incLogWeight: this.incLogWeight, decLogWeight: this.decLogWeight,
+      logWeightNote: s.logWeightNote, onLogWeightNoteChange: this.onLogWeightNoteChange,
+      saveLogWeight: this.saveLogWeight,
+      stepperBtnStyle: `width:36px;height:36px;border-radius:50%;border:none;background:${t.surfaceContainerHigh};color:${t.onSurface};font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;`,
+
+      addPhotoOpen: s.addPhotoOpen, closeAddPhoto: this.closeAddPhoto,
+      addPhotoChooseStep: s.addPhotoStep === 'choose', addPhotoPreviewStep: s.addPhotoStep === 'preview',
+      addPhotoCalendarOpen: s.calendarTarget === 'addPhoto',
+      addPhotoHeaderTitle: s.addPhotoStep === 'choose' ? 'Add progress photo' : (s.calendarTarget === 'addPhoto' ? 'Select date' : 'Add progress photo'),
+      addPhotoSlideOffset: s.calendarTarget === 'addPhoto' ? '-50%' : '0%',
+      addPhotoPanelHeight: s.calendarTarget === 'addPhoto' ? this.CALENDAR_HEIGHT : this.FIELDS_HEIGHT_ADDPHOTO_PREVIEW,
+      chooseTakePhoto: () => this.chooseAddPhotoSource('camera'), chooseGalleryPhoto: () => this.chooseAddPhotoSource('gallery'),
+      openAddPhotoCalendar: () => this.openCalendarFor('addPhoto'),
+      addPhotoDateLabel: s.addPhotoDate ? s.addPhotoDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+      addPhotoWeight: s.addPhotoWeight, onAddPhotoWeightChange: this.onAddPhotoWeightChange,
+      addPhotoWeightUnitLabel: weightUnit,
+      saveAddPhoto: this.saveAddPhoto,
+      ...this.buildCalendarVals(s, t),
+    };
+  }
+
+  progressAndProfileVals(s, t, weightUnit, heightUnit) {
+    const km = s.themeMod.KG_PER_LB;
+    const toW = kg => weightUnit === 'lb' ? this.round1(kg / km) : this.round1(kg);
+
+    // ---- Progress: view segmented toggle ----
+    const views = [{ id: 'weight', label: 'Weight' }, { id: 'photos', label: 'Photos' }, { id: 'measurements', label: 'Measurements' }];
+    const progressViewOptions = views.map(v => ({
+      label: v.label, onSelect: () => this.setProgressView(v.id),
+      style: `flex:1;height:36px;border:none;border-radius:999px;background:${s.progressView === v.id ? t.secondaryContainer : 'transparent'};color:${s.progressView === v.id ? t.onSecondaryContainer : t.onSurfaceVariant};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;`,
+    }));
+
+    // ---- Weight chart ----
+    const maxDay = Math.max(...s.weightData.map(d => d.day));
+    const rangeDays = this.RANGE_DAYS[s.weightRange] ?? 90;
+    const visible = s.weightData.filter(d => maxDay - d.day <= rangeDays);
+    const showGoalMarker = !s.simNoGoalWeight;
+    const ma = visible.map((d, i) => i === 0 ? d.weight : this.round1((d.weight + visible[i - 1].weight) / 2));
+    const weights = visible.map(d => d.weight).concat(showGoalMarker ? [this.GOAL_WEIGHT_KG] : []);
+    const minW = Math.min(...weights) - 0.6, maxW = Math.max(...weights) + 0.6;
+    const marginL = 8, marginR = 8, marginT = 10, marginB = 10, chartW = 328, chartH = 150;
+    const usableW = chartW - marginL - marginR, usableH = chartH - marginT - marginB;
+    const minDay = visible[0]?.day ?? 0, spanDay = Math.max(1, (visible[visible.length - 1]?.day ?? 1) - minDay);
+    const xOf = day => marginL + ((day - minDay) / spanDay) * usableW;
+    const yOf = w => marginT + ((maxW - w) / (maxW - minW)) * usableH;
+    const chartPoints = visible.map(d => ({ x: xOf(d.day), y: yOf(d.weight) }));
+    const linePathD = chartPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    const maPathD = ma.map((w, i) => `${i === 0 ? 'M' : 'L'}${xOf(visible[i].day)},${yOf(w)}`).join(' ');
+    const chartGridLines = [0, 1, 2, 3].map(i => ({ x1: marginL, x2: chartW - marginR, y: marginT + (usableH / 3) * i }));
+    const goalY = yOf(this.GOAL_WEIGHT_KG);
+
+    const rangeChipsList = Object.keys(this.RANGE_DAYS).map(r => ({
+      label: r, onSelect: () => this.setWeightRange(r),
+      style: `height:32px;padding:0 14px;border-radius:999px;border:1px solid ${s.weightRange === r ? t.primary : t.outlineVariant};background:${s.weightRange === r ? t.primaryContainer : 'transparent'};color:${s.weightRange === r ? t.onPrimaryContainer : t.onSurfaceVariant};font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;`,
+    }));
+
+    const weightChangeKg = visible[visible.length - 1].weight - visible[0].weight;
+    const losing = weightChangeKg < 0;
+    const profile = s.profile || this.DEFAULT_PROFILE;
+    let weightChangeColor = t.onSurfaceVariant;
+    if (Math.abs(weightChangeKg) >= 0.1) {
+      if (profile.goal === 'lose') weightChangeColor = losing ? t.primary : t.error;
+      else if (profile.goal === 'build') weightChangeColor = !losing ? t.primary : t.error;
+      else weightChangeColor = Math.abs(weightChangeKg) > 1 ? t.error : t.onSurfaceVariant;
+    }
+    const currentKg = visible[visible.length - 1].weight;
+
+    // ---- Photos: reads state.photos (seeded from weigh-in days at mount; Add photo sheet appends here) ----
+    const photos = [...s.photos].sort((a, b) => a.date - b.date);
+    const photosEmpty = photos.length === 0;
+    const monthsOrder = [...new Set(photos.map(p => p.month))];
+    const photoMonthGroups = monthsOrder.map(month => ({
+      month,
+      photos: photos.filter(p => p.month === month).map(p => {
+        const selected = s.selectedPhotoIds.includes(p.id);
+        return { ...p, selected, outline: selected ? `3px solid ${t.primary}` : 'none', toggleSelect: () => this.togglePhotoSelect(p.id) };
+      }),
+    }));
+    const canCompare = s.selectedPhotoIds.length === 2;
+    const comparePair = canCompare ? s.selectedPhotoIds.map(id => photos.find(p => p.id === id)).sort((a, b) => a.date - b.date) : [];
+    const comparePhotos = comparePair.map(p => ({ slotId: p.slotId, dateLabel: p.dateLabel }));
+    const compareDeltaKg = comparePair.length === 2 && comparePair[0].weight != null && comparePair[1].weight != null ? this.round1(comparePair[1].weight - comparePair[0].weight) : 0;
+
+    // ---- Measurements: each tracked body part reads its own chronological entries array;
+    // current value/delta/sparkline all derive from it, nothing separately hardcoded ----
+    const cmPerIn = s.themeMod.CM_PER_IN;
+    const toLen = cm => heightUnit === 'in' ? this.round1(cm / cmPerIn) : this.round1(cm);
+    const measurementRows = s.measurementData.map(m => {
+      const entries = m.entries;
+      const current = entries[entries.length - 1].value;
+      const hasDelta = entries.length > 1;
+      const delta = hasDelta ? this.round1(current - entries[0].value) : 0;
+      const minV = Math.min(...entries.map(e => e.value)), maxV = Math.max(...entries.map(e => e.value)) || 1;
+      const pts = hasDelta
+        ? entries.map((e, i) => `${(i / (entries.length - 1)) * 48},${24 - ((e.value - minV) / ((maxV - minV) || 1)) * 20 - 2}`).join(' ')
+        : '0,12 48,12';
+      const deltaLen = hasDelta ? toLen(delta) : 0;
+      return {
+        key: m.key, name: m.name,
+        currentDisplay: `${toLen(current)} ${heightUnit}`,
+        deltaDisplay: hasDelta ? `${deltaLen > 0 ? '+' : ''}${deltaLen} ${heightUnit}` : '—',
+        deltaColor: !hasDelta ? t.onSurfaceVariant : (delta === 0 ? t.onSurfaceVariant : (delta < 0 ? t.primary : t.error)),
+        sparklinePoints: pts,
+        onTap: () => this.openMeasurementForPart(m.key),
+      };
+    });
+
+    // ---- Add/log measurement sheet ----
+    const trackedKeys = s.measurementData.map(m => m.key);
+    const availableParts = this.BODY_PARTS.filter(p => !trackedKeys.includes(p.key));
+    const measurementPartOptions = availableParts.map(p => ({
+      key: p.key, name: p.name,
+      onSelect: () => this.selectMeasurementPart(p.key),
+      chipStyle: `height:36px;padding:0 14px;border-radius:999px;border:1px solid ${s.measurementPartKey === p.key ? t.primary : t.outlineVariant};background:${s.measurementPartKey === p.key ? t.primaryContainer : 'transparent'};color:${s.measurementPartKey === p.key ? t.onPrimaryContainer : t.onSurfaceVariant};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;`,
+    }));
+    const measurementCalendarOpen = s.calendarTarget === 'measurement';
+    const currentPart = this.BODY_PARTS.find(p => p.key === s.measurementPartKey);
+    const measurementSeries = s.measurementData.find(m => m.key === s.measurementPartKey);
+    const measurementDuplicateDate = !!(measurementSeries && s.measurementDate && measurementSeries.entries.some(e => e.day === this.dayOffsetFromDate(s.measurementDate)));
+    const measurementCanSave = !!s.measurementPartKey && s.measurementValue != null;
+
+    // ---- Profile: reminders ----
+    const switchStyle = on => `width:40px;height:24px;border-radius:12px;border:none;padding:2px;background:${on ? t.primary : t.surfaceContainerHigh};cursor:pointer;display:flex;justify-content:${on ? 'flex-end' : 'flex-start'};flex-shrink:0;`;
+    const knobStyle = `width:20px;height:20px;border-radius:50%;background:${t.surfaceContainerLowest};`;
+    const reminderRows = [
+      { key: 'meals', label: 'Meal logging', sublabel: 'Reminds you 3x daily' },
+      { key: 'weighIn', label: 'Weigh-in day', sublabel: 'Every Monday, 8:00 AM' },
+      { key: 'photo', label: 'Photo cadence', sublabel: 'Every 2 weeks' },
+    ].map(r => ({ ...r, switchStyle: switchStyle(s.reminderToggles[r.key]), knobStyle, onToggle: () => this.toggleReminder(r.key) }));
+
+    const segBtn2 = sel => `flex:1;height:32px;border:none;border-radius:999px;background:${sel ? t.secondaryContainer : 'transparent'};color:${sel ? t.onSecondaryContainer : t.onSurfaceVariant};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;padding:0 14px;`;
+
+    return {
+      progressViewOptions,
+      isWeightView: s.progressView === 'weight', isPhotosView: s.progressView === 'photos', isMeasurementsView: s.progressView === 'measurements',
+      showProgressList: !s.comparePhotosOpen, comparePhotosOpen: s.comparePhotosOpen,
+      rangeChipsList, chartGridLines, chartPoints, linePathD, maPathD, showGoalMarker, goalY,
+      chartMarginLeft: marginL, chartRight: chartW - marginR,
+      weightCurrentDisplay: `${toW(currentKg)} ${weightUnit}`,
+      weightChangeDisplay: `${weightChangeKg > 0 ? '+' : ''}${toW(weightChangeKg)} ${weightUnit}`, weightChangeColor,
+      weightToGoalDisplay: `${toW(Math.abs(currentKg - this.GOAL_WEIGHT_KG))} ${weightUnit}`,
+      sleepyEyeStyle: `background:${t.onPrimaryContainer};border-radius:2px;width:10px;height:3px;`,
+      sleepyMouthStyle: `background:${t.onPrimaryContainer};width:10px;height:3px;border-radius:2px;`,
+      photosEmpty, photosNotEmpty: !photosEmpty, photoMonthGroups, canCompare, openCompare: this.openCompare, closeCompare: this.closeCompare,
+      comparePhotos, compareDeltaDisplay: `${compareDeltaKg > 0 ? '+' : ''}${toW(compareDeltaKg)} ${weightUnit}`,
+      compareDeltaColor: compareDeltaKg === 0 ? t.onSurfaceVariant : (compareDeltaKg < 0 ? t.primary : t.error),
+      measurementRows, addMeasurement: this.openAddMeasurement,
+
+      measurementSheetOpen: s.measurementSheetOpen, closeMeasurementSheet: this.closeMeasurementSheet,
+      measurementCalendarOpen,
+      measurementHeaderTitle: measurementCalendarOpen ? 'Select date' : (s.measurementIsNewPart ? 'Add measurement' : `Log ${currentPart ? currentPart.name : ''}`),
+      measurementPanelHeight: measurementCalendarOpen ? this.CALENDAR_HEIGHT : (s.measurementIsNewPart ? this.FIELDS_HEIGHT_MEASUREMENT_NEW : this.FIELDS_HEIGHT_MEASUREMENT_EXISTING),
+      measurementSlideOffset: measurementCalendarOpen ? '-50%' : '0%',
+      measurementIsNewPart: s.measurementIsNewPart, measurementPartOptions,
+      openMeasurementCalendar: () => this.openCalendarFor('measurement'),
+      measurementDateLabel: s.measurementDate ? s.measurementDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+      measurementDuplicateDate,
+      measurementPartName: currentPart ? currentPart.name : '',
+      measurementValueDisplay: s.measurementValue != null ? s.measurementValue.toFixed(1) : '',
+      measurementUnitLabel: heightUnit,
+      incMeasurement: this.incMeasurement, decMeasurement: this.decMeasurement,
+      measurementSaveBtnStyle: `width:100%;height:48px;border:none;border-radius:999px;background:${t.primary};color:${t.onPrimary};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:${measurementCanSave ? 'pointer' : 'default'};opacity:${measurementCanSave ? 1 : 0.4};`,
+      saveMeasurement: this.saveMeasurement,
+
+      weightUnitKgStyle: segBtn2(weightUnit === 'kg'), weightUnitLbStyle: segBtn2(weightUnit === 'lb'),
+      setWeightUnitKg: () => this.setWeightUnit('kg'), setWeightUnitLb: () => this.setWeightUnit('lb'),
+      heightUnitCmStyle: segBtn2(heightUnit === 'cm'), heightUnitInStyle: segBtn2(heightUnit === 'in'),
+      setHeightUnitCm: () => this.setHeightUnit('cm'), setHeightUnitIn: () => this.setHeightUnit('in'),
+      reminderRows, exportData: this.exportData,
+    };
+  }
+
+  round1(n) { return Math.round(n * 10) / 10; }
+  greeting() {
+    const h = new Date().getHours();
+    const part = h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+    const line = h < 12 ? "Ready for breakfast?" : h < 18 ? "How's the day going?" : "Almost there for today.";
+    return `Good ${part}! ${line}`;
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    body { margin: 0; background: #eef1ec; font-family: 'Inter', sans-serif; }
+    a { color: #37693D; }
+    a:hover { color: #1E5027; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:20px;padding:32px 16px;">
+
+  <!-- Dev-only preview controls (not part of the app UI) -->
+  <div style="display:flex;align-items:center;gap:16px;font-family:'Inter',sans-serif;">
+    <span style="font-size:12px;color:#727970;letter-spacing:0.5px;text-transform:uppercase;">Preview</span>
+    <button onClick="{{ toggleTheme }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid #727970;background:{{ themeToggleBg }};color:{{ themeToggleColor }};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">{{ themeToggleLabel }}</button>
+    <button onClick="{{ resetFlow }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid #727970;background:transparent;color:#424940;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">Restart flow</button>
+  </div>
+
+  <!-- Phone frame: 412x915dp, 48dp status inset, 24dp gesture inset -->
+  <div style="width:412px;height:915px;border-radius:32px;border:8px solid #2b2b2b;box-shadow:0 30px 70px rgba(0,0,0,0.28);overflow:hidden;background:{{ t.surface }};display:flex;flex-direction:column;">
+
+    <!-- Status bar (48dp safe area) -->
+    <div style="height:48px;min-height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:{{ t.surface }};">
+      <span style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:{{ t.onSurface }};">9:41</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:16px;height:10px;border:1.5px solid {{ t.onSurface }};border-radius:2px;position:relative;"><div style="position:absolute;right:-3px;top:2px;width:2px;height:4px;background:{{ t.onSurface }};border-radius:1px;"></div></div>
+        <div style="width:18px;height:10px;border-radius:2px;background:{{ t.onSurface }};"></div>
+      </div>
+    </div>
+
+    <!-- Screen content -->
+    <div style="flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column;background:{{ t.surface }};">
+
+      <!-- ===================== STEP 0 — WELCOME ===================== -->
+      <!--
+        // Component: WelcomeScreen
+        // Type: Screen-specific
+        // Used in: Onboarding step 0
+        // Build priority: Medium
+        // Props: onGetStarted: () -> Unit, onSignIn: () -> Unit
+      -->
+      <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:24px;">
+
+          <!--
+            // Component: MascotAvatar
+            // Type: Reusable
+            // Used in: Welcome, Goal step, Confirm step, (future) Home empty states
+            // Build priority: High
+            // Props: state: MascotState, size: Dp
+          -->
+          <div style="width:{{ mascotSizePx }};height:{{ mascotSizePx }};border-radius:{{ mascotRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;position:relative;">
+            <div style="display:flex;gap:16px;">
+              <div style="{{ mascotEyeLeftStyle }}"></div>
+              <div style="{{ mascotEyeRightStyle }}"></div>
+            </div>
+            <div style="{{ mascotMouthStyle }}"></div>
+            <sc-if value="{{ mascotShowSparkles }}" hint-placeholder-val="{{ false }}">
+              <span style="position:absolute;top:6px;right:10px;font-size:16px;color:{{ t.onPrimaryContainer }};">✦</span>
+              <span style="position:absolute;top:20px;left:4px;font-size:11px;color:{{ t.onPrimaryContainer }};">✦</span>
+            </sc-if>
+          </div>
+
+          <!--
+            // Component: MascotSpeechBubble
+            // Type: Reusable
+            // Used in: Welcome, Goal step, Confirm step
+            // Build priority: High
+            // Props: text: String
+          -->
+          <div style="position:relative;background:{{ t.surfaceContainerHigh }};border-radius:16px;padding:12px 16px;max-width:280px;">
+            <div style="position:absolute;left:20px;top:-6px;width:12px;height:12px;background:{{ t.surfaceContainerHigh }};transform:rotate(45deg);"></div>
+            <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;line-height:20px;letter-spacing:0.25px;color:{{ t.onSurface }};text-align:center;">{{ bubbleText }}</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <h1 style="margin:0;font-family:'Poppins',sans-serif;font-size:28px;line-height:36px;font-weight:600;color:{{ t.onSurface }};">HealthTrack</h1>
+            <p style="margin:0;font-family:'Inter',sans-serif;font-size:16px;line-height:24px;letter-spacing:0.5px;color:{{ t.onSurfaceVariant }};text-align:center;">Track your body and nutrition, with Bibo by your side.</p>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;margin-top:8px;">
+            <!--
+              // Component: PrimaryButton
+              // Type: Reusable
+              // Used in: Every onboarding screen, (future) Home / Food / Progress CTAs
+              // Build priority: High
+              // Props: label: String, onClick: () -> Unit, enabled: Boolean, modifier
+            -->
+            <button onClick="{{ goToStep1 }}" style="width:100%;height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Get started</button>
+            <!--
+              // Component: TextButton
+              // Type: Reusable
+              // Used in: Welcome (sign-in), Dietary (skip), Confirm (disclaimer links)
+              // Build priority: High
+              // Props: label: String, onClick: () -> Unit
+            -->
+            <button style="height:48px;padding:0 16px;border:none;background:transparent;color:{{ t.primary }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">I already have an account</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== STEP 1 — GOAL ===================== -->
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:20px;overflow:auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button onClick="{{ goBack }}" aria-label="Back" style="width:48px;height:48px;border:none;background:transparent;color:{{ t.onSurface }};font-size:22px;cursor:pointer;">←</button>
+            <div style="width:48px;"></div>
+          </div>
+
+          <!--
+            // Component: StepProgressBar
+            // Type: Reusable
+            // Used in: Onboarding steps 1-5
+            // Build priority: High
+            // Props: currentStep: Int, totalSteps: Int
+          -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:4px;">
+              <sc-for list="{{ progressSegments }}" as="seg" hint-placeholder-count="5">
+                <div style="{{ seg.style }}"></div>
+              </sc-for>
+            </div>
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.5px;color:{{ t.onSurfaceVariant }};">Step 1 of 5</span>
+          </div>
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <div style="width:{{ mascotSmallPx }};height:{{ mascotSmallPx }};border-radius:{{ mascotSmallRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;">
+              <div style="display:flex;gap:10px;">
+                <div style="{{ mascotEyeLeftStyle }}"></div>
+                <div style="{{ mascotEyeRightStyle }}"></div>
+              </div>
+              <div style="{{ mascotMouthStyle }}"></div>
+            </div>
+            <div style="position:relative;background:{{ t.surfaceContainerHigh }};border-radius:16px;padding:10px 16px;">
+              <div style="position:absolute;left:20px;top:-6px;width:10px;height:10px;background:{{ t.surfaceContainerHigh }};transform:rotate(45deg);"></div>
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;line-height:20px;color:{{ t.onSurface }};">What's your goal?</p>
+            </div>
+          </div>
+
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;line-height:28px;font-weight:500;color:{{ t.onSurface }};">What brings you here?</h2>
+
+          <!--
+            // Component: SelectableCard
+            // Type: Reusable
+            // Used in: Goal step, Activity step, Dietary step
+            // Build priority: High
+            // Props: title: String, subtitle: String?, leadingIcon: ImageVector?, selected: Boolean, onClick: () -> Unit
+          -->
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ goalsList }}" as="g" hint-placeholder-count="3">
+              <div onClick="{{ g.onSelect }}" style="{{ g.cardStyle }}">
+                <span style="{{ g.titleStyle }}">{{ g.title }}</span>
+                <span style="{{ g.subtitleStyle }}">{{ g.subtitle }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="flex:1;"></div>
+          <button onClick="{{ goToStep2 }}" disabled="{{ goalNextDisabled }}" style="{{ goalNextStyle }}">Next</button>
+        </div>
+      </sc-if>
+
+      <!-- ===================== STEP 2 — BASICS ===================== -->
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:16px;overflow:auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button onClick="{{ goBack }}" aria-label="Back" style="width:48px;height:48px;border:none;background:transparent;color:{{ t.onSurface }};font-size:22px;cursor:pointer;">←</button>
+            <div style="width:48px;"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:4px;">
+              <sc-for list="{{ progressSegments }}" as="seg" hint-placeholder-count="5">
+                <div style="{{ seg.style }}"></div>
+              </sc-for>
+            </div>
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.5px;color:{{ t.onSurfaceVariant }};">Step 2 of 5</span>
+          </div>
+
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;line-height:28px;font-weight:500;color:{{ t.onSurface }};">Tell us about yourself</h2>
+
+          <!--
+            // Component: SegmentedToggle
+            // Type: Reusable
+            // Used in: Basics (units, sex), (future) Profile settings
+            // Build priority: High
+            // Props: options: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit
+          -->
+          <div style="display:flex;background:{{ t.surfaceContainerLow }};border-radius:999px;padding:4px;">
+            <button onClick="{{ setUnitsMetric }}" style="{{ unitsMetricStyle }}">Metric (kg, cm)</button>
+            <button onClick="{{ setUnitsImperial }}" style="{{ unitsImperialStyle }}">Imperial (lb, in)</button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Sex</span>
+            <div style="display:flex;background:{{ t.surfaceContainerLow }};border-radius:999px;padding:4px;">
+              <button onClick="{{ setSexMale }}" style="{{ sexMaleStyle }}">Male</button>
+              <button onClick="{{ setSexFemale }}" style="{{ sexFemaleStyle }}">Female</button>
+            </div>
+          </div>
+
+          <!--
+            // Component: NumericStepperField
+            // Type: Reusable
+            // Used in: Basics (age, height, weight, target weight), Confirm (calories, macros)
+            // Build priority: High
+            // Props: label: String, value: Number?, unitSuffix: String, onIncrement: () -> Unit, onDecrement: () -> Unit, error: String?
+          -->
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Age</span>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ ageDisplay }}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">years</span>
+              <button onClick="{{ decAge }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incAge }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+            <sc-if value="{{ ageError }}" hint-placeholder-val="{{ false }}"><span style="{{ errorTextStyle }}">{{ ageError }}</span></sc-if>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Height</span>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ heightDisplay }}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ heightUnitLabel }}</span>
+              <button onClick="{{ decHeight }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incHeight }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Current weight</span>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ weightDisplay }}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ weightUnitLabel }}</span>
+              <button onClick="{{ decWeight }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incWeight }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+          </div>
+
+          <sc-if value="{{ showTargetWeight }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <div style="display:flex;justify-content:space-between;">
+                <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Target weight (optional)</span>
+                <button onClick="{{ clearTargetWeight }}" style="border:none;background:transparent;color:{{ t.primary }};font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;">Clear</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+                <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ targetDisplay }}</span>
+                <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">{{ weightUnitLabel }}</span>
+                <button onClick="{{ decTarget }}" style="{{ stepperBtnStyle }}">−</button>
+                <button onClick="{{ incTarget }}" style="{{ stepperBtnStyle }}">+</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="flex:1;"></div>
+          <button onClick="{{ goToStep3 }}" disabled="{{ basicsNextDisabled }}" style="{{ basicsNextStyle }}">Next</button>
+        </div>
+      </sc-if>
+
+      <!-- ===================== STEP 3 — ACTIVITY ===================== -->
+      <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:20px;overflow:auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button onClick="{{ goBack }}" aria-label="Back" style="width:48px;height:48px;border:none;background:transparent;color:{{ t.onSurface }};font-size:22px;cursor:pointer;">←</button>
+            <div style="width:48px;"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:4px;">
+              <sc-for list="{{ progressSegments }}" as="seg" hint-placeholder-count="5">
+                <div style="{{ seg.style }}"></div>
+              </sc-for>
+            </div>
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.5px;color:{{ t.onSurfaceVariant }};">Step 3 of 5</span>
+          </div>
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;line-height:28px;font-weight:500;color:{{ t.onSurface }};">How active are you?</h2>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ activitiesList }}" as="a" hint-placeholder-count="4">
+              <div onClick="{{ a.onSelect }}" style="{{ a.cardStyle }}">
+                <span style="{{ a.titleStyle }}">{{ a.title }}</span>
+                <span style="{{ a.subtitleStyle }}">{{ a.subtitle }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1;"></div>
+          <button onClick="{{ goToStep4 }}" disabled="{{ activityNextDisabled }}" style="{{ activityNextStyle }}">Next</button>
+        </div>
+      </sc-if>
+
+      <!-- ===================== STEP 4 — DIETARY ===================== -->
+      <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:20px;overflow:auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button onClick="{{ goBack }}" aria-label="Back" style="width:48px;height:48px;border:none;background:transparent;color:{{ t.onSurface }};font-size:22px;cursor:pointer;">←</button>
+            <button onClick="{{ goToStep5 }}" style="height:48px;padding:0 16px;border:none;background:transparent;color:{{ t.primary }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">Skip</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:4px;">
+              <sc-for list="{{ progressSegments }}" as="seg" hint-placeholder-count="5">
+                <div style="{{ seg.style }}"></div>
+              </sc-for>
+            </div>
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.5px;color:{{ t.onSurfaceVariant }};">Step 4 of 5</span>
+          </div>
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;line-height:28px;font-weight:500;color:{{ t.onSurface }};">Any dietary preference?</h2>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ dietsList }}" as="d" hint-placeholder-count="4">
+              <div onClick="{{ d.onSelect }}" style="{{ d.cardStyle }}">
+                <span style="{{ d.titleStyle }}">{{ d.title }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex:1;"></div>
+          <button onClick="{{ goToStep5 }}" style="{{ dietaryNextStyle }}">Next</button>
+        </div>
+      </sc-if>
+
+      <!-- ===================== STEP 5 — CONFIRM ===================== -->
+      <sc-if value="{{ isStep5 }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:16px;overflow:auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <button onClick="{{ goBack }}" aria-label="Back" style="width:48px;height:48px;border:none;background:transparent;color:{{ t.onSurface }};font-size:22px;cursor:pointer;">←</button>
+            <div style="width:48px;"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:4px;">
+              <sc-for list="{{ progressSegments }}" as="seg" hint-placeholder-count="5">
+                <div style="{{ seg.style }}"></div>
+              </sc-for>
+            </div>
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.5px;color:{{ t.onSurfaceVariant }};">Step 5 of 5</span>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:{{ mascotSmallPx }};height:{{ mascotSmallPx }};border-radius:{{ mascotSmallRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex-shrink:0;">
+              <div style="display:flex;gap:10px;">
+                <div style="{{ mascotEyeLeftStyle }}"></div>
+                <div style="{{ mascotEyeRightStyle }}"></div>
+              </div>
+              <div style="{{ mascotMouthStyle }}"></div>
+              <sc-if value="{{ mascotShowSparkles }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;font-size:12px;color:{{ t.onPrimaryContainer }};transform:translate(18px,-18px);">✦</span>
+              </sc-if>
+            </div>
+            <div style="position:relative;background:{{ t.surfaceContainerHigh }};border-radius:16px;padding:10px 14px;flex:1;">
+              <div style="position:absolute;left:16px;top:-6px;width:10px;height:10px;background:{{ t.surfaceContainerHigh }};transform:rotate(45deg);"></div>
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:13px;line-height:18px;color:{{ t.onSurface }};">{{ confirmBubbleText }}</p>
+            </div>
+          </div>
+
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;line-height:28px;font-weight:500;color:{{ t.onSurface }};">Your daily targets</h2>
+
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Daily calorie goal</span>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:56px;">
+              <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:22px;font-weight:600;color:{{ t.onSurface }};">{{ calorieGoal }}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">kcal</span>
+              <button onClick="{{ decCalories }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incCalories }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+            <sc-if value="{{ belowFloor }}" hint-placeholder-val="{{ false }}">
+              <span style="{{ errorTextStyle }}">This is below the generally recommended minimum. Consider talking to a healthcare provider before going lower.</span>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Macro split</span>
+
+            <!-- macro bar: protein=primary, carbs=tertiary, fat=secondary (fixed mapping) -->
+            <div style="display:flex;width:100%;height:8px;border-radius:4px;overflow:hidden;">
+              <div style="width:{{ proteinPct }};background:{{ t.primary }};border-right:2px solid {{ t.surface }};box-sizing:border-box;"></div>
+              <div style="width:{{ carbsPct }};background:{{ t.tertiary }};border-right:2px solid {{ t.surface }};box-sizing:border-box;"></div>
+              <div style="width:{{ fatPct }};background:{{ t.secondary }};"></div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:{{ t.primary }};flex-shrink:0;"></span>
+              <span style="flex:1;font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Protein · {{ proteinPct }}</span>
+              <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;color:{{ t.onSurface }};">{{ proteinG }}g</span>
+              <button onClick="{{ decProtein }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incProtein }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:{{ t.tertiary }};flex-shrink:0;"></span>
+              <span style="flex:1;font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Carbs · {{ carbsPct }}</span>
+              <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;color:{{ t.onSurface }};">{{ carbsG }}g</span>
+              <button onClick="{{ decCarbs }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incCarbs }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:{{ t.secondary }};flex-shrink:0;"></span>
+              <span style="flex:1;font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Fat · {{ fatPct }}</span>
+              <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;color:{{ t.onSurface }};">{{ fatG }}g</span>
+              <button onClick="{{ decFat }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incFat }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+          </div>
+
+          <p style="margin:0;font-family:'Inter',sans-serif;font-size:12px;line-height:16px;letter-spacing:0.4px;color:{{ t.onSurfaceVariant }};">Estimates based on your inputs, not medical advice.</p>
+
+          <div style="flex:1;"></div>
+          <button onClick="{{ finishOnboarding }}" style="width:100%;height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Let's go</button>
+        </div>
+      </sc-if>
+
+      <!-- ===================== STEP 6 — HOME STUB ===================== -->
+      <!--
+        // Component: HomeStubScreen
+        // Type: Screen-specific
+        // Used in: Onboarding exit destination (placeholder — full Home built in Session 3)
+        // Build priority: Low
+        // Props: none
+      -->
+      <sc-if value="{{ isStep6 }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;">
+          <div style="width:{{ mascotSmallPx }};height:{{ mascotSmallPx }};border-radius:{{ mascotSmallRadiusPx }};background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;">
+            <div style="display:flex;gap:10px;">
+              <div style="{{ mascotEyeLeftStyle }}"></div>
+              <div style="{{ mascotEyeRightStyle }}"></div>
+            </div>
+            <div style="{{ mascotMouthStyle }}"></div>
+          </div>
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:22px;font-weight:500;color:{{ t.onSurface }};">Home</h2>
+          <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};text-align:center;">Stub destination — Home dashboard is built in Session 3.</p>
+          <button onClick="{{ resetFlow }}" style="height:48px;padding:0 24px;border-radius:999px;border:1px solid {{ t.outline }};background:transparent;color:{{ t.primary }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">Restart onboarding</button>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- Gesture nav inset (24dp) -->
+    <div style="height:24px;min-height:24px;display:flex;align-items:center;justify-content:center;background:{{ t.surface }};">
+      <div style="width:108px;height:4px;border-radius:2px;background:{{ t.onSurface }};opacity:0.35;"></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  GOALS = [
+    { id: 'lose', title: 'Lose weight', subtitle: 'Gradual, sustainable calorie deficit' },
+    { id: 'maintain', title: 'Maintain', subtitle: 'Keep your current weight steady' },
+    { id: 'build', title: 'Build muscle', subtitle: 'Calorie surplus with more protein' },
+  ];
+  ACTIVITIES = [
+    { id: 'sedentary', title: 'Sedentary', subtitle: 'Desk job, little exercise' },
+    { id: 'light', title: 'Light', subtitle: 'Light exercise 1–3 days/week' },
+    { id: 'moderate', title: 'Moderate', subtitle: 'Moderate exercise 3–5 days/week' },
+    { id: 'very', title: 'Very active', subtitle: 'Hard exercise 6–7 days/week' },
+  ];
+  DIETS = [
+    { id: 'none', title: 'None' },
+    { id: 'vegetarian', title: 'Vegetarian' },
+    { id: 'vegan', title: 'Vegan' },
+    { id: 'other', title: 'Other' },
+  ];
+  state = {
+    themeMod: null,
+    step: 0, isDark: false,
+    goal: null, age: null, sex: null, heightCm: 170, weightKg: 65, targetWeightKg: null,
+    units: 'metric', activity: null, diet: null,
+    calorieOverride: null, macroOverrides: { protein: null, carbs: null, fat: null },
+    celebrateBurst: false,
+  };
+
+  componentDidMount() {
+    import('./theme.js').then(mod => this.setState({ themeMod: mod }));
+  }
+
+  goTo(step) {
+    this.setState({ step });
+  }
+  goBack = () => this.setState(s => ({ step: Math.max(0, s.step - 1) }));
+  resetFlow = () => this.setState({
+    step: 0, goal: null, age: null, sex: null, heightCm: 170, weightKg: 65, targetWeightKg: null,
+    units: 'metric', activity: null, diet: null,
+    calorieOverride: null, macroOverrides: { protein: null, carbs: null, fat: null },
+  });
+
+  // Single source of truth: computed fresh from current state every call, never cached.
+  // BMR/TDEE math lives only in theme.js — calcDailyTargets() — so it can't drift from a second copy.
+  deriveTargets(s) {
+    const base = this.state.themeMod.calcDailyTargets(s);
+    const calorieGoal = s.calorieOverride != null ? s.calorieOverride : base.calories;
+    const splitProtein = Math.round((calorieGoal * 0.30) / 4);
+    const splitCarbs = Math.round((calorieGoal * 0.40) / 4);
+    const splitFat = Math.round((calorieGoal * 0.30) / 9);
+    return {
+      calorieGoal,
+      proteinG: s.macroOverrides.protein != null ? s.macroOverrides.protein : splitProtein,
+      carbsG: s.macroOverrides.carbs != null ? s.macroOverrides.carbs : splitCarbs,
+      fatG: s.macroOverrides.fat != null ? s.macroOverrides.fat : splitFat,
+      floor: base.floor,
+    };
+  }
+  toggleTheme = () => this.setState(s => ({ isDark: !s.isDark }));
+
+  finishOnboarding = () => {
+    this.setState({ celebrateBurst: true });
+    setTimeout(() => {
+      // Real cross-DC state hand-off: separate top-level DCs share no runtime state, but they
+      // DO share the browser's localStorage — Home.dc.html reads this same key on load.
+      const s = this.state;
+      localStorage.setItem('healthtrack_onboarding_profile', JSON.stringify({
+        sex: s.sex, age: s.age, heightCm: s.heightCm, weightKg: s.weightKg, activity: s.activity, goal: s.goal,
+      }));
+      window.location.href = './Home.dc.html';
+    }, 700);
+  };
+
+  round1 = n => Math.round(n * 10) / 10;
+
+  renderVals() {
+    const s = this.state;
+    if (!s.themeMod) return { isStep0: false, isStep1: false, isStep2: false, isStep3: false, isStep4: false, isStep5: false, isStep6: false, t: {}, themeToggleLabel: '', themeToggleBg: '#fff', themeToggleColor: '#181D18', toggleTheme: () => {}, resetFlow: () => {} };
+    const t = s.themeMod.THEMES[s.isDark ? 'dark' : 'light'];
+    const metric = s.units === 'metric';
+
+    const cardStyle = (selected, extra = '') =>
+      `background:${selected ? t.primaryContainer : t.surfaceContainerLow};border:${selected ? `2px solid ${t.primary}` : `1px solid ${t.outlineVariant}`};border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-height:48px;` + extra;
+    const titleStyle = selected => `font-family:'Poppins',sans-serif;font-size:16px;font-weight:500;letter-spacing:0.15px;color:${selected ? t.onPrimaryContainer : t.onSurface};`;
+    const subtitleStyle = () => `font-family:'Inter',sans-serif;font-size:13px;color:${t.onSurfaceVariant};`;
+
+    const clearOverrides = { calorieOverride: null, macroOverrides: { protein: null, carbs: null, fat: null } };
+    const goalsList = this.GOALS.map(g => ({
+      ...g,
+      cardStyle: cardStyle(s.goal === g.id),
+      titleStyle: titleStyle(s.goal === g.id),
+      subtitleStyle: subtitleStyle(),
+      onSelect: () => this.setState({ goal: g.id, ...clearOverrides }),
+    }));
+    const activitiesList = this.ACTIVITIES.map(a => ({
+      ...a,
+      cardStyle: cardStyle(s.activity === a.id),
+      titleStyle: titleStyle(s.activity === a.id),
+      subtitleStyle: subtitleStyle(),
+      onSelect: () => this.setState({ activity: a.id, ...clearOverrides }),
+    }));
+    const dietsList = this.DIETS.map(d => ({
+      ...d,
+      cardStyle: cardStyle(s.diet === d.id, 'flex-direction:row;align-items:center;'),
+      titleStyle: titleStyle(s.diet === d.id),
+      onSelect: () => this.setState({ diet: s.diet === d.id ? null : d.id }),
+    }));
+
+    const progressStep = s.step >= 1 && s.step <= 5 ? s.step : 0;
+    const progressSegments = [1, 2, 3, 4, 5].map(n => ({
+      style: `flex:1;height:4px;border-radius:2px;background:${n <= progressStep ? t.primary : t.outlineVariant};`,
+    }));
+
+    // mascot state per screen
+    let mascotState = 'idle';
+    if (s.step === 0) mascotState = 'celebrating';
+    else if (s.step === 5) mascotState = s.celebrateBurst ? 'celebrating' : 'idle';
+    const eyeBase = `background:${t.onPrimaryContainer};border-radius:50%;`;
+    let eyeLeft = `${eyeBase}width:10px;height:10px;`;
+    let eyeRight = `${eyeBase}width:10px;height:10px;`;
+    let mouth = `background:${t.onPrimaryContainer};width:20px;height:3px;border-radius:2px;`;
+    let showSparkles = false;
+    if (mascotState === 'celebrating') {
+      mouth = `border-bottom:3px solid ${t.onPrimaryContainer};width:22px;height:11px;border-radius:0 0 11px 11px;`;
+      showSparkles = true;
+    } else if (mascotState === 'happy') {
+      mouth = `border-bottom:3px solid ${t.onPrimaryContainer};width:22px;height:11px;border-radius:0 0 11px 11px;`;
+    } else if (mascotState === 'sleepy') {
+      eyeLeft = `${eyeBase}width:10px;height:3px;border-radius:2px;`;
+      eyeRight = `${eyeBase}width:10px;height:3px;border-radius:2px;`;
+      mouth = `background:${t.onPrimaryContainer};width:10px;height:3px;border-radius:2px;`;
+    } else if (mascotState === 'thinking') {
+      eyeRight = `${eyeBase}width:6px;height:6px;margin-top:2px;`;
+    }
+
+    const stepperBtnStyle = `width:36px;height:36px;border-radius:50%;border:none;background:${t.surfaceContainerHigh};color:${t.onSurface};font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;`;
+    const errorTextStyle = `font-family:'Inter',sans-serif;font-size:12px;line-height:16px;color:${t.error};`;
+
+    const nextBtn = (enabled) =>
+      `width:100%;height:48px;border:none;border-radius:999px;background:${t.primary};color:${t.onPrimary};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:${enabled ? 'pointer' : 'not-allowed'};opacity:${enabled ? 1 : 0.4};`;
+
+    // step2 unit conversions & validation
+    const heightDisplay = metric ? Math.round(s.heightCm) : Math.round(s.heightCm / s.themeMod.CM_PER_IN);
+    const weightDisplay = metric ? this.round1(s.weightKg) : this.round1(s.weightKg / s.themeMod.KG_PER_LB);
+    const targetDisplay = s.targetWeightKg == null ? '—' : (metric ? this.round1(s.targetWeightKg) : this.round1(s.targetWeightKg / s.themeMod.KG_PER_LB));
+    const heightStep = metric ? 1 : s.themeMod.CM_PER_IN;
+    const weightStep = metric ? 0.5 : s.themeMod.KG_PER_LB;
+
+    const ageValid = s.age != null && s.age >= 13 && s.age <= 100;
+    const heightValid = s.heightCm > 0;
+    const weightValid = s.weightKg > 0;
+    const sexValid = s.sex === 'male' || s.sex === 'female';
+    const basicsValid = ageValid && heightValid && weightValid && sexValid;
+
+    const segBtn = (selected, side) =>
+      `flex:1;height:40px;border:none;border-radius:999px;background:${selected ? t.secondaryContainer : 'transparent'};color:${selected ? t.onSecondaryContainer : t.onSurfaceVariant};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;`;
+
+    const targets = this.deriveTargets(s);
+    const belowFloor = targets.calorieGoal < targets.floor;
+    const macroCal = targets.proteinG * 4 + targets.carbsG * 4 + targets.fatG * 9;
+    const pct = g => macroCal > 0 ? Math.round((g / macroCal) * 100) + '%' : '0%';
+
+    return {
+      t, isDark: s.isDark,
+      themeToggleLabel: s.isDark ? 'Dark mode' : 'Light mode',
+      themeToggleBg: s.isDark ? '#2b2b2b' : '#ffffff',
+      themeToggleColor: s.isDark ? '#ffffff' : '#181D18',
+      toggleTheme: this.toggleTheme, resetFlow: this.resetFlow, goBack: this.goBack,
+
+      isStep0: s.step === 0, isStep1: s.step === 1, isStep2: s.step === 2,
+      isStep3: s.step === 3, isStep4: s.step === 4, isStep5: s.step === 5, isStep6: s.step === 6,
+
+      goToStep1: () => this.goTo(1), goToStep2: () => this.goTo(2), goToStep3: () => this.goTo(3),
+      goToStep4: () => this.goTo(4), goToStep5: () => this.goTo(5),
+      finishOnboarding: this.finishOnboarding,
+
+      bubbleText: "Let's build healthy habits together.",
+      confirmBubbleText: s.celebrateBurst ? "Nice! Let's get started." : "Here's what I calculated for you — feel free to adjust it.",
+
+      mascotSizePx: '112px', mascotRadiusPx: '38px',
+      mascotSmallPx: '64px', mascotSmallRadiusPx: '22px',
+      mascotEyeLeftStyle: eyeLeft, mascotEyeRightStyle: eyeRight, mascotMouthStyle: mouth, mascotShowSparkles: showSparkles,
+
+      progressSegments,
+      goalsList, activitiesList, dietsList,
+      goalNextDisabled: !s.goal, goalNextStyle: nextBtn(!!s.goal),
+      activityNextDisabled: !s.activity, activityNextStyle: nextBtn(!!s.activity),
+      dietaryNextStyle: nextBtn(true),
+
+      stepperBtnStyle, errorTextStyle,
+
+      unitsMetricStyle: segBtn(metric), unitsImperialStyle: segBtn(!metric),
+      setUnitsMetric: () => this.setState({ units: 'metric' }),
+      setUnitsImperial: () => this.setState({ units: 'imperial' }),
+      sexMaleStyle: segBtn(s.sex === 'male'), sexFemaleStyle: segBtn(s.sex === 'female'),
+      setSexMale: () => this.setState({ sex: 'male', ...clearOverrides }), setSexFemale: () => this.setState({ sex: 'female', ...clearOverrides }),
+
+      ageDisplay: s.age == null ? '—' : s.age,
+      ageError: s.age != null && !ageValid ? 'Age must be between 13 and 100' : null,
+      incAge: () => this.setState(st => ({ age: st.age == null ? 25 : Math.min(100, st.age + 1), ...clearOverrides })),
+      decAge: () => this.setState(st => ({ age: st.age == null ? 25 : Math.max(13, st.age - 1), ...clearOverrides })),
+
+      heightDisplay, heightUnitLabel: metric ? 'cm' : 'in',
+      incHeight: () => this.setState(st => ({ heightCm: st.heightCm + heightStep, ...clearOverrides })),
+      decHeight: () => this.setState(st => ({ heightCm: Math.max(50, st.heightCm - heightStep), ...clearOverrides })),
+
+      weightDisplay, weightUnitLabel: metric ? 'kg' : 'lb',
+      incWeight: () => this.setState(st => ({ weightKg: this.round1(st.weightKg + weightStep), ...clearOverrides })),
+      decWeight: () => this.setState(st => ({ weightKg: Math.max(20, this.round1(st.weightKg - weightStep)), ...clearOverrides })),
+
+      showTargetWeight: s.goal !== 'maintain',
+      targetDisplay,
+      clearTargetWeight: () => this.setState({ targetWeightKg: null }),
+      incTarget: () => this.setState(st => ({ targetWeightKg: this.round1((st.targetWeightKg == null ? st.weightKg : st.targetWeightKg) + weightStep) })),
+      decTarget: () => this.setState(st => ({ targetWeightKg: Math.max(20, this.round1((st.targetWeightKg == null ? st.weightKg : st.targetWeightKg) - weightStep)) })),
+
+      basicsNextDisabled: !basicsValid, basicsNextStyle: nextBtn(basicsValid),
+
+      calorieGoal: targets.calorieGoal, belowFloor,
+      incCalories: () => this.setState(st => ({ calorieOverride: this.deriveTargets(st).calorieGoal + 50 })),
+      decCalories: () => this.setState(st => ({ calorieOverride: Math.max(800, this.deriveTargets(st).calorieGoal - 50) })),
+
+      proteinG: targets.proteinG, carbsG: targets.carbsG, fatG: targets.fatG,
+      proteinPct: pct(targets.proteinG * 4), carbsPct: pct(targets.carbsG * 4), fatPct: pct(targets.fatG * 9),
+      incProtein: () => this.setState(st => ({ macroOverrides: { ...st.macroOverrides, protein: this.deriveTargets(st).proteinG + 5 } })),
+      decProtein: () => this.setState(st => ({ macroOverrides: { ...st.macroOverrides, protein: Math.max(0, this.deriveTargets(st).proteinG - 5) } })),
+      incCarbs: () => this.setState(st => ({ macroOverrides: { ...st.macroOverrides, carbs: this.deriveTargets(st).carbsG + 5 } })),
+      decCarbs: () => this.setState(st => ({ macroOverrides: { ...st.macroOverrides, carbs: Math.max(0, this.deriveTargets(st).carbsG - 5) } })),
+      incFat: () => this.setState(st => ({ macroOverrides: { ...st.macroOverrides, fat: this.deriveTargets(st).fatG + 5 } })),
+      decFat: () => this.setState(st => ({ macroOverrides: { ...st.macroOverrides, fat: Math.max(0, this.deriveTargets(st).fatG - 5) } })),
+    };
+  }
+}
+</script>
+</body>
+</html>

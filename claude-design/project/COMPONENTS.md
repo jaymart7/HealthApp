@@ -1,0 +1,93 @@
+# COMPONENTS.md
+Cumulative component manifest — final (Session 4 of 4 + fix pass). Sorted by build priority within each layer. `NEW` = added this session. `FIX` = added in the post-Session-4 fix pass (Log weight / Add photo / Add measurement).
+
+**File plan:** `theme.js` is the single source of truth for color tokens and `calcDailyTargets()` — Onboarding.dc.html, PhotoLogging.dc.html and Home.dc.html all import it. `appScaffold.js` / `fullScreenState.js` are canonical reference markup, copy-pasted (not executed imports) into every DC that needs them — see Concerns. Home.dc.html is the single app shell: it owns nav/FAB/quick-action sheet and all four tabs (Home, Food, Progress, Profile) in one file. Onboarding.dc.html and PhotoLogging.dc.html remain separate top-level pages reached by `window.location.href`. Sessions: 1 Onboarding, 2 PhotoLogging, 3 Home+Food, 4 Progress+Profile.
+
+## Deferred — explicit Claude Code follow-ups
+
+- Contrast-variant themes (medium/high-contrast M3 schemes) — out of scope; components read colors from the theme so they drop in without touching component code.
+- Barcode scanning — visual-only; icon renders, does nothing.
+- Photo comparison slider — comparison screen is static side-by-side only.
+- FAB scroll-collapse — kept statically extended since the prototype's screens don't need scroll-driven collapse.
+- Tap active tab to scroll to top — not built; tabs only switch.
+- **Claude Code task:** Home FAB "Log food" / meal "+" / Progress "Take one" route into the photo capture flow via real page navigation, but round-trip state isn't wired — PhotoLogging can't hand a new food item back to Home's diary across a page load. A real single-navigation-graph app carries that state for free.
+- **Claude Code task:** `FullScreenState` and `AppScaffold` are copy-pasted markup (canonical sources `fullScreenState.js` / `appScaffold.js`), not executed imports — promote both to real composables once the app has a component layer.
+- **Claude Code task:** Onboarding's target-weight input (`targetWeightKg`) is never written to the `healthtrack_onboarding_profile` localStorage key — only `sex, age, heightCm, weightKg, activity, goal` are saved. Progress's weight-goal marker therefore always falls back to a hardcoded demo goal (75.0 kg); wire target weight through the same hand-off so a real goal set in onboarding reaches Progress.
+- Profile's Units and Reminders controls are local UI state only (not persisted, not connected to Onboarding's units choice, which itself isn't saved to localStorage either) — functional stubs per this session's brief.
+- Sheet content-height swap uses two hand-tuned fixed pixel heights (fields vs. calendar) per sheet rather than measuring real DOM height — the transition looks smooth but may leave a few px of extra whitespace at one end. **Claude Code task:** swap to a measured-height approach (ResizeObserver or scrollHeight-on-ref) once there's a component layer to hang refs off cleanly.
+
+## High priority
+
+| Component | Type | Used in | Props | Description |
+|---|---|---|---|---|
+| MascotAvatar | Reusable | Welcome, Goal/Confirm steps, Home/Diary/Photos empty states, AI analyzing | `state: MascotState, size: Dp` | Geometric mascot ("Bibo") — rounded-square body (`primaryContainer`), dot eyes + mouth curve (`onPrimaryContainer`) only. 5 states: Idle, Happy, Celebrating, Sleepy, Thinking. No other detail is added to the mascot at any size. |
+| MascotSpeechBubble | Reusable | Welcome, Goal step, Confirm step, Home greeting | `text: String` | Rounded bubble, `surfaceContainerHigh` fill, tail on the left. |
+| PrimaryButton | Reusable | Every onboarding screen; Home/Food/Progress CTAs | `label, onClick, enabled, modifier` | Pill, 48dp min height, `primary` fill / `onPrimary` text. Disabled = 40% opacity. |
+| SecondaryButton | Reusable | Retry/Offline screens | `label, onClick, modifier` | Pill, `outline` border, transparent fill, `primary` text. |
+| SelectableCard | Reusable | Goal, Activity, Dietary steps | `title, subtitle?, leadingIcon?, selected, onClick` | Large tappable card. Selected = `primaryContainer` fill + 2dp `primary` border. |
+| StepProgressBar | Reusable | Onboarding steps 1–5 | `currentStep, totalSteps` | 5-segment bar, "Step N of 5" label. |
+| SegmentedToggle | Reusable | Basics (units, sex), Progress (Weight/Photos/Measurements), Profile (kg/lb, cm/in) `ext` | `options: List<String>, selectedIndex, onSelect` | Pill-track toggle, `secondaryContainer` selected chip. Extended this session from 2-option to N-option via the same pattern (list-driven, no fork). |
+| NumericStepperField | Reusable | Basics, Confirm | `label, value, unitSuffix, onIncrement, onDecrement, error?` | Value + unit + circular +/− buttons, tabular-nums. |
+| AppScaffold | Reusable | All four main tabs | `activeTab, onTabSelect, onFabClick` | Bottom nav (4 tabs) + docked FAB + quick-action sheet. Canonical markup in `appScaffold.js`. |
+| QuickActionSheet | Reusable | AppScaffold | `open, onDismiss, onLogFood, onLogWeight, onAddPhoto` | Modal bottom sheet, scrim, drag handle. "Log food" enters capture flow. |
+| CaptureScreen | Screen-specific | Photo logging, state 1 | `onCapture, onClose` | Full-bleed camera placeholder, framing guide, shutter/gallery/close/flash. |
+| ConfirmationScreen | Screen-specific | Photo logging, state 3 | `item, confidence, mealType, onLog, onDiscard, onSearchInstead` | Photo thumbnail + AIChip, meal-type selector, editable FoodItemRow + MacroInputGroup. |
+| FoodItemRow | Reusable | Confirmation (Editable), Food diary (Display, swipeable) | `variant, name, portionAmount, portionUnit, calories, proteinG, carbsG, fatG, onChange/onTap` | One component, mode-switched. Display variant adds swipe-to-delete in the diary via a translating wrapper — no new row component. |
+| MacroInputGroup | Reusable | Confirmation screen | `proteinG, carbsG, fatG, onChange*` | Three NumericStepperField rows, primary/tertiary/secondary dots. |
+| AIChip | Reusable | Confirmation (`default`), Home AIInsightCard (`onAccent`) | `label, variant` | `default`: tertiaryContainer bg. `onAccent`: surfaceContainerLowest bg, for use on an already-tertiaryContainer card. |
+| BasicsScreen | Screen-specific | Onboarding step 2 | `form, onChange, onNext, onBack` | Age, sex, height, weight, optional target weight, units toggle, inline validation. |
+| ConfirmTargetsScreen | Screen-specific | Onboarding step 5 | `targets, onEditCalories, onEditMacro, onConfirm, onBack` | Computed calorie goal + macro split, both editable; safety-floor warning; disclaimer. |
+| MascotGreetingCard | Screen-specific | Home dashboard | none (reads time of day) | `surfaceContainerLow` card, MascotAvatar (64dp) + speech-bubble text panel. |
+| CalorieRingCard | Screen-specific | Home dashboard | `consumed, goal` | Conic-gradient ring showing % of goal consumed, center label = remaining kcal. Goal from `calcDailyTargets()`. |
+| WeightMetricCard | Screen-specific | Home dashboard | `currentWeight, priorWeight, goal` | Current weight + 7-day delta. Trend color is goal-relative, never a fixed green/red mapping. |
+| MacroBar | Screen-specific | Home dashboard, Profile Goals section `ext` | `proteinG, carbsG, fatG` (consumed/goal on Home; goal-only on Profile) | Hard-edged 3-segment bar (protein=primary, carbs=tertiary, fat=secondary). Same bar reused on Profile's Goals card to show the target split, extended by omitting the "consumed" half rather than forking. |
+| Meal section header | Screen-specific | Food diary | `label, subtotalKcal, expanded, onToggle, onAdd` | Collapsible row: chevron, name, subtotal, "+". |
+| Diary sticky summary | Screen-specific | Food diary | `consumed, goal, remaining` | Non-scrolling bar pinned above the nav: consumed/goal, remaining kcal, mini macro bar. |
+| WeightProgressChart `NEW` | Screen-specific | Progress, Weight view | `data: {day,weight}[], movingAverage, goalWeight?` | SVG line chart: gridlines (`outlineVariant`), actual line (`primary`), 2-point trailing moving average (`secondary`), dashed goal marker (`tertiary`, omitted entirely when the profile has no target weight). Range chips (1M/3M/6M/1Y) filter by day offset from the latest point. |
+| WeightStatRow `NEW` | Screen-specific | Progress, Weight view | `current, change, goalRemaining?` | Current / change / goal-remaining, goal-remaining cell omitted with the goal marker. Change color reuses WeightMetricCard's goal-relative trend logic. |
+| ProgressPhotoGrid `NEW` | Screen-specific | Progress, Photos view | `photos, selectedIds, onToggleSelect` | 3-col grid grouped by month header, date label per tile, tap-to-select (max 2, oldest selection drops), reuses `<image-slot>` per tile. Empty state is FullScreenState (Sleepy, "No progress photos yet"). |
+| PhotoComparisonScreen `NEW` | Screen-specific | Progress, Photos view (after selecting 2 + Compare) | `photoA, photoB, weightDelta` | Static side-by-side only — two image-slots, dates, weight delta. Draggable slider explicitly deferred. |
+| MeasurementRow `NEW` | Screen-specific | Progress, Measurements view | `name, current, delta, sparklineValues, onTap` | Name, current value, delta (color: shrink=`primary`, grow=`error`, flat=`onSurfaceVariant`, no prior reading=`onSurfaceVariant` with "—"), small inline SVG sparkline. Whole row is tappable — opens AddMeasurementSheet pre-filled with that part. "+ Add measurement" row below opens the same sheet with no part pre-selected. |
+| AddMeasurementSheet `FIX` | Screen-specific (bottom sheet) | Home, opened from "+ Add measurement" or an existing MeasurementRow | none | Same sheet chrome as LogWeightSheet/AddPhotoSheet. Untracked-part entry: body-part picker chips (chest/waist/hips/arms/thighs minus whichever are already tracked) above the fields, first available part preselected. Tracked-part entry (tapping its row): picker omitted, header reads "Log {Part}". Shared: tappable date row (SheetDatePicker, defaults today, no future dates, marked dates come from the selected part's own entries), NumericStepperField (unit from the height-unit preference, cm by default), Save (disabled until a part + value are set)/Cancel. Picking a date that already has an entry for that part shows "Replacing your entry for this date." and Save replaces in place; otherwise inserts and re-sorts by date. Reads/writes `state.measurementData`.
+| ProfileGoalsSection `NEW` | Screen-specific | Profile | none (reads the same `targets`/`profile` Home computes) | Calorie target, macro split (via MacroBar), activity level — sourced from the same `calcDailyTargets()` call Home uses, never a separate hardcoded copy. |
+| `calcDailyTargets()` | Reusable (pure function) | Confirm step, Home, Progress, Profile | `(sex, age, heightCm, weightKg, activity, goal) -> Targets` | Mifflin–St Jeor BMR → TDEE → goal-adjusted calories → 30/40/30 macro split, clamped to 1200/1500 kcal floor. |
+| `deriveTargets()` | Reusable (pure function) | Confirm step | `(onboardingState) -> {calorieGoal, proteinG, carbsG, fatG, floor}` | Single source of truth for Step 5's numbers; manual overrides clear whenever an upstream input changes. |
+| SheetDatePicker `FIX` `NEW` | Reusable | LogWeightSheet, AddPhotoSheet (Profile's reminder times are a likely future user) | `target: 'logWeight'\|'addPhoto', selectedDate, markedDates, calendarMonth, onSelect, onBack` | The date row swaps the SHEET'S OWN content in place — no nested sheet, no second scrim. A `position:relative;overflow:hidden` wrapper with an animated `height` holds a `width:200%` flex row of two 100%-wide panels (fields, calendar); selecting the date row slides to the calendar panel (`translateX(-50%)`) while the header swaps to "Select date" + a back arrow; picking a date or tapping back slides back to fields. Calendar: weekday header, month nav (next disabled at the current month), 7-col grid of 44dp-min circular day buttons — today gets a `primary` ring, the selected date fills `primary`/`onPrimary`, future dates render in `outlineVariant` and are inert, and any date with an existing entry gets a small `primary` dot. `calendarTarget` in state picks whether marked dates and selection write back to `weightData` or `photos`, so the same grid-building method and markup pattern serve both sheets. |
+| LogWeightSheet `FIX` | Screen-specific (bottom sheet) | Home, opened from the FAB quick-action sheet | none | Title, tappable date row (SheetDatePicker; defaults today, no future dates), NumericStepperField prefilled with the latest logged weight (unit-aware), optional note (AppTextField), Save/Cancel. Picking a date that already has an entry shows an inline "Replacing your entry for this date." notice; Save replaces that entry in place rather than duplicating it, otherwise inserts and re-sorts by date. Reads/writes `state.weightData` — the single array the Progress chart, WeightStatRow, and Home's WeightMetricCard all read; "current weight" and the 7-day average are always derived by date order, not entry order. |
+| AddPhotoSheet `FIX` | Screen-specific (2-step bottom sheet) | Home, opened from the FAB quick-action sheet and Home's "Take one" reminder CTA | none | Step 1: "Take photo" / "Choose from gallery", both routing to the same shared placeholder image-slot (same pattern as PhotoLogging's simulated camera). Step 2: preview, tappable date row (SheetDatePicker; defaults today, no future dates), optional weight, Save/Cancel. Save inserts into `state.photos` — the same array ProgressPhotoGrid reads — sorted by date so month grouping stays correct regardless of entry order; Home's "Last photo N days ago" is computed from the most recent photo by date, not by insertion order. |
+
+## Medium priority
+
+| Component | Type | Used in | Props | Description |
+|---|---|---|---|---|
+| TextButton | Reusable | Welcome, Dietary, Basics | `label, onClick` | No container, `primary` text, compact height. |
+| AppTextField | Reusable | Manual search, Food diary search | `label, value, onValueChange, error?` | 12dp corner text field. |
+| AnalyzingScreen | Screen-specific | Photo logging, state 2 | `statusText, onCancel` | Dimmed photo, mascot Thinking, indeterminate progress, rotating status text, 1.8s auto-advance. |
+| RetryScreen | Screen-specific | Photo logging, state 4 | `onRetry, onLogManually` | FullScreenState variant with the captured photo instead of a mascot. |
+| ManualSearchScreen | Screen-specific | Photo logging, state 5 | `query, onQueryChange, onCancel` | FullScreenState variant ending in an auto-focused AppTextField. |
+| OfflineScreen | Screen-specific | Photo logging, state 6 | `onLogManually, onTryAgain` | Mascot Sleepy, Log manually (primary) + Try again (secondary). |
+| GoalScreen | Screen-specific | Onboarding step 1 | `selectedGoal, onSelect, onNext, onBack` | 3 SelectableCards (Lose/Maintain/Build), mascot Idle prompt bubble. |
+| ActivityScreen | Screen-specific | Onboarding step 3 | `selectedActivity, onSelect, onNext, onBack` | 4 SelectableCards with example subtitles. |
+| DietaryScreen | Screen-specific | Onboarding step 4 | `selectedDiet, onSelect, onNext, onSkip, onBack` | 4 SelectableCards, skippable, Skip carries equal nav weight to Next. |
+| AIInsightCard | Screen-specific | Home dashboard | `dismissible` | Only `tertiaryContainer` card on Home; sparkle "Insight" chip, dismiss sets local state. |
+| ProfileUnitsSection `NEW` | Screen-specific | Profile | none | kg/lb and cm/in SegmentedToggles. Local UI state — Onboarding doesn't persist a units preference, so this doesn't read one; the weight toggle does drive the same effective unit Home and Progress display. |
+| ProfileRemindersSection `NEW` | Screen-specific | Profile | none | Meal logging, weigh-in day, photo cadence — each a label/sublabel row + toggle switch. Functional switches, no real scheduling (stub per brief). |
+| ProfileDataSection `NEW` | Screen-specific | Profile | none | "Export data (JSON)" row, subtitle "Photos are not included in exports". Functionally exports profile + food entries as a downloaded JSON file (real, not stubbed). |
+
+## Low priority
+
+| Component | Type | Used in | Props | Description |
+|---|---|---|---|---|
+| WelcomeScreen | Screen-specific | Onboarding step 0 | `onGetStarted, onSignIn` | Mascot Celebrating, app name, value prop, sign-in text button (non-functional). |
+| HomeStubScreen | Screen-specific | Onboarding exit destination | none | Superseded — Home dashboard is real as of Session 3. |
+| ProgressPhotoReminderCard | Screen-specific | Home dashboard | `daysSinceLastPhoto` | "Last photo N days ago" + "Take one" CTA, opens the quick-action stub sheet. |
+| Barcode scan icon | Screen-specific | Food diary top bar | none | Visual only; pressed state; `onClick` no-op. |
+| ProfileAboutSection `NEW` | Screen-specific | Profile | none | Version "1.0.0 (prototype)" + "Estimates based on your inputs, not medical advice" disclaimer. |
+
+## Cross-file state and conventions
+
+**Real hand-off:** Onboarding's "Let's go" writes `{sex, age, heightCm, weightKg, activity, goal}` to `localStorage['healthtrack_onboarding_profile']` before navigating to Home.dc.html; Home reads it on mount and calls `calcDailyTargets()` with it — this is the one shared source of truth for calorie/macro goals across Home, Progress, and Profile. Falls back to `DEFAULT_PROFILE` (male, 26, 170cm, 55.5kg, sedentary, maintain → 1791 kcal) when the key is missing.
+
+**FullScreenState is copy-pasted from `fullScreenState.js`**, not a real shared component — every empty/status state (Home day-one, empty diary, empty progress photos, PhotoLogging's Retry/NoFood/Offline) carries a `// CANONICAL SOURCE` comment and must be edited at the source first, then re-pasted everywhere, per the same rule as `appScaffold.js`.
+
+**Weight/photo/measurement seed data is hardcoded** in Home.dc.html (`WEIGHT_DATA`, `MEASUREMENT_SEED`) — none of it reads from onboarding or the food diary; it exists to demonstrate the Progress tab's layouts, not as real user history. `WEIGHT_DATA` and the seed photo list are copied into `state.weightData` / `state.photos` on mount and become the live, appendable sources; `MEASUREMENT_SEED` (chest/waist/hips only, so arms/thighs demonstrate the "add a new part" picker) is expanded into `state.measurementData` — one chronological entries array per tracked body part, same shape as `weightData`. LogWeightSheet, AddPhotoSheet, and AddMeasurementSheet all push new entries into these same arrays (in-memory only, not persisted to localStorage), so Home, Progress, and the sheets always agree. A body part with only one reading (freshly added) shows "—" for its delta rather than a false 0.0.

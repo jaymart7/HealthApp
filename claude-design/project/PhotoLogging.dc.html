@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="./image-slot.js"></script>
+  <style>
+    body { margin: 0; background: #eef1ec; font-family: 'Inter', sans-serif; }
+    a { color: #37693D; }
+    a:hover { color: #1E5027; }
+    * { box-sizing: border-box; }
+    @keyframes indeterminate { 0% { transform: translateX(-60%); } 100% { transform: translateX(220%); } }
+  </style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:20px;padding:32px 16px;">
+
+  <!-- Dev-only preview controls (not part of the app UI) -->
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;font-family:'Inter',sans-serif;max-width:520px;">
+    <span style="font-size:12px;color:#727970;letter-spacing:0.5px;text-transform:uppercase;">Preview</span>
+    <button onClick="{{ toggleTheme }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid #727970;background:{{ themeToggleBg }};color:{{ themeToggleColor }};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">{{ themeToggleLabel }}</button>
+    <button onClick="{{ resetFlow }}" style="height:36px;padding:0 16px;border-radius:999px;border:1px solid #727970;background:transparent;color:#424940;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;">Reset flow</button>
+    <span style="font-size:12px;color:#727970;">Simulate AI result:</span>
+    <sc-for list="{{ simOptions }}" as="opt" hint-placeholder-count="5">
+      <button onClick="{{ opt.onSelect }}" style="{{ opt.style }}">{{ opt.label }}</button>
+    </sc-for>
+  </div>
+
+  <!-- Phone frame: 412x915dp -->
+  <div style="width:412px;height:915px;border-radius:32px;border:8px solid #2b2b2b;box-shadow:0 30px 70px rgba(0,0,0,0.28);overflow:hidden;background:{{ t.surface }};display:flex;flex-direction:column;">
+
+    <div style="height:48px;min-height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:{{ t.surface }};">
+      <span style="font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:{{ t.onSurface }};">9:41</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div style="width:16px;height:10px;border:1.5px solid {{ t.onSurface }};border-radius:2px;position:relative;"><div style="position:absolute;right:-3px;top:2px;width:2px;height:4px;background:{{ t.onSurface }};border-radius:1px;"></div></div>
+        <div style="width:18px;height:10px;border-radius:2px;background:{{ t.onSurface }};"></div>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column;background:{{ t.surface }};">
+
+      <!-- ===================== CAPTURE ===================== -->
+      <!--
+        // Component: CaptureScreen
+        // Type: Screen-specific
+        // Used in: Photo food logging flow, state 1
+        // Build priority: High
+        // Props: onCapture: () -> Unit, onClose: () -> Unit
+      -->
+      <sc-if value="{{ isCapture }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;position:relative;background:#000;">
+          <image-slot id="camera-feed" shape="rect" placeholder="Camera feed placeholder" style="position:absolute;inset:0;"></image-slot>
+          <div style="position:absolute;top:16px;left:16px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;">
+            <button onClick="{{ exitCapture }}" aria-label="Close" style="width:40px;height:40px;border:none;background:transparent;color:#fff;font-size:18px;cursor:pointer;">✕</button>
+          </div>
+          <div style="position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;">⚡</div>
+          <div style="position:absolute;top:88px;left:0;right:0;display:flex;justify-content:center;">
+            <span style="background:rgba(0,0,0,0.5);color:#fff;font-family:'Inter',sans-serif;font-size:13px;padding:8px 16px;border-radius:999px;">Center one food item</span>
+          </div>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:2px dashed rgba(255,255,255,0.7);border-radius:24px;"></div>
+          <div style="position:absolute;bottom:32px;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0 32px;">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;">▦</div>
+            <button onClick="{{ triggerShutter }}" aria-label="Capture" style="width:72px;height:72px;border-radius:50%;background:#fff;border:4px solid rgba(255,255,255,0.5);cursor:pointer;"></button>
+            <div style="width:44px;height:44px;"></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== ANALYZING ===================== -->
+      <!--
+        // Component: AnalyzingScreen
+        // Type: Screen-specific
+        // Used in: Photo food logging flow, state 2
+        // Build priority: Medium
+        // Props: statusText: String, onCancel: () -> Unit
+      -->
+      <sc-if value="{{ isAnalyzing }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;position:relative;background:#000;">
+          <image-slot id="camera-feed" shape="rect" style="position:absolute;inset:0;"></image-slot>
+          <div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;">
+            <div style="width:88px;height:88px;border-radius:32px;background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+              <div style="display:flex;gap:12px;"><div style="{{ mascotEyeLeftStyle }}"></div><div style="{{ mascotEyeRightStyle }}"></div></div>
+              <div style="{{ mascotMouthStyle }}"></div>
+              <span style="position:absolute;transform:translate(28px,-40px);font-family:'Inter',sans-serif;font-size:12px;color:#fff;">...</span>
+            </div>
+            <div style="width:200px;height:4px;border-radius:2px;background:rgba(255,255,255,0.25);overflow:hidden;position:relative;">
+              <div style="position:absolute;top:0;left:0;width:60%;height:100%;background:{{ t.primary }};border-radius:2px;animation:indeterminate 1.1s ease-in-out infinite;"></div>
+            </div>
+            <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;color:#fff;">{{ analyzingStatusText }}</p>
+            <button onClick="{{ cancelAnalyzing }}" style="height:40px;padding:0 20px;border:1px solid rgba(255,255,255,0.5);border-radius:999px;background:transparent;color:#fff;font-family:'Inter',sans-serif;font-size:13px;cursor:pointer;">Cancel</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== CONFIRMATION ===================== -->
+      <!--
+        // Component: ConfirmationScreen
+        // Type: Screen-specific
+        // Used in: Photo food logging flow, state 3
+        // Build priority: High
+        // Props: item: FoodItem, confidence: Confidence, mealType: MealType, onLog, onDiscard, onSearchInstead
+      -->
+      <sc-if value="{{ isConfirm }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:16px;overflow:auto;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <image-slot id="camera-feed" shape="rounded" radius="12" style="width:64px;height:64px;flex-shrink:0;"></image-slot>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <!--
+                // Component: AIChip
+                // Type: Reusable
+                // Used in: Confirmation screen (variant="default"); Home.dc.html's AIInsightCard
+                //   uses variant="onAccent" (surfaceContainerLowest bg, for placement on a
+                //   tertiaryContainer card) — same font-size/padding, only bg/text/label differ.
+                // Build priority: High
+                // Props: label: String, variant: "default" | "onAccent"
+              -->
+              <span style="display:inline-flex;align-items:center;gap:4px;width:fit-content;background:{{ t.tertiaryContainer }};color:{{ t.onTertiaryContainer }};font-family:'Inter',sans-serif;font-size:12px;font-weight:500;padding:4px 10px;border-radius:8px;">✦ AI detected</span>
+              <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:18px;font-weight:500;color:{{ t.onSurface }};">Review your meal</h2>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;">
+            <sc-for list="{{ mealTypesList }}" as="mt" hint-placeholder-count="4">
+              <button onClick="{{ mt.onSelect }}" style="{{ mt.style }}">{{ mt.label }}</button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ isLowConfidence }}" hint-placeholder-val="{{ false }}">
+            <div style="background:{{ t.tertiaryContainer }};border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;">
+              <p style="margin:0;font-family:'Inter',sans-serif;font-size:13px;line-height:18px;color:{{ t.onTertiaryContainer }};">Not fully sure about this one — double-check the portion.</p>
+              <button onClick="{{ goSearchInstead }}" style="align-self:flex-start;border:none;background:transparent;color:{{ t.tertiary }};font-family:'Inter',sans-serif;font-size:13px;font-weight:500;cursor:pointer;padding:0;">Search instead</button>
+            </div>
+          </sc-if>
+
+          <!--
+            // Component: FoodItemRow
+            // Type: Reusable
+            // Used in: Confirmation screen (Editable variant, this session); Food diary in Session 3 (Display variant, read-only — not demonstrated yet)
+            // Build priority: High
+            // Props: variant: "Display" | "Editable", name: String, portionAmount: Number, portionUnit: String, calories: Int, proteinG, carbsG, fatG, onChange
+          -->
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Food</span>
+            <input value="{{ foodName }}" onChange="{{ onFoodNameChange }}" style="height:48px;border-radius:12px;border:1px solid {{ t.outline }};background:transparent;padding:0 16px;font-family:'Poppins',sans-serif;font-size:16px;color:{{ t.onSurface }};" />
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Portion</span>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ portionAmount }}</span>
+              <div style="display:flex;background:{{ t.surfaceContainerHigh }};border-radius:999px;padding:2px;">
+                <sc-for list="{{ unitOptions }}" as="u" hint-placeholder-count="3">
+                  <button onClick="{{ u.onSelect }}" style="{{ u.style }}">{{ u.label }}</button>
+                </sc-for>
+              </div>
+              <button onClick="{{ decPortion }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incPortion }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Calories</span>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="flex:1;font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:16px;color:{{ t.onSurface }};">{{ calories }}</span>
+              <span style="font-family:'Inter',sans-serif;font-size:12px;color:{{ t.onSurfaceVariant }};">kcal</span>
+              <button onClick="{{ decCalories }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incCalories }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+          </div>
+
+          <!--
+            // Component: MacroInputGroup
+            // Type: Reusable
+            // Used in: Confirmation screen
+            // Build priority: High
+            // Props: proteinG, carbsG, fatG, onChangeProtein, onChangeCarbs, onChangeFat
+          -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <span style="font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:{{ t.onSurfaceVariant }};">Macros</span>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:{{ t.primary }};flex-shrink:0;"></span>
+              <span style="flex:1;font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Protein</span>
+              <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;color:{{ t.onSurface }};">{{ proteinG }}g</span>
+              <button onClick="{{ decProtein }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incProtein }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:{{ t.tertiary }};flex-shrink:0;"></span>
+              <span style="flex:1;font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Carbs</span>
+              <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;color:{{ t.onSurface }};">{{ carbsG }}g</span>
+              <button onClick="{{ decCarbs }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incCarbs }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;background:{{ t.surfaceContainerLow }};border-radius:12px;padding:4px 4px 4px 16px;height:48px;">
+              <span style="width:10px;height:10px;border-radius:3px;background:{{ t.secondary }};flex-shrink:0;"></span>
+              <span style="flex:1;font-family:'Inter',sans-serif;font-size:13px;color:{{ t.onSurfaceVariant }};">Fat</span>
+              <span style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-size:15px;color:{{ t.onSurface }};">{{ fatG }}g</span>
+              <button onClick="{{ decFat }}" style="{{ stepperBtnStyle }}">−</button>
+              <button onClick="{{ incFat }}" style="{{ stepperBtnStyle }}">+</button>
+            </div>
+          </div>
+
+          <div style="flex:1;"></div>
+          <button onClick="{{ logMeal }}" style="width:100%;height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Log meal</button>
+          <button onClick="{{ discardMeal }}" style="height:44px;border:none;background:transparent;color:{{ t.onSurfaceVariant }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;">Discard</button>
+        </div>
+      </sc-if>
+
+      <!-- ===================== RETRY ===================== -->
+      <!--
+        // CANONICAL SOURCE: fullScreenState.js — do not edit here
+        // Component: RetryScreen
+        // Type: Screen-specific (FullScreenState variant with a photo instead of a mascot)
+        // Used in: Photo food logging flow, state 4 (analysis failed)
+        // Build priority: Medium
+        // Props: onRetry: () -> Unit, onLogManually: () -> Unit
+      -->
+      <sc-if value="{{ isRetry }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;">
+          <image-slot id="camera-feed" shape="rounded" radius="16" style="width:160px;height:160px;opacity:0.6;"></image-slot>
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:{{ t.onSurface }};text-align:center;">We couldn't analyze that photo</h2>
+          <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};text-align:center;">Try taking the photo again with better lighting, or log the meal manually.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:8px;">
+            <button onClick="{{ retryCapture }}" style="width:100%;height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Retry</button>
+            <!--
+              // Component: SecondaryButton
+              // Type: Reusable
+              // Used in: Retry screen, Offline screen (first real use)
+              // Build priority: High
+              // Props: label: String, onClick: () -> Unit
+            -->
+            <button onClick="{{ goManualFromRetry }}" style="width:100%;height:48px;border-radius:999px;border:1px solid {{ t.outline }};background:transparent;color:{{ t.primary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Log manually instead</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===================== NO FOOD DETECTED (manual search) ===================== -->
+      <!--
+        // CANONICAL SOURCE: fullScreenState.js — do not edit here
+        // Component: ManualSearchScreen
+        // Type: Screen-specific (FullScreenState variant with a search field instead of buttons)
+        // Used in: Photo food logging flow, state 5 (no food detected) and Retry / low-confidence "Search instead"
+        // Build priority: Medium
+        // Props: query: String, onQueryChange, onCancel
+      -->
+      <sc-if value="{{ isNoFood }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;padding:24px 16px;gap:16px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:56px;height:56px;border-radius:19px;background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex-shrink:0;">
+              <div style="display:flex;gap:8px;"><div style="{{ mascotEyeLeftStyle }}"></div><div style="{{ mascotEyeRightStyle }}"></div></div>
+              <div style="{{ mascotMouthStyle }}"></div>
+            </div>
+            <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;line-height:20px;color:{{ t.onSurface }};">{{ noFoodMessage }}</p>
+          </div>
+          <!--
+            // Component: AppTextField
+            // Type: Reusable
+            // Used in: Manual search screen (first real use)
+            // Build priority: Medium
+            // Props: label, value, onValueChange, placeholder, autoFocus
+          -->
+          <input value="{{ searchQuery }}" onChange="{{ onSearchChange }}" placeholder="Search foods…" autoFocus="{{ true }}" style="height:48px;border-radius:12px;border:1px solid {{ t.outline }};background:transparent;padding:0 16px;font-family:'Inter',sans-serif;font-size:15px;color:{{ t.onSurface }};" />
+          <div style="flex:1;"></div>
+          <button onClick="{{ exitToShell }}" style="height:44px;border:none;background:transparent;color:{{ t.onSurfaceVariant }};font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer;align-self:center;">Cancel</button>
+        </div>
+      </sc-if>
+
+      <!-- ===================== OFFLINE ===================== -->
+      <!--
+        // CANONICAL SOURCE: fullScreenState.js — do not edit here
+        // Component: OfflineScreen
+        // Type: Screen-specific (FullScreenState: mascot + headline + body + 2 buttons)
+        // Used in: Photo food logging flow, state 6 (no connection)
+        // Build priority: Medium
+        // Props: onLogManually: () -> Unit, onTryAgain: () -> Unit
+      -->
+      <sc-if value="{{ isOffline }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;">
+          <div style="width:96px;height:96px;border-radius:34px;background:{{ t.primaryContainer }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
+            <div style="display:flex;gap:12px;"><div style="{{ mascotEyeLeftStyle }}"></div><div style="{{ mascotEyeRightStyle }}"></div></div>
+            <div style="{{ mascotMouthStyle }}"></div>
+          </div>
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:{{ t.onSurface }};text-align:center;">No connection</h2>
+          <p style="margin:0;font-family:'Inter',sans-serif;font-size:14px;color:{{ t.onSurfaceVariant }};text-align:center;">Photo logging needs a connection. You can still log manually — everything else works offline.</p>
+          <div style="display:flex;flex-direction:column;gap:8px;width:100%;margin-top:8px;">
+            <button onClick="{{ goManualFromOffline }}" style="width:100%;height:48px;border:none;border-radius:999px;background:{{ t.primary }};color:{{ t.onPrimary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Log manually</button>
+            <button onClick="{{ tryAgainOffline }}" style="width:100%;height:48px;border-radius:999px;border:1px solid {{ t.outline }};background:transparent;color:{{ t.primary }};font-family:'Poppins',sans-serif;font-size:16px;font-weight:600;cursor:pointer;">Try again</button>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <div style="height:24px;min-height:24px;display:flex;align-items:center;justify-content:center;background:{{ t.surface }};">
+      <div style="width:108px;height:4px;border-radius:2px;background:{{ t.onSurface }};opacity:0.35;"></div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snacks'];
+  SIM_MODES = [
+    { id: 'normal', label: 'Normal' },
+    { id: 'low', label: 'Low confidence' },
+    { id: 'retry', label: 'Retry (failed)' },
+    { id: 'nofood', label: 'No food' },
+    { id: 'offline', label: 'Offline' },
+  ];
+
+  state = {
+    themeMod: null, isDark: false,
+    flow: 'capture', simMode: 'normal', analyzingPhase: 0, confidence: 'high',
+    mealType: null,
+    foodName: 'Grilled chicken breast', portionAmount: 150, portionUnit: 'g',
+    calories: 210, proteinG: 32, carbsG: 2, fatG: 8,
+    searchQuery: '',
+  };
+
+  componentDidMount() {
+    import('./theme.js').then(mod => this.setState({ themeMod: mod }));
+    const h = new Date().getHours();
+    const mealType = h < 11 ? 'Breakfast' : h < 15 ? 'Lunch' : h < 21 ? 'Dinner' : 'Snacks';
+    this.setState({ mealType });
+  }
+
+  clearTimers() {
+    if (this._interval) clearInterval(this._interval);
+    if (this._timeout) clearTimeout(this._timeout);
+  }
+
+  goHome = () => { window.location.href = './Home.dc.html'; };
+
+  triggerShutter = () => {
+    if (this.state.simMode === 'offline') {
+      this.setState({ flow: 'offline' });
+      return;
+    }
+    this.setState({ flow: 'analyzing', analyzingPhase: 0 });
+    this.clearTimers();
+    this._interval = setInterval(() => this.setState(s => ({ analyzingPhase: (s.analyzingPhase + 1) % 3 })), 600);
+    this._timeout = setTimeout(() => {
+      clearInterval(this._interval);
+      const m = this.state.simMode;
+      if (m === 'retry') this.setState({ flow: 'retry' });
+      else if (m === 'nofood') this.setState({ flow: 'nofood' });
+      else this.setState({ flow: 'confirm', confidence: m === 'low' ? 'low' : 'high' });
+    }, 1800);
+  };
+
+  cancelAnalyzing = () => { this.clearTimers(); this.setState({ flow: 'capture' }); };
+  exitCapture = this.goHome;
+  exitToShell = this.goHome;
+
+  logMeal = this.goHome;
+  discardMeal = this.goHome;
+  retryCapture = () => this.setState({ flow: 'capture' });
+  goManualFromRetry = () => this.setState({ flow: 'nofood' });
+  goSearchInstead = () => this.setState({ flow: 'nofood' });
+  goManualFromOffline = () => this.setState({ flow: 'nofood' });
+  tryAgainOffline = () => this.setState({ flow: 'offline' });
+
+  resetFlow = () => this.setState({
+    flow: 'capture', simMode: 'normal',
+    foodName: 'Grilled chicken breast', portionAmount: 150, portionUnit: 'g',
+    calories: 210, proteinG: 32, carbsG: 2, fatG: 8, searchQuery: '',
+  });
+
+  toggleTheme = () => this.setState(s => ({ isDark: !s.isDark }));
+
+  renderVals() {
+    const s = this.state;
+    if (!s.themeMod) return { isCapture: true, isAnalyzing: false, isConfirm: false, isRetry: false, isNoFood: false, isOffline: false, t: {}, simOptions: [], mealTypesList: [], unitOptions: [], themeToggleLabel: '', themeToggleBg: '#fff', themeToggleColor: '#181D18', toggleTheme: () => {}, resetFlow: () => {} };
+    const t = s.themeMod.THEMES[s.isDark ? 'dark' : 'light'];
+
+    const eyeBase = `background:${t.onPrimaryContainer};border-radius:50%;`;
+    let eyeLeft = `${eyeBase}width:10px;height:10px;`;
+    let eyeRight = `${eyeBase}width:10px;height:10px;`;
+    let mouth = `background:${t.onPrimaryContainer};width:20px;height:3px;border-radius:2px;`;
+    const mascotState = s.flow === 'analyzing' ? 'thinking' : (s.flow === 'nofood' || s.flow === 'offline') ? 'sleepy' : 'idle';
+    if (mascotState === 'sleepy') {
+      eyeLeft = `${eyeBase}width:10px;height:3px;border-radius:2px;`;
+      eyeRight = `${eyeBase}width:10px;height:3px;border-radius:2px;`;
+      mouth = `background:${t.onPrimaryContainer};width:10px;height:3px;border-radius:2px;`;
+    } else if (mascotState === 'thinking') {
+      eyeRight = `${eyeBase}width:6px;height:6px;margin-top:2px;`;
+    }
+
+    const stepperBtnStyle = `width:36px;height:36px;border-radius:50%;border:none;background:${t.surfaceContainerHigh};color:${t.onSurface};font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;`;
+
+    const simOptions = this.SIM_MODES.map(m => ({
+      label: m.label,
+      onSelect: () => this.setState({ simMode: m.id }),
+      style: `height:32px;padding:0 12px;border-radius:999px;border:1px solid ${s.simMode === m.id ? t.primary : '#727970'};background:${s.simMode === m.id ? t.primaryContainer : 'transparent'};color:${s.simMode === m.id ? t.onPrimaryContainer : '#424940'};font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;`,
+    }));
+
+    const mealTypesList = this.MEAL_TYPES.map(mtLabel => {
+      const selected = s.mealType === mtLabel;
+      return {
+        label: mtLabel,
+        onSelect: () => this.setState({ mealType: mtLabel }),
+        style: `flex:1;height:36px;border-radius:999px;border:${selected ? `1.5px solid ${t.primary}` : `1px solid ${t.outlineVariant}`};background:${selected ? t.secondaryContainer : 'transparent'};color:${selected ? t.onSecondaryContainer : t.onSurfaceVariant};font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;`,
+      };
+    });
+
+    const unitOptions = ['g', 'oz', 'cup'].map(u => {
+      const selected = s.portionUnit === u;
+      return {
+        label: u,
+        onSelect: () => this.setState({ portionUnit: u }),
+        style: `padding:4px 10px;border:none;border-radius:999px;background:${selected ? t.secondaryContainer : 'transparent'};color:${selected ? t.onSecondaryContainer : t.onSurfaceVariant};font-family:'Inter',sans-serif;font-size:11px;cursor:pointer;`,
+      };
+    });
+
+    const analyzingPhrases = ['Looking at your photo…', 'Identifying the food…', 'Estimating portion…'];
+
+    return {
+      t, isDark: s.isDark,
+      themeToggleLabel: s.isDark ? 'Dark mode' : 'Light mode',
+      themeToggleBg: s.isDark ? '#2b2b2b' : '#ffffff',
+      themeToggleColor: s.isDark ? '#ffffff' : '#181D18',
+      toggleTheme: this.toggleTheme, resetFlow: this.resetFlow,
+      scrimColor: `rgba(0,0,0,0.32)`,
+      stopProp: e => e.stopPropagation(),
+
+      isCapture: s.flow === 'capture', isAnalyzing: s.flow === 'analyzing', isConfirm: s.flow === 'confirm',
+      isRetry: s.flow === 'retry', isNoFood: s.flow === 'nofood', isOffline: s.flow === 'offline',
+
+      simOptions,
+      mascotEyeLeftStyle: eyeLeft, mascotEyeRightStyle: eyeRight, mascotMouthStyle: mouth,
+
+      exitCapture: this.exitCapture, triggerShutter: this.triggerShutter,
+      cancelAnalyzing: this.cancelAnalyzing,
+      analyzingStatusText: analyzingPhrases[s.analyzingPhase],
+
+      isLowConfidence: s.confidence === 'low',
+      foodName: s.foodName, onFoodNameChange: e => this.setState({ foodName: e.target.value }),
+      portionAmount: s.portionAmount, unitOptions,
+      incPortion: () => this.setState(st => ({ portionAmount: st.portionAmount + 10 })),
+      decPortion: () => this.setState(st => ({ portionAmount: Math.max(0, st.portionAmount - 10) })),
+      calories: s.calories,
+      incCalories: () => this.setState(st => ({ calories: st.calories + 10 })),
+      decCalories: () => this.setState(st => ({ calories: Math.max(0, st.calories - 10) })),
+      proteinG: s.proteinG, carbsG: s.carbsG, fatG: s.fatG,
+      incProtein: () => this.setState(st => ({ proteinG: st.proteinG + 1 })),
+      decProtein: () => this.setState(st => ({ proteinG: Math.max(0, st.proteinG - 1) })),
+      incCarbs: () => this.setState(st => ({ carbsG: st.carbsG + 1 })),
+      decCarbs: () => this.setState(st => ({ carbsG: Math.max(0, st.carbsG - 1) })),
+      incFat: () => this.setState(st => ({ fatG: st.fatG + 1 })),
+      decFat: () => this.setState(st => ({ fatG: Math.max(0, st.fatG - 1) })),
+      mealTypesList, stepperBtnStyle,
+      logMeal: this.logMeal, discardMeal: this.discardMeal, goSearchInstead: this.goSearchInstead,
+
+      retryCapture: this.retryCapture, goManualFromRetry: this.goManualFromRetry,
+
+      noFoodMessage: "I couldn't spot a food item in that photo — let's search instead.",
+      searchQuery: s.searchQuery, onSearchChange: e => this.setState({ searchQuery: e.target.value }),
+      exitToShell: this.exitToShell,
+
+      goManualFromOffline: this.goManualFromOffline, tryAgainOffline: this.tryAgainOffline,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
