@@ -10,6 +10,6 @@ import ph.mart.healthapp.core.navigation.route.FoodRoute
 data object FoodCaptureStubRoute : NavKey
 
 fun EntryProviderScope<NavKey>.foodEntries(onCloseCaptureStub: () -> Unit) {
-    entry<FoodRoute> { FoodPlaceholderScreen() }
+    entry<FoodRoute> { FoodScreen() }
     entry<FoodCaptureStubRoute> { FoodCaptureStubScreen(onClose = onCloseCaptureStub) }
 }

@@ -7,6 +7,8 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.outlined.Home
@@ -25,4 +27,6 @@ object AppIcons {
     val Add: ImageVector = Icons.Filled.Add
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
+    val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
+    val ChevronRight: ImageVector = Icons.Filled.KeyboardArrowRight
 }

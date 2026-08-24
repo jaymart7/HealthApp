@@ -11,16 +11,6 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** Stands in for the real food diary until Phase 4. */
-@Composable
-fun FoodPlaceholderScreen() {
-    FullScreenState(
-        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-        heading = "Food",
-        body = "The real diary arrives in Phase 4.",
-    )
-}
-
 /** Stands in for the real capture flow (Phase 5) — demonstrates the FAB's "Log food" action
  * routing to a real destination, per BUILD_PLAN's Phase 2c. */
 @Composable
@@ -33,16 +23,6 @@ fun FoodCaptureStubScreen(onClose: () -> Unit) {
             SecondaryButton(label = "Back", onClick = onClose)
         },
     )
-}
-
-@PreviewLightDark
-@Composable
-private fun FoodPlaceholderScreenPreview() {
-    AppTheme {
-        Surface(color = MaterialTheme.colorScheme.surface) {
-            FoodPlaceholderScreen()
-        }
-    }
 }
 
 @PreviewLightDark
