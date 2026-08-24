@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.sqlite.bundled)
+    api(libs.kotlinx.coroutines.core)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
@@ -36,4 +37,6 @@ dependencies {
     implementation(libs.firebase.ai)
 
     implementation(libs.androidx.core.ktx)
+
+    testImplementation(libs.junit)
 }

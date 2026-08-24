@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.designsystem.icon
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
@@ -23,4 +24,5 @@ object AppIcons {
 
     val Add: ImageVector = Icons.Filled.Add
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
+    val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
 }

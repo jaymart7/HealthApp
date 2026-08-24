@@ -15,6 +15,8 @@ kotlinxSerializationCore = "1.9.0"
 material3AdaptiveNav3 = "1.3.0"
 navigationEvent = "1.1.2"
 koinBom = "4.1.1"
+orbitMvi = "12.0.0"
+kotlinxCoroutines = "1.11.0"
 room = "3.0.1"
 ksp = "2.3.11"
 sqlite = "2.7.0"
@@ -52,6 +54,11 @@ androidx-navigationevent-compose = { module = "androidx.navigationevent:navigati
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koinBom" }
 koin-android = { module = "io.insert-koin:koin-android" }
 koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose" }
+
+orbit-core = { module = "org.orbit-mvi:orbit-core", version.ref = "orbitMvi" }
+orbit-viewmodel = { module = "org.orbit-mvi:orbit-viewmodel", version.ref = "orbitMvi" }
+orbit-compose = { module = "org.orbit-mvi:orbit-compose", version.ref = "orbitMvi" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
 androidx-room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
 androidx-room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }

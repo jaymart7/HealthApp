@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.ui.AppScaffold
+import ph.mart.healthapp.ui.AppRoot
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AppTheme {
-                AppScaffold()
+                AppRoot()
             }
         }
     }

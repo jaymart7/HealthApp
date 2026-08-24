@@ -37,16 +37,25 @@ fun MacroInputGroup(
     onCarbsChange: (Int) -> Unit,
     onFatChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    step: Int = 1,
+    showPercentages: Boolean = false,
 ) {
+    val proteinKcal = proteinG * 4
+    val carbsKcal = carbsG * 4
+    val fatKcal = fatG * 9
+    val totalKcal = (proteinKcal + carbsKcal + fatKcal).coerceAtLeast(1)
+    fun label(base: String, kcal: Int) =
+        if (showPercentages) "$base · ${kcal * 100 / totalKcal}%" else base
+
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        MacroRow("Protein", proteinG, MaterialTheme.colorScheme.primary, onProteinChange)
-        MacroRow("Carbs", carbsG, MaterialTheme.colorScheme.tertiary, onCarbsChange)
-        MacroRow("Fat", fatG, MaterialTheme.colorScheme.secondary, onFatChange)
+        MacroRow(label("Protein", proteinKcal), proteinG, MaterialTheme.colorScheme.primary, step, onProteinChange)
+        MacroRow(label("Carbs", carbsKcal), carbsG, MaterialTheme.colorScheme.tertiary, step, onCarbsChange)
+        MacroRow(label("Fat", fatKcal), fatG, MaterialTheme.colorScheme.secondary, step, onFatChange)
     }
 }
 
 @Composable
-private fun MacroRow(label: String, grams: Int, dotColor: Color, onChange: (Int) -> Unit) {
+private fun MacroRow(label: String, grams: Int, dotColor: Color, step: Int, onChange: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -75,8 +84,8 @@ private fun MacroRow(label: String, grams: Int, dotColor: Color, onChange: (Int)
             style = MaterialTheme.typography.titleSmall.tabularNums,
             color = MaterialTheme.colorScheme.onSurface,
         )
-        StepperButton(symbol = "−", onClick = { onChange(grams - 1) })
-        StepperButton(symbol = "+", onClick = { onChange(grams + 1) })
+        StepperButton(symbol = "−", onClick = { onChange((grams - step).coerceAtLeast(0)) })
+        StepperButton(symbol = "+", onClick = { onChange(grams + step) })
     }
 }
 
@@ -92,6 +101,26 @@ private fun MacroInputGroupPreview() {
                 onProteinChange = {},
                 onCarbsChange = {},
                 onFatChange = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun MacroInputGroupWithPercentagesPreview() {
+    AppTheme {
+        Surface {
+            MacroInputGroup(
+                proteinG = 135,
+                carbsG = 179,
+                fatG = 60,
+                onProteinChange = {},
+                onCarbsChange = {},
+                onFatChange = {},
+                step = 5,
+                showPercentages = true,
                 modifier = Modifier.padding(16.dp),
             )
         }

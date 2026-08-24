@@ -1,0 +1,33 @@
+package ph.mart.healthapp.core.data.profile
+
+import kotlinx.coroutines.flow.Flow
+
+enum class Sex { Male, Female }
+enum class ActivityLevel { Sedentary, Light, Moderate, Very }
+enum class Goal { Lose, Maintain, Build }
+enum class DietaryPreference { None, Vegetarian, Vegan, Other }
+enum class UnitSystem { Metric, Imperial }
+
+/** The user's onboarding profile — the single source of truth for Mifflin–St Jeor inputs across
+ * Home, Progress, and Profile. [calorieOverrideKcal]/[proteinOverrideG]/[carbsOverrideG]/
+ * [fatOverrideG] are explicit manual adjustments made on the Confirm step; see [dailyTargets]. */
+data class Profile(
+    val sex: Sex,
+    val age: Int,
+    val heightCm: Double,
+    val weightKg: Double,
+    val activityLevel: ActivityLevel,
+    val goal: Goal,
+    val targetWeightKg: Double? = null,
+    val dietaryPreference: DietaryPreference? = null,
+    val preferredUnit: UnitSystem = UnitSystem.Metric,
+    val calorieOverrideKcal: Int? = null,
+    val proteinOverrideG: Int? = null,
+    val carbsOverrideG: Int? = null,
+    val fatOverrideG: Int? = null,
+)
+
+interface ProfileRepository {
+    fun observeProfile(): Flow<Profile?>
+    suspend fun saveProfile(profile: Profile)
+}
