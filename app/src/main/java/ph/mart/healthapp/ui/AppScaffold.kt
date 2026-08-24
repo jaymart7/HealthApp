@@ -26,7 +26,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.icon.DualStateIcon
 import ph.mart.healthapp.core.navigation.route.TopLevelBackStack
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
-import ph.mart.healthapp.feature.food.ui.FoodCaptureStubRoute
+import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.profileEntries
@@ -59,7 +59,7 @@ fun AppScaffold(modifier: Modifier = Modifier) {
                     onBack = { topLevelBackStack.removeLast() },
                     entryProvider = entryProvider {
                         homeEntries()
-                        foodEntries(onCloseCaptureStub = { topLevelBackStack.removeLast() })
+                        foodEntries(onExitCapture = { topLevelBackStack.removeLast() })
                         progressEntries(onCloseStub = { topLevelBackStack.removeLast() })
                         profileEntries()
                     },
@@ -85,7 +85,7 @@ fun AppScaffold(modifier: Modifier = Modifier) {
                     onDismiss = { sheetOpen = false },
                     onLogFood = {
                         sheetOpen = false
-                        topLevelBackStack.add(FoodCaptureStubRoute)
+                        topLevelBackStack.add(FoodCaptureRoute)
                     },
                     onLogWeight = {
                         sheetOpen = false

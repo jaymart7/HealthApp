@@ -5,11 +5,11 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.FoodRoute
 
-/** Stub target for the FAB's "Log food" action — real capture flow arrives in Phase 5. */
+/** The FAB's "Log food" destination — the real 6(+1)-state photo-logging flow (Phase 5). */
 @Serializable
-data object FoodCaptureStubRoute : NavKey
+data object FoodCaptureRoute : NavKey
 
-fun EntryProviderScope<NavKey>.foodEntries(onCloseCaptureStub: () -> Unit) {
+fun EntryProviderScope<NavKey>.foodEntries(onExitCapture: () -> Unit) {
     entry<FoodRoute> { FoodScreen() }
-    entry<FoodCaptureStubRoute> { FoodCaptureStubScreen(onClose = onCloseCaptureStub) }
+    entry<FoodCaptureRoute> { PhotoCaptureScreen(onExit = onExitCapture) }
 }
