@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.designsystem.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont
@@ -46,4 +47,9 @@ val AppTypography = Typography(
     labelMedium = baseline.labelMedium.copy(fontFamily = bodyFontFamily),
     labelSmall = baseline.labelSmall.copy(fontFamily = bodyFontFamily),
 )
+
+// Numeric values (calories, weight, macros) use tabular figures so digits
+// don't jitter on update — apply to any type-scale style used for a number.
+val TextStyle.tabularNums: TextStyle
+    get() = copy(fontFeatureSettings = "tnum")
 
