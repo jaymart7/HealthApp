@@ -12,6 +12,9 @@ val databaseModule = module {
         Room.databaseBuilder(androidContext(), AppDatabase::class.java, "healthapp.db")
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
+            // ponytail: no shipped users yet, no Migration objects exist to extend — destructive
+            // fallback is fine pre-release. Replace with real Migrations before shipping v2+.
+            .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 }

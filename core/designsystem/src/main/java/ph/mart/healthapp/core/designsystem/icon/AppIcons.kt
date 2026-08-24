@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -31,6 +32,7 @@ object AppIcons {
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
+    val ChevronLeft: ImageVector = Icons.Filled.KeyboardArrowLeft
     val ChevronRight: ImageVector = Icons.Filled.KeyboardArrowRight
     val Close: ImageVector = Icons.Filled.Close
     val Flash: ImageVector = Icons.Filled.FlashOn

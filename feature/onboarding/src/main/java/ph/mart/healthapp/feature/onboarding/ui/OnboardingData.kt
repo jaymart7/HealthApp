@@ -7,11 +7,6 @@ import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 
-const val CM_PER_IN = 2.54
-const val KG_PER_LB = 0.453592
-
-fun round1(value: Double): Double = kotlin.math.round(value * 10) / 10
-
 data class GoalOption(val goal: Goal, val title: String, val subtitle: String)
 data class ActivityOption(val level: ActivityLevel, val title: String, val subtitle: String)
 data class DietOption(val preference: DietaryPreference, val title: String)
