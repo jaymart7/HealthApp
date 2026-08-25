@@ -5,6 +5,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOn
@@ -37,4 +39,6 @@ object AppIcons {
     val Close: ImageVector = Icons.Filled.Close
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
+    val TrendDown: ImageVector = Icons.Filled.ArrowDownward
+    val TrendUp: ImageVector = Icons.Filled.ArrowUpward
 }

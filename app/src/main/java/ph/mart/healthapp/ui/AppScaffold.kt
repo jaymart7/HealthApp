@@ -63,7 +63,7 @@ fun AppScaffold(modifier: Modifier = Modifier) {
                     backStack = topLevelBackStack.backStack,
                     onBack = { topLevelBackStack.removeLast() },
                     entryProvider = entryProvider {
-                        homeEntries()
+                        homeEntries(onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
                         foodEntries(onExitCapture = { topLevelBackStack.removeLast() })
                         progressEntries()
                         profileEntries()
