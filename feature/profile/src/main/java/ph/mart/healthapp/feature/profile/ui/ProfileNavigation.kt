@@ -5,5 +5,5 @@ import androidx.navigation3.runtime.NavKey
 import ph.mart.healthapp.core.navigation.route.ProfileRoute
 
 fun EntryProviderScope<NavKey>.profileEntries() {
-    entry<ProfileRoute> { ProfilePlaceholderScreen() }
+    entry<ProfileRoute> { ProfileScreen() }
 }

@@ -21,4 +21,7 @@ internal data class ProfileEntity(
     val proteinOverrideG: Int?,
     val carbsOverrideG: Int?,
     val fatOverrideG: Int?,
+    val mealRemindersOn: Boolean,
+    val weighInReminderOn: Boolean,
+    val photoReminderOn: Boolean,
 )

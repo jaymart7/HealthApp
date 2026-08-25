@@ -21,7 +21,7 @@ import ph.mart.healthapp.core.data.progress.local.WeightEntryEntity
         MeasurementEntryEntity::class,
         ProgressPhotoEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {

@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /** [daysSinceLastPhoto] null means no photo has ever been taken — the card prompts for a first
@@ -27,7 +28,7 @@ fun ProgressPhotoReminderCard(
     onTakePhoto: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    HomeCard(modifier = modifier) {
+    AppCard(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),

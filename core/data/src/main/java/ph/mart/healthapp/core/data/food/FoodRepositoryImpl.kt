@@ -12,11 +12,19 @@ internal class FoodRepositoryImpl(private val dao: FoodEntryDao) : FoodRepositor
         dao.observeForDate(todayEpochDay()).map { entities -> entities.map { it.toFoodEntry() } }
 
     override suspend fun addEntry(entry: FoodEntry) {
-        dao.insert(entry.toEntity(date = todayEpochDay(), loggedAt = System.currentTimeMillis()))
+        // A dated entry only ever arrives from an import; everything logged in-app is "today".
+        val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
+        dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
     }
 
     override suspend fun deleteEntry(id: Long) {
         dao.softDelete(id)
+    }
+
+    override suspend fun allEntries(): List<FoodEntry> = dao.allActive().map { it.toFoodEntry() }
+
+    override suspend fun deleteAllEntries() {
+        dao.softDeleteAll()
     }
 }
 
@@ -36,6 +44,7 @@ private fun todayEpochDay(): Long {
 private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
     id = id,
     name = name,
+    dateEpochDay = date,
     mealType = MealType.valueOf(mealType),
     portionAmount = portionAmount,
     portionUnit = portionUnit,

@@ -4,9 +4,12 @@ import kotlinx.coroutines.flow.Flow
 
 enum class MealType { Breakfast, Lunch, Dinner, Snacks }
 
+/** [dateEpochDay] is 0 for a not-yet-stored entry — the repository stamps today on insert.
+ * A non-zero value is only ever set by a read, or by an import restoring a dated entry. */
 data class FoodEntry(
     val id: Long = 0,
     val name: String,
+    val dateEpochDay: Long = 0,
     val mealType: MealType,
     val portionAmount: Double,
     val portionUnit: String,
@@ -33,4 +36,10 @@ interface FoodRepository {
     fun observeTodayEntries(): Flow<List<FoodEntry>>
     suspend fun addEntry(entry: FoodEntry)
     suspend fun deleteEntry(id: Long)
+
+    /** Full history, oldest first — for data export. The diary itself never needs this. */
+    suspend fun allEntries(): List<FoodEntry>
+
+    /** Soft-deletes every entry, for import's replace-in-full semantics. */
+    suspend fun deleteAllEntries()
 }

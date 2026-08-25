@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
+import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -29,7 +30,7 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
  */
 @Composable
 fun MacroSummaryCard(consumed: DiaryTotals, targets: DailyTargets, modifier: Modifier = Modifier) {
-    HomeCard(modifier = modifier) {
+    AppCard(modifier = modifier) {
         Text(
             text = "Macros",
             style = MaterialTheme.typography.labelMedium,

@@ -28,6 +28,9 @@ private fun ProfileEntity.toProfile() = Profile(
     proteinOverrideG = proteinOverrideG,
     carbsOverrideG = carbsOverrideG,
     fatOverrideG = fatOverrideG,
+    mealRemindersOn = mealRemindersOn,
+    weighInReminderOn = weighInReminderOn,
+    photoReminderOn = photoReminderOn,
 )
 
 private fun Profile.toEntity() = ProfileEntity(
@@ -44,4 +47,7 @@ private fun Profile.toEntity() = ProfileEntity(
     proteinOverrideG = proteinOverrideG,
     carbsOverrideG = carbsOverrideG,
     fatOverrideG = fatOverrideG,
+    mealRemindersOn = mealRemindersOn,
+    weighInReminderOn = weighInReminderOn,
+    photoReminderOn = photoReminderOn,
 )

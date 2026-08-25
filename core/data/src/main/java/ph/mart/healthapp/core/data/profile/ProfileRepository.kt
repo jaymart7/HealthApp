@@ -25,6 +25,9 @@ data class Profile(
     val proteinOverrideG: Int? = null,
     val carbsOverrideG: Int? = null,
     val fatOverrideG: Int? = null,
+    val mealRemindersOn: Boolean = true,
+    val weighInReminderOn: Boolean = true,
+    val photoReminderOn: Boolean = false,
 )
 
 interface ProfileRepository {

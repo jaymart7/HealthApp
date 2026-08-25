@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AIChip
 import ph.mart.healthapp.core.designsystem.component.AIChipVariant
+import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -25,7 +26,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * a stored string. */
 @Composable
 fun AIInsightCard(text: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    HomeCard(modifier = modifier, color = MaterialTheme.colorScheme.tertiaryContainer) {
+    AppCard(modifier = modifier, color = MaterialTheme.colorScheme.tertiaryContainer) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
