@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,7 +45,7 @@ import ph.mart.healthapp.feature.profile.ui.components.ProfileUnitsSection
 private const val EXPORT_FILE_NAME = "healthtrack-export.json"
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = koinViewModel()) {
+fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProfileViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -108,6 +109,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = koinViewModel()) {
         onToggleReminder = viewModel::setReminder,
         onExport = viewModel::buildExport,
         onImport = { importLauncher.launch(arrayOf("application/json")) },
+        scrollState = scrollState,
     )
 }
 
@@ -120,6 +122,7 @@ private fun ProfileContent(
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         // A profile always exists by the time this tab is reachable (AppRoot gates on it) — this
@@ -129,7 +132,7 @@ private fun ProfileContent(
             verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
             Text(

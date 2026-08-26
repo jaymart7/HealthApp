@@ -1,8 +1,10 @@
 package ph.mart.healthapp.feature.progress.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,14 +40,14 @@ import ph.mart.healthapp.feature.progress.ui.components.WeightProgressChart
 import ph.mart.healthapp.feature.progress.ui.components.WeightStatRow
 
 @Composable
-fun ProgressScreen(viewModel: ProgressViewModel = koinViewModel()) {
+fun ProgressScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProgressViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val state = rememberProgressScreenState()
-    ProgressContent(uiState = uiState, state = state)
+    ProgressContent(uiState = uiState, state = state, scrollState = scrollState)
 }
 
 @Composable
-private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState) {
+private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState, scrollState: ScrollState = rememberScrollState()) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 16.dp)) {
@@ -54,12 +56,13 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
                     onSelect = { index -> state.tab = ProgressTab.entries[index] },
                 )
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 16.dp)) {
-                    when (state.tab) {
-                        ProgressTab.Weight -> WeightTabContent(uiState, state)
-                        ProgressTab.Photos -> PhotosTabContent(uiState, state)
-                        ProgressTab.Measurements -> MeasurementsTabContent(uiState, state)
-                    }
+                // Photos scrolls itself (LazyVerticalGrid) — nesting it in the verticalScroll
+                // Column measures it with infinite height and throws. The other two tabs are
+                // plain Columns and need the shared scroll.
+                when (state.tab) {
+                    ProgressTab.Photos -> PhotosTabContent(uiState, state)
+                    ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
+                    ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
                 }
             }
 
@@ -84,6 +87,14 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
             }
         }
     }
+}
+
+@Composable
+private fun ScrollingTab(scrollState: ScrollState, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(top = 16.dp),
+        content = content,
+    )
 }
 
 @Composable
@@ -136,7 +147,7 @@ private fun PhotosTabContent(uiState: ProgressUiState, state: ProgressScreenStat
         photos = uiState.photos,
         selectedIds = state.selectedPhotoIds,
         onToggleSelect = state::togglePhotoSelection,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
     )
 }
 

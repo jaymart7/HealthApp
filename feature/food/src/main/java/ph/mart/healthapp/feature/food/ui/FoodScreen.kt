@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.food.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,14 +42,14 @@ import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 
 @Composable
-fun FoodScreen(viewModel: FoodViewModel = koinViewModel()) {
+fun FoodScreen(scrollState: ScrollState = rememberScrollState(), viewModel: FoodViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val state = rememberFoodScreenState()
-    FoodContent(uiState = uiState, state = state, onEvent = viewModel::handleEvent)
+    FoodContent(uiState = uiState, state = state, scrollState = scrollState, onEvent = viewModel::handleEvent)
 }
 
 @Composable
-private fun FoodContent(uiState: FoodUiState, state: FoodScreenState, onEvent: (FoodEvent) -> Unit) {
+private fun FoodContent(uiState: FoodUiState, state: FoodScreenState, onEvent: (FoodEvent) -> Unit, scrollState: ScrollState = rememberScrollState()) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -70,7 +71,7 @@ private fun FoodContent(uiState: FoodUiState, state: FoodScreenState, onEvent: (
                     )
                 }
 
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
                     MealType.entries.forEach { mealType ->
                         val mealEntries = uiState.entries.filter { it.mealType == mealType }
                         val visibleEntries = mealEntries.filter {

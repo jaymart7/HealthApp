@@ -346,8 +346,7 @@ than filling the gap here.
 Track as separate tickets/issues, not folded into any phase above:
 
 - Barcode scanning
-- FAB scroll-collapse behavior
-- Photo comparison draggable slider
-- Tap-active-tab-to-scroll-to-top
-- Medium/high-contrast theme wiring
 - Final mascot illustration (replacing the geometric placeholder)
+
+Cleared in Phase 9: FAB scroll-collapse, tap-active-tab-to-scroll-to-top,
+photo comparison draggable slider, medium/high-contrast theme wiring.

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Restaurant
@@ -37,6 +38,7 @@ object AppIcons {
     val ChevronLeft: ImageVector = Icons.Filled.KeyboardArrowLeft
     val ChevronRight: ImageVector = Icons.Filled.KeyboardArrowRight
     val Close: ImageVector = Icons.Filled.Close
+    val Compare: ImageVector = Icons.Filled.SwapHoriz
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
     val TrendDown: ImageVector = Icons.Filled.ArrowDownward
