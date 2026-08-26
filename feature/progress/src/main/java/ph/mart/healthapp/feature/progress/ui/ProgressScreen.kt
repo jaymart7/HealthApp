@@ -27,6 +27,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.inRange
 import ph.mart.healthapp.core.data.progress.withMovingAverage
+import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -51,6 +52,12 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 16.dp)) {
+                Text(
+                    text = "Progress",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
                 SegmentedToggle(
                     options = ProgressTab.entries.map { it.name },
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
@@ -92,7 +99,10 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
 @Composable
 private fun ScrollingTab(scrollState: ScrollState, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(top = 16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(top = 16.dp, bottom = FabBottomClearance),
         content = content,
     )
 }

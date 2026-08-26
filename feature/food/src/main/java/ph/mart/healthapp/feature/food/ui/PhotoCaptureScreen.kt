@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -109,7 +110,16 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
     )
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize()) {
+        // AppScaffold hands this route the whole window. Capture/Analyzing are full-bleed camera
+        // surfaces that inset their own chrome; the other five states are ordinary content.
+        // safeDrawing unions the IME, so Confirmation's editable rows and ManualSearch's field
+        // get keyboard avoidance from this same line.
+        val insets = if (state.flow == CaptureFlow.Capture || state.flow == CaptureFlow.Analyzing) {
+            Modifier
+        } else {
+            Modifier.safeDrawingPadding()
+        }
+        Box(modifier = Modifier.fillMaxSize().then(insets)) {
             when (state.flow) {
                 CaptureFlow.Capture -> if (hasCameraPermission) {
                     CaptureScreen(

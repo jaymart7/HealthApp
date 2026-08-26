@@ -26,6 +26,7 @@ import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -70,7 +71,7 @@ private fun HomeContent(uiState: HomeUiState, state: HomeScreenState, onAddPhoto
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FabBottomClearance),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             MascotGreetingCard(greeting = greeting)

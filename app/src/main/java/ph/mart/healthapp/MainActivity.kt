@@ -1,5 +1,6 @@
 package ph.mart.healthapp
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // BottomNavBar paints its own surfaceContainer all the way to the screen edge; without
+        // this the system lays a translucent scrim over it in 3-button nav.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.isNavigationBarContrastEnforced = false
+        }
         setContent {
             AppTheme {
                 AppRoot()

@@ -35,6 +35,7 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
@@ -133,7 +134,7 @@ private fun ProfileContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FabBottomClearance),
         ) {
             Text(
                 text = "Profile",

@@ -2,9 +2,11 @@ package ph.mart.healthapp.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -51,9 +53,10 @@ private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
 private enum class ActiveSheet { None, QuickAction, LogWeight, AddPhoto }
 
 /**
- * Bottom nav (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
- * depends on every `:feature:*` module and `:core:navigation` at once, so it's the only place
- * real navigation wiring can live — see the Phase 2 plan's "flagged architectural decision."
+ * Bottom nav (4 tabs) + a FAB floating above it + quick-action sheet. This is the only place in
+ * the app that depends on every `:feature:*` module and `:core:navigation` at once, so it's the
+ * only place real navigation wiring can live — see the Phase 2 plan's "flagged architectural
+ * decision."
  */
 @Composable
 fun AppScaffold(modifier: Modifier = Modifier) {
@@ -75,45 +78,61 @@ fun AppScaffold(modifier: Modifier = Modifier) {
         else -> homeScroll
     }
 
+    // The capture flow is a full-bleed camera surface: it draws under both system bars and shows
+    // neither nav bar nor FAB (appScaffold.js). Every other route is a tab and stops at the bars.
+    val isFullBleed = topLevelBackStack.backStack.last() == FoodCaptureRoute
+
     Surface(color = MaterialTheme.colorScheme.background, modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                NavDisplay(
-                    backStack = topLevelBackStack.backStack,
-                    onBack = { topLevelBackStack.removeLast() },
-                    entryProvider = entryProvider {
-                        homeEntries(scrollState = homeScroll, onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
-                        foodEntries(scrollState = foodScroll, onExitCapture = { topLevelBackStack.removeLast() })
-                        progressEntries(scrollState = progressScroll)
-                        profileEntries(scrollState = profileScroll)
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-                BottomNavBar(
-                    items = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) },
-                    selectedIndex = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey },
-                    onSelect = { index ->
-                        val destination = TopLevelDestination.entries[index]
-                        if (destination.route != topLevelBackStack.topLevelKey) {
-                            topLevelBackStack.addTopLevel(destination.route)
-                        } else if (topLevelBackStack.backStack.last() == destination.route) {
-                            // Re-tapping the active tab scrolls it to the top — but only when its
-                            // root is what's actually showing. FoodCaptureRoute can sit on top of
-                            // the Food tab, and scrolling a hidden screen would be a no-op at best.
-                            scope.launch { currentScroll.animateScrollTo(0) }
-                        }
-                    },
-                )
+                // The FAB shares this Box with the screen so it floats over content but stops at
+                // the top of the nav bar — the nav bar's own tab targets stay uncovered.
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        // Status bars only — the bottom edge already belongs to BottomNavBar's
+                        // navigationBarsPadding(), and safeDrawing here would double it up.
+                        .then(if (isFullBleed) Modifier else Modifier.windowInsetsPadding(WindowInsets.statusBars)),
+                ) {
+                    NavDisplay(
+                        backStack = topLevelBackStack.backStack,
+                        onBack = { topLevelBackStack.removeLast() },
+                        entryProvider = entryProvider {
+                            homeEntries(scrollState = homeScroll, onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
+                            foodEntries(scrollState = foodScroll, onExitCapture = { topLevelBackStack.removeLast() })
+                            progressEntries(scrollState = progressScroll)
+                            profileEntries(scrollState = profileScroll)
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                    if (!isFullBleed) {
+                        DockedFab(
+                            onClick = { activeSheet = ActiveSheet.QuickAction },
+                            expanded = rememberFabExpanded(currentScroll),
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(end = 16.dp, bottom = 16.dp),
+                        )
+                    }
+                }
+                if (!isFullBleed) {
+                    BottomNavBar(
+                        items = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) },
+                        selectedIndex = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey },
+                        onSelect = { index ->
+                            val destination = TopLevelDestination.entries[index]
+                            if (destination.route != topLevelBackStack.topLevelKey) {
+                                topLevelBackStack.addTopLevel(destination.route)
+                            } else if (topLevelBackStack.backStack.last() == destination.route) {
+                                // Re-tapping the active tab scrolls it to the top — but only when
+                                // its root is what's actually showing; scrolling a hidden screen
+                                // would be a no-op at best.
+                                scope.launch { currentScroll.animateScrollTo(0) }
+                            }
+                        },
+                    )
+                }
             }
-
-            DockedFab(
-                onClick = { activeSheet = ActiveSheet.QuickAction },
-                expanded = rememberFabExpanded(currentScroll),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(end = 16.dp, bottom = 48.dp),
-            )
 
             when (activeSheet) {
                 ActiveSheet.QuickAction -> QuickActionSheet(
