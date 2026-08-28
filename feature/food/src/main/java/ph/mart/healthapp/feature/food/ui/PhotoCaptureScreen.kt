@@ -9,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -70,13 +71,17 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
 
     var hasCameraPermission by remember {
         mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED,
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED,
         )
     }
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        hasCameraPermission = granted
-        state.flow = if (granted) CaptureFlow.Capture else CaptureFlow.PermissionDenied
-    }
+    val permissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            hasCameraPermission = granted
+            state.flow = if (granted) CaptureFlow.Capture else CaptureFlow.PermissionDenied
+        }
     LaunchedEffect(Unit) {
         if (!hasCameraPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
@@ -88,6 +93,7 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                 RecognitionResult.NoFoodDetected -> state.flow = CaptureFlow.NoFood
                 RecognitionResult.Failed -> state.flow = CaptureFlow.Retry
             }
+
             PhotoCaptureSideEffect.MealLogged -> onExit()
         }
     }
@@ -102,7 +108,10 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     viewModel.handleEvent(PhotoCaptureEvent.OnCancelAnalysis)
                     state.flow = CaptureFlow.Capture
                 }
-                CaptureFlow.Confirmation -> if (state.isDirty) state.showDiscardConfirm = true else state.flow = CaptureFlow.Capture
+
+                CaptureFlow.Confirmation -> if (state.isDirty) state.showDiscardConfirm =
+                    true else state.flow = CaptureFlow.Capture
+
                 CaptureFlow.Retry, CaptureFlow.NoFood, CaptureFlow.Offline, CaptureFlow.PermissionDenied -> onExit()
             }
         },
@@ -114,7 +123,14 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                 CaptureFlow.Capture -> if (hasCameraPermission) {
                     CaptureScreen(
                         onClose = onExit,
-                        onCapture = { onCaptureRequested(viewModel, scope, cameraController, state) },
+                        onCapture = {
+                            onCaptureRequested(
+                                viewModel,
+                                scope,
+                                cameraController,
+                                state
+                            )
+                        },
                         cameraPreview = { cameraController.Preview(modifier = Modifier.fillMaxSize()) },
                     )
                 }
@@ -147,8 +163,14 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     heading = "We couldn't analyze that photo",
                     body = "Try taking the photo again with better lighting, or log the meal manually.",
                     actions = {
-                        PrimaryButton(label = "Retry", onClick = { state.flow = CaptureFlow.Capture })
-                        SecondaryButton(label = "Log manually instead", onClick = { state.flow = CaptureFlow.NoFood })
+                        PrimaryButton(
+                            label = "Retry",
+                            onClick = { state.flow = CaptureFlow.Capture },
+                            modifier = Modifier.fillMaxWidth())
+                        SecondaryButton(
+                            label = "Log manually instead",
+                            onClick = { state.flow = CaptureFlow.NoFood },
+                            modifier = Modifier.fillMaxWidth())
                     },
                 )
 
@@ -163,10 +185,16 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     heading = "No connection",
                     body = "Photo logging needs a connection. You can still log manually — everything else works offline.",
                     actions = {
-                        PrimaryButton(label = "Log manually", onClick = { state.flow = CaptureFlow.NoFood })
+                        PrimaryButton(
+                            label = "Log manually",
+                            onClick = { state.flow = CaptureFlow.NoFood },
+                            modifier = Modifier.fillMaxWidth())
                         SecondaryButton(
                             label = "Try again",
-                            onClick = { if (viewModel.isOnline()) state.flow = CaptureFlow.Capture },
+                            onClick = {
+                                if (viewModel.isOnline()) state.flow = CaptureFlow.Capture
+                            },
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     },
                 )
@@ -176,8 +204,11 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     heading = "Camera access needed",
                     body = "Grant camera access to log meals from a photo, or go back and log manually.",
                     actions = {
-                        PrimaryButton(label = "Grant access", onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) })
-                        SecondaryButton(label = "Back", onClick = onExit)
+                        PrimaryButton(
+                            label = "Grant access",
+                            onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                            modifier = Modifier.fillMaxWidth())
+                        SecondaryButton(label = "Back", onClick = onExit, modifier = Modifier.fillMaxWidth())
                     },
                 )
             }
@@ -220,7 +251,10 @@ private fun RetryPhotoIcon(photo: Bitmap?) {
         bitmap = photo.asImageBitmap(),
         contentDescription = null,
         contentScale = ContentScale.Crop,
-        modifier = Modifier.size(160.dp).clip(RoundedCornerShape(16.dp)).alpha(0.6f),
+        modifier = Modifier
+            .size(160.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .alpha(0.6f),
     )
 }
 
@@ -239,7 +273,9 @@ private fun DiscardConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
 @Composable
 private fun DiscardConfirmDialogPreview() {
     AppTheme {
-        Box(modifier = Modifier.background(Color.Black.copy(alpha = 0.32f)).padding(24.dp)) {
+        Box(modifier = Modifier
+            .background(Color.Black.copy(alpha = 0.32f))
+            .padding(24.dp)) {
             DiscardConfirmDialog(onConfirm = {}, onDismiss = {})
         }
     }

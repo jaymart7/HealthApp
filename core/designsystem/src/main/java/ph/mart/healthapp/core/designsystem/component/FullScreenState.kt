@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -52,7 +53,11 @@ fun FullScreenState(
             )
         }
         if (actions != null) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp), content = actions)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = actions,
+            )
         }
     }
 }
@@ -67,8 +72,8 @@ private fun FullScreenStatePreview() {
                 heading = "No progress photos yet",
                 body = "Add your first photo to start tracking changes over time.",
                 actions = {
-                    PrimaryButton(label = "Add photo", onClick = {})
-                    SecondaryButton(label = "Not now", onClick = {})
+                    PrimaryButton(label = "Add photo", onClick = {}, modifier = Modifier.fillMaxWidth())
+                    SecondaryButton(label = "Not now", onClick = {}, modifier = Modifier.fillMaxWidth())
                 },
             )
         }
