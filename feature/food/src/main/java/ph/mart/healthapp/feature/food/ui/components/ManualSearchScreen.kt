@@ -17,9 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.WindowInsetsRulers
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -29,11 +30,14 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * mascot + message inline in a leading row, a search field below, Cancel pinned to the bottom —
  * is a different shape than FullScreenState's centered icon/heading/body/actions column, so
  * forcing it into that shape would mean fighting the component rather than reusing it.
+ *
+ * Every path that gives up on the photo lands here — including the offline one, where the search
+ * can't reach the network — so hand entry has to be reachable from this screen too.
  */
 @Composable
 internal fun ManualSearchScreen(
-    query: String,
-    onQueryChange: (String) -> Unit,
+    onSelectProduct: (ScannedProduct) -> Unit,
+    onEnterManually: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -52,14 +56,21 @@ internal fun ManualSearchScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            AppTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                placeholder = "Search foods…",
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            FoodSearchPanel(
+                onSelect = onSelectProduct,
+                modifier = Modifier.padding(top = 16.dp),
             )
             Spacer(modifier = Modifier.weight(1f))
-            TextButton(label = "Cancel", onClick = onCancel, modifier = Modifier.align(Alignment.CenterHorizontally))
+            SecondaryButton(
+                label = "Enter it manually",
+                onClick = onEnterManually,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextButton(
+                label = "Cancel",
+                onClick = onCancel,
+                modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally),
+            )
         }
     }
 }
@@ -68,6 +79,6 @@ internal fun ManualSearchScreen(
 @Composable
 private fun ManualSearchScreenPreview() {
     AppTheme {
-        ManualSearchScreen(query = "", onQueryChange = {}, onCancel = {})
+        ManualSearchScreen(onSelectProduct = {}, onEnterManually = {}, onCancel = {})
     }
 }

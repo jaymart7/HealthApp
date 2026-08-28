@@ -275,7 +275,8 @@ of phasing at all.
 - `FoodItemRow` (Display + Editable variants, single component with a mode
   parameter — the prototype built this correctly, keep that structure)
 - Food diary screen: meal sections, swipe-to-delete, sticky summary
-- Manual food entry (search stub is fine — barcode is deferred)
+- Manual food entry (search stub is fine — barcode is deferred; both since
+  built: real Open Food Facts text search and an ML Kit scanner)
 
 **Reuses:** Phase 2 components. Establishes the food Room schema that
 Phase 5 (photo logging) and Phase 7 (Home) both read from.

@@ -155,6 +155,12 @@ Barcode scanning is built — the diary's barcode icon opens a real ML Kit
 scanner, looked up against Open Food Facts (`BarcodeLookupRepository` in
 `:core:data/food`, `BarcodeScanScreen` in `:feature:food`).
 
+Food text search is built — `FoodSearchRepository` (`:core:data/food`, same
+Open Food Facts transport as the barcode lookup) behind `FoodSearchPanel`
+(`:feature:food/ui/components`), used by the diary's add-entry sheet and the
+photo flow's no-food state. The diary's own top field is a local filter over
+logged entries, not a database search.
+
 Cleared in Phase 9 — these are built, don't re-defer them: FAB
 scroll-collapse (`DockedFab(expanded = …)` + `rememberFabExpanded`),
 tap-active-tab-to-scroll-to-top (`AppScaffold` owns each tab's

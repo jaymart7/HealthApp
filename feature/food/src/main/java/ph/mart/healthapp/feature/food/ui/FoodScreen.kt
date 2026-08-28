@@ -31,6 +31,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
@@ -44,6 +45,7 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
+import ph.mart.healthapp.feature.food.ui.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 
 @Composable
@@ -82,7 +84,7 @@ private fun FoodContent(
                     AppTextField(
                         value = state.searchQuery,
                         onValueChange = { state.searchQuery = it },
-                        placeholder = "Search foods…",
+                        placeholder = "Filter today's foods…",
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = onScanBarcode, modifier = Modifier.size(44.dp)) {
@@ -135,6 +137,7 @@ private fun FoodContent(
                     mealType = activeMealSheet,
                     form = state.addForm,
                     onFormChange = { state.addForm = it },
+                    onSelectProduct = { state.addForm = it.toAddEntryForm(activeMealSheet) },
                     onDismiss = state::closeSheet,
                     onAdd = {
                         onEvent(FoodEvent.OnAddEntry(state.addForm))
@@ -230,6 +233,7 @@ private fun AddEntrySheet(
     mealType: MealType,
     form: AddEntryForm,
     onFormChange: (AddEntryForm) -> Unit,
+    onSelectProduct: (ScannedProduct) -> Unit,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
 ) {
@@ -241,6 +245,9 @@ private fun AddEntrySheet(
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Seeds the fields below from a database hit; they stay editable either way, so this
+            // is a shortcut past typing rather than a separate entry mode.
+            FoodSearchPanel(onSelect = onSelectProduct)
             FoodItemRow(
                 variant = FoodItemRowVariant.Editable,
                 name = form.name,

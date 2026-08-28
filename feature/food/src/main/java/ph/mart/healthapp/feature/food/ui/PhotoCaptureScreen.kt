@@ -56,6 +56,10 @@ import ph.mart.healthapp.feature.food.ui.components.AnalyzingScreen
 import ph.mart.healthapp.feature.food.ui.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.components.ManualSearchScreen
+import ph.mart.healthapp.feature.food.ui.components.ScanConfirmationScreen
+
+private const val SEARCH_SUBTITLE =
+    "From the food database — adjust the portion to match what you ate."
 
 /**
  * Hosts the whole 6(+1)-state flow from `PhotoLogging.dc.html`, same shape as
@@ -110,8 +114,18 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     state.flow = CaptureFlow.Capture
                 }
 
-                CaptureFlow.Confirmation -> if (state.isDirty) state.showDiscardConfirm =
-                    true else state.flow = CaptureFlow.Capture
+                CaptureFlow.Confirmation -> if (state.isDirty) {
+                    state.discardReturnTarget = CaptureFlow.Capture
+                } else {
+                    state.flow = CaptureFlow.Capture
+                }
+
+                // Back steps to the search it was picked from, not out of the flow.
+                CaptureFlow.SearchConfirmation -> if (state.isDirty) {
+                    state.discardReturnTarget = CaptureFlow.NoFood
+                } else {
+                    state.flow = CaptureFlow.NoFood
+                }
 
                 CaptureFlow.Retry, CaptureFlow.NoFood, CaptureFlow.Offline, CaptureFlow.PermissionDenied -> onExit()
             }
@@ -185,9 +199,20 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                 )
 
                 CaptureFlow.NoFood -> ManualSearchScreen(
-                    query = state.searchQuery,
-                    onQueryChange = { state.searchQuery = it },
+                    onSelectProduct = state::applyProduct,
+                    onEnterManually = state::startManualEntry,
                     onCancel = onExit,
+                )
+
+                // A searched or hand-entered item is not an AI detection, so it gets the barcode
+                // flow's plain confirmation — no photo, no AI chip.
+                CaptureFlow.SearchConfirmation -> ScanConfirmationScreen(
+                    form = state.form,
+                    subtitle = SEARCH_SUBTITLE,
+                    onFormChange = { state.form = it },
+                    onMealTypeSelect = state::selectMealType,
+                    onLogEntry = { viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry())) },
+                    onDiscard = onExit,
                 )
 
                 CaptureFlow.Offline -> FullScreenState(
@@ -223,13 +248,13 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                 )
             }
 
-            if (state.showDiscardConfirm) {
+            state.discardReturnTarget?.let { returnTarget ->
                 DiscardConfirmDialog(
                     onConfirm = {
-                        state.showDiscardConfirm = false
-                        state.flow = CaptureFlow.Capture
+                        state.discardReturnTarget = null
+                        state.flow = returnTarget
                     },
-                    onDismiss = { state.showDiscardConfirm = false },
+                    onDismiss = { state.discardReturnTarget = null },
                 )
             }
         }

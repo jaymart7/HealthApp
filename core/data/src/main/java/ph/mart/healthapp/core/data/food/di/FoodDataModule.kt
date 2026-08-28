@@ -8,10 +8,13 @@ import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepositoryImpl
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.FoodRepositoryImpl
+import ph.mart.healthapp.core.data.food.FoodSearchRepository
+import ph.mart.healthapp.core.data.food.FoodSearchRepositoryImpl
 
 val foodDataModule = module {
     single { get<AppDatabase>().foodEntryDao() }
     single<FoodRepository> { FoodRepositoryImpl(get()) }
     single<FoodRecognitionRepository> { FoodRecognitionRepositoryImpl() }
     single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl() }
+    single<FoodSearchRepository> { FoodSearchRepositoryImpl() }
 }
