@@ -55,6 +55,7 @@ dependencies {
     implementation(project(":feature:profile"))
 
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.work.runtime.ktx)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

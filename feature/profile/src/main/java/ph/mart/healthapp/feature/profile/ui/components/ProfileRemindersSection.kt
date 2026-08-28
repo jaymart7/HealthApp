@@ -5,6 +5,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -13,13 +14,16 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.ReminderKind
 
-/** The switches persist to the profile row and nothing else — no notifications are scheduled.
- * Real scheduling is deliberately out of Phase 8's scope (see COMPONENTS.md). */
+/** The switches persist to the profile row; `:app`'s `ph.mart.healthapp.reminder` package watches
+ * that row and reconciles the WorkManager schedule behind them. [message] carries the
+ * notification-permission refusal, since a denied switch has to explain itself. */
 @Composable
 internal fun ProfileRemindersSection(
     enabled: (ReminderKind) -> Boolean,
     onToggle: (ReminderKind, Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    message: String? = null,
+    messageIsError: Boolean = false,
 ) {
     SettingsSection(label = "Reminders", modifier = modifier) {
         AppCard {
@@ -42,6 +46,17 @@ internal fun ProfileRemindersSection(
                 )
             }
         }
+        if (message != null) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (messageIsError) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
     }
 }
 
@@ -53,6 +68,22 @@ private fun ProfileRemindersSectionPreview() {
             ProfileRemindersSection(
                 enabled = { it != ReminderKind.Photo },
                 onToggle = { _, _ -> },
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ProfileRemindersSectionDeniedPreview() {
+    AppTheme {
+        Surface {
+            ProfileRemindersSection(
+                enabled = { false },
+                onToggle = { _, _ -> },
+                message = "Allow notifications for FitPulse in your system settings to use reminders.",
+                messageIsError = true,
                 modifier = Modifier.padding(16.dp),
             )
         }

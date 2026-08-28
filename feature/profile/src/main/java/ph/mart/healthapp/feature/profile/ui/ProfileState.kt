@@ -7,7 +7,9 @@ import ph.mart.healthapp.core.data.profile.Profile
 data class ProfileUiState(val profile: Profile? = null)
 
 /** The three reminder switches, as one addressable thing so the rows and the ViewModel don't each
- * hand-roll a copy of the same when-block. Persisted only — nothing is scheduled (Phase 8 scope). */
+ * hand-roll a copy of the same when-block. Persisted to the profile row only — the actual schedule
+ * is derived from that row by `ph.mart.healthapp.reminder` in `:app`, which is why nothing here
+ * calls a scheduler. */
 enum class ReminderKind(val label: String, val sublabel: String) {
     Meals("Meal logging", "Reminds you 3x daily"),
     WeighIn("Weigh-in day", "Every Monday, 8:00 AM"),

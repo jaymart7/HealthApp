@@ -1,7 +1,10 @@
 package ph.mart.healthapp.feature.profile.ui
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ScrollState
@@ -24,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,6 +49,14 @@ import ph.mart.healthapp.feature.profile.ui.components.ProfileUnitsSection
 
 private const val EXPORT_FILE_NAME = "fitpulse-export.json"
 
+private const val NOTIFICATIONS_DENIED =
+    "Allow notifications for FitPulse in your system settings to use reminders."
+
+/** Onboarding leaves meal and weigh-in reminders on by default, so a switch can be on without the
+ * permission ever having been asked for. Say so rather than staying silently broken. */
+private const val NOTIFICATIONS_BLOCKED =
+    "Reminders are on, but notifications are blocked. Turn a reminder off and on again to allow them."
+
 @Composable
 fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProfileViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
@@ -55,6 +67,25 @@ fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: P
     var pendingExport by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var messageIsError by remember { mutableStateOf(false) }
+
+    // Kept apart from [message] so the refusal renders under the Reminders card rather than Data.
+    var reminderMessage by remember { mutableStateOf<String?>(null) }
+    var pendingReminder by remember { mutableStateOf<ReminderKind?>(null) }
+
+    // A reminder that can't post a notification is a lie, so the switch only goes on once the
+    // permission is actually granted.
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        val kind = pendingReminder
+        pendingReminder = null
+        if (granted && kind != null) {
+            viewModel.setReminder(kind, true)
+            reminderMessage = null
+        } else if (!granted) {
+            reminderMessage = NOTIFICATIONS_DENIED
+        }
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -107,9 +138,23 @@ fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: P
         message = message,
         messageIsError = messageIsError,
         onSelectUnit = viewModel::setUnit,
-        onToggleReminder = viewModel::setReminder,
+        onToggleReminder = { kind, enabled ->
+            if (!enabled || context.canPostNotifications()) {
+                viewModel.setReminder(kind, enabled)
+                reminderMessage = null
+            } else {
+                pendingReminder = kind
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
         onExport = viewModel::buildExport,
         onImport = { importLauncher.launch(arrayOf("application/json")) },
+        // Re-read on each recomposition rather than watched: the only in-app source of a change is
+        // the launcher above, which sets state anyway.
+        reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
+            uiState.profile?.let { profile -> ReminderKind.entries.any(profile::reminderEnabled) } == true &&
+                !context.canPostNotifications()
+        },
         scrollState = scrollState,
     )
 }
@@ -123,6 +168,7 @@ private fun ProfileContent(
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    reminderMessage: String? = null,
     scrollState: ScrollState = rememberScrollState(),
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
@@ -147,6 +193,8 @@ private fun ProfileContent(
             ProfileRemindersSection(
                 enabled = profile::reminderEnabled,
                 onToggle = onToggleReminder,
+                message = reminderMessage,
+                messageIsError = true,
             )
             ProfileDataSection(
                 onExport = onExport,
@@ -158,6 +206,12 @@ private fun ProfileContent(
         }
     }
 }
+
+/** Below API 33 the permission doesn't exist and notifications are on by default. */
+private fun Context.canPostNotifications(): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+        ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
 
 private fun Context.writeText(uri: Uri, text: String): Result<Unit> = runCatching {
     contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }

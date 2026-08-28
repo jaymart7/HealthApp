@@ -25,6 +25,7 @@ exifinterface = "1.4.2"
 mlkitBarcode = "17.3.0"
 firebaseBom = "34.18.0"
 googleServices = "4.4.4"
+work = "2.11.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -76,6 +77,8 @@ mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version
 
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 firebase-ai = { module = "com.google.firebase:firebase-ai" }
+
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

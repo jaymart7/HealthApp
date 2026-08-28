@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.navigation.route.TopLevelDestination
+import ph.mart.healthapp.reminder.EXTRA_TAB
 import ph.mart.healthapp.ui.AppRoot
 
 class MainActivity : ComponentActivity() {
@@ -17,9 +19,15 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
+        // Cold start only: a reminder tapped while the app is already foregrounded lands on
+        // whatever tab was showing. Add onNewIntent handling if that's ever reported.
+        val startTab = intent?.getStringExtra(EXTRA_TAB)
+            ?.let { name -> TopLevelDestination.entries.firstOrNull { it.name == name } }
+            ?: TopLevelDestination.Home
+
         setContent {
             AppTheme {
-                AppRoot()
+                AppRoot(startTab = startTab)
             }
         }
     }

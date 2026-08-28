@@ -60,8 +60,13 @@ private enum class ActiveSheet { None, QuickAction, LogWeight, AddPhoto }
  * scrim.
  */
 @Composable
-fun AppScaffold(modifier: Modifier = Modifier) {
-    val topLevelBackStack = remember { TopLevelBackStack<NavKey>(TopLevelDestination.Home.route) }
+fun AppScaffold(
+    modifier: Modifier = Modifier,
+    startTab: TopLevelDestination = TopLevelDestination.Home,
+) {
+    // [startTab] is how a tapped reminder notification lands where the user would act on it — see
+    // MainActivity. It only seeds the initial stack; nothing re-routes an already-running app.
+    val topLevelBackStack = remember { TopLevelBackStack<NavKey>(startTab.route) }
     var activeSheet by rememberSaveable { mutableStateOf(ActiveSheet.None) }
     val scope = rememberCoroutineScope()
 

@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import org.koin.androidx.compose.koinViewModel
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.feature.onboarding.ui.OnboardingScreen
 
 sealed interface AppRootState {
@@ -36,11 +37,14 @@ class AppRootViewModel(profileRepository: ProfileRepository) : ViewModel() {
  * for an already-onboarded user before the first Room emission lands.
  */
 @Composable
-fun AppRoot(viewModel: AppRootViewModel = koinViewModel()) {
+fun AppRoot(
+    startTab: TopLevelDestination = TopLevelDestination.Home,
+    viewModel: AppRootViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsState()
     when (state) {
         AppRootState.Loading -> Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {}
         AppRootState.Onboarding -> OnboardingScreen()
-        AppRootState.Ready -> AppScaffold()
+        AppRootState.Ready -> AppScaffold(startTab = startTab)
     }
 }
