@@ -26,12 +26,17 @@ class FoodViewModel(
         when (event) {
             is FoodEvent.OnAddEntry -> onAddEntry(event.form)
             is FoodEvent.OnDeleteEntry -> onDeleteEntry(event.id)
+            is FoodEvent.OnToggleFavorite -> onToggleFavorite(event)
         }
     }
 
     private fun observeDiary(foodRepository: FoodRepository, profileRepository: ProfileRepository) = intent {
-        combine(foodRepository.observeTodayEntries(), profileRepository.observeProfile()) { entries, profile ->
-            FoodUiState(entries = entries, targets = profile?.dailyTargets())
+        combine(
+            foodRepository.observeTodayEntries(),
+            profileRepository.observeProfile(),
+            foodRepository.observeSuggestions(),
+        ) { entries, profile, suggestions ->
+            FoodUiState(entries = entries, targets = profile?.dailyTargets(), suggestions = suggestions)
         }.collect { newState -> reduce { newState } }
     }
 
@@ -41,5 +46,9 @@ class FoodViewModel(
 
     private fun onDeleteEntry(id: Long) = intent {
         foodRepository.deleteEntry(id)
+    }
+
+    private fun onToggleFavorite(event: FoodEvent.OnToggleFavorite) = intent {
+        foodRepository.setFavorite(event.suggestion, event.favorite)
     }
 }

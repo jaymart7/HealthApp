@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.dailyTotals
@@ -46,6 +47,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.FoodSearchPanel
+import ph.mart.healthapp.feature.food.ui.components.FoodSuggestionPanel
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 
 @Composable
@@ -136,8 +138,17 @@ private fun FoodContent(
                 AddEntrySheet(
                     mealType = activeMealSheet,
                     form = state.addForm,
+                    suggestions = uiState.suggestions,
                     onFormChange = { state.addForm = it },
                     onSelectProduct = { state.addForm = it.toAddEntryForm(activeMealSheet) },
+                    onSelectSuggestion = { state.addForm = it.toAddEntryForm(activeMealSheet) },
+                    onQuickAdd = { suggestion ->
+                        onEvent(FoodEvent.OnAddEntry(suggestion.toAddEntryForm(activeMealSheet)))
+                        state.closeSheet()
+                    },
+                    onToggleFavorite = { suggestion, favorite ->
+                        onEvent(FoodEvent.OnToggleFavorite(suggestion, favorite))
+                    },
                     onDismiss = state::closeSheet,
                     onAdd = {
                         onEvent(FoodEvent.OnAddEntry(state.addForm))
@@ -232,8 +243,12 @@ private fun SwipeableFoodEntryRow(entry: FoodEntry, onDelete: () -> Unit) {
 private fun AddEntrySheet(
     mealType: MealType,
     form: AddEntryForm,
+    suggestions: List<FoodSuggestion>,
     onFormChange: (AddEntryForm) -> Unit,
     onSelectProduct: (ScannedProduct) -> Unit,
+    onSelectSuggestion: (FoodSuggestion) -> Unit,
+    onQuickAdd: (FoodSuggestion) -> Unit,
+    onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
 ) {
@@ -245,8 +260,15 @@ private fun AddEntrySheet(
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Seeds the fields below from a database hit; they stay editable either way, so this
-            // is a shortcut past typing rather than a separate entry mode.
+            // Both panels seed the fields below; they stay editable either way, so this is a
+            // shortcut past typing rather than a separate entry mode. Already-logged foods come
+            // first — they cost no network round-trip and are the likelier match.
+            FoodSuggestionPanel(
+                suggestions = suggestions,
+                onSelect = onSelectSuggestion,
+                onQuickAdd = onQuickAdd,
+                onToggleFavorite = onToggleFavorite,
+            )
             FoodSearchPanel(onSelect = onSelectProduct)
             FoodItemRow(
                 variant = FoodItemRowVariant.Editable,
@@ -288,7 +310,13 @@ private fun FoodScreenPreview() {
     val targets = DailyTargets(calories = 1941, proteinG = 146, carbsG = 194, fatG = 65, floor = 1500)
     AppTheme {
         FoodContent(
-            uiState = FoodUiState(entries = entries, targets = targets),
+            uiState = FoodUiState(
+                entries = entries,
+                targets = targets,
+                suggestions = listOf(
+                    FoodSuggestion("Greek yogurt", 1.0, "cup", 150, 20, 8, 4, isFavorite = true),
+                ),
+            ),
             state = FoodScreenState(),
             onEvent = {},
             onScanBarcode = {},

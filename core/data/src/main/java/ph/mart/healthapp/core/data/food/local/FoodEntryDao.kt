@@ -10,6 +10,16 @@ internal interface FoodEntryDao {
     @Query("SELECT * FROM food_entry WHERE date = :date AND isDeleted = 0 ORDER BY loggedAt ASC")
     fun observeForDate(date: Long): Flow<List<FoodEntryEntity>>
 
+    /** One row per distinct food name — the most recently inserted one, newest first. The
+     * `MAX(id)` subquery is what makes "the row for this name" well-defined; a bare
+     * `GROUP BY name` would leave the non-aggregate columns up to SQLite. */
+    @Query(
+        "SELECT * FROM food_entry WHERE id IN " +
+            "(SELECT MAX(id) FROM food_entry WHERE isDeleted = 0 GROUP BY name) " +
+            "ORDER BY loggedAt DESC LIMIT :limit",
+    )
+    fun observeRecent(limit: Int): Flow<List<FoodEntryEntity>>
+
     @Query("SELECT * FROM food_entry WHERE isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
     suspend fun allActive(): List<FoodEntryEntity>
 

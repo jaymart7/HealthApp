@@ -2,6 +2,8 @@ package ph.mart.healthapp.core.data
 
 import androidx.room3.Database
 import androidx.room3.RoomDatabase
+import ph.mart.healthapp.core.data.food.local.FavoriteFoodDao
+import ph.mart.healthapp.core.data.food.local.FavoriteFoodEntity
 import ph.mart.healthapp.core.data.food.local.FoodEntryDao
 import ph.mart.healthapp.core.data.food.local.FoodEntryEntity
 import ph.mart.healthapp.core.data.profile.local.ProfileDao
@@ -17,16 +19,18 @@ import ph.mart.healthapp.core.data.progress.local.WeightEntryEntity
     entities = [
         ProfileEntity::class,
         FoodEntryEntity::class,
+        FavoriteFoodEntity::class,
         WeightEntryEntity::class,
         MeasurementEntryEntity::class,
         ProgressPhotoEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
     abstract fun foodEntryDao(): FoodEntryDao
+    abstract fun favoriteFoodDao(): FavoriteFoodDao
     abstract fun weightEntryDao(): WeightEntryDao
     abstract fun measurementEntryDao(): MeasurementEntryDao
     abstract fun progressPhotoDao(): ProgressPhotoDao
