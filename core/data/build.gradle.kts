@@ -36,6 +36,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
 
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
 
     testImplementation(libs.junit)

@@ -27,6 +27,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.icon.DualStateIcon
 import ph.mart.healthapp.core.navigation.route.TopLevelBackStack
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
+import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
@@ -78,9 +79,9 @@ fun AppScaffold(modifier: Modifier = Modifier) {
         else -> homeScroll
     }
 
-    // The photo-capture flow is a full-bleed camera surface: neither nav bar nor FAB, and it draws
-    // under both system bars (appScaffold.js). Every other route is a tab and stops at the bars.
-    val showChrome = topLevelBackStack.backStack.lastOrNull() != FoodCaptureRoute
+    // The camera flows are full-bleed surfaces: neither nav bar nor FAB, and they draw under both
+    // system bars (appScaffold.js). Every other route is a tab and stops at the bars.
+    val showChrome = topLevelBackStack.backStack.lastOrNull() !in setOf(FoodCaptureRoute, BarcodeScanRoute)
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
@@ -118,7 +119,11 @@ fun AppScaffold(modifier: Modifier = Modifier) {
                 onBack = { topLevelBackStack.removeLast() },
                 entryProvider = entryProvider {
                     homeEntries(scrollState = homeScroll, onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
-                    foodEntries(scrollState = foodScroll, onExitCapture = { topLevelBackStack.removeLast() })
+                    foodEntries(
+                        scrollState = foodScroll,
+                        onScanBarcode = { topLevelBackStack.add(BarcodeScanRoute) },
+                        onExitFlow = { topLevelBackStack.removeLast() },
+                    )
                     progressEntries(scrollState = progressScroll)
                     profileEntries(scrollState = profileScroll)
                 },

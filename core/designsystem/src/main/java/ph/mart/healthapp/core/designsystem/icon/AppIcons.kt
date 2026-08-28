@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.Home
@@ -32,6 +33,7 @@ object AppIcons {
     val Profile = DualStateIcon(Icons.Filled.Person, Icons.Outlined.Person)
 
     val Add: ImageVector = Icons.Filled.Add
+    val Barcode: ImageVector = Icons.Filled.QrCodeScanner
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown

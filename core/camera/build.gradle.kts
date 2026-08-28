@@ -29,6 +29,7 @@ dependencies {
     implementation(libs.androidx.camera.compose)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.mlkit.barcode.scanning)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

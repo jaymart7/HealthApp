@@ -9,8 +9,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -38,28 +41,58 @@ import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 
 @Composable
-fun FoodScreen(scrollState: ScrollState = rememberScrollState(), viewModel: FoodViewModel = koinViewModel()) {
+fun FoodScreen(
+    onScanBarcode: () -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
+    viewModel: FoodViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
     val state = rememberFoodScreenState()
-    FoodContent(uiState = uiState, state = state, scrollState = scrollState, onEvent = viewModel::handleEvent)
+    FoodContent(
+        uiState = uiState,
+        state = state,
+        onEvent = viewModel::handleEvent,
+        onScanBarcode = onScanBarcode,
+        scrollState = scrollState,
+    )
 }
 
 @Composable
-private fun FoodContent(uiState: FoodUiState, state: FoodScreenState, onEvent: (FoodEvent) -> Unit, scrollState: ScrollState = rememberScrollState()) {
+private fun FoodContent(
+    uiState: FoodUiState,
+    state: FoodScreenState,
+    onEvent: (FoodEvent) -> Unit,
+    onScanBarcode: () -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
+) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
-                AppTextField(
-                    value = state.searchQuery,
-                    onValueChange = { state.searchQuery = it },
-                    placeholder = "Search foods…",
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 8.dp),
-                )
+                ) {
+                    AppTextField(
+                        value = state.searchQuery,
+                        onValueChange = { state.searchQuery = it },
+                        placeholder = "Search foods…",
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = onScanBarcode, modifier = Modifier.size(44.dp)) {
+                        Icon(
+                            imageVector = AppIcons.Barcode,
+                            contentDescription = "Scan barcode",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
                 uiState.targets?.let { targets ->
                     DiarySummaryBar(
@@ -251,6 +284,7 @@ private fun FoodScreenPreview() {
             uiState = FoodUiState(entries = entries, targets = targets),
             state = FoodScreenState(),
             onEvent = {},
+            onScanBarcode = {},
         )
     }
 }

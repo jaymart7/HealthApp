@@ -1,17 +1,14 @@
 package ph.mart.healthapp.feature.food.ui.components
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fitInside
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -111,33 +108,6 @@ internal fun ConfirmationScreen(
 
             PrimaryButton(label = "Log meal", onClick = onLogMeal, enabled = form.isValid(), modifier = Modifier.fillMaxWidth())
             TextButton(label = "Discard", onClick = onDiscard, modifier = Modifier.fillMaxWidth())
-        }
-    }
-}
-
-/** The prototype's 4 individually-bordered pill buttons (single-select) — visually distinct from
- * [ph.mart.healthapp.core.designsystem.component.SegmentedToggle]'s single continuous track, so
- * built here rather than reused for a shape it wasn't designed for. */
-@Composable
-private fun MealTypeChipRow(selected: MealType, onSelect: (MealType) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        MealType.entries.forEach { mealType ->
-            val isSelected = mealType == selected
-            Surface(
-                onClick = { onSelect(mealType) },
-                shape = RoundedCornerShape(999.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                border = BorderStroke(
-                    width = if (isSelected) 1.5.dp else 1.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                ),
-                modifier = Modifier.weight(1f).height(36.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Text(text = mealType.name, style = MaterialTheme.typography.labelMedium)
-                }
-            }
         }
     }
 }

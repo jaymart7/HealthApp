@@ -345,8 +345,10 @@ than filling the gap here.
 
 Track as separate tickets/issues, not folded into any phase above:
 
-- Barcode scanning
 - Final mascot illustration (replacing the geometric placeholder)
+
+Cleared after Phase 9: barcode scanning (ML Kit in-app scanner + Open Food
+Facts lookup, feeding the same `FoodEntry` rows as manual and photo logging).
 
 Cleared in Phase 9: FAB scroll-collapse, tap-active-tab-to-scroll-to-top,
 photo comparison draggable slider, medium/high-contrast theme wiring.

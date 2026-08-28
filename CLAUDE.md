@@ -148,9 +148,12 @@ of these — don't rely on the default Activity back behavior:
 
 ## Deferred from the prototype — explicit backlog, not silently dropped
 
-- Barcode scanning (icon exists, no scan logic)
 - Final mascot illustration (placeholder geometric mascot "Bibo" was used
   throughout)
+
+Barcode scanning is built — the diary's barcode icon opens a real ML Kit
+scanner, looked up against Open Food Facts (`BarcodeLookupRepository` in
+`:core:data/food`, `BarcodeScanScreen` in `:feature:food`).
 
 Cleared in Phase 9 — these are built, don't re-defer them: FAB
 scroll-collapse (`DockedFab(expanded = …)` + `rememberFabExpanded`),

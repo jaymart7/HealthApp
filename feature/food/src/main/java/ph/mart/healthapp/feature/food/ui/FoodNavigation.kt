@@ -10,7 +10,16 @@ import ph.mart.healthapp.core.navigation.route.FoodRoute
 @Serializable
 data object FoodCaptureRoute : NavKey
 
-fun EntryProviderScope<NavKey>.foodEntries(scrollState: ScrollState, onExitCapture: () -> Unit) {
-    entry<FoodRoute> { FoodScreen(scrollState = scrollState) }
-    entry<FoodCaptureRoute> { PhotoCaptureScreen(onExit = onExitCapture) }
+/** The food diary's barcode entry point — the scan/lookup/confirm flow. */
+@Serializable
+data object BarcodeScanRoute : NavKey
+
+fun EntryProviderScope<NavKey>.foodEntries(
+    scrollState: ScrollState,
+    onScanBarcode: () -> Unit,
+    onExitFlow: () -> Unit,
+) {
+    entry<FoodRoute> { FoodScreen(scrollState = scrollState, onScanBarcode = onScanBarcode) }
+    entry<FoodCaptureRoute> { PhotoCaptureScreen(onExit = onExitFlow) }
+    entry<BarcodeScanRoute> { BarcodeScanScreen(onExit = onExitFlow) }
 }
