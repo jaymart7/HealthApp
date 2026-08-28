@@ -58,7 +58,6 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
                         .padding(top = 16.dp, bottom = DockedFabContentPadding),
                 ) {
                     when (state.tab) {
@@ -102,30 +101,32 @@ private fun WeightTabContent(uiState: ProgressUiState, state: ProgressScreenStat
         )
         return
     }
-    SegmentedToggle(
-        options = ChartRange.entries.map { it.label },
-        selectedIndex = ChartRange.entries.indexOf(state.range),
-        onSelect = { index -> state.range = ChartRange.entries[index] },
-    )
-    val filtered = uiState.weightEntries.inRange(state.range)
-    val points = filtered.withMovingAverage()
-    WeightProgressChart(
-        points = points,
-        goalWeightKg = uiState.goalWeightKg,
-        unit = uiState.preferredUnit,
-        modifier = Modifier.padding(top = 16.dp),
-    )
-    val sorted = uiState.weightEntries.sortedBy { it.dateEpochDay }
-    val current = sorted.last().weightKg
-    val prior = if (sorted.size >= 2) sorted[sorted.size - 2].weightKg else current
-    WeightStatRow(
-        currentKg = current,
-        changeKg = current - prior,
-        goal = uiState.goal,
-        goalWeightKg = uiState.goalWeightKg,
-        unit = uiState.preferredUnit,
-        modifier = Modifier.padding(top = 16.dp),
-    )
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        SegmentedToggle(
+            options = ChartRange.entries.map { it.label },
+            selectedIndex = ChartRange.entries.indexOf(state.range),
+            onSelect = { index -> state.range = ChartRange.entries[index] },
+        )
+        val filtered = uiState.weightEntries.inRange(state.range)
+        val points = filtered.withMovingAverage()
+        WeightProgressChart(
+            points = points,
+            goalWeightKg = uiState.goalWeightKg,
+            unit = uiState.preferredUnit,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        val sorted = uiState.weightEntries.sortedBy { it.dateEpochDay }
+        val current = sorted.last().weightKg
+        val prior = if (sorted.size >= 2) sorted[sorted.size - 2].weightKg else current
+        WeightStatRow(
+            currentKg = current,
+            changeKg = current - prior,
+            goal = uiState.goal,
+            goalWeightKg = uiState.goalWeightKg,
+            unit = uiState.preferredUnit,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
 }
 
 @Composable
@@ -148,7 +149,10 @@ private fun PhotosTabContent(uiState: ProgressUiState, state: ProgressScreenStat
 
 @Composable
 private fun MeasurementsTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
         MeasurementPart.entries.filter { it in uiState.measurements }.forEach { part ->
             MeasurementRow(
                 name = part.name,
