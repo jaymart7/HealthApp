@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.home.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,7 +26,11 @@ import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.WeightEntry
+<<<<<<< HEAD
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
+=======
+import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
+>>>>>>> refs/heads/debug-seed-data
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -39,14 +44,14 @@ import ph.mart.healthapp.feature.home.ui.components.ProgressPhotoReminderCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
 
 @Composable
-fun HomeScreen(onAddPhoto: () -> Unit, viewModel: HomeViewModel = koinViewModel()) {
+fun HomeScreen(onAddPhoto: () -> Unit, scrollState: ScrollState = rememberScrollState(), viewModel: HomeViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val state = rememberHomeScreenState()
-    HomeContent(uiState = uiState, state = state, onAddPhoto = onAddPhoto)
+    HomeContent(uiState = uiState, state = state, scrollState = scrollState, onAddPhoto = onAddPhoto)
 }
 
 @Composable
-private fun HomeContent(uiState: HomeUiState, state: HomeScreenState, onAddPhoto: () -> Unit) {
+private fun HomeContent(uiState: HomeUiState, state: HomeScreenState, onAddPhoto: () -> Unit, scrollState: ScrollState = rememberScrollState()) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         if (uiState.isDayOne) {
             FullScreenState(
@@ -69,9 +74,14 @@ private fun HomeContent(uiState: HomeUiState, state: HomeScreenState, onAddPhoto
         Column(
             modifier = Modifier
                 .fillMaxSize()
+<<<<<<< HEAD
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp)
                 .padding(bottom = DockedFabContentPadding),
+=======
+                .verticalScroll(scrollState)
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FabBottomClearance),
+>>>>>>> refs/heads/debug-seed-data
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             MascotGreetingCard(greeting = greeting)

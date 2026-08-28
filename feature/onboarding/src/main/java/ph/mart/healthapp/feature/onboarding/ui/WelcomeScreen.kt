@@ -38,7 +38,7 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
         MascotSpeechBubble(text = "Let's build healthy habits together.")
         Spacer(Modifier.height(24.dp))
         Text(
-            text = "HealthTrack",
+            text = "FitPulse",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -51,7 +51,6 @@ fun WelcomeScreen(onGetStarted: () -> Unit) {
         )
         Spacer(Modifier.height(32.dp))
         PrimaryButton(label = "Get started", onClick = onGetStarted, modifier = Modifier.fillMaxWidth())
-        TextButton(label = "I already have an account", onClick = {})
     }
 }
 

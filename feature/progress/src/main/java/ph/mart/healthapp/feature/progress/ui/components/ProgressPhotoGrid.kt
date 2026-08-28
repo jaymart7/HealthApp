@@ -35,6 +35,7 @@ import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
+import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
 import ph.mart.healthapp.core.designsystem.component.epochDayToDate
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.todayEpochDay
@@ -53,7 +54,7 @@ fun ProgressPhotoGrid(
     val monthFormat = remember(photos) { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
     val grouped = photos.sortedByDescending { it.dateEpochDay }.groupBy { monthFormat.format(epochDayToDate(it.dateEpochDay)) }
 
-    LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = modifier, contentPadding = PaddingValues(16.dp)) {
+    LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = modifier, contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FabBottomClearance)) {
         grouped.forEach { (month, monthPhotos) ->
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(

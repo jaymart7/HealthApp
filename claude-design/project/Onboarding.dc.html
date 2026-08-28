@@ -86,7 +86,7 @@
           </div>
 
           <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-            <h1 style="margin:0;font-family:'Poppins',sans-serif;font-size:28px;line-height:36px;font-weight:600;color:{{ t.onSurface }};">HealthTrack</h1>
+            <h1 style="margin:0;font-family:'Poppins',sans-serif;font-size:28px;line-height:36px;font-weight:600;color:{{ t.onSurface }};">FitPulse</h1>
             <p style="margin:0;font-family:'Inter',sans-serif;font-size:16px;line-height:24px;letter-spacing:0.5px;color:{{ t.onSurfaceVariant }};text-align:center;">Track your body and nutrition, with Bibo by your side.</p>
           </div>
 
@@ -511,7 +511,7 @@ class Component extends DCLogic {
       // Real cross-DC state hand-off: separate top-level DCs share no runtime state, but they
       // DO share the browser's localStorage — Home.dc.html reads this same key on load.
       const s = this.state;
-      localStorage.setItem('healthtrack_onboarding_profile', JSON.stringify({
+      localStorage.setItem('fitpulse_onboarding_profile', JSON.stringify({
         sex: s.sex, age: s.age, heightCm: s.heightCm, weightKg: s.weightKg, activity: s.activity, goal: s.goal,
       }));
       window.location.href = './Home.dc.html';

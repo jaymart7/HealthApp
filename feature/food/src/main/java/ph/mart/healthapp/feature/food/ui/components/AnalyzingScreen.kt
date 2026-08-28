@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LinearProgressIndicator
@@ -59,7 +60,13 @@ internal fun AnalyzingScreen(photo: Bitmap, onCancel: () -> Unit, modifier: Modi
             modifier = Modifier.fillMaxSize(),
         )
         Column(
-            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)).padding(24.dp),
+            // safeDrawingPadding after background: the scrim still covers the bars, the
+            // mascot/progress/status stack sits inside them.
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.55f))
+                .safeDrawingPadding()
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
         ) {

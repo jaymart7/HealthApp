@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,41 +42,7 @@ internal fun CaptureScreen(
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         cameraPreview()
 
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-                .size(40.dp)
-                .background(Color.Black.copy(alpha = 0.45f), CircleShape),
-        ) {
-            Icon(imageVector = AppIcons.Close, contentDescription = "Close", tint = Color.White)
-        }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(40.dp)
-                .background(Color.Black.copy(alpha = 0.45f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(imageVector = AppIcons.Flash, contentDescription = null, tint = Color.White)
-        }
-
-        Surface(
-            color = Color.Black.copy(alpha = 0.5f),
-            contentColor = Color.White,
-            shape = RoundedCornerShape(999.dp),
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 88.dp),
-        ) {
-            Text(
-                text = "Center one food item",
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-
+        // Framing guide is centred on the preview, so it stays outside the safe-area box below.
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -83,24 +50,62 @@ internal fun CaptureScreen(
                 .border(2.dp, Color.White.copy(alpha = 0.7f), RoundedCornerShape(24.dp)),
         )
 
-        Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp)) {
+        // Everything tappable or readable sits inside the safe area; the preview stays full-bleed.
+        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color.Black.copy(alpha = 0.45f), CircleShape),
+            ) {
+                Icon(imageVector = AppIcons.Close, contentDescription = "Close", tint = Color.White)
+            }
+
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(44.dp)
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .background(Color.Black.copy(alpha = 0.45f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(imageVector = AppIcons.Gallery, contentDescription = null, tint = Color.White)
+                Icon(imageVector = AppIcons.Flash, contentDescription = null, tint = Color.White)
             }
 
             Surface(
-                onClick = onCapture,
-                shape = CircleShape,
-                color = Color.White,
-                border = BorderStroke(4.dp, Color.White.copy(alpha = 0.5f)),
-                modifier = Modifier.align(Alignment.Center).size(72.dp),
-            ) {}
+                color = Color.Black.copy(alpha = 0.5f),
+                contentColor = Color.White,
+                shape = RoundedCornerShape(999.dp),
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 88.dp),
+            ) {
+                Text(
+                    text = "Center one food item",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+
+            Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp)) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(44.dp)
+                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(imageVector = AppIcons.Gallery, contentDescription = null, tint = Color.White)
+                }
+
+                Surface(
+                    onClick = onCapture,
+                    shape = CircleShape,
+                    color = Color.White,
+                    border = BorderStroke(4.dp, Color.White.copy(alpha = 0.5f)),
+                    modifier = Modifier.align(Alignment.Center).size(72.dp),
+                ) {}
+            }
         }
     }
 }

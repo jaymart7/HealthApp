@@ -1,11 +1,19 @@
 package ph.mart.healthapp.core.designsystem.theme
+import android.app.UiModeManager
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
@@ -247,14 +255,51 @@ val unspecified_scheme = ColorFamily(
     Color.Unspecified, Color.Unspecified, Color.Unspecified, Color.Unspecified
 )
 
+/** The three contrast levels [Color.kt] ships tokens for. Standard is the only one below API 34. */
+enum class AppContrast { Standard, Medium, High }
+
+/**
+ * Maps the platform's 0f..1f contrast value onto our three schemes. The system only ever emits
+ * 0f / 0.5f / 1f today, but the API is a continuous float, so bucket it rather than compare.
+ */
+internal fun contrastFor(level: Float): AppContrast = when {
+    level >= 0.66f -> AppContrast.High
+    level >= 0.33f -> AppContrast.Medium
+    else -> AppContrast.Standard
+}
+
+/**
+ * The system accessibility contrast setting, kept live — Android delivers changes without
+ * recreating the Activity, so a one-shot read would go stale. API 24–33 has no such setting.
+ */
+@Composable
+fun systemContrast(): AppContrast {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return AppContrast.Standard
+    val context = LocalContext.current
+    val uiModeManager = remember(context) { context.getSystemService(UiModeManager::class.java) }
+        ?: return AppContrast.Standard
+    var contrast by remember(uiModeManager) { mutableStateOf(contrastFor(uiModeManager.contrast)) }
+    DisposableEffect(uiModeManager) {
+        val listener = UiModeManager.ContrastChangeListener { level -> contrast = contrastFor(level) }
+        uiModeManager.addContrastChangeListener(context.mainExecutor, listener)
+        onDispose { uiModeManager.removeContrastChangeListener(listener) }
+    }
+    return contrast
+}
+
 @Composable
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    contrast: AppContrast = systemContrast(),
     content: @Composable() () -> Unit
 ) {
   // Dynamic color (Material You) is disabled project-wide — always use the
   // fixed Material Theme Builder palette, never derive colors from wallpaper.
-  val colorScheme = if (darkTheme) darkScheme else lightScheme
+  val colorScheme = when (contrast) {
+    AppContrast.Standard -> if (darkTheme) darkScheme else lightScheme
+    AppContrast.Medium -> if (darkTheme) mediumContrastDarkColorScheme else mediumContrastLightColorScheme
+    AppContrast.High -> if (darkTheme) highContrastDarkColorScheme else highContrastLightColorScheme
+  }
 
   MaterialTheme(
     colorScheme = colorScheme,

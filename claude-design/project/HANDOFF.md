@@ -1,10 +1,10 @@
-# HANDOFF.md — HealthTrack prototype → Claude Code
+# HANDOFF.md — FitPulse prototype → Claude Code
 
 ## File structure
 
 - `theme.js` — shared module: `THEMES.light` / `THEMES.dark` (M3-style color tokens), `calcDailyTargets()` (Mifflin–St Jeor BMR → TDEE → goal-adjusted calories + macro split), `ACT_MULT`, `GOAL_ADJ`, unit constants (`CM_PER_IN`, `KG_PER_LB`). Imported by all three screens — single source of truth for colors and health math.
 - `appScaffold.js`, `fullScreenState.js` — **not executed imports**. Plain-text reference notes describing two markup patterns (bottom nav + FAB + quick-action sheet; empty/status-state layout) that are hand copy-pasted into every DC that needs them, because DCs can't share arbitrary child markup. Treat these as the canonical spec to diff against, not working code.
-- `Onboarding.dc.html` — welcome → goal → basics → activity → dietary → confirm targets. Writes the completed profile to `localStorage['healthtrack_onboarding_profile']`, then navigates to `Home.dc.html`.
+- `Onboarding.dc.html` — welcome → goal → basics → activity → dietary → confirm targets. Writes the completed profile to `localStorage['fitpulse_onboarding_profile']`, then navigates to `Home.dc.html`.
 - `PhotoLogging.dc.html` — camera capture → simulated AI analysis → confirm/edit → log. Reached from Home's FAB ("Log food") and meal-section "+" buttons via `window.location.href`.
 - `Home.dc.html` — the single app shell: bottom nav + FAB + quick-action sheet, and all four tabs (Home, Food, Progress, Profile) in one file, switched by in-memory `state.tab`. Also owns the Log Weight, Add Photo, and Add Measurement bottom sheets.
 - `image-slot.js` — drag-and-drop image placeholder component, used for camera/gallery/progress-photo placeholders.
@@ -13,7 +13,7 @@ Full component-level detail (every screen, every reusable piece, props, deferred
 
 ## Cross-screen state: localStorage (prototype-only workaround)
 
-Onboarding and Home are separate top-level pages with no shared runtime — the only way to hand data from one to the other in this prototype tool is `localStorage['healthtrack_onboarding_profile']`, written once by Onboarding and read once by Home on mount (`{sex, age, heightCm, weightKg, activity, goal}`). Home falls back to a hardcoded `DEFAULT_PROFILE` if the key is missing.
+Onboarding and Home are separate top-level pages with no shared runtime — the only way to hand data from one to the other in this prototype tool is `localStorage['fitpulse_onboarding_profile']`, written once by Onboarding and read once by Home on mount (`{sex, age, heightCm, weightKg, activity, goal}`). Home falls back to a hardcoded `DEFAULT_PROFILE` if the key is missing.
 
 **This is a Claude Design workaround, not a pattern to carry into the real app.** It exists only because these are static prototype pages with no app-level state container or navigation graph. In the real app, Claude Code should replace this with a proper local database (Room) and dependency injection (Koin) — profile, weight log, photos, and measurements all become persisted entities read reactively, not a single JSON blob shuttled through localStorage at a page boundary.
 

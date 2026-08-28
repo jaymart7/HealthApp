@@ -34,4 +34,6 @@ dependencies {
 
     implementation(libs.androidx.navigationevent)
     implementation(libs.androidx.navigationevent.compose)
+
+    testImplementation(libs.junit)
 }

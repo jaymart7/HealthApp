@@ -22,7 +22,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "HealthApp"
+rootProject.name = "FitPulse"
 include(":app")
 include(":core:designsystem")
 include(":core:data")

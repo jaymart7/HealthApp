@@ -9,7 +9,7 @@ import ph.mart.healthapp.core.data.AppDatabase
 
 val databaseModule = module {
     single {
-        Room.databaseBuilder(androidContext(), AppDatabase::class.java, "healthapp.db")
+        Room.databaseBuilder(androidContext(), AppDatabase::class.java, "fitpulse.db")
             .setDriver(BundledSQLiteDriver())
             .setQueryCoroutineContext(Dispatchers.IO)
             // ponytail: no shipped users yet, no Migration objects exist to extend — destructive

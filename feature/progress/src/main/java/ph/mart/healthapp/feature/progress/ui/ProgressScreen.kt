@@ -1,8 +1,10 @@
 package ph.mart.healthapp.feature.progress.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,7 +27,11 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.inRange
 import ph.mart.healthapp.core.data.progress.withMovingAverage
+<<<<<<< HEAD
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
+=======
+import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
+>>>>>>> refs/heads/debug-seed-data
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -39,22 +45,29 @@ import ph.mart.healthapp.feature.progress.ui.components.WeightProgressChart
 import ph.mart.healthapp.feature.progress.ui.components.WeightStatRow
 
 @Composable
-fun ProgressScreen(viewModel: ProgressViewModel = koinViewModel()) {
+fun ProgressScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProgressViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val state = rememberProgressScreenState()
-    ProgressContent(uiState = uiState, state = state)
+    ProgressContent(uiState = uiState, state = state, scrollState = scrollState)
 }
 
 @Composable
-private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState) {
+private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState, scrollState: ScrollState = rememberScrollState()) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 16.dp)) {
+                Text(
+                    text = "Progress",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                )
                 SegmentedToggle(
                     options = ProgressTab.entries.map { it.name },
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
                     onSelect = { index -> state.tab = ProgressTab.entries[index] },
                 )
+<<<<<<< HEAD
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -65,6 +78,15 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                         ProgressTab.Photos -> PhotosTabContent(uiState, state)
                         ProgressTab.Measurements -> MeasurementsTabContent(uiState, state)
                     }
+=======
+                // Photos scrolls itself (LazyVerticalGrid) — nesting it in the verticalScroll
+                // Column measures it with infinite height and throws. The other two tabs are
+                // plain Columns and need the shared scroll.
+                when (state.tab) {
+                    ProgressTab.Photos -> PhotosTabContent(uiState, state)
+                    ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
+                    ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
+>>>>>>> refs/heads/debug-seed-data
                 }
             }
 
@@ -89,6 +111,17 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
             }
         }
     }
+}
+
+@Composable
+private fun ScrollingTab(scrollState: ScrollState, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(top = 16.dp, bottom = FabBottomClearance),
+        content = content,
+    )
 }
 
 @Composable
@@ -143,7 +176,7 @@ private fun PhotosTabContent(uiState: ProgressUiState, state: ProgressScreenStat
         photos = uiState.photos,
         selectedIds = state.selectedPhotoIds,
         onToggleSelect = state::togglePhotoSelection,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxSize(),
     )
 }
 

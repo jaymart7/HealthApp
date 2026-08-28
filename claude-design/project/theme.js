@@ -1,4 +1,4 @@
-// Shared source of truth for HealthTrack tokens + health math.
+// Shared source of truth for FitPulse tokens + health math.
 // Session 1 keeps Onboarding.dc.html's inline copy (verified working); from Session 2
 // onward, new DCs should import from here instead of re-typing hex/formula literals.
 export const THEMES = {

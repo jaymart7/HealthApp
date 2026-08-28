@@ -17,11 +17,11 @@ import ph.mart.healthapp.feature.profile.di.profileModule
 import ph.mart.healthapp.feature.progress.di.progressModule
 import ph.mart.healthapp.ui.AppRootViewModel
 
-class HealthTrackApplication : Application() {
+class FitPulseApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {
-            androidContext(this@HealthTrackApplication)
+            androidContext(this@FitPulseApplication)
             modules(
                 databaseModule,
                 networkModule,

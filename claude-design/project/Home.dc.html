@@ -843,7 +843,7 @@ class Component extends DCLogic {
   // before navigating here (separate top-level DCs share no runtime state, but DO share
   // localStorage). This is the fallback used only when that key is missing — e.g. Home opened
   // directly without completing onboarding in this browser session.
-  STORAGE_KEY = 'healthtrack_onboarding_profile';
+  STORAGE_KEY = 'fitpulse_onboarding_profile';
   DEFAULT_PROFILE = { sex: 'male', age: 26, heightCm: 170, weightKg: 55.5, activity: 'sedentary', goal: 'maintain' };
   BASE_DATE = new Date(2026, 5, 1); // seed date for weigh-ins/photos
   WEIGHT_DATA = [
@@ -1132,7 +1132,7 @@ class Component extends DCLogic {
     const blob = new Blob([JSON.stringify({ profile: s.profile, foodEntries: s.foodEntries }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'healthtrack-export.json'; document.body.appendChild(a); a.click(); a.remove();
+    a.href = url; a.download = 'fitpulse-export.json'; document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
   };
 

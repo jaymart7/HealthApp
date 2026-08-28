@@ -1,4 +1,4 @@
-# COMPONENTS.md
+# COMPONENTS.md — FitPulse
 Cumulative component manifest — final (Session 4 of 4 + fix pass). Sorted by build priority within each layer. `NEW` = added this session. `FIX` = added in the post-Session-4 fix pass (Log weight / Add photo / Add measurement).
 
 **File plan:** `theme.js` is the single source of truth for color tokens and `calcDailyTargets()` — Onboarding.dc.html, PhotoLogging.dc.html and Home.dc.html all import it. `appScaffold.js` / `fullScreenState.js` are canonical reference markup, copy-pasted (not executed imports) into every DC that needs them — see Concerns. Home.dc.html is the single app shell: it owns nav/FAB/quick-action sheet and all four tabs (Home, Food, Progress, Profile) in one file. Onboarding.dc.html and PhotoLogging.dc.html remain separate top-level pages reached by `window.location.href`. Sessions: 1 Onboarding, 2 PhotoLogging, 3 Home+Food, 4 Progress+Profile.
@@ -12,7 +12,7 @@ Cumulative component manifest — final (Session 4 of 4 + fix pass). Sorted by b
 - Tap active tab to scroll to top — not built; tabs only switch.
 - **Claude Code task:** Home FAB "Log food" / meal "+" / Progress "Take one" route into the photo capture flow via real page navigation, but round-trip state isn't wired — PhotoLogging can't hand a new food item back to Home's diary across a page load. A real single-navigation-graph app carries that state for free.
 - **Claude Code task:** `FullScreenState` and `AppScaffold` are copy-pasted markup (canonical sources `fullScreenState.js` / `appScaffold.js`), not executed imports — promote both to real composables once the app has a component layer.
-- **Claude Code task:** Onboarding's target-weight input (`targetWeightKg`) is never written to the `healthtrack_onboarding_profile` localStorage key — only `sex, age, heightCm, weightKg, activity, goal` are saved. Progress's weight-goal marker therefore always falls back to a hardcoded demo goal (75.0 kg); wire target weight through the same hand-off so a real goal set in onboarding reaches Progress.
+- **Claude Code task:** Onboarding's target-weight input (`targetWeightKg`) is never written to the `fitpulse_onboarding_profile` localStorage key — only `sex, age, heightCm, weightKg, activity, goal` are saved. Progress's weight-goal marker therefore always falls back to a hardcoded demo goal (75.0 kg); wire target weight through the same hand-off so a real goal set in onboarding reaches Progress.
 - Profile's Units and Reminders controls are local UI state only (not persisted, not connected to Onboarding's units choice, which itself isn't saved to localStorage either) — functional stubs per this session's brief.
 - Sheet content-height swap uses two hand-tuned fixed pixel heights (fields vs. calendar) per sheet rather than measuring real DOM height — the transition looks smooth but may leave a few px of extra whitespace at one end. **Claude Code task:** swap to a measured-height approach (ResizeObserver or scrollHeight-on-ref) once there's a component layer to hang refs off cleanly.
 
@@ -86,7 +86,7 @@ Cumulative component manifest — final (Session 4 of 4 + fix pass). Sorted by b
 
 ## Cross-file state and conventions
 
-**Real hand-off:** Onboarding's "Let's go" writes `{sex, age, heightCm, weightKg, activity, goal}` to `localStorage['healthtrack_onboarding_profile']` before navigating to Home.dc.html; Home reads it on mount and calls `calcDailyTargets()` with it — this is the one shared source of truth for calorie/macro goals across Home, Progress, and Profile. Falls back to `DEFAULT_PROFILE` (male, 26, 170cm, 55.5kg, sedentary, maintain → 1791 kcal) when the key is missing.
+**Real hand-off:** Onboarding's "Let's go" writes `{sex, age, heightCm, weightKg, activity, goal}` to `localStorage['fitpulse_onboarding_profile']` before navigating to Home.dc.html; Home reads it on mount and calls `calcDailyTargets()` with it — this is the one shared source of truth for calorie/macro goals across Home, Progress, and Profile. Falls back to `DEFAULT_PROFILE` (male, 26, 170cm, 55.5kg, sedentary, maintain → 1791 kcal) when the key is missing.
 
 **FullScreenState is copy-pasted from `fullScreenState.js`**, not a real shared component — every empty/status state (Home day-one, empty diary, empty progress photos, PhotoLogging's Retry/NoFood/Offline) carries a `// CANONICAL SOURCE` comment and must be edited at the source first, then re-pasted everywhere, per the same rule as `appScaffold.js`.
 

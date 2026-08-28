@@ -1,4 +1,4 @@
-# CLAUDE.md — HealthTrack
+# CLAUDE.md — FitPulse
 
 Persistent context for every Claude Code session on this project. Read this
 before writing any code. If something here conflicts with what you find in
@@ -149,13 +149,15 @@ of these — don't rely on the default Activity back behavior:
 ## Deferred from the prototype — explicit backlog, not silently dropped
 
 - Barcode scanning (icon exists, no scan logic)
-- FAB extended ↔ icon-only scroll-collapse behavior
-- Photo comparison draggable before/after slider (static side-by-side was
-  built instead)
-- Tap-active-tab-to-scroll-to-top
-- Medium/high-contrast theme wiring (tokens exist in `Color.kt`, unused)
 - Final mascot illustration (placeholder geometric mascot "Bibo" was used
   throughout)
+
+Cleared in Phase 9 — these are built, don't re-defer them: FAB
+scroll-collapse (`DockedFab(expanded = …)` + `rememberFabExpanded`),
+tap-active-tab-to-scroll-to-top (`AppScaffold` owns each tab's
+`ScrollState`), the photo comparison draggable slider, and the
+medium/high-contrast schemes (`AppTheme` now follows
+`UiModeManager.getContrast()` on API 34+).
 
 ## Composable structure & previews
 

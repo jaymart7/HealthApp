@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,7 +35,11 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
+<<<<<<< HEAD
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
+=======
+import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
+>>>>>>> refs/heads/debug-seed-data
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
@@ -42,10 +47,10 @@ import ph.mart.healthapp.feature.profile.ui.components.ProfileGoalsSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileRemindersSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileUnitsSection
 
-private const val EXPORT_FILE_NAME = "healthtrack-export.json"
+private const val EXPORT_FILE_NAME = "fitpulse-export.json"
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = koinViewModel()) {
+fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProfileViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -109,6 +114,7 @@ fun ProfileScreen(viewModel: ProfileViewModel = koinViewModel()) {
         onToggleReminder = viewModel::setReminder,
         onExport = viewModel::buildExport,
         onImport = { importLauncher.launch(arrayOf("application/json")) },
+        scrollState = scrollState,
     )
 }
 
@@ -121,6 +127,7 @@ private fun ProfileContent(
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         // A profile always exists by the time this tab is reachable (AppRoot gates on it) — this
@@ -130,9 +137,14 @@ private fun ProfileContent(
             verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier
                 .fillMaxSize()
+<<<<<<< HEAD
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp)
                 .padding(bottom = DockedFabContentPadding),
+=======
+                .verticalScroll(scrollState)
+                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FabBottomClearance),
+>>>>>>> refs/heads/debug-seed-data
         ) {
             Text(
                 text = "Profile",

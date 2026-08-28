@@ -24,7 +24,7 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
  * Progress photos are never included — they are image files, and the UI says so.
  */
 @Serializable
-internal data class HealthTrackExport(
+internal data class FitPulseExport(
     @SerialName("schemaVersion") val schemaVersion: Int = EXPORT_SCHEMA_VERSION,
     val profile: ExportProfile? = null,
     val foodEntries: List<ExportFoodEntry> = emptyList(),
@@ -93,7 +93,7 @@ internal fun buildExportJson(
     weightEntries: List<WeightEntry>,
     measurements: List<MeasurementEntry>,
 ): String = json.encodeToString(
-    HealthTrackExport(
+    FitPulseExport(
         profile = profile?.toExport(),
         foodEntries = foodEntries.map { it.toExport() },
         weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note) },
@@ -104,9 +104,9 @@ internal fun buildExportJson(
 /** Parses and validates in one step — a malformed file, an unknown enum name, or a future schema
  * version all come back as [Result.failure] so the caller can show a message and write nothing. */
 internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
-    val export = json.decodeFromString<HealthTrackExport>(text)
+    val export = json.decodeFromString<FitPulseExport>(text)
     require(export.schemaVersion <= EXPORT_SCHEMA_VERSION) {
-        "This file was written by a newer version of HealthTrack."
+        "This file was written by a newer version of FitPulse."
     }
     ImportPayload(
         profile = export.profile?.toProfile(),
