@@ -36,7 +36,7 @@ val DockedFabContentPadding = 72.dp
  * Extended FAB, [MaterialTheme.colorScheme.primaryContainer] fill, Level-3 shadow — the only real
  * drop shadow in the app (M3's default FAB elevation is already the 6dp we want). Positioning is
  * the caller's job; it floats above the nav bar, never on top of it — leave
- * [FabBottomClearance] below a screen's last item.
+ * [DockedFabContentPadding] below a screen's last item.
  *
  * [expanded] `false` collapses it to an icon-only circle; drive it from [rememberFabExpanded].
  */
@@ -61,12 +61,6 @@ fun DockedFab(onClick: () -> Unit, modifier: Modifier = Modifier, label: String 
         modifier = modifier,
     )
 }
-
-/**
- * Vertical room a screen must leave below its last item so [DockedFab] never covers it: 56dp FAB +
- * 16dp inset + 16dp breathing room. A component metric, not a value off the spacing scale.
- */
-val FabBottomClearance = 88.dp
 
 /** Below this many pixels a scroll delta is fling settle or thumb jitter, not a direction change. */
 private const val SCROLL_DIRECTION_SLOP = 8

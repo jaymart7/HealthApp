@@ -4,18 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-<<<<<<< HEAD
-=======
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
->>>>>>> refs/heads/debug-seed-data
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -78,17 +70,6 @@ private fun PreviewSheet(modifier: Modifier, content: @Composable ColumnScope.()
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerLow)
-<<<<<<< HEAD
-=======
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {},
-                )
-                // union, not .imePadding().navigationBarsPadding() — chaining stacks the two
-                // and leaves a nav-bar-sized gap above the keyboard.
-                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
->>>>>>> refs/heads/debug-seed-data
                 .padding(top = 12.dp, start = 16.dp, end = 16.dp, bottom = 24.dp),
         ) {
             Box(

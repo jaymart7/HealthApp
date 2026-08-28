@@ -26,11 +26,7 @@ import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.WeightEntry
-<<<<<<< HEAD
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
-=======
-import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
->>>>>>> refs/heads/debug-seed-data
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -74,14 +70,9 @@ private fun HomeContent(uiState: HomeUiState, state: HomeScreenState, onAddPhoto
         Column(
             modifier = Modifier
                 .fillMaxSize()
-<<<<<<< HEAD
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 16.dp)
                 .padding(bottom = DockedFabContentPadding),
-=======
-                .verticalScroll(scrollState)
-                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FabBottomClearance),
->>>>>>> refs/heads/debug-seed-data
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             MascotGreetingCard(greeting = greeting)

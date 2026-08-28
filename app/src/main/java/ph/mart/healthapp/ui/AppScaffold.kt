@@ -1,21 +1,12 @@
 package ph.mart.healthapp.ui
 
 import androidx.compose.foundation.layout.Box
-<<<<<<< HEAD
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-=======
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
->>>>>>> refs/heads/debug-seed-data
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,7 +15,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
@@ -58,7 +48,6 @@ private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
 private enum class ActiveSheet { None, QuickAction, LogWeight, AddPhoto }
 
 /**
-<<<<<<< HEAD
  * Bottom nav (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
  * depends on every `:feature:*` module and `:core:navigation` at once, so it's the only place
  * real navigation wiring can live — see the Phase 2 plan's "flagged architectural decision."
@@ -68,29 +57,50 @@ private enum class ActiveSheet { None, QuickAction, LogWeight, AddPhoto }
  * any landscape cutout, and the nav bar. The sheets sit *outside* the Scaffold because it draws
  * the bottom bar and FAB after its content — a sheet nested inside would have both on top of its
  * scrim.
-=======
- * Bottom nav (4 tabs) + a FAB floating above it + quick-action sheet. This is the only place in
- * the app that depends on every `:feature:*` module and `:core:navigation` at once, so it's the
- * only place real navigation wiring can live — see the Phase 2 plan's "flagged architectural
- * decision."
->>>>>>> refs/heads/debug-seed-data
  */
 @Composable
 fun AppScaffold(modifier: Modifier = Modifier) {
     val topLevelBackStack = remember { TopLevelBackStack<NavKey>(TopLevelDestination.Home.route) }
     var activeSheet by rememberSaveable { mutableStateOf(ActiveSheet.None) }
-<<<<<<< HEAD
-    // The photo-capture flow shows neither nav bar nor FAB (appScaffold.js).
+    val scope = rememberCoroutineScope()
+
+    // Hoisted out of the screens so the FAB can watch the active tab's scroll and re-tapping a tab
+    // can drive it back to the top. Free side effect: NavDisplay disposes the off-screen entry, so
+    // owning the state here is also what preserves each tab's scroll position across tab switches.
+    val homeScroll = rememberScrollState()
+    val foodScroll = rememberScrollState()
+    val progressScroll = rememberScrollState()
+    val profileScroll = rememberScrollState()
+    val currentScroll = when (topLevelBackStack.topLevelKey) {
+        TopLevelDestination.Food.route -> foodScroll
+        TopLevelDestination.Progress.route -> progressScroll
+        TopLevelDestination.Profile.route -> profileScroll
+        else -> homeScroll
+    }
+
+    // The photo-capture flow is a full-bleed camera surface: neither nav bar nor FAB, and it draws
+    // under both system bars (appScaffold.js). Every other route is a tab and stops at the bars.
     val showChrome = topLevelBackStack.backStack.lastOrNull() != FoodCaptureRoute
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
+            contentWindowInsets = if (showChrome) ScaffoldDefaults.contentWindowInsets else WindowInsets(0),
             bottomBar = {
                 if (showChrome) {
                     BottomNavBar(
                         items = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) },
                         selectedIndex = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey },
-                        onSelect = { index -> topLevelBackStack.addTopLevel(TopLevelDestination.entries[index].route) },
+                        onSelect = { index ->
+                            val destination = TopLevelDestination.entries[index]
+                            if (destination.route != topLevelBackStack.topLevelKey) {
+                                topLevelBackStack.addTopLevel(destination.route)
+                            } else if (topLevelBackStack.backStack.last() == destination.route) {
+                                // Re-tapping the active tab scrolls it to the top — but only when
+                                // its root is what's actually showing; scrolling a hidden screen
+                                // would be a no-op at best.
+                                scope.launch { currentScroll.animateScrollTo(0) }
+                            }
+                        },
                     )
                 }
             },
@@ -98,6 +108,7 @@ fun AppScaffold(modifier: Modifier = Modifier) {
                 if (showChrome) {
                     DockedFab(
                         onClick = { activeSheet = ActiveSheet.QuickAction },
+                        expanded = rememberFabExpanded(currentScroll),
                     )
                 }
             },
@@ -106,10 +117,10 @@ fun AppScaffold(modifier: Modifier = Modifier) {
                 backStack = topLevelBackStack.backStack,
                 onBack = { topLevelBackStack.removeLast() },
                 entryProvider = entryProvider {
-                    homeEntries(onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
-                    foodEntries(onExitCapture = { topLevelBackStack.removeLast() })
-                    progressEntries()
-                    profileEntries()
+                    homeEntries(scrollState = homeScroll, onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
+                    foodEntries(scrollState = foodScroll, onExitCapture = { topLevelBackStack.removeLast() })
+                    progressEntries(scrollState = progressScroll)
+                    profileEntries(scrollState = profileScroll)
                 },
                 // Only the bar is cleared here — clearance for the FAB on top of it is
                 // [DockedFabContentPadding], added inside each destination's scroll container.
@@ -130,94 +141,6 @@ fun AppScaffold(modifier: Modifier = Modifier) {
             ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.None -> Unit
-=======
-    val scope = rememberCoroutineScope()
-
-    // Hoisted out of the screens so the FAB can watch the active tab's scroll and re-tapping a tab
-    // can drive it back to the top. Free side effect: NavDisplay disposes the off-screen entry, so
-    // owning the state here is also what preserves each tab's scroll position across tab switches.
-    val homeScroll = rememberScrollState()
-    val foodScroll = rememberScrollState()
-    val progressScroll = rememberScrollState()
-    val profileScroll = rememberScrollState()
-    val currentScroll = when (topLevelBackStack.topLevelKey) {
-        TopLevelDestination.Food.route -> foodScroll
-        TopLevelDestination.Progress.route -> progressScroll
-        TopLevelDestination.Profile.route -> profileScroll
-        else -> homeScroll
-    }
-
-    // The capture flow is a full-bleed camera surface: it draws under both system bars and shows
-    // neither nav bar nor FAB (appScaffold.js). Every other route is a tab and stops at the bars.
-    val isFullBleed = topLevelBackStack.backStack.last() == FoodCaptureRoute
-
-    Surface(color = MaterialTheme.colorScheme.background, modifier = modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                // The FAB shares this Box with the screen so it floats over content but stops at
-                // the top of the nav bar — the nav bar's own tab targets stay uncovered.
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        // Status bars only — the bottom edge already belongs to BottomNavBar's
-                        // navigationBarsPadding(), and safeDrawing here would double it up.
-                        .then(if (isFullBleed) Modifier else Modifier.windowInsetsPadding(WindowInsets.statusBars)),
-                ) {
-                    NavDisplay(
-                        backStack = topLevelBackStack.backStack,
-                        onBack = { topLevelBackStack.removeLast() },
-                        entryProvider = entryProvider {
-                            homeEntries(scrollState = homeScroll, onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
-                            foodEntries(scrollState = foodScroll, onExitCapture = { topLevelBackStack.removeLast() })
-                            progressEntries(scrollState = progressScroll)
-                            profileEntries(scrollState = profileScroll)
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                    if (!isFullBleed) {
-                        DockedFab(
-                            onClick = { activeSheet = ActiveSheet.QuickAction },
-                            expanded = rememberFabExpanded(currentScroll),
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(end = 16.dp, bottom = 16.dp),
-                        )
-                    }
-                }
-                if (!isFullBleed) {
-                    BottomNavBar(
-                        items = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) },
-                        selectedIndex = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey },
-                        onSelect = { index ->
-                            val destination = TopLevelDestination.entries[index]
-                            if (destination.route != topLevelBackStack.topLevelKey) {
-                                topLevelBackStack.addTopLevel(destination.route)
-                            } else if (topLevelBackStack.backStack.last() == destination.route) {
-                                // Re-tapping the active tab scrolls it to the top — but only when
-                                // its root is what's actually showing; scrolling a hidden screen
-                                // would be a no-op at best.
-                                scope.launch { currentScroll.animateScrollTo(0) }
-                            }
-                        },
-                    )
-                }
-            }
-
-            when (activeSheet) {
-                ActiveSheet.QuickAction -> QuickActionSheet(
-                    onDismiss = { activeSheet = ActiveSheet.None },
-                    onLogFood = {
-                        activeSheet = ActiveSheet.None
-                        topLevelBackStack.add(FoodCaptureRoute)
-                    },
-                    onLogWeight = { activeSheet = ActiveSheet.LogWeight },
-                    onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
-                )
-                ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
-                ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })
-                ActiveSheet.None -> Unit
-            }
->>>>>>> refs/heads/debug-seed-data
         }
     }
 }

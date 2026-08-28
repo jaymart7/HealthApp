@@ -35,11 +35,7 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
-<<<<<<< HEAD
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
-=======
-import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
->>>>>>> refs/heads/debug-seed-data
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
@@ -137,14 +133,9 @@ private fun ProfileContent(
             verticalArrangement = Arrangement.spacedBy(24.dp),
             modifier = Modifier
                 .fillMaxSize()
-<<<<<<< HEAD
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 16.dp)
                 .padding(bottom = DockedFabContentPadding),
-=======
-                .verticalScroll(scrollState)
-                .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = FabBottomClearance),
->>>>>>> refs/heads/debug-seed-data
         ) {
             Text(
                 text = "Profile",

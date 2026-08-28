@@ -27,11 +27,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.inRange
 import ph.mart.healthapp.core.data.progress.withMovingAverage
-<<<<<<< HEAD
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
-=======
-import ph.mart.healthapp.core.designsystem.component.FabBottomClearance
->>>>>>> refs/heads/debug-seed-data
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -67,18 +63,6 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
                     onSelect = { index -> state.tab = ProgressTab.entries[index] },
                 )
-<<<<<<< HEAD
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 16.dp, bottom = DockedFabContentPadding),
-                ) {
-                    when (state.tab) {
-                        ProgressTab.Weight -> WeightTabContent(uiState, state)
-                        ProgressTab.Photos -> PhotosTabContent(uiState, state)
-                        ProgressTab.Measurements -> MeasurementsTabContent(uiState, state)
-                    }
-=======
                 // Photos scrolls itself (LazyVerticalGrid) — nesting it in the verticalScroll
                 // Column measures it with infinite height and throws. The other two tabs are
                 // plain Columns and need the shared scroll.
@@ -86,7 +70,6 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     ProgressTab.Photos -> PhotosTabContent(uiState, state)
                     ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
                     ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
->>>>>>> refs/heads/debug-seed-data
                 }
             }
 
@@ -119,7 +102,7 @@ private fun ScrollingTab(scrollState: ScrollState, content: @Composable ColumnSc
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(top = 16.dp, bottom = FabBottomClearance),
+            .padding(top = 16.dp, bottom = DockedFabContentPadding),
         content = content,
     )
 }
@@ -134,7 +117,7 @@ private fun WeightTabContent(uiState: ProgressUiState, state: ProgressScreenStat
         )
         return
     }
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    Column {
         SegmentedToggle(
             options = ChartRange.entries.map { it.label },
             selectedIndex = ChartRange.entries.indexOf(state.range),
@@ -182,10 +165,7 @@ private fun PhotosTabContent(uiState: ProgressUiState, state: ProgressScreenStat
 
 @Composable
 private fun MeasurementsTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
-    Column(
-        modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         MeasurementPart.entries.filter { it in uiState.measurements }.forEach { part ->
             MeasurementRow(
                 name = part.name,
