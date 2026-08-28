@@ -46,6 +46,7 @@ import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileGoalsSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileRemindersSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileUnitsSection
+import ph.mart.healthapp.feature.profile.ui.components.ProfileWaterSection
 
 private const val EXPORT_FILE_NAME = "fitpulse-export.json"
 
@@ -138,6 +139,7 @@ fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: P
         message = message,
         messageIsError = messageIsError,
         onSelectUnit = viewModel::setUnit,
+        onSetWaterGoal = viewModel::setWaterGoal,
         onToggleReminder = { kind, enabled ->
             if (!enabled || context.canPostNotifications()) {
                 viewModel.setReminder(kind, enabled)
@@ -165,6 +167,7 @@ private fun ProfileContent(
     message: String?,
     messageIsError: Boolean,
     onSelectUnit: (UnitSystem) -> Unit,
+    onSetWaterGoal: (Int) -> Unit,
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
@@ -190,6 +193,11 @@ private fun ProfileContent(
             )
             ProfileGoalsSection(profile = profile)
             ProfileUnitsSection(unit = profile.preferredUnit, onSelect = onSelectUnit)
+            ProfileWaterSection(
+                goalGlasses = profile.waterGoalGlasses,
+                unit = profile.preferredUnit,
+                onSetGoal = onSetWaterGoal,
+            )
             ProfileRemindersSection(
                 enabled = profile::reminderEnabled,
                 onToggle = onToggleReminder,
@@ -239,6 +247,7 @@ private fun ProfileScreenPreview() {
             message = null,
             messageIsError = false,
             onSelectUnit = {},
+            onSetWaterGoal = {},
             onToggleReminder = { _, _ -> },
             onExport = {},
             onImport = {},

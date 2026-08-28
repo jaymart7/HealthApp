@@ -13,6 +13,8 @@ import org.koin.core.component.inject
 import ph.mart.healthapp.MainActivity
 import ph.mart.healthapp.R
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
  * Posts one reminder notification. Which one is carried in the input data, so all five schedules
@@ -27,6 +29,8 @@ class ReminderWorker(
 ) : CoroutineWorker(context, params), KoinComponent {
 
     private val foodRepository: FoodRepository by inject()
+    private val waterRepository: WaterRepository by inject()
+    private val profileRepository: ProfileRepository by inject()
 
     override suspend fun doWork(): Result {
         val reminder = inputData.getString(KEY_REMINDER)
@@ -40,6 +44,12 @@ class ReminderWorker(
         val mealType = reminder.mealType
         if (mealType != null && foodRepository.observeTodayEntries().first().any { it.mealType == mealType }) {
             return Result.success()
+        }
+
+        // Same rule for water: don't nudge someone who already hit today's goal.
+        if (reminder.checksWater) {
+            val goal = profileRepository.observeProfile().first()?.waterGoalGlasses ?: return Result.success()
+            if (waterRepository.observeToday().first() >= goal) return Result.success()
         }
 
         notify(reminder)

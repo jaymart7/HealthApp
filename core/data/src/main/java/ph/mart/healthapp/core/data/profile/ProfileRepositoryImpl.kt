@@ -31,6 +31,8 @@ private fun ProfileEntity.toProfile() = Profile(
     mealRemindersOn = mealRemindersOn,
     weighInReminderOn = weighInReminderOn,
     photoReminderOn = photoReminderOn,
+    waterRemindersOn = waterRemindersOn,
+    waterGoalGlasses = waterGoalGlasses,
 )
 
 private fun Profile.toEntity() = ProfileEntity(
@@ -50,4 +52,6 @@ private fun Profile.toEntity() = ProfileEntity(
     mealRemindersOn = mealRemindersOn,
     weighInReminderOn = weighInReminderOn,
     photoReminderOn = photoReminderOn,
+    waterRemindersOn = waterRemindersOn,
+    waterGoalGlasses = waterGoalGlasses,
 )

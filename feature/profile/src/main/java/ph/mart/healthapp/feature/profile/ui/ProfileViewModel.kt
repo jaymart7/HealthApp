@@ -9,11 +9,14 @@ import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
+import ph.mart.healthapp.core.data.water.WaterRepository
 
 class ProfileViewModel(
     private val profileRepository: ProfileRepository,
     private val foodRepository: FoodRepository,
     private val progressRepository: ProgressRepository,
+    private val waterRepository: WaterRepository,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -38,19 +41,26 @@ class ProfileViewModel(
         profileRepository.saveProfile(profile.withReminder(kind, enabled))
     }
 
+    fun setWaterGoal(glasses: Int) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(waterGoalGlasses = glasses.coerceIn(WATER_GOAL_GLASSES)))
+    }
+
     fun buildExport() = intent {
         val json = buildExportJson(
             profile = state.profile,
             foodEntries = foodRepository.allEntries(),
             weightEntries = progressRepository.observeWeightEntries().first(),
             measurements = progressRepository.observeMeasurements().first().values.flatten(),
+            waterDays = waterRepository.allDays(),
         )
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }
 
-    /** Replaces the profile and the food diary; weight and measurements are upserted by date, so
-     * importing merges history rather than discarding entries the file doesn't mention. Nothing is
-     * written at all if the file fails to parse. Photos are never touched. */
+    /** Replaces the profile, the food diary and the water log; weight and measurements are
+     * upserted by date, so importing merges history rather than discarding entries the file
+     * doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
+     * touched. */
     fun import(text: String) = intent {
         parseExport(text).fold(
             onSuccess = { payload ->
@@ -59,6 +69,8 @@ class ProfileViewModel(
                 payload.foodEntries.forEach { foodRepository.addEntry(it) }
                 payload.weightEntries.forEach { progressRepository.upsertWeightEntry(it) }
                 payload.measurements.forEach { progressRepository.upsertMeasurementEntry(it) }
+                waterRepository.clearAllDays()
+                payload.waterDays.forEach { waterRepository.upsertDay(it) }
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {

@@ -161,7 +161,12 @@ Open Food Facts transport as the barcode lookup) behind `FoodSearchPanel`
 photo flow's no-food state. The diary's own top field is a local filter over
 logged entries, not a database search.
 
-Reminders are wired — the three Profile switches now schedule real notifications.
+Water tracking is built — `WaterRepository` (`:core:data/water`, one row per day
+holding a glass count), the shared `WaterGlassRow` in `:core:designsystem`, a
+`WaterCard` on Home and a `DiaryWaterRow` in the diary, a goal stepper in
+Profile > Water, and two water reminders that stay quiet once the goal is met.
+
+Reminders are wired — the four Profile switches now schedule real notifications.
 `ph.mart.healthapp.reminder` in `:app` holds the schedule table and the worker;
 `FitPulseApplication` reconciles WorkManager off `ProfileRepository.observeProfile()`,
 so the switches stay a plain Room write and no `:feature:*` module touches

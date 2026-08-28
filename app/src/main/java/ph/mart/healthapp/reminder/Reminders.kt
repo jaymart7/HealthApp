@@ -17,8 +17,8 @@ const val KEY_REMINDER = "reminder"
  * Profile switches already promise in their sublabels (`ReminderKind` in `:feature:profile`):
  * meals 3x daily, weigh-in Monday 8:00, photos every 2 weeks.
  *
- * [mealType] is set only on the three meal reminders, and is what lets the worker stay quiet when
- * that meal is already in today's diary.
+ * [mealType] is set only on the three meal reminders, and [checksWater] only on the two water
+ * ones; both are what let the worker stay quiet about something already logged today.
  */
 enum class Reminder(
     val periodDays: Long,
@@ -29,22 +29,27 @@ enum class Reminder(
     val body: String,
     val tab: TopLevelDestination,
     val mealType: MealType?,
+    val checksWater: Boolean = false,
 ) {
     Breakfast(1, 8, null, "Breakfast logged?", "Add it while you remember the portions.", TopLevelDestination.Food, MealType.Breakfast),
     Lunch(1, 13, null, "Lunch logged?", "A quick entry keeps today's macros honest.", TopLevelDestination.Food, MealType.Lunch),
     Dinner(1, 19, null, "Dinner logged?", "Close out the day's diary.", TopLevelDestination.Food, MealType.Dinner),
     WeighIn(7, 8, Calendar.MONDAY, "Weigh-in day", "Same time, same scale — log this week's weight.", TopLevelDestination.Progress, null),
     Photo(14, 9, null, "Progress photo time", "Two weeks on. Take the next one in the same pose.", TopLevelDestination.Progress, null),
+    WaterMidday(1, 11, null, "Water check", "Halfway through the day — how many glasses so far?", TopLevelDestination.Home, null, checksWater = true),
+    WaterAfternoon(1, 16, null, "Water check", "Still time to hit today's water goal.", TopLevelDestination.Home, null, checksWater = true),
     ;
 
     val uniqueName: String get() = "reminder-$name"
 }
 
-/** Which profile switch owns this reminder. The three meal reminders share one switch. */
+/** Which profile switch owns this reminder. The three meal reminders share one switch, as do the
+ * two water ones. */
 fun Reminder.enabledIn(profile: Profile): Boolean = when (this) {
     Reminder.Breakfast, Reminder.Lunch, Reminder.Dinner -> profile.mealRemindersOn
     Reminder.WeighIn -> profile.weighInReminderOn
     Reminder.Photo -> profile.photoReminderOn
+    Reminder.WaterMidday, Reminder.WaterAfternoon -> profile.waterRemindersOn
 }
 
 /**

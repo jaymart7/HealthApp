@@ -37,17 +37,30 @@ import ph.mart.healthapp.feature.home.ui.components.CalorieRingCard
 import ph.mart.healthapp.feature.home.ui.components.MacroSummaryCard
 import ph.mart.healthapp.feature.home.ui.components.MascotGreetingCard
 import ph.mart.healthapp.feature.home.ui.components.ProgressPhotoReminderCard
+import ph.mart.healthapp.feature.home.ui.components.WaterCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
 
 @Composable
 fun HomeScreen(onAddPhoto: () -> Unit, scrollState: ScrollState = rememberScrollState(), viewModel: HomeViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val state = rememberHomeScreenState()
-    HomeContent(uiState = uiState, state = state, scrollState = scrollState, onAddPhoto = onAddPhoto)
+    HomeContent(
+        uiState = uiState,
+        state = state,
+        scrollState = scrollState,
+        onAddPhoto = onAddPhoto,
+        onEvent = viewModel::handleEvent,
+    )
 }
 
 @Composable
-private fun HomeContent(uiState: HomeUiState, state: HomeScreenState, onAddPhoto: () -> Unit, scrollState: ScrollState = rememberScrollState()) {
+private fun HomeContent(
+    uiState: HomeUiState,
+    state: HomeScreenState,
+    onAddPhoto: () -> Unit,
+    onEvent: (HomeEvent) -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
+) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         if (uiState.isDayOne) {
             FullScreenState(
@@ -84,6 +97,13 @@ private fun HomeContent(uiState: HomeUiState, state: HomeScreenState, onAddPhoto
             if (targets != null) {
                 CalorieRingCard(consumedKcal = uiState.totals.calories, goalKcal = targets.calories)
             }
+
+            WaterCard(
+                glasses = uiState.waterGlasses,
+                goalGlasses = uiState.waterGoalGlasses,
+                unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
+                onSetGlasses = { glasses -> onEvent(HomeEvent.OnSetWaterGlasses(glasses)) },
+            )
 
             WeightMetricCard(
                 trend = trend,
@@ -128,9 +148,11 @@ private fun HomeScreenPreview() {
                     WeightEntry(dateEpochDay = today, weightKg = 76.5),
                 ),
                 lastPhotoEpochDay = today - 12,
+                waterGlasses = 5,
             ),
             state = HomeScreenState(),
             onAddPhoto = {},
+            onEvent = {},
         )
     }
 }
@@ -143,6 +165,7 @@ private fun HomeScreenDayOnePreview() {
             uiState = HomeUiState(profile = PreviewProfile),
             state = HomeScreenState(),
             onAddPhoto = {},
+            onEvent = {},
         )
     }
 }

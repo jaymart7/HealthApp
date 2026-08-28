@@ -14,6 +14,8 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
+import ph.mart.healthapp.core.data.water.WaterDay
 
 class ProfileExportTest {
 
@@ -28,6 +30,8 @@ class ProfileExportTest {
         preferredUnit = UnitSystem.Imperial,
         calorieOverrideKcal = 1800,
         photoReminderOn = true,
+        waterRemindersOn = true,
+        waterGoalGlasses = 10,
     )
 
     private val foodEntries = listOf(
@@ -47,22 +51,24 @@ class ProfileExportTest {
 
     private val weightEntries = listOf(WeightEntry(20_000, 62.4, "after the gym"))
     private val measurements = listOf(MeasurementEntry(MeasurementPart.Waist, 20_001, 78.5))
+    private val waterDays = listOf(WaterDay(20_000, 6), WaterDay(20_001, 9))
 
     @Test
-    fun `round trips profile food weight and measurements`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements)
+    fun `round trips profile food weight measurements and water`() {
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(profile, payload.profile)
         assertEquals(weightEntries, payload.weightEntries)
         assertEquals(measurements, payload.measurements)
+        assertEquals(waterDays, payload.waterDays)
         // The row id is storage-local and deliberately not exported; everything else survives.
         assertEquals(foodEntries.map { it.copy(id = 0) }, payload.foodEntries)
     }
 
     @Test
     fun `export carries no photo data`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays)
         assertFalse(json.contains("filePath"))
         assertFalse(json.contains("\"photos\""))
     }
@@ -75,14 +81,36 @@ class ProfileExportTest {
 
     @Test
     fun `unrecognized enum value fails`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays)
             .replace("\"Waist\"", "\"Elbow\"")
         assertTrue(parseExport(json).isFailure)
     }
 
+    /** A file written before water existed must still import — every field added since is
+     * defaulted, which is the whole reason the version gate only looks forward. Written out by
+     * hand rather than derived from [buildExportJson], which can only emit the current schema. */
+    @Test
+    fun `a v1 file without water still imports`() {
+        val v1 = """
+            {
+              "schemaVersion": 1,
+              "profile": {
+                "sex": "Female", "age": 31, "heightCm": 165.0, "weightKg": 62.0,
+                "activityLevel": "Moderate", "goal": "Lose", "preferredUnit": "Imperial"
+              },
+              "weightEntries": [{ "dateEpochDay": 20000, "weightKg": 62.4 }]
+            }
+        """.trimIndent()
+        val payload = parseExport(v1).getOrThrow()
+
+        assertEquals(weightEntries.map { it.copy(note = "") }, payload.weightEntries)
+        assertEquals(emptyList<WaterDay>(), payload.waterDays)
+        assertEquals(DEFAULT_WATER_GOAL_GLASSES, payload.profile?.waterGoalGlasses)
+    }
+
     @Test
     fun `newer schema version is rejected`() {
-        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList())
+        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 99")
         assertTrue(parseExport(json).isFailure)
     }

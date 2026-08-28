@@ -14,6 +14,8 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
+import ph.mart.healthapp.core.data.water.WaterDay
 
 /**
  * The on-disk export format. Deliberately its own set of DTOs rather than `@Serializable` on the
@@ -30,9 +32,12 @@ internal data class FitPulseExport(
     val foodEntries: List<ExportFoodEntry> = emptyList(),
     val weightEntries: List<ExportWeightEntry> = emptyList(),
     val measurements: List<ExportMeasurement> = emptyList(),
+    val waterDays: List<ExportWaterDay> = emptyList(),
 )
 
-internal const val EXPORT_SCHEMA_VERSION = 1
+/** 2 added [FitPulseExport.waterDays] and the profile's water fields. Every addition is
+ * defaulted, so a v1 file still imports — the version gate only rejects files from the future. */
+internal const val EXPORT_SCHEMA_VERSION = 2
 
 @Serializable
 internal data class ExportProfile(
@@ -52,6 +57,8 @@ internal data class ExportProfile(
     val mealRemindersOn: Boolean = true,
     val weighInReminderOn: Boolean = true,
     val photoReminderOn: Boolean = false,
+    val waterRemindersOn: Boolean = false,
+    val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
 )
 
 @Serializable
@@ -73,12 +80,16 @@ internal data class ExportWeightEntry(val dateEpochDay: Long, val weightKg: Doub
 @Serializable
 internal data class ExportMeasurement(val part: String, val dateEpochDay: Long, val valueCm: Double)
 
+@Serializable
+internal data class ExportWaterDay(val dateEpochDay: Long, val glasses: Int)
+
 /** What an import hands back to the ViewModel — domain types only, already validated. */
 internal data class ImportPayload(
     val profile: Profile?,
     val foodEntries: List<FoodEntry>,
     val weightEntries: List<WeightEntry>,
     val measurements: List<MeasurementEntry>,
+    val waterDays: List<WaterDay>,
 )
 
 private val json = Json {
@@ -92,12 +103,14 @@ internal fun buildExportJson(
     foodEntries: List<FoodEntry>,
     weightEntries: List<WeightEntry>,
     measurements: List<MeasurementEntry>,
+    waterDays: List<WaterDay>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
         foodEntries = foodEntries.map { it.toExport() },
         weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note) },
         measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.valueCm) },
+        waterDays = waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
     ),
 )
 
@@ -115,6 +128,7 @@ internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
         measurements = export.measurements.map {
             MeasurementEntry(enumOf<MeasurementPart>(it.part, MeasurementPart.entries), it.dateEpochDay, it.valueCm)
         },
+        waterDays = export.waterDays.map { WaterDay(it.dateEpochDay, it.glasses) },
     )
 }
 
@@ -138,6 +152,8 @@ private fun Profile.toExport() = ExportProfile(
     mealRemindersOn = mealRemindersOn,
     weighInReminderOn = weighInReminderOn,
     photoReminderOn = photoReminderOn,
+    waterRemindersOn = waterRemindersOn,
+    waterGoalGlasses = waterGoalGlasses,
 )
 
 private fun ExportProfile.toProfile() = Profile(
@@ -157,6 +173,8 @@ private fun ExportProfile.toProfile() = Profile(
     mealRemindersOn = mealRemindersOn,
     weighInReminderOn = weighInReminderOn,
     photoReminderOn = photoReminderOn,
+    waterRemindersOn = waterRemindersOn,
+    waterGoalGlasses = waterGoalGlasses,
 )
 
 private fun FoodEntry.toExport() = ExportFoodEntry(

@@ -22,6 +22,8 @@ import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.water.WaterDay
+import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.designsystem.component.todayEpochDay
 
 /**
@@ -42,6 +44,7 @@ fun seedDebugData(koin: Koin) {
         profiles.saveProfile(seedProfile)
         koin.get<ProgressRepository>().seedProgress(today)
         koin.get<FoodRepository>().seedFood(today)
+        koin.get<WaterRepository>().seedWater(today)
     }
 }
 
@@ -107,6 +110,16 @@ private suspend fun ProgressRepository.seedProgress(today: Long) {
             weightKg = weightKg,
         )
     }
+}
+
+/** Ten days of hydration, today deliberately part-way through so the card shows a partly-filled
+ * row rather than an all-or-nothing one. */
+private suspend fun WaterRepository.seedWater(today: Long) {
+    val random = Random(seed = 11)
+    for (daysAgo in 9 downTo 1) {
+        upsertDay(WaterDay(dateEpochDay = today - daysAgo, glasses = random.nextInt(5, 10)))
+    }
+    upsertDay(WaterDay(dateEpochDay = today, glasses = 4))
 }
 
 private suspend fun FoodRepository.seedFood(today: Long) {

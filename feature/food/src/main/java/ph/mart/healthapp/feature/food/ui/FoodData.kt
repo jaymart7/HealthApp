@@ -4,11 +4,16 @@ import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.DailyTargets
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 data class FoodUiState(
     val entries: List<FoodEntry> = emptyList(),
     val targets: DailyTargets? = null,
     val suggestions: List<FoodSuggestion> = emptyList(),
+    val waterGlasses: Int = 0,
+    val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    val unit: UnitSystem = UnitSystem.Metric,
 )
 
 /** What the user is actively editing in the add-entry sheet — seeded fresh (not from a loaded
@@ -54,4 +59,5 @@ sealed interface FoodEvent {
     data class OnAddEntry(val form: AddEntryForm) : FoodEvent
     data class OnDeleteEntry(val id: Long) : FoodEvent
     data class OnToggleFavorite(val suggestion: FoodSuggestion, val favorite: Boolean) : FoodEvent
+    data class OnSetWaterGlasses(val glasses: Int) : FoodEvent
 }

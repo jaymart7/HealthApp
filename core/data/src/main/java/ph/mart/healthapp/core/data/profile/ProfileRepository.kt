@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.data.profile
 
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 enum class Sex { Male, Female }
 enum class ActivityLevel { Sedentary, Light, Moderate, Very }
@@ -28,6 +29,8 @@ data class Profile(
     val mealRemindersOn: Boolean = true,
     val weighInReminderOn: Boolean = true,
     val photoReminderOn: Boolean = false,
+    val waterRemindersOn: Boolean = false,
+    val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
 )
 
 interface ProfileRepository {

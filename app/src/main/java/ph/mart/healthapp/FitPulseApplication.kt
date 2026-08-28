@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.food.di.foodDataModule
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.di.profileDataModule
 import ph.mart.healthapp.core.data.progress.di.progressDataModule
+import ph.mart.healthapp.core.data.water.di.waterDataModule
 import ph.mart.healthapp.debug.seedDebugData
 import ph.mart.healthapp.feature.food.di.foodModule
 import ph.mart.healthapp.feature.home.di.homeModule
@@ -42,6 +43,7 @@ class FitPulseApplication : Application() {
                 profileDataModule,
                 foodDataModule,
                 progressDataModule,
+                waterDataModule,
                 onboardingModule,
                 foodModule,
                 homeModule,

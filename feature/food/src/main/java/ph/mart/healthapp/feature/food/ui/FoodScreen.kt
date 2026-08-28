@@ -46,6 +46,7 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
+import ph.mart.healthapp.feature.food.ui.components.DiaryWaterRow
 import ph.mart.healthapp.feature.food.ui.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.components.FoodSuggestionPanel
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
@@ -115,6 +116,14 @@ private fun FoodContent(
                         .verticalScroll(scrollState)
                         .padding(bottom = DockedFabContentPadding),
                 ) {
+                    DiaryWaterRow(
+                        glasses = uiState.waterGlasses,
+                        goalGlasses = uiState.waterGoalGlasses,
+                        unit = uiState.unit,
+                        onSetGlasses = { glasses -> onEvent(FoodEvent.OnSetWaterGlasses(glasses)) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+
                     MealType.entries.forEach { mealType ->
                         val mealEntries = uiState.entries.filter { it.mealType == mealType }
                         val visibleEntries = mealEntries.filter {

@@ -5,11 +5,12 @@ import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 /**
- * Pure read model — Home writes nothing. Every field traces back to a repository interface:
- * [profile] from `ProfileRepository`, [totals] from `FoodRepository`, [weightEntries] and
- * [lastPhotoEpochDay] from `ProgressRepository`. Targets are never stored here — they're derived
+ * Read model. Every field traces back to a repository interface: [profile] from
+ * `ProfileRepository`, [totals] from `FoodRepository`, [weightEntries] and [lastPhotoEpochDay]
+ * from `ProgressRepository`, [waterGlasses] from `WaterRepository`. Targets are never stored here — they're derived
  * from [profile] at read time via `dailyTargets()`, so they can't drift from the inputs that
  * produce them.
  */
@@ -19,12 +20,20 @@ data class HomeUiState(
     val foodEntryCount: Int = 0,
     val weightEntries: List<WeightEntry> = emptyList(),
     val lastPhotoEpochDay: Long? = null,
+    val waterGlasses: Int = 0,
+    val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
 )
+
+/** The one thing Home writes: today's glass count. Everything else on the screen is read-only. */
+sealed interface HomeEvent {
+    data class OnSetWaterGlasses(val glasses: Int) : HomeEvent
+}
 
 /** Day one = nothing logged anywhere yet. The profile alone doesn't count — it always exists by
  * the time Home is reachable. */
 val HomeUiState.isDayOne: Boolean
-    get() = foodEntryCount == 0 && weightEntries.isEmpty() && lastPhotoEpochDay == null
+    get() = foodEntryCount == 0 && weightEntries.isEmpty() && lastPhotoEpochDay == null &&
+        waterGlasses == 0
 
 /** [hasPrior] false means there's no entry 7+ days back to compare against — the card shows
  * "No prior data" rather than a false 0.0 delta. */

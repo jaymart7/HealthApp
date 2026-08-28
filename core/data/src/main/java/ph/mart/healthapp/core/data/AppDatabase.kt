@@ -14,6 +14,8 @@ import ph.mart.healthapp.core.data.progress.local.ProgressPhotoDao
 import ph.mart.healthapp.core.data.progress.local.ProgressPhotoEntity
 import ph.mart.healthapp.core.data.progress.local.WeightEntryDao
 import ph.mart.healthapp.core.data.progress.local.WeightEntryEntity
+import ph.mart.healthapp.core.data.water.local.WaterDayDao
+import ph.mart.healthapp.core.data.water.local.WaterDayEntity
 
 @Database(
     entities = [
@@ -23,8 +25,9 @@ import ph.mart.healthapp.core.data.progress.local.WeightEntryEntity
         WeightEntryEntity::class,
         MeasurementEntryEntity::class,
         ProgressPhotoEntity::class,
+        WaterDayEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -34,4 +37,5 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun weightEntryDao(): WeightEntryDao
     abstract fun measurementEntryDao(): MeasurementEntryDao
     abstract fun progressPhotoDao(): ProgressPhotoDao
+    abstract fun waterDayDao(): WaterDayDao
 }

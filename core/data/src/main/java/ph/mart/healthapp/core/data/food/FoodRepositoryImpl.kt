@@ -1,6 +1,5 @@
 package ph.mart.healthapp.core.data.food
 
-import java.util.Calendar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -8,6 +7,7 @@ import ph.mart.healthapp.core.data.food.local.FavoriteFoodDao
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodEntity
 import ph.mart.healthapp.core.data.food.local.FoodEntryDao
 import ph.mart.healthapp.core.data.food.local.FoodEntryEntity
+import ph.mart.healthapp.core.data.todayEpochDay
 
 /** Recents are read a little deeper than [MAX_SUGGESTIONS], so favorites crowding the front of
  * the merged list don't starve it of recents. */
@@ -48,19 +48,6 @@ internal class FoodRepositoryImpl(
     override suspend fun setFavorite(suggestion: FoodSuggestion, favorite: Boolean) {
         if (favorite) favoriteDao.upsert(suggestion.toEntity()) else favoriteDao.clearFavorite(suggestion.name)
     }
-}
-
-// ponytail: local-midnight epoch day via Calendar, not java.time.LocalDate — the project has no
-// core-library-desugaring configured, and this phase only ever needs "today". Switch to
-// LocalDate + desugaring when Phase 6's date-pickers need arbitrary-date math.
-private fun todayEpochDay(): Long {
-    val calendar = Calendar.getInstance().apply {
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-    }
-    return calendar.timeInMillis / 86_400_000L
 }
 
 private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
