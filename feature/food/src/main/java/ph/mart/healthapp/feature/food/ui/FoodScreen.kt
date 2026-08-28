@@ -31,6 +31,7 @@ import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
@@ -70,7 +71,12 @@ private fun FoodContent(uiState: FoodUiState, state: FoodScreenState, onEvent: (
                     )
                 }
 
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = DockedFabContentPadding),
+                ) {
                     MealType.entries.forEach { mealType ->
                         val mealEntries = uiState.entries.filter { it.mealType == mealType }
                         val visibleEntries = mealEntries.filter {

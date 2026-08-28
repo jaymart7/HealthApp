@@ -25,6 +25,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.inRange
 import ph.mart.healthapp.core.data.progress.withMovingAverage
+import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -54,7 +55,12 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
                     onSelect = { index -> state.tab = ProgressTab.entries[index] },
                 )
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 16.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(top = 16.dp, bottom = DockedFabContentPadding),
+                ) {
                     when (state.tab) {
                         ProgressTab.Weight -> WeightTabContent(uiState, state)
                         ProgressTab.Photos -> PhotosTabContent(uiState, state)

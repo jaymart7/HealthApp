@@ -1,19 +1,15 @@
 package ph.mart.healthapp.ui
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
@@ -50,55 +46,67 @@ private enum class ActiveSheet { None, QuickAction, LogWeight, AddPhoto }
  * Bottom nav (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
  * depends on every `:feature:*` module and `:core:navigation` at once, so it's the only place
  * real navigation wiring can live — see the Phase 2 plan's "flagged architectural decision."
+ *
+ * [Scaffold] owns the window insets: it measures [BottomNavBar] (which consumes the navigation-bar
+ * inset itself) and hands the destinations a `PaddingValues` that already clears the status bar,
+ * any landscape cutout, and the nav bar. The sheets sit *outside* the Scaffold because it draws
+ * the bottom bar and FAB after its content — a sheet nested inside would have both on top of its
+ * scrim.
  */
 @Composable
 fun AppScaffold(modifier: Modifier = Modifier) {
     val topLevelBackStack = remember { TopLevelBackStack<NavKey>(TopLevelDestination.Home.route) }
     var activeSheet by rememberSaveable { mutableStateOf(ActiveSheet.None) }
+    // The photo-capture flow shows neither nav bar nor FAB (appScaffold.js).
+    val showChrome = topLevelBackStack.backStack.lastOrNull() != FoodCaptureRoute
 
-    Surface(color = MaterialTheme.colorScheme.background, modifier = modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                NavDisplay(
-                    backStack = topLevelBackStack.backStack,
-                    onBack = { topLevelBackStack.removeLast() },
-                    entryProvider = entryProvider {
-                        homeEntries(onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
-                        foodEntries(onExitCapture = { topLevelBackStack.removeLast() })
-                        progressEntries()
-                        profileEntries()
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-                BottomNavBar(
-                    items = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) },
-                    selectedIndex = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey },
-                    onSelect = { index -> topLevelBackStack.addTopLevel(TopLevelDestination.entries[index].route) },
-                )
-            }
-
-            DockedFab(
-                onClick = { activeSheet = ActiveSheet.QuickAction },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(end = 16.dp, bottom = 48.dp),
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                if (showChrome) {
+                    BottomNavBar(
+                        items = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) },
+                        selectedIndex = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey },
+                        onSelect = { index -> topLevelBackStack.addTopLevel(TopLevelDestination.entries[index].route) },
+                    )
+                }
+            },
+            floatingActionButton = {
+                if (showChrome) {
+                    DockedFab(
+                        onClick = { activeSheet = ActiveSheet.QuickAction },
+                    )
+                }
+            },
+        ) { innerPadding ->
+            NavDisplay(
+                backStack = topLevelBackStack.backStack,
+                onBack = { topLevelBackStack.removeLast() },
+                entryProvider = entryProvider {
+                    homeEntries(onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
+                    foodEntries(onExitCapture = { topLevelBackStack.removeLast() })
+                    progressEntries()
+                    profileEntries()
+                },
+                // Only the bar is cleared here — clearance for the FAB on top of it is
+                // [DockedFabContentPadding], added inside each destination's scroll container.
+                modifier = Modifier.padding(innerPadding),
             )
+        }
 
-            when (activeSheet) {
-                ActiveSheet.QuickAction -> QuickActionSheet(
-                    onDismiss = { activeSheet = ActiveSheet.None },
-                    onLogFood = {
-                        activeSheet = ActiveSheet.None
-                        topLevelBackStack.add(FoodCaptureRoute)
-                    },
-                    onLogWeight = { activeSheet = ActiveSheet.LogWeight },
-                    onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
-                )
-                ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
-                ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })
-                ActiveSheet.None -> Unit
-            }
+        when (activeSheet) {
+            ActiveSheet.QuickAction -> QuickActionSheet(
+                onDismiss = { activeSheet = ActiveSheet.None },
+                onLogFood = {
+                    activeSheet = ActiveSheet.None
+                    topLevelBackStack.add(FoodCaptureRoute)
+                },
+                onLogWeight = { activeSheet = ActiveSheet.LogWeight },
+                onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
+            )
+            ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
+            ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })
+            ActiveSheet.None -> Unit
         }
     }
 }

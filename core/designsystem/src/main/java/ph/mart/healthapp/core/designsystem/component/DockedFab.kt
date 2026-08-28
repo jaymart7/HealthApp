@@ -20,6 +20,15 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
+ * How far a [DockedFab] reaches up from the bottom of a screen's content area: `FabPosition.End`
+ * parks it 16dp above the bottom bar and the FAB itself is 56dp tall. Every scrollable screen that
+ * sits under the FAB adds this to the *bottom of its scrolling content* — after `verticalScroll`,
+ * not before — so the content scrolls under the FAB and only comes to rest clear of it, rather
+ * than the viewport stopping short and leaving a dead band.
+ */
+val DockedFabContentPadding = 72.dp
+
+/**
  * Extended FAB, [MaterialTheme.colorScheme.primaryContainer] fill, Level-3 shadow — the only real
  * drop shadow in the app. Positioning (docked, overlapping the nav bar) is the caller's job.
  */

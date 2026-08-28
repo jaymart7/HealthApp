@@ -94,6 +94,10 @@ internal fun AnalyzingScreen(photo: Bitmap, onCancel: () -> Unit, modifier: Modi
 @Composable
 private fun AnalyzingScreenPreview() {
     AppTheme {
-        AnalyzingScreen(photo = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888), onCancel = {})
+        Surface {
+            AnalyzingScreen(
+                photo = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888),
+                onCancel = {})
+        }
     }
 }
