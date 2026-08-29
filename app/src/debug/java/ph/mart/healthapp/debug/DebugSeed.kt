@@ -14,6 +14,8 @@ import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 import ph.mart.healthapp.core.data.profile.Goal
@@ -50,6 +52,7 @@ fun seedDebugData(koin: Koin) {
         koin.get<FoodRepository>().seedFood(today)
         koin.get<WaterRepository>().seedWater(today)
         koin.get<ExerciseRepository>().seedExercise(today)
+        koin.get<MoodRepository>().seedMood(today)
     }
 }
 
@@ -135,6 +138,25 @@ private suspend fun ExerciseRepository.seedExercise(today: Long) {
                 type = type,
                 minutes = minutes,
                 burnedKcal = estimateBurnedKcal(type, minutes, seedProfile.weightKg),
+            ),
+        )
+    }
+}
+
+/**
+ * Twenty days of reflections with two deliberate holes: day 6 is skipped entirely so the chart
+ * has a real gap to draw, and day 3 records a mood without an energy so the tab's two averages
+ * report different denominators.
+ */
+private suspend fun MoodRepository.seedMood(today: Long) {
+    val random = Random(seed = 13)
+    for (daysAgo in 19 downTo 0) {
+        if (daysAgo == 6) continue
+        upsertDay(
+            MoodDay(
+                dateEpochDay = today - daysAgo,
+                mood = random.nextInt(2, 6),
+                energy = if (daysAgo == 3) 0 else random.nextInt(2, 6),
             ),
         )
     }

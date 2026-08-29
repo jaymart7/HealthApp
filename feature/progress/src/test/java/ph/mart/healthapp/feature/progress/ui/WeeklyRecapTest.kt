@@ -5,6 +5,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 import ph.mart.healthapp.core.data.food.DayNutrition
+import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
@@ -23,8 +24,9 @@ private fun recap(
     nutrition: List<DayNutrition> = week(0, 0, 0, 0, 0, 0, 0),
     activeDays: Set<Long> = emptySet(),
     weightEntries: List<WeightEntry> = emptyList(),
+    moodDays: List<MoodDay> = emptyList(),
     targets: DailyTargets? = TARGETS,
-) = weeklyRecap(nutrition, activeDays, weightEntries, targets, todayEpochDay = TODAY)
+) = weeklyRecap(nutrition, activeDays, weightEntries, moodDays, targets, todayEpochDay = TODAY)
 
 class WeeklyRecapTest {
 
@@ -98,5 +100,30 @@ class WeeklyRecapTest {
             ),
         )
         assertNull(result!!.weightTrend)
+    }
+
+    @Test
+    fun `mood from before the window is not averaged into it`() {
+        val result = recap(
+            activeDays = (TODAY - 2..TODAY).toSet(),
+            moodDays = listOf(MoodDay(TODAY - 30, mood = 1, energy = 1)),
+        )
+        assertNull(result!!.moodAverages)
+    }
+
+    @Test
+    fun `mood inside the window is averaged, energy keeping its own denominator`() {
+        val result = recap(
+            activeDays = (TODAY - 2..TODAY).toSet(),
+            moodDays = listOf(
+                MoodDay(TODAY - 30, mood = 1, energy = 1),
+                MoodDay(TODAY - 2, mood = 4, energy = 0),
+                MoodDay(TODAY, mood = 2, energy = 3),
+            ),
+        )
+        val averages = result!!.moodAverages!!
+        assertEquals(3.0, averages.mood!!, 0.001)
+        assertEquals(3.0, averages.energy!!, 0.001)
+        assertEquals(2, averages.daysLogged)
     }
 }

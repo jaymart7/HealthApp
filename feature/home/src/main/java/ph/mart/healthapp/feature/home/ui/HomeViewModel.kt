@@ -8,6 +8,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
@@ -18,8 +19,8 @@ import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.designsystem.component.todayEpochDay
 
 /**
- * Near-read-only container: the water glasses are the only thing this screen writes, so
- * [handleEvent] has exactly one branch. The FAB's sheets own every other write path.
+ * Near-read-only container: the water glasses and the day's mood/energy are the only things this
+ * screen writes. The FAB's sheets own every other write path.
  *
  * All five flows are combined rather than snapshotted: this is what stops Home from drifting from
  * the rest of the app (the prototype's Home briefly read a hardcoded profile instead of the shared
@@ -27,7 +28,8 @@ import ph.mart.healthapp.core.designsystem.component.todayEpochDay
  *
  * The streak's four day-series ride in a second combine chained onto the first — `combine` only
  * has typed overloads up to five flows, and the streak's inputs are independent of the day's
- * totals anyway. Today's exercise joins at that same outer combine for the same reason.
+ * totals anyway. Today's exercise and today's mood join at that same outer combine for the same
+ * reason: the inner one is already at the cap.
  */
 class HomeViewModel(
     profileRepository: ProfileRepository,
@@ -35,15 +37,18 @@ class HomeViewModel(
     progressRepository: ProgressRepository,
     private val waterRepository: WaterRepository,
     exerciseRepository: ExerciseRepository,
+    private val moodRepository: MoodRepository,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
 
     override val container = orbitContainer<HomeUiState, Nothing>(HomeUiState()) {
-        observeHome(profileRepository, foodRepository, progressRepository, exerciseRepository)
+        observeHome(profileRepository, foodRepository, progressRepository, exerciseRepository, moodRepository)
     }
 
     fun handleEvent(event: HomeEvent) {
         when (event) {
             is HomeEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
+            is HomeEvent.OnSetMood -> onSetMood(event.level)
+            is HomeEvent.OnSetEnergy -> onSetEnergy(event.level)
         }
     }
 
@@ -51,11 +56,20 @@ class HomeViewModel(
         waterRepository.setToday(glasses)
     }
 
+    private fun onSetMood(level: Int) = intent {
+        moodRepository.setTodayMood(level)
+    }
+
+    private fun onSetEnergy(level: Int) = intent {
+        moodRepository.setTodayEnergy(level)
+    }
+
     private fun observeHome(
         profileRepository: ProfileRepository,
         foodRepository: FoodRepository,
         progressRepository: ProgressRepository,
         exerciseRepository: ExerciseRepository,
+        moodRepository: MoodRepository,
     ) = intent {
         val today = combine(
             profileRepository.observeProfile(),
@@ -83,9 +97,16 @@ class HomeViewModel(
             ::loggedDays,
         )
 
-        combine(today, activeDays, exerciseRepository.observeTodayEntries()) { state, days, exercise ->
+        combine(
+            today,
+            activeDays,
+            exerciseRepository.observeTodayEntries(),
+            moodRepository.observeToday(),
+        ) { state, days, exercise, mood ->
             state.copy(
                 burnedKcal = exercise.totalBurnedKcal(),
+                moodLevel = mood.mood,
+                energyLevel = mood.energy,
                 addExerciseToBudget = state.profile?.addExerciseToBudget != false,
                 // Read on every emission, not once at flow-construction time, so the streak
                 // doesn't freeze at whatever day the app happened to be opened.

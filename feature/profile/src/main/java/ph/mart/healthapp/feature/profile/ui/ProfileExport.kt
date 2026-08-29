@@ -7,6 +7,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 import ph.mart.healthapp.core.data.profile.Goal
@@ -36,13 +37,15 @@ internal data class FitPulseExport(
     val measurements: List<ExportMeasurement> = emptyList(),
     val waterDays: List<ExportWaterDay> = emptyList(),
     val exercises: List<ExportExercise> = emptyList(),
+    val moodDays: List<ExportMoodDay> = emptyList(),
 )
 
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
  * [FitPulseExport.exercises] and [ExportProfile.addExerciseToBudget]; 4 added
- * [ExportProfile.darkThemeOn]. Every addition is defaulted,
- * so a v1 file still imports — the version gate only rejects files from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 4
+ * [ExportProfile.darkThemeOn]; 5 added [FitPulseExport.moodDays].
+ * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
+ * from the future. */
+internal const val EXPORT_SCHEMA_VERSION = 5
 
 @Serializable
 internal data class ExportProfile(
@@ -99,6 +102,11 @@ internal data class ExportExercise(
     val burnedKcal: Int,
 )
 
+/** Mood is history, not convenience data, so unlike favourites and saved meals it belongs in the
+ * file. A 0 on either field means that row was never tapped. */
+@Serializable
+internal data class ExportMoodDay(val dateEpochDay: Long, val mood: Int, val energy: Int)
+
 /** What an import hands back to the ViewModel — domain types only, already validated. */
 internal data class ImportPayload(
     val profile: Profile?,
@@ -107,6 +115,7 @@ internal data class ImportPayload(
     val measurements: List<MeasurementEntry>,
     val waterDays: List<WaterDay>,
     val exercises: List<ExerciseEntry>,
+    val moodDays: List<MoodDay>,
 )
 
 private val json = Json {
@@ -122,6 +131,7 @@ internal fun buildExportJson(
     measurements: List<MeasurementEntry>,
     waterDays: List<WaterDay>,
     exercises: List<ExerciseEntry>,
+    moodDays: List<MoodDay>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
@@ -132,6 +142,7 @@ internal fun buildExportJson(
         exercises = exercises.map {
             ExportExercise(it.dateEpochDay, it.type.name, it.name, it.minutes, it.burnedKcal)
         },
+        moodDays = moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
     ),
 )
 
@@ -159,6 +170,7 @@ internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
                 burnedKcal = it.burnedKcal,
             )
         },
+        moodDays = export.moodDays.map { MoodDay(it.dateEpochDay, it.mood, it.energy) },
     )
 }
 

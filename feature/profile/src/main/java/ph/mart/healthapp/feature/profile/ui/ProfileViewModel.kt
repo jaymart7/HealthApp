@@ -7,6 +7,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -19,6 +20,7 @@ class ProfileViewModel(
     private val progressRepository: ProgressRepository,
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
+    private val moodRepository: MoodRepository,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -66,12 +68,13 @@ class ProfileViewModel(
             measurements = progressRepository.observeMeasurements().first().values.flatten(),
             waterDays = waterRepository.allDays(),
             exercises = exerciseRepository.allEntries(),
+            moodDays = moodRepository.allDays(),
         )
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }
 
-    /** Replaces the profile, the food diary, the water log and the exercise log; weight and
-     * measurements are
+    /** Replaces the profile, the food diary, the water log, the exercise log and the mood log;
+     * weight and measurements are
      * upserted by date, so importing merges history rather than discarding entries the
      * file doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
      * touched. */
@@ -87,6 +90,8 @@ class ProfileViewModel(
                 payload.waterDays.forEach { waterRepository.upsertDay(it) }
                 exerciseRepository.deleteAllEntries()
                 payload.exercises.forEach { exerciseRepository.addEntry(it) }
+                moodRepository.clearAllDays()
+                payload.moodDays.forEach { moodRepository.upsertDay(it) }
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {

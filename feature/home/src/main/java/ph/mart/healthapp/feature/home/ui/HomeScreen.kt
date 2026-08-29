@@ -39,6 +39,7 @@ import ph.mart.healthapp.feature.home.ui.components.AIInsightCard
 import ph.mart.healthapp.feature.home.ui.components.CalorieRingCard
 import ph.mart.healthapp.feature.home.ui.components.MacroSummaryCard
 import ph.mart.healthapp.feature.home.ui.components.MascotGreetingCard
+import ph.mart.healthapp.feature.home.ui.components.MoodCard
 import ph.mart.healthapp.feature.home.ui.components.ProgressPhotoReminderCard
 import ph.mart.healthapp.feature.home.ui.components.StreakCard
 import ph.mart.healthapp.feature.home.ui.components.WaterCard
@@ -119,6 +120,13 @@ private fun HomeContent(
                 onSetGlasses = { glasses -> onEvent(HomeEvent.OnSetWaterGlasses(glasses)) },
             )
 
+            MoodCard(
+                mood = uiState.moodLevel,
+                energy = uiState.energyLevel,
+                onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
+                onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
+            )
+
             WeightMetricCard(
                 trend = trend,
                 goal = uiState.profile?.goal,
@@ -163,6 +171,8 @@ private fun HomeScreenPreview() {
                 ),
                 lastPhotoEpochDay = today - 12,
                 waterGlasses = 5,
+                moodLevel = 4,
+                energyLevel = 3,
                 burnedKcal = 320,
                 streak = StreakStats(current = 12, best = 31, totalDaysLogged = 74),
                 weightProgressKg = 5.2,

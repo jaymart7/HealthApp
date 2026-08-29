@@ -95,7 +95,7 @@ cancels, Confirmation returns to Capture with a discard confirm if edited).
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
+  `exercise`, `mood`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
 - **Calorie/macro math is Mifflin–St Jeor**, computed live from profile inputs
@@ -141,6 +141,25 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   rather than rendering zeros, and its "days logged" uses the streak's four-domain definition
   while its calorie average uses food days only — the two denominators can differ, so the card
   says which is which.
+- **Mood is not a streak domain.** The streak's definition of a logged day stays food, water,
+  weigh-in, exercise — a two-tap reflection holding a 40-day run would cheapen it, and folding
+  mood in retroactively lengthens past runs. So `MoodRepository` has no `observeLoggedDays()`,
+  `loggedDays()` is untouched, and Home's `isDayOne` ignores mood too (the mood card only
+  appears once something real has been logged, which is the right order anyway).
+- **In `mood_day`, `0` means "not tapped", never a zero score.** A day with a mood and no energy
+  is a first-class row — that is what keeps both columns non-null and stops the card demanding
+  two taps to record one. The averages skip zeros and keep *separate* denominators per series,
+  so a mood-only week reports a mood average and a blank energy one. The two writes are partial
+  upserts (`ON CONFLICT … DO UPDATE SET mood`) precisely so a mood tap can't wipe that day's
+  energy.
+- **`List<MoodDay>.inRange()` anchors to today; `List<WeightEntry>.inRange()` anchors to the
+  latest entry.** The difference is deliberate: a mood chart headed "1M" must show the last 30
+  days with their gaps intact, while a weight chart re-centres on the data it has. The Mood tab
+  therefore hands its chart the *window bounds*, not just the list — the series is sparse, and
+  the x-position of a bar is its date.
+- **The Progress tab labels are trimmed to fit five pills.** "Nutrition" reads "Food" and
+  "Measurements" reads "Body" — five equal-weight `SegmentedToggle` pills leave ~64dp each on a
+  360dp screen. Adding a sixth tab means reworking the toggle, not shortening further.
 - **The recap's weight cell goes blank when the last weigh-in predates the window.**
   `trendVsSevenDaysAgo()` anchors to the latest *entry*, not to today, so without that guard a
   card headed "Last 7 days" would report a delta between two entries from two months ago.

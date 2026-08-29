@@ -4,6 +4,9 @@ import kotlin.math.abs
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.NutritionAverages
 import ph.mart.healthapp.core.data.food.averages
+import ph.mart.healthapp.core.data.mood.MoodAverages
+import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.mood.moodAverages
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
@@ -35,6 +38,9 @@ data class WeeklyRecap(
     val targets: DailyTargets?,
     /** Null when nothing was weighed inside the window — see [weeklyRecap]. */
     val weightTrend: WeightTrendDisplay?,
+    /** Null when nothing was felt-logged inside the window, for the same reason [weightTrend] is
+     * dropped: a card headed "Last 7 days" must not report a number from outside them. */
+    val moodAverages: MoodAverages?,
     val bestDay: BestDay?,
 )
 
@@ -54,6 +60,7 @@ fun weeklyRecap(
     dailyNutrition: List<DayNutrition>,
     activeDays: Set<Long>,
     weightEntries: List<WeightEntry>,
+    moodDays: List<MoodDay>,
     targets: DailyTargets?,
     todayEpochDay: Long,
 ): WeeklyRecap? {
@@ -74,6 +81,12 @@ fun weeklyRecap(
         } else {
             null
         },
+        // Sliced by date, not by tail: the mood series is sparse, so its last seven rows could
+        // reach back months.
+        moodAverages = moodDays
+            .filter { it.dateEpochDay in windowStart..todayEpochDay }
+            .takeIf { it.isNotEmpty() }
+            ?.moodAverages(),
         bestDay = targets?.let { window.bestDay(it.calories) },
     )
 }

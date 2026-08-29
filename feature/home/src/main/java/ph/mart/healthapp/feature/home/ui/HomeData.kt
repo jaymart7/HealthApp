@@ -27,6 +27,9 @@ data class HomeUiState(
     val lastPhotoEpochDay: Long? = null,
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    /** Today's reflection, 1-5 each; 0 means the user hasn't tapped that row. */
+    val moodLevel: Int = 0,
+    val energyLevel: Int = 0,
     val burnedKcal: Int = 0,
     /** From the profile — whether [burnedKcal] raises the calorie ring's goal. */
     val addExerciseToBudget: Boolean = true,
@@ -35,13 +38,22 @@ data class HomeUiState(
     val weightProgressKg: Double? = null,
 )
 
-/** The one thing Home writes: today's glass count. Everything else on the screen is read-only. */
+/** All Home writes: today's glass count and today's mood/energy. Everything else on the screen
+ * is read-only — the FAB's sheets own every other write path. A level of 0 clears that row. */
 sealed interface HomeEvent {
     data class OnSetWaterGlasses(val glasses: Int) : HomeEvent
+    data class OnSetMood(val level: Int) : HomeEvent
+    data class OnSetEnergy(val level: Int) : HomeEvent
 }
 
-/** Day one = nothing logged anywhere yet. The profile alone doesn't count — it always exists by
- * the time Home is reachable. */
+/**
+ * Day one = nothing logged anywhere yet. The profile alone doesn't count — it always exists by
+ * the time Home is reachable.
+ *
+ * Mood is deliberately absent: it isn't one of the streak's four domains, so a reflection alone
+ * doesn't make a day "logged" here either. The cost is that the mood card only appears once
+ * something real has been logged, which is the right order anyway.
+ */
 val HomeUiState.isDayOne: Boolean
     get() = foodEntryCount == 0 && weightEntries.isEmpty() && lastPhotoEpochDay == null &&
         waterGlasses == 0 && burnedKcal == 0

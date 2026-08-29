@@ -14,6 +14,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.food.NutritionAverages
+import ph.mart.healthapp.core.data.mood.MOOD_SCALE
+import ph.mart.healthapp.core.data.mood.MoodAverages
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
@@ -60,6 +62,7 @@ fun WeeklyRecapCard(
                     ?: "${recap.averages.calories}",
             )
             WeightCell(trend = recap.weightTrend, goal = goal, unit = unit)
+            StatCell(label = "Mood", value = moodValue(recap.moodAverages))
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -78,6 +81,11 @@ fun WeeklyRecapCard(
         }
     }
 }
+
+/** Mood only — the recap row is already four cells wide, and energy has its own cell on the
+ * Mood tab. An em dash when the week has weight and food but no reflection. */
+private fun moodValue(averages: MoodAverages?): String =
+    averages?.mood?.let { "%.1f/${MOOD_SCALE.last}".format(it) } ?: "—"
 
 @Composable
 private fun WeightCell(trend: WeightTrendDisplay?, goal: Goal?, unit: UnitSystem) {
@@ -131,6 +139,7 @@ private fun WeeklyRecapCardPreview() {
                         averages = NutritionAverages(1940, 141, 196, 68, daysLogged = 7),
                         targets = PREVIEW_TARGETS,
                         weightTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = -0.6, hasPrior = true),
+                        moodAverages = MoodAverages(mood = 3.6, energy = 3.1, daysLogged = 6),
                         bestDay = BestDay(dateEpochDay = 20_690, calories = 1985),
                     ),
                     goal = Goal.Lose,
@@ -143,6 +152,7 @@ private fun WeeklyRecapCardPreview() {
                         averages = NutritionAverages(1720, 118, 170, 61, daysLogged = 2),
                         targets = PREVIEW_TARGETS,
                         weightTrend = null,
+                        moodAverages = null,
                         bestDay = BestDay(dateEpochDay = 20_688, calories = 1880),
                     ),
                     goal = Goal.Lose,
