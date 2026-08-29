@@ -171,6 +171,16 @@ the profile's target and averages macros over the selected `ChartRange`. The agg
 (`NutritionTrend.kt` in `:core:data/food`, on top of one bounded `observeSince` query); the chart
 and averages card live in `:feature:progress/ui/components`.
 
+Streaks are built — Home's `StreakCard` shows the current logging streak, five badges
+(3/7/14/30/100 days), and weight-progress milestones (2/5/10 kg toward the goal). A day
+counts if *anything* was logged: food, water, or a weigh-in. All of it is derived in
+`core/data/streak/LoggingStreak.kt` (pure, no repository, no table, no schema change) from
+`observeDailyNutrition()`, `WaterRepository.observeLoggedDays()`, and
+`observeWeightEntries()`. Two rules are deliberate and tested: a grace day (today still
+empty counts back from yesterday) and badges earned off the *best* run, so breaking a
+streak never un-earns one. There is no celebration toast — the badge lighting up is the
+reward; announcing it would need persisted "already celebrated" state.
+
 Reminders are wired — the four Profile switches now schedule real notifications.
 `ph.mart.healthapp.reminder` in `:app` holds the schedule table and the worker;
 `FitPulseApplication` reconciles WorkManager off `ProfileRepository.observeProfile()`,

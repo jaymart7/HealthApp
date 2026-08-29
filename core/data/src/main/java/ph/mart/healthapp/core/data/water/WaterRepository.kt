@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.water
 
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.streak.STREAK_WINDOW_DAYS
 
 /** One day's hydration, as a glass count. Days the user never logged simply have no row. */
 data class WaterDay(val dateEpochDay: Long, val glasses: Int)
@@ -39,6 +40,10 @@ interface WaterRepository {
 
     /** Every day with a non-zero count, oldest first — for data export. */
     suspend fun allDays(): List<WaterDay>
+
+    /** Days with at least one glass, within the last [STREAK_WINDOW_DAYS] — water's contribution
+     * to the logging streak. */
+    fun observeLoggedDays(): Flow<Set<Long>>
 
     /** Zeroes every day, for import's replace-in-full semantics. */
     suspend fun clearAllDays()

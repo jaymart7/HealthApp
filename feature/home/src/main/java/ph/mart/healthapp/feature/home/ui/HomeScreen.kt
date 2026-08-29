@@ -26,6 +26,7 @@ import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
@@ -37,6 +38,7 @@ import ph.mart.healthapp.feature.home.ui.components.CalorieRingCard
 import ph.mart.healthapp.feature.home.ui.components.MacroSummaryCard
 import ph.mart.healthapp.feature.home.ui.components.MascotGreetingCard
 import ph.mart.healthapp.feature.home.ui.components.ProgressPhotoReminderCard
+import ph.mart.healthapp.feature.home.ui.components.StreakCard
 import ph.mart.healthapp.feature.home.ui.components.WaterCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
 
@@ -98,6 +100,12 @@ private fun HomeContent(
                 CalorieRingCard(consumedKcal = uiState.totals.calories, goalKcal = targets.calories)
             }
 
+            StreakCard(
+                streak = uiState.streak,
+                weightProgressKg = uiState.weightProgressKg,
+                unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
+            )
+
             WaterCard(
                 glasses = uiState.waterGlasses,
                 goalGlasses = uiState.waterGoalGlasses,
@@ -149,6 +157,8 @@ private fun HomeScreenPreview() {
                 ),
                 lastPhotoEpochDay = today - 12,
                 waterGlasses = 5,
+                streak = StreakStats(current = 12, best = 31, totalDaysLogged = 74),
+                weightProgressKg = 5.2,
             ),
             state = HomeScreenState(),
             onAddPhoto = {},

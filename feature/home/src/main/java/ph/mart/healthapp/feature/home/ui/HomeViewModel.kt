@@ -8,8 +8,12 @@ import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.streak.loggedDays
+import ph.mart.healthapp.core.data.streak.streakStats
+import ph.mart.healthapp.core.data.streak.weightProgressKg
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
+import ph.mart.healthapp.core.designsystem.component.todayEpochDay
 
 /**
  * Near-read-only container: the water glasses are the only thing this screen writes, so
@@ -18,6 +22,10 @@ import ph.mart.healthapp.core.data.water.WaterRepository
  * All five flows are combined rather than snapshotted: this is what stops Home from drifting from
  * the rest of the app (the prototype's Home briefly read a hardcoded profile instead of the shared
  * one). The photo list collapses to its newest date here so the full list never enters UI state.
+ *
+ * The streak's three day-series ride in a second combine chained onto the first — `combine` only
+ * has typed overloads up to five flows, and the streak's inputs are independent of the day's
+ * totals anyway.
  */
 class HomeViewModel(
     profileRepository: ProfileRepository,
@@ -45,7 +53,7 @@ class HomeViewModel(
         foodRepository: FoodRepository,
         progressRepository: ProgressRepository,
     ) = intent {
-        combine(
+        val today = combine(
             profileRepository.observeProfile(),
             foodRepository.observeTodayEntries(),
             progressRepository.observeWeightEntries(),
@@ -60,6 +68,24 @@ class HomeViewModel(
                 lastPhotoEpochDay = photos.maxOfOrNull { it.dateEpochDay },
                 waterGlasses = waterGlasses,
                 waterGoalGlasses = profile?.waterGoalGlasses ?: DEFAULT_WATER_GOAL_GLASSES,
+            )
+        }
+
+        val activeDays = combine(
+            foodRepository.observeDailyNutrition(),
+            waterRepository.observeLoggedDays(),
+            progressRepository.observeWeightEntries(),
+            ::loggedDays,
+        )
+
+        combine(today, activeDays) { state, days ->
+            state.copy(
+                // Read on every emission, not once at flow-construction time, so the streak
+                // doesn't freeze at whatever day the app happened to be opened.
+                streak = days.streakStats(todayEpochDay()),
+                weightProgressKg = state.profile?.let {
+                    weightProgressKg(state.weightEntries, it.goal, it.weightKg)
+                },
             )
         }.collect { newState -> reduce { newState } }
     }

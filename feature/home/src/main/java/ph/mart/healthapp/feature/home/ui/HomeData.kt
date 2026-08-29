@@ -5,6 +5,7 @@ import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 /**
@@ -12,7 +13,8 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
  * `ProfileRepository`, [totals] from `FoodRepository`, [weightEntries] and [lastPhotoEpochDay]
  * from `ProgressRepository`, [waterGlasses] from `WaterRepository`. Targets are never stored here — they're derived
  * from [profile] at read time via `dailyTargets()`, so they can't drift from the inputs that
- * produce them.
+ * produce them. [streak] and [weightProgressKg] are derived the same way, from all three
+ * repositories at once — nothing about consistency is stored.
  */
 data class HomeUiState(
     val profile: Profile? = null,
@@ -22,6 +24,9 @@ data class HomeUiState(
     val lastPhotoEpochDay: Long? = null,
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),
+    /** Null when the goal is Maintain (no direction to move) or nothing has been weighed yet. */
+    val weightProgressKg: Double? = null,
 )
 
 /** The one thing Home writes: today's glass count. Everything else on the screen is read-only. */

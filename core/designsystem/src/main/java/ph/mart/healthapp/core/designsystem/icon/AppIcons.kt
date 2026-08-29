@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -46,6 +47,7 @@ object AppIcons {
     val Compare: ImageVector = Icons.Filled.SwapHoriz
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
+    val Streak: ImageVector = Icons.Filled.LocalFireDepartment
     val TrendDown: ImageVector = Icons.Filled.ArrowDownward
     val TrendUp: ImageVector = Icons.Filled.ArrowUpward
 }
