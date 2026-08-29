@@ -36,6 +36,10 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
 
+    // Google Health API auth. Only `health/GoogleHealthAuth.kt` touches this — the access token
+    // it hands back is a plain String everywhere else, and no `:feature:*` module sees the type.
+    implementation(libs.play.services.auth)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
 

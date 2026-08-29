@@ -10,7 +10,8 @@ interface ExerciseRepository {
 
     /** One day's entries — the diary, which can be pointed at any past day. */
     fun observeEntries(dateEpochDay: Long): Flow<List<ExerciseEntry>>
-    suspend fun addEntry(entry: ExerciseEntry)
+    /** Returns the new row id, which the Google Health import records against the data point. */
+    suspend fun addEntry(entry: ExerciseEntry): Long
     suspend fun deleteEntry(id: Long)
 
     /** Full history, oldest first — for data export. */

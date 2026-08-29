@@ -17,8 +17,9 @@ internal interface ExerciseEntryDao {
     @Query("SELECT * FROM exercise_entry WHERE isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
     suspend fun allActive(): List<ExerciseEntryEntity>
 
+    /** Returns the new row id — a health-sync import has to link the remote data point to it. */
     @Insert
-    suspend fun insert(entity: ExerciseEntryEntity)
+    suspend fun insert(entity: ExerciseEntryEntity): Long
 
     @Query("UPDATE exercise_entry SET isDeleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)

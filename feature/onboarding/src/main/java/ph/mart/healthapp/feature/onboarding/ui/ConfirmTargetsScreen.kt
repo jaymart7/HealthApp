@@ -53,7 +53,7 @@ fun ConfirmTargetsScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OnboardingStepHeader(currentStep = 5, totalSteps = 5, onBack = onBack)
+            OnboardingStepHeader(currentStep = 6, totalSteps = 6, onBack = onBack)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 MascotAvatar(state = if (isCelebrating) MascotState.Celebrating else MascotState.Idle, size = 64.dp)
                 MascotSpeechBubble(

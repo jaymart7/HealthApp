@@ -32,6 +32,7 @@ import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
+import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.LogWeightSheet
@@ -132,7 +133,11 @@ fun AppScaffold(
                         onExitFlow = { topLevelBackStack.removeLast() },
                     )
                     progressEntries(scrollState = progressScroll)
-                    profileEntries(scrollState = profileScroll)
+                    profileEntries(
+                        scrollState = profileScroll,
+                        onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },
+                        onExitFlow = { topLevelBackStack.removeLast() },
+                    )
                 },
                 // Only the bar is cleared here — clearance for the FAB on top of it is
                 // [DockedFabContentPadding], added inside each destination's scroll container.

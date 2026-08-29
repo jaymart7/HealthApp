@@ -11,6 +11,10 @@ import ph.mart.healthapp.core.data.food.local.FoodEntryEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealDao
 import ph.mart.healthapp.core.data.food.local.SavedMealEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealItemEntity
+import ph.mart.healthapp.core.data.health.local.HealthLinkDao
+import ph.mart.healthapp.core.data.health.local.HealthLinkEntity
+import ph.mart.healthapp.core.data.health.local.SleepDayDao
+import ph.mart.healthapp.core.data.health.local.SleepDayEntity
 import ph.mart.healthapp.core.data.mood.local.MoodDayDao
 import ph.mart.healthapp.core.data.mood.local.MoodDayEntity
 import ph.mart.healthapp.core.data.profile.local.ProfileDao
@@ -37,8 +41,10 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         WaterDayEntity::class,
         ExerciseEntryEntity::class,
         MoodDayEntity::class,
+        HealthLinkEntity::class,
+        SleepDayEntity::class,
     ],
-    version = 9,
+    version = 11,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -52,4 +58,6 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun waterDayDao(): WaterDayDao
     abstract fun exerciseEntryDao(): ExerciseEntryDao
     abstract fun moodDayDao(): MoodDayDao
+    abstract fun healthLinkDao(): HealthLinkDao
+    abstract fun sleepDayDao(): SleepDayDao
 }

@@ -14,11 +14,11 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
     override fun observeEntries(dateEpochDay: Long): Flow<List<ExerciseEntry>> =
         dao.observeForDate(dateEpochDay).map { entities -> entities.map { it.toExerciseEntry() } }
 
-    override suspend fun addEntry(entry: ExerciseEntry) {
+    override suspend fun addEntry(entry: ExerciseEntry): Long {
         // A dated entry arrives from an import, or from the diary pointed at a past day; anything
         // logged without one is "today".
         val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
-        dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
+        return dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
     }
 
     override suspend fun deleteEntry(id: Long) {

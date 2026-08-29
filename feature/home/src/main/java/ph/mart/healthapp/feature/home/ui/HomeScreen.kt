@@ -56,6 +56,7 @@ import ph.mart.healthapp.feature.home.ui.components.MacroSummaryCard
 import ph.mart.healthapp.feature.home.ui.components.MascotGreetingCard
 import ph.mart.healthapp.feature.home.ui.components.MoodCard
 import ph.mart.healthapp.feature.home.ui.components.ProgressPhotoReminderCard
+import ph.mart.healthapp.feature.home.ui.components.SleepCard
 import ph.mart.healthapp.feature.home.ui.components.StreakCard
 import ph.mart.healthapp.feature.home.ui.components.WaterCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
@@ -183,33 +184,38 @@ private fun HomeCards(
             modifier = appearModifier(3, appear),
         )
 
+        // Hidden rather than zeroed when Google Health isn't connected or hasn't synced a night.
+        uiState.lastNight?.let { night ->
+            SleepCard(night = night, modifier = appearModifier(4, appear))
+        }
+
         MoodCard(
             mood = uiState.moodLevel,
             energy = uiState.energyLevel,
             onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
             onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
-            modifier = appearModifier(4, appear),
+            modifier = appearModifier(5, appear),
         )
 
         WeightMetricCard(
             trend = trend,
             goal = uiState.profile?.goal,
             unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            modifier = appearModifier(5, appear),
+            modifier = appearModifier(6, appear),
         )
 
         if (targets != null) {
             MacroSummaryCard(
                 consumed = uiState.totals,
                 targets = targets,
-                modifier = appearModifier(6, appear),
+                modifier = appearModifier(7, appear),
             )
         }
 
         ProgressPhotoReminderCard(
             daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
             onTakePhoto = onAddPhoto,
-            modifier = appearModifier(7, appear),
+            modifier = appearModifier(8, appear),
         )
     }
 }

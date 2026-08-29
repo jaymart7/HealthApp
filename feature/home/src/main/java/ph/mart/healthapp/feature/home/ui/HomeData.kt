@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.home.ui
 
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.food.DiaryTotals
+import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
@@ -14,7 +15,7 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
  * Read model. Every field traces back to a repository interface: [profile] from
  * `ProfileRepository`, [totals] from `FoodRepository`, [weightEntries] and [lastPhotoEpochDay]
  * from `ProgressRepository`, [waterGlasses] from `WaterRepository`, [burnedKcal] from
- * `ExerciseRepository`. Targets are never stored here — they're derived
+ * `ExerciseRepository`, [lastNight] from `SleepRepository`. Targets are never stored here — they're derived
  * from [profile] at read time via `dailyTargets()`, so they can't drift from the inputs that
  * produce them. [streak] and [weightProgressKg] are derived the same way, from all three
  * repositories at once — nothing about consistency is stored.
@@ -34,6 +35,9 @@ data class HomeUiState(
     val moodLevel: Int = 0,
     val energyLevel: Int = 0,
     val burnedKcal: Int = 0,
+    /** Last night, from Google Health. Null when nothing was imported — the card is hidden, not
+     * zeroed, because FitPulse has no way to measure sleep itself. */
+    val lastNight: SleepNight? = null,
     /** From the profile — whether [burnedKcal] raises the calorie ring's goal. */
     val addExerciseToBudget: Boolean = true,
     val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),

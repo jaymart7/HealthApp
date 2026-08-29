@@ -36,7 +36,7 @@ fun GoalScreen(options: List<GoalOption>, selected: Goal?, onSelect: (Goal) -> U
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OnboardingStepHeader(currentStep = 1, totalSteps = 5, onBack = onBack)
+            OnboardingStepHeader(currentStep = 1, totalSteps = 6, onBack = onBack)
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 MascotAvatar(state = MascotState.Idle, size = 64.dp)
                 MascotSpeechBubble(text = "What's your goal?")

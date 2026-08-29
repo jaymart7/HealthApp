@@ -44,6 +44,7 @@ import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileAppearanceSection
+import ph.mart.healthapp.feature.profile.ui.components.ProfileConnectionsSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileExerciseSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileGoalsSection
@@ -62,7 +63,11 @@ private const val NOTIFICATIONS_BLOCKED =
     "Reminders are on, but notifications are blocked. Turn a reminder off and on again to allow them."
 
 @Composable
-fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProfileViewModel = koinViewModel()) {
+fun ProfileScreen(
+    onOpenHealth: () -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
+    viewModel: ProfileViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -156,6 +161,7 @@ fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: P
         },
         onExport = viewModel::buildExport,
         onImport = { importLauncher.launch(arrayOf("application/json")) },
+        onOpenHealth = onOpenHealth,
         // Re-read on each recomposition rather than watched: the only in-app source of a change is
         // the launcher above, which sets state anyway.
         reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
@@ -178,6 +184,7 @@ private fun ProfileContent(
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    onOpenHealth: () -> Unit,
     reminderMessage: String? = null,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -221,6 +228,7 @@ private fun ProfileContent(
                 message = reminderMessage,
                 messageIsError = true,
             )
+            ProfileConnectionsSection(onOpenHealth = onOpenHealth)
             ProfileDataSection(
                 onExport = onExport,
                 onImport = onImport,
@@ -270,6 +278,7 @@ private fun ProfileScreenPreview() {
             onToggleReminder = { _, _ -> },
             onExport = {},
             onImport = {},
+            onOpenHealth = {},
         )
     }
 }

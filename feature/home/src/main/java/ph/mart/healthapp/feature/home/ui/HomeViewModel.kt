@@ -8,6 +8,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -38,10 +39,18 @@ class HomeViewModel(
     private val waterRepository: WaterRepository,
     exerciseRepository: ExerciseRepository,
     private val moodRepository: MoodRepository,
+    sleepRepository: SleepRepository,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
 
     override val container = orbitContainer<HomeUiState, Nothing>(HomeUiState()) {
-        observeHome(profileRepository, foodRepository, progressRepository, exerciseRepository, moodRepository)
+        observeHome(
+            profileRepository,
+            foodRepository,
+            progressRepository,
+            exerciseRepository,
+            moodRepository,
+            sleepRepository,
+        )
     }
 
     fun handleEvent(event: HomeEvent) {
@@ -70,6 +79,7 @@ class HomeViewModel(
         progressRepository: ProgressRepository,
         exerciseRepository: ExerciseRepository,
         moodRepository: MoodRepository,
+        sleepRepository: SleepRepository,
     ) = intent {
         val today = combine(
             profileRepository.observeProfile(),
@@ -102,10 +112,12 @@ class HomeViewModel(
             activeDays,
             exerciseRepository.observeTodayEntries(),
             moodRepository.observeToday(),
-        ) { state, days, exercise, mood ->
+            sleepRepository.observeLastNight(),
+        ) { state, days, exercise, mood, lastNight ->
             state.copy(
                 loaded = true,
                 burnedKcal = exercise.totalBurnedKcal(),
+                lastNight = lastNight,
                 moodLevel = mood.mood,
                 energyLevel = mood.energy,
                 addExerciseToBudget = state.profile?.addExerciseToBudget != false,

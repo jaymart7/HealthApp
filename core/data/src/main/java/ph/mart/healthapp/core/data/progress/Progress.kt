@@ -51,6 +51,10 @@ interface ProgressRepository {
     fun observeWeightEntries(): Flow<List<WeightEntry>>
     suspend fun upsertWeightEntry(entry: WeightEntry)
 
+    /** Removes one day's weigh-in. Only the Google Health disconnect calls this, to take back
+     * exactly the entries it imported. */
+    suspend fun deleteWeightEntry(dateEpochDay: Long)
+
     fun observeMeasurements(): Flow<Map<MeasurementPart, List<MeasurementEntry>>>
     suspend fun upsertMeasurementEntry(entry: MeasurementEntry)
 

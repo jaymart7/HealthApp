@@ -22,7 +22,7 @@ import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.onboarding.ui.components.OnboardingStepHeader
 
-/** Onboarding step 4 of 5. Skip and Next are the same transition — tapping the already-selected
+/** Onboarding step 4 of 6. Skip and Next are the same transition — tapping the already-selected
  * card toggles it off (handled by the caller's [onSelect]). */
 @Composable
 fun DietaryScreen(
@@ -42,7 +42,7 @@ fun DietaryScreen(
         ) {
             OnboardingStepHeader(
                 currentStep = 4,
-                totalSteps = 5,
+                totalSteps = 6,
                 onBack = onBack,
                 trailingAction = { TextButton(label = "Skip", onClick = onNext) },
             )

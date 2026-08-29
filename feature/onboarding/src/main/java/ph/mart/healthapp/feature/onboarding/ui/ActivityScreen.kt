@@ -38,7 +38,7 @@ fun ActivityScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OnboardingStepHeader(currentStep = 3, totalSteps = 5, onBack = onBack)
+            OnboardingStepHeader(currentStep = 3, totalSteps = 6, onBack = onBack)
             Text(
                 text = "How active are you?",
                 style = MaterialTheme.typography.titleLarge,

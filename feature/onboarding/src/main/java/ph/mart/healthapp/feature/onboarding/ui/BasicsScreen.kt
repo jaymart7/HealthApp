@@ -47,7 +47,7 @@ fun BasicsScreen(form: OnboardingForm, onFormChange: (OnboardingForm) -> Unit, o
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            OnboardingStepHeader(currentStep = 2, totalSteps = 5, onBack = onBack)
+            OnboardingStepHeader(currentStep = 2, totalSteps = 6, onBack = onBack)
             Text(
                 text = "Tell us about yourself",
                 style = MaterialTheme.typography.titleLarge,

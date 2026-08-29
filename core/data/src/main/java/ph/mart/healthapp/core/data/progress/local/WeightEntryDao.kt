@@ -13,4 +13,9 @@ internal interface WeightEntryDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: WeightEntryEntity)
+
+    /** A real DELETE, not a soft one: the table is keyed by date and has no tombstone column, and
+     * the only caller is a user asking to remove a weigh-in that Google Health put here. */
+    @Query("DELETE FROM weight_entry WHERE date = :date")
+    suspend fun delete(date: Long)
 }

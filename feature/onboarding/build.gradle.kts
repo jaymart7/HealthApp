@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.orbit.viewmodel)
     implementation(libs.orbit.compose)
 
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigationevent)
     implementation(libs.androidx.navigationevent.compose)
 }

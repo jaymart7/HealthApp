@@ -28,6 +28,10 @@ internal class ProgressRepositoryImpl(
         weightDao.upsert(WeightEntryEntity(date = entry.dateEpochDay, weightKg = entry.weightKg, note = entry.note))
     }
 
+    override suspend fun deleteWeightEntry(dateEpochDay: Long) {
+        weightDao.delete(dateEpochDay)
+    }
+
     override fun observeMeasurements(): Flow<Map<MeasurementPart, List<MeasurementEntry>>> =
         measurementDao.observeAll().map { entities ->
             entities.map { it.toMeasurementEntry() }.groupBy { it.part }

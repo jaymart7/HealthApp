@@ -31,6 +31,9 @@ so its own "Deferred" list is stale. For what components actually exist, read
 - **Also in use:** ML Kit barcode scanning, Firebase AI + App Check,
   WorkManager (reminders), Open Food Facts over `HttpURLConnection` +
   kotlinx.serialization — no HTTP client dependency, don't add one
+- **Google Health API** (`health.googleapis.com/v4`, the Fitbit Web API's
+  successor — *not* Health Connect, *not* Google Fit): REST over the same
+  `HttpURLConnection`, OAuth via `play-services-auth`'s Authorization API
 
 Versions live in `gradle/libs.versions.toml`. Read it — never restate or
 duplicate versions here or in a parallel catalog.
@@ -95,7 +98,7 @@ cancels, Confirmation returns to Capture with a discard confirm if edited).
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise`, `mood`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
+  `exercise`, `mood`, `health`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
 - **Calorie/macro math is Mifflin–St Jeor**, computed live from profile inputs
@@ -189,9 +192,62 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   repository overloads resolve `todayEpochDay()` when their flow is *built*, so a Glance session
   that spans midnight would keep reporting yesterday; the 30-minute tick is what restarts it.
 
+### Google Health
+
+The four requested scopes are Restricted, so the app is capped at 100 users until it passes
+OAuth App Verification plus an annual CASA/OWASP-ASVS assessment. Everything below exists
+because of that, not because it was the nicest design available.
+
+- **No refresh token, no client secret, no credentials file on the device.** Google holds the
+  grant; `GoogleHealthAuth.authorize()` mints a fresh ~1-hour access token silently on every
+  later call, and that token lives in one `@Volatile` field in `HealthSyncRepositoryImpl` —
+  never Room, never SharedPreferences. A `credentials.json` is not needed and must never be
+  committed; Play Services resolves the OAuth client from package name + signing certificate.
+- **"Connected" is never a stored flag.** It is whatever `authorize()` says right now. A local
+  boolean would quietly become a lie the moment someone revoked access from
+  myaccount.google.com, and the screen showing it is exactly the screen that must not lie.
+- **`health_link` is the whole of sync bookkeeping** — no cursor table, no sync-state row. The
+  remote resource name is its primary key (so re-syncing an overlapping window cannot duplicate
+  anything), `MAX(remoteTimeMillis)` per type *is* the cursor (derived, so a failed sync cannot
+  advance past data it never wrote), and `pushed` separates "delete what we imported" from
+  "delete what we sent". It stays out of the data export for the same reason saved meals do: a
+  restored backup on another device has no relationship to those remote names.
+- **Every window is re-queried one day behind the cursor.** Watches sync hours late; the primary
+  key makes the overlap free. First sync backfills 30 days — asking for only what's needed is
+  the data-minimisation answer on the verification form, not a performance tweak.
+- **Imported workouts are ordinary `exercise_entry` rows**, so `budgetKcal()` and the streak
+  pick them up with no special case. Imported weigh-ins *skip* days that already have an entry
+  rather than replacing them — the typed number is the one the user chose to record.
+- **Water is only pushed once the day is settled** (`dateEpochDay < today`). A day's row holds a
+  running count, and patching the remote point on every glass tap costs far more code than
+  letting today go out on tomorrow's sync.
+- **A meal deleted from the diary is deleted from Google Health on the next sync.** Otherwise
+  "delete" would mean something different on each side.
+- **Sleep is not a streak domain**, same reasoning as mood: a watch recording sleep while its
+  owner ignores the app is not "you logged something". `sleep_day` lives under `health/` because
+  FitPulse cannot measure sleep, so there is no manual write path — and Home's card is *hidden*
+  when there's no night rather than rendering a zero.
+- **The disclosure screen is a screen, not a settings row.** It renders from
+  `HealthDisclosurePanel` in `:core:designsystem` because onboarding (step 5 of 6) and Profile →
+  Connections both show it, and `connect()` is the only path from it to Google's consent prompt.
+  It must stay in the normal flow, carry nothing unrelated, and name each scope's purpose.
+- **Onboarding's health step sits before Confirm, not after.** Finishing onboarding writes the
+  profile, and `AppRoot` swaps the whole wizard out the moment that lands.
+- **Two ViewModels, not one shared.** `:feature:onboarding` and `:feature:profile` each own their
+  slice of `HealthSyncRepository`; `:feature:*` modules never import each other, and only the
+  disclosure UI is genuinely common.
+
 ## Backlog
 
 - Final mascot illustration (the geometric placeholder "Bibo" is used throughout).
+- Google Health: verification is *not* done. Needs the Cloud project's consent screen branded
+  for FitPulse, an Android OAuth client (package + debug **and** release SHA-1) in that same
+  project, per-scope justifications submitted, and a CASA Letter of Validation. Note that
+  `app/google-services.json` points at a different project (`moviefied-3d48b`) than the OAuth
+  credentials that were supplied — pick one project and confirm which consent screen the first
+  `authorize()` actually raises.
+- Google Health weight parsing reads the timestamp from `sampleTime.physicalTime` with a flat
+  `physicalTime` fallback; pin it once a live response has been captured.
 
 ## Composable structure & previews
 

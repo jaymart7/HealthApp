@@ -14,7 +14,7 @@ import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
 /**
- * Hosts the whole 6-step wizard. No Nav3 here — the prototype's back is a plain `step - 1` with
+ * Hosts the whole 7-step wizard. No Nav3 here — the prototype's back is a plain `step - 1` with
  * no branching, so a saved `step: Int` + `when` dispatch reproduces it exactly (including
  * Skip -> Confirm, then back -> Dietary) without a second, competing back-handler on top of
  * NavDisplay's own.
@@ -78,12 +78,14 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
                 onBack = { state.step = 3 },
             )
 
+            5 -> HealthConnectScreen(onNext = { state.step = 6 }, onBack = { state.step = 4 })
+
             else -> ConfirmTargetsScreen(
                 form = state.form,
                 isCelebrating = uiState.isCelebrating,
                 onFormChange = { state.form = it },
                 onFinish = { viewModel.handleEvent(OnboardingEvent.OnFinish(state.form)) },
-                onBack = { state.step = 4 },
+                onBack = { state.step = 5 },
             )
         }
     }
