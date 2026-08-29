@@ -15,7 +15,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val lightScheme = lightColorScheme(
+/** Standard-contrast pair, public because the home-screen widget hands them to Glance's
+ * `ColorProviders` — RemoteViews has no access to [AppTheme]. The medium/high pairs stay private:
+ * `UiModeManager.getContrast()` is an in-app read with no Glance equivalent. */
+val lightScheme = lightColorScheme(
     primary = primaryLight,
     onPrimary = onPrimaryLight,
     primaryContainer = primaryContainerLight,
@@ -53,7 +56,7 @@ private val lightScheme = lightColorScheme(
     surfaceContainerHighest = surfaceContainerHighestLight,
 )
 
-private val darkScheme = darkColorScheme(
+val darkScheme = darkColorScheme(
     primary = primaryDark,
     onPrimary = onPrimaryDark,
     primaryContainer = primaryContainerDark,

@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">FitPulse</string>
+    <string name="widget_description">Today\'s calories, streak, and water — with one-tap logging.</string>
 </resources>

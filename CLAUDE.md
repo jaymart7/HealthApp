@@ -153,6 +153,22 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.
+- **The home-screen widget lives in `:app`, for the same reason reminders do** — a widget is a
+  system surface, not a screen. It reads the repository interfaces directly (no ViewModel; there
+  is no Compose lifecycle to hold one) and gets them from Koin's global context via
+  `KoinComponent`, the same trick `ReminderWorker` uses. Three things it does differently from
+  the app, all forced by RemoteViews rather than chosen: Home's calorie *ring* becomes a linear
+  bar (Glance cannot draw arcs), the text uses the system face (Glance has no custom fonts, and
+  no tabular figures — nothing on the widget animates, so there is nothing to jitter), and the
+  card reads `surface` instead of `AppCard`'s `surfaceContainerLow`, which Glance's
+  `ColorProviders` has no slot for. `Profile.darkThemeOn` *is* honored — null hands Glance both
+  schemes and lets the system pick, an explicit choice pins both slots — but contrast stays
+  Standard-only, since `UiModeManager.getContrast()` has no Glance equivalent. `lightScheme`
+  and `darkScheme` in `Theme.kt` are public for exactly this one caller.
+- **The widget's `updatePeriodMillis` is about midnight, not freshness.** Every in-app change is
+  pushed by `FitPulseApplication`'s collector the moment Room emits. But the today-only
+  repository overloads resolve `todayEpochDay()` when their flow is *built*, so a Glance session
+  that spans midnight would keep reporting yesterday; the 30-minute tick is what restarts it.
 
 ## Backlog
 
