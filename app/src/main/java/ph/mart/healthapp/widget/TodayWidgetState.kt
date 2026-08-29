@@ -1,6 +1,9 @@
 package ph.mart.healthapp.widget
 
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.budgetKcal
+import ph.mart.healthapp.core.data.health.StepDay
+import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -22,6 +25,8 @@ data class TodayWidgetState(
     val goalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     val unit: UnitSystem = UnitSystem.Metric,
     val streakDays: Int = 0,
+    /** Today's steps from Google Health. Zero means none imported — the line is omitted. */
+    val steps: Int = 0,
     /** Null means follow the device, exactly as `Profile.darkThemeOn` does. */
     val darkThemeOn: Boolean? = null,
     /** No profile row yet — the user hasn't finished onboarding, so there are no targets to show. */
@@ -44,25 +49,30 @@ val TodayWidgetState.glassesAfterAdd: Int get() = (glasses + 1).coerceAtMost(goa
 val TodayWidgetState.waterGoalReached: Boolean get() = glasses >= goalGlasses
 
 /**
- * [burnedKcal] folds in through `budgetKcal()` — the one place exercise touches the day's budget —
- * so the widget and Home's ring cannot drift apart. [profile] null means onboarding is unfinished.
+ * The day's burn folds in through `budgetKcal()` — the one place exercise touches the day's budget
+ * — so the widget and Home's ring cannot drift apart. That is also why [exercise] and [steps]
+ * arrive raw rather than pre-summed: `dayBurnedKcal()` is the single combining rule, and calling
+ * it here means the widget cannot combine them differently from Home. [profile] null means
+ * onboarding is unfinished.
  */
 fun todayWidgetState(
     profile: Profile?,
     totals: DiaryTotals,
     glasses: Int,
-    burnedKcal: Int,
+    exercise: List<ExerciseEntry>,
+    steps: StepDay?,
     streakDays: Int,
 ): TodayWidgetState {
     if (profile == null) return TodayWidgetState(onboarding = true)
     val targets = profile.dailyTargets()
     return TodayWidgetState(
         consumedKcal = totals.calories,
-        budgetKcal = budgetKcal(targets.calories, burnedKcal, profile.addExerciseToBudget),
+        budgetKcal = budgetKcal(targets.calories, dayBurnedKcal(exercise, steps), profile.addExerciseToBudget),
         glasses = glasses,
         goalGlasses = profile.waterGoalGlasses,
         unit = profile.preferredUnit,
         streakDays = streakDays,
+        steps = steps?.steps ?: 0,
         darkThemeOn = profile.darkThemeOn,
     )
 }

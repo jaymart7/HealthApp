@@ -18,9 +18,11 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import ph.mart.healthapp.core.data.di.databaseModule
 import ph.mart.healthapp.core.data.di.networkModule
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.di.exerciseDataModule
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.di.foodDataModule
+import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.di.healthDataModule
 import ph.mart.healthapp.core.data.mood.di.moodDataModule
 import ph.mart.healthapp.core.data.profile.ProfileRepository
@@ -74,7 +76,13 @@ class FitPulseApplication : Application() {
         seedDebugData(koinApp.koin)
 
         scheduleReminders(koinApp.koin.get())
-        updateWidget(koinApp.koin.get(), koinApp.koin.get(), koinApp.koin.get())
+        updateWidget(
+            koinApp.koin.get(),
+            koinApp.koin.get(),
+            koinApp.koin.get(),
+            koinApp.koin.get(),
+            koinApp.koin.get(),
+        )
     }
 
     /**
@@ -102,21 +110,27 @@ class FitPulseApplication : Application() {
      * the same Room flows the widget itself reads.
      *
      * The profile flow is in the combine so a target edit, a water-goal change, or the dark-mode
-     * switch all reach the widget — not just food and water. Day rollover is not covered here (the
-     * today-only overloads resolve their date once); `updatePeriodMillis` handles that.
+     * switch all reach the widget — not just food and water. Exercise and steps are here because
+     * the widget's budget is derived from both, and a Google Health sync writes both: without
+     * them a finished sync would leave the widget showing yesterday's budget until the next tick.
+     * Day rollover is not covered here (the today-only overloads resolve their date once);
+     * `updatePeriodMillis` handles that.
      */
     private fun updateWidget(
         foodRepository: FoodRepository,
         waterRepository: WaterRepository,
         profileRepository: ProfileRepository,
+        exerciseRepository: ExerciseRepository,
+        stepsRepository: StepsRepository,
     ) {
         applicationScope.launch {
             combine(
                 foodRepository.observeTodayEntries(),
                 waterRepository.observeToday(),
                 profileRepository.observeProfile(),
-                ::Triple,
-            )
+                exerciseRepository.observeTodayEntries(),
+                stepsRepository.observeToday(),
+            ) { food, water, profile, exercise, steps -> listOf(food, water, profile, exercise, steps) }
                 .distinctUntilChanged()
                 .collect { TodayWidget().updateAll(this@FitPulseApplication) }
         }

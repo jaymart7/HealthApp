@@ -5,10 +5,12 @@ import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
-import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.SleepRepository
+import ph.mart.healthapp.core.data.health.StepsRepository
+import ph.mart.healthapp.core.data.health.dayBurnedKcal
+import ph.mart.healthapp.core.data.health.stepsCreditKcal
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -40,6 +42,7 @@ class HomeViewModel(
     exerciseRepository: ExerciseRepository,
     private val moodRepository: MoodRepository,
     sleepRepository: SleepRepository,
+    stepsRepository: StepsRepository,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
 
     override val container = orbitContainer<HomeUiState, Nothing>(HomeUiState()) {
@@ -50,6 +53,7 @@ class HomeViewModel(
             exerciseRepository,
             moodRepository,
             sleepRepository,
+            stepsRepository,
         )
     }
 
@@ -80,6 +84,7 @@ class HomeViewModel(
         exerciseRepository: ExerciseRepository,
         moodRepository: MoodRepository,
         sleepRepository: SleepRepository,
+        stepsRepository: StepsRepository,
     ) = intent {
         val today = combine(
             profileRepository.observeProfile(),
@@ -107,17 +112,29 @@ class HomeViewModel(
             ::loggedDays,
         )
 
+        // The two Google Health flows pair up before the outer combine: it is already at the
+        // five-flow arity the typed overloads stop at.
+        val fromWatch = combine(
+            sleepRepository.observeLastNight(),
+            stepsRepository.observeToday(),
+            ::Pair,
+        )
+
         combine(
             today,
             activeDays,
             exerciseRepository.observeTodayEntries(),
             moodRepository.observeToday(),
-            sleepRepository.observeLastNight(),
-        ) { state, days, exercise, mood, lastNight ->
+            fromWatch,
+        ) { state, days, exercise, mood, (lastNight, steps) ->
             state.copy(
                 loaded = true,
-                burnedKcal = exercise.totalBurnedKcal(),
+                // Steps fold in here rather than in budgetKcal(), which stays the single place
+                // burned calories reach the day.
+                burnedKcal = dayBurnedKcal(exercise, steps),
+                stepsCreditKcal = stepsCreditKcal(steps, exercise),
                 lastNight = lastNight,
+                steps = steps,
                 moodLevel = mood.mood,
                 energyLevel = mood.energy,
                 addExerciseToBudget = state.profile?.addExerciseToBudget != false,

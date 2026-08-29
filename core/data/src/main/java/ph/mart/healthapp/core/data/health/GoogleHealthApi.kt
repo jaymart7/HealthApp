@@ -201,6 +201,7 @@ internal enum class HealthDataType(
     Exercise("exercise", "interval.start_time", SESSION_PAGE_SIZE),
     Sleep("sleep", "interval.start_time", SESSION_PAGE_SIZE),
     Weight("weight", "physical_time", SAMPLE_PAGE_SIZE),
+    Steps("steps", "interval.start_time", SAMPLE_PAGE_SIZE),
 }
 
 /**
@@ -263,6 +264,8 @@ internal data class RemoteExercise(
     val name: String,
     val minutes: Int,
     val burnedKcal: Int,
+    /** The watch's own step count for the session, so the day's step credit can subtract it. */
+    val steps: Int,
 ) : RemotePoint
 
 /** One imported weigh-in. The API carries grams; the app is metric-first in kilograms. */
@@ -270,6 +273,17 @@ internal data class RemoteWeight(
     override val remoteName: String,
     override val timeMillis: Long,
     val weightKg: Double,
+) : RemotePoint
+
+/**
+ * One bucket of steps. The API reports steps intra-day rather than as a daily total, so several
+ * of these fold into one `step_day` row — which is why steps are the one imported type that does
+ * not ride `health_link`: a bucket has no stable identity worth keying a link by.
+ */
+internal data class RemoteSteps(
+    override val remoteName: String,
+    override val timeMillis: Long,
+    val count: Int,
 ) : RemotePoint
 
 /** One imported night. [timeMillis] is when it started; [endMillis] is what dates it. */
@@ -311,6 +325,12 @@ internal fun parseExercisePage(body: String): Page<RemoteExercise> {
             minutes = (seconds / 60.0).roundToInt().coerceAtLeast(0),
             burnedKcal = exercise["metricsSummary"]?.jsonObject.number("caloriesKcal")
                 ?.roundToInt()?.coerceAtLeast(0) ?: 0,
+            // A session that reports no steps falls back to the cadence estimate rather than 0 —
+            // otherwise a run the watch didn't count would have its steps credited a second time
+            // as ordinary walking.
+            steps = exercise["metricsSummary"]?.jsonObject.number("steps")
+                ?.roundToInt()?.takeIf { it > 0 }
+                ?: estimatedSteps(type, (seconds / 60.0).roundToInt().coerceAtLeast(0)),
         )
     }
     return Page(exercises, root.string("nextPageToken"))
@@ -379,6 +399,34 @@ internal fun parseSleepPage(body: String): Page<RemoteSleep> {
         )
     }
     return Page(nights, root.string("nextPageToken"))
+}
+
+/**
+ * Steps come back as intervals carrying a count. The caller groups them by local day and sums.
+ *
+ * ponytail: the count is read from `count`, then `steps`, then `delta`, because the reference and
+ * the wire have used more than one name for it and this module has no way to try a live account.
+ * Pin it to one field once a real response has been captured — same outstanding job as
+ * `parseWeightPage`'s timestamp.
+ */
+internal fun parseStepsPage(body: String): Page<RemoteSteps> {
+    val root = parseRoot(body) ?: return Page(emptyList(), null)
+
+    val buckets = root["dataPoints"]?.jsonArray.orEmpty().mapNotNull { element ->
+        val point = element as? JsonObject ?: return@mapNotNull null
+        val remoteName = point.string("name") ?: return@mapNotNull null
+        val steps = point["steps"]?.jsonObject ?: return@mapNotNull null
+        // An undated bucket cannot be placed on a day, so it is dropped rather than invented —
+        // the same treatment parseExercisePage gives a workout with no interval.
+        val start = parseRfc3339(steps["interval"]?.jsonObject.string("startTime"))
+            ?: return@mapNotNull null
+        val count = (steps.number("count") ?: steps.number("steps") ?: steps.number("delta"))
+            ?.roundToInt() ?: return@mapNotNull null
+        if (count <= 0) return@mapNotNull null
+
+        RemoteSteps(remoteName = remoteName, timeMillis = start, count = count)
+    }
+    return Page(buckets, root.string("nextPageToken"))
 }
 
 private fun parseRoot(body: String): JsonObject? =

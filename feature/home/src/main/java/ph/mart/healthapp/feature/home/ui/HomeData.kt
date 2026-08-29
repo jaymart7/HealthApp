@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.home.ui
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
@@ -15,7 +16,8 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
  * Read model. Every field traces back to a repository interface: [profile] from
  * `ProfileRepository`, [totals] from `FoodRepository`, [weightEntries] and [lastPhotoEpochDay]
  * from `ProgressRepository`, [waterGlasses] from `WaterRepository`, [burnedKcal] from
- * `ExerciseRepository`, [lastNight] from `SleepRepository`. Targets are never stored here — they're derived
+ * `ExerciseRepository` and `StepsRepository` together, [lastNight] and [steps] from
+ * `SleepRepository`/`StepsRepository`. Targets are never stored here — they're derived
  * from [profile] at read time via `dailyTargets()`, so they can't drift from the inputs that
  * produce them. [streak] and [weightProgressKg] are derived the same way, from all three
  * repositories at once — nothing about consistency is stored.
@@ -38,6 +40,11 @@ data class HomeUiState(
     /** Last night, from Google Health. Null when nothing was imported — the card is hidden, not
      * zeroed, because FitPulse has no way to measure sleep itself. */
     val lastNight: SleepNight? = null,
+    /** Today's steps, from Google Health. Hidden the same way [lastNight] is, for the same reason. */
+    val steps: StepDay? = null,
+    /** The part of [burnedKcal] that came from [steps] — what the card shows, and already net of
+     * any workout that had claimed those steps. */
+    val stepsCreditKcal: Int = 0,
     /** From the profile — whether [burnedKcal] raises the calorie ring's goal. */
     val addExerciseToBudget: Boolean = true,
     val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),

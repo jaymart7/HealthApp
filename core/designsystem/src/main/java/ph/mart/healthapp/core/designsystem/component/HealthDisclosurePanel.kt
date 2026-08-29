@@ -31,7 +31,7 @@ private data class Disclosure(val title: String, val body: String)
 private val DISCLOSURES = listOf(
     Disclosure(
         "Workouts and activity",
-        "Imported so logged exercise raises your daily calorie budget.",
+        "Imported so your workouts and daily steps raise your calorie budget.",
     ),
     Disclosure(
         "Weight and body measurements",
@@ -65,9 +65,9 @@ fun HealthDisclosurePanel(
         )
         Text(
             text = "FitPulse collects health and fitness data from Google Health to show your " +
-                "workouts and the calories they burned, track your weight trend, and show how " +
-                "you slept. It also sends the meals and water you log to Google Health, so your " +
-                "nutrition stays in one place.",
+                "workouts and steps and the calories they burned, track your weight trend, and " +
+                "show how you slept. It also sends the meals and water you log to Google Health, " +
+                "so your nutrition stays in one place.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

@@ -57,6 +57,7 @@ import ph.mart.healthapp.feature.home.ui.components.MascotGreetingCard
 import ph.mart.healthapp.feature.home.ui.components.MoodCard
 import ph.mart.healthapp.feature.home.ui.components.ProgressPhotoReminderCard
 import ph.mart.healthapp.feature.home.ui.components.SleepCard
+import ph.mart.healthapp.feature.home.ui.components.StepsCard
 import ph.mart.healthapp.feature.home.ui.components.StreakCard
 import ph.mart.healthapp.feature.home.ui.components.WaterCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
@@ -189,33 +190,41 @@ private fun HomeCards(
             SleepCard(night = night, modifier = appearModifier(4, appear))
         }
 
+        uiState.steps?.let { steps ->
+            StepsCard(
+                steps = steps,
+                creditKcal = if (uiState.addExerciseToBudget) uiState.stepsCreditKcal else 0,
+                modifier = appearModifier(5, appear),
+            )
+        }
+
         MoodCard(
             mood = uiState.moodLevel,
             energy = uiState.energyLevel,
             onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
             onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
-            modifier = appearModifier(5, appear),
+            modifier = appearModifier(6, appear),
         )
 
         WeightMetricCard(
             trend = trend,
             goal = uiState.profile?.goal,
             unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            modifier = appearModifier(6, appear),
+            modifier = appearModifier(7, appear),
         )
 
         if (targets != null) {
             MacroSummaryCard(
                 consumed = uiState.totals,
                 targets = targets,
-                modifier = appearModifier(7, appear),
+                modifier = appearModifier(8, appear),
             )
         }
 
         ProgressPhotoReminderCard(
             daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
             onTakePhoto = onAddPhoto,
-            modifier = appearModifier(8, appear),
+            modifier = appearModifier(9, appear),
         )
     }
 }

@@ -14,6 +14,8 @@ data class ExerciseEntry(
     val name: String = "",
     val minutes: Int,
     val burnedKcal: Int,
+    /** Steps this activity contributed to the day. See `stepsCreditKcal()` for what it's for. */
+    val steps: Int = 0,
 )
 
 /**

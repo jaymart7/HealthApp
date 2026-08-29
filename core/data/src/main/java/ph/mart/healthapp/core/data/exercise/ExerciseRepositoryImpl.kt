@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryDao
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryEntity
+import ph.mart.healthapp.core.data.health.estimatedSteps
 import ph.mart.healthapp.core.data.streak.STREAK_WINDOW_DAYS
 import ph.mart.healthapp.core.data.todayEpochDay
 
@@ -18,7 +19,13 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
         // A dated entry arrives from an import, or from the diary pointed at a past day; anything
         // logged without one is "today".
         val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
-        return dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
+        // Filled here rather than at each call site so no write path can forget it. Manual
+        // logging never knows a step count; the import supplies the watch's own, which is
+        // non-zero and so wins over the estimate.
+        val steps = entry.steps.takeIf { it > 0 } ?: estimatedSteps(entry.type, entry.minutes)
+        return dao.insert(
+            entry.copy(steps = steps).toEntity(date = date, loggedAt = System.currentTimeMillis()),
+        )
     }
 
     override suspend fun deleteEntry(id: Long) {
@@ -43,6 +50,7 @@ private fun ExerciseEntryEntity.toExerciseEntry() = ExerciseEntry(
     name = name,
     minutes = minutes,
     burnedKcal = burnedKcal,
+    steps = steps,
 )
 
 private fun ExerciseEntry.toEntity(date: Long, loggedAt: Long) = ExerciseEntryEntity(
@@ -53,4 +61,5 @@ private fun ExerciseEntry.toEntity(date: Long, loggedAt: Long) = ExerciseEntryEn
     loggedAt = loggedAt,
     minutes = minutes,
     burnedKcal = burnedKcal,
+    steps = steps,
 )

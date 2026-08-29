@@ -4,7 +4,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.DiaryTotals
+import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
@@ -33,12 +36,18 @@ class TodayWidgetStateTest {
         consumed: Int = 0,
         glasses: Int = 0,
         burned: Int = 0,
+        steps: StepDay? = null,
         addExercise: Boolean = true,
     ) = todayWidgetState(
         profile = profile.copy(addExerciseToBudget = addExercise),
         totals = DiaryTotals(consumed, 0, 0, 0),
         glasses = glasses,
-        burnedKcal = burned,
+        exercise = if (burned == 0) {
+            emptyList()
+        } else {
+            listOf(ExerciseEntry(type = ExerciseType.Strength, minutes = 40, burnedKcal = burned))
+        },
+        steps = steps,
         streakDays = 3,
     )
 
@@ -50,6 +59,24 @@ class TodayWidgetStateTest {
     @Test
     fun `exercise leaves the budget alone when the credit is off`() {
         assertEquals(2000, stateFor(burned = 320, addExercise = false).budgetKcal)
+    }
+
+    @Test
+    fun `steps raise the budget, and the count reaches the widget`() {
+        val state = stateFor(steps = StepDay(dateEpochDay = 20_000, steps = 8432, burnedKcal = 300))
+        assertEquals(8432, state.steps)
+        assertEquals(2300, state.budgetKcal)
+    }
+
+    @Test
+    fun `steps leave the budget alone when the credit is off`() {
+        val state = stateFor(
+            steps = StepDay(dateEpochDay = 20_000, steps = 8432, burnedKcal = 300),
+            addExercise = false,
+        )
+        // Still shown — the switch governs the budget, not whether the day is reported.
+        assertEquals(8432, state.steps)
+        assertEquals(2000, state.budgetKcal)
     }
 
     @Test
@@ -66,7 +93,7 @@ class TodayWidgetStateTest {
 
     @Test
     fun `a missing profile yields the onboarding state rather than dividing by zero`() {
-        val state = todayWidgetState(null, DiaryTotals(0, 0, 0, 0), 0, 0, 0)
+        val state = todayWidgetState(null, DiaryTotals(0, 0, 0, 0), 0, emptyList(), null, 0)
         assertTrue(state.onboarding)
         assertEquals(0f, state.progress, 0f)
     }

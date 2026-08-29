@@ -52,7 +52,7 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.data.exercise.budgetKcal
-import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
+import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.feature.food.ui.components.DiaryDateHeader
 import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.DiaryWaterRow
@@ -132,7 +132,7 @@ private fun FoodContent(
                         consumedKcal = uiState.entries.dailyTotals().calories,
                         goalKcal = budgetKcal(
                             targetKcal = targets.calories,
-                            burnedKcal = uiState.exercise.totalBurnedKcal(),
+                            burnedKcal = dayBurnedKcal(uiState.exercise, uiState.steps),
                             addExercise = uiState.addExerciseToBudget,
                         ),
                         proteinGoalG = targets.proteinG,

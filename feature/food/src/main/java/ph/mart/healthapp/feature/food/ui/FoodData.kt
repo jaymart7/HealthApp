@@ -6,6 +6,7 @@ import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
+import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -19,6 +20,8 @@ data class FoodUiState(
     val today: Long = todayEpochDay(),
     val entries: List<FoodEntry> = emptyList(),
     val exercise: List<ExerciseEntry> = emptyList(),
+    /** The selected day's steps, from Google Health. Null when none were imported for it. */
+    val steps: StepDay? = null,
     /** From the profile — whether [exercise]'s burn raises the summary bar's goal. */
     val addExerciseToBudget: Boolean = true,
     val targets: DailyTargets? = null,

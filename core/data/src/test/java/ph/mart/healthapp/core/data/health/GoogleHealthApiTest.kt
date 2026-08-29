@@ -8,6 +8,36 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 
+/**
+ * Steps arrive as intra-day buckets, so two of these land on one local day and one on the next.
+ * The last has no interval and must be dropped, exactly as an undated workout is.
+ */
+private const val STEPS = """
+{
+  "dataPoints": [
+    {
+      "name": "users/me/dataTypes/steps/dataPoints/s1",
+      "steps": {
+        "interval": { "startTime": "2026-04-20T08:00:00Z", "endTime": "2026-04-20T09:00:00Z" },
+        "count": 2200
+      }
+    },
+    {
+      "name": "users/me/dataTypes/steps/dataPoints/s2",
+      "steps": {
+        "interval": { "startTime": "2026-04-20T14:00:00Z", "endTime": "2026-04-20T15:00:00Z" },
+        "count": "3100"
+      }
+    },
+    {
+      "name": "users/me/dataTypes/steps/dataPoints/s3",
+      "steps": { "count": 900 }
+    }
+  ],
+  "nextPageToken": "steps-2"
+}
+"""
+
 /** A page shaped like the API's own documented response, trimmed to the fields FitPulse reads. */
 private const val PAGE = """
 {
@@ -164,6 +194,30 @@ class GoogleHealthApiTest {
         assertEquals(ExerciseType.Other, unknown.type)
         assertEquals("Other", unknown.name)
         assertEquals(210, unknown.burnedKcal)
+    }
+
+    @Test
+    fun `a workout carries the steps the watch counted`() {
+        val page = parseExercisePage(PAGE)
+
+        // metricsSummary.steps, quoted on the wire.
+        assertEquals(6200, page.items[0].steps)
+        // An unrecognised activity reports none and is assumed to have taken none, so it can't
+        // subtract a day's real walking. estimatedSteps' own cases are covered in StepsTest.
+        assertEquals(0, page.items[1].steps)
+    }
+
+    @Test
+    fun `a steps page keeps its buckets and drops the undated one`() {
+        val page = parseStepsPage(STEPS)
+
+        assertEquals("steps-2", page.nextPageToken)
+        assertEquals(2, page.items.size)
+        assertEquals("users/me/dataTypes/steps/dataPoints/s1", page.items[0].remoteName)
+        assertEquals(2200, page.items[0].count)
+        // A count that came through as a quoted string still parses.
+        assertEquals(3100, page.items[1].count)
+        assertEquals(0, parseStepsPage("not json").items.size)
     }
 
     @Test

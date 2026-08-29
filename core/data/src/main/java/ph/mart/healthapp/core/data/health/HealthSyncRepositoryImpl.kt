@@ -15,7 +15,10 @@ import ph.mart.healthapp.core.data.health.local.HealthLinkDao
 import ph.mart.healthapp.core.data.health.local.HealthLinkEntity
 import ph.mart.healthapp.core.data.health.local.SleepDayDao
 import ph.mart.healthapp.core.data.health.local.SleepDayEntity
+import ph.mart.healthapp.core.data.health.local.StepDayDao
+import ph.mart.healthapp.core.data.health.local.StepDayEntity
 import ph.mart.healthapp.core.data.network.NetworkMonitor
+import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
@@ -41,6 +44,8 @@ internal class HealthSyncRepositoryImpl(
     private val exerciseRepository: ExerciseRepository,
     private val progressRepository: ProgressRepository,
     private val sleepDao: SleepDayDao,
+    private val stepDao: StepDayDao,
+    private val profileRepository: ProfileRepository,
     private val foodRepository: FoodRepository,
     private val waterRepository: WaterRepository,
     private val networkMonitor: NetworkMonitor,
@@ -93,6 +98,11 @@ internal class HealthSyncRepositoryImpl(
             Outcome.Failed -> failed = true
         }
         when (val result = importSleep(token)) {
+            is Outcome.Wrote -> imported += result.items
+            Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+            Outcome.Failed -> failed = true
+        }
+        when (val result = importSteps(token)) {
             is Outcome.Wrote -> imported += result.items
             Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
             Outcome.Failed -> failed = true
@@ -172,6 +182,71 @@ internal class HealthSyncRepositoryImpl(
             ),
         )
         day
+    }
+
+    /**
+     * Steps are the one imported type that doesn't go through [importAll], because they aggregate:
+     * the API reports intra-day buckets and `step_day` holds a daily total, so there is no
+     * one-remote-point-to-one-local-row relationship for `health_link` to record. The cursor is
+     * `MAX(date)` in `step_day` instead — still derived from rows actually written, which is the
+     * property that makes the link table's own cursor safe.
+     *
+     * Days are summed and **replaced** rather than accumulated, so re-querying an overlapping
+     * window is idempotent and a bucket the watch later revises corrects itself. That is also why
+     * nothing is written until every page has landed: a half-read window would replace a good
+     * total with a low one.
+     */
+    private suspend fun importSteps(token: String): Outcome {
+        // Priced at one weight for the whole window: the latest weigh-in, else the profile's.
+        // The MET estimate is coarse by construction, so a per-day weight would be false
+        // precision. No profile means onboarding is unfinished and there is nothing to price at.
+        val weightKg = progressRepository.observeWeightEntries().first()
+            .maxByOrNull { it.dateEpochDay }?.weightKg
+            ?: profileRepository.observeProfile().first()?.weightKg
+            ?: return Outcome.Wrote(0)
+
+        val since = stepsWindowStart()
+        var pageToken: String? = null
+        val totals = mutableMapOf<Long, Int>()
+
+        repeat(MAX_PAGES) {
+            val url = dataPointsUrl(HealthDataType.Steps, sinceMillis = since, pageToken = pageToken)
+            val page = when (val response = fetch(url, token)) {
+                is HealthResponse.Ok -> parseStepsPage(response.body)
+                HealthResponse.Forbidden -> {
+                    cachedToken = null
+                    return Outcome.Revoked
+                }
+
+                HealthResponse.Unauthorized, HealthResponse.Failed -> return Outcome.Failed
+            }
+
+            page.items.forEach { bucket ->
+                val day = epochDayOf(bucket.timeMillis)
+                totals[day] = (totals[day] ?: 0) + bucket.count
+            }
+            pageToken = page.nextPageToken ?: return writeSteps(totals, weightKg)
+        }
+        return writeSteps(totals, weightKg)
+    }
+
+    private suspend fun writeSteps(totals: Map<Long, Int>, weightKg: Double): Outcome {
+        totals.forEach { (day, steps) ->
+            stepDao.upsert(
+                StepDayEntity(date = day, steps = steps, burnedKcal = stepsBurnedKcal(steps, weightKg)),
+            )
+        }
+        return Outcome.Wrote(totals.size)
+    }
+
+    /**
+     * Day-aligned, unlike [windowStart]: a window that starts mid-morning would return a partial
+     * day, and the replace-in-full write would turn a complete total into a fragment of one. The
+     * cursor's own day is re-queried too, since it was almost certainly still in progress.
+     */
+    private suspend fun stepsWindowStart(): Long {
+        val latest = stepDao.latestDate() ?: return epochDayStartMillis(todayEpochDay() - BACKFILL_DAYS)
+        return epochDayStartMillis(latest - 1)
     }
 
     /**
@@ -387,6 +462,8 @@ internal class HealthSyncRepositoryImpl(
                     SLEEP_TABLE -> sleepDao.delete(link.localId)
                 }
             }
+            // No links to walk: step_day is its own bookkeeping, so it is cleared wholesale.
+            stepDao.clear()
         }
         // The links go either way: keeping them would make a later reconnect skip data the user
         // asked us to forget, and keeping them without the rows would point at nothing.

@@ -212,6 +212,30 @@ because of that, not because it was the nicest design available.
   advance past data it never wrote), and `pushed` separates "delete what we imported" from
   "delete what we sent". It stays out of the data export for the same reason saved meals do: a
   restored backup on another device has no relationship to those remote names.
+- **Steps are the one type that doesn't ride `health_link`.** The API reports intra-day buckets
+  and FitPulse stores a daily total, so there is no one-point-to-one-row relationship for a link
+  to record. `MAX(date)` in `step_day` is the cursor instead — still derived from rows actually
+  written, which is the property that made the link table's cursor safe. Consequences worth
+  keeping: the window is *day-aligned* (`epochDayStartMillis(latest - 1)`, not a millisecond
+  offset), because a mid-day boundary would return a partial day; each re-queried day is summed
+  and **replaced**, so a re-sync is idempotent and a revised bucket self-corrects; nothing is
+  written until every page lands, so a half-read window can't replace a good total with a
+  fragment; and Profile's "N items imported" doesn't count step days.
+- **`step_day.burnedKcal` is computed at import and scaled at read.** Stored, not recomputed —
+  the same rule `exercise_entry` follows, so a later weigh-in can't rewrite what a past day
+  burned. It prices the day's *whole* step count at one weight (latest weigh-in, else the
+  profile's); `stepsCreditKcal()` then subtracts the steps a logged workout already claims and
+  scales the stored figure down proportionally. That subtraction is why `exercise_entry` carries a
+  `steps` column at all: the watch's own `metricsSummary.steps` for an imported session, and
+  `estimatedSteps()` — Walk/Run/HIIT only — for one logged by hand.
+- **Steps ride `addExerciseToBudget`; they do not get a second switch.** `budgetKcal()` is still
+  the only fold-in point and is unchanged: callers now pass `dayBurnedKcal(exercise, steps)`. What
+  this does *not* correct for is the walking already priced into `calculateDailyTargets()`'s
+  activity multiplier — the existing switch is the user's answer to that, and the upgrade path (a
+  baseline step count per `ActivityLevel`) is marked in `Steps.kt`.
+- **Steps are not a streak domain and not exported**, same reasoning as sleep and `health_link`
+  respectively. `step_day` is import-only telemetry with no manual write path; `StepsRepository`
+  is read-only and has no `observeLoggedDays()`.
 - **Every window is re-queried one day behind the cursor.** Watches sync hours late; the primary
   key makes the overlap free. First sync backfills 30 days — asking for only what's needed is
   the data-minimisation answer on the verification form, not a performance tweak.
@@ -248,6 +272,8 @@ because of that, not because it was the nicest design available.
   `authorize()` actually raises.
 - Google Health weight parsing reads the timestamp from `sampleTime.physicalTime` with a flat
   `physicalTime` fallback; pin it once a live response has been captured.
+- `parseStepsPage` reads the bucket count from `count`, then `steps`, then `delta`, for the same
+  reason and with the same fix: pin it to one field once a live response has been captured.
 
 ## Composable structure & previews
 

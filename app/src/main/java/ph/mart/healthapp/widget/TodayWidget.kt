@@ -43,8 +43,9 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import ph.mart.healthapp.MainActivity
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
-import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.health.StepsRepository
+import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -83,6 +84,7 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
     private val waterRepository: WaterRepository by inject()
     private val exerciseRepository: ExerciseRepository by inject()
     private val progressRepository: ProgressRepository by inject()
+    private val stepsRepository: StepsRepository by inject()
 
     override val sizeMode = SizeMode.Responsive(setOf(SMALL, WIDE))
 
@@ -103,14 +105,21 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
             profileRepository.observeProfile(),
             foodRepository.observeTodayEntries(),
             waterRepository.observeToday(),
-            exerciseRepository.observeTodayEntries(),
+            // Paired ahead of the combine, which is already at the arity the typed overloads
+            // stop at.
+            combine(
+                exerciseRepository.observeTodayEntries(),
+                stepsRepository.observeToday(),
+                ::Pair,
+            ),
             activeDays,
-        ) { profile, entries, glasses, exercise, days ->
+        ) { profile, entries, glasses, (exercise, steps), days ->
             todayWidgetState(
                 profile = profile,
                 totals = entries.dailyTotals(),
                 glasses = glasses,
-                burnedKcal = exercise.totalBurnedKcal(),
+                exercise = exercise,
+                steps = steps,
                 streakDays = days.streakStats(todayEpochDay()).current,
             )
         }
@@ -228,12 +237,22 @@ private fun CaloriesContent(state: TodayWidgetState) {
     )
     Spacer(GlanceModifier.height(4.dp))
     val remaining = state.remainingKcal
-    Text(
-        // Over budget is stated, not hidden — but as a fact, not a scolding, and in
-        // onSurfaceVariant rather than error: a day over target is not a failure state.
-        text = if (remaining >= 0) "$remaining kcal left" else "${-remaining} kcal over",
-        style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
-    )
+    Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            // Over budget is stated, not hidden — but as a fact, not a scolding, and in
+            // onSurfaceVariant rather than error: a day over target is not a failure state.
+            text = if (remaining >= 0) "$remaining kcal left" else "${-remaining} kcal over",
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+            modifier = GlanceModifier.defaultWeight(),
+        )
+        // Omitted rather than zeroed when Google Health isn't connected, same as Home's card.
+        if (state.steps > 0) {
+            Text(
+                text = "${formatSteps(state.steps)} steps",
+                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+            )
+        }
+    }
 }
 
 @Composable

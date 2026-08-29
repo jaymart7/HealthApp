@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.profile.ProfileRepository
@@ -28,13 +29,14 @@ class FoodViewModel(
     profileRepository: ProfileRepository,
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
+    stepsRepository: StepsRepository,
 ) : ViewModel(), OrbitContainerHost<FoodUiState, FoodUiState, FoodSideEffect> {
 
     /** The diary's day, and the only thing that re-points the three dated flows below. */
     private val selectedDate = MutableStateFlow(todayEpochDay())
 
     override val container = orbitContainer<FoodUiState, FoodSideEffect>(FoodUiState()) {
-        observeDiary(foodRepository, profileRepository, waterRepository, exerciseRepository)
+        observeDiary(foodRepository, profileRepository, waterRepository, exerciseRepository, stepsRepository)
     }
 
     fun handleEvent(event: FoodEvent) {
@@ -57,6 +59,7 @@ class FoodViewModel(
         profileRepository: ProfileRepository,
         waterRepository: WaterRepository,
         exerciseRepository: ExerciseRepository,
+        stepsRepository: StepsRepository,
     ) = intent {
         // Saved meals belong to no day, so they combine outside the date switch — which also keeps
         // the inner combine at the five-flow arity the typed overloads stop at.
@@ -66,12 +69,19 @@ class FoodViewModel(
                 profileRepository.observeProfile(),
                 foodRepository.observeSuggestions(),
                 waterRepository.observeDay(date),
-                exerciseRepository.observeEntries(date),
-            ) { entries, profile, suggestions, waterGlasses, exercise ->
+                // The day's burn comes from two sources now, so they pair up before the combine
+                // that is already at its typed-overload arity.
+                combine(
+                    exerciseRepository.observeEntries(date),
+                    stepsRepository.observeSteps(date),
+                    ::Pair,
+                ),
+            ) { entries, profile, suggestions, waterGlasses, (exercise, steps) ->
                 FoodUiState(
                     selectedDate = date,
                     entries = entries,
                     exercise = exercise,
+                    steps = steps,
                     addExerciseToBudget = profile?.addExerciseToBudget != false,
                     targets = profile?.dailyTargets(),
                     suggestions = suggestions,
