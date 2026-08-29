@@ -77,4 +77,9 @@ interface FoodRepository {
     fun observeSuggestions(): Flow<List<FoodSuggestion>>
 
     suspend fun setFavorite(suggestion: FoodSuggestion, favorite: Boolean)
+
+    /** Dense daily nutrition for the last [TREND_WINDOW_DAYS], oldest first, ending today — the
+     * Progress tab's Nutrition series. */
+    fun observeDailyNutrition(): Flow<List<DayNutrition>>
+
 }

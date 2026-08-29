@@ -123,8 +123,8 @@ private suspend fun WaterRepository.seedWater(today: Long) {
 }
 
 private suspend fun FoodRepository.seedFood(today: Long) {
-    // Five days of diary, today included. Only today's shows in the diary screen; the rest give
-    // export and any future date-scrolling something real to read.
+    // Five menus, rotated across the 90-day window below. Only today's shows in the diary screen;
+    // the rest feed the Nutrition trend, export, and any future date-scrolling.
     val days = listOf(
         listOf(
             food("Oatmeal with banana", MealType.Breakfast, 1.0, "bowl", 320, 11, 58, 6),
@@ -159,8 +159,12 @@ private suspend fun FoodRepository.seedFood(today: Long) {
             food("Grilled tilapia with vegetables", MealType.Dinner, 1.0, "plate", 420, 39, 22, 18),
         ),
     )
-    days.forEachIndexed { index, entries ->
-        entries.forEach { addEntry(it.copy(dateEpochDay = today - index)) }
+    // 90 days, same window as seedProgress, so 1M and 3M differ visibly on the Nutrition tab.
+    // Every 11th day is skipped: the chart's gap handling and the "averaged over N logged days"
+    // caption both need a real gap to show.
+    for (daysAgo in 0..89) {
+        if (daysAgo > 0 && daysAgo % 11 == 0) continue
+        days[daysAgo % days.size].forEach { addEntry(it.copy(dateEpochDay = today - daysAgo)) }
     }
 }
 

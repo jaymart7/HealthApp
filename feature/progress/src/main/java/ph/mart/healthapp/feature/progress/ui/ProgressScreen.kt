@@ -20,6 +20,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import ph.mart.healthapp.core.data.food.DayNutrition
+import ph.mart.healthapp.core.data.food.averages
+import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ChartRange
@@ -35,6 +38,8 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.components.MeasurementRow
+import ph.mart.healthapp.feature.progress.ui.components.NutritionAverageCard
+import ph.mart.healthapp.feature.progress.ui.components.NutritionTrendChart
 import ph.mart.healthapp.feature.progress.ui.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.components.ProgressPhotoGrid
 import ph.mart.healthapp.feature.progress.ui.components.WeightProgressChart
@@ -59,7 +64,7 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     modifier = Modifier.padding(bottom = 16.dp),
                 )
                 SegmentedToggle(
-                    options = ProgressTab.entries.map { it.name },
+                    options = ProgressTab.entries.map { it.label },
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
                     onSelect = { index -> state.tab = ProgressTab.entries[index] },
                 )
@@ -69,6 +74,7 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                 when (state.tab) {
                     ProgressTab.Photos -> PhotosTabContent(uiState, state)
                     ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
+                    ProgressTab.Nutrition -> ScrollingTab(scrollState) { NutritionTabContent(uiState, state) }
                     ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
                 }
             }
@@ -146,6 +152,38 @@ private fun WeightTabContent(uiState: ProgressUiState, state: ProgressScreenStat
 }
 
 @Composable
+private fun NutritionTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
+    if (uiState.dailyNutrition.none { it.isLogged }) {
+        FullScreenState(
+            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+            heading = "Nothing logged yet",
+            body = "Log a few meals in the diary and your calorie trend shows up here.",
+        )
+        return
+    }
+    Column {
+        SegmentedToggle(
+            options = ChartRange.entries.map { it.label },
+            selectedIndex = ChartRange.entries.indexOf(state.range),
+            onSelect = { index -> state.range = ChartRange.entries[index] },
+        )
+        // The series is already dense and ends today, so the range is a plain tail slice — no
+        // date math up here.
+        val days = state.range.days?.let { uiState.dailyNutrition.takeLast(it) } ?: uiState.dailyNutrition
+        NutritionTrendChart(
+            days = days,
+            targetCalories = uiState.targets?.calories,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        NutritionAverageCard(
+            averages = days.averages(),
+            targets = uiState.targets,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
+}
+
+@Composable
 private fun PhotosTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
     if (uiState.photos.isEmpty()) {
         FullScreenState(
@@ -197,6 +235,10 @@ private fun ProgressScreenPreview() {
                 goalWeightKg = 72.0,
                 goal = Goal.Lose,
                 preferredUnit = UnitSystem.Metric,
+                dailyNutrition = listOf(1850, 2100, 0, 1720, 2340).mapIndexed { index, calories ->
+                    DayNutrition(index.toLong(), calories, calories / 16, calories / 10, calories / 30)
+                },
+                targets = DailyTargets(calories = 1941, proteinG = 146, carbsG = 194, fatG = 65, floor = 1500),
             ),
             state = ProgressScreenState(),
         )

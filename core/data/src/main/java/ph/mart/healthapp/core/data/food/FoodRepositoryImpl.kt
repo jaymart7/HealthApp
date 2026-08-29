@@ -48,6 +48,17 @@ internal class FoodRepositoryImpl(
     override suspend fun setFavorite(suggestion: FoodSuggestion, favorite: Boolean) {
         if (favorite) favoriteDao.upsert(suggestion.toEntity()) else favoriteDao.clearFavorite(suggestion.name)
     }
+
+    override fun observeDailyNutrition(): Flow<List<DayNutrition>> {
+        // Anchored on today here, not in the feature layer: todayEpochDay() is internal to this
+        // module, and the window has to match the query's lower bound exactly for the series to
+        // stay dense.
+        val today = todayEpochDay()
+        val from = today - TREND_WINDOW_DAYS
+        return dao.observeSince(from).map { entities ->
+            entities.map { it.toFoodEntry() }.dailySeries(fromEpochDay = from, toEpochDay = today)
+        }
+    }
 }
 
 private fun FoodEntryEntity.toFoodEntry() = FoodEntry(

@@ -20,6 +20,10 @@ internal interface FoodEntryDao {
     )
     fun observeRecent(limit: Int): Flow<List<FoodEntryEntity>>
 
+    /** Bounded history for the Nutrition trend — the whole table is only ever read by export. */
+    @Query("SELECT * FROM food_entry WHERE date >= :from AND isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
+    fun observeSince(from: Long): Flow<List<FoodEntryEntity>>
+
     @Query("SELECT * FROM food_entry WHERE isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
     suspend fun allActive(): List<FoodEntryEntity>
 

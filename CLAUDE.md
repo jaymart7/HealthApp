@@ -166,6 +166,11 @@ holding a glass count), the shared `WaterGlassRow` in `:core:designsystem`, a
 `WaterCard` on Home and a `DiaryWaterRow` in the diary, a goal stepper in
 Profile > Water, and two water reminders that stay quiet once the goal is met.
 
+Nutrition trends are built — the Progress tab's Nutrition sub-tab charts daily calories against
+the profile's target and averages macros over the selected `ChartRange`. The aggregation is pure
+(`NutritionTrend.kt` in `:core:data/food`, on top of one bounded `observeSince` query); the chart
+and averages card live in `:feature:progress/ui/components`.
+
 Reminders are wired — the four Profile switches now schedule real notifications.
 `ph.mart.healthapp.reminder` in `:app` holds the schedule table and the worker;
 `FitPulseApplication` reconciles WorkManager off `ProfileRepository.observeProfile()`,
