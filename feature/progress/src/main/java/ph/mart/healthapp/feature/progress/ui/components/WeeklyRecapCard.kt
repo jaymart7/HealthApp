@@ -102,8 +102,10 @@ private fun WeightCell(trend: WeightTrendDisplay?, goal: Goal?, unit: UnitSystem
     )
 }
 
+/** Shared with [GoalProjectionCard] — same screen, same feature, so it stays here rather than
+ * being promoted to `:core:designsystem` (that rule is about components used across screens). */
 @Composable
-private fun Note(text: String) {
+internal fun Note(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelSmall,

@@ -38,6 +38,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.ui.components.GoalProjectionCard
 import ph.mart.healthapp.feature.progress.ui.components.MeasurementRow
 import ph.mart.healthapp.feature.progress.ui.components.NutritionAverageCard
 import ph.mart.healthapp.feature.progress.ui.components.NutritionTrendChart
@@ -168,6 +169,20 @@ private fun WeightTabContent(uiState: ProgressUiState, state: ProgressScreenStat
             unit = uiState.preferredUnit,
             modifier = Modifier.padding(top = 16.dp),
         )
+        // Under the row that says how far there is to go. Null (no goal weight, a Maintain
+        // goal, or too little recent data to fit a rate) omits the card, same as the recap.
+        goalProjection(
+            weightEntries = uiState.weightEntries,
+            goalWeightKg = uiState.goalWeightKg,
+            goal = uiState.goal,
+            todayEpochDay = todayEpochDay(),
+        )?.let { projection ->
+            GoalProjectionCard(
+                projection = projection,
+                unit = uiState.preferredUnit,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
     }
 }
 
