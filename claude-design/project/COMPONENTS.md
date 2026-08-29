@@ -3,18 +3,27 @@ Cumulative component manifest — final (Session 4 of 4 + fix pass). Sorted by b
 
 **File plan:** `theme.js` is the single source of truth for color tokens and `calcDailyTargets()` — Onboarding.dc.html, PhotoLogging.dc.html and Home.dc.html all import it. `appScaffold.js` / `fullScreenState.js` are canonical reference markup, copy-pasted (not executed imports) into every DC that needs them — see Concerns. Home.dc.html is the single app shell: it owns nav/FAB/quick-action sheet and all four tabs (Home, Food, Progress, Profile) in one file. Onboarding.dc.html and PhotoLogging.dc.html remain separate top-level pages reached by `window.location.href`. Sessions: 1 Onboarding, 2 PhotoLogging, 3 Home+Food, 4 Progress+Profile.
 
-## Deferred — explicit Claude Code follow-ups
+## Status — this file describes the prototype, not the shipped app
 
-- Contrast-variant themes (medium/high-contrast M3 schemes) — out of scope; components read colors from the theme so they drop in without touching component code.
-- Barcode scanning — visual-only; icon renders, does nothing.
-- Photo comparison slider — comparison screen is static side-by-side only.
-- FAB scroll-collapse — kept statically extended since the prototype's screens don't need scroll-driven collapse.
-- Tap active tab to scroll to top — not built; tabs only switch.
-- **Claude Code task:** Home FAB "Log food" / meal "+" / Progress "Take one" route into the photo capture flow via real page navigation, but round-trip state isn't wired — PhotoLogging can't hand a new food item back to Home's diary across a page load. A real single-navigation-graph app carries that state for free.
-- **Claude Code task:** `FullScreenState` and `AppScaffold` are copy-pasted markup (canonical sources `fullScreenState.js` / `appScaffold.js`), not executed imports — promote both to real composables once the app has a component layer.
-- **Claude Code task:** Onboarding's target-weight input (`targetWeightKg`) is never written to the `fitpulse_onboarding_profile` localStorage key — only `sex, age, heightCm, weightKg, activity, goal` are saved. Progress's weight-goal marker therefore always falls back to a hardcoded demo goal (75.0 kg); wire target weight through the same hand-off so a real goal set in onboarding reaches Progress.
-- Profile's Units and Reminders controls are local UI state only (not persisted, not connected to Onboarding's units choice, which itself isn't saved to localStorage either) — functional stubs per this session's brief.
-- Sheet content-height swap uses two hand-tuned fixed pixel heights (fields vs. calendar) per sheet rather than measuring real DOM height — the transition looks smooth but may leave a few px of extra whitespace at one end. **Claude Code task:** swap to a measured-height approach (ResizeObserver or scrollHeight-on-ref) once there's a component layer to hang refs off cleanly.
+**Historical.** Every Claude Code follow-up listed here was built and shipped;
+the tables below still describe the *prototype's* components, which is what they
+are for. Where the shipped app and this file disagree, the code wins — read
+`:core:designsystem` for the real component inventory and `CLAUDE.md` for the
+rules that still bind.
+
+Resolved since the handoff: contrast-variant themes (`AppTheme` follows
+`UiModeManager.getContrast()`), barcode scanning (ML Kit + Open Food Facts),
+the draggable photo `ComparisonSlider`, FAB scroll-collapse
+(`rememberFabExpanded`), tap-active-tab-to-scroll-to-top, the photo-flow
+round trip (one real nav graph, the flow writes the `FoodEntry` itself),
+`FullScreenState` / `AppScaffold` as real composables, `Profile.targetWeightKg`
+persisted from onboarding through to Progress's goal marker, and Profile's
+units and reminders (`preferredUnit` is stored; the four reminder switches
+schedule real WorkManager notifications). The sheet fixed-pixel-height
+workaround is moot — Compose sheets size to their content.
+
+Still open: the final mascot illustration (the geometric placeholder "Bibo"
+ships today).
 
 ## High priority
 

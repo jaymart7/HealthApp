@@ -1,5 +1,13 @@
 # BUILD_PLAN.md — FitPulse
 
+> **Status: complete — historical record, not a to-do list.** All nine phases
+> shipped (see `git log`). Nothing below is outstanding work; read it for why a
+> phase was ordered where it was, not for what to build next. Two instructions
+> in here are dead: Phase 0's "paste COMPONENTS.md into CLAUDE.md" and Phase 1's
+> "add the version catalog block from CLAUDE.md" — the catalog is now solely
+> `gradle/libs.versions.toml`, and `CLAUDE.md` points at `COMPONENTS.md` rather
+> than inlining it. Current rules live in `CLAUDE.md`.
+
 Ordered by dependency, not by prototype session number. Each phase is one
 Claude Code session. Do not start a phase until the previous one is
 confirmed working — later phases assume earlier ones are real, not stubbed.
@@ -342,14 +350,14 @@ than filling the gap here.
 
 **Reuses:** everything. Should be the smallest phase.
 
-## Deferred — explicit backlog for later, not silently dropped
+## Deferred — what actually stayed deferred
 
-Track as separate tickets/issues, not folded into any phase above:
+Cleared after the phases above: barcode scanning, food text search, water
+tracking, nutrition trend charts, logging streaks and badges, exercise logging,
+diary date navigation, real reminder scheduling, FAB scroll-collapse,
+tap-active-tab-to-scroll-to-top, the photo comparison slider, and
+medium/high-contrast theme wiring.
+
+Still open:
 
 - Final mascot illustration (replacing the geometric placeholder)
-
-Cleared after Phase 9: barcode scanning (ML Kit in-app scanner + Open Food
-Facts lookup, feeding the same `FoodEntry` rows as manual and photo logging).
-
-Cleared in Phase 9: FAB scroll-collapse, tap-active-tab-to-scroll-to-top,
-photo comparison draggable slider, medium/high-contrast theme wiring.
