@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-29T00:00:00Z",
+  "title": "Design System: FitPulse",
+  "extensions": {
+    "note": "Android/Jetpack Compose project. The normative token source is core/designsystem/theme/Color.kt (a frozen Material Theme Builder export carrying light + dark at standard/medium/high contrast). The HTML/CSS below is a rendering approximation of Compose components for panel preview only; it is not shipped code.",
+    "colorMeta": {
+      "cultivated-green": {
+        "role": "primary",
+        "displayName": "Cultivated Green",
+        "canonical": "#37693D",
+        "darkCounterpart": "#9DD49E",
+        "tonalRamp": ["#0B2311", "#12351B", "#1E5027", "#2A5F32", "#37693D", "#6FAE76", "#9DD49E", "#B8F1B9"]
+      },
+      "sage-stem": {
+        "role": "secondary",
+        "displayName": "Sage Stem",
+        "canonical": "#516350",
+        "darkCounterpart": "#B8CCB5",
+        "tonalRamp": ["#141A14", "#232D23", "#3A4B3A", "#455644", "#516350", "#8AA088", "#B8CCB5", "#D4E8D0"]
+      },
+      "rain-barrel-teal": {
+        "role": "tertiary",
+        "displayName": "Rain Barrel Teal",
+        "canonical": "#39656C",
+        "darkCounterpart": "#A1CED6",
+        "tonalRamp": ["#082226", "#123137", "#1F4D54", "#2C5960", "#39656C", "#6FA3AC", "#A1CED6", "#BDEAF3"]
+      },
+      "blight-red": {
+        "role": "error",
+        "displayName": "Blight Red",
+        "canonical": "#BA1A1A",
+        "darkCounterpart": "#FFB4AB",
+        "tonalRamp": ["#410002", "#690005", "#93000A", "#A80710", "#BA1A1A", "#E4544C", "#FFB4AB", "#FFDAD6"]
+      },
+      "greenhouse-paper": {
+        "role": "neutral",
+        "displayName": "Greenhouse Paper",
+        "canonical": "#F7FBF2",
+        "darkCounterpart": "#101510",
+        "tonalRamp": ["#0B0F0B", "#101510", "#181D18", "#2D322C", "#727970", "#C1C9BE", "#E5E9E1", "#F7FBF2"]
+      },
+      "potting-bench": {
+        "role": "neutral",
+        "displayName": "Potting Bench",
+        "canonical": "#F1F5EC",
+        "darkCounterpart": "#181D18",
+        "tonalRamp": ["#0B0F0B", "#181D18", "#1C211C", "#272B26", "#424940", "#C1C9BE", "#EBEFE6", "#F1F5EC"]
+      },
+      "trellis-grey": {
+        "role": "neutral",
+        "displayName": "Trellis Grey",
+        "canonical": "#727970",
+        "darkCounterpart": "#8C9389",
+        "tonalRamp": ["#181D18", "#2D322C", "#424940", "#5A6158", "#727970", "#8C9389", "#C1C9BE", "#DEE5D9"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display / Poppins", "purpose": "Reserved. Not used on any current screen." },
+      "headline": { "displayName": "Headline / Poppins", "purpose": "Full-screen moments: onboarding step headers, welcome." },
+      "title": { "displayName": "Title / Poppins", "purpose": "Card headings, button labels (SemiBold), section headers, empty-state headings." },
+      "body": { "displayName": "Body / Inter", "purpose": "Prose, field values, list rows. bodySmall carries secondary and error text." },
+      "label": { "displayName": "Label / Inter", "purpose": "Chips, nav labels, field labels, step counters. Never uppercase." }
+    },
+    "shadows": [
+      { "name": "fab-level-3", "value": "0 4px 8px rgba(0,0,0,0.16), 0 1px 3px rgba(0,0,0,0.12)", "purpose": "M3 Level-3 FAB elevation (6dp). The only real drop shadow in the app; everything else uses tonal surface layering." }
+    ],
+    "motion": [
+      { "name": "settle", "value": "cubic-bezier(0.2, 0, 0, 1)", "purpose": "M3 emphasized-decelerate. Things arrive and settle; nothing snaps or bounces. No celebration animation exists by decision." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "0dp", "purpose": "The only window class the app currently designs for: phone portrait, single column, bottom navigation bar." }
+    ],
+    "surfaceTones": [
+      { "name": "surfaceContainerLowest", "light": "#FFFFFF", "dark": "#0B0F0B", "purpose": "Lifted off an already-tinted surface (AIChip on-accent variant)." },
+      { "name": "surfaceContainerLow", "light": "#F1F5EC", "dark": "#181D18", "purpose": "Default card and bottom-sheet fill." },
+      { "name": "surfaceContainer", "light": "#EBEFE6", "dark": "#1C211C", "purpose": "Bottom navigation bar." },
+      { "name": "surfaceContainerHigh", "light": "#E5E9E1", "dark": "#272B26", "purpose": "Unfilled progress track." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Pill, primary fill, 48dp min height. The single confirming action on a screen.",
+      "html": "<button class=\"ds-btn-primary\">Get started</button>",
+      "css": ".ds-btn-primary { background:#37693D; color:#FFFFFF; font-family:Poppins,sans-serif; font-size:16px; font-weight:600; line-height:24px; min-height:48px; padding:12px 24px; border:none; border-radius:999px; cursor:pointer; transition:filter .15s cubic-bezier(0.2,0,0,1); } .ds-btn-primary:hover { filter:brightness(1.08); } .ds-btn-primary:focus-visible { outline:2px solid #37693D; outline-offset:2px; } .ds-btn-primary:active { filter:brightness(0.94); } .ds-btn-primary[disabled] { opacity:.4; cursor:default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Pill, 1dp outline border, transparent fill. The escape hatch beside a primary action ('Log manually instead').",
+      "html": "<button class=\"ds-btn-secondary\">Log manually instead</button>",
+      "css": ".ds-btn-secondary { background:transparent; color:#37693D; font-family:Poppins,sans-serif; font-size:16px; font-weight:600; line-height:24px; min-height:48px; padding:12px 24px; border:1px solid #727970; border-radius:999px; cursor:pointer; transition:background .15s cubic-bezier(0.2,0,0,1); } .ds-btn-secondary:hover { background:rgba(55,105,61,.06); } .ds-btn-secondary:focus-visible { outline:2px solid #37693D; outline-offset:2px; } .ds-btn-secondary[disabled] { opacity:.4; cursor:default; }"
+    },
+    {
+      "name": "App Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The shared card chrome: surfaceContainerLow, 20dp corners, 16dp interior. No shadow, no border — the tone step is the separation.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-title\">Today</div><div class=\"ds-card-value\">1,840 kcal</div><div class=\"ds-card-sub\">of 2,150 remaining</div></div>",
+      "css": ".ds-card { background:#F1F5EC; color:#181D18; border-radius:20px; padding:16px; width:280px; } .ds-card-title { font-family:Poppins,sans-serif; font-size:16px; font-weight:500; line-height:24px; } .ds-card-value { font-family:Inter,sans-serif; font-size:28px; font-weight:600; line-height:36px; font-feature-settings:'tnum'; margin-top:4px; } .ds-card-sub { font-family:Inter,sans-serif; font-size:12px; line-height:16px; color:#424940; font-feature-settings:'tnum'; margin-top:4px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "48dp tall, 12dp corners, transparent fill, 1dp outline border, label above in labelMedium. Error switches the border to error and adds a bodySmall message; the field is never colour-filled.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Current weight</span><input class=\"ds-field-input\" value=\"72.4\" /></label>",
+      "css": ".ds-field { display:flex; flex-direction:column; gap:4px; width:240px; } .ds-field-label { font-family:Inter,sans-serif; font-size:12px; font-weight:500; line-height:16px; color:#424940; } .ds-field-input { height:48px; box-sizing:border-box; padding:0 16px; background:transparent; color:#181D18; font-family:Inter,sans-serif; font-size:16px; line-height:24px; font-feature-settings:'tnum'; border:1px solid #727970; border-radius:12px; caret-color:#37693D; } .ds-field-input:focus { outline:none; border-color:#37693D; } .ds-field-input:focus-visible { border-color:#37693D; }"
+    },
+    {
+      "name": "AI Chip",
+      "kind": "chip",
+      "refersTo": "chip-ai",
+      "description": "8dp corners, 14dp sparkle, labelMedium. tertiaryContainer marks machine-generated content — the only accent surface in the app.",
+      "html": "<span class=\"ds-chip-ai\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 2l1.9 5.6L19.5 9.5 13.9 11.4 12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2zm6.5 11l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z\"/></svg>AI detected</span>",
+      "css": ".ds-chip-ai { display:inline-flex; align-items:center; gap:4px; background:#BDEAF3; color:#1F4D54; font-family:Inter,sans-serif; font-size:12px; font-weight:500; line-height:16px; padding:4px 8px; border-radius:8px; }"
+    },
+    {
+      "name": "Bottom Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item-selected",
+      "description": "80dp tall, surfaceContainer ground, four fixed tabs. Selected: filled icon in a 16dp secondaryContainer pill. Unselected: outlined icon, onSurfaceVariant.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item--selected\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M12 3l9 8h-3v10h-4v-6h-4v6H6V11H3z\"/></svg></span><span class=\"ds-nav-label\">Home</span></a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><rect x=\"4\" y=\"3\" width=\"16\" height=\"18\" rx=\"2\"/><path d=\"M8 8h8M8 12h8M8 16h5\"/></svg></span><span class=\"ds-nav-label\">Diary</span></a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M4 18l5-6 4 4 7-9\"/></svg></span><span class=\"ds-nav-label\">Progress</span></a><a class=\"ds-nav-item\" href=\"#\"><span class=\"ds-nav-pill\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21c0-4 3.6-6 8-6s8 2 8 6\"/></svg></span><span class=\"ds-nav-label\">Profile</span></a></nav>",
+      "css": ".ds-nav { display:flex; align-items:center; justify-content:space-around; height:80px; background:#EBEFE6; width:360px; } .ds-nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 0; text-decoration:none; color:#424940; } .ds-nav-pill { display:flex; align-items:center; justify-content:center; padding:4px 16px; border-radius:16px; background:transparent; } .ds-nav-label { font-family:Inter,sans-serif; font-size:12px; font-weight:500; line-height:16px; } .ds-nav-item--selected { color:#3A4B3A; } .ds-nav-item--selected .ds-nav-pill { background:#D4E8D0; } .ds-nav-item:hover .ds-nav-pill { background:rgba(212,232,208,.5); } .ds-nav-item:focus-visible { outline:2px solid #37693D; outline-offset:2px; border-radius:8px; }"
+    },
+    {
+      "name": "Docked FAB",
+      "kind": "button",
+      "refersTo": "fab-docked",
+      "description": "Extended FAB, primaryContainer fill, pill shape, M3 Level-3 elevation. The one place in the app with a real drop shadow, and the only FAB on any screen.",
+      "html": "<button class=\"ds-fab\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z\"/><circle cx=\"12\" cy=\"13\" r=\"4\"/></svg>Log food</button>",
+      "css": ".ds-fab { display:inline-flex; align-items:center; gap:8px; height:56px; padding:0 20px; background:#B8F1B9; color:#1E5027; font-family:Poppins,sans-serif; font-size:14px; font-weight:600; line-height:20px; border:none; border-radius:999px; box-shadow:0 4px 8px rgba(0,0,0,.16), 0 1px 3px rgba(0,0,0,.12); cursor:pointer; transition:box-shadow .15s cubic-bezier(0.2,0,0,1); } .ds-fab:hover { box-shadow:0 6px 12px rgba(0,0,0,.2), 0 2px 4px rgba(0,0,0,.14); } .ds-fab:focus-visible { outline:2px solid #37693D; outline-offset:3px; }"
+    },
+    {
+      "name": "Macro Bar",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Signature component. 8dp tall, 4dp radius, split by calorie share — protein primary, carbs tertiary, fat secondary, in that order, on every screen in the app.",
+      "html": "<div class=\"ds-macrobar\"><span style=\"flex:30\"></span><span style=\"flex:50\"></span><span style=\"flex:20\"></span></div>",
+      "css": ".ds-macrobar { display:flex; width:280px; height:8px; border-radius:4px; overflow:hidden; } .ds-macrobar span:nth-child(1) { background:#37693D; } .ds-macrobar span:nth-child(2) { background:#39656C; } .ds-macrobar span:nth-child(3) { background:#516350; }"
+    },
+    {
+      "name": "Bibo (Mascot Avatar)",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Signature component. primaryContainer rounded square with a size/3 radius, dot eyes and a mouth curve in onPrimaryContainer at 62% of the box. Five states; no other detail at any size. Currently a placeholder for a final illustration.",
+      "html": "<div class=\"ds-bibo\"><svg width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"13\" cy=\"15\" r=\"2\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"27\" cy=\"15\" r=\"2\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M13 25c2.5 3 11.5 3 14 0\"/></svg></div>",
+      "css": ".ds-bibo { display:flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:21px; background:#B8F1B9; color:#1E5027; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kitchen Garden",
+    "overview": "FitPulse is cultivated, not engineered. Everything in the palette grows out of green — a deep forest for what's growing, a muted sage beside it, a pond teal for the water and the weather — laid on a paper ground that is itself faintly green (#F7FBF2, not white). That off-white is the system's quietest and most important decision: the app never has the clinical glare of a medical dashboard, even in its most numeric moments.\n\nThe system is unhurried. Cards sit on the ground with 20dp corners and 16dp of interior air, separated by a 12dp gap, inside 16dp of screen margin — a rhythm that never crowds. Type is a two-family pairing: Poppins carries display, headline, and title with a geometric warmth, Inter carries body and label with the neutrality a number-heavy screen needs. Every numeric value renders with tabular figures so digits don't jitter as they update. Nothing is animated for spectacle; things settle.\n\nBibo, the geometric mascot, is where the personality is concentrated. The system deliberately spends its warmth in one place — the mascot, the copy, and the container fills — and stays disciplined everywhere else. Color.kt is the normative source for every value: a frozen Material Theme Builder export carrying light and dark at standard, medium, and high contrast.",
+    "keyCharacteristics": [
+      "Green-tinted paper ground, never pure white, never a dark-neon black",
+      "Two-family type: Poppins for structure, Inter for substance, tabular figures for all numbers",
+      "Generous and soft: pill buttons, 20dp cards, 16dp interiors, 48dp touch targets",
+      "Depth by tonal surface layering; shadow is reserved for things that genuinely float",
+      "Semantic color is fixed app-wide — a macro is the same color in every chart on every screen",
+      "Personality lives in Bibo and the copy, never in one-off visual exceptions"
+    ],
+    "rules": [
+      { "name": "The Fixed Macro Rule", "body": "Protein is primary, Carbs is tertiary, Fat is secondary — identical in every macro bar, chart, and legend in the app. This is not a per-screen decision, and colour never carries the meaning alone: a macro colour always ships with its label.", "section": "colors" },
+      { "name": "The One Accent Surface Rule", "body": "tertiaryContainer as a card background means 'this came from the AI.' It appears on the AIChip and the AIInsightCard and nowhere else. Spending it on an ordinary card would erase the only visual signal the app has for machine-generated content.", "section": "colors" },
+      { "name": "The Earned Red Rule", "body": "error is for genuine failure and for a trend that is genuinely off the user's goal — never for a direction (weight going up is not an error), never for a missed day. Neutral is onSurfaceVariant; on-track is primary. Direction depends on the user's goal.", "section": "colors" },
+      { "name": "The No Inline Hex Rule", "body": "Every colour reads from MaterialTheme.colorScheme. A literal hex in a component silently breaks the medium- and high-contrast schemes that AppTheme swaps in from UiModeManager.getContrast(), and breaks dark mode outright.", "section": "colors" },
+      { "name": "The Tabular Number Rule", "body": "Any type style rendering a number that updates — calories, weight, macros, water, streak counts — applies TextStyle.tabularNums. Proportional digits make a counting number twitch as it changes, which reads as instability in a tracker.", "section": "typography" },
+      { "name": "The Role, Not The Size Rule", "body": "Text maps to a type-scale role. There is no hand-picked sp value anywhere in the app, so system font scaling works everywhere without a layout audit.", "section": "typography" },
+      { "name": "The Two-Value Rhythm Rule", "body": "16dp from the screen edge, 12dp between cards. Those two numbers produce the app's entire vertical rhythm; a screen that invents a third margin will read as belonging to a different app.", "section": "layout" },
+      { "name": "The Floating-Only Shadow Rule", "body": "If it scrolls with the content, it has no shadow. If it hovers over the content — FAB, sheet, dialog — it may. A shadow on a resting card is the tell that someone reached for depth instead of reaching for the next surface tone.", "section": "elevation" },
+      { "name": "The Radius-Follows-Touch Rule", "body": "The bigger and more tappable the thing, the rounder it is: pill for actions, 20dp for cards, 8dp for chips, 4dp for indicators. A radius that doesn't fit that ladder is picking a shape for its own sake.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do read every colour from MaterialTheme.colorScheme — the frozen Color.kt is the only source of values, and the contrast schemes depend on components never bypassing it.",
+      "Do reuse AppCard, PrimaryButton, AppTextField, AIChip, AppBottomSheet, and FullScreenState rather than restyling a Surface. A new component used on two screens belongs in :core:designsystem; one used on one screen stays in that feature's ui/components/.",
+      "Do apply tabularNums to any style that renders a changing number.",
+      "Do keep spacing on the 4/8/12/16/24/32/48 scale, 16dp from screen edges, 12dp between cards.",
+      "Do give every screen and component a single @PreviewLightDark wrapped in Surface inside AppTheme, and preview the meaningfully different variants. Dialogs and sheets need a scrim-behind-Surface wrapper or they preview invisible.",
+      "Do hold 48x48dp minimum touch targets with at least 8dp between them."
+    ],
+    "donts": [
+      "Don't write a hex literal in a component, regenerate Color.kt, or enable dynamic colour (Material You) — the fixed palette is the identity, and wallpaper-derived colour would dissolve the fixed macro assignments.",
+      "Don't use tertiaryContainer as a card background for anything that isn't AI output.",
+      "Don't put a drop shadow on a resting card; reach for the next surfaceContainer tone.",
+      "Don't reassign a macro colour per screen, or let colour carry the macro meaning without a label beside it.",
+      "Don't use error for a direction of travel, a missed day, or a broken streak.",
+      "Don't invent a spacing value, a radius outside the ladder, a third type family, or a third border weight.",
+      "Don't hand-pick an sp size instead of using a type-scale role — it breaks system font scaling silently.",
+      "Don't add a second FAB, or spend the one FAB on a secondary action."
+    ]
+  }
+}
