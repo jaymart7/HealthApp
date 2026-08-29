@@ -1,6 +1,9 @@
 package ph.mart.healthapp
 
 import android.app.Application
+import com.google.firebase.FirebaseApp
+import ph.mart.healthapp.appcheck.initAppCheck
+import ph.mart.healthapp.BuildConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,6 +38,10 @@ class FitPulseApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        FirebaseApp.initializeApp(this)
+        initAppCheck()
+
         val koinApp = startKoin {
             androidContext(this@FitPulseApplication)
             modules(

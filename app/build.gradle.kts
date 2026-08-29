@@ -20,8 +20,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Signing credentials live in ~/.gradle/gradle.properties (untracked, outside the repo) —
+    // never in this file, which is checked in. Absent them the release build just goes unsigned
+    // rather than failing, so a fresh clone and CI still build.
+    val keystoreFile = providers.gradleProperty("fitpulseKeystoreFile").orNull
+
+    signingConfigs {
+        create("release") {
+            if (keystoreFile != null) {
+                storeFile = file(keystoreFile)
+                storePassword = providers.gradleProperty("fitpulseKeystorePassword").get()
+                keyAlias = providers.gradleProperty("fitpulseKeyAlias").get()
+                keyPassword = providers.gradleProperty("fitpulseKeyPassword").get()
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release").takeIf { keystoreFile != null }
             optimization {
                 enable = false
             }
@@ -40,6 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -53,6 +71,10 @@ dependencies {
     implementation(project(":feature:food"))
     implementation(project(":feature:progress"))
     implementation(project(":feature:profile"))
+
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.appcheck.playintegrity)
+    debugImplementation(libs.firebase.appcheck.debug)
 
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.work.runtime.ktx)
