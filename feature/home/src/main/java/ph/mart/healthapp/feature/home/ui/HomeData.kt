@@ -20,6 +20,9 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
  * repositories at once — nothing about consistency is stored.
  */
 data class HomeUiState(
+    /** False until the repositories' first combined emission. The all-zero default below is
+     * indistinguishable from a genuinely empty day, so nothing may be rendered from it. */
+    val loaded: Boolean = false,
     val profile: Profile? = null,
     val totals: DiaryTotals = DiaryTotals(0, 0, 0, 0),
     val foodEntryCount: Int = 0,
@@ -57,6 +60,22 @@ sealed interface HomeEvent {
 val HomeUiState.isDayOne: Boolean
     get() = foodEntryCount == 0 && weightEntries.isEmpty() && lastPhotoEpochDay == null &&
         waterGlasses == 0 && burnedKcal == 0
+
+/**
+ * What Home is actually showing.
+ *
+ * [Loading] exists because [HomeUiState]'s default is all-zero, which reads as day one. Without
+ * this the day-one empty state renders for the frames before Room's first emission — a hard cut
+ * hid it, but Home crossfades between phases now, so a user with months of history would watch
+ * "Let's log your first meal" fade away on every cold start.
+ */
+enum class HomePhase { Loading, DayOne, Populated }
+
+fun homePhase(state: HomeUiState): HomePhase = when {
+    !state.loaded -> HomePhase.Loading
+    state.isDayOne -> HomePhase.DayOne
+    else -> HomePhase.Populated
+}
 
 /** Days between the most recent photo and today. Null when there are no photos at all. */
 fun daysSincePhoto(lastPhotoEpochDay: Long?, todayEpochDay: Long): Long? =

@@ -6,6 +6,7 @@ import org.junit.Test
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
+import ph.mart.healthapp.core.data.progress.WeightEntry
 
 private val TARGETS = DailyTargets(calories = 2000, proteinG = 150, carbsG = 200, fatG = 67, floor = 1500)
 
@@ -56,6 +57,53 @@ class HomeDataTest {
     fun `empty diary does not trigger the protein insight`() {
         val trend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
         assertNull(insightFor(DiaryTotals(0, 0, 0, 0), TARGETS, trend))
+    }
+
+    @Test
+    fun `an unloaded state is Loading, never day one`() {
+        // The regression this guards: HomeUiState's all-zero default is indistinguishable from a
+        // genuinely empty day, so a user with months of history would see the day-one empty state
+        // fade away on every cold start.
+        assertEquals(HomePhase.Loading, homePhase(HomeUiState()))
+        assertEquals(
+            HomePhase.Loading,
+            homePhase(HomeUiState(waterGlasses = 5, foodEntryCount = 3)),
+        )
+    }
+
+    @Test
+    fun `a loaded state is day one only when nothing has been logged`() {
+        assertEquals(HomePhase.DayOne, homePhase(HomeUiState(loaded = true)))
+        assertEquals(
+            HomePhase.Populated,
+            homePhase(HomeUiState(loaded = true, waterGlasses = 1)),
+        )
+        assertEquals(
+            HomePhase.Populated,
+            homePhase(HomeUiState(loaded = true, foodEntryCount = 1)),
+        )
+        assertEquals(
+            HomePhase.Populated,
+            homePhase(
+                HomeUiState(
+                    loaded = true,
+                    weightEntries = listOf(WeightEntry(dateEpochDay = 100, weightKg = 76.0)),
+                ),
+            ),
+        )
+        assertEquals(
+            HomePhase.Populated,
+            homePhase(HomeUiState(loaded = true, burnedKcal = 200)),
+        )
+        assertEquals(
+            HomePhase.Populated,
+            homePhase(HomeUiState(loaded = true, lastPhotoEpochDay = 100)),
+        )
+        // Mood is deliberately not a day-one signal, same as it isn't a streak domain.
+        assertEquals(
+            HomePhase.DayOne,
+            homePhase(HomeUiState(loaded = true, moodLevel = 4, energyLevel = 3)),
+        )
     }
 
     @Test

@@ -324,6 +324,53 @@ Borders are 1dp `outline` (fields, secondary buttons) or 2dp `primary` (a select
 pill for actions, 20dp for cards, 8dp for chips, 4dp for indicators. A radius that doesn't fit
 that ladder is picking a shape for its own sake.
 
+## Motion
+
+Motion is a scale like every other in this system: a fixed set of named durations in
+`theme/Motion.kt`, and no call site inventing its own. A duration that wants to be 180 or 340 is
+a duration that hasn't picked a side.
+
+- **120ms — Feedback.** A tap acknowledging itself.
+- **220ms — State.** A routine state change, and *every* exit. Exits are never slower than the
+  entrance that preceded them.
+- **300ms — Enter.** Something joining or leaving the layout.
+- **450ms — Settle.** Reserved. Exactly one thing in the app is allowed it: Home's calorie ring.
+
+Easings are Material 3's published curves, written out in `Motion.kt` — `Standard`,
+`EmphasizedDecelerate` for confident arrivals, `EmphasizedAccelerate` for exits. No bounce, no
+elastic; the system is unhurried, and things settle rather than spring.
+
+### Named Rules
+
+**The One Authored Moment Rule.** The calorie ring's sweep is the app's only authored entrance.
+Everything else that moves is explaining feedback, a state change, or a spatial relationship. A
+second 450ms flourish anywhere would spend the ring's meaning, not add to it.
+
+**The Motion-Marks-Change Rule.** Animate what *changed*, never what merely exists. The badge dot
+that just turned earned animates; five badges already earned when the screen opens simply draw.
+This is why almost nothing here needs a "have I played this yet" flag — `animateColorAsState` and
+`animateFloatAsState` don't animate their first composition, so they only ever animate a change
+they witnessed.
+
+**The Numbers Don't Move Rule.** Calories, weight, macros, and streak counts never animate.
+`tabularNums` exists so digits stay still while they update; counting them would undo the reason
+for the rule. When a figure and its visualisation disagree for half a second, the figure is the
+one telling the truth — the ring catches up to the number, never the other way round.
+
+**The Draw-Phase Rule.** An animated value is read inside a `graphicsLayer`, `Canvas`, or
+`drawBehind` lambda, never in composition, so a running animation recomposes nothing. Passing a
+`State<Float>` down instead of a `Float` is how that gets enforced at the call boundary. The one
+sanctioned exception is a leaf `Icon`'s `tint`, which has no draw-phase equivalent.
+
+**The No Loops Rule.** Nothing animates at rest. No idle mascot, no pulsing accent, no shimmer.
+Every animation in the app is triggered by a state change and ends.
+
+**The Remove-Animations Rule.** All motion is expressed through Compose's animation APIs, never a
+hand-rolled `LaunchedEffect` + `delay`. Android's recomposer carries a `MotionDurationScale` from
+`Settings.Global.ANIMATOR_DURATION_SCALE`, so the whole system collapses to instant cuts when the
+user turns on **Remove animations** — for free, and only as long as nothing hand-rolls its own
+clock.
+
 ## Components
 
 ### Buttons

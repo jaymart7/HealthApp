@@ -1,5 +1,7 @@
 package ph.mart.healthapp.feature.home.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -22,6 +25,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
 private val RING_SIZE = 96.dp
@@ -33,6 +37,15 @@ private val RING_STROKE = 10.dp
  * has [burnedKcal] folded in by `budgetKcal()`, so the ring can't disagree with the diary's
  * summary bar. [burnedKcal] is passed separately only to name the difference on the card; pass 0
  * when the user has turned the exercise credit off.
+ *
+ * The arc is the app's one authored entrance: it sweeps to its share over [Motion.Settle] while
+ * the numbers stay instant and true, so the ring reads as settling onto a fact rather than the
+ * fact waiting on the ring.
+ *
+ * This needs no "have I swept yet" flag. `animateFloatAsState` doesn't animate on first
+ * composition, and `HomeViewModel` is retained per nav entry — so returning to the Home tab
+ * composes the ring already at its true value and it simply draws. The sweep fires only when the
+ * value actually changes: cold start, and after something is logged.
  */
 @Composable
 fun CalorieRingCard(
@@ -41,7 +54,12 @@ fun CalorieRingCard(
     modifier: Modifier = Modifier,
     burnedKcal: Int = 0,
 ) {
-    val progress = if (goalKcal > 0) (consumedKcal.toFloat() / goalKcal).coerceIn(0f, 1f) else 0f
+    val target = if (goalKcal > 0) (consumedKcal.toFloat() / goalKcal).coerceIn(0f, 1f) else 0f
+    val progress = animateFloatAsState(
+        targetValue = target,
+        animationSpec = tween(durationMillis = Motion.Settle, easing = Motion.EmphasizedDecelerate),
+        label = "calorieRingProgress",
+    )
     AppCard(modifier = modifier) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -79,8 +97,10 @@ fun CalorieRingCard(
     }
 }
 
+/** [progress] arrives as a [State] rather than a plain float so the sweep is read inside the
+ * [Canvas] draw lambda — the whole animation lives in the Draw phase and recomposes nothing. */
 @Composable
-private fun CalorieRing(progress: Float, remainingKcal: Int) {
+private fun CalorieRing(progress: State<Float>, remainingKcal: Int) {
     val trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh
     val progressColor: Color = MaterialTheme.colorScheme.primary
     Box(modifier = Modifier.size(RING_SIZE), contentAlignment = Alignment.Center) {
@@ -104,7 +124,7 @@ private fun CalorieRing(progress: Float, remainingKcal: Int) {
             drawArc(
                 color = progressColor,
                 startAngle = -90f,
-                sweepAngle = 360f * progress,
+                sweepAngle = 360f * progress.value,
                 useCenter = false,
                 topLeft = topLeft,
                 size = arcSize,

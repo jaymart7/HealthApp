@@ -104,6 +104,7 @@ class HomeViewModel(
             moodRepository.observeToday(),
         ) { state, days, exercise, mood ->
             state.copy(
+                loaded = true,
                 burnedKcal = exercise.totalBurnedKcal(),
                 moodLevel = mood.mood,
                 energyLevel = mood.energy,

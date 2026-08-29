@@ -22,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -30,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.mood.MoodLevel
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.Motion
+import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
+import ph.mart.healthapp.core.designsystem.theme.stepFillProgress
 
 private val STEP_SIZE = 32.dp
 
@@ -50,6 +55,9 @@ private val MoodFaces = listOf(
  * picked is tinted, because lighting up sad *and* neutral *and* happy to reach "good" says the
  * wrong thing. Energy is a **meter** that fills up to the level, the same read as
  * [ph.mart.healthapp.core.designsystem.component.WaterGlassRow].
+ *
+ * That difference carries into the motion too: energy staggers as it fills, mood doesn't, because
+ * a single choice has no direction to travel in.
  *
  * Feature-local rather than `:core:designsystem`: Home is the only screen that logs mood.
  */
@@ -84,13 +92,15 @@ fun MoodCard(
             describe = { level -> "Set energy to ${MoodLevel.entries[level - 1].label}" },
             onSelect = onSetEnergy,
             modifier = Modifier.padding(top = 4.dp),
+            stagger = true,
         )
     }
 }
 
 /**
  * [active] decides which steps are tinted, [icon] which glyph each draws — the only two things
- * that differ between the mood and energy rows.
+ * that differ between the mood and energy rows. [stagger] adds the third: a meter fills in
+ * sequence, a single choice lands all at once.
  *
  * Tapping the level you are already on clears it back to 0, so a mis-tap is corrected by the
  * same gesture that made it and the card needs no separate undo.
@@ -104,7 +114,13 @@ private fun ScaleRow(
     describe: (Int) -> String,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    stagger: Boolean = false,
 ) {
+    val inactiveTint = MaterialTheme.colorScheme.outlineVariant
+    val activeTint = MaterialTheme.colorScheme.primary
+    val filling = rememberFillDirection(level)
+    val count = MoodLevel.entries.size
+
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
@@ -114,10 +130,22 @@ private fun ScaleRow(
         )
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             MoodLevel.entries.forEachIndexed { index, entry ->
+                val fill = stepFillProgress(
+                    active = active(index),
+                    index = index,
+                    count = count,
+                    filling = filling,
+                    stagger = stagger,
+                )
                 IconButton(
                     onClick = { onSelect(if (entry.value == level) 0 else entry.value) },
                     modifier = Modifier
                         .size(STEP_SIZE)
+                        // Read inside the layer lambda: the pop settles in the Draw phase.
+                        .graphicsLayer {
+                            scaleX = 1f + (Motion.ActiveStepScale - 1f) * fill.value
+                            scaleY = scaleX
+                        }
                         // Announces the level the tap would set, not "face 4 of 5" — the same
                         // reasoning WaterGlassRow uses.
                         .clearAndSetSemantics { contentDescription = describe(entry.value) },
@@ -125,11 +153,7 @@ private fun ScaleRow(
                     Icon(
                         imageVector = icon(index),
                         contentDescription = null,
-                        tint = if (active(index)) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.outlineVariant
-                        },
+                        tint = lerp(inactiveTint, activeTint, fill.value),
                     )
                 }
             }

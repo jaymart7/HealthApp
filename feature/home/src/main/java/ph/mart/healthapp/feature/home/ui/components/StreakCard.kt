@@ -1,5 +1,7 @@
 package ph.mart.healthapp.feature.home.ui.components
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +15,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -31,6 +35,7 @@ import ph.mart.healthapp.core.data.streak.nextBadge
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
 /**
@@ -105,21 +110,42 @@ fun StreakCard(
     }
 }
 
-/** Filled means earned — off the *best* run ever, so it never goes dark again. */
+/**
+ * Filled means earned — off the *best* run ever, so it never goes dark again.
+ *
+ * The colour transition is not the streak celebration CLAUDE.md rules out, and it needs none of
+ * the persisted "already celebrated" state that ruled the celebration out. `animateColorAsState`
+ * does not animate on first composition: a badge already earned when Home opens simply draws
+ * earned. It animates only a flip it actually witnesses — the moment the badge is won, while the
+ * user is looking at it. Colour only; a scale pop here would cross the line.
+ */
 @Composable
 private fun BadgeDot(days: Int, earned: Boolean) {
+    val spec = tween<Color>(durationMillis = Motion.State, easing = Motion.Standard)
+    val container by animateColorAsState(
+        targetValue = if (earned) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        },
+        animationSpec = spec,
+        label = "badgeContainer",
+    )
+    val content by animateColorAsState(
+        targetValue = if (earned) {
+            MaterialTheme.colorScheme.onPrimary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        animationSpec = spec,
+        label = "badgeContent",
+    )
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(32.dp)
             .clip(CircleShape)
-            .background(
-                if (earned) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-            )
+            .background(container)
             .clearAndSetSemantics {
                 contentDescription = if (earned) "$days-day badge, earned" else "$days-day badge, not yet earned"
             },
@@ -127,11 +153,7 @@ private fun BadgeDot(days: Int, earned: Boolean) {
         Text(
             text = days.toString(),
             style = MaterialTheme.typography.labelMedium.tabularNums,
-            color = if (earned) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
+            color = content,
         )
     }
 }
