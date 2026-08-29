@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Restaurant
@@ -38,6 +40,7 @@ object AppIcons {
 
     val Add: ImageVector = Icons.Filled.Add
     val Barcode: ImageVector = Icons.Filled.QrCodeScanner
+    val Bookmark: ImageVector = Icons.Filled.BookmarkAdd
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
@@ -45,6 +48,7 @@ object AppIcons {
     val ChevronRight: ImageVector = Icons.Filled.KeyboardArrowRight
     val Close: ImageVector = Icons.Filled.Close
     val Compare: ImageVector = Icons.Filled.SwapHoriz
+    val Delete: ImageVector = Icons.Outlined.Delete
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment

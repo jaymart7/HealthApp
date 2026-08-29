@@ -67,6 +67,10 @@ interface FoodRepository {
     /** One day's entries — the diary, which can be pointed at any past day. */
     fun observeEntries(dateEpochDay: Long): Flow<List<FoodEntry>>
     suspend fun addEntry(entry: FoodEntry)
+
+    /** Logs several foods as one write, so a saved meal lands in the diary in a single emission
+     * instead of appearing item by item. */
+    suspend fun addEntries(entries: List<FoodEntry>)
     suspend fun deleteEntry(id: Long)
 
     /** Full history, oldest first — for data export. The diary itself never needs this. */
@@ -80,6 +84,13 @@ interface FoodRepository {
     fun observeSuggestions(): Flow<List<FoodSuggestion>>
 
     suspend fun setFavorite(suggestion: FoodSuggestion, favorite: Boolean)
+
+    /** The newest [MAX_SAVED_MEALS] saved meals, each with its items. */
+    fun observeSavedMeals(): Flow<List<SavedMeal>>
+
+    suspend fun saveMeal(name: String, items: List<SavedMealItem>)
+
+    suspend fun deleteSavedMeal(id: Long)
 
     /** Dense daily nutrition for the last [TREND_WINDOW_DAYS], oldest first, ending today — the
      * Progress tab's Nutrition series. */

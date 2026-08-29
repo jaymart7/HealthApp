@@ -35,6 +35,8 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.SavedMeal
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
@@ -56,6 +58,7 @@ import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.DiaryWaterRow
 import ph.mart.healthapp.feature.food.ui.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.components.FoodSuggestionPanel
+import ph.mart.healthapp.feature.food.ui.components.SavedMealPanel
 import ph.mart.healthapp.feature.food.ui.components.ExerciseSection
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 
@@ -165,6 +168,9 @@ private fun FoodContent(
                             expanded = state.expandedMeals[mealType] != false,
                             onToggle = { state.toggleExpanded(mealType) },
                             onAdd = { state.openSheet(mealType) },
+                            // Nothing logged here yet means nothing to snapshot — the whole
+                            // section's entries are saved, not the filtered view.
+                            onSave = if (mealEntries.isEmpty()) null else ({ state.openSaveMealSheet(mealType) }),
                             onDeleteEntry = { id -> onEvent(FoodEvent.OnDeleteEntry(id)) },
                         )
                     }
@@ -185,6 +191,12 @@ private fun FoodContent(
                     mealType = activeMealSheet,
                     form = state.addForm,
                     suggestions = uiState.suggestions,
+                    savedMeals = uiState.savedMeals,
+                    onLogSavedMeal = { meal ->
+                        onEvent(FoodEvent.OnLogSavedMeal(meal, activeMealSheet))
+                        state.closeSheet()
+                    },
+                    onDeleteSavedMeal = { meal -> onEvent(FoodEvent.OnDeleteSavedMeal(meal.id)) },
                     onFormChange = { state.addForm = it },
                     onSelectProduct = { state.addForm = it.toAddEntryForm(activeMealSheet) },
                     onSelectSuggestion = { state.addForm = it.toAddEntryForm(activeMealSheet) },
@@ -199,6 +211,28 @@ private fun FoodContent(
                     onAdd = {
                         onEvent(FoodEvent.OnAddEntry(state.addForm))
                         state.closeSheet()
+                    },
+                )
+            }
+
+            val saveMealFor = state.saveMealFor
+            if (saveMealFor != null) {
+                SaveMealSheet(
+                    mealType = saveMealFor,
+                    name = state.savedMealName,
+                    itemCount = uiState.entries.count { it.mealType == saveMealFor },
+                    onNameChange = { state.savedMealName = it },
+                    onDismiss = state::closeSaveMealSheet,
+                    onSave = {
+                        onEvent(
+                            FoodEvent.OnSaveMeal(
+                                name = state.savedMealName,
+                                items = uiState.entries
+                                    .filter { it.mealType == saveMealFor }
+                                    .map { it.toSavedMealItem() },
+                            ),
+                        )
+                        state.closeSaveMealSheet()
                     },
                 )
             }
@@ -238,6 +272,7 @@ private fun MealSection(
     expanded: Boolean,
     onToggle: () -> Unit,
     onAdd: () -> Unit,
+    onSave: (() -> Unit)?,
     onDeleteEntry: (Long) -> Unit,
 ) {
     Column {
@@ -247,6 +282,7 @@ private fun MealSection(
             expanded = expanded,
             onToggle = onToggle,
             onAdd = onAdd,
+            onSave = onSave,
         )
         if (expanded) {
             if (entries.isEmpty()) {
@@ -314,6 +350,9 @@ private fun AddEntrySheet(
     mealType: MealType,
     form: AddEntryForm,
     suggestions: List<FoodSuggestion>,
+    savedMeals: List<SavedMeal>,
+    onLogSavedMeal: (SavedMeal) -> Unit,
+    onDeleteSavedMeal: (SavedMeal) -> Unit,
     onFormChange: (AddEntryForm) -> Unit,
     onSelectProduct: (ScannedProduct) -> Unit,
     onSelectSuggestion: (FoodSuggestion) -> Unit,
@@ -333,6 +372,11 @@ private fun AddEntrySheet(
             // Both panels seed the fields below; they stay editable either way, so this is a
             // shortcut past typing rather than a separate entry mode. Already-logged foods come
             // first — they cost no network round-trip and are the likelier match.
+            SavedMealPanel(
+                savedMeals = savedMeals,
+                onLog = onLogSavedMeal,
+                onDelete = onDeleteSavedMeal,
+            )
             FoodSuggestionPanel(
                 suggestions = suggestions,
                 onSelect = onSelectSuggestion,
@@ -370,6 +414,55 @@ private fun AddEntrySheet(
     }
 }
 
+/** Names the snapshot of [mealType]'s entries. Seeded with the meal's own name, so the fast path
+ * is Save without typing; [itemCount] is there so the user can see what they're about to keep. */
+@Composable
+private fun SaveMealSheet(
+    mealType: MealType,
+    name: String,
+    itemCount: Int,
+    onNameChange: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+) {
+    AppBottomSheet(onDismiss = onDismiss) {
+        Text(
+            text = "Save this ${mealType.name}",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+        Text(
+            text = "$itemCount ${if (itemCount == 1) "item" else "items"} — log them all again in one tap.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            AppTextField(value = name, onValueChange = onNameChange, placeholder = "Name this meal")
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                PrimaryButton(label = "Save", onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun SaveMealSheetPreview() {
+    AppTheme {
+        SaveMealSheet(
+            mealType = MealType.Breakfast,
+            name = "Usual breakfast",
+            itemCount = 3,
+            onNameChange = {},
+            onDismiss = {},
+            onSave = {},
+        )
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun FoodScreenPreview() {
@@ -385,6 +478,13 @@ private fun FoodScreenPreview() {
                 targets = targets,
                 suggestions = listOf(
                     FoodSuggestion("Greek yogurt", 1.0, "cup", 150, 20, 8, 4, isFavorite = true),
+                ),
+                savedMeals = listOf(
+                    SavedMeal(
+                        id = 1,
+                        name = "Usual breakfast",
+                        items = listOf(SavedMealItem("Greek yogurt", 1.0, "cup", 150, 20, 8, 4)),
+                    ),
                 ),
             ),
             state = FoodScreenState(),

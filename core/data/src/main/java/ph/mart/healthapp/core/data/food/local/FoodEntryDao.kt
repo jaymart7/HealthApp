@@ -30,6 +30,9 @@ internal interface FoodEntryDao {
     @Insert
     suspend fun insert(entity: FoodEntryEntity)
 
+    @Insert
+    suspend fun insertAll(entities: List<FoodEntryEntity>)
+
     @Query("UPDATE food_entry SET isDeleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)
 

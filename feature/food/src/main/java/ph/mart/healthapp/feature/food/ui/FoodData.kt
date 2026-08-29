@@ -4,6 +4,8 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.SavedMeal
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -21,6 +23,8 @@ data class FoodUiState(
     val addExerciseToBudget: Boolean = true,
     val targets: DailyTargets? = null,
     val suggestions: List<FoodSuggestion> = emptyList(),
+    /** Not the day's — saved meals are date-independent, and re-loggable onto any day. */
+    val savedMeals: List<SavedMeal> = emptyList(),
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     val unit: UnitSystem = UnitSystem.Metric,
@@ -67,6 +71,32 @@ fun FoodSuggestion.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     fatG = fatG,
 )
 
+/** Twin of [FoodSuggestion.toAddEntryForm] for a saved meal's item — it skips the form entirely,
+ * because a saved meal is logged whole rather than edited one item at a time. */
+fun SavedMealItem.toFoodEntry(mealType: MealType, dateEpochDay: Long): FoodEntry = FoodEntry(
+    name = name,
+    dateEpochDay = dateEpochDay,
+    mealType = mealType,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+)
+
+/** The day and meal slot are dropped: they are supplied again at log time, so the same saved meal
+ * can go into any slot on any day. */
+fun FoodEntry.toSavedMealItem(): SavedMealItem = SavedMealItem(
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+)
+
 sealed interface FoodEvent {
     data class OnSelectDate(val dateEpochDay: Long) : FoodEvent
     data class OnAddEntry(val form: AddEntryForm) : FoodEvent
@@ -74,4 +104,7 @@ sealed interface FoodEvent {
     data class OnToggleFavorite(val suggestion: FoodSuggestion, val favorite: Boolean) : FoodEvent
     data class OnSetWaterGlasses(val glasses: Int) : FoodEvent
     data class OnDeleteExercise(val id: Long) : FoodEvent
+    data class OnSaveMeal(val name: String, val items: List<SavedMealItem>) : FoodEvent
+    data class OnLogSavedMeal(val meal: SavedMeal, val mealType: MealType) : FoodEvent
+    data class OnDeleteSavedMeal(val id: Long) : FoodEvent
 }

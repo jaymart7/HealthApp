@@ -14,7 +14,8 @@ import ph.mart.healthapp.core.data.food.FoodSearchRepositoryImpl
 val foodDataModule = module {
     single { get<AppDatabase>().foodEntryDao() }
     single { get<AppDatabase>().favoriteFoodDao() }
-    single<FoodRepository> { FoodRepositoryImpl(get(), get()) }
+    single { get<AppDatabase>().savedMealDao() }
+    single<FoodRepository> { FoodRepositoryImpl(get(), get(), get()) }
     single<FoodRecognitionRepository> { FoodRecognitionRepositoryImpl() }
     single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl() }
     single<FoodSearchRepository> { FoodSearchRepositoryImpl() }

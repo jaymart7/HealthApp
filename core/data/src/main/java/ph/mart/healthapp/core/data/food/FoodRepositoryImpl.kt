@@ -7,6 +7,9 @@ import ph.mart.healthapp.core.data.food.local.FavoriteFoodDao
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodEntity
 import ph.mart.healthapp.core.data.food.local.FoodEntryDao
 import ph.mart.healthapp.core.data.food.local.FoodEntryEntity
+import ph.mart.healthapp.core.data.food.local.SavedMealDao
+import ph.mart.healthapp.core.data.food.local.SavedMealEntity
+import ph.mart.healthapp.core.data.food.local.SavedMealItemEntity
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /** Recents are read a little deeper than [MAX_SUGGESTIONS], so favorites crowding the front of
@@ -16,6 +19,7 @@ private const val RECENT_LIMIT = MAX_SUGGESTIONS * 2
 internal class FoodRepositoryImpl(
     private val dao: FoodEntryDao,
     private val favoriteDao: FavoriteFoodDao,
+    private val savedMealDao: SavedMealDao,
 ) : FoodRepository {
 
     override fun observeTodayEntries(): Flow<List<FoodEntry>> = observeEntries(todayEpochDay())
@@ -28,6 +32,15 @@ internal class FoodRepositoryImpl(
         // logged without one is "today".
         val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
         dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
+    }
+
+    override suspend fun addEntries(entries: List<FoodEntry>) {
+        val loggedAt = System.currentTimeMillis()
+        dao.insertAll(
+            entries.map { entry ->
+                entry.toEntity(date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay(), loggedAt = loggedAt)
+            },
+        )
     }
 
     override suspend fun deleteEntry(id: Long) {
@@ -52,6 +65,22 @@ internal class FoodRepositoryImpl(
         if (favorite) favoriteDao.upsert(suggestion.toEntity()) else favoriteDao.clearFavorite(suggestion.name)
     }
 
+    override fun observeSavedMeals(): Flow<List<SavedMeal>> =
+        combine(savedMealDao.observeMeals(MAX_SAVED_MEALS), savedMealDao.observeItems()) { meals, items ->
+            groupSavedMeals(meals, items)
+        }
+
+    override suspend fun saveMeal(name: String, items: List<SavedMealItem>) {
+        val mealId = savedMealDao.insertMeal(
+            SavedMealEntity(name = name, createdAt = System.currentTimeMillis()),
+        )
+        savedMealDao.insertItems(items.map { it.toEntity(mealId) })
+    }
+
+    override suspend fun deleteSavedMeal(id: Long) {
+        savedMealDao.softDelete(id)
+    }
+
     override fun observeDailyNutrition(): Flow<List<DayNutrition>> {
         // Anchored on today here, not in the feature layer: todayEpochDay() is internal to this
         // module, and the window has to match the query's lower bound exactly for the series to
@@ -63,6 +92,44 @@ internal class FoodRepositoryImpl(
         }
     }
 }
+
+/** Joins the two saved-meal tables in Kotlin — driven by [meals], so items whose parent was
+ * soft-deleted (or fell past the recency limit) are dropped, and a meal with no items still
+ * appears. */
+internal fun groupSavedMeals(
+    meals: List<SavedMealEntity>,
+    items: List<SavedMealItemEntity>,
+): List<SavedMeal> {
+    val byMeal = items.groupBy { it.mealId }
+    return meals.map { meal ->
+        SavedMeal(
+            id = meal.id,
+            name = meal.name,
+            items = byMeal[meal.id].orEmpty().map { it.toSavedMealItem() },
+        )
+    }
+}
+
+private fun SavedMealItemEntity.toSavedMealItem() = SavedMealItem(
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+)
+
+private fun SavedMealItem.toEntity(mealId: Long) = SavedMealItemEntity(
+    mealId = mealId,
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+)
 
 private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
     id = id,

@@ -144,6 +144,12 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **The recap's weight cell goes blank when the last weigh-in predates the window.**
   `trendVsSevenDaysAgo()` anchors to the latest *entry*, not to today, so without that guard a
   card headed "Last 7 days" would report a delta between two entries from two months ago.
+- **A saved meal is a snapshot, not a live link.** Saving copies the section's entries into
+  `saved_meal`/`saved_meal_item`; editing or deleting the original diary rows never touches it,
+  and deleting the saved meal never touches what was logged from it. Re-logging always writes
+  fresh entries stamped with the diary's *selected* day. The panel shows the newest
+  `MAX_SAVED_MEALS` only, and saved meals stay out of the data export for the same reason
+  favorites do — convenience data, not history.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.

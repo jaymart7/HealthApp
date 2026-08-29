@@ -1,0 +1,32 @@
+package ph.mart.healthapp.core.data.food
+
+/** A named snapshot of what was logged to one meal section — "Usual breakfast" is the four items
+ * that were in Breakfast the day it was saved. Re-logging inserts a copy of every [items] entry
+ * into whichever meal slot the add-entry sheet is open on; the saved meal itself is never touched
+ * by logging, and deleting it leaves the already-logged entries alone. */
+data class SavedMeal(
+    val id: Long,
+    val name: String,
+    val items: List<SavedMealItem>,
+)
+
+/** One food inside a [SavedMeal] — the same fields a [FoodEntry] carries, minus the day and meal
+ * slot, which are supplied at log time. */
+data class SavedMealItem(
+    val name: String,
+    val portionAmount: Double,
+    val portionUnit: String,
+    val calories: Int,
+    val proteinG: Int,
+    val carbsG: Int,
+    val fatG: Int,
+)
+
+fun SavedMeal.totalKcal(): Int = items.sumOf { it.calories }
+
+/** Same cap and same reason as [MAX_SUGGESTIONS]: the panel sits above the entry form in the
+ * add-entry sheet, and a longer list pushes the form off-screen.
+ *
+ * ponytail: the newest 5 only — a 6th saved meal pushes the oldest out of view (and out of reach
+ * of its own delete button). Add a manage-saved-meals list in Profile if anyone keeps more. */
+const val MAX_SAVED_MEALS = 5

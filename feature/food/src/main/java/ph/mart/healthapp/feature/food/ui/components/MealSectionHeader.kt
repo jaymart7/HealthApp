@@ -18,7 +18,9 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** Screen-specific to the food diary — collapsible row: chevron, meal label, subtotal, "+". */
+/** Screen-specific to the food diary — collapsible row: chevron, meal label, subtotal, an optional
+ * "save as meal" bookmark, and "+". [onSave] is null for a section with nothing in it — there is
+ * nothing to snapshot yet. */
 @Composable
 fun MealSectionHeader(
     label: String,
@@ -26,6 +28,7 @@ fun MealSectionHeader(
     expanded: Boolean,
     onToggle: () -> Unit,
     onAdd: () -> Unit,
+    onSave: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -53,6 +56,21 @@ fun MealSectionHeader(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        if (onSave != null) {
+            Surface(
+                onClick = onSave,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 8.dp).height(24.dp),
+            ) {
+                Icon(
+                    imageVector = AppIcons.Bookmark,
+                    contentDescription = "Save $label as a meal",
+                    modifier = Modifier.padding(4.dp),
+                )
+            }
+        }
         Surface(
             onClick = onAdd,
             shape = CircleShape,
@@ -80,6 +98,7 @@ private fun MealSectionHeaderPreview() {
                 expanded = true,
                 onToggle = {},
                 onAdd = {},
+                onSave = {},
             )
         }
     }

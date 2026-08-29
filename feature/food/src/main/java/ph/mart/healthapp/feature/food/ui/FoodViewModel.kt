@@ -9,6 +9,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
@@ -44,6 +45,9 @@ class FoodViewModel(
             is FoodEvent.OnToggleFavorite -> onToggleFavorite(event)
             is FoodEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
             is FoodEvent.OnDeleteExercise -> onDeleteExercise(event.id)
+            is FoodEvent.OnSaveMeal -> onSaveMeal(event.name, event.items)
+            is FoodEvent.OnLogSavedMeal -> onLogSavedMeal(event)
+            is FoodEvent.OnDeleteSavedMeal -> onDeleteSavedMeal(event.id)
         }
     }
 
@@ -54,7 +58,9 @@ class FoodViewModel(
         waterRepository: WaterRepository,
         exerciseRepository: ExerciseRepository,
     ) = intent {
-        selectedDate.flatMapLatest { date ->
+        // Saved meals belong to no day, so they combine outside the date switch — which also keeps
+        // the inner combine at the five-flow arity the typed overloads stop at.
+        val dated = selectedDate.flatMapLatest { date ->
             combine(
                 foodRepository.observeEntries(date),
                 profileRepository.observeProfile(),
@@ -74,6 +80,9 @@ class FoodViewModel(
                     unit = profile?.preferredUnit ?: UnitSystem.Metric,
                 )
             }
+        }
+        combine(dated, foodRepository.observeSavedMeals()) { newState, savedMeals ->
+            newState.copy(savedMeals = savedMeals)
         }.collect { newState -> reduce { newState } }
     }
 
@@ -97,5 +106,20 @@ class FoodViewModel(
 
     private fun onToggleFavorite(event: FoodEvent.OnToggleFavorite) = intent {
         foodRepository.setFavorite(event.suggestion, event.favorite)
+    }
+
+    private fun onSaveMeal(name: String, items: List<SavedMealItem>) = intent {
+        foodRepository.saveMeal(name.trim(), items)
+    }
+
+    /** One batched write, so the whole meal appears in the diary at once. */
+    private fun onLogSavedMeal(event: FoodEvent.OnLogSavedMeal) = intent {
+        foodRepository.addEntries(
+            event.meal.items.map { it.toFoodEntry(event.mealType, selectedDate.value) },
+        )
+    }
+
+    private fun onDeleteSavedMeal(id: Long) = intent {
+        foodRepository.deleteSavedMeal(id)
     }
 }

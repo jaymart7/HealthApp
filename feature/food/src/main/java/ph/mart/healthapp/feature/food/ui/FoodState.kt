@@ -24,6 +24,8 @@ internal class FoodScreenState(
     exerciseSheetOpen: Boolean = false,
     exerciseExpanded: Boolean = true,
     calendarOpen: Boolean = false,
+    saveMealFor: MealType? = null,
+    savedMealName: String = "",
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -33,6 +35,10 @@ internal class FoodScreenState(
     var exerciseExpanded: Boolean by mutableStateOf(exerciseExpanded)
     var calendarOpen: Boolean by mutableStateOf(calendarOpen)
 
+    /** Which meal section's entries the "save this meal" sheet is naming, and the name so far. */
+    var saveMealFor: MealType? by mutableStateOf(saveMealFor)
+    var savedMealName: String by mutableStateOf(savedMealName)
+
     fun openSheet(mealType: MealType) {
         addForm = AddEntryForm(mealType = mealType)
         activeMealSheet = mealType
@@ -40,6 +46,15 @@ internal class FoodScreenState(
 
     fun closeSheet() {
         activeMealSheet = null
+    }
+
+    fun openSaveMealSheet(mealType: MealType) {
+        savedMealName = mealType.name
+        saveMealFor = mealType
+    }
+
+    fun closeSaveMealSheet() {
+        saveMealFor = null
     }
 
     fun toggleExpanded(mealType: MealType) {
@@ -55,7 +70,7 @@ internal class FoodScreenState(
                     f.mealType.name, f.name, f.portionAmount, f.portionUnit,
                     f.calories, f.proteinG, f.carbsG, f.fatG,
                 ) + MealType.entries.map { m -> it.expandedMeals[m] != false } +
-                    listOf(it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen)
+                    listOf(it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen, it.saveMealFor?.name, it.savedMealName)
             },
             restore = { saved ->
                 FoodScreenState(
@@ -75,6 +90,8 @@ internal class FoodScreenState(
                     exerciseSheetOpen = saved[10 + MealType.entries.size] as Boolean,
                     exerciseExpanded = saved[11 + MealType.entries.size] as Boolean,
                     calendarOpen = saved[12 + MealType.entries.size] as Boolean,
+                    saveMealFor = (saved[13 + MealType.entries.size] as String?)?.let(MealType::valueOf),
+                    savedMealName = saved[14 + MealType.entries.size] as String,
                 )
             },
         )
