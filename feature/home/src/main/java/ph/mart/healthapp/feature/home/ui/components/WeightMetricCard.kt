@@ -18,7 +18,9 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TrendDirection
+import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.profile.goalRelativeTrend
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
@@ -26,8 +28,6 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
-import ph.mart.healthapp.feature.home.ui.TREND_ARROW_DEADBAND_KG
-import ph.mart.healthapp.feature.home.ui.WeightTrendDisplay
 
 /**
  * Current weight + the change against 7 days ago. The trend **colour** comes from the shared

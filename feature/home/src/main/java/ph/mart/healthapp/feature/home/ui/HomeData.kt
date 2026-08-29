@@ -4,6 +4,8 @@ import kotlin.math.abs
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Profile
+import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
+import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
@@ -43,31 +45,6 @@ sealed interface HomeEvent {
 val HomeUiState.isDayOne: Boolean
     get() = foodEntryCount == 0 && weightEntries.isEmpty() && lastPhotoEpochDay == null &&
         waterGlasses == 0 && burnedKcal == 0
-
-/** [hasPrior] false means there's no entry 7+ days back to compare against — the card shows
- * "No prior data" rather than a false 0.0 delta. */
-data class WeightTrendDisplay(val currentKg: Double, val deltaKg: Double, val hasPrior: Boolean)
-
-/** Below this the arrow renders as a neutral dash — the delta is real but too small to call a
- * direction. Display-only: the *color* still comes from the shared `goalRelativeTrend()`. */
-const val TREND_ARROW_DEADBAND_KG = 0.2
-
-/**
- * Latest weight vs. the newest entry at least 7 days older — by **date**, never by insertion
- * order, so backdating a past weight can't produce a bogus trend. [fallbackKg] (the onboarding
- * weight from the profile) stands in when nothing has been logged yet.
- */
-fun List<WeightEntry>.trendVsSevenDaysAgo(fallbackKg: Double): WeightTrendDisplay {
-    val latest = maxByOrNull { it.dateEpochDay }
-        ?: return WeightTrendDisplay(currentKg = fallbackKg, deltaKg = 0.0, hasPrior = false)
-    val prior = filter { it.dateEpochDay <= latest.dateEpochDay - 7 }.maxByOrNull { it.dateEpochDay }
-        ?: return WeightTrendDisplay(currentKg = latest.weightKg, deltaKg = 0.0, hasPrior = false)
-    return WeightTrendDisplay(
-        currentKg = latest.weightKg,
-        deltaKg = latest.weightKg - prior.weightKg,
-        hasPrior = true,
-    )
-}
 
 /** Days between the most recent photo and today. Null when there are no photos at all. */
 fun daysSincePhoto(lastPhotoEpochDay: Long?, todayEpochDay: Long): Long? =

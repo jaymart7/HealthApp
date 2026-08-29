@@ -64,6 +64,10 @@ fun epochDayToDate(epochDay: Long): java.util.Date = epochDayToCalendar(epochDay
 fun formatEpochDay(epochDay: Long): String =
     SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(epochDayToDate(epochDay))
 
+/** "Tuesday" — unambiguous inside a week-long window, where the full date is too long a label. */
+fun formatWeekday(epochDay: Long): String =
+    SimpleDateFormat("EEEE", Locale.getDefault()).format(epochDayToDate(epochDay))
+
 /**
  * The date row + swap-in-place calendar, shared by LogWeightSheet/AddPhotoSheet/AddMeasurementSheet.
  * [AnimatedContent] handles the height/slide animation natively — no manual pixel-height hack.

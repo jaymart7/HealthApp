@@ -36,6 +36,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
+import ph.mart.healthapp.core.designsystem.component.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.components.MeasurementRow
 import ph.mart.healthapp.feature.progress.ui.components.NutritionAverageCard
@@ -43,6 +44,7 @@ import ph.mart.healthapp.feature.progress.ui.components.NutritionTrendChart
 import ph.mart.healthapp.feature.progress.ui.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.components.ProgressPhotoGrid
 import ph.mart.healthapp.feature.progress.ui.components.WeightProgressChart
+import ph.mart.healthapp.feature.progress.ui.components.WeeklyRecapCard
 import ph.mart.healthapp.feature.progress.ui.components.WeightStatRow
 
 @Composable
@@ -63,6 +65,24 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = 16.dp),
                 )
+                // Above the sub-tab toggle, not inside a tab: the recap spans nutrition, weight
+                // and consistency at once. Null (nothing logged this week) omits it entirely
+                // rather than rendering an all-zero card on day one.
+                val recap = weeklyRecap(
+                    dailyNutrition = uiState.dailyNutrition,
+                    activeDays = uiState.activeDays,
+                    weightEntries = uiState.weightEntries,
+                    targets = uiState.targets,
+                    todayEpochDay = todayEpochDay(),
+                )
+                if (recap != null) {
+                    WeeklyRecapCard(
+                        recap = recap,
+                        goal = uiState.goal,
+                        unit = uiState.preferredUnit,
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    )
+                }
                 SegmentedToggle(
                     options = ProgressTab.entries.map { it.label },
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
@@ -223,10 +243,11 @@ private fun MeasurementsTabContent(uiState: ProgressUiState, state: ProgressScre
 @PreviewLightDark
 @Composable
 private fun ProgressScreenPreview() {
+    val today = todayEpochDay()
     val entries = listOf(
-        WeightEntry(dateEpochDay = 0, weightKg = 78.0),
-        WeightEntry(dateEpochDay = 1, weightKg = 77.5),
-        WeightEntry(dateEpochDay = 2, weightKg = 76.9),
+        WeightEntry(dateEpochDay = today - 9, weightKg = 78.0),
+        WeightEntry(dateEpochDay = today - 4, weightKg = 77.5),
+        WeightEntry(dateEpochDay = today, weightKg = 76.9),
     )
     AppTheme {
         ProgressContent(
@@ -236,8 +257,9 @@ private fun ProgressScreenPreview() {
                 goal = Goal.Lose,
                 preferredUnit = UnitSystem.Metric,
                 dailyNutrition = listOf(1850, 2100, 0, 1720, 2340).mapIndexed { index, calories ->
-                    DayNutrition(index.toLong(), calories, calories / 16, calories / 10, calories / 30)
+                    DayNutrition(todayEpochDay() - 4 + index, calories, calories / 16, calories / 10, calories / 30)
                 },
+                activeDays = (todayEpochDay() - 4..todayEpochDay()).toSet(),
                 targets = DailyTargets(calories = 1941, proteinG = 146, carbsG = 194, fatG = 65, floor = 1500),
             ),
             state = ProgressScreenState(),

@@ -136,6 +136,14 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   default would force light on a phone already in dark mode; the Profile switch resolves it
   with `darkThemeOn ?: isSystemInDarkTheme()`, the same expression `MainActivity` uses to pick
   the scheme. Contrast stays system-driven.
+- **The weekly recap window is rolling-7-ending-today**, not a calendar week — a calendar week
+  reports a half-empty Monday. The card is *hidden* when nothing was logged in the window
+  rather than rendering zeros, and its "days logged" uses the streak's four-domain definition
+  while its calorie average uses food days only — the two denominators can differ, so the card
+  says which is which.
+- **The recap's weight cell goes blank when the last weigh-in predates the window.**
+  `trendVsSevenDaysAgo()` anchors to the latest *entry*, not to today, so without that guard a
+  card headed "Last 7 days" would report a delta between two entries from two months ago.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.

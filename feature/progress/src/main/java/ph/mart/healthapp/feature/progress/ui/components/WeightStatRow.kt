@@ -55,8 +55,10 @@ fun WeightStatRow(
     }
 }
 
+/** Shared with [WeeklyRecapCard] — same screen, same feature, so it stays here rather than
+ * being promoted to `:core:designsystem` (that rule is about components used across screens). */
 @Composable
-private fun StatCell(label: String, value: String, valueColor: Color? = null) {
+internal fun StatCell(label: String, value: String, valueColor: Color? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
@@ -68,7 +70,7 @@ private fun StatCell(label: String, value: String, valueColor: Color? = null) {
     }
 }
 
-private fun formatKg(value: Double): String =
+internal fun formatKg(value: Double): String =
     if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark

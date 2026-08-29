@@ -31,5 +31,8 @@ data class ProgressUiState(
     val preferredUnit: UnitSystem = UnitSystem.Metric,
     /** Dense, one row per day for the last year — the Nutrition tab slices it per selected range. */
     val dailyNutrition: List<DayNutrition> = emptyList(),
+    /** Every day anything was logged, across all four domains — the streak's definition, reused
+     * by the weekly recap so the two can't disagree about what a logged day is. */
+    val activeDays: Set<Long> = emptySet(),
     val targets: DailyTargets? = null,
 )

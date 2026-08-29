@@ -26,6 +26,7 @@ import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
