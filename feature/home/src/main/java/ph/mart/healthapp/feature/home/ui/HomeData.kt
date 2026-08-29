@@ -11,7 +11,8 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 /**
  * Read model. Every field traces back to a repository interface: [profile] from
  * `ProfileRepository`, [totals] from `FoodRepository`, [weightEntries] and [lastPhotoEpochDay]
- * from `ProgressRepository`, [waterGlasses] from `WaterRepository`. Targets are never stored here — they're derived
+ * from `ProgressRepository`, [waterGlasses] from `WaterRepository`, [burnedKcal] from
+ * `ExerciseRepository`. Targets are never stored here — they're derived
  * from [profile] at read time via `dailyTargets()`, so they can't drift from the inputs that
  * produce them. [streak] and [weightProgressKg] are derived the same way, from all three
  * repositories at once — nothing about consistency is stored.
@@ -24,6 +25,9 @@ data class HomeUiState(
     val lastPhotoEpochDay: Long? = null,
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    val burnedKcal: Int = 0,
+    /** From the profile — whether [burnedKcal] raises the calorie ring's goal. */
+    val addExerciseToBudget: Boolean = true,
     val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),
     /** Null when the goal is Maintain (no direction to move) or nothing has been weighed yet. */
     val weightProgressKg: Double? = null,
@@ -38,7 +42,7 @@ sealed interface HomeEvent {
  * the time Home is reachable. */
 val HomeUiState.isDayOne: Boolean
     get() = foodEntryCount == 0 && weightEntries.isEmpty() && lastPhotoEpochDay == null &&
-        waterGlasses == 0
+        waterGlasses == 0 && burnedKcal == 0
 
 /** [hasPrior] false means there's no entry 7+ days back to compare against — the card shows
  * "No prior data" rather than a false 0.0 delta. */

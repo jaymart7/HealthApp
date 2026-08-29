@@ -181,6 +181,16 @@ empty counts back from yesterday) and badges earned off the *best* run, so break
 streak never un-earns one. There is no celebration toast — the badge lighting up is the
 reward; announcing it would need persisted "already celebrated" state.
 
+Exercise logging is built — a fourth `:core:data` domain (`exercise/`, one soft-deleted row per
+activity), logged from the FAB's quick-action sheet and from the diary's own Exercise section
+(`LogExerciseSheet` in `:feature:food`, beside the diary that shows it). Burned kcal are estimated
+MET × kg × hours from a fixed `ExerciseType` table, pre-filled and editable — once the user touches
+the kcal field it stops re-estimating. One rule is deliberate and tested: `budgetKcal()` is the
+only place burned calories are folded into the day, and `Profile.addExerciseToBudget` (a Profile
+switch, default on) can turn the credit off — `calculateDailyTargets()` already applies an activity
+multiplier, so crediting a workout on top of it can count the same training twice. The
+Mifflin–St Jeor target itself is never touched. Exercise days also count toward the logging streak.
+
 Reminders are wired — the four Profile switches now schedule real notifications.
 `ph.mart.healthapp.reminder` in `:app` holds the schedule table and the worker;
 `FitPulseApplication` reconciles WorkManager off `ProfileRepository.observeProfile()`,

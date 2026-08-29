@@ -7,6 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.core.Koin
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealType
@@ -45,6 +49,7 @@ fun seedDebugData(koin: Koin) {
         koin.get<ProgressRepository>().seedProgress(today)
         koin.get<FoodRepository>().seedFood(today)
         koin.get<WaterRepository>().seedWater(today)
+        koin.get<ExerciseRepository>().seedExercise(today)
     }
 }
 
@@ -114,6 +119,27 @@ private suspend fun ProgressRepository.seedProgress(today: Long) {
 
 /** Ten days of hydration, today deliberately part-way through so the card shows a partly-filled
  * row rather than an all-or-nothing one. */
+/** Every other day, so the streak sees exercise-only days too. */
+private suspend fun ExerciseRepository.seedExercise(today: Long) {
+    val sessions = listOf(
+        ExerciseType.Run to 32,
+        ExerciseType.Strength to 45,
+        ExerciseType.Cycle to 50,
+        ExerciseType.Yoga to 40,
+        ExerciseType.Walk to 25,
+    )
+    sessions.forEachIndexed { index, (type, minutes) ->
+        addEntry(
+            ExerciseEntry(
+                dateEpochDay = today - index * 2L,
+                type = type,
+                minutes = minutes,
+                burnedKcal = estimateBurnedKcal(type, minutes, seedProfile.weightKg),
+            ),
+        )
+    }
+}
+
 private suspend fun WaterRepository.seedWater(today: Long) {
     val random = Random(seed = 11)
     for (daysAgo in 9 downTo 1) {

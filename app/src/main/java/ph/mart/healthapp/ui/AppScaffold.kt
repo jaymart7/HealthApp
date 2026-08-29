@@ -29,6 +29,7 @@ import ph.mart.healthapp.core.navigation.route.TopLevelBackStack
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
+import ph.mart.healthapp.feature.food.ui.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.profileEntries
@@ -43,10 +44,10 @@ private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
     TopLevelDestination.Profile -> AppIcons.Profile
 }
 
-/** The FAB's overlay sheet — Log weight/Add photo are real [ph.mart.healthapp.core.designsystem.component.AppBottomSheet]s
+/** The FAB's overlay sheet — Log exercise/Log weight/Add photo are real [ph.mart.healthapp.core.designsystem.component.AppBottomSheet]s
  * shown here (same shape as [QuickActionSheet] itself), not [androidx.navigation3.runtime.NavKey]
  * routes: predictive back needs to close the sheet without replacing the screen underneath it. */
-private enum class ActiveSheet { None, QuickAction, LogWeight, AddPhoto }
+private enum class ActiveSheet { None, QuickAction, LogExercise, LogWeight, AddPhoto }
 
 /**
  * Bottom nav (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
@@ -145,9 +146,11 @@ fun AppScaffold(
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(FoodCaptureRoute)
                 },
+                onLogExercise = { activeSheet = ActiveSheet.LogExercise },
                 onLogWeight = { activeSheet = ActiveSheet.LogWeight },
                 onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
             )
+            ActiveSheet.LogExercise -> LogExerciseSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.None -> Unit

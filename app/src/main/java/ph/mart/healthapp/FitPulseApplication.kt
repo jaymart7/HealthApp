@@ -16,6 +16,7 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import ph.mart.healthapp.core.data.di.databaseModule
 import ph.mart.healthapp.core.data.di.networkModule
+import ph.mart.healthapp.core.data.exercise.di.exerciseDataModule
 import ph.mart.healthapp.core.data.food.di.foodDataModule
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.di.profileDataModule
@@ -51,6 +52,7 @@ class FitPulseApplication : Application() {
                 foodDataModule,
                 progressDataModule,
                 waterDataModule,
+                exerciseDataModule,
                 onboardingModule,
                 foodModule,
                 homeModule,

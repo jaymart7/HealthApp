@@ -14,17 +14,19 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** The FAB's quick-action sheet: Log food / Log weight / Add photo, each routing to a real
- * (stub-for-now) destination. */
+/** The FAB's quick-action sheet: Log food / Log exercise / Log weight / Add photo, each routing
+ * to a real destination. */
 @Composable
 fun QuickActionSheet(
     onDismiss: () -> Unit,
     onLogFood: () -> Unit,
+    onLogExercise: () -> Unit,
     onLogWeight: () -> Unit,
     onAddPhoto: () -> Unit,
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         QuickActionRow(label = "Log food", onClick = onLogFood)
+        QuickActionRow(label = "Log exercise", onClick = onLogExercise)
         QuickActionRow(label = "Log weight", onClick = onLogWeight)
         QuickActionRow(label = "Add photo", onClick = onAddPhoto)
     }
@@ -47,6 +49,12 @@ private fun QuickActionRow(label: String, onClick: () -> Unit) {
 @Composable
 private fun QuickActionSheetPreview() {
     AppTheme {
-        QuickActionSheet(onDismiss = {}, onLogFood = {}, onLogWeight = {}, onAddPhoto = {})
+        QuickActionSheet(
+            onDismiss = {},
+            onLogFood = {},
+            onLogExercise = {},
+            onLogWeight = {},
+            onAddPhoto = {},
+        )
     }
 }

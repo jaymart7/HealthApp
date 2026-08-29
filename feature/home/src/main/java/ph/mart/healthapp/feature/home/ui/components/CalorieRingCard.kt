@@ -27,10 +27,20 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
 private val RING_SIZE = 96.dp
 private val RING_STROKE = 10.dp
 
-/** Ring shows the share of the day's calorie goal already consumed; the centre reads the kcal
- * still left. [goalKcal] comes from `Profile.dailyTargets()`, never a stored copy. */
+/**
+ * Ring shows the share of the day's calorie goal already consumed; the centre reads the kcal
+ * still left. [goalKcal] comes from `Profile.dailyTargets()`, never a stored copy — and already
+ * has [burnedKcal] folded in by `budgetKcal()`, so the ring can't disagree with the diary's
+ * summary bar. [burnedKcal] is passed separately only to name the difference on the card; pass 0
+ * when the user has turned the exercise credit off.
+ */
 @Composable
-fun CalorieRingCard(consumedKcal: Int, goalKcal: Int, modifier: Modifier = Modifier) {
+fun CalorieRingCard(
+    consumedKcal: Int,
+    goalKcal: Int,
+    modifier: Modifier = Modifier,
+    burnedKcal: Int = 0,
+) {
     val progress = if (goalKcal > 0) (consumedKcal.toFloat() / goalKcal).coerceIn(0f, 1f) else 0f
     AppCard(modifier = modifier) {
         Row(
@@ -55,6 +65,13 @@ fun CalorieRingCard(consumedKcal: Int, goalKcal: Int, modifier: Modifier = Modif
                         style = MaterialTheme.typography.bodyMedium.tabularNums,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                }
+                if (burnedKcal > 0) {
+                    Text(
+                        text = "+$burnedKcal kcal from exercise",
+                        style = MaterialTheme.typography.labelMedium.tabularNums,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -114,7 +131,12 @@ private fun CalorieRing(progress: Float, remainingKcal: Int) {
 private fun CalorieRingCardPreview() {
     AppTheme {
         Surface {
-            CalorieRingCard(consumedKcal = 940, goalKcal = 1941, modifier = Modifier.padding(16.dp))
+            CalorieRingCard(
+                consumedKcal = 940,
+                goalKcal = 2261,
+                burnedKcal = 320,
+                modifier = Modifier.padding(16.dp),
+            )
         }
     }
 }

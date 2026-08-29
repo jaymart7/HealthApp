@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import java.util.Calendar
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import ph.mart.healthapp.core.data.exercise.budgetKcal
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.Goal
@@ -97,7 +98,11 @@ private fun HomeContent(
             }
 
             if (targets != null) {
-                CalorieRingCard(consumedKcal = uiState.totals.calories, goalKcal = targets.calories)
+                CalorieRingCard(
+                    consumedKcal = uiState.totals.calories,
+                    goalKcal = budgetKcal(targets.calories, uiState.burnedKcal, uiState.addExerciseToBudget),
+                    burnedKcal = if (uiState.addExerciseToBudget) uiState.burnedKcal else 0,
+                )
             }
 
             StreakCard(
@@ -157,6 +162,7 @@ private fun HomeScreenPreview() {
                 ),
                 lastPhotoEpochDay = today - 12,
                 waterGlasses = 5,
+                burnedKcal = 320,
                 streak = StreakStats(current = 12, best = 31, totalDaysLogged = 74),
                 weightProgressKg = 5.2,
             ),

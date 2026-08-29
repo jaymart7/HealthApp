@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -20,10 +21,11 @@ class FoodViewModel(
     private val foodRepository: FoodRepository,
     profileRepository: ProfileRepository,
     private val waterRepository: WaterRepository,
+    private val exerciseRepository: ExerciseRepository,
 ) : ViewModel(), OrbitContainerHost<FoodUiState, FoodUiState, FoodSideEffect> {
 
     override val container = orbitContainer<FoodUiState, FoodSideEffect>(FoodUiState()) {
-        observeDiary(foodRepository, profileRepository, waterRepository)
+        observeDiary(foodRepository, profileRepository, waterRepository, exerciseRepository)
     }
 
     fun handleEvent(event: FoodEvent) {
@@ -32,6 +34,7 @@ class FoodViewModel(
             is FoodEvent.OnDeleteEntry -> onDeleteEntry(event.id)
             is FoodEvent.OnToggleFavorite -> onToggleFavorite(event)
             is FoodEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
+            is FoodEvent.OnDeleteExercise -> onDeleteExercise(event.id)
         }
     }
 
@@ -39,15 +42,19 @@ class FoodViewModel(
         foodRepository: FoodRepository,
         profileRepository: ProfileRepository,
         waterRepository: WaterRepository,
+        exerciseRepository: ExerciseRepository,
     ) = intent {
         combine(
             foodRepository.observeTodayEntries(),
             profileRepository.observeProfile(),
             foodRepository.observeSuggestions(),
             waterRepository.observeToday(),
-        ) { entries, profile, suggestions, waterGlasses ->
+            exerciseRepository.observeTodayEntries(),
+        ) { entries, profile, suggestions, waterGlasses, exercise ->
             FoodUiState(
                 entries = entries,
+                exercise = exercise,
+                addExerciseToBudget = profile?.addExerciseToBudget != false,
                 targets = profile?.dailyTargets(),
                 suggestions = suggestions,
                 waterGlasses = waterGlasses,
@@ -67,6 +74,10 @@ class FoodViewModel(
 
     private fun onDeleteEntry(id: Long) = intent {
         foodRepository.deleteEntry(id)
+    }
+
+    private fun onDeleteExercise(id: Long) = intent {
+        exerciseRepository.deleteEntry(id)
     }
 
     private fun onToggleFavorite(event: FoodEvent.OnToggleFavorite) = intent {

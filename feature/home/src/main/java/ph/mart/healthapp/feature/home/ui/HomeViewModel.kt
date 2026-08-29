@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.profile.ProfileRepository
@@ -23,19 +25,20 @@ import ph.mart.healthapp.core.designsystem.component.todayEpochDay
  * the rest of the app (the prototype's Home briefly read a hardcoded profile instead of the shared
  * one). The photo list collapses to its newest date here so the full list never enters UI state.
  *
- * The streak's three day-series ride in a second combine chained onto the first — `combine` only
+ * The streak's four day-series ride in a second combine chained onto the first — `combine` only
  * has typed overloads up to five flows, and the streak's inputs are independent of the day's
- * totals anyway.
+ * totals anyway. Today's exercise joins at that same outer combine for the same reason.
  */
 class HomeViewModel(
     profileRepository: ProfileRepository,
     foodRepository: FoodRepository,
     progressRepository: ProgressRepository,
     private val waterRepository: WaterRepository,
+    exerciseRepository: ExerciseRepository,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
 
     override val container = orbitContainer<HomeUiState, Nothing>(HomeUiState()) {
-        observeHome(profileRepository, foodRepository, progressRepository)
+        observeHome(profileRepository, foodRepository, progressRepository, exerciseRepository)
     }
 
     fun handleEvent(event: HomeEvent) {
@@ -52,6 +55,7 @@ class HomeViewModel(
         profileRepository: ProfileRepository,
         foodRepository: FoodRepository,
         progressRepository: ProgressRepository,
+        exerciseRepository: ExerciseRepository,
     ) = intent {
         val today = combine(
             profileRepository.observeProfile(),
@@ -75,11 +79,14 @@ class HomeViewModel(
             foodRepository.observeDailyNutrition(),
             waterRepository.observeLoggedDays(),
             progressRepository.observeWeightEntries(),
+            exerciseRepository.observeLoggedDays(),
             ::loggedDays,
         )
 
-        combine(today, activeDays) { state, days ->
+        combine(today, activeDays, exerciseRepository.observeTodayEntries()) { state, days, exercise ->
             state.copy(
+                burnedKcal = exercise.totalBurnedKcal(),
+                addExerciseToBudget = state.profile?.addExerciseToBudget != false,
                 // Read on every emission, not once at flow-construction time, so the streak
                 // doesn't freeze at whatever day the app happened to be opened.
                 streak = days.streakStats(todayEpochDay()),

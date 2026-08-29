@@ -3,6 +3,8 @@ package ph.mart.healthapp.feature.profile.ui
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.ActivityLevel
@@ -33,11 +35,13 @@ internal data class FitPulseExport(
     val weightEntries: List<ExportWeightEntry> = emptyList(),
     val measurements: List<ExportMeasurement> = emptyList(),
     val waterDays: List<ExportWaterDay> = emptyList(),
+    val exercises: List<ExportExercise> = emptyList(),
 )
 
-/** 2 added [FitPulseExport.waterDays] and the profile's water fields. Every addition is
- * defaulted, so a v1 file still imports — the version gate only rejects files from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 2
+/** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
+ * [FitPulseExport.exercises] and [ExportProfile.addExerciseToBudget]. Every addition is defaulted,
+ * so a v1 file still imports — the version gate only rejects files from the future. */
+internal const val EXPORT_SCHEMA_VERSION = 3
 
 @Serializable
 internal data class ExportProfile(
@@ -59,6 +63,7 @@ internal data class ExportProfile(
     val photoReminderOn: Boolean = false,
     val waterRemindersOn: Boolean = false,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    val addExerciseToBudget: Boolean = true,
 )
 
 @Serializable
@@ -83,6 +88,15 @@ internal data class ExportMeasurement(val part: String, val dateEpochDay: Long, 
 @Serializable
 internal data class ExportWaterDay(val dateEpochDay: Long, val glasses: Int)
 
+@Serializable
+internal data class ExportExercise(
+    val dateEpochDay: Long,
+    val type: String,
+    val name: String = "",
+    val minutes: Int,
+    val burnedKcal: Int,
+)
+
 /** What an import hands back to the ViewModel — domain types only, already validated. */
 internal data class ImportPayload(
     val profile: Profile?,
@@ -90,6 +104,7 @@ internal data class ImportPayload(
     val weightEntries: List<WeightEntry>,
     val measurements: List<MeasurementEntry>,
     val waterDays: List<WaterDay>,
+    val exercises: List<ExerciseEntry>,
 )
 
 private val json = Json {
@@ -104,6 +119,7 @@ internal fun buildExportJson(
     weightEntries: List<WeightEntry>,
     measurements: List<MeasurementEntry>,
     waterDays: List<WaterDay>,
+    exercises: List<ExerciseEntry>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
@@ -111,6 +127,9 @@ internal fun buildExportJson(
         weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note) },
         measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.valueCm) },
         waterDays = waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
+        exercises = exercises.map {
+            ExportExercise(it.dateEpochDay, it.type.name, it.name, it.minutes, it.burnedKcal)
+        },
     ),
 )
 
@@ -129,6 +148,15 @@ internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
             MeasurementEntry(enumOf<MeasurementPart>(it.part, MeasurementPart.entries), it.dateEpochDay, it.valueCm)
         },
         waterDays = export.waterDays.map { WaterDay(it.dateEpochDay, it.glasses) },
+        exercises = export.exercises.map {
+            ExerciseEntry(
+                dateEpochDay = it.dateEpochDay,
+                type = enumOf(it.type, ExerciseType.entries),
+                name = it.name,
+                minutes = it.minutes,
+                burnedKcal = it.burnedKcal,
+            )
+        },
     )
 }
 
@@ -154,6 +182,7 @@ private fun Profile.toExport() = ExportProfile(
     photoReminderOn = photoReminderOn,
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
+    addExerciseToBudget = addExerciseToBudget,
 )
 
 private fun ExportProfile.toProfile() = Profile(
@@ -175,6 +204,7 @@ private fun ExportProfile.toProfile() = Profile(
     photoReminderOn = photoReminderOn,
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
+    addExerciseToBudget = addExerciseToBudget,
 )
 
 private fun FoodEntry.toExport() = ExportFoodEntry(

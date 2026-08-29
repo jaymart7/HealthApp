@@ -45,10 +45,13 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.data.exercise.budgetKcal
+import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.DiaryWaterRow
 import ph.mart.healthapp.feature.food.ui.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.components.FoodSuggestionPanel
+import ph.mart.healthapp.feature.food.ui.components.ExerciseSection
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 
 @Composable
@@ -102,7 +105,11 @@ private fun FoodContent(
                 uiState.targets?.let { targets ->
                     DiarySummaryBar(
                         consumedKcal = uiState.entries.dailyTotals().calories,
-                        goalKcal = targets.calories,
+                        goalKcal = budgetKcal(
+                            targetKcal = targets.calories,
+                            burnedKcal = uiState.exercise.totalBurnedKcal(),
+                            addExercise = uiState.addExerciseToBudget,
+                        ),
                         proteinGoalG = targets.proteinG,
                         carbsGoalG = targets.carbsG,
                         fatGoalG = targets.fatG,
@@ -139,6 +146,14 @@ private fun FoodContent(
                             onDeleteEntry = { id -> onEvent(FoodEvent.OnDeleteEntry(id)) },
                         )
                     }
+
+                    ExerciseSection(
+                        entries = uiState.exercise,
+                        expanded = state.exerciseExpanded,
+                        onToggle = { state.exerciseExpanded = !state.exerciseExpanded },
+                        onAdd = { state.exerciseSheetOpen = true },
+                        onDeleteEntry = { id -> onEvent(FoodEvent.OnDeleteExercise(id)) },
+                    )
                 }
             }
 
@@ -164,6 +179,10 @@ private fun FoodContent(
                         state.closeSheet()
                     },
                 )
+            }
+
+            if (state.exerciseSheetOpen) {
+                LogExerciseSheet(onDismiss = { state.exerciseSheetOpen = false })
             }
         }
     }

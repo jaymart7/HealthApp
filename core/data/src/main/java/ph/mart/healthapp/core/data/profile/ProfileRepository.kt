@@ -31,6 +31,10 @@ data class Profile(
     val photoReminderOn: Boolean = false,
     val waterRemindersOn: Boolean = false,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    /** Whether logged exercise raises the day's shown calorie budget — see
+     * [ph.mart.healthapp.core.data.exercise.budgetKcal]. On by default; off for users whose
+     * activity level already accounts for their workouts. */
+    val addExerciseToBudget: Boolean = true,
 )
 
 interface ProfileRepository {

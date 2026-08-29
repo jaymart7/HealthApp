@@ -43,6 +43,7 @@ import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
+import ph.mart.healthapp.feature.profile.ui.components.ProfileExerciseSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileGoalsSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileRemindersSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileUnitsSection
@@ -140,6 +141,7 @@ fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: P
         messageIsError = messageIsError,
         onSelectUnit = viewModel::setUnit,
         onSetWaterGoal = viewModel::setWaterGoal,
+        onSetExerciseBudget = viewModel::setExerciseBudget,
         onToggleReminder = { kind, enabled ->
             if (!enabled || context.canPostNotifications()) {
                 viewModel.setReminder(kind, enabled)
@@ -168,6 +170,7 @@ private fun ProfileContent(
     messageIsError: Boolean,
     onSelectUnit: (UnitSystem) -> Unit,
     onSetWaterGoal: (Int) -> Unit,
+    onSetExerciseBudget: (Boolean) -> Unit,
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
@@ -197,6 +200,10 @@ private fun ProfileContent(
                 goalGlasses = profile.waterGoalGlasses,
                 unit = profile.preferredUnit,
                 onSetGoal = onSetWaterGoal,
+            )
+            ProfileExerciseSection(
+                addToBudget = profile.addExerciseToBudget,
+                onSetAddToBudget = onSetExerciseBudget,
             )
             ProfileRemindersSection(
                 enabled = profile::reminderEnabled,
@@ -248,6 +255,7 @@ private fun ProfileScreenPreview() {
             messageIsError = false,
             onSelectUnit = {},
             onSetWaterGoal = {},
+            onSetExerciseBudget = {},
             onToggleReminder = { _, _ -> },
             onExport = {},
             onImport = {},

@@ -21,11 +21,15 @@ internal class FoodScreenState(
     addForm: AddEntryForm = AddEntryForm(),
     searchQuery: String = "",
     expandedMeals: Map<MealType, Boolean> = MealType.entries.associateWith { true },
+    exerciseSheetOpen: Boolean = false,
+    exerciseExpanded: Boolean = true,
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
     var searchQuery: String by mutableStateOf(searchQuery)
     var expandedMeals: Map<MealType, Boolean> by mutableStateOf(expandedMeals)
+    var exerciseSheetOpen: Boolean by mutableStateOf(exerciseSheetOpen)
+    var exerciseExpanded: Boolean by mutableStateOf(exerciseExpanded)
 
     fun openSheet(mealType: MealType) {
         addForm = AddEntryForm(mealType = mealType)
@@ -48,7 +52,8 @@ internal class FoodScreenState(
                     it.activeMealSheet?.name, it.searchQuery,
                     f.mealType.name, f.name, f.portionAmount, f.portionUnit,
                     f.calories, f.proteinG, f.carbsG, f.fatG,
-                ) + MealType.entries.map { m -> it.expandedMeals[m] != false }
+                ) + MealType.entries.map { m -> it.expandedMeals[m] != false } +
+                    listOf(it.exerciseSheetOpen, it.exerciseExpanded)
             },
             restore = { saved ->
                 FoodScreenState(
@@ -65,6 +70,8 @@ internal class FoodScreenState(
                         fatG = saved[9] as Int,
                     ),
                     expandedMeals = MealType.entries.mapIndexed { index, m -> m to (saved[10 + index] as Boolean) }.toMap(),
+                    exerciseSheetOpen = saved[10 + MealType.entries.size] as Boolean,
+                    exerciseExpanded = saved[11 + MealType.entries.size] as Boolean,
                 )
             },
         )

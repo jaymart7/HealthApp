@@ -7,12 +7,12 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
 
 /**
  * Consistency, derived — never stored. Nothing in this file writes anything: the streak is a fold
- * over data the food, water, and progress repositories already return, the same way
+ * over data the food, water, exercise, and progress repositories already return, the same way
  * [ph.mart.healthapp.core.data.food.dailySeries] is a fold over the diary. That's what keeps a
  * backdated entry or a restored import honest — the streak recomputes rather than needing a
  * stored counter patched.
  *
- * It sits at its own domain root rather than under `food/` because it merges three domains, and
+ * It sits at its own domain root rather than under `food/` because it merges four domains, and
  * it has no `local/` or `di/` because there is nothing to persist and no repository to bind.
  */
 
@@ -24,18 +24,20 @@ const val STREAK_WINDOW_DAYS = 365
 data class StreakStats(val current: Int, val best: Int, val totalDaysLogged: Int)
 
 /**
- * Every day the user did *anything* — logged food, drank a glass, or weighed in. [nutrition] is
- * the dense zero-filled series, so [DayNutrition.isLogged] is the only honest signal there; a
- * zero-calorie day means "didn't open the app", not "ate nothing".
+ * Every day the user did *anything* — logged food, drank a glass, moved, or weighed in.
+ * [nutrition] is the dense zero-filled series, so [DayNutrition.isLogged] is the only honest
+ * signal there; a zero-calorie day means "didn't open the app", not "ate nothing".
  */
 fun loggedDays(
     nutrition: List<DayNutrition>,
     waterDays: Set<Long>,
     weightEntries: List<WeightEntry>,
+    exerciseDays: Set<Long>,
 ): Set<Long> = buildSet {
     nutrition.forEach { if (it.isLogged) add(it.dateEpochDay) }
     addAll(waterDays)
     weightEntries.forEach { add(it.dateEpochDay) }
+    addAll(exerciseDays)
 }
 
 /**

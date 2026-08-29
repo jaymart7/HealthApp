@@ -4,6 +4,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.ActivityLevel
@@ -52,10 +54,13 @@ class ProfileExportTest {
     private val weightEntries = listOf(WeightEntry(20_000, 62.4, "after the gym"))
     private val measurements = listOf(MeasurementEntry(MeasurementPart.Waist, 20_001, 78.5))
     private val waterDays = listOf(WaterDay(20_000, 6), WaterDay(20_001, 9))
+    private val exercises = listOf(
+        ExerciseEntry(id = 3, dateEpochDay = 20_001, type = ExerciseType.Run, name = "Riverside", minutes = 32, burnedKcal = 324),
+    )
 
     @Test
-    fun `round trips profile food weight measurements and water`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays)
+    fun `round trips profile food weight measurements water and exercise`() {
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(profile, payload.profile)
@@ -64,11 +69,12 @@ class ProfileExportTest {
         assertEquals(waterDays, payload.waterDays)
         // The row id is storage-local and deliberately not exported; everything else survives.
         assertEquals(foodEntries.map { it.copy(id = 0) }, payload.foodEntries)
+        assertEquals(exercises.map { it.copy(id = 0) }, payload.exercises)
     }
 
     @Test
     fun `export carries no photo data`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises)
         assertFalse(json.contains("filePath"))
         assertFalse(json.contains("\"photos\""))
     }
@@ -81,7 +87,7 @@ class ProfileExportTest {
 
     @Test
     fun `unrecognized enum value fails`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises)
             .replace("\"Waist\"", "\"Elbow\"")
         assertTrue(parseExport(json).isFailure)
     }
@@ -105,12 +111,15 @@ class ProfileExportTest {
 
         assertEquals(weightEntries.map { it.copy(note = "") }, payload.weightEntries)
         assertEquals(emptyList<WaterDay>(), payload.waterDays)
+        assertEquals(emptyList<ExerciseEntry>(), payload.exercises)
         assertEquals(DEFAULT_WATER_GOAL_GLASSES, payload.profile?.waterGoalGlasses)
+        // Defaulted on, so an older file doesn't silently drop the exercise credit.
+        assertEquals(true, payload.profile?.addExerciseToBudget)
     }
 
     @Test
     fun `newer schema version is rejected`() {
-        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList())
+        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 99")
         assertTrue(parseExport(json).isFailure)
     }

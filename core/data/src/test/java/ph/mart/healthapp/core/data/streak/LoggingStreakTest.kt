@@ -21,6 +21,7 @@ class LoggingStreakTest {
             nutrition = listOf(ate(TODAY)),
             waterDays = setOf(TODAY - 1),
             weightEntries = emptyList(),
+            exerciseDays = emptySet(),
         )
         assertEquals(setOf(TODAY, TODAY - 1), days)
         assertEquals(2, days.streakStats(TODAY).current)
@@ -32,6 +33,18 @@ class LoggingStreakTest {
             nutrition = listOf(ate(TODAY), blank(TODAY - 1)),
             waterDays = emptySet(),
             weightEntries = listOf(WeightEntry(dateEpochDay = TODAY - 1, weightKg = 80.0)),
+            exerciseDays = emptySet(),
+        )
+        assertEquals(2, days.streakStats(TODAY).current)
+    }
+
+    @Test
+    fun `a gym-only day keeps the streak alive`() {
+        val days = loggedDays(
+            nutrition = listOf(ate(TODAY), blank(TODAY - 1)),
+            waterDays = emptySet(),
+            weightEntries = emptyList(),
+            exerciseDays = setOf(TODAY - 1),
         )
         assertEquals(2, days.streakStats(TODAY).current)
     }
@@ -42,6 +55,7 @@ class LoggingStreakTest {
             nutrition = listOf(ate(TODAY), blank(TODAY - 1), ate(TODAY - 2)),
             waterDays = emptySet(),
             weightEntries = emptyList(),
+            exerciseDays = emptySet(),
         )
         assertEquals(setOf(TODAY, TODAY - 2), days)
         assertEquals(1, days.streakStats(TODAY).current)

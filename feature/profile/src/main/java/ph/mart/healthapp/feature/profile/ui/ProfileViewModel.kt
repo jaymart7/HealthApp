@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -17,6 +18,7 @@ class ProfileViewModel(
     private val foodRepository: FoodRepository,
     private val progressRepository: ProgressRepository,
     private val waterRepository: WaterRepository,
+    private val exerciseRepository: ExerciseRepository,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -46,6 +48,11 @@ class ProfileViewModel(
         profileRepository.saveProfile(profile.copy(waterGoalGlasses = glasses.coerceIn(WATER_GOAL_GLASSES)))
     }
 
+    fun setExerciseBudget(enabled: Boolean) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(addExerciseToBudget = enabled))
+    }
+
     fun buildExport() = intent {
         val json = buildExportJson(
             profile = state.profile,
@@ -53,13 +60,15 @@ class ProfileViewModel(
             weightEntries = progressRepository.observeWeightEntries().first(),
             measurements = progressRepository.observeMeasurements().first().values.flatten(),
             waterDays = waterRepository.allDays(),
+            exercises = exerciseRepository.allEntries(),
         )
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }
 
-    /** Replaces the profile, the food diary and the water log; weight and measurements are
-     * upserted by date, so importing merges history rather than discarding entries the file
-     * doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
+    /** Replaces the profile, the food diary, the water log and the exercise log; weight and
+     * measurements are
+     * upserted by date, so importing merges history rather than discarding entries the
+     * file doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
      * touched. */
     fun import(text: String) = intent {
         parseExport(text).fold(
@@ -71,6 +80,8 @@ class ProfileViewModel(
                 payload.measurements.forEach { progressRepository.upsertMeasurementEntry(it) }
                 waterRepository.clearAllDays()
                 payload.waterDays.forEach { waterRepository.upsertDay(it) }
+                exerciseRepository.deleteAllEntries()
+                payload.exercises.forEach { exerciseRepository.addEntry(it) }
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {

@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.food.ui
 
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
@@ -9,6 +10,9 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 data class FoodUiState(
     val entries: List<FoodEntry> = emptyList(),
+    val exercise: List<ExerciseEntry> = emptyList(),
+    /** From the profile — whether [exercise]'s burn raises the summary bar's goal. */
+    val addExerciseToBudget: Boolean = true,
     val targets: DailyTargets? = null,
     val suggestions: List<FoodSuggestion> = emptyList(),
     val waterGlasses: Int = 0,
@@ -60,4 +64,5 @@ sealed interface FoodEvent {
     data class OnDeleteEntry(val id: Long) : FoodEvent
     data class OnToggleFavorite(val suggestion: FoodSuggestion, val favorite: Boolean) : FoodEvent
     data class OnSetWaterGlasses(val glasses: Int) : FoodEvent
+    data class OnDeleteExercise(val id: Long) : FoodEvent
 }
