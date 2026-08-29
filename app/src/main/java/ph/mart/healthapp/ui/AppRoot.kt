@@ -28,6 +28,13 @@ class AppRootViewModel(profileRepository: ProfileRepository) : ViewModel() {
     val state: StateFlow<AppRootState> = profileRepository.observeProfile()
         .map { profile -> if (profile == null) AppRootState.Onboarding else AppRootState.Ready }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppRootState.Loading)
+
+    /** Read by [MainActivity] above the theme. Its own chain rather than a share of [state]'s: the
+     * two have different "not loaded yet" values (Loading vs. follow-the-system), and a wrapper to
+     * carry both costs more than a second query against a one-row table. */
+    val darkThemeOn: StateFlow<Boolean?> = profileRepository.observeProfile()
+        .map { profile -> profile?.darkThemeOn }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 }
 
 /**

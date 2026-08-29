@@ -39,9 +39,10 @@ internal data class FitPulseExport(
 )
 
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
- * [FitPulseExport.exercises] and [ExportProfile.addExerciseToBudget]. Every addition is defaulted,
+ * [FitPulseExport.exercises] and [ExportProfile.addExerciseToBudget]; 4 added
+ * [ExportProfile.darkThemeOn]. Every addition is defaulted,
  * so a v1 file still imports — the version gate only rejects files from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 3
+internal const val EXPORT_SCHEMA_VERSION = 4
 
 @Serializable
 internal data class ExportProfile(
@@ -64,6 +65,7 @@ internal data class ExportProfile(
     val waterRemindersOn: Boolean = false,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     val addExerciseToBudget: Boolean = true,
+    val darkThemeOn: Boolean? = null,
 )
 
 @Serializable
@@ -183,6 +185,7 @@ private fun Profile.toExport() = ExportProfile(
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
     addExerciseToBudget = addExerciseToBudget,
+    darkThemeOn = darkThemeOn,
 )
 
 private fun ExportProfile.toProfile() = Profile(
@@ -205,6 +208,7 @@ private fun ExportProfile.toProfile() = Profile(
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
     addExerciseToBudget = addExerciseToBudget,
+    darkThemeOn = darkThemeOn,
 )
 
 private fun FoodEntry.toExport() = ExportFoodEntry(

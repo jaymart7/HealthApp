@@ -53,6 +53,11 @@ class ProfileViewModel(
         profileRepository.saveProfile(profile.copy(addExerciseToBudget = enabled))
     }
 
+    fun setDarkTheme(enabled: Boolean) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(darkThemeOn = enabled))
+    }
+
     fun buildExport() = intent {
         val json = buildExportJson(
             profile = state.profile,

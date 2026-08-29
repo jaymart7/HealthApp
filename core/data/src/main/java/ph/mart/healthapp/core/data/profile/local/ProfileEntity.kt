@@ -27,4 +27,5 @@ internal data class ProfileEntity(
     val waterRemindersOn: Boolean,
     val waterGoalGlasses: Int,
     val addExerciseToBudget: Boolean = true,
+    val darkThemeOn: Boolean? = null,
 )

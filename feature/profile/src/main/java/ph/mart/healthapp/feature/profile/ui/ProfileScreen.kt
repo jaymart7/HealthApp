@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -42,6 +43,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.components.ProfileAboutSection
+import ph.mart.healthapp.feature.profile.ui.components.ProfileAppearanceSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileExerciseSection
 import ph.mart.healthapp.feature.profile.ui.components.ProfileGoalsSection
@@ -140,6 +142,7 @@ fun ProfileScreen(scrollState: ScrollState = rememberScrollState(), viewModel: P
         message = message,
         messageIsError = messageIsError,
         onSelectUnit = viewModel::setUnit,
+        onSetDarkTheme = viewModel::setDarkTheme,
         onSetWaterGoal = viewModel::setWaterGoal,
         onSetExerciseBudget = viewModel::setExerciseBudget,
         onToggleReminder = { kind, enabled ->
@@ -169,6 +172,7 @@ private fun ProfileContent(
     message: String?,
     messageIsError: Boolean,
     onSelectUnit: (UnitSystem) -> Unit,
+    onSetDarkTheme: (Boolean) -> Unit,
     onSetWaterGoal: (Int) -> Unit,
     onSetExerciseBudget: (Boolean) -> Unit,
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
@@ -196,6 +200,12 @@ private fun ProfileContent(
             )
             ProfileGoalsSection(profile = profile)
             ProfileUnitsSection(unit = profile.preferredUnit, onSelect = onSelectUnit)
+            // null profile field means "follow the device", so resolve it here rather than in the
+            // section — same expression MainActivity uses to pick the scheme.
+            ProfileAppearanceSection(
+                darkTheme = profile.darkThemeOn ?: isSystemInDarkTheme(),
+                onSetDarkTheme = onSetDarkTheme,
+            )
             ProfileWaterSection(
                 goalGlasses = profile.waterGoalGlasses,
                 unit = profile.preferredUnit,
@@ -254,6 +264,7 @@ private fun ProfileScreenPreview() {
             message = null,
             messageIsError = false,
             onSelectUnit = {},
+            onSetDarkTheme = {},
             onSetWaterGoal = {},
             onSetExerciseBudget = {},
             onToggleReminder = { _, _ -> },

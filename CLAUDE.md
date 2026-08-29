@@ -132,6 +132,10 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   genuinely mean today, so don't collapse them into the dated ones.
 - **The diary's top field is a local filter over logged entries**, not a
   database search. Database search is `FoodSearchRepository`/`FoodSearchPanel`.
+- **`Profile.darkThemeOn` is nullable and null means follow the device.** A plain `false`
+  default would force light on a phone already in dark mode; the Profile switch resolves it
+  with `darkThemeOn ?: isSystemInDarkTheme()`, the same expression `MainActivity` uses to pick
+  the scheme. Contrast stays system-driven.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.

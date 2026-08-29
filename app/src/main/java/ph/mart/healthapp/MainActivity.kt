@@ -5,10 +5,15 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import org.koin.androidx.compose.koinViewModel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.reminder.EXTRA_TAB
 import ph.mart.healthapp.ui.AppRoot
+import ph.mart.healthapp.ui.AppRootViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,8 +31,12 @@ class MainActivity : ComponentActivity() {
             ?: TopLevelDestination.Home
 
         setContent {
-            AppTheme {
-                AppRoot(startTab = startTab)
+            // Hoisted so the theme can read the profile that AppRoot already gates on — same
+            // ViewModelStoreOwner and key, so this is the instance AppRoot uses, not a second one.
+            val viewModel: AppRootViewModel = koinViewModel()
+            val darkThemeOn by viewModel.darkThemeOn.collectAsState()
+            AppTheme(darkTheme = darkThemeOn ?: isSystemInDarkTheme()) {
+                AppRoot(startTab = startTab, viewModel = viewModel)
             }
         }
     }

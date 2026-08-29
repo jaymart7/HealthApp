@@ -30,7 +30,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         WaterDayEntity::class,
         ExerciseEntryEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {

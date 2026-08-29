@@ -34,6 +34,7 @@ private fun ProfileEntity.toProfile() = Profile(
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
     addExerciseToBudget = addExerciseToBudget,
+    darkThemeOn = darkThemeOn,
 )
 
 private fun Profile.toEntity() = ProfileEntity(
@@ -56,4 +57,5 @@ private fun Profile.toEntity() = ProfileEntity(
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
     addExerciseToBudget = addExerciseToBudget,
+    darkThemeOn = darkThemeOn,
 )

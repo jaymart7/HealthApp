@@ -34,6 +34,7 @@ class ProfileExportTest {
         photoReminderOn = true,
         waterRemindersOn = true,
         waterGoalGlasses = 10,
+        darkThemeOn = true,
     )
 
     private val foodEntries = listOf(

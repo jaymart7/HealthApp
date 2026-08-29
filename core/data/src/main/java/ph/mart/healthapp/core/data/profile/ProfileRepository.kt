@@ -35,6 +35,10 @@ data class Profile(
      * [ph.mart.healthapp.core.data.exercise.budgetKcal]. On by default; off for users whose
      * activity level already accounts for their workouts. */
     val addExerciseToBudget: Boolean = true,
+    /** null means follow the system setting; it only becomes explicit once the user touches the
+     * Dark mode switch in Profile. A plain `false` default would force light on a device that is
+     * in dark mode. */
+    val darkThemeOn: Boolean? = null,
 )
 
 interface ProfileRepository {
