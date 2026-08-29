@@ -27,6 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
@@ -37,6 +40,7 @@ import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.designsystem.component.CalendarPanel
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
@@ -47,6 +51,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.data.exercise.budgetKcal
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
+import ph.mart.healthapp.feature.food.ui.components.DiaryDateHeader
 import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.DiaryWaterRow
 import ph.mart.healthapp.feature.food.ui.components.FoodSearchPanel
@@ -56,7 +61,7 @@ import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 
 @Composable
 fun FoodScreen(
-    onScanBarcode: () -> Unit,
+    onScanBarcode: (Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: FoodViewModel = koinViewModel(),
 ) {
@@ -76,12 +81,29 @@ private fun FoodContent(
     uiState: FoodUiState,
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
-    onScanBarcode: () -> Unit,
+    onScanBarcode: (Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
 ) {
+    // Back off a past day returns to today rather than leaving the tab — one level, same rule the
+    // sheets and the calendar swap-in follow. On today no handler is registered at all.
+    if (uiState.selectedDate != uiState.today) {
+        val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+        NavigationBackHandler(
+            state = navigationState,
+            onBackCompleted = { onEvent(FoodEvent.OnSelectDate(uiState.today)) },
+        )
+    }
+
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
+                DiaryDateHeader(
+                    selectedDate = uiState.selectedDate,
+                    today = uiState.today,
+                    onSelectDate = { date -> onEvent(FoodEvent.OnSelectDate(date)) },
+                    onOpenCalendar = { state.calendarOpen = true },
+                    modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
+                )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -90,10 +112,10 @@ private fun FoodContent(
                     AppTextField(
                         value = state.searchQuery,
                         onValueChange = { state.searchQuery = it },
-                        placeholder = "Filter today's foods…",
+                        placeholder = "Filter this day's foods…",
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = onScanBarcode, modifier = Modifier.size(44.dp)) {
+                    IconButton(onClick = { onScanBarcode(uiState.selectedDate) }, modifier = Modifier.size(44.dp)) {
                         Icon(
                             imageVector = AppIcons.Barcode,
                             contentDescription = "Scan barcode",
@@ -182,7 +204,27 @@ private fun FoodContent(
             }
 
             if (state.exerciseSheetOpen) {
-                LogExerciseSheet(onDismiss = { state.exerciseSheetOpen = false })
+                LogExerciseSheet(
+                    onDismiss = { state.exerciseSheetOpen = false },
+                    dateEpochDay = uiState.selectedDate,
+                )
+            }
+
+            if (state.calendarOpen) {
+                AppBottomSheet(onDismiss = { state.calendarOpen = false }) {
+                    CalendarPanel(
+                        selectedDate = uiState.selectedDate,
+                        // No dots: which days have entries would cost a query the diary otherwise
+                        // never makes. Add it if the calendar starts feeling blind.
+                        markedDates = emptySet(),
+                        maxDate = uiState.today,
+                        onSelectDate = { date ->
+                            onEvent(FoodEvent.OnSelectDate(date))
+                            state.calendarOpen = false
+                        },
+                        onBack = { state.calendarOpen = false },
+                    )
+                }
             }
         }
     }

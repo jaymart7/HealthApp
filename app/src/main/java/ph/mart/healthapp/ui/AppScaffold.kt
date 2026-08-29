@@ -87,7 +87,8 @@ fun AppScaffold(
 
     // The camera flows are full-bleed surfaces: neither nav bar nor FAB, and they draw under both
     // system bars (appScaffold.js). Every other route is a tab and stops at the bars.
-    val showChrome = topLevelBackStack.backStack.lastOrNull() !in setOf(FoodCaptureRoute, BarcodeScanRoute)
+    val showChrome = topLevelBackStack.backStack.lastOrNull()
+        .let { it != FoodCaptureRoute && it !is BarcodeScanRoute }
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
@@ -127,7 +128,7 @@ fun AppScaffold(
                     homeEntries(scrollState = homeScroll, onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
                     foodEntries(
                         scrollState = foodScroll,
-                        onScanBarcode = { topLevelBackStack.add(BarcodeScanRoute) },
+                        onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },
                         onExitFlow = { topLevelBackStack.removeLast() },
                     )
                     progressEntries(scrollState = progressScroll)

@@ -191,6 +191,21 @@ switch, default on) can turn the credit off — `calculateDailyTargets()` alread
 multiplier, so crediting a workout on top of it can count the same training twice. The
 Mifflin–St Jeor target itself is never touched. Exercise days also count toward the logging streak.
 
+Diary date navigation is built — the food diary shows any past day, not just today. A date
+header (`DiaryDateHeader` in `:feature:food/ui/components`; tapping the label opens the shared
+`CalendarPanel`, now public in `:core:designsystem`, in a sheet) drives one `selectedDate` in
+`FoodViewModel`, and `flatMapLatest` re-points the three dated flows —
+`FoodRepository.observeEntries(date)`, `WaterRepository.observeDay(date)`,
+`ExerciseRepository.observeEntries(date)`. The today-only overloads stayed, because Home and the
+streak genuinely mean today. No schema change: every dated table already stored `date`, and
+`addEntry` already honoured a non-zero `dateEpochDay`, so logging to a past day is a stamp rather
+than a second write path. Four rules are deliberate: forward stepping stops at today (there are no
+planned meals); system back from a past day returns to today instead of leaving the tab; the
+barcode route carries the day (`BarcodeScanRoute(dateEpochDay)`) so a scan lands where you are
+looking, while photo capture stays today-only since the FAB launches it outside the diary's date
+context; and backfilling a past day feeds the logging streak, because `observeLoggedDays()` reads
+the same rows.
+
 Reminders are wired — the four Profile switches now schedule real notifications.
 `ph.mart.healthapp.reminder` in `:app` holds the schedule table and the worker;
 `FitPulseApplication` reconciles WorkManager off `ProfileRepository.observeProfile()`,

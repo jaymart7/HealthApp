@@ -18,11 +18,14 @@ internal class FoodRepositoryImpl(
     private val favoriteDao: FavoriteFoodDao,
 ) : FoodRepository {
 
-    override fun observeTodayEntries(): Flow<List<FoodEntry>> =
-        dao.observeForDate(todayEpochDay()).map { entities -> entities.map { it.toFoodEntry() } }
+    override fun observeTodayEntries(): Flow<List<FoodEntry>> = observeEntries(todayEpochDay())
+
+    override fun observeEntries(dateEpochDay: Long): Flow<List<FoodEntry>> =
+        dao.observeForDate(dateEpochDay).map { entities -> entities.map { it.toFoodEntry() } }
 
     override suspend fun addEntry(entry: FoodEntry) {
-        // A dated entry only ever arrives from an import; everything logged in-app is "today".
+        // A dated entry arrives from an import, or from the diary pointed at a past day; anything
+        // logged without one is "today".
         val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
         dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
     }

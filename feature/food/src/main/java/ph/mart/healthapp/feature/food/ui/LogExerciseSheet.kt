@@ -24,8 +24,14 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.components.ExerciseTypeChipRow
 
+/** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; the FAB's
+ * quick-action sheet leaves it 0, which the repository stamps as today. */
 @Composable
-fun LogExerciseSheet(onDismiss: () -> Unit, viewModel: LogExerciseViewModel = koinViewModel()) {
+fun LogExerciseSheet(
+    onDismiss: () -> Unit,
+    dateEpochDay: Long = 0,
+    viewModel: LogExerciseViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
     val state = rememberLogExerciseState()
     viewModel.collectSideEffect { effect ->
@@ -33,13 +39,20 @@ fun LogExerciseSheet(onDismiss: () -> Unit, viewModel: LogExerciseViewModel = ko
             LogExerciseSideEffect.Saved -> onDismiss()
         }
     }
-    LogExerciseContent(uiState = uiState, state = state, onDismiss = onDismiss, onEvent = viewModel::handleEvent)
+    LogExerciseContent(
+        uiState = uiState,
+        state = state,
+        dateEpochDay = dateEpochDay,
+        onDismiss = onDismiss,
+        onEvent = viewModel::handleEvent,
+    )
 }
 
 @Composable
 private fun LogExerciseContent(
     uiState: LogExerciseUiState,
     state: LogExerciseState,
+    dateEpochDay: Long,
     onDismiss: () -> Unit,
     onEvent: (LogExerciseEvent) -> Unit,
 ) {
@@ -92,7 +105,7 @@ private fun LogExerciseContent(
                 SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
                     label = "Save",
-                    onClick = { onEvent(LogExerciseEvent.OnSave(form)) },
+                    onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay)) },
                     enabled = form.isValid(),
                     modifier = Modifier.weight(1f),
                 )
@@ -108,6 +121,7 @@ private fun LogExerciseSheetPreview() {
         LogExerciseContent(
             uiState = LogExerciseUiState(weightKg = 74.0),
             state = LogExerciseState(form = LogExerciseForm(type = ExerciseType.Run, minutes = 30)),
+            dateEpochDay = 0,
             onDismiss = {},
             onEvent = {},
         )

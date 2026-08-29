@@ -6,9 +6,15 @@ import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 data class FoodUiState(
+    /** The day being shown. Every list below is that day's, and everything logged from this
+     * screen is stamped with it. */
+    val selectedDate: Long = todayEpochDay(),
+    /** Re-read on each emission, so the header still says "Today" after a midnight rollover. */
+    val today: Long = todayEpochDay(),
     val entries: List<FoodEntry> = emptyList(),
     val exercise: List<ExerciseEntry> = emptyList(),
     /** From the profile — whether [exercise]'s burn raises the summary bar's goal. */
@@ -35,8 +41,10 @@ data class AddEntryForm(
 
 fun AddEntryForm.isValid(): Boolean = name.isNotBlank()
 
-fun AddEntryForm.toFoodEntry(): FoodEntry = FoodEntry(
+/** [dateEpochDay] 0 leaves the stamping to the repository, which means today. */
+fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
     name = name,
+    dateEpochDay = dateEpochDay,
     mealType = mealType,
     portionAmount = portionAmount,
     portionUnit = portionUnit,
@@ -60,6 +68,7 @@ fun FoodSuggestion.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
 )
 
 sealed interface FoodEvent {
+    data class OnSelectDate(val dateEpochDay: Long) : FoodEvent
     data class OnAddEntry(val form: AddEntryForm) : FoodEvent
     data class OnDeleteEntry(val id: Long) : FoodEvent
     data class OnToggleFavorite(val suggestion: FoodSuggestion, val favorite: Boolean) : FoodEvent

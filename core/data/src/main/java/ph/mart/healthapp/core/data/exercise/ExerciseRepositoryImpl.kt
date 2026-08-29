@@ -9,11 +9,14 @@ import ph.mart.healthapp.core.data.todayEpochDay
 
 internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : ExerciseRepository {
 
-    override fun observeTodayEntries(): Flow<List<ExerciseEntry>> =
-        dao.observeForDate(todayEpochDay()).map { entities -> entities.map { it.toExerciseEntry() } }
+    override fun observeTodayEntries(): Flow<List<ExerciseEntry>> = observeEntries(todayEpochDay())
+
+    override fun observeEntries(dateEpochDay: Long): Flow<List<ExerciseEntry>> =
+        dao.observeForDate(dateEpochDay).map { entities -> entities.map { it.toExerciseEntry() } }
 
     override suspend fun addEntry(entry: ExerciseEntry) {
-        // A dated entry only ever arrives from an import; everything logged in-app is "today".
+        // A dated entry arrives from an import, or from the diary pointed at a past day; anything
+        // logged without one is "today".
         val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
         dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
     }

@@ -63,6 +63,9 @@ fun List<FoodEntry>.dailyTotals(): DiaryTotals = fold(DiaryTotals(0, 0, 0, 0)) {
 
 interface FoodRepository {
     fun observeTodayEntries(): Flow<List<FoodEntry>>
+
+    /** One day's entries — the diary, which can be pointed at any past day. */
+    fun observeEntries(dateEpochDay: Long): Flow<List<FoodEntry>>
     suspend fun addEntry(entry: FoodEntry)
     suspend fun deleteEntry(id: Long)
 

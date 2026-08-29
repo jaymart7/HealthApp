@@ -53,7 +53,11 @@ private const val MANUAL_SUBTITLE = "We didn't have that product, so this one's 
  * behavior to every state.
  */
 @Composable
-fun BarcodeScanScreen(onExit: () -> Unit, viewModel: BarcodeScanViewModel = koinViewModel()) {
+fun BarcodeScanScreen(
+    dateEpochDay: Long,
+    onExit: () -> Unit,
+    viewModel: BarcodeScanViewModel = koinViewModel(),
+) {
     val state = rememberBarcodeScanScreen()
     val context = LocalContext.current
 
@@ -153,7 +157,8 @@ fun BarcodeScanScreen(onExit: () -> Unit, viewModel: BarcodeScanViewModel = koin
                     subtitle = if (state.originalForm.name.isBlank()) MANUAL_SUBTITLE else FOUND_SUBTITLE,
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
-                    onLogEntry = { viewModel.handleEvent(BarcodeScanEvent.OnLogEntry(state.form.toFoodEntry())) },
+                    // The diary's day, not today — a scan while reviewing Tuesday belongs to Tuesday.
+                    onLogEntry = { viewModel.handleEvent(BarcodeScanEvent.OnLogEntry(state.form.toFoodEntry(dateEpochDay))) },
                     onDiscard = onExit,
                 )
 

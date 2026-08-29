@@ -7,6 +7,9 @@ import ph.mart.healthapp.core.data.streak.STREAK_WINDOW_DAYS
  * for the diary and Home. */
 interface ExerciseRepository {
     fun observeTodayEntries(): Flow<List<ExerciseEntry>>
+
+    /** One day's entries — the diary, which can be pointed at any past day. */
+    fun observeEntries(dateEpochDay: Long): Flow<List<ExerciseEntry>>
     suspend fun addEntry(entry: ExerciseEntry)
     suspend fun deleteEntry(id: Long)
 

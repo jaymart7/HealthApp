@@ -143,8 +143,12 @@ private fun DateRow(selectedDate: Long, onClick: () -> Unit) {
     }
 }
 
+/**
+ * The calendar half of [SheetDatePicker], public because the food diary shows the same grid on its
+ * own — tapping the date header opens it in a sheet, with [onBack] closing that sheet.
+ */
 @Composable
-private fun CalendarPanel(
+fun CalendarPanel(
     selectedDate: Long,
     markedDates: Set<Long>,
     maxDate: Long,

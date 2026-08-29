@@ -25,7 +25,7 @@ class LogExerciseViewModel(
 
     fun handleEvent(event: LogExerciseEvent) {
         when (event) {
-            is LogExerciseEvent.OnSave -> onSave(event.form)
+            is LogExerciseEvent.OnSave -> onSave(event.form, event.dateEpochDay)
         }
     }
 
@@ -45,8 +45,8 @@ class LogExerciseViewModel(
         }.collect { newState -> reduce { newState } }
     }
 
-    private fun onSave(form: LogExerciseForm) = intent {
-        exerciseRepository.addEntry(form.toExerciseEntry())
+    private fun onSave(form: LogExerciseForm, dateEpochDay: Long) = intent {
+        exerciseRepository.addEntry(form.toExerciseEntry(dateEpochDay))
         postSideEffect(LogExerciseSideEffect.Saved)
     }
 }

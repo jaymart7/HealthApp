@@ -9,9 +9,11 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
 
 internal class WaterRepositoryImpl(private val dao: WaterDayDao) : WaterRepository {
 
+    override fun observeToday(): Flow<Int> = observeDay(todayEpochDay())
+
     /** No row yet is 0 glasses, not an empty card — the UI never has to special-case a null. */
-    override fun observeToday(): Flow<Int> =
-        dao.observeForDate(todayEpochDay()).map { it?.glasses ?: 0 }
+    override fun observeDay(dateEpochDay: Long): Flow<Int> =
+        dao.observeForDate(dateEpochDay).map { it?.glasses ?: 0 }
 
     override suspend fun setToday(glasses: Int) {
         upsertDay(WaterDay(dateEpochDay = todayEpochDay(), glasses = glasses))

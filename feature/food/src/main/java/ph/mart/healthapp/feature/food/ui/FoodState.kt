@@ -23,6 +23,7 @@ internal class FoodScreenState(
     expandedMeals: Map<MealType, Boolean> = MealType.entries.associateWith { true },
     exerciseSheetOpen: Boolean = false,
     exerciseExpanded: Boolean = true,
+    calendarOpen: Boolean = false,
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -30,6 +31,7 @@ internal class FoodScreenState(
     var expandedMeals: Map<MealType, Boolean> by mutableStateOf(expandedMeals)
     var exerciseSheetOpen: Boolean by mutableStateOf(exerciseSheetOpen)
     var exerciseExpanded: Boolean by mutableStateOf(exerciseExpanded)
+    var calendarOpen: Boolean by mutableStateOf(calendarOpen)
 
     fun openSheet(mealType: MealType) {
         addForm = AddEntryForm(mealType = mealType)
@@ -53,7 +55,7 @@ internal class FoodScreenState(
                     f.mealType.name, f.name, f.portionAmount, f.portionUnit,
                     f.calories, f.proteinG, f.carbsG, f.fatG,
                 ) + MealType.entries.map { m -> it.expandedMeals[m] != false } +
-                    listOf(it.exerciseSheetOpen, it.exerciseExpanded)
+                    listOf(it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen)
             },
             restore = { saved ->
                 FoodScreenState(
@@ -72,6 +74,7 @@ internal class FoodScreenState(
                     expandedMeals = MealType.entries.mapIndexed { index, m -> m to (saved[10 + index] as Boolean) }.toMap(),
                     exerciseSheetOpen = saved[10 + MealType.entries.size] as Boolean,
                     exerciseExpanded = saved[11 + MealType.entries.size] as Boolean,
+                    calendarOpen = saved[12 + MealType.entries.size] as Boolean,
                 )
             },
         )

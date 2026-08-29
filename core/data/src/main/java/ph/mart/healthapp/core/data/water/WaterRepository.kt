@@ -35,7 +35,10 @@ interface WaterRepository {
     fun observeToday(): Flow<Int>
     suspend fun setToday(glasses: Int)
 
-    /** Backdated write — only an import or the debug seed ever uses it. */
+    /** One day's count — the diary, which can be pointed at any past day. */
+    fun observeDay(dateEpochDay: Long): Flow<Int>
+
+    /** Dated write — an import, the debug seed, or the diary on a day that isn't today. */
     suspend fun upsertDay(day: WaterDay)
 
     /** Every day with a non-zero count, oldest first — for data export. */

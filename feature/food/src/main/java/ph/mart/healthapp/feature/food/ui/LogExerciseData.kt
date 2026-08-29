@@ -30,7 +30,9 @@ fun LogExerciseForm.withEstimate(weightKg: Double): LogExerciseForm =
 
 fun LogExerciseForm.isValid(): Boolean = minutes > 0
 
-fun LogExerciseForm.toExerciseEntry(): ExerciseEntry = ExerciseEntry(
+/** [dateEpochDay] 0 leaves the stamping to the repository, which means today. */
+fun LogExerciseForm.toExerciseEntry(dateEpochDay: Long = 0): ExerciseEntry = ExerciseEntry(
+    dateEpochDay = dateEpochDay,
     type = type,
     name = name.trim(),
     minutes = minutes,
@@ -38,7 +40,8 @@ fun LogExerciseForm.toExerciseEntry(): ExerciseEntry = ExerciseEntry(
 )
 
 sealed interface LogExerciseEvent {
-    data class OnSave(val form: LogExerciseForm) : LogExerciseEvent
+    /** [dateEpochDay] is the diary's selected day — 0 from the FAB, which is always today. */
+    data class OnSave(val form: LogExerciseForm, val dateEpochDay: Long = 0) : LogExerciseEvent
 }
 
 sealed interface LogExerciseSideEffect {
