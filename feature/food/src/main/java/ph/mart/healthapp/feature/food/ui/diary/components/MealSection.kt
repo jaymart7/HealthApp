@@ -47,7 +47,7 @@ internal fun MealSection(
         if (expanded) {
             if (entries.isEmpty()) {
                 Text(
-                    text = "Nothing logged for ${mealType.name} yet.",
+                    text = EMPTY_SECTION_LABEL,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 38.dp, end = 16.dp, bottom = 12.dp),

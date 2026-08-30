@@ -24,6 +24,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.ui.diary.components.EMPTY_SECTION_LABEL
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.food.ui.diary.components.MealSectionHeader
 
@@ -51,7 +52,7 @@ internal fun ExerciseSection(
         if (expanded) {
             if (entries.isEmpty()) {
                 Text(
-                    text = "Nothing logged for Exercise yet.",
+                    text = EMPTY_SECTION_LABEL,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 38.dp, end = 16.dp, bottom = 12.dp),

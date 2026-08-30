@@ -55,6 +55,7 @@ import ph.mart.healthapp.feature.food.ui.diary.components.AddEntrySheet
 import ph.mart.healthapp.feature.food.ui.diary.components.DiaryDateHeader
 import ph.mart.healthapp.feature.food.ui.diary.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.diary.components.DiaryWaterRow
+import ph.mart.healthapp.feature.food.ui.diary.components.EmptyDiaryDay
 import ph.mart.healthapp.feature.food.ui.diary.components.MealSection
 import ph.mart.healthapp.feature.food.ui.diary.components.SaveMealSheet
 import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
@@ -142,7 +143,7 @@ private fun FoodContent(
 
                 uiState.targets?.let { targets ->
                     DiarySummaryBar(
-                        consumedKcal = uiState.entries.dailyTotals().calories,
+                        consumed = uiState.entries.dailyTotals(),
                         goalKcal = budgetKcal(
                             targetKcal = targets.calories,
                             burnedKcal = dayBurnedKcal(uiState.exercise, uiState.steps),
@@ -168,6 +169,13 @@ private fun FoodContent(
                         onSetGlasses = { glasses -> onEvent(FoodEvent.OnSetWaterGlasses(glasses)) },
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     )
+
+                    // One mascot and one sentence in place of five identical "nothing logged"
+                    // lines. Only when the whole day is bare — a single empty section between two
+                    // full ones is not a first-run moment, it is just an empty section.
+                    if (uiState.entries.isEmpty() && uiState.exercise.isEmpty()) {
+                        EmptyDiaryDay(isToday = uiState.selectedDate == uiState.today)
+                    }
 
                     MealType.entries.forEach { mealType ->
                         val mealEntries = uiState.entries.filter { it.mealType == mealType }

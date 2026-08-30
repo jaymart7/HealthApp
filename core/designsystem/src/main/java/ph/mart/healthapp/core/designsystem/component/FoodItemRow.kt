@@ -15,6 +15,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -79,7 +85,7 @@ private fun DisplayRow(
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(text = name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             Text(
-                text = "${portionAmount.formatPortion()} $portionUnit · P ${proteinG}g · C ${carbsG}g · F ${fatG}g",
+                text = macroLine(portionAmount, portionUnit, proteinG, carbsG, fatG),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -169,6 +175,36 @@ private fun EditableRow(
             onValueChange = { onCaloriesChange(it.toIntOrNull() ?: 0) },
         )
     }
+}
+
+/**
+ * "150 g · P 32g · C 2g · F 8g", with each macro's initial in that macro's own colour.
+ *
+ * The app has a fixed colour for protein, carbs and fat and spends it on bars and charts, while
+ * the most-repeated element in the whole product — a diary row — said all three in the same grey.
+ * Colouring the *letter* rather than the number is what keeps the line quiet: the letter is the
+ * label the Fixed Macro Rule requires beside every macro colour, so the colour lands exactly on
+ * the glyph that already carries the meaning, and the figures stay one uniform weight to scan
+ * down. SemiBold because sage and moss are neighbours at 12sp, and a marker has to read as chosen.
+ */
+@Composable
+private fun macroLine(
+    portionAmount: Double,
+    portionUnit: String,
+    proteinG: Int,
+    carbsG: Int,
+    fatG: Int,
+): AnnotatedString = buildAnnotatedString {
+    append("${portionAmount.formatPortion()} $portionUnit")
+    macroToken("P", proteinG, MaterialTheme.colorScheme.primary)
+    macroToken("C", carbsG, MaterialTheme.colorScheme.tertiary)
+    macroToken("F", fatG, MaterialTheme.colorScheme.secondary)
+}
+
+private fun AnnotatedString.Builder.macroToken(initial: String, grams: Int, color: Color) {
+    append(" · ")
+    withStyle(SpanStyle(color = color, fontWeight = FontWeight.SemiBold)) { append(initial) }
+    append(" ${grams}g")
 }
 
 private fun Double.formatPortion(): String = if (this == this.toLong().toDouble()) toLong().toString() else toString()
