@@ -18,7 +18,8 @@ sealed interface FoodSearchSideEffect
 /** Below this a query matches half the database, and every keystroke would spend a request. */
 private const val MIN_QUERY_LENGTH = 2
 
-/** Open Food Facts rate-limits free-text search; this keeps ordinary typing to one request. */
+/** FoodData Central's hourly budget is shared by every install; this keeps ordinary typing to
+ * one request. */
 private const val DEBOUNCE_MS = 400L
 
 /**

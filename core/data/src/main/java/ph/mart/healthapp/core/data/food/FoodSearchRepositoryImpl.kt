@@ -3,19 +3,21 @@ package ph.mart.healthapp.core.data.food
 import java.net.URLEncoder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonObject
 
-private const val ENDPOINT = "https://world.openfoodfacts.org/cgi/search.pl" +
-    "?search_terms=%s&search_simple=1&action=process&json=1&page_size=20" +
-    "&fields=product_name,nutriments"
+/**
+ * Ten hits, not the panel's five: nameless rows are dropped after the fact, so there has to be
+ * slack. FDC ships the whole food record — every nutrient plus the full ingredients text, roughly
+ * 21 KB each — and its `nutrients=` filter is ignored on this endpoint, so `pageSize` is the only
+ * thing that keeps a debounced keystroke burst off a quarter-megabyte response.
+ */
+private const val PAGE_SIZE = 10
 
 /**
- * Free-text product search, same transport and product mapping as [BarcodeLookupRepositoryImpl].
- *
- * ponytail: `cgi/search.pl` is the legacy free-text endpoint and Open Food Facts rate-limits it
- * (~10 requests/minute). The caller's debounce keeps normal typing under that; move to the
- * SearchALicious host (search.openfoodfacts.org) if it ever bites.
+ * Free-text food search, same transport and product mapping as [BarcodeLookupRepositoryImpl].
+ * No `dataType` filter: branded packages and whole foods ("Broccoli, raw") both belong in the
+ * results, ranked by FDC's own relevance.
  */
 internal class FoodSearchRepositoryImpl : FoodSearchRepository {
 
@@ -24,21 +26,19 @@ internal class FoodSearchRepositoryImpl : FoodSearchRepository {
         val terms = URLEncoder.encode(query.trim(), "UTF-8")
         if (terms.isEmpty()) return@withContext FoodSearchResult.Empty
 
-        when (val response = openFoodFactsGet(ENDPOINT.format(terms))) {
-            is OffResponse.Ok -> parseOpenFoodFactsSearch(response.body)
-            OffResponse.NotFound -> FoodSearchResult.Empty
-            OffResponse.Failed -> FoodSearchResult.Failed
+        when (val response = fdcGet("foods/search", "query=$terms&pageSize=$PAGE_SIZE")) {
+            is FdcResponse.Ok -> parseFdcSearch(response.body)
+            FdcResponse.Failed -> FoodSearchResult.Failed
         }
     }
 }
 
 /** Split out of the network call so the response shape is unit-testable without a socket. */
-internal fun parseOpenFoodFactsSearch(body: String): FoodSearchResult {
-    val root = runCatching { offJson.parseToJsonElement(body).jsonObject }.getOrNull()
+internal fun parseFdcSearch(body: String): FoodSearchResult {
+    val root = runCatching { fdcJson.parseToJsonElement(body).jsonObject }.getOrNull()
         ?: return FoodSearchResult.Failed
-    val products = runCatching { root["products"]?.jsonArray }.getOrNull()
-        ?: return FoodSearchResult.Failed
+    val foods = root["foods"] as? JsonArray ?: return FoodSearchResult.Failed
 
-    val hits = products.mapNotNull { runCatching { it.jsonObject.toScannedProduct() }.getOrNull() }
+    val hits = foods.mapNotNull { runCatching { it.jsonObject.toScannedProduct() }.getOrNull() }
     return if (hits.isEmpty()) FoodSearchResult.Empty else FoodSearchResult.Hits(hits)
 }

@@ -12,6 +12,20 @@ android {
 
     defaultConfig {
         minSdk = 24
+
+        // FoodData Central key. Lives in ~/.gradle/gradle.properties (untracked, outside the
+        // repo) as `fdcApiKey` — never in this file, which is checked in, the same rule the
+        // release signing config follows. Absent it the build still compiles and food search
+        // reports Failed, so a fresh clone and CI don't break.
+        buildConfigField(
+            "String",
+            "FDC_API_KEY",
+            "\"${providers.gradleProperty("fdcApiKey").orNull.orEmpty()}\"",
+        )
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     compileOptions {

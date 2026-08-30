@@ -23,7 +23,7 @@ import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 /**
  * One ingredient's fields, plus the button that commits it to the recipe. Identical in shape to the
  * add-entry sheet's form — including [FoodSearchPanel], which owns its own ViewModel and so drops
- * in for free, letting an ingredient come from Open Food Facts instead of the keyboard.
+ * in for free, letting an ingredient come from FoodData Central instead of the keyboard.
  */
 @Composable
 internal fun RecipeIngredientEditor(

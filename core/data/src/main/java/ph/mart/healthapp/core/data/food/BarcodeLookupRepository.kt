@@ -6,7 +6,7 @@ package ph.mart.healthapp.core.data.food
  * matched a database row or it didn't, and reusing the AI type would drag the AI accent treatment
  * onto a deterministic result.
  *
- * Values are always per 100 g, the unit Open Food Facts stores.
+ * Values are always per 100 g, the unit FoodData Central reports search nutrients in.
  */
 data class ScannedProduct(
     val name: String,

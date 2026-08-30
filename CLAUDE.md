@@ -29,8 +29,8 @@ so its own "Deferred" list is stale. For what components actually exist, read
 - **Navigation:** Navigation 3 — use skill `/navigation-3`
 - **Predictive back:** `androidx.navigationevent` (see below)
 - **Also in use:** ML Kit barcode scanning, Firebase AI + App Check,
-  WorkManager (reminders), Open Food Facts over `HttpURLConnection` +
-  kotlinx.serialization — no HTTP client dependency, don't add one
+  WorkManager (reminders), USDA FoodData Central (`api.nal.usda.gov/fdc/v1`) over
+  `HttpURLConnection` + kotlinx.serialization — no HTTP client dependency, don't add one
 - **Google Health API** (`health.googleapis.com/v4`, the Fitbit Web API's
   successor — *not* Health Connect, *not* Google Fit): REST over the same
   `HttpURLConnection`, OAuth via `play-services-auth`'s Authorization API
@@ -131,6 +131,26 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **The barcode route carries the day** (`BarcodeScanRoute(dateEpochDay)`) so a
   scan lands on the day you're looking at; photo capture stays today-only,
   because the FAB launches it outside the diary's date context.
+- **FoodData Central has no barcode endpoint, and the `gtinUpc` check is what makes a scan
+  trustworthy.** A scan is a `foods/search` restricted to `dataType=Branded`, and search is not a
+  lookup: an unlisted code usually answers HTTP 200 with an empty `foods`, but a code that tokenizes
+  to nothing (all zeros, say) makes FDC fall back to relevance and hand back the top of the entire
+  branded database — 433,403 "hits", every one of them a real product.
+  `parseFdcProduct` therefore compares `gtinUpc` back against the scanned code, leading zeros
+  stripped on both sides, and that comparison is the only thing standing between an unknown
+  package and a diary row for someone else's chicken nuggets — never "simplify" it away as a
+  redundant check on a result the server already filtered. The leading-zero stripping is not
+  cosmetic either: FDC stores `gtinUpc` at whatever width its source used (`028400642255` for one
+  product, `0099447210127` for the next) and matches query tokens exactly, so the lookup asks for
+  every zero-padding at once in one unquoted query, which FDC ORs. Search, by contrast, sets no
+  `dataType` — whole foods and branded packages both belong in the results.
+- **The FDC key is a gradle property, and its budget is app-wide.** `fdcApiKey` lives in
+  `~/.gradle/gradle.properties` and reaches the code as `BuildConfig.FDC_API_KEY` in `:core:data`,
+  the same untracked-and-degrade-gracefully rule the release signing config follows — absent it the
+  build still compiles and search reports `Failed`. It is one signed key shared by every install,
+  so the 3600 requests/hour ceiling is the *app's*, not each user's; that is what the search
+  debounce is protecting, and `pageSize` is capped at 10 because FDC ignores `nutrients=` on this
+  endpoint and ships ~21 KB per food.
 - **The today-only repository overloads are deliberate** — Home and the streak
   genuinely mean today, so don't collapse them into the dated ones.
 - **The diary's top field is a local filter over logged entries**, not a
@@ -347,6 +367,9 @@ because of that, not because it was the nicest design available.
 
 ## Backlog
 
+- FoodData Central runs on one signed key shipped in the APK (extractable, and its 3600 req/hour
+  budget is shared by every install). A proxy holding the key is the upgrade path if either the
+  ceiling or the exposure starts to matter.
 - Final mascot illustration (the geometric placeholder "Bibo" is used throughout).
 - Google Health: verification is *not* done. Needs the Cloud project's consent screen branded
   for FitPulse, an Android OAuth client (package + debug **and** release SHA-1) in that same

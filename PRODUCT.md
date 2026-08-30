@@ -43,7 +43,7 @@ Four things a neighboring tracker could not truthfully claim at once:
 
 - **Short, frequent, in-the-moment sessions.** Logging happens at the table, at the gym,
   on the scale — not at a desk. One-handed reach and glanceability matter more than density.
-- **Network is optional and often absent.** AI photo analysis and Open Food Facts lookups
+- **Network is optional and often absent.** AI photo analysis and FoodData Central lookups
   need the network; every one of them degrades to a manual-entry path.
 - **The day is the unit.** Home means today. The diary can walk backward through any past
   day but never forward past today — there are no planned meals.
@@ -56,7 +56,7 @@ Confirmed and shipping:
 
 - Onboarding that computes targets from Mifflin–St Jeor (age, sex, height, weight,
   activity, goal), with a 1200/1500 kcal safety floor the user can override past a warning.
-- Food diary by meal, with AI photo capture, barcode scanning (ML Kit + Open Food Facts),
+- Food diary by meal, with AI photo capture, barcode scanning (ML Kit + FoodData Central),
   manual search, and a local filter over already-logged entries.
 - Water, exercise logging (MET-estimated burn, editable, with an opt-out calorie credit),
   weight and body measurements, progress photos with comparison.
@@ -68,7 +68,7 @@ Constraints that bind future work:
 - **Offline-first.** Room is the source of truth for all core data. Soft delete only.
 - **AI requires network** (Firebase AI Logic / Gemini + App Check) and must always have a
   manual fallback.
-- **No HTTP client dependency.** Open Food Facts goes over `HttpURLConnection` +
+- **No HTTP client dependency.** FoodData Central goes over `HttpURLConnection` +
   kotlinx.serialization, deliberately.
 - **minSdk 24.** Old and small devices are in scope.
 - Architecture, module boundaries, theming rules, and the decision log live in `CLAUDE.md`
