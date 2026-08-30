@@ -1,0 +1,195 @@
+package ph.mart.healthapp.widget
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.glance.GlanceModifier
+import androidx.glance.GlanceTheme
+import androidx.glance.LocalContext
+import androidx.glance.LocalSize
+import androidx.glance.action.clickable
+import androidx.glance.appwidget.LinearProgressIndicator
+import androidx.glance.appwidget.action.actionRunCallback
+import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.appwidget.appWidgetBackground
+import androidx.glance.appwidget.components.FilledButton
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.background
+import androidx.glance.layout.Alignment
+import androidx.glance.layout.Column
+import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxSize
+import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
+import androidx.glance.layout.padding
+import androidx.glance.text.FontWeight
+import androidx.glance.text.Text
+import androidx.glance.text.TextStyle
+import ph.mart.healthapp.MainActivity
+import ph.mart.healthapp.core.data.health.formatSteps
+import ph.mart.healthapp.core.data.water.waterVolumeLabel
+import ph.mart.healthapp.core.navigation.route.TopLevelDestination
+import ph.mart.healthapp.reminder.EXTRA_TAB
+
+private val WATER_ROW_MIN_HEIGHT = 100.dp
+
+/**
+ * `AppCard`'s chrome, rebuilt with the tokens Glance exposes: 20dp corners, 16dp padding, and
+ * `surface` in place of `surfaceContainerLow`, which Glance's `ColorProviders` has no slot for.
+ * No hex is written here — every color still comes from the frozen palette by way of the schemes.
+ */
+@Composable
+internal fun TodayWidgetContent(state: TodayWidgetState) {
+    Column(
+        modifier = GlanceModifier
+            .fillMaxSize()
+            .appWidgetBackground()
+            .background(GlanceTheme.colors.surface)
+            .cornerRadius(20.dp)
+            .padding(16.dp)
+            .clickable(actionStartActivity(openAppIntent(LocalContext.current, TopLevelDestination.Home))),
+    ) {
+        if (state.onboarding) {
+            OnboardingContent()
+            return@Column
+        }
+        CaloriesContent(state)
+        if (LocalSize.current.height >= WATER_ROW_MIN_HEIGHT) {
+            Spacer(GlanceModifier.height(12.dp))
+            WaterRow(state)
+        }
+    }
+}
+
+/** Nothing to report until onboarding writes a profile — no targets exist to divide by. */
+@Composable
+private fun OnboardingContent() {
+    Column(
+        modifier = GlanceModifier.fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = "Set up FitPulse to see today's numbers.",
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
+        )
+    }
+}
+
+@Composable
+private fun CaloriesContent(state: TodayWidgetState) {
+    Row(
+        modifier = GlanceModifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Today",
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+            modifier = GlanceModifier.defaultWeight(),
+        )
+        if (state.streakDays > 0) {
+            Text(
+                text = "${state.streakDays}-day streak",
+                style = TextStyle(
+                    color = GlanceTheme.colors.primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+            )
+        }
+    }
+    Spacer(GlanceModifier.height(4.dp))
+    Row(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .clickable(actionStartActivity(openAppIntent(LocalContext.current, TopLevelDestination.Food))),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Text(
+            text = "${state.consumedKcal}",
+            style = TextStyle(
+                color = GlanceTheme.colors.onSurface,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+            ),
+        )
+        Text(
+            text = " / ${state.budgetKcal} kcal",
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
+        )
+    }
+    Spacer(GlanceModifier.height(8.dp))
+    LinearProgressIndicator(
+        progress = state.progress,
+        color = GlanceTheme.colors.primary,
+        backgroundColor = GlanceTheme.colors.surfaceVariant,
+        modifier = GlanceModifier.fillMaxWidth(),
+    )
+    Spacer(GlanceModifier.height(4.dp))
+    val remaining = state.remainingKcal
+    Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            // Over budget is stated, not hidden — but as a fact, not a scolding, and in
+            // onSurfaceVariant rather than error: a day over target is not a failure state.
+            text = if (remaining >= 0) "$remaining kcal left" else "${-remaining} kcal over",
+            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+            modifier = GlanceModifier.defaultWeight(),
+        )
+        // Omitted rather than zeroed when Google Health isn't connected, same as Home's card.
+        if (state.steps > 0) {
+            Text(
+                text = "${formatSteps(state.steps)} steps",
+                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WaterRow(state: TodayWidgetState) {
+    Row(
+        modifier = GlanceModifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Water ${state.glasses} / ${state.goalGlasses} · " +
+                waterVolumeLabel(state.glasses, state.unit),
+            style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp),
+            modifier = GlanceModifier.defaultWeight(),
+        )
+        if (state.waterGoalReached) {
+            Text(
+                text = "Goal hit",
+                style = TextStyle(
+                    color = GlanceTheme.colors.primary,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
+            )
+        } else {
+            FilledButton(
+                text = "+1 glass",
+                onClick = actionRunCallback<AddGlassAction>(),
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+/**
+ * Reuses the reminder notification's extra, so a widget tap and a notification tap land on a tab
+ * the same way — [MainActivity] already reads it.
+ *
+ * The distinct `data` URI is load-bearing: `Intent.filterEquals` ignores extras, so the two tab
+ * intents would otherwise be the same intent, and Glance would conflate their PendingIntents into
+ * whichever was created last.
+ */
+private fun openAppIntent(context: Context, tab: TopLevelDestination) =
+    Intent(context, MainActivity::class.java)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        .setData(Uri.parse("fitpulse://widget/${tab.name}"))
+        .putExtra(EXTRA_TAB, tab.name)
