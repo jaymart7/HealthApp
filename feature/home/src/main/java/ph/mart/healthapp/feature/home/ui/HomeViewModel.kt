@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.SleepRepository
@@ -17,13 +18,14 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.streak.weightProgressKg
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
- * Near-read-only container: the water glasses and the day's mood/energy are the only things this
- * screen writes. The FAB's sheets own every other write path.
+ * Near-read-only container: the water glasses, the day's mood/energy and the fasting timer are the
+ * only things this screen writes. The FAB's sheets own every other write path.
  *
  * All five flows are combined rather than snapshotted: this is what stops Home from drifting from
  * the rest of the app (the prototype's Home briefly read a hardcoded profile instead of the shared
@@ -31,8 +33,9 @@ import ph.mart.healthapp.core.data.todayEpochDay
  *
  * The streak's four day-series ride in a second combine chained onto the first — `combine` only
  * has typed overloads up to five flows, and the streak's inputs are independent of the day's
- * totals anyway. Today's exercise and today's mood join at that same outer combine for the same
- * reason: the inner one is already at the cap.
+ * totals anyway. Today's exercise joins at that same outer combine for the same reason: the inner
+ * one is already at the cap. Mood pairs with the running fast, and sleep with steps, so that outer
+ * combine stays inside the arity too.
  */
 class HomeViewModel(
     profileRepository: ProfileRepository,
@@ -41,6 +44,7 @@ class HomeViewModel(
     private val waterRepository: WaterRepository,
     exerciseRepository: ExerciseRepository,
     private val moodRepository: MoodRepository,
+    private val fastingRepository: FastingRepository,
     sleepRepository: SleepRepository,
     stepsRepository: StepsRepository,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
@@ -52,6 +56,7 @@ class HomeViewModel(
             progressRepository,
             exerciseRepository,
             moodRepository,
+            fastingRepository,
             sleepRepository,
             stepsRepository,
         )
@@ -62,11 +67,20 @@ class HomeViewModel(
             is HomeEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
             is HomeEvent.OnSetMood -> onSetMood(event.level)
             is HomeEvent.OnSetEnergy -> onSetEnergy(event.level)
+            HomeEvent.OnStartFast -> onStartFast()
+            HomeEvent.OnEndFast -> intent { fastingRepository.stop() }
+            HomeEvent.OnDiscardFast -> intent { fastingRepository.discardActive() }
         }
     }
 
     private fun onSetWaterGlasses(glasses: Int) = intent {
         waterRepository.setToday(glasses)
+    }
+
+    /** The goal is read off the profile here rather than passed down from the card, so the value
+     * snapshotted onto the row is always the one Room holds — see `FastSessionEntity`. */
+    private fun onStartFast() = intent {
+        fastingRepository.start(state.fastingGoalHours)
     }
 
     private fun onSetMood(level: Int) = intent {
@@ -83,10 +97,11 @@ class HomeViewModel(
         progressRepository: ProgressRepository,
         exerciseRepository: ExerciseRepository,
         moodRepository: MoodRepository,
+        fastingRepository: FastingRepository,
         sleepRepository: SleepRepository,
         stepsRepository: StepsRepository,
     ) = intent {
-        val today = combine(
+        val todayState = combine(
             profileRepository.observeProfile(),
             foodRepository.observeTodayEntries(),
             progressRepository.observeWeightEntries(),
@@ -101,6 +116,7 @@ class HomeViewModel(
                 lastPhotoEpochDay = photos.maxOfOrNull { it.dateEpochDay },
                 waterGlasses = waterGlasses,
                 waterGoalGlasses = profile?.waterGoalGlasses ?: DEFAULT_WATER_GOAL_GLASSES,
+                fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
             )
         }
 
@@ -120,13 +136,21 @@ class HomeViewModel(
             ::Pair,
         )
 
+        // Mood and the running fast pair up for the same reason [fromWatch] does: the outer
+        // combine below is already at the five-flow arity the typed overloads stop at.
+        val moodAndFast = combine(
+            moodRepository.observeToday(),
+            fastingRepository.observeActive(),
+            ::Pair,
+        )
+
         combine(
-            today,
+            todayState,
             activeDays,
             exerciseRepository.observeTodayEntries(),
-            moodRepository.observeToday(),
+            moodAndFast,
             fromWatch,
-        ) { state, days, exercise, mood, (lastNight, steps) ->
+        ) { state, days, exercise, (mood, activeFast), (lastNight, steps) ->
             state.copy(
                 loaded = true,
                 // Steps fold in here rather than in budgetKcal(), which stays the single place
@@ -137,6 +161,7 @@ class HomeViewModel(
                 steps = steps,
                 moodLevel = mood.mood,
                 energyLevel = mood.energy,
+                activeFast = activeFast,
                 addExerciseToBudget = state.profile?.addExerciseToBudget != false,
                 // Read on every emission, not once at flow-construction time, so the streak
                 // doesn't freeze at whatever day the app happened to be opened.

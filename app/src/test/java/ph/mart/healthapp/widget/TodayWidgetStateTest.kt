@@ -2,10 +2,12 @@ package ph.mart.healthapp.widget
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.profile.ActivityLevel
@@ -38,6 +40,8 @@ class TodayWidgetStateTest {
         burned: Int = 0,
         steps: StepDay? = null,
         addExercise: Boolean = true,
+        activeFast: FastSession? = null,
+        nowMillis: Long = NOW,
     ) = todayWidgetState(
         profile = profile.copy(addExerciseToBudget = addExercise),
         totals = DiaryTotals(consumed, 0, 0, 0),
@@ -49,6 +53,8 @@ class TodayWidgetStateTest {
         },
         steps = steps,
         streakDays = 3,
+        activeFast = activeFast,
+        nowMillis = nowMillis,
     )
 
     @Test
@@ -106,5 +112,33 @@ class TodayWidgetStateTest {
         val atGoal = stateFor(glasses = 8)
         assertEquals(8, atGoal.glassesAfterAdd)
         assertTrue(atGoal.waterGoalReached)
+    }
+
+    @Test
+    fun `no running fast leaves the line out rather than reporting a zero`() {
+        val state = stateFor()
+        assertNull(state.fastingUntilMillis)
+        assertFalse(state.fastingGoalReached)
+    }
+
+    /** A target *time*, not an elapsed duration: Glance can't tick, so an elapsed figure would go
+     * stale between the widget's half-hourly updates. */
+    @Test
+    fun `a running fast carries its target time, not its elapsed time`() {
+        val start = NOW - 9 * HOUR
+        val state = stateFor(activeFast = FastSession(startMillis = start, goalHours = 16))
+        assertEquals(start + 16 * HOUR, state.fastingUntilMillis)
+        assertFalse(state.fastingGoalReached)
+    }
+
+    @Test
+    fun `a fast past its target reports it as reached`() {
+        val state = stateFor(activeFast = FastSession(startMillis = NOW - 17 * HOUR, goalHours = 16))
+        assertTrue(state.fastingGoalReached)
+    }
+
+    private companion object {
+        const val HOUR = 3_600_000L
+        const val NOW = 1_700_000_000_000L
     }
 }

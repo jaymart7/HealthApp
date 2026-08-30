@@ -6,6 +6,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.mood.MoodDay
@@ -62,10 +64,16 @@ class ProfileExportTest {
     // The second day is mood-only — 0 is "not tapped", and it has to survive the round trip as 0
     // rather than being dropped or promoted to a score.
     private val moodDays = listOf(MoodDay(20_000, mood = 4, energy = 3), MoodDay(20_001, mood = 2, energy = 0))
+    // The third is still running: history only, so it must not reach the file.
+    private val fastSessions = listOf(
+        FastSession(id = 4, startMillis = 1_700_000_000_000L, endMillis = 1_700_057_600_000L, goalHours = 16),
+        FastSession(id = 5, startMillis = 1_700_100_000_000L, endMillis = 1_700_165_600_000L, goalHours = 18),
+        FastSession(id = 6, startMillis = 1_700_200_000_000L, endMillis = null, goalHours = 16),
+    )
 
     @Test
-    fun `round trips profile food weight measurements water exercise and mood`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays)
+    fun `round trips profile food weight measurements water exercise mood and fasting`() {
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(profile, payload.profile)
@@ -76,11 +84,13 @@ class ProfileExportTest {
         // The row id is storage-local and deliberately not exported; everything else survives.
         assertEquals(foodEntries.map { it.copy(id = 0) }, payload.foodEntries)
         assertEquals(exercises.map { it.copy(id = 0) }, payload.exercises)
+        // The running fast is dropped and the ids go with the storage they came from.
+        assertEquals(fastSessions.take(2).map { it.copy(id = 0) }, payload.fastSessions)
     }
 
     @Test
     fun `export carries no photo data`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions)
         assertFalse(json.contains("filePath"))
         assertFalse(json.contains("\"photos\""))
     }
@@ -93,9 +103,21 @@ class ProfileExportTest {
 
     @Test
     fun `unrecognized enum value fails`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions)
             .replace("\"Waist\"", "\"Elbow\"")
         assertTrue(parseExport(json).isFailure)
+    }
+
+    /** A v5 file — the schema one version back, written before fasting existed. Same guarantee as
+     * the v1 case below, checked at the boundary that just moved. */
+    @Test
+    fun `a v5 file without fasting still imports`() {
+        val v5 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, emptyList())
+            .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 5")
+        val payload = parseExport(v5).getOrThrow()
+
+        assertEquals(emptyList<FastSession>(), payload.fastSessions)
+        assertEquals(moodDays, payload.moodDays)
     }
 
     /** A file written before water existed must still import — every field added since is
@@ -119,14 +141,16 @@ class ProfileExportTest {
         assertEquals(emptyList<WaterDay>(), payload.waterDays)
         assertEquals(emptyList<ExerciseEntry>(), payload.exercises)
         assertEquals(emptyList<MoodDay>(), payload.moodDays)
+        assertEquals(emptyList<FastSession>(), payload.fastSessions)
         assertEquals(DEFAULT_WATER_GOAL_GLASSES, payload.profile?.waterGoalGlasses)
+        assertEquals(DEFAULT_FAST_GOAL_HOURS, payload.profile?.fastingGoalHours)
         // Defaulted on, so an older file doesn't silently drop the exercise credit.
         assertEquals(true, payload.profile?.addExerciseToBudget)
     }
 
     @Test
     fun `newer schema version is rejected`() {
-        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 99")
         assertTrue(parseExport(json).isFailure)
     }

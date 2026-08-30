@@ -5,6 +5,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.mood.MoodDay
@@ -38,14 +40,16 @@ internal data class FitPulseExport(
     val waterDays: List<ExportWaterDay> = emptyList(),
     val exercises: List<ExportExercise> = emptyList(),
     val moodDays: List<ExportMoodDay> = emptyList(),
+    val fastSessions: List<ExportFastSession> = emptyList(),
 )
 
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
  * [FitPulseExport.exercises] and [ExportProfile.addExerciseToBudget]; 4 added
- * [ExportProfile.darkThemeOn]; 5 added [FitPulseExport.moodDays].
+ * [ExportProfile.darkThemeOn]; 5 added [FitPulseExport.moodDays]; 6 added
+ * [FitPulseExport.fastSessions] and the profile's fasting fields.
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 5
+internal const val EXPORT_SCHEMA_VERSION = 6
 
 @Serializable
 internal data class ExportProfile(
@@ -68,6 +72,8 @@ internal data class ExportProfile(
     val waterRemindersOn: Boolean = false,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     val addExerciseToBudget: Boolean = true,
+    val fastingGoalHours: Int = DEFAULT_FAST_GOAL_HOURS,
+    val fastingRemindersOn: Boolean = false,
     val darkThemeOn: Boolean? = null,
 )
 
@@ -107,6 +113,12 @@ internal data class ExportExercise(
 @Serializable
 internal data class ExportMoodDay(val dateEpochDay: Long, val mood: Int, val energy: Int)
 
+/** Completed fasts only — `endMillis` is non-null here because a running fast is a timer, not
+ * history, and restoring one on another device would resume a clock nobody started there. The row
+ * id is dropped: it is an autoGenerate key with no meaning outside the database it came from. */
+@Serializable
+internal data class ExportFastSession(val startMillis: Long, val endMillis: Long, val goalHours: Int)
+
 /** What an import hands back to the ViewModel — domain types only, already validated. */
 internal data class ImportPayload(
     val profile: Profile?,
@@ -116,6 +128,7 @@ internal data class ImportPayload(
     val waterDays: List<WaterDay>,
     val exercises: List<ExerciseEntry>,
     val moodDays: List<MoodDay>,
+    val fastSessions: List<FastSession>,
 )
 
 private val json = Json {
@@ -132,6 +145,7 @@ internal fun buildExportJson(
     waterDays: List<WaterDay>,
     exercises: List<ExerciseEntry>,
     moodDays: List<MoodDay>,
+    fastSessions: List<FastSession>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
@@ -143,6 +157,9 @@ internal fun buildExportJson(
             ExportExercise(it.dateEpochDay, it.type.name, it.name, it.minutes, it.burnedKcal)
         },
         moodDays = moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
+        fastSessions = fastSessions.mapNotNull { session ->
+            session.endMillis?.let { ExportFastSession(session.startMillis, it, session.goalHours) }
+        },
     ),
 )
 
@@ -171,6 +188,9 @@ internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
             )
         },
         moodDays = export.moodDays.map { MoodDay(it.dateEpochDay, it.mood, it.energy) },
+        fastSessions = export.fastSessions.map {
+            FastSession(startMillis = it.startMillis, endMillis = it.endMillis, goalHours = it.goalHours)
+        },
     )
 }
 
@@ -197,6 +217,8 @@ private fun Profile.toExport() = ExportProfile(
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
     addExerciseToBudget = addExerciseToBudget,
+    fastingGoalHours = fastingGoalHours,
+    fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
 )
 
@@ -220,6 +242,8 @@ private fun ExportProfile.toProfile() = Profile(
     waterRemindersOn = waterRemindersOn,
     waterGoalGlasses = waterGoalGlasses,
     addExerciseToBudget = addExerciseToBudget,
+    fastingGoalHours = fastingGoalHours,
+    fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
 )
 

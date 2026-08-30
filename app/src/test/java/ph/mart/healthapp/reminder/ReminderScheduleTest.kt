@@ -3,8 +3,10 @@ package ph.mart.healthapp.reminder
 import java.util.Calendar
 import java.util.TimeZone
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.fasting.FastSession
 
 private val ZONE: TimeZone = TimeZone.getTimeZone("Asia/Manila")
 
@@ -59,5 +61,39 @@ class ReminderScheduleTest {
     fun `weekly early on the Monday itself runs that same morning`() {
         val now = at(2026, Calendar.AUGUST, 24, 7)
         assertEquals("2026-08-24 08:00", describe(nextRunMillis(hour = 8, dayOfWeek = Calendar.MONDAY, nowMillis = now, zone = ZONE)))
+    }
+
+    // The fasting goal is the one one-shot: its target comes from when the user stopped eating,
+    // not from a clock, so it has no `nextRunMillis` to answer to.
+
+    @Test
+    fun `the fasting target is the fast's own snapshotted goal`() {
+        val start = at(2026, Calendar.AUGUST, 24, 20)
+        val target = fastingGoalTargetMillis(FastSession(startMillis = start, goalHours = 16), true)
+        assertEquals("2026-08-25 12:00", describe(target!!))
+    }
+
+    @Test
+    fun `no fast and a switched-off reminder both schedule nothing`() {
+        val start = at(2026, Calendar.AUGUST, 24, 20)
+        assertNull(fastingGoalTargetMillis(null, true))
+        assertNull(fastingGoalTargetMillis(FastSession(startMillis = start, goalHours = 16), false))
+    }
+
+    @Test
+    fun `the delay is measured to the target and stays positive`() {
+        val now = at(2026, Calendar.AUGUST, 24, 20)
+        val target = at(2026, Calendar.AUGUST, 25, 12)
+        assertEquals(16 * 3_600_000L, fastingGoalDelayMillis(target, now))
+    }
+
+    /** A target already past means the work enqueued when the fast started has fired; scheduling
+     * again on the next profile emission would be a duplicate. */
+    @Test
+    fun `a target already in the past schedules nothing`() {
+        val target = at(2026, Calendar.AUGUST, 25, 12)
+        assertNull(fastingGoalDelayMillis(target, at(2026, Calendar.AUGUST, 25, 13)))
+        assertNull(fastingGoalDelayMillis(target, target))
+        assertNull(fastingGoalDelayMillis(null, target))
     }
 }

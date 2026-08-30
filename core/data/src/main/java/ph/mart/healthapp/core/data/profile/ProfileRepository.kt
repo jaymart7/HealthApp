@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.data.profile
 
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 enum class Sex { Male, Female }
@@ -31,6 +32,12 @@ data class Profile(
     val photoReminderOn: Boolean = false,
     val waterRemindersOn: Boolean = false,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    /** The intermittent-fasting target, in hours. Snapshotted onto each fast at start — see
+     * [ph.mart.healthapp.core.data.fasting.FastSession]. */
+    val fastingGoalHours: Int = DEFAULT_FAST_GOAL_HOURS,
+    /** Off by default, like the photo and water reminders: a notification nobody asked for is
+     * worse than one they have to go and find. */
+    val fastingRemindersOn: Boolean = false,
     /** Whether logged exercise raises the day's shown calorie budget — see
      * [ph.mart.healthapp.core.data.exercise.budgetKcal]. On by default; off for users whose
      * activity level already accounts for their workouts. */

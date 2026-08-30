@@ -38,6 +38,7 @@ import ph.mart.healthapp.feature.home.ui.HomeScreenState
 import ph.mart.healthapp.feature.home.ui.HomeUiState
 import ph.mart.healthapp.feature.home.ui.components.AIInsightCard
 import ph.mart.healthapp.feature.home.ui.components.CalorieRingCard
+import ph.mart.healthapp.feature.home.ui.components.FastingCard
 import ph.mart.healthapp.feature.home.ui.components.MacroSummaryCard
 import ph.mart.healthapp.feature.home.ui.components.MascotGreetingCard
 import ph.mart.healthapp.feature.home.ui.components.MoodCard
@@ -125,16 +126,27 @@ internal fun HomeCards(
             modifier = appearModifier(3, appear),
         )
 
+        // Always shown, unlike the two Google Health cards below: a fast that hasn't started is
+        // an invitation, not an absence of data.
+        FastingCard(
+            activeFast = uiState.activeFast,
+            goalHours = uiState.fastingGoalHours,
+            onStart = { onEvent(HomeEvent.OnStartFast) },
+            onEnd = { onEvent(HomeEvent.OnEndFast) },
+            onDiscard = { onEvent(HomeEvent.OnDiscardFast) },
+            modifier = appearModifier(4, appear),
+        )
+
         // Hidden rather than zeroed when Google Health isn't connected or hasn't synced a night.
         uiState.lastNight?.let { night ->
-            SleepCard(night = night, modifier = appearModifier(4, appear))
+            SleepCard(night = night, modifier = appearModifier(5, appear))
         }
 
         uiState.steps?.let { steps ->
             StepsCard(
                 steps = steps,
                 creditKcal = if (uiState.addExerciseToBudget) uiState.stepsCreditKcal else 0,
-                modifier = appearModifier(5, appear),
+                modifier = appearModifier(6, appear),
             )
         }
 
@@ -143,28 +155,28 @@ internal fun HomeCards(
             energy = uiState.energyLevel,
             onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
             onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
-            modifier = appearModifier(6, appear),
+            modifier = appearModifier(7, appear),
         )
 
         WeightMetricCard(
             trend = trend,
             goal = uiState.profile?.goal,
             unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            modifier = appearModifier(7, appear),
+            modifier = appearModifier(8, appear),
         )
 
         if (targets != null) {
             MacroSummaryCard(
                 consumed = uiState.totals,
                 targets = targets,
-                modifier = appearModifier(8, appear),
+                modifier = appearModifier(9, appear),
             )
         }
 
         ProgressPhotoReminderCard(
             daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
             onTakePhoto = onAddPhoto,
-            modifier = appearModifier(9, appear),
+            modifier = appearModifier(10, appear),
         )
     }
 }

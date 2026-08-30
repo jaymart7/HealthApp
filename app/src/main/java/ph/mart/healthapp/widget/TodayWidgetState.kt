@@ -2,6 +2,8 @@ package ph.mart.healthapp.widget
 
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.budgetKcal
+import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.fasting.goalReachedMillis
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.food.DiaryTotals
@@ -27,6 +29,15 @@ data class TodayWidgetState(
     val streakDays: Int = 0,
     /** Today's steps from Google Health. Zero means none imported — the line is omitted. */
     val steps: Int = 0,
+    /**
+     * When the running fast hits its target, or null when none is running — the line is omitted.
+     *
+     * A *time*, not an elapsed duration, and that is the whole point: Glance cannot tick and
+     * `updatePeriodMillis` is 30 minutes, so "14h 20m" would be wrong for up to half an hour after
+     * every redraw. A target time is computed once and stays true until the fast ends.
+     */
+    val fastingUntilMillis: Long? = null,
+    val fastingGoalReached: Boolean = false,
     /** Null means follow the device, exactly as `Profile.darkThemeOn` does. */
     val darkThemeOn: Boolean? = null,
     /** No profile row yet — the user hasn't finished onboarding, so there are no targets to show. */
@@ -62,6 +73,8 @@ fun todayWidgetState(
     exercise: List<ExerciseEntry>,
     steps: StepDay?,
     streakDays: Int,
+    activeFast: FastSession? = null,
+    nowMillis: Long = System.currentTimeMillis(),
 ): TodayWidgetState {
     if (profile == null) return TodayWidgetState(onboarding = true)
     val targets = profile.dailyTargets()
@@ -73,6 +86,8 @@ fun todayWidgetState(
         unit = profile.preferredUnit,
         streakDays = streakDays,
         steps = steps?.steps ?: 0,
+        fastingUntilMillis = activeFast?.goalReachedMillis,
+        fastingGoalReached = activeFast != null && nowMillis >= activeFast.goalReachedMillis,
         darkThemeOn = profile.darkThemeOn,
     )
 }

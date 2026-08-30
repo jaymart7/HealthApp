@@ -42,6 +42,7 @@ import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAppearance
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileConnectionsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileDataSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileExerciseSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileFastingSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileGoalsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileRemindersSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileUnitsSection
@@ -144,6 +145,7 @@ fun ProfileScreen(
         onSelectUnit = viewModel::setUnit,
         onSetDarkTheme = viewModel::setDarkTheme,
         onSetWaterGoal = viewModel::setWaterGoal,
+        onSetFastingGoal = viewModel::setFastingGoal,
         onSetExerciseBudget = viewModel::setExerciseBudget,
         onToggleReminder = { kind, enabled ->
             if (!enabled || context.canPostNotifications()) {
@@ -175,6 +177,7 @@ private fun ProfileContent(
     onSelectUnit: (UnitSystem) -> Unit,
     onSetDarkTheme: (Boolean) -> Unit,
     onSetWaterGoal: (Int) -> Unit,
+    onSetFastingGoal: (Int) -> Unit,
     onSetExerciseBudget: (Boolean) -> Unit,
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
@@ -212,6 +215,10 @@ private fun ProfileContent(
                 goalGlasses = profile.waterGoalGlasses,
                 unit = profile.preferredUnit,
                 onSetGoal = onSetWaterGoal,
+            )
+            ProfileFastingSection(
+                goalHours = profile.fastingGoalHours,
+                onSetGoal = onSetFastingGoal,
             )
             ProfileExerciseSection(
                 addToBudget = profile.addExerciseToBudget,
@@ -254,6 +261,7 @@ private fun ProfileScreenPreview() {
             onSelectUnit = {},
             onSetDarkTheme = {},
             onSetWaterGoal = {},
+            onSetFastingGoal = {},
             onSetExerciseBudget = {},
             onToggleReminder = { _, _ -> },
             onExport = {},

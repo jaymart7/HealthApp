@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
@@ -26,12 +28,13 @@ class ProgressViewModel(
     exerciseRepository: ExerciseRepository,
     moodRepository: MoodRepository,
     sleepRepository: SleepRepository,
+    fastingRepository: FastingRepository,
 ) : ViewModel(), OrbitContainerHost<ProgressUiState, ProgressUiState, Nothing> {
 
     override val container = orbitContainer<ProgressUiState, Nothing>(ProgressUiState()) {
         observeProgress(
             progressRepository, profileRepository, foodRepository, waterRepository, exerciseRepository,
-            moodRepository, sleepRepository,
+            moodRepository, sleepRepository, fastingRepository,
         )
     }
 
@@ -43,6 +46,7 @@ class ProgressViewModel(
         exerciseRepository: ExerciseRepository,
         moodRepository: MoodRepository,
         sleepRepository: SleepRepository,
+        fastingRepository: FastingRepository,
     ) = intent {
         val progress = combine(
             progressRepository.observeWeightEntries(),
@@ -61,6 +65,7 @@ class ProgressViewModel(
                 dailyNutrition = dailyNutrition,
                 // Computed live off the profile, same as every other place targets are shown.
                 targets = profile?.dailyTargets(),
+                fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
             )
         }
 
@@ -80,8 +85,14 @@ class ProgressViewModel(
             activeDays,
             moodRepository.observeDays(),
             sleepRepository.observeNights(),
-        ) { state, days, moodDays, nights ->
-            state.copy(activeDays = days, moodDays = moodDays, sleepNights = nights)
+            fastingRepository.observeSessions(),
+        ) { state, days, moodDays, nights, fasts ->
+            state.copy(
+                activeDays = days,
+                moodDays = moodDays,
+                sleepNights = nights,
+                fastSessions = fasts,
+            )
         }.collect { newState -> reduce { newState } }
     }
 }

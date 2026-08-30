@@ -1,5 +1,7 @@
 package ph.mart.healthapp.feature.progress.ui.progress
 
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.mood.MoodDay
@@ -14,7 +16,7 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
 /** [label] rather than the entry name in the toggle: labels are trimmed to keep the pills wide
  * enough to read — "Measurements" to "Body" and "Nutrition" to "Food". Past five options the
  * toggle stops splitting the width evenly and scrolls instead (see SegmentedToggle), which is
- * what makes a sixth tab possible without trimming any further. */
+ * what makes a sixth and a seventh tab possible without trimming any further. */
 enum class ProgressTab(val label: String) {
     Weight("Weight"),
     Nutrition("Food"),
@@ -22,6 +24,7 @@ enum class ProgressTab(val label: String) {
     Measurements("Body"),
     Mood("Mood"),
     Sleep("Sleep"),
+    Fasting("Fasting"),
 }
 
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
@@ -42,6 +45,12 @@ data class ProgressUiState(
     /** Sparse too, and import-only: FitPulse cannot measure sleep, so a night with no row is a
      * night Google Health never sent. The Sleep tab places them by date, like [moodDays]. */
     val sleepNights: List<SleepNight> = emptyList(),
+    /** Completed fasts only, oldest first — a running one would keep growing under the chart.
+     * Sparse and dated by the day each fast *ended*, like [sleepNights]. */
+    val fastSessions: List<FastSession> = emptyList(),
+    /** The profile's current target — the chart's goal line. Each bar carries its own snapshot,
+     * so this only ever moves the line, never a bar. */
+    val fastingGoalHours: Int = DEFAULT_FAST_GOAL_HOURS,
     /** Every day anything was logged, across all four domains — the streak's definition, reused
      * by the weekly recap so the two can't disagree about what a logged day is. */
     val activeDays: Set<Long> = emptySet(),

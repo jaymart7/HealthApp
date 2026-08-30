@@ -1,6 +1,8 @@
 package ph.mart.healthapp.feature.home.ui
 
 import kotlin.math.abs
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
@@ -36,6 +38,11 @@ data class HomeUiState(
     /** Today's reflection, 1-5 each; 0 means the user hasn't tapped that row. */
     val moodLevel: Int = 0,
     val energyLevel: Int = 0,
+    /** The fast currently running, or null. Not part of [isDayOne] — see its KDoc. */
+    val activeFast: FastSession? = null,
+    /** The profile's target, used only to price a fast that hasn't started; a running one carries
+     * its own snapshot. */
+    val fastingGoalHours: Int = DEFAULT_FAST_GOAL_HOURS,
     val burnedKcal: Int = 0,
     /** Last night, from Google Health. Null when nothing was imported — the card is hidden, not
      * zeroed, because FitPulse has no way to measure sleep itself. */
@@ -52,20 +59,24 @@ data class HomeUiState(
     val weightProgressKg: Double? = null,
 )
 
-/** All Home writes: today's glass count and today's mood/energy. Everything else on the screen
- * is read-only — the FAB's sheets own every other write path. A level of 0 clears that row. */
+/** All Home writes: today's glass count, today's mood/energy, and the fasting timer. Everything
+ * else on the screen is read-only — the FAB's sheets own every other write path. A level of 0
+ * clears that row. */
 sealed interface HomeEvent {
     data class OnSetWaterGlasses(val glasses: Int) : HomeEvent
     data class OnSetMood(val level: Int) : HomeEvent
     data class OnSetEnergy(val level: Int) : HomeEvent
+    data object OnStartFast : HomeEvent
+    data object OnEndFast : HomeEvent
+    data object OnDiscardFast : HomeEvent
 }
 
 /**
  * Day one = nothing logged anywhere yet. The profile alone doesn't count — it always exists by
  * the time Home is reachable.
  *
- * Mood is deliberately absent: it isn't one of the streak's four domains, so a reflection alone
- * doesn't make a day "logged" here either. The cost is that the mood card only appears once
+ * Mood and fasting are deliberately absent: neither is one of the streak's four domains, so a
+ * reflection or a running timer alone doesn't make a day "logged" here either. The cost is that the mood card only appears once
  * something real has been logged, which is the right order anyway.
  */
 val HomeUiState.isDayOne: Boolean

@@ -20,6 +20,8 @@ import ph.mart.healthapp.core.data.di.databaseModule
 import ph.mart.healthapp.core.data.di.networkModule
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.di.exerciseDataModule
+import ph.mart.healthapp.core.data.fasting.FastingRepository
+import ph.mart.healthapp.core.data.fasting.di.fastingDataModule
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.di.foodDataModule
 import ph.mart.healthapp.core.data.health.StepsRepository
@@ -39,6 +41,8 @@ import ph.mart.healthapp.feature.progress.di.progressModule
 import ph.mart.healthapp.reminder.Reminder
 import ph.mart.healthapp.reminder.ReminderScheduler
 import ph.mart.healthapp.reminder.enabledIn
+import ph.mart.healthapp.reminder.fastingGoalDelayMillis
+import ph.mart.healthapp.reminder.fastingGoalTargetMillis
 import ph.mart.healthapp.ui.AppRootViewModel
 import ph.mart.healthapp.widget.TodayWidget
 
@@ -63,6 +67,7 @@ class FitPulseApplication : Application() {
                 waterDataModule,
                 exerciseDataModule,
                 moodDataModule,
+                fastingDataModule,
                 healthDataModule,
                 onboardingModule,
                 foodModule,
@@ -76,7 +81,9 @@ class FitPulseApplication : Application() {
         seedDebugData(koinApp.koin)
 
         scheduleReminders(koinApp.koin.get())
+        scheduleFastingGoal(koinApp.koin.get(), koinApp.koin.get())
         updateWidget(
+            koinApp.koin.get(),
             koinApp.koin.get(),
             koinApp.koin.get(),
             koinApp.koin.get(),
@@ -105,6 +112,32 @@ class FitPulseApplication : Application() {
     }
 
     /**
+     * The fasting goal notification, in the same derived-not-commanded shape as
+     * [scheduleReminders] — but derived off the *running fast* rather than off a repeating clock,
+     * because a fast's target lands at an hour the user chose by stopping eating.
+     *
+     * The map to an absolute target instant is what keeps this quiet: the profile row re-emits on
+     * every weight edit, and a delay recomputed against a moving `now` would differ every time and
+     * churn the queue.
+     */
+    private fun scheduleFastingGoal(
+        fastingRepository: FastingRepository,
+        profileRepository: ProfileRepository,
+    ) {
+        val scheduler = ReminderScheduler(this)
+        applicationScope.launch {
+            combine(
+                fastingRepository.observeActive(),
+                profileRepository.observeProfile(),
+            ) { fast, profile -> fastingGoalTargetMillis(fast, profile?.fastingRemindersOn == true) }
+                .distinctUntilChanged()
+                .collect { target ->
+                    scheduler.scheduleFastingGoal(fastingGoalDelayMillis(target, System.currentTimeMillis()))
+                }
+        }
+    }
+
+    /**
      * Keeps the home-screen widget honest, in the same derived-not-commanded shape as
      * [scheduleReminders]: nothing in the app tells the widget to redraw, this reconciles it off
      * the same Room flows the widget itself reads.
@@ -113,7 +146,9 @@ class FitPulseApplication : Application() {
      * switch all reach the widget — not just food and water. Exercise and steps are here because
      * the widget's budget is derived from both, and a Google Health sync writes both: without
      * them a finished sync would leave the widget showing yesterday's budget until the next tick.
-     * Day rollover is not covered here (the today-only overloads resolve their date once);
+     * The running fast is here so starting or ending one moves the widget's line immediately —
+     * it pairs with water ahead of the combine, which is already at the arity the typed overloads
+     * stop at. Day rollover is not covered here (the today-only overloads resolve their date once);
      * `updatePeriodMillis` handles that.
      */
     private fun updateWidget(
@@ -122,11 +157,12 @@ class FitPulseApplication : Application() {
         profileRepository: ProfileRepository,
         exerciseRepository: ExerciseRepository,
         stepsRepository: StepsRepository,
+        fastingRepository: FastingRepository,
     ) {
         applicationScope.launch {
             combine(
                 foodRepository.observeTodayEntries(),
-                waterRepository.observeToday(),
+                combine(waterRepository.observeToday(), fastingRepository.observeActive(), ::Pair),
                 profileRepository.observeProfile(),
                 exerciseRepository.observeTodayEntries(),
                 stepsRepository.observeToday(),

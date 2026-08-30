@@ -1,7 +1,16 @@
 package ph.mart.healthapp.reminder
 
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import java.util.Calendar
 import java.util.TimeZone
+import ph.mart.healthapp.MainActivity
+import ph.mart.healthapp.R
+import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.fasting.goalReachedMillis
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
@@ -50,6 +59,53 @@ fun Reminder.enabledIn(profile: Profile): Boolean = when (this) {
     Reminder.WeighIn -> profile.weighInReminderOn
     Reminder.Photo -> profile.photoReminderOn
     Reminder.WaterMidday, Reminder.WaterAfternoon -> profile.waterRemindersOn
+}
+
+/**
+ * The instant a pending fasting-goal notification should fire, or null when there shouldn't be one.
+ * Split from [fastingGoalDelayMillis] so the collector in `FitPulseApplication` can
+ * `distinctUntilChanged` on an *absolute* target — the profile row re-emits on every weight edit,
+ * and a delay recomputed against a moving `now` would look different every time and re-enqueue the
+ * work for no reason.
+ */
+internal fun fastingGoalTargetMillis(fast: FastSession?, fastingRemindersOn: Boolean): Long? =
+    fast?.takeIf { fastingRemindersOn }?.goalReachedMillis
+
+/**
+ * Null for a target already in the past: the work enqueued when the fast started has already fired
+ * by then, and re-firing it on the next profile emission would be a duplicate.
+ */
+internal fun fastingGoalDelayMillis(targetMillis: Long?, nowMillis: Long): Long? =
+    targetMillis?.takeIf { it > nowMillis }?.minus(nowMillis)
+
+/**
+ * Posts one notification, tapping through to [tab]. Shared by [ReminderWorker] and
+ * [FastingGoalWorker] so the two don't hold two copies of the same builder — and so a change to
+ * how FitPulse notifies reaches both.
+ *
+ * [id] must be stable per notification kind: it is what lets a repeat replace its predecessor
+ * rather than stack another row in the shade.
+ */
+internal fun notify(context: Context, id: Int, title: String, body: String, tab: TopLevelDestination) {
+    val intent = Intent(context, MainActivity::class.java)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        .putExtra(EXTRA_TAB, tab.name)
+    val pendingIntent = PendingIntent.getActivity(
+        context,
+        id,
+        intent,
+        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+    val notification = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setContentTitle(title)
+        .setContentText(body)
+        .setContentIntent(pendingIntent)
+        .setAutoCancel(true)
+        .build()
+    // The caller's areNotificationsEnabled() check already covers the permission; this catch is
+    // only for the race where it's revoked between that check and here.
+    runCatching { NotificationManagerCompat.from(context).notify(id, notification) }
 }
 
 /**

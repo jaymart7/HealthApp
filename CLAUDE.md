@@ -98,7 +98,7 @@ cancels, Confirmation returns to Capture with a discard confirm if edited).
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise`, `mood`, `health`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
+  `exercise`, `mood`, `health`, `fasting`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
 - **Calorie/macro math is Mifflin–St Jeor**, computed live from profile inputs
@@ -223,6 +223,37 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `AppScaffold`'s `showChrome` for a different reason: it is an authoring screen with its own Save,
   and leaving the tab bar up put a "Log food" FAB over it and let a tab tap walk away from a
   half-written recipe without the discard question `NavigationBackHandler` asks.
+- **A fast is a session, not a day.** Fasts cross midnight by design, so `fast_session` holds
+  `startMillis`/`endMillis` rather than an epoch day, and `endMillis IS NULL` *is* the active-fast
+  marker — no status column, no "currently fasting" flag on the profile, so the two can never
+  disagree. `FastSession.dateEpochDay` keys off the day it **ended**, the same choice `SleepNight`
+  makes: a 16-hour fast started at 20:00 is yesterday evening's discipline paying off at lunchtime,
+  and charting it on the start day would put every bar a day early.
+- **`goalHours` is snapshotted onto each fast at start.** The target lives on the profile
+  (`Profile.fastingGoalHours`, nudge-only over `FAST_GOAL_HOURS`), but raising it next month must
+  not retroactively un-hit a fast already finished — the same rule `step_day.burnedKcal` and
+  `exercise_entry.burnedKcal` follow. Changing the target moves the Progress chart's goal *line*
+  and prices the *next* fast; never a bar already drawn.
+- **Fasting is not a streak domain**, for the same reason mood and sleep aren't: the streak means
+  "you logged something you did", and a timer left running is not that. So `FastingRepository` has
+  no `observeLoggedDays()`, `loggedDays()` is untouched, and Home's `isDayOne` ignores fasting.
+- **Discarding an *active* fast is a hard delete, and that does not breach the soft-delete rule.**
+  An unfinished fast never became history — it is the mis-tap being undone. `deleteActive()` can
+  only ever reach a row with `endMillis IS NULL`; completed sessions have no delete path at all.
+  The guard against two open fasts is a read-then-write in `start()`, not a unique index: SQLite
+  treats every NULL as distinct, so `endMillis` cannot carry one that means anything.
+- **Only completed fasts are exported, and the fasting goal notification is the one one-shot.**
+  A running fast is a timer, not history, so it never reaches the file (schema v6) — restoring one
+  on another device would resume a clock nobody started there. And every `Reminder` entry is
+  periodic and reconciled off the profile row, whereas a fast's target lands at an hour the user
+  chose by stopping eating: `FitPulseApplication` derives it off `observeActive()` instead,
+  `distinctUntilChanged` on the **absolute** target (the profile re-emits on every weight edit, so a
+  delay recomputed against a moving `now` would churn the queue), and `FastingGoalWorker` re-reads
+  the fast at fire time so it can never congratulate someone on a fast they ended two hours ago.
+- **The widget prints the fast's target *time*, not its elapsed time.** Glance cannot tick and
+  `updatePeriodMillis` is 30 minutes, so "14h 20m" would be wrong for up to half an hour after every
+  redraw; "Fasting until 12:30" is computed once and stays true. Home's card, which *can* tick, runs
+  a 1-second ticker only while a fast is open and reads it inside a draw lambda.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.
@@ -342,7 +373,7 @@ because of that, not because it was the nicest design available.
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `mood`, `sleep`), `:feature:profile`
+  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `fasting`), `:feature:profile`
   (`profile`, `health`) and `:feature:onboarding` (`onboarding`, `health`, `shared`)
   are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under

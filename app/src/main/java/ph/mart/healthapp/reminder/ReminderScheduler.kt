@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -39,6 +41,29 @@ class ReminderScheduler(context: Context) {
         }
     }
 
+    /**
+     * The fasting goal is the one one-shot here: its hour comes from when the user stopped eating,
+     * not from a clock, so there is nothing to repeat. [delayMillis] null cancels — no fast open,
+     * the switch off, or a target already in the past.
+     *
+     * REPLACE rather than KEEP, the opposite of [reconcile]'s policy and for the opposite reason:
+     * starting a new fast *must* move the pending notification, since the old one's delay was
+     * measured from a fast that no longer exists.
+     */
+    fun scheduleFastingGoal(delayMillis: Long?) {
+        if (delayMillis == null) {
+            workManager.cancelUniqueWork(FASTING_GOAL_WORK)
+            return
+        }
+        workManager.enqueueUniqueWork(
+            FASTING_GOAL_WORK,
+            ExistingWorkPolicy.REPLACE,
+            OneTimeWorkRequestBuilder<FastingGoalWorker>()
+                .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
+                .build(),
+        )
+    }
+
     private fun Reminder.request() = PeriodicWorkRequestBuilder<ReminderWorker>(periodDays, TimeUnit.DAYS)
         .setInitialDelay(
             System.currentTimeMillis().let { now -> nextRunMillis(hour, dayOfWeek, now) - now },
@@ -48,8 +73,8 @@ class ReminderScheduler(context: Context) {
         .build()
 
     companion object {
-        /** One channel for all five reminders. Split per kind only if someone asks to mute meal
-         * nudges without losing weigh-in. */
+        /** One channel for every notification this app posts. Split per kind only if someone asks
+         * to mute meal nudges without losing weigh-in. */
         fun createChannel(context: Context) {
             // NotificationChannelCompat, not the platform class: minSdk is 24 and channels only
             // exist from 26 — the compat builder no-ops below that instead of crashing.

@@ -11,6 +11,8 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
+import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealType
@@ -30,6 +32,7 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
+import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
@@ -53,6 +56,7 @@ fun seedDebugData(koin: Koin) {
         koin.get<WaterRepository>().seedWater(today)
         koin.get<ExerciseRepository>().seedExercise(today)
         koin.get<MoodRepository>().seedMood(today)
+        koin.get<FastingRepository>().seedFasting(today)
     }
 }
 
@@ -67,6 +71,9 @@ private val seedProfile = Profile(
     dietaryPreference = DietaryPreference.None,
     preferredUnit = UnitSystem.Metric,
     photoReminderOn = true,
+    // On, unlike the shipping default, so the goal notification scheduled by the running fast in
+    // [seedFasting] actually fires on a debug install.
+    fastingRemindersOn = true,
 )
 
 private suspend fun ProgressRepository.seedProgress(today: Long) {
@@ -161,6 +168,48 @@ private suspend fun MoodRepository.seedMood(today: Long) {
         )
     }
 }
+
+/**
+ * Twenty days of completed fasts plus one still running.
+ *
+ * Lengths straddle the 16-hour goal on purpose so the Progress chart has bars on both sides of its
+ * goal line and "Goals hit" reads something other than N of N. Two days are skipped so the sparse
+ * series has real gaps, and one fast carries an 18-hour goal to prove the per-row snapshot is what
+ * the chart judges each bar against rather than the profile's current target.
+ *
+ * The running fast is written through [FastingRepository.upsertSession] rather than `start()`,
+ * which stamps `System.currentTimeMillis()` and could only ever produce a zero-length fast. It is
+ * backdated to two minutes short of its goal, which is what makes the goal notification testable
+ * on a debug install without sitting through sixteen hours.
+ */
+private suspend fun FastingRepository.seedFasting(today: Long) {
+    val random = Random(seed = 17)
+    for (daysAgo in 20 downTo 1) {
+        if (daysAgo == 5 || daysAgo == 12) continue
+        val goalHours = if (daysAgo == 9) 18 else 16
+        val hours = random.nextInt(13, 20)
+        // Ended at noon, so the row lands on the day it ended even in a zone whose offset pushes
+        // local midnight across a UTC boundary.
+        val endMillis = epochDayStartMillis(today - daysAgo) + 12 * HOUR_MILLIS
+        upsertSession(
+            FastSession(
+                startMillis = endMillis - hours * HOUR_MILLIS,
+                endMillis = endMillis,
+                goalHours = goalHours,
+            ),
+        )
+    }
+    upsertSession(
+        FastSession(
+            startMillis = System.currentTimeMillis() - 16 * HOUR_MILLIS + 2 * MINUTE_MILLIS,
+            endMillis = null,
+            goalHours = 16,
+        ),
+    )
+}
+
+private const val HOUR_MILLIS = 3_600_000L
+private const val MINUTE_MILLIS = 60_000L
 
 private suspend fun WaterRepository.seedWater(today: Long) {
     val random = Random(seed = 11)

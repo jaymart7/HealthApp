@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.combine
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.StepsRepository
@@ -53,6 +54,7 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
     private val exerciseRepository: ExerciseRepository by inject()
     private val progressRepository: ProgressRepository by inject()
     private val stepsRepository: StepsRepository by inject()
+    private val fastingRepository: FastingRepository by inject()
 
     override val sizeMode = SizeMode.Responsive(setOf(SMALL, WIDE))
 
@@ -72,7 +74,9 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
         val states = combine(
             profileRepository.observeProfile(),
             foodRepository.observeTodayEntries(),
-            waterRepository.observeToday(),
+            // Water pairs with the running fast: the combine below is already at the arity the
+            // typed overloads stop at.
+            combine(waterRepository.observeToday(), fastingRepository.observeActive(), ::Pair),
             // Paired ahead of the combine, which is already at the arity the typed overloads
             // stop at.
             combine(
@@ -81,11 +85,12 @@ class TodayWidget : GlanceAppWidget(), KoinComponent {
                 ::Pair,
             ),
             activeDays,
-        ) { profile, entries, glasses, (exercise, steps), days ->
+        ) { profile, entries, (glasses, activeFast), (exercise, steps), days ->
             todayWidgetState(
                 profile = profile,
                 totals = entries.dailyTotals(),
                 glasses = glasses,
+                activeFast = activeFast,
                 exercise = exercise,
                 steps = steps,
                 streakDays = days.streakStats(todayEpochDay()).current,

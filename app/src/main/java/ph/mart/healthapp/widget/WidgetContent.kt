@@ -30,6 +30,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import ph.mart.healthapp.MainActivity
+import ph.mart.healthapp.core.data.fasting.formatClockTime
 import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.data.water.waterVolumeLabel
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
@@ -61,6 +62,7 @@ internal fun TodayWidgetContent(state: TodayWidgetState) {
         if (LocalSize.current.height >= WATER_ROW_MIN_HEIGHT) {
             Spacer(GlanceModifier.height(12.dp))
             WaterRow(state)
+            FastingRow(state)
         }
     }
 }
@@ -178,6 +180,25 @@ private fun WaterRow(state: TodayWidgetState) {
             )
         }
     }
+}
+
+/** Omitted entirely when nothing is running, like the steps line — a fast you haven't started is
+ * not a zero. */
+@Composable
+private fun FastingRow(state: TodayWidgetState) {
+    val until = state.fastingUntilMillis ?: return
+    Spacer(GlanceModifier.height(4.dp))
+    Text(
+        text = if (state.fastingGoalReached) "Fast complete" else "Fasting until ${formatClockTime(until)}",
+        style = TextStyle(
+            color = if (state.fastingGoalReached) {
+                GlanceTheme.colors.primary
+            } else {
+                GlanceTheme.colors.onSurfaceVariant
+            },
+            fontSize = 13.sp,
+        ),
+    )
 }
 
 /**

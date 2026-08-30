@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.map
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.fasting.FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
@@ -21,6 +23,7 @@ class ProfileViewModel(
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
     private val moodRepository: MoodRepository,
+    private val fastingRepository: FastingRepository,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -50,6 +53,11 @@ class ProfileViewModel(
         profileRepository.saveProfile(profile.copy(waterGoalGlasses = glasses.coerceIn(WATER_GOAL_GLASSES)))
     }
 
+    fun setFastingGoal(hours: Int) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(fastingGoalHours = hours.coerceIn(FAST_GOAL_HOURS)))
+    }
+
     fun setExerciseBudget(enabled: Boolean) = intent {
         val profile = state.profile ?: return@intent
         profileRepository.saveProfile(profile.copy(addExerciseToBudget = enabled))
@@ -69,12 +77,13 @@ class ProfileViewModel(
             waterDays = waterRepository.allDays(),
             exercises = exerciseRepository.allEntries(),
             moodDays = moodRepository.allDays(),
+            fastSessions = fastingRepository.allSessions(),
         )
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }
 
-    /** Replaces the profile, the food diary, the water log, the exercise log and the mood log;
-     * weight and measurements are
+    /** Replaces the profile, the food diary, the water log, the exercise log, the mood log and the
+     * fasting log; weight and measurements are
      * upserted by date, so importing merges history rather than discarding entries the
      * file doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
      * touched. */
@@ -92,6 +101,10 @@ class ProfileViewModel(
                 payload.exercises.forEach { exerciseRepository.addEntry(it) }
                 moodRepository.clearAllDays()
                 payload.moodDays.forEach { moodRepository.upsertDay(it) }
+                // Clears a running fast too, which is the honest reading of replace-in-full: the
+                // timer belongs to the history being replaced, not to the device.
+                fastingRepository.clearAllSessions()
+                payload.fastSessions.forEach { fastingRepository.upsertSession(it) }
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {
