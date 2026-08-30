@@ -4,8 +4,10 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
+import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -28,6 +30,9 @@ data class FoodUiState(
     val suggestions: List<FoodSuggestion> = emptyList(),
     /** Not the day's — saved meals are date-independent, and re-loggable onto any day. */
     val savedMeals: List<SavedMeal> = emptyList(),
+    /** Date-independent for the same reason, and listed separately: a recipe seeds the form with
+     * one serving, where a saved meal logs itself whole. */
+    val recipes: List<Recipe> = emptyList(),
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     val unit: UnitSystem = UnitSystem.Metric,
@@ -88,6 +93,31 @@ fun SavedMealItem.toFoodEntry(mealType: MealType, dateEpochDay: Long): FoodEntry
     fatG = fatG,
 )
 
+/** Twin of [FoodSuggestion.toAddEntryForm] again, and for the same reason it isn't a
+ * [FoodEntry]: a recipe seeds the sheet's fields — one editable row priced at one serving, not the
+ * ingredient list — so the user can log half a portion by editing the numbers before adding. */
+fun Recipe.toAddEntryForm(mealType: MealType): AddEntryForm {
+    val serving = perServing()
+    return AddEntryForm(
+        mealType = mealType,
+        name = name,
+        portionAmount = 1.0,
+        portionUnit = SERVING_UNIT,
+        calories = serving.calories,
+        proteinG = serving.proteinG,
+        carbsG = serving.carbsG,
+        fatG = serving.fatG,
+    )
+}
+
+/** Added to the add-entry sheet's portion-unit pills, so a seeded recipe shows its unit selected
+ * instead of no pill at all — and so a leftovers-by-hand entry can say "serving" too.
+ *
+ * ponytail: the portion stepper still steps by 10, which is meaningless for servings; nobody can
+ * type 0.5 there today. Editing the kcal field is the half-portion path until the stepper learns
+ * a per-unit step size. */
+const val SERVING_UNIT = "serving"
+
 /** The day and meal slot are dropped: they are supplied again at log time, so the same saved meal
  * can go into any slot on any day. */
 fun FoodEntry.toSavedMealItem(): SavedMealItem = SavedMealItem(
@@ -110,4 +140,5 @@ sealed interface FoodEvent {
     data class OnSaveMeal(val name: String, val items: List<SavedMealItem>) : FoodEvent
     data class OnLogSavedMeal(val meal: SavedMeal, val mealType: MealType) : FoodEvent
     data class OnDeleteSavedMeal(val id: Long) : FoodEvent
+    data class OnDeleteRecipe(val id: Long) : FoodEvent
 }

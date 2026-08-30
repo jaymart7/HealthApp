@@ -81,6 +81,24 @@ internal class FoodRepositoryImpl(
         savedMealDao.softDelete(id)
     }
 
+    override fun observeRecipes(): Flow<List<Recipe>> =
+        combine(savedMealDao.observeRecipes(MAX_RECIPES), savedMealDao.observeItems()) { recipes, items ->
+            groupRecipes(recipes, items)
+        }
+
+    override suspend fun saveRecipe(name: String, servings: Int, items: List<SavedMealItem>) {
+        val recipeId = savedMealDao.insertMeal(
+            SavedMealEntity(name = name, createdAt = System.currentTimeMillis(), servings = servings),
+        )
+        savedMealDao.insertItems(items.map { it.toEntity(recipeId) })
+    }
+
+    /** Same soft delete as [deleteSavedMeal] — one table — but named for what the caller is
+     * holding, so the recipe UI doesn't read like it's deleting a meal. */
+    override suspend fun deleteRecipe(id: Long) {
+        savedMealDao.softDelete(id)
+    }
+
     override fun observeDailyNutrition(): Flow<List<DayNutrition>> {
         // Anchored on today here, not in the feature layer: todayEpochDay() is internal to this
         // module, and the window has to match the query's lower bound exactly for the series to
@@ -106,6 +124,24 @@ internal fun groupSavedMeals(
             id = meal.id,
             name = meal.name,
             items = byMeal[meal.id].orEmpty().map { it.toSavedMealItem() },
+        )
+    }
+}
+
+/** Twin of [groupSavedMeals] over the same two tables, for the rows that carry a servings count.
+ * A null [SavedMealEntity.servings] can't reach here — the query filters it — but it is coerced
+ * rather than forced, since a crash is a poor answer to a stray row. */
+internal fun groupRecipes(
+    recipes: List<SavedMealEntity>,
+    items: List<SavedMealItemEntity>,
+): List<Recipe> {
+    val byRecipe = items.groupBy { it.mealId }
+    return recipes.map { recipe ->
+        Recipe(
+            id = recipe.id,
+            name = recipe.name,
+            servings = (recipe.servings ?: 1).coerceAtLeast(1),
+            items = byRecipe[recipe.id].orEmpty().map { it.toSavedMealItem() },
         )
     }
 }

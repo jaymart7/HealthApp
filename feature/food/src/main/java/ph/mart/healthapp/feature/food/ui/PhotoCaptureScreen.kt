@@ -6,19 +6,15 @@ import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,11 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigationevent.NavigationEventInfo
@@ -46,12 +40,12 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.camera.CameraCaptureController
 import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.food.RecognitionResult
+import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
-import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.components.AnalyzingScreen
 import ph.mart.healthapp.feature.food.ui.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.components.ConfirmationScreen
@@ -250,6 +244,8 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
 
             state.discardReturnTarget?.let { returnTarget ->
                 DiscardConfirmDialog(
+                    title = "Discard this meal?",
+                    body = "You've made edits that haven't been logged yet.",
                     onConfirm = {
                         state.discardReturnTarget = null
                         state.flow = returnTarget
@@ -291,27 +287,4 @@ private fun RetryPhotoIcon(photo: Bitmap?) {
             .clip(RoundedCornerShape(16.dp))
             .alpha(0.6f),
     )
-}
-
-@Composable
-private fun DiscardConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Discard this meal?") },
-        text = { Text("You've made edits that haven't been logged yet.") },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Discard") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Keep editing") } },
-    )
-}
-
-@PreviewLightDark
-@Composable
-private fun DiscardConfirmDialogPreview() {
-    AppTheme {
-        Box(modifier = Modifier
-            .background(Color.Black.copy(alpha = 0.32f))
-            .padding(24.dp)) {
-            DiscardConfirmDialog(onConfirm = {}, onDismiss = {})
-        }
-    }
 }

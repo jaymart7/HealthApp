@@ -35,6 +35,7 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
@@ -58,6 +59,7 @@ import ph.mart.healthapp.feature.food.ui.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.components.DiaryWaterRow
 import ph.mart.healthapp.feature.food.ui.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.components.FoodSuggestionPanel
+import ph.mart.healthapp.feature.food.ui.components.RecipePanel
 import ph.mart.healthapp.feature.food.ui.components.SavedMealPanel
 import ph.mart.healthapp.feature.food.ui.components.ExerciseSection
 import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
@@ -65,6 +67,7 @@ import ph.mart.healthapp.feature.food.ui.components.MealSectionHeader
 @Composable
 fun FoodScreen(
     onScanBarcode: (Long) -> Unit,
+    onNewRecipe: () -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: FoodViewModel = koinViewModel(),
 ) {
@@ -75,6 +78,7 @@ fun FoodScreen(
         state = state,
         onEvent = viewModel::handleEvent,
         onScanBarcode = onScanBarcode,
+        onNewRecipe = onNewRecipe,
         scrollState = scrollState,
     )
 }
@@ -85,6 +89,7 @@ private fun FoodContent(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onScanBarcode: (Long) -> Unit,
+    onNewRecipe: () -> Unit,
     scrollState: ScrollState = rememberScrollState(),
 ) {
     // Back off a past day returns to today rather than leaving the tab — one level, same rule the
@@ -192,6 +197,16 @@ private fun FoodContent(
                     form = state.addForm,
                     suggestions = uiState.suggestions,
                     savedMeals = uiState.savedMeals,
+                    recipes = uiState.recipes,
+                    onSelectRecipe = { recipe -> state.addForm = recipe.toAddEntryForm(activeMealSheet) },
+                    onDeleteRecipe = { recipe -> onEvent(FoodEvent.OnDeleteRecipe(recipe.id)) },
+                    // The builder is a screen, not a sub-view of this sheet: an ingredient list
+                    // doesn't fit above a keyboard. Closing first means back from it lands on the
+                    // diary rather than reopening a stale form.
+                    onNewRecipe = {
+                        state.closeSheet()
+                        onNewRecipe()
+                    },
                     onLogSavedMeal = { meal ->
                         onEvent(FoodEvent.OnLogSavedMeal(meal, activeMealSheet))
                         state.closeSheet()
@@ -351,6 +366,10 @@ private fun AddEntrySheet(
     form: AddEntryForm,
     suggestions: List<FoodSuggestion>,
     savedMeals: List<SavedMeal>,
+    recipes: List<Recipe>,
+    onSelectRecipe: (Recipe) -> Unit,
+    onDeleteRecipe: (Recipe) -> Unit,
+    onNewRecipe: () -> Unit,
     onLogSavedMeal: (SavedMeal) -> Unit,
     onDeleteSavedMeal: (SavedMeal) -> Unit,
     onFormChange: (AddEntryForm) -> Unit,
@@ -372,6 +391,12 @@ private fun AddEntrySheet(
             // Both panels seed the fields below; they stay editable either way, so this is a
             // shortcut past typing rather than a separate entry mode. Already-logged foods come
             // first — they cost no network round-trip and are the likelier match.
+            RecipePanel(
+                recipes = recipes,
+                onSelect = onSelectRecipe,
+                onDelete = onDeleteRecipe,
+                onNewRecipe = onNewRecipe,
+            )
             SavedMealPanel(
                 savedMeals = savedMeals,
                 onLog = onLogSavedMeal,
@@ -397,6 +422,7 @@ private fun AddEntrySheet(
                 onPortionAmountChange = { onFormChange(form.copy(portionAmount = it)) },
                 onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
                 onCaloriesChange = { onFormChange(form.copy(calories = it)) },
+                portionUnitOptions = listOf("g", "oz", "cup", SERVING_UNIT),
             )
             MacroInputGroup(
                 proteinG = form.proteinG,
@@ -490,6 +516,7 @@ private fun FoodScreenPreview() {
             state = FoodScreenState(),
             onEvent = {},
             onScanBarcode = {},
+            onNewRecipe = {},
         )
     }
 }

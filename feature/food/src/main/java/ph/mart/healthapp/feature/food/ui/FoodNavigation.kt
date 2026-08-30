@@ -15,12 +15,21 @@ data object FoodCaptureRoute : NavKey
 @Serializable
 data class BarcodeScanRoute(val dateEpochDay: Long) : NavKey
 
+/** Authoring a recipe — reached from the add-entry sheet, and carrying nothing: a recipe belongs
+ * to no day, so unlike [BarcodeScanRoute] it has no date to pass. */
+@Serializable
+data object RecipeBuilderRoute : NavKey
+
 fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
     onScanBarcode: (Long) -> Unit,
+    onNewRecipe: () -> Unit,
     onExitFlow: () -> Unit,
 ) {
-    entry<FoodRoute> { FoodScreen(scrollState = scrollState, onScanBarcode = onScanBarcode) }
+    entry<FoodRoute> {
+        FoodScreen(scrollState = scrollState, onScanBarcode = onScanBarcode, onNewRecipe = onNewRecipe)
+    }
+    entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }
     entry<FoodCaptureRoute> { PhotoCaptureScreen(onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
 }

@@ -50,6 +50,7 @@ class FoodViewModel(
             is FoodEvent.OnSaveMeal -> onSaveMeal(event.name, event.items)
             is FoodEvent.OnLogSavedMeal -> onLogSavedMeal(event)
             is FoodEvent.OnDeleteSavedMeal -> onDeleteSavedMeal(event.id)
+            is FoodEvent.OnDeleteRecipe -> onDeleteRecipe(event.id)
         }
     }
 
@@ -61,8 +62,8 @@ class FoodViewModel(
         exerciseRepository: ExerciseRepository,
         stepsRepository: StepsRepository,
     ) = intent {
-        // Saved meals belong to no day, so they combine outside the date switch — which also keeps
-        // the inner combine at the five-flow arity the typed overloads stop at.
+        // Saved meals and recipes belong to no day, so they combine outside the date switch —
+        // which also keeps the inner combine at the five-flow arity the typed overloads stop at.
         val dated = selectedDate.flatMapLatest { date ->
             combine(
                 foodRepository.observeEntries(date),
@@ -91,8 +92,12 @@ class FoodViewModel(
                 )
             }
         }
-        combine(dated, foodRepository.observeSavedMeals()) { newState, savedMeals ->
-            newState.copy(savedMeals = savedMeals)
+        combine(
+            dated,
+            foodRepository.observeSavedMeals(),
+            foodRepository.observeRecipes(),
+        ) { newState, savedMeals, recipes ->
+            newState.copy(savedMeals = savedMeals, recipes = recipes)
         }.collect { newState -> reduce { newState } }
     }
 
@@ -131,5 +136,9 @@ class FoodViewModel(
 
     private fun onDeleteSavedMeal(id: Long) = intent {
         foodRepository.deleteSavedMeal(id)
+    }
+
+    private fun onDeleteRecipe(id: Long) = intent {
+        foodRepository.deleteRecipe(id)
     }
 }

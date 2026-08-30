@@ -92,6 +92,14 @@ interface FoodRepository {
 
     suspend fun deleteSavedMeal(id: Long)
 
+    /** The newest [MAX_RECIPES] recipes, each with its ingredients. Recipes and saved meals share
+     * a table but never a list — see `SavedMealDao`. */
+    fun observeRecipes(): Flow<List<Recipe>>
+
+    suspend fun saveRecipe(name: String, servings: Int, items: List<SavedMealItem>)
+
+    suspend fun deleteRecipe(id: Long)
+
     /** Dense daily nutrition for the last [TREND_WINDOW_DAYS], oldest first, ending today — the
      * Progress tab's Nutrition series. */
     fun observeDailyNutrition(): Flow<List<DayNutrition>>

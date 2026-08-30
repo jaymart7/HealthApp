@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -28,6 +30,12 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * Scrim, swipe-to-dismiss, window insets (nav bar + IME) and predictive-back dismissal all come
  * from [ModalBottomSheet]. A sub-level inside the sheet — the [SheetDatePicker] calendar — can
  * still take back first: its handler registers after the sheet's, so it wins while showing.
+ *
+ * The content column scrolls, because a sheet is only ever as tall as the screen and the tallest
+ * of these (the food diary's add-entry sheet: recipes, saved meals, recents, search, then the form
+ * itself) runs past that on a small phone — without this its Add button is simply out of reach.
+ * The sheet's own drag still wins while the scroll sits at the top. Nothing inside a sheet may be
+ * a lazy list: this hands its children unbounded height.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +59,7 @@ fun AppBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
             content = content,
         )

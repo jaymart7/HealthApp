@@ -7,6 +7,7 @@ import ph.mart.healthapp.feature.food.ui.FoodSearchViewModel
 import ph.mart.healthapp.feature.food.ui.FoodViewModel
 import ph.mart.healthapp.feature.food.ui.LogExerciseViewModel
 import ph.mart.healthapp.feature.food.ui.PhotoCaptureViewModel
+import ph.mart.healthapp.feature.food.ui.RecipeBuilderViewModel
 
 val foodModule = module {
     viewModelOf(::FoodViewModel)
@@ -14,4 +15,5 @@ val foodModule = module {
     viewModelOf(::PhotoCaptureViewModel)
     viewModelOf(::BarcodeScanViewModel)
     viewModelOf(::LogExerciseViewModel)
+    viewModelOf(::RecipeBuilderViewModel)
 }

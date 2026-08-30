@@ -176,6 +176,16 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   fresh entries stamped with the diary's *selected* day. The panel shows the newest
   `MAX_SAVED_MEALS` only, and saved meals stay out of the data export for the same reason
   favorites do — convenience data, not history.
+- **A recipe is a saved meal with a servings count, and logs as one row.** Both live in
+  `saved_meal`/`saved_meal_item`; `servings IS NULL` *is* the discriminator, and two DAO queries
+  keep the lists apart so neither can evict the other from its own newest-5 window. The difference
+  that earns the extra concept is at log time: a saved meal re-logs its items as one diary row
+  each, while a recipe seeds the add-entry form with a *single* row priced at `perServing()` — the
+  diary should read "Chili · 1 serving", not list the onions. The seeded row stays editable, like a
+  search hit or a suggestion, because that is the only way to log half a portion today. Recipes
+  stay out of the data export for the same reason saved meals do, and the builder is a screen
+  rather than a sheet sub-view because an ingredient list plus its editor doesn't fit above a
+  keyboard.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.
