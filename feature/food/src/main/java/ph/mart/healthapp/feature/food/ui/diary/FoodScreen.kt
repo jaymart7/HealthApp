@@ -195,6 +195,7 @@ private fun FoodContent(
                             // Nothing logged here yet means nothing to snapshot — the whole
                             // section's entries are saved, not the filtered view.
                             onSave = if (mealEntries.isEmpty()) null else ({ state.openSaveMealSheet(mealType) }),
+                            onEditEntry = state::openEditSheet,
                             onDeleteEntry = { entry ->
                                 onEvent(FoodEvent.OnDeleteEntry(entry.id))
                                 scope.launch {
@@ -213,7 +214,8 @@ private fun FoodContent(
                         entries = uiState.exercise,
                         expanded = state.exerciseExpanded,
                         onToggle = { state.exerciseExpanded = !state.exerciseExpanded },
-                        onAdd = { state.exerciseSheetOpen = true },
+                        onAdd = { state.openExerciseSheet() },
+                        onEditEntry = { entry -> state.openExerciseSheet(entry) },
                         onDeleteEntry = { entry ->
                             onEvent(FoodEvent.OnDeleteExercise(entry.id))
                             scope.launch {
@@ -263,9 +265,17 @@ private fun FoodContent(
                     },
                     onDismiss = state::closeSheet,
                     onAdd = {
-                        onEvent(FoodEvent.OnAddEntry(state.addForm))
+                        val editingId = state.editingEntryId
+                        onEvent(
+                            if (editingId == null) {
+                                FoodEvent.OnAddEntry(state.addForm)
+                            } else {
+                                FoodEvent.OnUpdateEntry(editingId, state.addForm)
+                            },
+                        )
                         state.closeSheet()
                     },
+                    editing = state.editingEntryId != null,
                 )
             }
 
@@ -291,10 +301,16 @@ private fun FoodContent(
                 )
             }
 
-            if (state.exerciseSheetOpen) {
+            // The row being corrected is resolved off the loaded day rather than held in screen
+            // state, so the saver stays flat. The guard is what makes that safe: after a rotation
+            // the day arrives an emission later, and a sheet composed against a null row would
+            // seed itself blank and save as a *new* activity.
+            val editingExercise = state.editingExerciseId?.let { id -> uiState.exercise.find { it.id == id } }
+            if (state.exerciseSheetOpen && (state.editingExerciseId == null || editingExercise != null)) {
                 LogExerciseSheet(
-                    onDismiss = { state.exerciseSheetOpen = false },
+                    onDismiss = state::closeExerciseSheet,
                     dateEpochDay = uiState.selectedDate,
+                    editing = editingExercise,
                 )
             }
 

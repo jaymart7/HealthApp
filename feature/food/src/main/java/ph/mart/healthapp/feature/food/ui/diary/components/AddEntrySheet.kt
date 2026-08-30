@@ -31,7 +31,13 @@ import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
 import ph.mart.healthapp.feature.food.ui.shared.isValid
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
-/** The diary's log-a-food sheet: four shortcut panels that seed the form, then the form itself. */
+/**
+ * The diary's log-a-food sheet: four shortcut panels that seed the form, then the form itself.
+ *
+ * [editing] turns the same sheet into the correct-a-logged-row sheet. The panels go with it: they
+ * all seed a *new* log, and two of them ([onLogSavedMeal], [onLogAgain]) write rows the moment
+ * they're tapped, which is not something that can happen while one row is being corrected.
+ */
 @Composable
 internal fun AddEntrySheet(
     mealType: MealType,
@@ -51,50 +57,53 @@ internal fun AddEntrySheet(
     onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
+    editing: Boolean = false,
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Add to ${mealType.name}",
+            text = if (editing) "Edit ${mealType.name} entry" else "Add to ${mealType.name}",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Both panels seed the fields below; they stay editable either way, so this is a
-            // shortcut past typing rather than a separate entry mode. Already-logged foods come
-            // first — they cost no network round-trip and are the likelier match.
-            RecipePanel(
-                recipes = recipes,
-                onSelect = onSelectRecipe,
-                onDelete = onDeleteRecipe,
-                onNewRecipe = onNewRecipe,
-            )
-            SavedMealPanel(
-                savedMeals = savedMeals,
-                onLog = onLogSavedMeal,
-                onDelete = onDeleteSavedMeal,
-            )
-            FoodSuggestionPanel(
-                suggestions = suggestions,
-                onSelect = onSelectSuggestion,
-                onLogAgain = onLogAgain,
-                onToggleFavorite = onToggleFavorite,
-            )
-            FoodSearchPanel(onSelect = onSelectProduct)
-            // ponytail: on a diary with recipes and recents, a quick add is still a scroll to the
-            // bottom of the sheet. A compact kcal-only row at the top is the upgrade if that
-            // friction shows up.
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = "Or add it yourself",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (!editing) {
+                // Both panels seed the fields below; they stay editable either way, so this is a
+                // shortcut past typing rather than a separate entry mode. Already-logged foods come
+                // first — they cost no network round-trip and are the likelier match.
+                RecipePanel(
+                    recipes = recipes,
+                    onSelect = onSelectRecipe,
+                    onDelete = onDeleteRecipe,
+                    onNewRecipe = onNewRecipe,
                 )
-                Text(
-                    text = "Leave the name blank to log calories only.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                SavedMealPanel(
+                    savedMeals = savedMeals,
+                    onLog = onLogSavedMeal,
+                    onDelete = onDeleteSavedMeal,
                 )
+                FoodSuggestionPanel(
+                    suggestions = suggestions,
+                    onSelect = onSelectSuggestion,
+                    onLogAgain = onLogAgain,
+                    onToggleFavorite = onToggleFavorite,
+                )
+                FoodSearchPanel(onSelect = onSelectProduct)
+                // ponytail: on a diary with recipes and recents, a quick add is still a scroll to
+                // the bottom of the sheet. A compact kcal-only row at the top is the upgrade if
+                // that friction shows up.
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Or add it yourself",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = "Leave the name blank to log calories only.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             FoodItemRow(
                 variant = FoodItemRowVariant.Editable,
@@ -124,7 +133,11 @@ internal fun AddEntrySheet(
                 PrimaryButton(
                     // The label is the only thing telling the user a nameless entry will be
                     // accepted; the button itself is enabled the moment there are calories.
-                    label = if (form.name.isBlank()) "Quick add" else "Add",
+                    label = when {
+                        editing -> "Save"
+                        form.name.isBlank() -> "Quick add"
+                        else -> "Add"
+                    },
                     onClick = onAdd,
                     enabled = form.isValid(),
                     modifier = Modifier.weight(1f),
@@ -158,6 +171,34 @@ private fun AddEntrySheetPreview() {
             onToggleFavorite = { _, _ -> },
             onDismiss = {},
             onAdd = {},
+        )
+    }
+}
+
+/** Correcting a logged row: no shortcut panels, and the button commits over the row it opened. */
+@PreviewLightDark
+@Composable
+private fun AddEntrySheetEditingPreview() {
+    AppTheme {
+        AddEntrySheet(
+            mealType = MealType.Lunch,
+            form = AddEntryForm(name = "Grilled chicken breast", portionAmount = 150.0, portionUnit = "g", calories = 210, proteinG = 32, carbsG = 2, fatG = 8),
+            suggestions = emptyList(),
+            savedMeals = emptyList(),
+            recipes = emptyList(),
+            onSelectRecipe = {},
+            onDeleteRecipe = {},
+            onNewRecipe = {},
+            onLogSavedMeal = {},
+            onDeleteSavedMeal = {},
+            onFormChange = {},
+            onSelectProduct = {},
+            onSelectSuggestion = {},
+            onLogAgain = {},
+            onToggleFavorite = { _, _ -> },
+            onDismiss = {},
+            onAdd = {},
+            editing = true,
         )
     }
 }

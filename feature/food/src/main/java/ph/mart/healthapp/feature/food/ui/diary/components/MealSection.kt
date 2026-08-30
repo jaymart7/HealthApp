@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.food.ui.diary.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -41,6 +42,7 @@ internal fun MealSection(
     onAdd: () -> Unit,
     onSave: (() -> Unit)?,
     onDeleteEntry: (FoodEntry) -> Unit,
+    onEditEntry: (FoodEntry) -> Unit,
 ) {
     Column {
         MealSectionHeader(
@@ -66,6 +68,9 @@ internal fun MealSection(
                         Box(
                             modifier = Modifier
                                 .background(MaterialTheme.colorScheme.surface)
+                                // After the background so the ripple lands on top of it, before the
+                                // padding so the whole row is the target rather than just the text.
+                                .clickable(onClickLabel = "Edit entry") { onEditEntry(entry) }
                                 .padding(start = EntryIndent, end = 16.dp, top = 8.dp, bottom = 8.dp),
                         ) {
                             FoodItemRow(
@@ -103,6 +108,7 @@ private fun MealSectionPreview() {
                 onAdd = {},
                 onSave = {},
                 onDeleteEntry = {},
+                onEditEntry = {},
             )
         }
     }
@@ -124,6 +130,7 @@ private fun MealSectionEmptyPreview() {
                 // Nothing logged means nothing to snapshot — the header hides its save affordance.
                 onSave = null,
                 onDeleteEntry = {},
+                onEditEntry = {},
             )
         }
     }
@@ -146,6 +153,7 @@ private fun MealSectionFilteredPreview() {
                 onAdd = {},
                 onSave = {},
                 onDeleteEntry = {},
+                onEditEntry = {},
             )
         }
     }
@@ -169,6 +177,7 @@ private fun MealSectionCollapsedPreview() {
                 onAdd = {},
                 onSave = {},
                 onDeleteEntry = {},
+                onEditEntry = {},
             )
         }
     }

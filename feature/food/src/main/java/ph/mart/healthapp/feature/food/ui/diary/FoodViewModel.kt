@@ -47,6 +47,7 @@ class FoodViewModel(
         when (event) {
             is FoodEvent.OnSelectDate -> selectedDate.value = event.dateEpochDay
             is FoodEvent.OnAddEntry -> onAddEntry(event.form)
+            is FoodEvent.OnUpdateEntry -> onUpdateEntry(event.id, event.form)
             is FoodEvent.OnDeleteEntry -> onDeleteEntry(event.id)
             is FoodEvent.OnRestoreEntry -> onRestoreEntry(event.entry)
             is FoodEvent.OnToggleFavorite -> onToggleFavorite(event)
@@ -115,6 +116,10 @@ class FoodViewModel(
 
     private fun onAddEntry(form: AddEntryForm) = intent {
         foodRepository.addEntry(form.toFoodEntry(dateEpochDay = selectedDate.value))
+    }
+
+    private fun onUpdateEntry(id: Long, form: AddEntryForm) = intent {
+        foodRepository.updateEntry(form.toFoodEntry(dateEpochDay = selectedDate.value).copy(id = id))
     }
 
     private fun onDeleteEntry(id: Long) = intent {

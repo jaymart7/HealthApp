@@ -7,8 +7,11 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
 @Composable
 internal fun rememberFoodScreenState(): FoodScreenState =
@@ -27,6 +30,8 @@ internal class FoodScreenState(
     calendarOpen: Boolean = false,
     saveMealFor: MealType? = null,
     savedMealName: String = "",
+    editingEntryId: Long? = null,
+    editingExerciseId: Long? = null,
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -36,17 +41,45 @@ internal class FoodScreenState(
     var exerciseExpanded: Boolean by mutableStateOf(exerciseExpanded)
     var calendarOpen: Boolean by mutableStateOf(calendarOpen)
 
+    /**
+     * Which logged row each sheet is *correcting* rather than adding to — null means a new entry.
+     *
+     * Ids rather than the rows themselves: the screen resolves them back off the loaded day, which
+     * keeps this saveable across a rotation without teaching the saver two more record shapes.
+     */
+    var editingEntryId: Long? by mutableStateOf(editingEntryId)
+    var editingExerciseId: Long? by mutableStateOf(editingExerciseId)
+
     /** Which meal section's entries the "save this meal" sheet is naming, and the name so far. */
     var saveMealFor: MealType? by mutableStateOf(saveMealFor)
     var savedMealName: String by mutableStateOf(savedMealName)
 
     fun openSheet(mealType: MealType) {
         addForm = AddEntryForm(mealType = mealType)
+        editingEntryId = null
         activeMealSheet = mealType
+    }
+
+    /** The same sheet, seeded from a row that already exists — it saves over that row. */
+    fun openEditSheet(entry: FoodEntry) {
+        addForm = entry.toAddEntryForm()
+        editingEntryId = entry.id
+        activeMealSheet = entry.mealType
     }
 
     fun closeSheet() {
         activeMealSheet = null
+        editingEntryId = null
+    }
+
+    fun openExerciseSheet(entry: ExerciseEntry? = null) {
+        editingExerciseId = entry?.id
+        exerciseSheetOpen = true
+    }
+
+    fun closeExerciseSheet() {
+        exerciseSheetOpen = false
+        editingExerciseId = null
     }
 
     fun openSaveMealSheet(mealType: MealType) {
@@ -71,7 +104,11 @@ internal class FoodScreenState(
                     f.mealType.name, f.name, f.portionAmount, f.portionUnit,
                     f.calories, f.proteinG, f.carbsG, f.fatG,
                 ) + MealType.entries.map { m -> it.expandedMeals[m] != false } +
-                    listOf(it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen, it.saveMealFor?.name, it.savedMealName)
+                    listOf(
+                        it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen,
+                        it.saveMealFor?.name, it.savedMealName,
+                        it.editingEntryId, it.editingExerciseId,
+                    )
             },
             restore = { saved ->
                 FoodScreenState(
@@ -93,6 +130,8 @@ internal class FoodScreenState(
                     calendarOpen = saved[12 + MealType.entries.size] as Boolean,
                     saveMealFor = (saved[13 + MealType.entries.size] as String?)?.let(MealType::valueOf),
                     savedMealName = saved[14 + MealType.entries.size] as String,
+                    editingEntryId = saved[15 + MealType.entries.size] as Long?,
+                    editingExerciseId = saved[16 + MealType.entries.size] as Long?,
                 )
             },
         )

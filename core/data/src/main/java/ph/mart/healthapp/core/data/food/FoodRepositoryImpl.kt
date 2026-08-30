@@ -43,6 +43,14 @@ internal class FoodRepositoryImpl(
         )
     }
 
+    override suspend fun updateEntry(entry: FoodEntry) {
+        val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
+        // The original logging time comes across, so a corrected row doesn't jump to the bottom
+        // of its meal section — every read of this table orders by it.
+        val loggedAt = dao.loggedAt(entry.id) ?: System.currentTimeMillis()
+        dao.replace(entry.id, entry.toEntity(date = date, loggedAt = loggedAt))
+    }
+
     override suspend fun deleteEntry(id: Long) {
         dao.softDelete(id)
     }

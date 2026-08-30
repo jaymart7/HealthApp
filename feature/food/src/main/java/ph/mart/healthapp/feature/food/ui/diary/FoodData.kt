@@ -101,6 +101,10 @@ sealed interface FoodEvent {
     data class OnAddEntry(val form: AddEntryForm) : FoodEvent
     data class OnDeleteEntry(val id: Long) : FoodEvent
 
+    /** A logged row corrected in place. The repository retires [id] and writes the corrected row
+     * in its place, so the diary keeps its order — see `FoodRepository.updateEntry`. */
+    data class OnUpdateEntry(val id: Long, val form: AddEntryForm) : FoodEvent
+
     /** Undo, for the snackbar a delete raises. Soft delete has no restore-by-id, so the row is
      * written again from what the screen still holds — a new id for the same meal, which is what
      * the user asked for and all they can see. */

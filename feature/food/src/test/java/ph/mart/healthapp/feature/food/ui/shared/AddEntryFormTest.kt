@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
 import ph.mart.healthapp.core.data.food.SavedMealItem
@@ -51,6 +52,45 @@ class AddEntryFormTest {
         assertEquals("g", entry.portionUnit)
         assertEquals(20000L, entry.dateEpochDay)
         assertEquals(32, entry.proteinG)
+    }
+
+    /** Tapping a logged row and saving it straight back must be a no-op on every figure. */
+    @Test
+    fun `a logged entry round-trips through the edit form unchanged`() {
+        val logged = FoodEntry(
+            id = 7,
+            name = "Grilled chicken breast",
+            dateEpochDay = 20000,
+            mealType = MealType.Dinner,
+            portionAmount = 150.0,
+            portionUnit = "g",
+            calories = 210,
+            proteinG = 32,
+            carbsG = 2,
+            fatG = 8,
+        )
+        val saved = logged.toAddEntryForm().toFoodEntry(dateEpochDay = logged.dateEpochDay)
+        assertEquals(logged.copy(id = 0), saved)
+    }
+
+    /** The trap: a quick add is stored under [QUICK_ADD_NAME], and reopening it must not turn
+     * that placeholder into a food the user claims to have named. */
+    @Test
+    fun `a quick add reopens as a quick add`() {
+        val logged = FoodEntry(
+            name = QUICK_ADD_NAME,
+            mealType = MealType.Snacks,
+            portionAmount = 1.0,
+            portionUnit = SERVING_UNIT,
+            calories = 320,
+            proteinG = 0,
+            carbsG = 0,
+            fatG = 0,
+        )
+        val form = logged.toAddEntryForm()
+        assertEquals("", form.name)
+        assertEquals(QUICK_ADD_NAME, form.toFoodEntry().name)
+        assertEquals(320, form.toFoodEntry().calories)
     }
 
     /**

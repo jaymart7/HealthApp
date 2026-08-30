@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
@@ -25,15 +26,19 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseTypeChipRow
 
 /** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; the FAB's
- * quick-action sheet leaves it 0, which the repository stamps as today. */
+ * quick-action sheet leaves it 0, which the repository stamps as today.
+ *
+ * [editing] is the logged activity being corrected, if any — the same sheet, seeded and saving
+ * over that row instead of adding one. */
 @Composable
 fun LogExerciseSheet(
     onDismiss: () -> Unit,
     dateEpochDay: Long = 0,
+    editing: ExerciseEntry? = null,
     viewModel: LogExerciseViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
-    val state = rememberLogExerciseState()
+    val state = rememberLogExerciseState(editing?.toLogExerciseForm() ?: LogExerciseForm())
     viewModel.collectSideEffect { effect ->
         when (effect) {
             LogExerciseSideEffect.Saved -> onDismiss()
@@ -43,6 +48,7 @@ fun LogExerciseSheet(
         uiState = uiState,
         state = state,
         dateEpochDay = dateEpochDay,
+        editingId = editing?.id,
         onDismiss = onDismiss,
         onEvent = viewModel::handleEvent,
     )
@@ -53,6 +59,7 @@ private fun LogExerciseContent(
     uiState: LogExerciseUiState,
     state: LogExerciseState,
     dateEpochDay: Long,
+    editingId: Long?,
     onDismiss: () -> Unit,
     onEvent: (LogExerciseEvent) -> Unit,
 ) {
@@ -62,7 +69,7 @@ private fun LogExerciseContent(
 
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Log exercise",
+            text = if (editingId == null) "Log exercise" else "Edit exercise",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -116,7 +123,7 @@ private fun LogExerciseContent(
                 SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
                     label = "Save",
-                    onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay)) },
+                    onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
                     enabled = form.isValid(),
                     modifier = Modifier.weight(1f),
                 )
@@ -133,6 +140,27 @@ private fun LogExerciseSheetPreview() {
             uiState = LogExerciseUiState(weightKg = 74.0),
             state = LogExerciseState(form = LogExerciseForm(type = ExerciseType.Run, minutes = 30)),
             dateEpochDay = 0,
+            editingId = null,
+            onDismiss = {},
+            onEvent = {},
+        )
+    }
+}
+
+/** Correcting a logged activity: the title says so, and the burn is the figure that was logged
+ * rather than a fresh estimate — [LogExerciseForm.burnedEdited] is what holds it there. */
+@PreviewLightDark
+@Composable
+private fun LogExerciseSheetEditingPreview() {
+    AppTheme {
+        LogExerciseContent(
+            uiState = LogExerciseUiState(weightKg = 74.0),
+            state = LogExerciseState(
+                form = ExerciseEntry(id = 1, type = ExerciseType.Run, name = "Riverside loop", minutes = 30, burnedKcal = 363)
+                    .toLogExerciseForm(),
+            ),
+            dateEpochDay = 0,
+            editingId = 1,
             onDismiss = {},
             onEvent = {},
         )

@@ -76,6 +76,16 @@ interface FoodRepository {
     /** Logs several foods as one write, so a saved meal lands in the diary in a single emission
      * instead of appearing item by item. */
     suspend fun addEntries(entries: List<FoodEntry>)
+    /**
+     * Corrects a logged entry. The corrected row *supersedes* the old one — soft delete plus a
+     * fresh insert in one transaction — so [FoodEntry.id] changes while the row's place in the
+     * day does not: it keeps the original logging time.
+     *
+     * That is also what keeps Google Health honest without a line of sync code. A push skips
+     * entries it has already sent, so an in-place update would leave the remote copy stale
+     * forever; retiring the id lets the existing delete-then-push pass do the right thing.
+     */
+    suspend fun updateEntry(entry: FoodEntry)
     suspend fun deleteEntry(id: Long)
 
     /** Full history, oldest first — for data export. The diary itself never needs this. */

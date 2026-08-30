@@ -12,6 +12,10 @@ interface ExerciseRepository {
     fun observeEntries(dateEpochDay: Long): Flow<List<ExerciseEntry>>
     /** Returns the new row id, which the Google Health import records against the data point. */
     suspend fun addEntry(entry: ExerciseEntry): Long
+    /** Twin of `FoodRepository.updateEntry`: the corrected row supersedes the old one, so the id
+     * changes and the row's place in the day does not. [ExerciseEntry.steps] is carried across
+     * untouched — an imported workout's step count is the watch's, not something to re-estimate. */
+    suspend fun updateEntry(entry: ExerciseEntry)
     suspend fun deleteEntry(id: Long)
 
     /** Full history, oldest first — for data export. */

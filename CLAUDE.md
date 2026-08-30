@@ -239,6 +239,21 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   restore-by-id — `OnRestoreEntry` writes the row again from what the screen still holds, a new id
   for the same meal). A saved meal or recipe is something the user built, and its delete icon sits
   beside the one that logs it, so those ask first. Don't collapse the two into one pattern.
+- **An edit supersedes a row; it never rewrites one.** Tapping a diary or exercise row reopens it
+  in the sheet that logged it, and saving soft-deletes the old row and inserts the corrected one
+  in a single `@Transaction` (`FoodEntryDao.replace`/`ExerciseEntryDao.replace`), carrying the
+  original `loggedAt` across so the row keeps its place in the day. The id therefore changes,
+  exactly like `OnRestoreEntry`'s undo. That is not incidental: `pushMeals()` skips entries in
+  `links.pushedLocalIds(FOOD_TABLE)`, so an in-place `UPDATE` would leave the Google Health copy
+  stale forever with nothing to notice it, whereas retiring the id lets the existing
+  delete-then-push pass correct both sides for free. One transaction is also what stops the diary
+  flow emitting a frame with the row missing. Two things ride along: the exercise sheet seeds
+  `burnedEdited = true` so opening a past workout can't re-estimate its burn at today's weight,
+  and `updateEntry` passes `steps` through untouched rather than re-deriving it like `addEntry`
+  does, because an imported workout's step count is the watch's own figure.
+- **The edit sheet hides the add sheet's four shortcut panels.** Recipes, saved meals, recents and
+  search all seed a *new* log, and two of them write rows the moment they're tapped — which is not
+  a thing that can happen while one row is being corrected. Same sheet, `editing` flag, one `if`.
 - **The `RecipeBuilderRoute` carries no bottom nav and no FAB**, joining the two camera flows in
   `AppScaffold`'s `showChrome` for a different reason: it is an authoring screen with its own Save,
   and leaving the tab bar up put a "Log food" FAB over it and let a tab tap walk away from a

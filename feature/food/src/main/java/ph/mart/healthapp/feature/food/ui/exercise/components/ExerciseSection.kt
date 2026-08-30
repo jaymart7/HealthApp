@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.food.ui.exercise.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,7 @@ internal fun ExerciseSection(
     onToggle: () -> Unit,
     onAdd: () -> Unit,
     onDeleteEntry: (ExerciseEntry) -> Unit,
+    onEditEntry: (ExerciseEntry) -> Unit,
 ) {
     Column {
         MealSectionHeader(
@@ -60,7 +62,11 @@ internal fun ExerciseSection(
             }
             entries.forEach { entry ->
                 key(entry.id) {
-                    SwipeableExerciseRow(entry = entry, onDelete = { onDeleteEntry(entry) })
+                    SwipeableExerciseRow(
+                        entry = entry,
+                        onDelete = { onDeleteEntry(entry) },
+                        onEdit = { onEditEntry(entry) },
+                    )
                 }
             }
         }
@@ -68,12 +74,14 @@ internal fun ExerciseSection(
 }
 
 @Composable
-private fun SwipeableExerciseRow(entry: ExerciseEntry, onDelete: () -> Unit) {
+private fun SwipeableExerciseRow(entry: ExerciseEntry, onDelete: () -> Unit, onEdit: () -> Unit) {
     SwipeToDeleteRow(onDelete = onDelete) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
+                // Same order as the meal rows': ripple over the background, target the whole row.
+                .clickable(onClickLabel = "Edit activity", onClick = onEdit)
                 .padding(start = EntryIndent, end = 16.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -113,6 +121,7 @@ private fun ExerciseSectionPreview() {
                 onToggle = {},
                 onAdd = {},
                 onDeleteEntry = {},
+                onEditEntry = {},
             )
         }
     }

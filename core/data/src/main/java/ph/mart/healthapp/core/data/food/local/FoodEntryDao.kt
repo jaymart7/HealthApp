@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.food.local
 import androidx.room3.Dao
 import androidx.room3.Insert
 import androidx.room3.Query
+import androidx.room3.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -38,6 +39,23 @@ internal interface FoodEntryDao {
 
     @Query("UPDATE food_entry SET isDeleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)
+
+    /** The row's original logging time, so an edit can keep it and stay where it is in the day. */
+    @Query("SELECT loggedAt FROM food_entry WHERE id = :id")
+    suspend fun loggedAt(id: Long): Long?
+
+    /**
+     * An edit supersedes a row rather than rewriting it — see
+     * [FoodRepository.updateEntry][ph.mart.healthapp.core.data.food.FoodRepository.updateEntry]
+     * for why the id changes.
+     *
+     * One transaction, so the diary's flow sees one emission rather than a frame with the row gone.
+     */
+    @Transaction
+    suspend fun replace(id: Long, entity: FoodEntryEntity) {
+        softDelete(id)
+        insert(entity)
+    }
 
     @Query("UPDATE food_entry SET isDeleted = 1")
     suspend fun softDeleteAll()

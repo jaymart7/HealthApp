@@ -25,7 +25,7 @@ class LogExerciseViewModel(
 
     fun handleEvent(event: LogExerciseEvent) {
         when (event) {
-            is LogExerciseEvent.OnSave -> onSave(event.form, event.dateEpochDay)
+            is LogExerciseEvent.OnSave -> onSave(event.form, event.dateEpochDay, event.editingId)
         }
     }
 
@@ -45,8 +45,13 @@ class LogExerciseViewModel(
         }.collect { newState -> reduce { newState } }
     }
 
-    private fun onSave(form: LogExerciseForm, dateEpochDay: Long) = intent {
-        exerciseRepository.addEntry(form.toExerciseEntry(dateEpochDay))
+    private fun onSave(form: LogExerciseForm, dateEpochDay: Long, editingId: Long?) = intent {
+        val entry = form.toExerciseEntry(dateEpochDay)
+        if (editingId == null) {
+            exerciseRepository.addEntry(entry)
+        } else {
+            exerciseRepository.updateEntry(entry.copy(id = editingId))
+        }
         postSideEffect(LogExerciseSideEffect.Saved)
     }
 }

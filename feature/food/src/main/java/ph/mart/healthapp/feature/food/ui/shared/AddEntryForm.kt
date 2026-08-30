@@ -44,6 +44,23 @@ fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
     fatG = fatG,
 )
 
+/**
+ * Inverse of [toFoodEntry], for reopening a logged row to correct it.
+ *
+ * [QUICK_ADD_NAME] maps back to a blank name so a quick add reopens as one — the sheet's button
+ * says "Quick add" again, and saving round-trips the row straight back to itself.
+ */
+fun FoodEntry.toAddEntryForm(): AddEntryForm = AddEntryForm(
+    mealType = mealType,
+    name = name.takeIf { it != QUICK_ADD_NAME }.orEmpty(),
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+)
+
 /** Added to the add-entry sheet's portion-unit pills, so a seeded recipe shows its unit selected
  * instead of no pill at all — and so a leftovers-by-hand entry can say "serving" too. */
 const val SERVING_UNIT = "serving"

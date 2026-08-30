@@ -28,6 +28,16 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
         )
     }
 
+    override suspend fun updateEntry(entry: ExerciseEntry) {
+        val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
+        val loggedAt = dao.loggedAt(entry.id) ?: System.currentTimeMillis()
+        // Unlike addEntry, steps are taken as given: re-deriving them would throw away the watch's
+        // own figure on an imported workout, which is the one number here we didn't guess.
+        // ponytail: so an edited duration doesn't move a hand-logged estimate either, and
+        // stepsCreditKcal() subtracts a slightly stale count. Re-estimate here if that drift shows.
+        dao.replace(entry.id, entry.toEntity(date = date, loggedAt = loggedAt))
+    }
+
     override suspend fun deleteEntry(id: Long) {
         dao.softDelete(id)
     }
