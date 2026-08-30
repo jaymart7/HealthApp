@@ -11,7 +11,7 @@ import androidx.compose.runtime.setValue
 internal fun rememberAddPhotoState(): AddPhotoState = remember { AddPhotoState() }
 
 /** Plain `remember`, not `rememberSaveable` — same justified exception
- * [ph.mart.healthapp.feature.food.ui.PhotoCaptureScreenState] already established for holding a
+ * [ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreenState] already established for holding a
  * non-parcelable [Bitmap]; losing an in-progress photo pick on process death is acceptable.
  * ponytail: process death loses the in-progress capture; add a Saver-backed byte[] snapshot if
  * that's ever reported as a real problem. */

@@ -5,6 +5,10 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.FoodRoute
+import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanScreen
+import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
+import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
+import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 
 /** The FAB's "Log food" destination — the real 6(+1)-state photo-logging flow (Phase 5). */
 @Serializable

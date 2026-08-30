@@ -29,8 +29,8 @@ import ph.mart.healthapp.core.navigation.route.TopLevelBackStack
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
-import ph.mart.healthapp.feature.food.ui.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
+import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute

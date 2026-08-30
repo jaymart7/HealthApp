@@ -302,15 +302,27 @@ because of that, not because it was the nicest design available.
 
 ## Composable structure & previews
 
-- **File breakdown:** each screen's composable lives in its feature module's
-  `ui/` package as `ScreenName.kt`; sub-composables go in a sibling
-  `ui/components/`. Don't leave a 400-line composable with five nested private
-  functions in one file. Follow whatever `/orbit-mvi-screen-split` prescribes —
-  don't run two conventions in parallel.
+- **File breakdown:** a screen's composable is `ScreenName.kt`; its
+  sub-composables go in a sibling `components/`. Don't leave a 400-line
+  composable with five nested private functions in one file. Follow whatever
+  `/orbit-mvi-screen-split` prescribes — don't run two conventions in parallel.
+- **A feature holding more than one flow nests one level per flow.** A single-flow
+  feature is flat: `ui/ScreenName.kt` + `ui/components/`. A multi-flow one is
+  `ui/<flow>/ScreenName.kt` + `ui/<flow>/components/`, one package per flow, with
+  the `*Data`/`*State`/`*ViewModel`/`*Screen` quartet intact inside each. Anything
+  genuinely used by two or more flows goes in `ui/shared/` (or
+  `ui/shared/components/`) rather than being left in whichever flow happened to
+  declare it first. `:feature:food` is the worked example — `diary`, `photo`,
+  `barcode`, `exercise`, `recipe`, `search`, `shared` — and grouping there is by
+  *subject*, not by owning screen: `ExerciseSection` sits under `exercise/` and
+  `RecipePanel` under `recipe/` even though `FoodScreen` renders both. Only
+  `FoodNavigation.kt` stays at the `ui/` root, because the route types and
+  `foodEntries` are the module's entry point.
 - **Shared vs. screen-specific placement is not optional.** Used in ≥2 screens
   (`FoodItemRow`, `AIChip`, `MascotAvatar`, `WaterGlassRow`, `CalendarPanel`) →
   `:core:designsystem`, never duplicated into a feature. One screen only → that
-  feature's own `ui/components/`.
+  screen's own `components/`. `ui/shared/` is for the middle case: crossing flows
+  inside one feature, but not crossing features.
 - **Every screen and component composable gets a `@PreviewLightDark`** (not two
   hand-written `@Preview`s) wrapped in `Surface` using the app theme — both
   modes are fully specified, and one annotation makes it hard to silently skip

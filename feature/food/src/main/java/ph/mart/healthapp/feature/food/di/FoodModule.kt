@@ -2,12 +2,12 @@ package ph.mart.healthapp.feature.food.di
 
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
-import ph.mart.healthapp.feature.food.ui.BarcodeScanViewModel
-import ph.mart.healthapp.feature.food.ui.FoodSearchViewModel
-import ph.mart.healthapp.feature.food.ui.FoodViewModel
-import ph.mart.healthapp.feature.food.ui.LogExerciseViewModel
-import ph.mart.healthapp.feature.food.ui.PhotoCaptureViewModel
-import ph.mart.healthapp.feature.food.ui.RecipeBuilderViewModel
+import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanViewModel
+import ph.mart.healthapp.feature.food.ui.diary.FoodViewModel
+import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseViewModel
+import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureViewModel
+import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderViewModel
+import ph.mart.healthapp.feature.food.ui.search.FoodSearchViewModel
 
 val foodModule = module {
     viewModelOf(::FoodViewModel)
