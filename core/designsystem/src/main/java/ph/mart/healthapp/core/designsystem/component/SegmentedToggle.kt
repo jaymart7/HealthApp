@@ -1,23 +1,43 @@
 package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import kotlin.math.roundToInt
+
+/**
+ * The width five pills already leave on a 360dp screen — the floor below which a `labelLarge`
+ * label starts clipping. Pills split the track evenly while they clear it and the toggle scrolls
+ * once they don't, so every caller with five or fewer options renders exactly as it did before
+ * this floor existed.
+ */
+private val MinPillWidth = 64.dp
+
+/** Track padding, taken off before the split so evenly-sized pills add up to the track exactly. */
+private val TrackPadding = 4.dp
 
 /** Pill-track toggle, list-driven (N options), [MaterialTheme.colorScheme.secondaryContainer] selected chip. */
 @Composable
@@ -27,43 +47,65 @@ fun SegmentedToggle(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(999.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(4.dp),
-    ) {
-        options.forEachIndexed { index, option ->
-            val selected = index == selectedIndex
-            Surface(
-                onClick = { onSelect(index) },
-                shape = RoundedCornerShape(999.dp),
-                color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-                contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = option, style = MaterialTheme.typography.labelLarge)
+    val scroll = rememberScrollState()
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val pillWidth = pillWidth(maxWidth, options.size)
+        val pillPx = with(LocalDensity.current) { pillWidth.toPx() }
+        // Without this a restored selection off the right-hand end opens with no visible chip.
+        // scrollTo clamps, so there is no bounds math to get wrong.
+        LaunchedEffect(selectedIndex, pillPx) { scroll.scrollTo((selectedIndex * pillPx).roundToInt()) }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(999.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                // Background before the scroll, so the track stays put and only the pills move.
+                .horizontalScroll(scroll)
+                .padding(TrackPadding),
+        ) {
+            options.forEachIndexed { index, option ->
+                val selected = index == selectedIndex
+                Surface(
+                    onClick = { onSelect(index) },
+                    shape = RoundedCornerShape(999.dp),
+                    color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                    contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .width(pillWidth)
+                        .height(40.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                        Text(text = option, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                    }
                 }
             }
         }
     }
 }
 
+private fun pillWidth(available: Dp, count: Int): Dp =
+    maxOf((available - TrackPadding * 2) / count.coerceAtLeast(1), MinPillWidth)
+
 @PreviewLightDark
 @Composable
 private fun SegmentedTogglePreview() {
     AppTheme {
         Surface {
-            SegmentedToggle(
-                options = listOf("Metric (kg, cm)", "Imperial (lb, in)"),
-                selectedIndex = 0,
-                onSelect = {},
-                modifier = Modifier.padding(16.dp),
-            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                SegmentedToggle(
+                    options = listOf("Metric (kg, cm)", "Imperial (lb, in)"),
+                    selectedIndex = 0,
+                    onSelect = {},
+                )
+                // Six options is what the floor exists for: the track scrolls instead of squeezing.
+                SegmentedToggle(
+                    options = listOf("Weight", "Food", "Photos", "Body", "Mood", "Sleep"),
+                    selectedIndex = 5,
+                    onSelect = {},
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+            }
         }
     }
 }

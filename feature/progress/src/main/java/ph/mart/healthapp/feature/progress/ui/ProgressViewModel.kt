@@ -6,6 +6,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.dailyTargets
@@ -24,12 +25,13 @@ class ProgressViewModel(
     waterRepository: WaterRepository,
     exerciseRepository: ExerciseRepository,
     moodRepository: MoodRepository,
+    sleepRepository: SleepRepository,
 ) : ViewModel(), OrbitContainerHost<ProgressUiState, ProgressUiState, Nothing> {
 
     override val container = orbitContainer<ProgressUiState, Nothing>(ProgressUiState()) {
         observeProgress(
             progressRepository, profileRepository, foodRepository, waterRepository, exerciseRepository,
-            moodRepository,
+            moodRepository, sleepRepository,
         )
     }
 
@@ -40,6 +42,7 @@ class ProgressViewModel(
         waterRepository: WaterRepository,
         exerciseRepository: ExerciseRepository,
         moodRepository: MoodRepository,
+        sleepRepository: SleepRepository,
     ) = intent {
         val progress = combine(
             progressRepository.observeWeightEntries(),
@@ -72,8 +75,13 @@ class ProgressViewModel(
             ::loggedDays,
         )
 
-        combine(progress, activeDays, moodRepository.observeDays()) { state, days, moodDays ->
-            state.copy(activeDays = days, moodDays = moodDays)
+        combine(
+            progress,
+            activeDays,
+            moodRepository.observeDays(),
+            sleepRepository.observeNights(),
+        ) { state, days, moodDays, nights ->
+            state.copy(activeDays = days, moodDays = moodDays, sleepNights = nights)
         }.collect { newState -> reduce { newState } }
     }
 }

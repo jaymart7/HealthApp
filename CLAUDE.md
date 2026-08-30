@@ -160,9 +160,13 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   days with their gaps intact, while a weight chart re-centres on the data it has. The Mood tab
   therefore hands its chart the *window bounds*, not just the list — the series is sparse, and
   the x-position of a bar is its date.
-- **The Progress tab labels are trimmed to fit five pills.** "Nutrition" reads "Food" and
-  "Measurements" reads "Body" — five equal-weight `SegmentedToggle` pills leave ~64dp each on a
-  360dp screen. Adding a sixth tab means reworking the toggle, not shortening further.
+- **`SegmentedToggle` splits its width evenly until a pill would fall below 64dp, then scrolls.**
+  64dp is what five pills already left on a 360dp screen, so every caller with five or fewer
+  options (the unit toggles, the four `ChartRange` pills) renders exactly as it did before the
+  floor existed — the branch only ever fires for the six Progress tabs, and on very narrow
+  screens, where scrolling replaces clipping. The Progress labels stay trimmed ("Nutrition" reads
+  "Food", "Measurements" reads "Body"); a seventh tab costs nothing but scroll distance now, so
+  never shorten a label further to avoid one.
 - **The recap's weight cell goes blank when the last weigh-in predates the window.**
   `trendVsSevenDaysAgo()` anchors to the latest *entry*, not to today, so without that guard a
   card headed "Last 7 days" would report a delta between two entries from two months ago.
@@ -250,7 +254,9 @@ because of that, not because it was the nicest design available.
 - **Sleep is not a streak domain**, same reasoning as mood: a watch recording sleep while its
   owner ignores the app is not "you logged something". `sleep_day` lives under `health/` because
   FitPulse cannot measure sleep, so there is no manual write path — and Home's card is *hidden*
-  when there's no night rather than rendering a zero.
+  when there's no night rather than rendering a zero. Progress's Sleep tab windows the series
+  **anchored to today**, like mood and unlike weight: a sparse series headed "1M" has to show the
+  last 30 days with their gaps intact, not the 30 days around whenever the watch last synced.
 - **The disclosure screen is a screen, not a settings row.** It renders from
   `HealthDisclosurePanel` in `:core:designsystem` because onboarding (step 5 of 6) and Profile →
   Connections both show it, and `connect()` is the only path from it to Google's consent prompt.

@@ -23,6 +23,10 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.averages
+import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.health.formatDuration
+import ph.mart.healthapp.core.data.health.inRange
+import ph.mart.healthapp.core.data.health.sleepAverages
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.inRange
@@ -50,6 +54,7 @@ import ph.mart.healthapp.feature.progress.ui.components.MoodTrendChart
 import ph.mart.healthapp.feature.progress.ui.components.NutritionTrendChart
 import ph.mart.healthapp.feature.progress.ui.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.components.ProgressPhotoGrid
+import ph.mart.healthapp.feature.progress.ui.components.SleepTrendChart
 import ph.mart.healthapp.feature.progress.ui.components.WeightProgressChart
 import ph.mart.healthapp.feature.progress.ui.components.WeeklyRecapCard
 import ph.mart.healthapp.feature.progress.ui.components.StatCell
@@ -106,6 +111,7 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     ProgressTab.Nutrition -> ScrollingTab(scrollState) { NutritionTabContent(uiState, state) }
                     ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
                     ProgressTab.Mood -> ScrollingTab(scrollState) { MoodTabContent(uiState, state) }
+                    ProgressTab.Sleep -> ScrollingTab(scrollState) { SleepTabContent(uiState, state) }
                 }
             }
 
@@ -266,6 +272,47 @@ private fun MoodTabContent(uiState: ProgressUiState, state: ProgressScreenState)
     }
 }
 
+@Composable
+private fun SleepTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
+    if (uiState.sleepNights.isEmpty()) {
+        FullScreenState(
+            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+            heading = "No sleep data yet",
+            body = "Connect Google Health in Profile and your nights show up here.",
+        )
+        return
+    }
+    Column {
+        SegmentedToggle(
+            options = ChartRange.entries.map { it.label },
+            selectedIndex = ChartRange.entries.indexOf(state.range),
+            onSelect = { index -> state.range = ChartRange.entries[index] },
+        )
+        // Windowed by date rather than sliced off the end, for the same reason the mood series is:
+        // nights are sparse, so the chart needs the window's bounds to know where the gaps are.
+        val today = todayEpochDay()
+        val from = today - (state.range.days ?: ChartRange.OneYear.days!!)
+        val nights = uiState.sleepNights.inRange(state.range, today)
+        SleepTrendChart(
+            nights = nights,
+            fromEpochDay = from,
+            toEpochDay = today,
+            modifier = Modifier.padding(top = 16.dp),
+        )
+        val averages = nights.sleepAverages()
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            StatCell(label = "Avg night", value = durationLabel(averages.averageMinutes))
+            StatCell(label = "Longest", value = durationLabel(averages.longestMinutes))
+            StatCell(label = "Nights", value = "${averages.nights}")
+        }
+    }
+}
+
+private fun durationLabel(minutes: Int?): String = minutes?.let(::formatDuration) ?: "—"
+
 private fun averageLabel(value: Double?): String =
     value?.let { "%.1f / ${MOOD_SCALE.last}".format(it) } ?: "—"
 
@@ -328,6 +375,9 @@ private fun ProgressScreenPreview() {
                 activeDays = (todayEpochDay() - 4..todayEpochDay()).toSet(),
                 moodDays = listOf(4 to 3, 5 to 4, 3 to 2, 4 to 4).mapIndexed { index, (mood, energy) ->
                     MoodDay(todayEpochDay() - 4 + index, mood, energy)
+                },
+                sleepNights = listOf(432, 401, 512, 388).mapIndexed { index, minutes ->
+                    SleepNight(todayEpochDay() - 4 + index, minutes)
                 },
                 targets = DailyTargets(calories = 1941, proteinG = 146, carbsG = 194, fatG = 65, floor = 1500),
             ),

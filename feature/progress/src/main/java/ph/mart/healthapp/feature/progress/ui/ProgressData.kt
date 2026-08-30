@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.progress.ui
 
 import ph.mart.healthapp.core.data.food.DayNutrition
+import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
@@ -10,15 +11,17 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
-/** [label] rather than the entry name in the toggle: five equal-weight SegmentedToggle pills
- * leave ~64dp each on a 360dp screen, so every label is trimmed to fit at labelLarge —
- * "Measurements" to "Body" and "Nutrition" to "Food". "Photos" is the longest that survives. */
+/** [label] rather than the entry name in the toggle: labels are trimmed to keep the pills wide
+ * enough to read — "Measurements" to "Body" and "Nutrition" to "Food". Past five options the
+ * toggle stops splitting the width evenly and scrolls instead (see SegmentedToggle), which is
+ * what makes a sixth tab possible without trimming any further. */
 enum class ProgressTab(val label: String) {
     Weight("Weight"),
     Nutrition("Food"),
     Photos("Photos"),
     Measurements("Body"),
     Mood("Mood"),
+    Sleep("Sleep"),
 }
 
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
@@ -36,6 +39,9 @@ data class ProgressUiState(
     val dailyNutrition: List<DayNutrition> = emptyList(),
     /** Sparse — logged days only, unlike [dailyNutrition]. The Mood tab places them by date. */
     val moodDays: List<MoodDay> = emptyList(),
+    /** Sparse too, and import-only: FitPulse cannot measure sleep, so a night with no row is a
+     * night Google Health never sent. The Sleep tab places them by date, like [moodDays]. */
+    val sleepNights: List<SleepNight> = emptyList(),
     /** Every day anything was logged, across all four domains — the streak's definition, reused
      * by the weekly recap so the two can't disagree about what a logged day is. */
     val activeDays: Set<Long> = emptySet(),

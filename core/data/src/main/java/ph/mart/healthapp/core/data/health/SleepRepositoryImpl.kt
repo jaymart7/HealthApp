@@ -11,6 +11,9 @@ internal class SleepRepositoryImpl(private val dao: SleepDayDao) : SleepReposito
     /** Today-only, like `FoodRepository.observeTodayEntries()` — Home genuinely means today. */
     override fun observeLastNight(): Flow<SleepNight?> =
         dao.observeForDate(todayEpochDay()).map { it?.toSleepNight() }
+
+    override fun observeNights(): Flow<List<SleepNight>> =
+        dao.observeAll().map { nights -> nights.map { it.toSleepNight() } }
 }
 
 private fun SleepDayEntity.toSleepNight() = SleepNight(dateEpochDay = date, minutesAsleep = minutesAsleep)
