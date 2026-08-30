@@ -312,12 +312,20 @@ because of that, not because it was the nicest design available.
   the `*Data`/`*State`/`*ViewModel`/`*Screen` quartet intact inside each. Anything
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
-  declare it first. `:feature:food` is the worked example — `diary`, `photo`,
-  `barcode`, `exercise`, `recipe`, `search`, `shared` — and grouping there is by
-  *subject*, not by owning screen: `ExerciseSection` sits under `exercise/` and
-  `RecipePanel` under `recipe/` even though `FoodScreen` renders both. Only
-  `FoodNavigation.kt` stays at the `ui/` root, because the route types and
-  `foodEntries` are the module's entry point.
+  declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
+  `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
+  `measurement`, `photo`, `nutrition`, `mood`, `sleep`) and `:feature:profile`
+  (`profile`, `health`) are the worked examples. Grouping is by *subject*, not by
+  owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
+  `recipe/` though `FoodScreen` renders both, and Progress's six tab bodies sit
+  with the charts they draw rather than with the shell that dispatches them. Only
+  the `*Navigation.kt` file stays at the `ui/` root, because its route types and
+  `<feature>Entries` are what `:app` reaches for.
+- **`:feature:home` and `:feature:onboarding` are deliberately flat**, and should
+  stay that way. Each holds exactly one flow — Home is one screen, onboarding is one
+  wizard whose seven steps are sub-views of `OnboardingScreen`'s `when (step)` — so
+  `ui/` + `ui/components/` is already what the rule above prescribes. Don't "finish
+  the job" by sub-packaging them.
 - **Shared vs. screen-specific placement is not optional.** Used in ≥2 screens
   (`FoodItemRow`, `AIChip`, `MascotAvatar`, `WaterGlassRow`, `CalendarPanel`) →
   `:core:designsystem`, never duplicated into a feature. One screen only → that
