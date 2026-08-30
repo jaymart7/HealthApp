@@ -35,9 +35,9 @@ import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
-import ph.mart.healthapp.feature.progress.ui.AddPhotoSheet
-import ph.mart.healthapp.feature.progress.ui.LogWeightSheet
+import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
+import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
 
 private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
     TopLevelDestination.Home -> AppIcons.Home
