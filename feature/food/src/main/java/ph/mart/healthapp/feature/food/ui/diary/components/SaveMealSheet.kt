@@ -31,7 +31,9 @@ internal fun SaveMealSheet(
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Save this ${mealType.name}",
+            // Word-for-word the header button's own accessible name, so the sheet confirms the
+            // thing that was tapped. "Save this Snacks" also read as a grammatical slip.
+            text = "Save ${mealType.name} as a meal",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 4.dp),

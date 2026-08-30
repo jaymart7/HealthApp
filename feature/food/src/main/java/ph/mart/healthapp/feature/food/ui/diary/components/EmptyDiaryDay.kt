@@ -61,10 +61,6 @@ internal fun EmptyDiaryDay(isToday: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
-/** What a single empty section says once the day has *something* on it. The header directly above
- * already names the meal, so repeating the name four times down the screen was the noise. */
-internal const val EMPTY_SECTION_LABEL = "Nothing here yet."
-
 @PreviewLightDark
 @Composable
 private fun EmptyDiaryDayPreview() {

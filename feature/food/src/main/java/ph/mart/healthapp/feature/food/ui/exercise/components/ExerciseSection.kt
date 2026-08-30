@@ -1,19 +1,14 @@
 package ph.mart.healthapp.feature.food.ui.exercise.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
@@ -24,9 +19,11 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.ui.diary.components.EMPTY_SECTION_LABEL
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.food.ui.diary.components.MealSectionHeader
+import ph.mart.healthapp.feature.food.ui.shared.components.EMPTY_SECTION_LABEL
+import ph.mart.healthapp.feature.food.ui.shared.components.EntryIndent
+import ph.mart.healthapp.feature.food.ui.shared.components.SwipeToDeleteRow
 
 /**
  * The diary's fifth section — same collapsible header and swipe-to-delete as the meal sections,
@@ -48,6 +45,9 @@ internal fun ExerciseSection(
             expanded = expanded,
             onToggle = onToggle,
             onAdd = onAdd,
+            // Four sections above this one report calories eaten in the same slot. This one
+            // reports calories spent, and it raises the day's budget rather than filling it.
+            burned = true,
         )
         if (expanded) {
             if (entries.isEmpty()) {
@@ -55,7 +55,7 @@ internal fun ExerciseSection(
                     text = EMPTY_SECTION_LABEL,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 38.dp, end = 16.dp, bottom = 12.dp),
+                    modifier = Modifier.padding(start = EntryIndent, end = 16.dp, bottom = 12.dp),
                 )
             }
             entries.forEach { entry ->
@@ -69,35 +69,12 @@ internal fun ExerciseSection(
 
 @Composable
 private fun SwipeableExerciseRow(entry: ExerciseEntry, onDelete: () -> Unit) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onDelete()
-            true
-        },
-    )
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            Row(
-                modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.error),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Delete",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.padding(end = 24.dp),
-                )
-            }
-        },
-    ) {
+    SwipeToDeleteRow(onDelete = onDelete) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(start = 38.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                .padding(start = EntryIndent, end = 16.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {

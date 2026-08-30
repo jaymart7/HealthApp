@@ -187,6 +187,9 @@ private fun FoodContent(
                             entries = visibleEntries,
                             subtotalKcal = mealEntries.dailyTotals().calories,
                             expanded = state.expandedMeals[mealType] != false,
+                            // The section has food in it and the filter hid all of it — a
+                            // different sentence from a section with nothing in it.
+                            filteredOut = mealEntries.isNotEmpty() && visibleEntries.isEmpty(),
                             onToggle = { state.toggleExpanded(mealType) },
                             onAdd = { state.openSheet(mealType) },
                             // Nothing logged here yet means nothing to snapshot — the whole

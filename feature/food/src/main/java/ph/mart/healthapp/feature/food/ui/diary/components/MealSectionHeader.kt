@@ -2,9 +2,9 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -17,22 +17,39 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
-/** Screen-specific to the food diary — collapsible row: chevron, meal label, subtotal, an optional
+/**
+ * Screen-specific to the food diary — collapsible row: chevron, meal label, subtotal, an optional
  * "save as meal" bookmark, and "+". [onSave] is null for a section with nothing in it — there is
- * nothing to snapshot yet. */
+ * nothing to snapshot yet.
+ *
+ * [burned] is what keeps the exercise section honest. Its subtotal sits in the same slot, at the
+ * same size and colour, as the four above it — but those are calories eaten and this one is
+ * calories spent, and it *raises* the day's budget rather than filling it. Five numbers down one
+ * column that look identical and mean opposite things is a misreading waiting to happen, and the
+ * cost of it is believing you ate 903 kcal you did not.
+ *
+ * A zero subtotal prints nothing at all: on an empty day, four "0 kcal" labels are four
+ * repetitions of the absence the empty state already says once.
+ */
 @Composable
-fun MealSectionHeader(
+internal fun MealSectionHeader(
     label: String,
     subtotalKcal: Int,
     expanded: Boolean,
     onToggle: () -> Unit,
     onAdd: () -> Unit,
     onSave: (() -> Unit)? = null,
+    burned: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -40,6 +57,12 @@ fun MealSectionHeader(
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clickable(onClick = onToggle)
+            // Without this a screen reader gets "Breakfast 325 kcal" and an activatable row, with
+            // no word about it being a section or which way activating it goes.
+            .semantics {
+                role = Role.Button
+                stateDescription = if (expanded) "Expanded" else "Collapsed"
+            }
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -47,7 +70,8 @@ fun MealSectionHeader(
             imageVector = if (expanded) AppIcons.ChevronDown else AppIcons.ChevronRight,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.height(16.dp),
+            // Explicitly square, because the entry rows below indent to clear exactly this.
+            modifier = Modifier.size(16.dp),
         )
         Text(
             text = label,
@@ -55,11 +79,13 @@ fun MealSectionHeader(
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f).padding(start = 8.dp),
         )
-        Text(
-            text = "$subtotalKcal kcal",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (subtotalKcal != 0) {
+            Text(
+                text = if (burned) "$subtotalKcal kcal burned" else "$subtotalKcal kcal",
+                style = MaterialTheme.typography.bodySmall.tabularNums,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         if (onSave != null) {
             HeaderAction(
                 icon = AppIcons.Bookmark,
@@ -110,6 +136,41 @@ private fun MealSectionHeaderPreview() {
                 onAdd = {},
                 onSave = {},
             )
+        }
+    }
+}
+
+/** Collapsed, nothing logged, and the exercise variant — the three the meal row never showed. */
+@PreviewLightDark
+@Composable
+private fun MealSectionHeaderVariantsPreview() {
+    AppTheme {
+        Surface {
+            Column {
+                MealSectionHeader(
+                    label = "Lunch",
+                    subtotalKcal = 480,
+                    expanded = false,
+                    onToggle = {},
+                    onAdd = {},
+                    onSave = {},
+                )
+                MealSectionHeader(
+                    label = "Dinner",
+                    subtotalKcal = 0,
+                    expanded = true,
+                    onToggle = {},
+                    onAdd = {},
+                )
+                MealSectionHeader(
+                    label = "Exercise",
+                    subtotalKcal = 903,
+                    expanded = true,
+                    onToggle = {},
+                    onAdd = {},
+                    burned = true,
+                )
+            }
         }
     }
 }
