@@ -240,6 +240,19 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `toScannedProduct` tries the branded id first and falls back. Sodium (`1093`) is the one nutrient
   in the app counted in milligrams, which is why its stepper steps by 50 and its field is a digit
   wider than the macro fields.
+- **Targets are editable from Profile, and a manual calorie target reprices the split.** The four
+  `Profile` overrides used to be reachable only from onboarding's Confirm step, which left a user
+  who wanted a different target with no path but a reinstall — Goals is now an editable card, like
+  Water and Fasting, not a sheet or a route. Two things fall out of the overrides being nullable:
+  `dailyTargets()` prices the 30/40/30 split off the *effective* calories, because 1800 kcal printed
+  over a macro bar summing to 2400 is two numbers that disagree (per-macro overrides still win on
+  top, and with no calorie override it is exactly `calculateDailyTargets`); and "Reset to
+  calculated" exists because an override is a **pin** — without a way back to null, one nudge means
+  a later weigh-in never moves the targets again. The calorie field is the stepper-only variant on
+  purpose, the one place that rule bends: the write is clamped to `CALORIE_TARGET_KCAL`, and a
+  clamped value re-seeds `StepperValueField`'s text, so a half-typed "1" would snap to "800"
+  mid-keystroke. `CALORIE_FLOOR_WARNING` lives in `:core:data` beside the floors so the two screens
+  that show it can't drift — it warns, it never blocks, and it is not a clamp.
 - **Every numeric figure is typable, not just steppable.** `StepperValueField` (in
   `NumericStepperField.kt`) backs the calorie, macro, portion, duration and burn values; the ±
   buttons nudge a figure that is already about right. Stepper-only entry meant 320 kcal cost 32

@@ -18,8 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.ActivityLevel
+import ph.mart.healthapp.core.data.profile.CALORIE_FLOOR_WARNING
+import ph.mart.healthapp.core.data.profile.CALORIE_TARGET_KCAL
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Sex
+import ph.mart.healthapp.core.data.profile.belowFloor
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
@@ -44,7 +47,7 @@ internal fun ConfirmTargetsScreen(
 ) {
     val profile = form.toProfileOrNull() ?: return
     val targets = profile.dailyTargets()
-    val belowFloor = targets.calories < targets.floor
+    val belowFloor = targets.belowFloor
 
     Column(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
         Column(
@@ -76,11 +79,11 @@ internal fun ConfirmTargetsScreen(
                     value = targets.calories.toString(),
                     unitSuffix = "kcal",
                     onIncrement = { onFormChange(form.copy(calorieOverrideKcal = targets.calories + 50)) },
-                    onDecrement = { onFormChange(form.copy(calorieOverrideKcal = (targets.calories - 50).coerceAtLeast(800))) },
+                    onDecrement = { onFormChange(form.copy(calorieOverrideKcal = (targets.calories - 50).coerceAtLeast(CALORIE_TARGET_KCAL.first))) },
                 )
                 if (belowFloor) {
                     Text(
-                        text = "This is below the generally recommended minimum. Consider talking to a healthcare provider before going lower.",
+                        text = CALORIE_FLOOR_WARNING,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )

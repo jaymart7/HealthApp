@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.fasting.FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.profile.CALORIE_TARGET_KCAL
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -46,6 +47,44 @@ class ProfileViewModel(
     fun setReminder(kind: ReminderKind, enabled: Boolean) = intent {
         val profile = state.profile ?: return@intent
         profileRepository.saveProfile(profile.withReminder(kind, enabled))
+    }
+
+    /** The four target setters write an override on top of the Mifflin–St Jeor computation; see
+     * [ph.mart.healthapp.core.data.profile.dailyTargets]. Clamped at the edges the way
+     * [setWaterGoal] is, rather than validated after the fact — the calorie floor is a *warning*,
+     * not a bound, so it is deliberately not clamped here. */
+    fun setCalorieTarget(kcal: Int) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(calorieOverrideKcal = kcal.coerceIn(CALORIE_TARGET_KCAL)))
+    }
+
+    fun setProteinTarget(grams: Int) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(proteinOverrideG = grams.coerceAtLeast(0)))
+    }
+
+    fun setCarbsTarget(grams: Int) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(carbsOverrideG = grams.coerceAtLeast(0)))
+    }
+
+    fun setFatTarget(grams: Int) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(fatOverrideG = grams.coerceAtLeast(0)))
+    }
+
+    /** Back to null, which is what makes the targets track the profile again — an override is a
+     * pin, and nothing else clears it. */
+    fun resetTargets() = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(
+            profile.copy(
+                calorieOverrideKcal = null,
+                proteinOverrideG = null,
+                carbsOverrideG = null,
+                fatOverrideG = null,
+            ),
+        )
     }
 
     fun setWaterGoal(glasses: Int) = intent {

@@ -144,6 +144,11 @@ fun ProfileScreen(
         messageIsError = messageIsError,
         onSelectUnit = viewModel::setUnit,
         onSetDarkTheme = viewModel::setDarkTheme,
+        onSetCalorieTarget = viewModel::setCalorieTarget,
+        onSetProteinTarget = viewModel::setProteinTarget,
+        onSetCarbsTarget = viewModel::setCarbsTarget,
+        onSetFatTarget = viewModel::setFatTarget,
+        onResetTargets = viewModel::resetTargets,
         onSetWaterGoal = viewModel::setWaterGoal,
         onSetFastingGoal = viewModel::setFastingGoal,
         onSetExerciseBudget = viewModel::setExerciseBudget,
@@ -176,6 +181,11 @@ private fun ProfileContent(
     messageIsError: Boolean,
     onSelectUnit: (UnitSystem) -> Unit,
     onSetDarkTheme: (Boolean) -> Unit,
+    onSetCalorieTarget: (Int) -> Unit,
+    onSetProteinTarget: (Int) -> Unit,
+    onSetCarbsTarget: (Int) -> Unit,
+    onSetFatTarget: (Int) -> Unit,
+    onResetTargets: () -> Unit,
     onSetWaterGoal: (Int) -> Unit,
     onSetFastingGoal: (Int) -> Unit,
     onSetExerciseBudget: (Boolean) -> Unit,
@@ -203,7 +213,14 @@ private fun ProfileContent(
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            ProfileGoalsSection(profile = profile)
+            ProfileGoalsSection(
+                profile = profile,
+                onSetCalorieTarget = onSetCalorieTarget,
+                onSetProteinTarget = onSetProteinTarget,
+                onSetCarbsTarget = onSetCarbsTarget,
+                onSetFatTarget = onSetFatTarget,
+                onResetTargets = onResetTargets,
+            )
             ProfileUnitsSection(unit = profile.preferredUnit, onSelect = onSelectUnit)
             // null profile field means "follow the device", so resolve it here rather than in the
             // section — same expression MainActivity uses to pick the scheme.
@@ -260,6 +277,11 @@ private fun ProfileScreenPreview() {
             messageIsError = false,
             onSelectUnit = {},
             onSetDarkTheme = {},
+            onSetCalorieTarget = {},
+            onSetProteinTarget = {},
+            onSetCarbsTarget = {},
+            onSetFatTarget = {},
+            onResetTargets = {},
             onSetWaterGoal = {},
             onSetFastingGoal = {},
             onSetExerciseBudget = {},

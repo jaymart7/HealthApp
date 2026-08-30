@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.data.profile
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -68,6 +69,27 @@ class DailyTargetsTest {
         val targets = overridden.dailyTargets()
         assertEquals(2000, targets.calories)
         assertEquals(150, targets.proteinG)
-        assertEquals(calculateDailyTargets(base).carbsG, targets.carbsG)
+        // Carbs carry no override, so they are the 40% share of the *manual* 2000 kcal.
+        assertEquals(200, targets.carbsG)
+    }
+
+    @Test
+    fun `a manual calorie target reprices the whole macro split`() {
+        val targets = profile(sex = Sex.Male).copy(calorieOverrideKcal = 2000).dailyTargets()
+        val macroCalories = targets.proteinG * 4 + targets.carbsG * 4 + targets.fatG * 9
+        assertTrue(Math.abs(macroCalories - 2000) <= 3)
+    }
+
+    @Test
+    fun `dailyTargets without overrides is the computed value`() {
+        val base = profile(sex = Sex.Female)
+        assertEquals(calculateDailyTargets(base), base.dailyTargets())
+    }
+
+    @Test
+    fun `belowFloor only trips under the safety floor`() {
+        val base = profile(sex = Sex.Male)
+        assertTrue(base.copy(calorieOverrideKcal = MALE_CALORIE_FLOOR - 1).dailyTargets().belowFloor)
+        assertFalse(base.dailyTargets().belowFloor)
     }
 }
