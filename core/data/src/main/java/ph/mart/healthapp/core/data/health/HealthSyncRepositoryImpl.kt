@@ -9,7 +9,6 @@ import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.GLASS_ML
 import ph.mart.healthapp.core.data.water.WaterRepository
-import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.health.local.HealthLinkDao
 import ph.mart.healthapp.core.data.health.local.HealthLinkEntity
@@ -128,15 +127,7 @@ internal class HealthSyncRepositoryImpl(
         localTable = EXERCISE_TABLE,
         parse = ::parseExercisePage,
     ) { remote ->
-        exerciseRepository.addEntry(
-            ExerciseEntry(
-                dateEpochDay = epochDayOf(remote.timeMillis),
-                type = remote.type,
-                name = remote.name,
-                minutes = remote.minutes,
-                burnedKcal = remote.burnedKcal,
-            ),
-        )
+        exerciseRepository.addEntry(remote.toExerciseEntry())
     }
 
     /**
@@ -286,7 +277,12 @@ internal class HealthSyncRepositoryImpl(
         var ok = true
         entries.filterNot { it.id in alreadySent }.forEach { entry ->
             val dayStart = epochDayStartMillis(entry.dateEpochDay)
+            // A rejected body would otherwise strand the meal forever: no link is recorded, so
+            // every later sync retries it and fails again. The second attempt drops the three
+            // unverified nutrient names — see `nutritionLogBody`. `?:` keeps it unbuilt when the
+            // first lands, and a transient failure only costs a request that was already lost.
             val created = create(token, NUTRITION_LOG, nutritionLogBody(entry, dayStart))
+                ?: create(token, NUTRITION_LOG, nutritionLogBody(entry, dayStart, micronutrients = false))
             if (created == null) {
                 ok = false
             } else {

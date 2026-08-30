@@ -1,9 +1,11 @@
 package ph.mart.healthapp.core.data.health
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
@@ -157,6 +159,46 @@ class GoogleHealthApiTest {
         assertTrue(body.contains("\"kcal\":420"))
         assertTrue(body.contains("\"nutrient\":\"PROTEIN\""))
         assertTrue(body.contains("\"grams\":38"))
+        // Nothing was measured for the three, so nothing is asserted about them.
+        assertFalse(body.contains("DIETARY_FIBER"))
+    }
+
+    @Test
+    fun `fiber and sugar ride the nutrients array and sodium converts to grams`() {
+        val packet = FoodEntry(
+            name = "Cheese crackers",
+            mealType = MealType.Snacks,
+            portionAmount = 30.0,
+            portionUnit = "g",
+            calories = 150,
+            proteinG = 3,
+            carbsG = 18,
+            fatG = 8,
+            fiberG = 2,
+            sugarG = 4,
+            sodiumMg = 480,
+        )
+        val body = nutritionLogBody(packet, dayStartMillis = 0L)
+
+        assertTrue(body.contains("\"nutrient\":\"DIETARY_FIBER\""))
+        assertTrue(body.contains("\"nutrient\":\"TOTAL_SUGARS\""))
+        // The array carries grams, and sodium is the app's one milligram figure.
+        assertTrue(body.contains("\"nutrient\":\"SODIUM\""))
+        assertTrue(body.contains("\"grams\":0.48"))
+
+        // The fallback the push retries with drops exactly those three and nothing else.
+        val pinned = nutritionLogBody(packet, dayStartMillis = 0L, micronutrients = false)
+        assertFalse(pinned.contains("DIETARY_FIBER"))
+        assertFalse(pinned.contains("SODIUM"))
+        assertTrue(pinned.contains("\"nutrient\":\"PROTEIN\""))
+
+        // A quick add measures none of the three, so it already sends the fallback's body —
+        // which is what makes the retry a no-op for everything but a scanned packet.
+        val quickAdd = packet.copy(fiberG = 0, sugarG = 0, sodiumMg = 0)
+        assertEquals(
+            nutritionLogBody(quickAdd, 0L, micronutrients = false),
+            nutritionLogBody(quickAdd, 0L),
+        )
     }
 
     @Test
@@ -205,6 +247,23 @@ class GoogleHealthApiTest {
         // An unrecognised activity reports none and is assumed to have taken none, so it can't
         // subtract a day's real walking. estimatedSteps' own cases are covered in StepsTest.
         assertEquals(0, page.items[1].steps)
+    }
+
+    @Test
+    fun `an imported workout reaches the diary with every measured field intact`() {
+        val page = parseExercisePage(PAGE)
+        val entry = page.items[0].toExerciseEntry()
+
+        // The one number here nobody guessed: dropping it lets addEntry re-derive 3000 from the
+        // MET estimate, and stepsCreditKcal() then credits the difference a second time.
+        assertEquals(6200, entry.steps)
+        assertEquals(380, entry.burnedKcal)
+        assertEquals(30, entry.minutes)
+        assertEquals(ExerciseType.Run, entry.type)
+        assertEquals("Morning Trail Run", entry.name)
+        // The local day the interval starts, not the raw instant. Asserted through the same
+        // conversion rather than a literal, because the answer moves with the test JVM's zone.
+        assertEquals(epochDayOf(page.items[0].timeMillis), entry.dateEpochDay)
     }
 
     @Test

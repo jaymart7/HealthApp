@@ -11,6 +11,7 @@ import java.util.TimeZone
 import javax.xml.datatype.DatatypeFactory
 import kotlin.math.roundToInt
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArrayBuilder
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
@@ -22,6 +23,8 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import ph.mart.healthapp.core.data.epochDayOf
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
@@ -139,7 +142,11 @@ internal fun batchDeleteBody(remoteNames: List<String>): String = buildJsonObjec
  * synthesised from the slot. That is the honest reading of what the user recorded — "lunch on
  * Tuesday" — and it keeps the meal in the right place on anyone else's timeline.
  */
-internal fun nutritionLogBody(entry: FoodEntry, dayStartMillis: Long): String {
+internal fun nutritionLogBody(
+    entry: FoodEntry,
+    dayStartMillis: Long,
+    micronutrients: Boolean = true,
+): String {
     val start = dayStartMillis + entry.mealType.hourOfDay() * 60 * 60 * 1000L
     return buildJsonObject {
         putJsonObject("nutritionLog") {
@@ -153,16 +160,36 @@ internal fun nutritionLogBody(entry: FoodEntry, dayStartMillis: Long): String {
             putJsonObject("totalCarbohydrate") { put("grams", entry.carbsG) }
             putJsonObject("totalFat") { put("grams", entry.fatG) }
             putJsonArray("nutrients") {
-                add(
-                    buildJsonObject {
-                        put("nutrient", "PROTEIN")
-                        putJsonObject("quantity") { put("grams", entry.proteinG) }
-                    },
-                )
+                nutrient("PROTEIN", entry.proteinG)
+                if (micronutrients) {
+                    // Zero means unknown-or-none everywhere else in the app, so it is omitted
+                    // rather than asserted — and every field left out is one fewer that can be
+                    // rejected.
+                    if (entry.fiberG > 0) nutrient("DIETARY_FIBER", entry.fiberG)
+                    if (entry.sugarG > 0) nutrient("TOTAL_SUGARS", entry.sugarG)
+                    // Sodium is the app's one milligram figure; the array's quantity carries
+                    // grams, so it converts rather than inventing a `milligrams` field.
+                    if (entry.sodiumMg > 0) nutrient("SODIUM", entry.sodiumMg / 1000.0)
+                }
             }
             putJsonObject("serving") { put("amount", entry.portionAmount) }
         }
     }.toString()
+}
+
+/**
+ * ponytail: `DIETARY_FIBER`, `TOTAL_SUGARS` and `SODIUM` are unverified — the v4 reference names
+ * a `Nutrient` enum but publishes none of its values. An unknown one fails the *whole* meal, so
+ * `pushMeals` retries once with `micronutrients = false`; that is what makes guessing safe. Pin
+ * the three against a live response and both this flag and that retry can go.
+ */
+private fun JsonArrayBuilder.nutrient(name: String, grams: Number) {
+    add(
+        buildJsonObject {
+            put("nutrient", name)
+            putJsonObject("quantity") { put("grams", grams) }
+        },
+    )
 }
 
 /** A day's glasses as one hydration event. See `pushHydration` for why it's a whole day. */
@@ -267,6 +294,20 @@ internal data class RemoteExercise(
     /** The watch's own step count for the session, so the day's step credit can subtract it. */
     val steps: Int,
 ) : RemotePoint
+
+/**
+ * The one place a fetched workout becomes a diary row. `steps` has to be carried explicitly:
+ * `ExerciseRepositoryImpl.addEntry` re-derives a zero from the MET estimate, which would throw
+ * away the watch's own figure — the one number here that wasn't guessed.
+ */
+internal fun RemoteExercise.toExerciseEntry() = ExerciseEntry(
+    dateEpochDay = epochDayOf(timeMillis),
+    type = type,
+    name = name,
+    minutes = minutes,
+    burnedKcal = burnedKcal,
+    steps = steps,
+)
 
 /** One imported weigh-in. The API carries grams; the app is metric-first in kilograms. */
 internal data class RemoteWeight(

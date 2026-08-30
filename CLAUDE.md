@@ -246,6 +246,14 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   callers is onboarding's target screen. `0` means unknown-or-none, the same reading a missing FDC
   macro already gets. The entry group opens itself only when a value arrives non-zero, so a scanned
   packet shows its sodium without a tap while a quick add keeps the sheet its current height.
+  They reach Google Health too, as `nutrients` entries beside `PROTEIN` — sodium converted to
+  grams, since that array carries one unit and mg is the app's own.
+- **A meal push that is rejected retries once without the three micronutrients.** Their enum
+  names could not be verified (see the backlog), an unknown one fails the *whole* `nutritionLog`,
+  and `pushMeals` records no link on failure — so a wrong guess would strand that meal forever,
+  re-failing on every later sync. The fallback body is what makes guessing safe, and a value of
+  zero is omitted anyway, so a quick add already sends it. Delete the retry when the names are
+  pinned, not before.
 - **FDC reports sugar under two ids** — `2000` on branded rows, `1063` on Foundation ones — so
   `toScannedProduct` tries the branded id first and falls back. Sodium (`1093`) is the one nutrient
   in the app counted in milligrams, which is why its stepper steps by 50 and its field is a digit
@@ -397,7 +405,10 @@ because of that, not because it was the nicest design available.
   key makes the overlap free. First sync backfills 30 days — asking for only what's needed is
   the data-minimisation answer on the verification form, not a performance tweak.
 - **Imported workouts are ordinary `exercise_entry` rows**, so `budgetKcal()` and the streak
-  pick them up with no special case. Imported weigh-ins *skip* days that already have an entry
+  pick them up with no special case. `RemoteExercise.toExerciseEntry()` is the *only* place one
+  becomes a row, so no field can be dropped on the way in: `addEntry` re-derives a zero `steps`
+  from the MET estimate, which would throw away the watch's own count and let `stepsCreditKcal()`
+  credit the difference a second time. Imported weigh-ins *skip* days that already have an entry
   rather than replacing them — the typed number is the one the user chose to record.
 - **Water is only pushed once the day is settled** (`dateEpochDay < today`). A day's row holds a
   running count, and patching the remote point on every glass tap costs far more code than
@@ -425,10 +436,10 @@ because of that, not because it was the nicest design available.
 - FoodData Central runs on one signed key shipped in the APK (extractable, and its 3600 req/hour
   budget is shared by every install). A proxy holding the key is the upgrade path if either the
   ceiling or the exposure starts to matter.
-- Google Health's `nutritionLog` still carries only kcal + carbs + fat + the `PROTEIN` nutrient.
-  Pin the v4 nutrient enum names for fiber, sugar and sodium against a live response before adding
-  them — an unknown field fails the *whole* meal push, and this is the same rule the weight
-  timestamp and step-bucket fields are already waiting on.
+- Google Health's `nutritionLog` sends `DIETARY_FIBER`, `TOTAL_SUGARS` and `SODIUM` on unverified
+  names — the v4 reference publishes no `Nutrient` enum values. Pin the three against a live
+  response and `nutritionLogBody`'s `micronutrients` flag *and* `pushMeals`' retry both go, the
+  same outstanding job as the weight timestamp and the step-bucket field.
 - Final mascot illustration (the geometric placeholder "Bibo" is used throughout).
 - Google Health: verification is *not* done. Needs the Cloud project's consent screen branded
   for FitPulse, an Android OAuth client (package + debug **and** release SHA-1) in that same
