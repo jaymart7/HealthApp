@@ -25,6 +25,7 @@ import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.shared.isValid
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /**
  * The barcode flow's review step. Same parts as [ConfirmationScreen][ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen] minus the photo and the AI
@@ -78,7 +79,7 @@ internal fun ScanConfirmationScreen(
                 carbsG = form.carbsG,
                 fatG = form.fatG,
                 onNameChange = { onFormChange(form.copy(name = it)) },
-                onPortionAmountChange = { onFormChange(form.copy(portionAmount = it)) },
+                onPortionAmountChange = { onFormChange(form.withPortionAmount(it)) },
                 onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
                 onCaloriesChange = { onFormChange(form.copy(calories = it)) },
             )

@@ -20,6 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -29,8 +33,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * Full-bleed camera chrome. Always black/white regardless of app theme — a camera viewfinder's
  * overlay controls need to stay legible over a live feed of arbitrary brightness, the same reason
  * the prototype hardcodes `rgba(0,0,0,…)`/`#fff` here instead of theme tokens even though every
- * other screen in the app reads colors from [MaterialTheme.colorScheme]. Flash and the gallery
- * icon are visual-only, matching the prototype (neither has a real handler there either).
+ * other screen in the app reads colors from [MaterialTheme.colorScheme].
  */
 @Composable
 internal fun CaptureScreen(
@@ -57,21 +60,10 @@ internal fun CaptureScreen(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
-                    .size(40.dp)
+                    .size(48.dp)
                     .background(Color.Black.copy(alpha = 0.45f), CircleShape),
             ) {
                 Icon(imageVector = AppIcons.Close, contentDescription = "Close", tint = Color.White)
-            }
-
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-                    .size(40.dp)
-                    .background(Color.Black.copy(alpha = 0.45f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(imageVector = AppIcons.Flash, contentDescription = null, tint = Color.White)
             }
 
             Surface(
@@ -88,22 +80,22 @@ internal fun CaptureScreen(
             }
 
             Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp)) {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .size(44.dp)
-                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(imageVector = AppIcons.Gallery, contentDescription = null, tint = Color.White)
-                }
-
+                // An empty Surface is invisible to a screen reader, and this one is the whole
+                // point of the screen. The flash and gallery icons that used to flank it are gone
+                // rather than labelled: both were prototype chrome with no handler behind them,
+                // and a control that looks tappable and does nothing is worse than an absent one.
                 Surface(
                     onClick = onCapture,
                     shape = CircleShape,
                     color = Color.White,
                     border = BorderStroke(4.dp, Color.White.copy(alpha = 0.5f)),
-                    modifier = Modifier.align(Alignment.Center).size(72.dp),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(72.dp)
+                        .semantics {
+                            contentDescription = "Take photo"
+                            role = Role.Button
+                        },
                 ) {}
             }
         }

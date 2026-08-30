@@ -195,6 +195,34 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   stay out of the data export for the same reason saved meals do, and the builder is a screen
   rather than a sheet sub-view because an ingredient list plus its editor doesn't fit above a
   keyboard.
+- **Changing a portion reprices the entry.** `AddEntryForm.withPortionAmount()` (and its
+  `SavedMealItem` twin) scale calories and all three macros by the portion ratio, because every
+  seeded figure in this app is a figure *for a stated amount* — 539 kcal per 100 g off Open Food
+  Facts, an AI estimate for the plate it saw, a recipe's serving. The barcode screen instructs the
+  user to "adjust the portion to match what you ate"; without this that instruction wrote 539 kcal
+  against 30 g. The factor applies to the *current* pair rather than a remembered original, so
+  there is no seed to carry and a run of stepper taps stays within a unit of the one-shot answer.
+  A zero starting portion has no price-per-unit, so the amount moves alone.
+- **Every numeric figure is typable, not just steppable.** `StepperValueField` (in
+  `NumericStepperField.kt`) backs the calorie, macro, portion, duration and burn values; the ±
+  buttons nudge a figure that is already about right. Stepper-only entry meant 320 kcal cost 32
+  taps and 48 g of carbs cost 48 — which made the manual path, the offline fallback *and* the
+  correction path after a low-confidence AI estimate all unusable. The field holds its own text so
+  a backspace to empty stays empty while the model reads zero, and re-seeds only when the incoming
+  value is a different *number*, which is what leaves a half-typed "1." alone.
+  `NumericStepperField` keeps its read-only mode for callers that genuinely only nudge.
+- **The portion stepper steps per unit** (`portionStep`): 10 for g/oz, 0.5 for cup/serving. Ten
+  servings is not a nudge, and a fixed step of 10 is why a seeded recipe row could never become
+  half a portion.
+- **Delete gets an undo; user-authored things get a confirmation.** A swipe on a diary or exercise
+  row is deliberate and loses one row, so it raises a snackbar with Undo (soft delete has no
+  restore-by-id — `OnRestoreEntry` writes the row again from what the screen still holds, a new id
+  for the same meal). A saved meal or recipe is something the user built, and its delete icon sits
+  beside the one that logs it, so those ask first. Don't collapse the two into one pattern.
+- **The `RecipeBuilderRoute` carries no bottom nav and no FAB**, joining the two camera flows in
+  `AppScaffold`'s `showChrome` for a different reason: it is an authoring screen with its own Save,
+  and leaving the tab bar up put a "Log food" FAB over it and let a tab tap walk away from a
+  half-written recipe without the discard question `NavigationBackHandler` asks.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.

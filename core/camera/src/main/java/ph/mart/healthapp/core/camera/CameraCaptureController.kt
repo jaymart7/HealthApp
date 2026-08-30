@@ -80,8 +80,24 @@ private suspend fun takePicture(context: Context, controller: LifecycleCameraCon
     return decodeRotatedBitmap(file)
 }
 
+/**
+ * What the capture is decoded down to, on its long edge. Nothing downstream wants more: the
+ * recognition request re-encodes it, the analyzing screen draws it behind a scrim, and the
+ * confirmation screen shows it at 64dp. Decoding the sensor's full frame instead would allocate
+ * roughly 190MB for a 48MP camera — and then a second copy of it to rotate — which is an
+ * OutOfMemoryError on the small devices minSdk 24 still admits, not a slow frame.
+ */
+private const val MAX_CAPTURE_EDGE = 1280
+
 private fun decodeRotatedBitmap(file: File): Bitmap {
-    val bitmap = BitmapFactory.decodeFile(file.path)
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(file.path, bounds)
+    val options = BitmapFactory.Options().apply {
+        inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight)
+    }
+    val bitmap = BitmapFactory.decodeFile(file.path, options)
+        ?: error("Could not decode capture at ${file.path}")
+
     val rotationDegrees = when (
         ExifInterface(file.path).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
     ) {
@@ -91,6 +107,23 @@ private fun decodeRotatedBitmap(file: File): Bitmap {
         else -> 0
     }
     if (rotationDegrees == 0) return bitmap
+
     val matrix = Matrix().apply { postRotate(rotationDegrees.toFloat()) }
-    return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    // createBitmap can hand back the same instance when there is nothing to do; only recycle a
+    // source that was genuinely replaced.
+    if (rotated !== bitmap) bitmap.recycle()
+    return rotated
+}
+
+/** Largest power-of-two subsample that still leaves the long edge at or above [MAX_CAPTURE_EDGE] —
+ * the sizing rule `inSampleSize` is documented to round to anyway. */
+private fun sampleSizeFor(width: Int, height: Int): Int {
+    var sample = 1
+    var longEdge = maxOf(width, height)
+    while (longEdge / 2 >= MAX_CAPTURE_EDGE) {
+        longEdge /= 2
+        sample *= 2
+    }
+    return sample
 }

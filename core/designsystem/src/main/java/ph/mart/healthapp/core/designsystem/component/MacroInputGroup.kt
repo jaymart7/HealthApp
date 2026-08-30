@@ -6,9 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -27,6 +29,9 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
  * Three labeled numeric rows (Protein/Carbs/Fat) using the fixed semantic colors — protein =
  * `primary`, carbs = `tertiary`, fat = `secondary` — identical across every macro display in the
  * app.
+ *
+ * Every value is typable. A macro figure is *entered*, not nudged: 48g of carbs off a photo
+ * estimate is 48 taps at the default step, which is not a correction path anyone would use.
  */
 @Composable
 fun MacroInputGroup(
@@ -48,21 +53,30 @@ fun MacroInputGroup(
         if (showPercentages) "$base · ${kcal * 100 / totalKcal}%" else base
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        MacroRow(label("Protein", proteinKcal), proteinG, MaterialTheme.colorScheme.primary, step, onProteinChange)
-        MacroRow(label("Carbs", carbsKcal), carbsG, MaterialTheme.colorScheme.tertiary, step, onCarbsChange)
-        MacroRow(label("Fat", fatKcal), fatG, MaterialTheme.colorScheme.secondary, step, onFatChange)
+        MacroRow("Protein", label("Protein", proteinKcal), proteinG, MaterialTheme.colorScheme.primary, step, onProteinChange)
+        MacroRow("Carbs", label("Carbs", carbsKcal), carbsG, MaterialTheme.colorScheme.tertiary, step, onCarbsChange)
+        MacroRow("Fat", label("Fat", fatKcal), fatG, MaterialTheme.colorScheme.secondary, step, onFatChange)
     }
 }
 
+/** [macro] is the bare name for screen readers; [label] is what is drawn, which may carry a
+ * percentage the announcement doesn't need to repeat three times. */
 @Composable
-private fun MacroRow(label: String, grams: Int, dotColor: Color, step: Int, onChange: (Int) -> Unit) {
+private fun MacroRow(
+    macro: String,
+    label: String,
+    grams: Int,
+    dotColor: Color,
+    step: Int,
+    onChange: (Int) -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(48.dp)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+            .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -79,13 +93,22 @@ private fun MacroRow(label: String, grams: Int, dotColor: Color, step: Int, onCh
                 .weight(1f)
                 .padding(start = 12.dp),
         )
-        Text(
-            text = "${grams}g",
-            style = MaterialTheme.typography.titleSmall.tabularNums,
-            color = MaterialTheme.colorScheme.onSurface,
+        StepperValueField(
+            value = grams.toString(),
+            onValueChange = { onChange(it.toIntOrNull() ?: 0) },
+            contentDescription = "$macro in grams",
+            // Wide enough for three digits without giving the row's whole width to a number that
+            // is almost always two; right-aligned so it sits against its "g" the way it always did.
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(56.dp),
         )
-        StepperButton(symbol = "−", onClick = { onChange((grams - step).coerceAtLeast(0)) })
-        StepperButton(symbol = "+", onClick = { onChange(grams + step) })
+        Text(
+            text = "g",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        StepperButton(symbol = "−", label = "Decrease $macro", onClick = { onChange((grams - step).coerceAtLeast(0)) })
+        StepperButton(symbol = "+", label = "Increase $macro", onClick = { onChange(grams + step) })
     }
 }
 

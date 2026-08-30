@@ -45,6 +45,8 @@ import ph.mart.healthapp.feature.food.ui.barcode.components.ScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
+import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
+import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 private const val FOUND_SUBTITLE = "Values are per 100 g — adjust the portion to match what you ate."
@@ -100,6 +102,8 @@ fun BarcodeScanScreen(
         }
     }
 
+    var retriedWhileOffline by remember { mutableStateOf(false) }
+
     val backHandlerState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
     NavigationBackHandler(
         state = backHandlerState,
@@ -112,7 +116,7 @@ fun BarcodeScanScreen(
                 }
 
                 ScanFlow.Confirmation -> if (state.isDirty) {
-                    state.showDiscardConfirm = true
+                    state.pendingDiscard = { state.rescan() }
                 } else {
                     state.rescan()
                 }
@@ -162,7 +166,8 @@ fun BarcodeScanScreen(
                     onMealTypeSelect = state::selectMealType,
                     // The diary's day, not today — a scan while reviewing Tuesday belongs to Tuesday.
                     onLogEntry = { viewModel.handleEvent(BarcodeScanEvent.OnLogEntry(state.form.toFoodEntry(dateEpochDay))) },
-                    onDiscard = onExit,
+                    // Asks the same question back asks; it used to throw the edits away silently.
+                    onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
                 )
 
                 ScanFlow.NotFound -> FullScreenState(
@@ -186,7 +191,11 @@ fun BarcodeScanScreen(
                 ScanFlow.Offline -> FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                     heading = "No connection",
-                    body = "Looking up a barcode needs a connection. You can still log manually — everything else works offline.",
+                    body = if (retriedWhileOffline) {
+                        "Still nothing. A barcode lookup needs a connection — you can add the item by hand in the meantime."
+                    } else {
+                        "Looking up a barcode needs a connection. You can still log manually — everything else works offline."
+                    },
                     actions = {
                         PrimaryButton(
                             label = "Log manually",
@@ -196,7 +205,10 @@ fun BarcodeScanScreen(
                         SecondaryButton(
                             label = "Try again",
                             onClick = {
-                                if (viewModel.isOnline()) {
+                                if (!viewModel.isOnline()) {
+                                    retriedWhileOffline = true
+                                } else {
+                                    retriedWhileOffline = false
                                     if (hasCameraPermission) {
                                         state.rescan()
                                     } else {
@@ -209,28 +221,43 @@ fun BarcodeScanScreen(
                     },
                 )
 
-                ScanFlow.PermissionDenied -> FullScreenState(
-                    icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                    heading = "Camera access needed",
-                    body = "Grant camera access to scan a barcode, or go back and log manually.",
-                    actions = {
-                        PrimaryButton(
-                            label = "Grant access",
-                            onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        SecondaryButton(label = "Back", onClick = onExit, modifier = Modifier.fillMaxWidth())
-                    },
-                )
+                ScanFlow.PermissionDenied -> {
+                    // Same dead end the photo flow had: a spent prompt never shows again, so
+                    // "Grant access" was a button that could not work.
+                    val settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA)
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = "Camera access needed",
+                        body = if (settingsOnly) {
+                            "Camera access is off for FitPulse. Turn it on in Settings to scan a barcode, or go back and log manually."
+                        } else {
+                            "Grant camera access to scan a barcode, or go back and log manually."
+                        },
+                        actions = {
+                            PrimaryButton(
+                                label = if (settingsOnly) "Open settings" else "Grant access",
+                                onClick = {
+                                    if (settingsOnly) {
+                                        context.openAppSettings()
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            SecondaryButton(label = "Back", onClick = onExit, modifier = Modifier.fillMaxWidth())
+                        },
+                    )
+                }
             }
 
-            if (state.showDiscardConfirm) {
+            state.pendingDiscard?.let { discard ->
                 DiscardScanDialog(
                     onConfirm = {
-                        state.showDiscardConfirm = false
-                        state.rescan()
+                        state.pendingDiscard = null
+                        discard()
                     },
-                    onDismiss = { state.showDiscardConfirm = false },
+                    onDismiss = { state.pendingDiscard = null },
                 )
             }
         }

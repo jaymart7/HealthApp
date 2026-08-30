@@ -9,9 +9,9 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.feature.food.ui.diary.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreenState
-import ph.mart.healthapp.feature.food.ui.photo.defaultMealTypeForNow
 import ph.mart.healthapp.feature.food.ui.photo.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
 enum class ScanFlow { Scanning, LookingUp, Confirmation, NotFound, Offline, PermissionDenied }
@@ -26,12 +26,13 @@ internal class BarcodeScanScreenState(
     flow: ScanFlow = ScanFlow.Scanning,
     form: AddEntryForm = AddEntryForm(mealType = defaultMealTypeForNow()),
     originalForm: AddEntryForm = form,
-    showDiscardConfirm: Boolean = false,
 ) {
     var flow: ScanFlow by mutableStateOf(flow)
     var form: AddEntryForm by mutableStateOf(form)
     var originalForm: AddEntryForm by mutableStateOf(originalForm)
-    var showDiscardConfirm: Boolean by mutableStateOf(showDiscardConfirm)
+    /** What a confirmed discard does — rescan, or leave the flow. Non-null exactly while the
+     * dialog is up; a lambda for the same reason [PhotoCaptureScreenState.pendingDiscard] is one. */
+    var pendingDiscard: (() -> Unit)? by mutableStateOf(null)
 
     val isDirty: Boolean get() = form != originalForm
 

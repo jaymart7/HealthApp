@@ -33,7 +33,7 @@ internal fun MealSection(
     onToggle: () -> Unit,
     onAdd: () -> Unit,
     onSave: (() -> Unit)?,
-    onDeleteEntry: (Long) -> Unit,
+    onDeleteEntry: (FoodEntry) -> Unit,
 ) {
     Column {
         MealSectionHeader(
@@ -55,7 +55,7 @@ internal fun MealSection(
             }
             entries.forEach { entry ->
                 key(entry.id) {
-                    SwipeableFoodEntryRow(entry = entry, onDelete = { onDeleteEntry(entry.id) })
+                    SwipeableFoodEntryRow(entry = entry, onDelete = { onDeleteEntry(entry) })
                 }
             }
         }

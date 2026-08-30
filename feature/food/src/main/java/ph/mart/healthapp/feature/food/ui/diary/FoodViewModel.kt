@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.health.StepsRepository
@@ -46,9 +48,11 @@ class FoodViewModel(
             is FoodEvent.OnSelectDate -> selectedDate.value = event.dateEpochDay
             is FoodEvent.OnAddEntry -> onAddEntry(event.form)
             is FoodEvent.OnDeleteEntry -> onDeleteEntry(event.id)
+            is FoodEvent.OnRestoreEntry -> onRestoreEntry(event.entry)
             is FoodEvent.OnToggleFavorite -> onToggleFavorite(event)
             is FoodEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
             is FoodEvent.OnDeleteExercise -> onDeleteExercise(event.id)
+            is FoodEvent.OnRestoreExercise -> onRestoreExercise(event.entry)
             is FoodEvent.OnSaveMeal -> onSaveMeal(event.name, event.items)
             is FoodEvent.OnLogSavedMeal -> onLogSavedMeal(event)
             is FoodEvent.OnDeleteSavedMeal -> onDeleteSavedMeal(event.id)
@@ -115,6 +119,16 @@ class FoodViewModel(
 
     private fun onDeleteEntry(id: Long) = intent {
         foodRepository.deleteEntry(id)
+    }
+
+    /** `id = 0` so the repository inserts rather than collides; the entry keeps its own day, so
+     * an undo on Tuesday's diary restores to Tuesday. */
+    private fun onRestoreEntry(entry: FoodEntry) = intent {
+        foodRepository.addEntry(entry.copy(id = 0))
+    }
+
+    private fun onRestoreExercise(entry: ExerciseEntry) = intent {
+        exerciseRepository.addEntry(entry.copy(id = 0))
     }
 
     private fun onDeleteExercise(id: Long) = intent {

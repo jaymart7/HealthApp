@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -77,32 +80,37 @@ private fun FoodSearchPanelContent(
             onValueChange = onQueryChange,
             placeholder = "Search foods…",
         )
-        when (val status = uiState.status) {
-            SearchStatus.Idle -> Hint("Search the food database, or fill in the details yourself.")
+        // The panel's whole answer — searching, hits, nothing, offline — arrives without any
+        // visible change of focus, so a screen reader needs telling. Polite: it waits for the
+        // keystroke to finish being announced.
+        Column(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
+            when (val status = uiState.status) {
+                SearchStatus.Idle -> Hint("Search the food database, or fill in the details yourself.")
 
-            SearchStatus.Searching -> Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(vertical = 4.dp),
-            ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(16.dp),
-                )
-                Hint("Searching…")
-            }
-
-            is SearchStatus.Results -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                status.products.take(MAX_VISIBLE_HITS).forEach { product ->
-                    SearchHitRow(product = product, onClick = { onSelect(product) })
+                SearchStatus.Searching -> Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                ) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Hint("Searching…")
                 }
+
+                is SearchStatus.Results -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    status.products.take(MAX_VISIBLE_HITS).forEach { product ->
+                        SearchHitRow(product = product, onClick = { onSelect(product) })
+                    }
+                }
+
+                SearchStatus.Empty -> Hint("No matches — enter it by hand instead.")
+
+                SearchStatus.Failed ->
+                    Hint("Couldn't search just now — check your connection, or enter it by hand.")
             }
-
-            SearchStatus.Empty -> Hint("No matches — enter it by hand instead.")
-
-            SearchStatus.Failed ->
-                Hint("Couldn't search just now — check your connection, or enter it by hand.")
         }
     }
 }

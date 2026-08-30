@@ -11,6 +11,7 @@ import ph.mart.healthapp.core.data.food.RecognitionConfidence
 import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
 enum class CaptureFlow {
@@ -34,7 +35,6 @@ internal class PhotoCaptureScreenState(
     form: AddEntryForm = AddEntryForm(mealType = defaultMealTypeForNow()),
     originalForm: AddEntryForm = form,
     confidence: RecognitionConfidence = RecognitionConfidence.High,
-    discardReturnTarget: CaptureFlow? = null,
 ) {
     var flow: CaptureFlow by mutableStateOf(flow)
     var photo: Bitmap? by mutableStateOf(photo)
@@ -42,10 +42,11 @@ internal class PhotoCaptureScreenState(
     var originalForm: AddEntryForm by mutableStateOf(originalForm)
     var confidence: RecognitionConfidence by mutableStateOf(confidence)
 
-    /** Which state a confirmed discard returns to — the flow the confirmation was reached from, so
-     * a searched item goes back to the search and a photographed one back to the camera. Non-null
-     * exactly while the discard dialog is up. */
-    var discardReturnTarget: CaptureFlow? by mutableStateOf(discardReturnTarget)
+    /** What a confirmed discard does — go back to the camera, back to the search, or leave the
+     * flow. Non-null exactly while the dialog is up. A lambda rather than a [CaptureFlow] because
+     * the Discard *button* leaves the flow entirely, and it has to ask the same question the back
+     * gesture does rather than acting without one. */
+    var pendingDiscard: (() -> Unit)? by mutableStateOf(null)
 
     val isDirty: Boolean get() = form != originalForm
 

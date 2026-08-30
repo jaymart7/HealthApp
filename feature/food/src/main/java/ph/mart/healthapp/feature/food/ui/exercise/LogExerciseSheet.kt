@@ -81,6 +81,9 @@ private fun LogExerciseContent(
                 label = "Duration",
                 value = "${form.minutes}",
                 unitSuffix = "min",
+                onValueChange = {
+                    state.form = form.copy(minutes = it.toIntOrNull() ?: 0).withEstimate(uiState.weightKg)
+                },
                 onIncrement = {
                     state.form = form.copy(minutes = form.minutes + MINUTES_STEP).withEstimate(uiState.weightKg)
                 },
@@ -90,9 +93,17 @@ private fun LogExerciseContent(
                 },
             )
             NumericStepperField(
-                label = "Burned · estimated from ${form.type.label.lowercase()} at your latest weight",
+                // Estimation stops the moment the field is edited by hand, so the label has to
+                // stop saying "estimated" at the same moment — otherwise it describes a
+                // calculation that is no longer running.
+                label = if (form.burnedEdited) {
+                    "Burned · your figure"
+                } else {
+                    "Burned · estimated from ${form.type.label.lowercase()} at your latest weight"
+                },
                 value = "${form.burnedKcal}",
                 unitSuffix = "kcal",
+                onValueChange = { state.form = form.copy(burnedKcal = it.toIntOrNull() ?: 0, burnedEdited = true) },
                 onIncrement = { state.form = form.copy(burnedKcal = form.burnedKcal + KCAL_STEP, burnedEdited = true) },
                 onDecrement = {
                     state.form = form.copy(

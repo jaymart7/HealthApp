@@ -17,11 +17,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,28 +25,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-private val STATUS_PHRASES = listOf("Looking at your photo…", "Identifying the food…", "Estimating portion…")
-
 /**
- * The rotating status text is purely cosmetic (loops on a [LaunchedEffect], doesn't gate
- * anything) — the real transition off this screen waits for the actual recognition call, however
- * long it takes, per CLAUDE.md's "reflect actual request latency" requirement.
+ * The status line is one honest sentence rather than a rotating set of three.
+ *
+ * The rotation was a `while (true)` loop on a `LaunchedEffect` + `delay`, which is a hand-rolled
+ * clock: it breaks DESIGN.md's No Loops Rule (nothing animates at rest) and its Remove-Animations
+ * Rule at once, since a hand-rolled timer ignores `MotionDurationScale` and keeps ticking for a
+ * user who has turned system animations off. It also promised progress it never had — the
+ * transition off this screen waits for the recognition call however long it takes, and the
+ * indeterminate bar already says "working" truthfully.
  */
 @Composable
 internal fun AnalyzingScreen(photo: Bitmap, onCancel: () -> Unit, modifier: Modifier = Modifier) {
-    var phraseIndex by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1_200)
-            phraseIndex = (phraseIndex + 1) % STATUS_PHRASES.size
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize().background(Color.Black)) {
         Image(
             bitmap = photo.asImageBitmap(),
@@ -73,7 +62,7 @@ internal fun AnalyzingScreen(photo: Bitmap, onCancel: () -> Unit, modifier: Modi
             MascotAvatar(state = MascotState.Thinking, size = 88.dp)
             LinearProgressIndicator(modifier = Modifier.size(width = 200.dp, height = 4.dp))
             Text(
-                text = STATUS_PHRASES[phraseIndex],
+                text = "Looking at your photo…",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White,
                 textAlign = TextAlign.Center,

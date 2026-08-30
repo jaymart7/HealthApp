@@ -26,7 +26,11 @@ import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
 import ph.mart.healthapp.core.designsystem.theme.stepFillProgress
 
-private val GLASS_SIZE = 32.dp
+/** The tap target, not the glyph. 48dp is the platform minimum and a mistap here sets the wrong
+ * water count; the drink icon inside stays the size it always was. The row already wraps, so a
+ * bigger target costs a second line on a high goal rather than a clipped one. */
+private val GLASS_TARGET = 48.dp
+private val GLASS_ICON = 32.dp
 
 /**
  * One tappable glass per [goal]; the first [glasses] of them are filled. Tapping glass *n* sets
@@ -57,7 +61,7 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
             IconButton(
                 onClick = { onSetGlasses(glassesAfterTap(glasses, index)) },
                 modifier = Modifier
-                    .size(GLASS_SIZE)
+                    .size(GLASS_TARGET)
                     // Scale is read inside the layer lambda, so it settles in the Draw phase and
                     // never recomposes anything.
                     .graphicsLayer {
@@ -77,6 +81,7 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
                     imageVector = if (filled) Icons.Filled.LocalDrink else Icons.Outlined.LocalDrink,
                     contentDescription = null,
                     tint = lerp(emptyTint, filledTint, fill.value),
+                    modifier = Modifier.size(GLASS_ICON),
                 )
             }
         }

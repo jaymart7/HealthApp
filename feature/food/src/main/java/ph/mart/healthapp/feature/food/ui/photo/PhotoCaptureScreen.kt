@@ -52,6 +52,8 @@ import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ManualSearchScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
+import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
+import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 private const val SEARCH_SUBTITLE =
@@ -99,6 +101,10 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
         }
     }
 
+    // Set when a retry finds the network still down, so the screen says so instead of appearing
+    // to ignore the tap.
+    var retriedWhileOffline by remember { mutableStateOf(false) }
+
     val backHandlerState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
     NavigationBackHandler(
         state = backHandlerState,
@@ -111,14 +117,14 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                 }
 
                 CaptureFlow.Confirmation -> if (state.isDirty) {
-                    state.discardReturnTarget = CaptureFlow.Capture
+                    state.pendingDiscard = { state.flow = CaptureFlow.Capture }
                 } else {
                     state.flow = CaptureFlow.Capture
                 }
 
                 // Back steps to the search it was picked from, not out of the flow.
                 CaptureFlow.SearchConfirmation -> if (state.isDirty) {
-                    state.discardReturnTarget = CaptureFlow.NoFood
+                    state.pendingDiscard = { state.flow = CaptureFlow.NoFood }
                 } else {
                     state.flow = CaptureFlow.NoFood
                 }
@@ -174,7 +180,9 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                         onMealTypeSelect = state::selectMealType,
                         onSearchInstead = { state.flow = CaptureFlow.NoFood },
                         onLogMeal = { viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry())) },
-                        onDiscard = onExit,
+                        // Back already asks before throwing away edits; the button that means the
+                        // same thing asked nothing at all.
+                        onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
                     )
                 }
 
@@ -208,13 +216,17 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
                     onLogEntry = { viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry())) },
-                    onDiscard = onExit,
+                    onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
                 )
 
                 CaptureFlow.Offline -> FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                     heading = "No connection",
-                    body = "Photo logging needs a connection. You can still log manually — everything else works offline.",
+                    body = if (retriedWhileOffline) {
+                        "Still nothing. Photo logging needs a connection — you can log manually in the meantime."
+                    } else {
+                        "Photo logging needs a connection. You can still log manually — everything else works offline."
+                    },
                     actions = {
                         PrimaryButton(
                             label = "Log manually",
@@ -223,36 +235,56 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                         SecondaryButton(
                             label = "Try again",
                             onClick = {
-                                if (viewModel.isOnline()) state.flow = CaptureFlow.Capture
+                                if (viewModel.isOnline()) {
+                                    retriedWhileOffline = false
+                                    state.flow = CaptureFlow.Capture
+                                } else {
+                                    retriedWhileOffline = true
+                                }
                             },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     },
                 )
 
-                CaptureFlow.PermissionDenied -> FullScreenState(
-                    icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                    heading = "Camera access needed",
-                    body = "Grant camera access to log meals from a photo, or go back and log manually.",
-                    actions = {
-                        PrimaryButton(
-                            label = "Grant access",
-                            onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                            modifier = Modifier.fillMaxWidth())
-                        SecondaryButton(label = "Back", onClick = onExit, modifier = Modifier.fillMaxWidth())
-                    },
-                )
+                CaptureFlow.PermissionDenied -> {
+                    // Once the prompt is spent, launching it again does nothing at all and the
+                    // screen becomes a dead end — Settings is the only door left.
+                    val settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA)
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = "Camera access needed",
+                        body = if (settingsOnly) {
+                            "Camera access is off for FitPulse. Turn it on in Settings to log meals from a photo, or go back and log manually."
+                        } else {
+                            "Grant camera access to log meals from a photo, or go back and log manually."
+                        },
+                        actions = {
+                            PrimaryButton(
+                                label = if (settingsOnly) "Open settings" else "Grant access",
+                                onClick = {
+                                    if (settingsOnly) {
+                                        context.openAppSettings()
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth())
+                            SecondaryButton(label = "Back", onClick = onExit, modifier = Modifier.fillMaxWidth())
+                        },
+                    )
+                }
             }
 
-            state.discardReturnTarget?.let { returnTarget ->
+            state.pendingDiscard?.let { discard ->
                 DiscardConfirmDialog(
                     title = "Discard this meal?",
                     body = "You've made edits that haven't been logged yet.",
                     onConfirm = {
-                        state.discardReturnTarget = null
-                        state.flow = returnTarget
+                        state.pendingDiscard = null
+                        discard()
                     },
-                    onDismiss = { state.discardReturnTarget = null },
+                    onDismiss = { state.pendingDiscard = null },
                 )
             }
         }

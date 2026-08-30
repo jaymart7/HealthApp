@@ -13,9 +13,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -23,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.exercise.budgetKcal
@@ -30,6 +39,7 @@ import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.SavedMeal
+import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
@@ -37,6 +47,7 @@ import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.CalendarPanel
+import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -88,6 +99,15 @@ private fun FoodContent(
         )
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Which saved meal or recipe a confirm dialog is asking about. Local rather than in
+    // [FoodScreenState]: a rotation mid-dialog can lose the question and re-ask it, where losing
+    // the sheet's half-typed form underneath would actually cost the user something.
+    var pendingDeleteSavedMeal by remember { mutableStateOf<SavedMeal?>(null) }
+    var pendingDeleteRecipe by remember { mutableStateOf<Recipe?>(null) }
+
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -106,10 +126,12 @@ private fun FoodContent(
                     AppTextField(
                         value = state.searchQuery,
                         onValueChange = { state.searchQuery = it },
+                        // No visible label: the placeholder already says it, and AppTextField
+                        // hands the placeholder to the screen reader when there is no label.
                         placeholder = "Filter this day's foods…",
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = { onScanBarcode(uiState.selectedDate) }, modifier = Modifier.size(44.dp)) {
+                    IconButton(onClick = { onScanBarcode(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
                         Icon(
                             imageVector = AppIcons.Barcode,
                             contentDescription = "Scan barcode",
@@ -162,7 +184,17 @@ private fun FoodContent(
                             // Nothing logged here yet means nothing to snapshot — the whole
                             // section's entries are saved, not the filtered view.
                             onSave = if (mealEntries.isEmpty()) null else ({ state.openSaveMealSheet(mealType) }),
-                            onDeleteEntry = { id -> onEvent(FoodEvent.OnDeleteEntry(id)) },
+                            onDeleteEntry = { entry ->
+                                onEvent(FoodEvent.OnDeleteEntry(entry.id))
+                                scope.launch {
+                                    val undone = snackbarHostState.showSnackbar(
+                                        message = "Deleted ${entry.name}",
+                                        actionLabel = "Undo",
+                                        duration = SnackbarDuration.Short,
+                                    ) == SnackbarResult.ActionPerformed
+                                    if (undone) onEvent(FoodEvent.OnRestoreEntry(entry))
+                                }
+                            },
                         )
                     }
 
@@ -171,7 +203,17 @@ private fun FoodContent(
                         expanded = state.exerciseExpanded,
                         onToggle = { state.exerciseExpanded = !state.exerciseExpanded },
                         onAdd = { state.exerciseSheetOpen = true },
-                        onDeleteEntry = { id -> onEvent(FoodEvent.OnDeleteExercise(id)) },
+                        onDeleteEntry = { entry ->
+                            onEvent(FoodEvent.OnDeleteExercise(entry.id))
+                            scope.launch {
+                                val undone = snackbarHostState.showSnackbar(
+                                    message = "Deleted ${entry.type.label}",
+                                    actionLabel = "Undo",
+                                    duration = SnackbarDuration.Short,
+                                ) == SnackbarResult.ActionPerformed
+                                if (undone) onEvent(FoodEvent.OnRestoreExercise(entry))
+                            }
+                        },
                     )
                 }
             }
@@ -185,7 +227,7 @@ private fun FoodContent(
                     savedMeals = uiState.savedMeals,
                     recipes = uiState.recipes,
                     onSelectRecipe = { recipe -> state.addForm = recipe.toAddEntryForm(activeMealSheet) },
-                    onDeleteRecipe = { recipe -> onEvent(FoodEvent.OnDeleteRecipe(recipe.id)) },
+                    onDeleteRecipe = { recipe -> pendingDeleteRecipe = recipe },
                     // The builder is a screen, not a sub-view of this sheet: an ingredient list
                     // doesn't fit above a keyboard. Closing first means back from it lands on the
                     // diary rather than reopening a stale form.
@@ -197,7 +239,7 @@ private fun FoodContent(
                         onEvent(FoodEvent.OnLogSavedMeal(meal, activeMealSheet))
                         state.closeSheet()
                     },
-                    onDeleteSavedMeal = { meal -> onEvent(FoodEvent.OnDeleteSavedMeal(meal.id)) },
+                    onDeleteSavedMeal = { meal -> pendingDeleteSavedMeal = meal },
                     onFormChange = { state.addForm = it },
                     onSelectProduct = { state.addForm = it.toAddEntryForm(activeMealSheet) },
                     onSelectSuggestion = { state.addForm = it.toAddEntryForm(activeMealSheet) },
@@ -261,6 +303,45 @@ private fun FoodContent(
                     )
                 }
             }
+
+            // A saved meal and a recipe are things the user authored, and the row's delete icon
+            // sits beside the one that logs it. A swipe on a diary row gets an undo instead —
+            // recovery beats a confirmation when the gesture is deliberate and the loss is one row.
+            pendingDeleteSavedMeal?.let { meal ->
+                DiscardConfirmDialog(
+                    title = "Delete \"${meal.name}\"?",
+                    body = "The meals you already logged from it stay in your diary.",
+                    confirmLabel = "Delete",
+                    dismissLabel = "Keep",
+                    onConfirm = {
+                        onEvent(FoodEvent.OnDeleteSavedMeal(meal.id))
+                        pendingDeleteSavedMeal = null
+                    },
+                    onDismiss = { pendingDeleteSavedMeal = null },
+                )
+            }
+
+            pendingDeleteRecipe?.let { recipe ->
+                DiscardConfirmDialog(
+                    title = "Delete \"${recipe.name}\"?",
+                    body = "The entries you already logged from it stay in your diary.",
+                    confirmLabel = "Delete",
+                    dismissLabel = "Keep",
+                    onConfirm = {
+                        onEvent(FoodEvent.OnDeleteRecipe(recipe.id))
+                        pendingDeleteRecipe = null
+                    },
+                    onDismiss = { pendingDeleteRecipe = null },
+                )
+            }
+
+            // Above the docked FAB, so an Undo is never the thing hidden behind it.
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = DockedFabContentPadding),
+            )
         }
     }
 }

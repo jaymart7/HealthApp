@@ -29,6 +29,7 @@ import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
 import ph.mart.healthapp.feature.food.ui.shared.isValid
+import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /** The diary's log-a-food sheet: four shortcut panels that seed the form, then the form itself. */
 @Composable
@@ -105,7 +106,7 @@ internal fun AddEntrySheet(
                 carbsG = form.carbsG,
                 fatG = form.fatG,
                 onNameChange = { onFormChange(form.copy(name = it)) },
-                onPortionAmountChange = { onFormChange(form.copy(portionAmount = it)) },
+                onPortionAmountChange = { onFormChange(form.withPortionAmount(it)) },
                 onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
                 onCaloriesChange = { onFormChange(form.copy(calories = it)) },
                 portionUnitOptions = listOf("g", "oz", "cup", SERVING_UNIT),

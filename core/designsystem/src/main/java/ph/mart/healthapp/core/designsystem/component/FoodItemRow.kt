@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -53,6 +52,16 @@ fun FoodItemRow(
             onNameChange, onPortionAmountChange, onPortionUnitChange, onCaloriesChange, modifier,
         )
     }
+}
+
+/**
+ * How far one tap of the portion stepper moves, per unit. Ten grams is a sensible nudge; ten cups
+ * is not, and ten servings is nonsense — a stepper that steps in the wrong unit is why a seeded
+ * recipe row could never be turned into half a portion.
+ */
+internal fun portionStep(unit: String): Double = when (unit) {
+    "g", "oz" -> 10.0
+    else -> 0.5
 }
 
 @Composable
@@ -99,49 +108,56 @@ private fun EditableRow(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         AppTextField(label = "Food", value = name, onValueChange = onNameChange)
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(text = "Portion", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                    .padding(start = 16.dp, top = 4.dp, bottom = 4.dp, end = 4.dp),
+                    .padding(start = 16.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = portionAmount.formatPortion(),
-                    style = MaterialTheme.typography.titleMedium.tabularNums,
-                    color = MaterialTheme.colorScheme.onSurface,
+                StepperValueField(
+                    value = portionAmount.formatPortion(),
+                    onValueChange = { onPortionAmountChange(it.toDoubleOrNull() ?: 0.0) },
+                    contentDescription = "Portion amount in $portionUnit",
+                    decimal = true,
                     modifier = Modifier.weight(1f),
                 )
-                Surface(
-                    shape = RoundedCornerShape(999.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.padding(end = 4.dp),
-                ) {
-                    Row(modifier = Modifier.padding(2.dp)) {
-                        portionUnitOptions.forEach { unit ->
-                            val selected = unit == portionUnit
-                            Surface(
-                                onClick = { onPortionUnitChange(unit) },
-                                shape = RoundedCornerShape(999.dp),
-                                color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
-                                contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                            ) {
-                                Text(
-                                    text = unit,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                )
-                            }
-                        }
-                    }
-                }
-                StepperButton(symbol = "−", onClick = { onPortionAmountChange((portionAmount - 10).coerceAtLeast(0.0)) })
-                StepperButton(symbol = "+", onClick = { onPortionAmountChange(portionAmount + 10) })
+                Text(
+                    text = portionUnit,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                StepperButton(
+                    symbol = "−",
+                    label = "Decrease portion",
+                    onClick = {
+                        onPortionAmountChange((portionAmount - portionStep(portionUnit)).coerceAtLeast(0.0))
+                    },
+                )
+                StepperButton(
+                    symbol = "+",
+                    label = "Increase portion",
+                    onClick = { onPortionAmountChange(portionAmount + portionStep(portionUnit)) },
+                )
             }
+            // Its own row rather than crammed into the one above: four unit pills, a value field
+            // and two steppers do not share 48dp of width, and they share it even less once the
+            // system font scale goes up. [SegmentedToggle] is the system's own single-select row —
+            // it brings the track that tells the unselected units apart from plain text, the
+            // selection semantics, and a width floor that scrolls rather than squeezes.
+            SegmentedToggle(
+                options = portionUnitOptions,
+                selectedIndex = portionUnitOptions.indexOf(portionUnit).coerceAtLeast(0),
+                onSelect = { index -> onPortionUnitChange(portionUnitOptions[index]) },
+                // This row is the first place the toggle sits on a bottom sheet, which is already
+                // surfaceContainerLow — its default track would vanish into the sheet. One step up
+                // the tone ladder is how the system separates a surface from what it carries.
+                trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            )
         }
 
         NumericStepperField(
@@ -150,6 +166,7 @@ private fun EditableRow(
             unitSuffix = "kcal",
             onIncrement = { onCaloriesChange(calories + 10) },
             onDecrement = { onCaloriesChange((calories - 10).coerceAtLeast(0)) },
+            onValueChange = { onCaloriesChange(it.toIntOrNull() ?: 0) },
         )
     }
 }
@@ -194,6 +211,32 @@ private fun FoodItemRowEditablePreview() {
                 onPortionAmountChange = {},
                 onPortionUnitChange = {},
                 onCaloriesChange = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** The seeded-recipe shape: a serving, where the stepper has to move in halves rather than tens. */
+@PreviewLightDark
+@Composable
+private fun FoodItemRowEditableServingPreview() {
+    AppTheme {
+        Surface {
+            FoodItemRow(
+                variant = FoodItemRowVariant.Editable,
+                name = "Chili",
+                portionAmount = 1.0,
+                portionUnit = "serving",
+                calories = 395,
+                proteinG = 32,
+                carbsG = 20,
+                fatG = 21,
+                onNameChange = {},
+                onPortionAmountChange = {},
+                onPortionUnitChange = {},
+                onCaloriesChange = {},
+                portionUnitOptions = listOf("g", "oz", "cup", "serving"),
                 modifier = Modifier.padding(16.dp),
             )
         }

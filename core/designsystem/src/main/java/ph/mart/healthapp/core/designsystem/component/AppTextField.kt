@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -67,7 +69,16 @@ fun AppTextField(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth(),
+                // The label and placeholder are siblings, not part of the field, so without this a
+                // screen reader announces every field in the app as a bare edit box. The
+                // placeholder stands in where a field has no visible label — the diary's filter
+                // and the food search both rely on it.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        val name = label ?: placeholder
+                        if (name != null) contentDescription = name
+                    },
             )
         }
         if (error != null) {

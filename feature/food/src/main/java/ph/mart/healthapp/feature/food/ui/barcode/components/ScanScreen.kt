@@ -57,7 +57,7 @@ internal fun ScanScreen(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(16.dp)
-                    .size(40.dp)
+                    .size(48.dp)
                     .background(Color.Black.copy(alpha = 0.45f), CircleShape),
             ) {
                 Icon(imageVector = AppIcons.Close, contentDescription = "Close", tint = Color.White)

@@ -38,7 +38,7 @@ internal fun ExerciseSection(
     expanded: Boolean,
     onToggle: () -> Unit,
     onAdd: () -> Unit,
-    onDeleteEntry: (Long) -> Unit,
+    onDeleteEntry: (ExerciseEntry) -> Unit,
 ) {
     Column {
         MealSectionHeader(
@@ -59,7 +59,7 @@ internal fun ExerciseSection(
             }
             entries.forEach { entry ->
                 key(entry.id) {
-                    SwipeableExerciseRow(entry = entry, onDelete = { onDeleteEntry(entry.id) })
+                    SwipeableExerciseRow(entry = entry, onDelete = { onDeleteEntry(entry) })
                 }
             }
         }

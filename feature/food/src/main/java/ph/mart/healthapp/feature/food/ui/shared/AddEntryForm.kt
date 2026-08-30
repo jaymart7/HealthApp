@@ -1,8 +1,10 @@
 package ph.mart.healthapp.feature.food.ui.shared
 
+import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 
 /** What the user is actively editing in the add-entry sheet — seeded fresh (not from a loaded
@@ -43,11 +45,7 @@ fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
 )
 
 /** Added to the add-entry sheet's portion-unit pills, so a seeded recipe shows its unit selected
- * instead of no pill at all — and so a leftovers-by-hand entry can say "serving" too.
- *
- * ponytail: the portion stepper still steps by 10, which is meaningless for servings; nobody can
- * type 0.5 there today. Editing the kcal field is the half-portion path until the stepper learns
- * a per-unit step size. */
+ * instead of no pill at all — and so a leftovers-by-hand entry can say "serving" too. */
 const val SERVING_UNIT = "serving"
 
 /**
@@ -55,9 +53,6 @@ const val SERVING_UNIT = "serving"
  *
  * Here rather than in `barcode/` because the photo flow's manual-search fallback seeds the form
  * from a scanned product too.
- *
- * ponytail: the macros stay as looked up (per 100 g) when the user edits the portion — manual
- * entry doesn't rescale either. Scale here if that's ever reported as wrong.
  */
 fun ScannedProduct.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryForm(
     mealType = mealType,
@@ -69,3 +64,48 @@ fun ScannedProduct.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     carbsG = carbsG,
     fatG = fatG,
 )
+
+/**
+ * Changing the portion reprices what the portion is made of.
+ *
+ * Every seeded value in this app is a figure *for a stated amount* — 539 kcal per 100 g off Open
+ * Food Facts, an AI estimate for the plate it saw, a recipe's serving. Moving the amount without
+ * moving those numbers means the barcode screen's own instruction ("adjust the portion to match
+ * what you ate") writes 539 kcal against 30 g of Nutella, silently and in the direction that
+ * inflates the day.
+ *
+ * The factor is applied to the current pair rather than to a remembered original, so there is no
+ * seed to carry around and no way for a re-seeded form to disagree with itself. Each step rounds,
+ * so a run of stepper taps can land a unit off the one-shot answer — bounded, not compounding, and
+ * a kilocalorie either way. A zero or absent starting portion has no price-per-unit to scale from,
+ * so the amount moves alone.
+ */
+fun AddEntryForm.withPortionAmount(amount: Double): AddEntryForm {
+    val factor = portionFactor(from = portionAmount, to = amount) ?: return copy(portionAmount = amount)
+    return copy(
+        portionAmount = amount,
+        calories = scale(calories, factor),
+        proteinG = scale(proteinG, factor),
+        carbsG = scale(carbsG, factor),
+        fatG = scale(fatG, factor),
+    )
+}
+
+/** Twin of [AddEntryForm.withPortionAmount] for the recipe builder's ingredient draft, which edits
+ * a [SavedMealItem] rather than a form but is priced exactly the same way. */
+fun SavedMealItem.withPortionAmount(amount: Double): SavedMealItem {
+    val factor = portionFactor(from = portionAmount, to = amount) ?: return copy(portionAmount = amount)
+    return copy(
+        portionAmount = amount,
+        calories = scale(calories, factor),
+        proteinG = scale(proteinG, factor),
+        carbsG = scale(carbsG, factor),
+        fatG = scale(fatG, factor),
+    )
+}
+
+/** Null when there is nothing to scale from or to — the caller then moves the amount alone. */
+private fun portionFactor(from: Double, to: Double): Double? =
+    if (from <= 0.0 || to < 0.0) null else to / from
+
+private fun scale(value: Int, factor: Double): Int = (value * factor).roundToInt()

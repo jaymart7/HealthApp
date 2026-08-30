@@ -18,6 +18,7 @@ import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
+import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /**
  * One ingredient's fields, plus the button that commits it to the recipe. Identical in shape to the
@@ -63,7 +64,7 @@ internal fun RecipeIngredientEditor(
             carbsG = draft.carbsG,
             fatG = draft.fatG,
             onNameChange = { onDraftChange(draft.copy(name = it)) },
-            onPortionAmountChange = { onDraftChange(draft.copy(portionAmount = it)) },
+            onPortionAmountChange = { onDraftChange(draft.withPortionAmount(it)) },
             onPortionUnitChange = { onDraftChange(draft.copy(portionUnit = it)) },
             onCaloriesChange = { onDraftChange(draft.copy(calories = it)) },
         )

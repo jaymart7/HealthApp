@@ -46,6 +46,7 @@ fun SegmentedToggle(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    trackColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
 ) {
     val scroll = rememberScrollState()
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -59,7 +60,7 @@ fun SegmentedToggle(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(999.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .background(trackColor)
                 // Background before the scroll, so the track stays put and only the pills move.
                 .horizontalScroll(scroll)
                 .padding(TrackPadding),

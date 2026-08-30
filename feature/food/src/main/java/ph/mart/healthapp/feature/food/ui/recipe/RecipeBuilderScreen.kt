@@ -30,7 +30,6 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
-import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
@@ -104,7 +103,8 @@ private fun RecipeBuilderContent(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp, bottom = DockedFabContentPadding),
+                    // No docked FAB over this route any more, so no clearance to reserve for one.
+                    .padding(top = 16.dp, bottom = 24.dp),
             ) {
                 Text(
                     text = "New recipe",

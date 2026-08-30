@@ -89,8 +89,12 @@ fun AppScaffold(
 
     // The camera flows are full-bleed surfaces: neither nav bar nor FAB, and they draw under both
     // system bars (appScaffold.js). Every other route is a tab and stops at the bars.
+    //
+    // The recipe builder joins them for a different reason: it is an authoring screen with its own
+    // Save, and leaving the tab bar up meant a "Log food" FAB floating over it plus a tab tap that
+    // walked away from a half-written recipe without the discard question that back asks.
     val showChrome = topLevelBackStack.backStack.lastOrNull()
-        .let { it != FoodCaptureRoute && it !is BarcodeScanRoute }
+        .let { it != FoodCaptureRoute && it != RecipeBuilderRoute && it !is BarcodeScanRoute }
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(

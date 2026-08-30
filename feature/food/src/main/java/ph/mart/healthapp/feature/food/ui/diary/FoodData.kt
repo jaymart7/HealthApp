@@ -100,9 +100,17 @@ sealed interface FoodEvent {
     data class OnSelectDate(val dateEpochDay: Long) : FoodEvent
     data class OnAddEntry(val form: AddEntryForm) : FoodEvent
     data class OnDeleteEntry(val id: Long) : FoodEvent
+
+    /** Undo, for the snackbar a delete raises. Soft delete has no restore-by-id, so the row is
+     * written again from what the screen still holds — a new id for the same meal, which is what
+     * the user asked for and all they can see. */
+    data class OnRestoreEntry(val entry: FoodEntry) : FoodEvent
     data class OnToggleFavorite(val suggestion: FoodSuggestion, val favorite: Boolean) : FoodEvent
     data class OnSetWaterGlasses(val glasses: Int) : FoodEvent
     data class OnDeleteExercise(val id: Long) : FoodEvent
+
+    /** Twin of [OnRestoreEntry], for the exercise section's swipe. */
+    data class OnRestoreExercise(val entry: ExerciseEntry) : FoodEvent
     data class OnSaveMeal(val name: String, val items: List<SavedMealItem>) : FoodEvent
     data class OnLogSavedMeal(val meal: SavedMeal, val mealType: MealType) : FoodEvent
     data class OnDeleteSavedMeal(val id: Long) : FoodEvent

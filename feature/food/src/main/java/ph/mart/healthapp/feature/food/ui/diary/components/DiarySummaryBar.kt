@@ -32,17 +32,26 @@ fun DiarySummaryBar(
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
             Text(
                 text = "$consumedKcal / $goalKcal kcal",
-                style = MaterialTheme.typography.bodySmall,
+                // Both figures update as the day fills; a proportional digit makes the left-hand
+                // one twitch while the right-hand one sits still.
+                style = MaterialTheme.typography.bodySmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${goalKcal - consumedKcal} left",
+                // "-212 left" is a grade, and a minus sign is not how anyone reads a day. The
+                // colour stays onSurface either way: over budget is not an error.
+                text = remainingLabel(consumedKcal = consumedKcal, goalKcal = goalKcal),
                 style = MaterialTheme.typography.titleSmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
         MacroBar(proteinG = proteinGoalG, carbsG = carbsGoalG, fatG = fatGoalG)
     }
+}
+
+internal fun remainingLabel(consumedKcal: Int, goalKcal: Int): String {
+    val remaining = goalKcal - consumedKcal
+    return if (remaining < 0) "${-remaining} over" else "$remaining left"
 }
 
 @PreviewLightDark
@@ -52,6 +61,24 @@ private fun DiarySummaryBarPreview() {
         Surface {
             DiarySummaryBar(
                 consumedKcal = 940,
+                goalKcal = 1941,
+                proteinGoalG = 146,
+                carbsGoalG = 194,
+                fatGoalG = 65,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** Past the goal — the case the old "-212 left" wording read as a scolding. */
+@PreviewLightDark
+@Composable
+private fun DiarySummaryBarOverPreview() {
+    AppTheme {
+        Surface {
+            DiarySummaryBar(
+                consumedKcal = 2153,
                 goalKcal = 1941,
                 proteinGoalG = 146,
                 carbsGoalG = 194,
