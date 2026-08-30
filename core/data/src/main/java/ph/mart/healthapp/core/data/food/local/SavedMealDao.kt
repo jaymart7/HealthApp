@@ -32,4 +32,10 @@ internal interface SavedMealDao {
 
     @Query("UPDATE saved_meal SET isDeleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)
+
+    /** Only the name. A recipe and a saved meal are the same row shape here, and `servings` is
+     * what tells them apart — an upsert of the whole entity would be one typo away from turning
+     * a recipe into a saved meal. */
+    @Query("UPDATE saved_meal SET name = :name WHERE id = :id")
+    suspend fun rename(id: Long, name: String)
 }

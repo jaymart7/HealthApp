@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Restaurant
@@ -49,6 +50,7 @@ object AppIcons {
     val Close: ImageVector = Icons.Filled.Close
     val Compare: ImageVector = Icons.Filled.SwapHoriz
     val Delete: ImageVector = Icons.Outlined.Delete
+    val Edit: ImageVector = Icons.Outlined.Edit
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment

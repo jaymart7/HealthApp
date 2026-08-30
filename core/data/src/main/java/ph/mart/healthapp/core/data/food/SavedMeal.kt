@@ -30,6 +30,7 @@ fun SavedMeal.totalKcal(): Int = items.sumOf { it.calories }
 /** Same cap and same reason as [MAX_SUGGESTIONS]: the panel sits above the entry form in the
  * add-entry sheet, and a longer list pushes the form off-screen.
  *
- * ponytail: the newest 5 only — a 6th saved meal pushes the oldest out of view (and out of reach
- * of its own delete button). Add a manage-saved-meals list in Profile if anyone keeps more. */
+ * The newest 5 only — a 6th saved meal is out of view *here*, which is what
+ * [FoodRepository.observeAllSavedMeals] and Profile's library screen exist for: this window is a
+ * display choice about sheet height, not a cap on what the user can reach. */
 const val MAX_SAVED_MEALS = 5

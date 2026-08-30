@@ -44,6 +44,7 @@ import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileDataSectio
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileExerciseSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileFastingSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileGoalsSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileLibrarySection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileRemindersSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileUnitsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileWaterSection
@@ -61,6 +62,7 @@ private const val NOTIFICATIONS_BLOCKED =
 @Composable
 fun ProfileScreen(
     onOpenHealth: () -> Unit,
+    onOpenLibrary: () -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: ProfileViewModel = koinViewModel(),
 ) {
@@ -164,6 +166,7 @@ fun ProfileScreen(
         onExport = viewModel::buildExport,
         onImport = { importLauncher.launch(arrayOf("application/json")) },
         onOpenHealth = onOpenHealth,
+        onOpenLibrary = onOpenLibrary,
         // Re-read on each recomposition rather than watched: the only in-app source of a change is
         // the launcher above, which sets state anyway.
         reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
@@ -193,6 +196,7 @@ private fun ProfileContent(
     onExport: () -> Unit,
     onImport: () -> Unit,
     onOpenHealth: () -> Unit,
+    onOpenLibrary: () -> Unit,
     reminderMessage: String? = null,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -247,6 +251,7 @@ private fun ProfileContent(
                 message = reminderMessage,
                 messageIsError = true,
             )
+            ProfileLibrarySection(onOpenLibrary = onOpenLibrary)
             ProfileConnectionsSection(onOpenHealth = onOpenHealth)
             ProfileDataSection(
                 onExport = onExport,
@@ -289,6 +294,7 @@ private fun ProfileScreenPreview() {
             onExport = {},
             onImport = {},
             onOpenHealth = {},
+            onOpenLibrary = {},
         )
     }
 }

@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProfileRoute
 import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
+import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryScreen
 import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
 
 /**
@@ -16,11 +17,24 @@ import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
 @Serializable
 data object HealthConnectionRoute : NavKey
 
+/** Saved meals and recipes, also one level above Profile. A route rather than a sheet: it is a
+ * list that can outgrow a sheet, and NavDisplay's back is what returns to Profile. */
+@Serializable
+data object FoodLibraryRoute : NavKey
+
 fun EntryProviderScope<NavKey>.profileEntries(
     scrollState: ScrollState,
     onOpenHealth: () -> Unit,
+    onOpenLibrary: () -> Unit,
     onExitFlow: () -> Unit,
 ) {
-    entry<ProfileRoute> { ProfileScreen(scrollState = scrollState, onOpenHealth = onOpenHealth) }
+    entry<ProfileRoute> {
+        ProfileScreen(
+            scrollState = scrollState,
+            onOpenHealth = onOpenHealth,
+            onOpenLibrary = onOpenLibrary,
+        )
+    }
     entry<HealthConnectionRoute> { HealthConnectionScreen(onBack = onExitFlow) }
+    entry<FoodLibraryRoute> { FoodLibraryScreen() }
 }

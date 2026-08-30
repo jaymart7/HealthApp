@@ -18,8 +18,8 @@ data class Recipe(
 /** Same cap and same reason as [MAX_SAVED_MEALS] — the panel sits above the entry form in the
  * add-entry sheet, and a longer list pushes the form off-screen.
  *
- * ponytail: the newest 5 only, so a 6th recipe pushes the oldest out of view (and out of reach of
- * its own delete button). Add a manage-recipes list in Profile if anyone keeps more. */
+ * The newest 5 only, for the same reason and with the same escape hatch:
+ * [FoodRepository.observeAllRecipes] and Profile's library screen reach the rest. */
 const val MAX_RECIPES = 5
 
 /** What one portion of a [Recipe] costs — the shape a diary entry is built from. */

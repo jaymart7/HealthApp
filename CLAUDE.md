@@ -215,6 +215,16 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   stay out of the data export for the same reason saved meals do, and the builder is a screen
   rather than a sheet sub-view because an ingredient list plus its editor doesn't fit above a
   keyboard.
+- **The panels' newest-5 windows are a display choice, not a cap.** `MAX_SAVED_MEALS` and
+  `MAX_RECIPES` keep the add-entry sheet short; Profile → Saved meals & recipes reads
+  `observeAllSavedMeals()`/`observeAllRecipes()` and is the only place the rest can be reached — a
+  sixth saved meal used to be out of view *and* out of reach of its own delete button, which is the
+  bug that screen exists to fix. Both windows share one join helper per type in
+  `FoodRepositoryImpl`, so the panel's list and the library's cannot drift apart in grouping or
+  order. The library renames and deletes and **cannot log**: logging needs a meal slot and a day,
+  and Profile has neither. Rename is one column (`SavedMealDao.rename`) precisely because a recipe
+  and a saved meal are the same row shape and `servings` is what tells them apart. The Profile row
+  carries no count, for the same reason the Connections row caches no connection state.
 - **Changing a portion reprices the entry.** `AddEntryForm.withPortionAmount()` (and its
   `SavedMealItem` twin) scale calories, all three macros and the three micronutrients by the
   portion ratio, because every
@@ -446,7 +456,7 @@ because of that, not because it was the nicest design available.
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
   `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `fasting`), `:feature:profile`
-  (`profile`, `health`) and `:feature:onboarding` (`onboarding`, `health`, `shared`)
+  (`profile`, `health`, `library`) and `:feature:onboarding` (`onboarding`, `health`, `shared`)
   are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
   `recipe/` though `FoodScreen` renders both, and Progress's six tab bodies sit

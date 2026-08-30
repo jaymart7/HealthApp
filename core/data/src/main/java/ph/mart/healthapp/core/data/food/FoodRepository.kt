@@ -122,7 +122,14 @@ interface FoodRepository {
 
     suspend fun saveMeal(name: String, items: List<SavedMealItem>)
 
+    /** Every saved meal, newest first. The panel's newest-[MAX_SAVED_MEALS] window is what keeps
+     * the add-entry sheet short; this is the read that can reach past it, for the library screen
+     * where a meal saved months ago is still deletable. */
+    fun observeAllSavedMeals(): Flow<List<SavedMeal>>
+
     suspend fun deleteSavedMeal(id: Long)
+
+    suspend fun renameSavedMeal(id: Long, name: String)
 
     /** The newest [MAX_RECIPES] recipes, each with its ingredients. Recipes and saved meals share
      * a table but never a list — see `SavedMealDao`. */
@@ -130,7 +137,12 @@ interface FoodRepository {
 
     suspend fun saveRecipe(name: String, servings: Int, items: List<SavedMealItem>)
 
+    /** Twin of [observeAllSavedMeals], and for the same reason. */
+    fun observeAllRecipes(): Flow<List<Recipe>>
+
     suspend fun deleteRecipe(id: Long)
+
+    suspend fun renameRecipe(id: Long, name: String)
 
     /** Dense daily nutrition for the last [TREND_WINDOW_DAYS], oldest first, ending today — the
      * Progress tab's Nutrition series. */

@@ -16,6 +16,10 @@ import ph.mart.healthapp.core.data.todayEpochDay
  * the merged list don't starve it of recents. */
 private const val RECENT_LIMIT = MAX_SUGGESTIONS * 2
 
+/** The library screen wants every row. A number rather than a second query without `LIMIT`, so
+ * both windows go through the same DAO method and can't diverge in filter or order. */
+private const val NO_LIMIT = Int.MAX_VALUE
+
 internal class FoodRepositoryImpl(
     private val dao: FoodEntryDao,
     private val favoriteDao: FavoriteFoodDao,
@@ -73,8 +77,14 @@ internal class FoodRepositoryImpl(
         if (favorite) favoriteDao.upsert(suggestion.toEntity()) else favoriteDao.clearFavorite(suggestion.name)
     }
 
-    override fun observeSavedMeals(): Flow<List<SavedMeal>> =
-        combine(savedMealDao.observeMeals(MAX_SAVED_MEALS), savedMealDao.observeItems()) { meals, items ->
+    override fun observeSavedMeals(): Flow<List<SavedMeal>> = savedMeals(MAX_SAVED_MEALS)
+
+    override fun observeAllSavedMeals(): Flow<List<SavedMeal>> = savedMeals(NO_LIMIT)
+
+    /** One join for both windows, so the panel's list and the library's cannot drift apart in how
+     * they group or order. */
+    private fun savedMeals(limit: Int): Flow<List<SavedMeal>> =
+        combine(savedMealDao.observeMeals(limit), savedMealDao.observeItems()) { meals, items ->
             groupSavedMeals(meals, items)
         }
 
@@ -89,8 +99,17 @@ internal class FoodRepositoryImpl(
         savedMealDao.softDelete(id)
     }
 
-    override fun observeRecipes(): Flow<List<Recipe>> =
-        combine(savedMealDao.observeRecipes(MAX_RECIPES), savedMealDao.observeItems()) { recipes, items ->
+    override suspend fun renameSavedMeal(id: Long, name: String) {
+        savedMealDao.rename(id, name)
+    }
+
+    override fun observeRecipes(): Flow<List<Recipe>> = recipes(MAX_RECIPES)
+
+    override fun observeAllRecipes(): Flow<List<Recipe>> = recipes(NO_LIMIT)
+
+    /** Twin of [savedMeals]. */
+    private fun recipes(limit: Int): Flow<List<Recipe>> =
+        combine(savedMealDao.observeRecipes(limit), savedMealDao.observeItems()) { recipes, items ->
             groupRecipes(recipes, items)
         }
 
@@ -105,6 +124,11 @@ internal class FoodRepositoryImpl(
      * holding, so the recipe UI doesn't read like it's deleting a meal. */
     override suspend fun deleteRecipe(id: Long) {
         savedMealDao.softDelete(id)
+    }
+
+    /** Same one-column update as [renameSavedMeal], named for what the caller is holding. */
+    override suspend fun renameRecipe(id: Long, name: String) {
+        savedMealDao.rename(id, name)
     }
 
     override fun observeDailyNutrition(): Flow<List<DayNutrition>> {
