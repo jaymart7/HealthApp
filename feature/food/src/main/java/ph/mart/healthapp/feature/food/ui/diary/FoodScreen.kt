@@ -1,13 +1,11 @@
 package ph.mart.healthapp.feature.food.ui.diary
 
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -16,13 +14,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -36,10 +29,8 @@ import ph.mart.healthapp.core.data.exercise.budgetKcal
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
-import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
-import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.profile.DailyTargets
@@ -47,27 +38,17 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.CalendarPanel
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
-import ph.mart.healthapp.core.designsystem.component.FoodItemRow
-import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
-import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.ui.diary.components.AddEntrySheet
 import ph.mart.healthapp.feature.food.ui.diary.components.DiaryDateHeader
 import ph.mart.healthapp.feature.food.ui.diary.components.DiarySummaryBar
 import ph.mart.healthapp.feature.food.ui.diary.components.DiaryWaterRow
-import ph.mart.healthapp.feature.food.ui.diary.components.FoodSuggestionPanel
-import ph.mart.healthapp.feature.food.ui.diary.components.MealSectionHeader
-import ph.mart.healthapp.feature.food.ui.diary.components.SavedMealPanel
+import ph.mart.healthapp.feature.food.ui.diary.components.MealSection
+import ph.mart.healthapp.feature.food.ui.diary.components.SaveMealSheet
 import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseSection
-import ph.mart.healthapp.feature.food.ui.recipe.components.RecipePanel
-import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
-import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
-import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
-import ph.mart.healthapp.feature.food.ui.shared.isValid
 
 @Composable
 fun FoodScreen(
@@ -281,238 +262,6 @@ private fun FoodContent(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun MealSection(
-    mealType: MealType,
-    entries: List<FoodEntry>,
-    subtotalKcal: Int,
-    expanded: Boolean,
-    onToggle: () -> Unit,
-    onAdd: () -> Unit,
-    onSave: (() -> Unit)?,
-    onDeleteEntry: (Long) -> Unit,
-) {
-    Column {
-        MealSectionHeader(
-            label = mealType.name,
-            subtotalKcal = subtotalKcal,
-            expanded = expanded,
-            onToggle = onToggle,
-            onAdd = onAdd,
-            onSave = onSave,
-        )
-        if (expanded) {
-            if (entries.isEmpty()) {
-                Text(
-                    text = "Nothing logged for ${mealType.name} yet.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 38.dp, end = 16.dp, bottom = 12.dp),
-                )
-            }
-            entries.forEach { entry ->
-                key(entry.id) {
-                    SwipeableFoodEntryRow(entry = entry, onDelete = { onDeleteEntry(entry.id) })
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SwipeableFoodEntryRow(entry: FoodEntry, onDelete: () -> Unit) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onDelete()
-            true
-        },
-    )
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.error),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Delete",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onError,
-                    modifier = Modifier.padding(end = 24.dp),
-                )
-            }
-        },
-    ) {
-        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(start = 38.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
-            FoodItemRow(
-                variant = FoodItemRowVariant.Display,
-                name = entry.name,
-                portionAmount = entry.portionAmount,
-                portionUnit = entry.portionUnit,
-                calories = entry.calories,
-                proteinG = entry.proteinG,
-                carbsG = entry.carbsG,
-                fatG = entry.fatG,
-            )
-        }
-    }
-}
-
-@Composable
-private fun AddEntrySheet(
-    mealType: MealType,
-    form: AddEntryForm,
-    suggestions: List<FoodSuggestion>,
-    savedMeals: List<SavedMeal>,
-    recipes: List<Recipe>,
-    onSelectRecipe: (Recipe) -> Unit,
-    onDeleteRecipe: (Recipe) -> Unit,
-    onNewRecipe: () -> Unit,
-    onLogSavedMeal: (SavedMeal) -> Unit,
-    onDeleteSavedMeal: (SavedMeal) -> Unit,
-    onFormChange: (AddEntryForm) -> Unit,
-    onSelectProduct: (ScannedProduct) -> Unit,
-    onSelectSuggestion: (FoodSuggestion) -> Unit,
-    onLogAgain: (FoodSuggestion) -> Unit,
-    onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
-    onDismiss: () -> Unit,
-    onAdd: () -> Unit,
-) {
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = "Add to ${mealType.name}",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Both panels seed the fields below; they stay editable either way, so this is a
-            // shortcut past typing rather than a separate entry mode. Already-logged foods come
-            // first — they cost no network round-trip and are the likelier match.
-            RecipePanel(
-                recipes = recipes,
-                onSelect = onSelectRecipe,
-                onDelete = onDeleteRecipe,
-                onNewRecipe = onNewRecipe,
-            )
-            SavedMealPanel(
-                savedMeals = savedMeals,
-                onLog = onLogSavedMeal,
-                onDelete = onDeleteSavedMeal,
-            )
-            FoodSuggestionPanel(
-                suggestions = suggestions,
-                onSelect = onSelectSuggestion,
-                onLogAgain = onLogAgain,
-                onToggleFavorite = onToggleFavorite,
-            )
-            FoodSearchPanel(onSelect = onSelectProduct)
-            // ponytail: on a diary with recipes and recents, a quick add is still a scroll to the
-            // bottom of the sheet. A compact kcal-only row at the top is the upgrade if that
-            // friction shows up.
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = "Or add it yourself",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = "Leave the name blank to log calories only.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            FoodItemRow(
-                variant = FoodItemRowVariant.Editable,
-                name = form.name,
-                portionAmount = form.portionAmount,
-                portionUnit = form.portionUnit,
-                calories = form.calories,
-                proteinG = form.proteinG,
-                carbsG = form.carbsG,
-                fatG = form.fatG,
-                onNameChange = { onFormChange(form.copy(name = it)) },
-                onPortionAmountChange = { onFormChange(form.copy(portionAmount = it)) },
-                onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
-                onCaloriesChange = { onFormChange(form.copy(calories = it)) },
-                portionUnitOptions = listOf("g", "oz", "cup", SERVING_UNIT),
-            )
-            MacroInputGroup(
-                proteinG = form.proteinG,
-                carbsG = form.carbsG,
-                fatG = form.fatG,
-                onProteinChange = { onFormChange(form.copy(proteinG = it)) },
-                onCarbsChange = { onFormChange(form.copy(carbsG = it)) },
-                onFatChange = { onFormChange(form.copy(fatG = it)) },
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(
-                    // The label is the only thing telling the user a nameless entry will be
-                    // accepted; the button itself is enabled the moment there are calories.
-                    label = if (form.name.isBlank()) "Quick add" else "Add",
-                    onClick = onAdd,
-                    enabled = form.isValid(),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-/** Names the snapshot of [mealType]'s entries. Seeded with the meal's own name, so the fast path
- * is Save without typing; [itemCount] is there so the user can see what they're about to keep. */
-@Composable
-private fun SaveMealSheet(
-    mealType: MealType,
-    name: String,
-    itemCount: Int,
-    onNameChange: (String) -> Unit,
-    onDismiss: () -> Unit,
-    onSave: () -> Unit,
-) {
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = "Save this ${mealType.name}",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-        Text(
-            text = "$itemCount ${if (itemCount == 1) "item" else "items"} — log them all again in one tap.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AppTextField(value = name, onValueChange = onNameChange, placeholder = "Name this meal")
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(label = "Save", onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun SaveMealSheetPreview() {
-    AppTheme {
-        SaveMealSheet(
-            mealType = MealType.Breakfast,
-            name = "Usual breakfast",
-            itemCount = 3,
-            onNameChange = {},
-            onDismiss = {},
-            onSave = {},
-        )
     }
 }
 
