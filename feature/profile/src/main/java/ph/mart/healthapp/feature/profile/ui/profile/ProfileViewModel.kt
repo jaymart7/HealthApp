@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui
+package ph.mart.healthapp.feature.profile.ui.profile
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.first

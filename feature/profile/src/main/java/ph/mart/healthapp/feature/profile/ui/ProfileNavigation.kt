@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProfileRoute
 import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
+import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
 
 /**
  * The Google Health disclosure and connection, one level above the Profile tab. A route rather

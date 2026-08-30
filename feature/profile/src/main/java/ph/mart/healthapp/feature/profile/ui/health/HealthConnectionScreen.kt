@@ -6,36 +6,26 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.health.HealthConnection
-import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
-import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HealthDisclosurePanel
-import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.ui.health.components.ConnectedPanel
+import ph.mart.healthapp.feature.profile.ui.health.components.DisconnectSheet
 
 /**
  * The Google Health connection, one Nav3 level above Profile — so system back returns to the
@@ -122,132 +112,6 @@ private fun HealthConnectionContent(
             DisconnectSheet(
                 onDismiss = { onConfirmDisconnect(false) },
                 onConfirm = onDisconnect,
-            )
-        }
-    }
-}
-
-@Composable
-private fun ConnectedPanel(
-    importedItems: Int,
-    busy: Boolean,
-    message: String?,
-    messageIsError: Boolean,
-    onSync: () -> Unit,
-    onDisconnect: () -> Unit,
-    onBack: () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Google Health",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        AppCard {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "Connected",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = if (importedItems == 0) {
-                        "Nothing imported yet. Sync to pull in your workouts."
-                    } else {
-                        "$importedItems items imported from your watch and connected apps."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (message != null) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (messageIsError) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        }
-        PrimaryButton(
-            label = if (busy) "Syncing…" else "Sync now",
-            onClick = onSync,
-            enabled = !busy,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        SecondaryButton(
-            label = "Disconnect",
-            onClick = onDisconnect,
-            enabled = !busy,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Text(
-            text = "You can also review or revoke this at myaccount.google.com/permissions.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        SecondaryButton(label = "Back", onClick = onBack, modifier = Modifier.fillMaxWidth())
-    }
-}
-
-/**
- * Disconnecting revokes the grant either way. The two checkboxes are about the data on each side,
- * and both default to deleting — an integration that leaves health data behind after being
- * switched off is exactly what the security assessment looks for.
- */
-@Composable
-private fun DisconnectSheet(onDismiss: () -> Unit, onConfirm: (Boolean, Boolean) -> Unit) {
-    var deleteImported by remember { mutableStateOf(true) }
-    var deleteSent by remember { mutableStateOf(true) }
-
-    AppBottomSheet(onDismiss = onDismiss) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(
-                text = "Disconnect Google Health?",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "FitPulse will stop reading your health data and will no longer send your " +
-                    "meals and water to Google Health.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            DeleteChoice(
-                label = "Delete the workouts, weigh-ins and sleep imported from Google Health",
-                checked = deleteImported,
-                onToggle = { deleteImported = it },
-            )
-            DeleteChoice(
-                label = "Delete the meals and water FitPulse sent to Google Health",
-                checked = deleteSent,
-                onToggle = { deleteSent = it },
-            )
-            PrimaryButton(
-                label = "Disconnect",
-                onClick = { onConfirm(deleteImported, deleteSent) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.fillMaxWidth())
-        }
-    }
-}
-
-@Composable
-private fun DeleteChoice(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
-    AppCard(onClick = { onToggle(!checked) }) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(checked = checked, onCheckedChange = onToggle)
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

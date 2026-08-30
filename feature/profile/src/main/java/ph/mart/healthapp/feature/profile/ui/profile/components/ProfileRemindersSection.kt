@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.components
+package ph.mart.healthapp.feature.profile.ui.profile.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
@@ -12,7 +12,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.profile.ui.ReminderKind
+import ph.mart.healthapp.feature.profile.ui.profile.ReminderKind
 
 /** The switches persist to the profile row; `:app`'s `ph.mart.healthapp.reminder` package watches
  * that row and reconciles the WorkManager schedule behind them. [message] carries the

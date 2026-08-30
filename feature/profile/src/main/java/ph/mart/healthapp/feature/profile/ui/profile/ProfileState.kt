@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui
+package ph.mart.healthapp.feature.profile.ui.profile
 
 import ph.mart.healthapp.core.data.profile.Profile
 

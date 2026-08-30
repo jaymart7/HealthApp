@@ -1,18 +1,14 @@
-package ph.mart.healthapp.feature.profile.ui
+package ph.mart.healthapp.feature.profile.ui.profile
 
 import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,15 +37,15 @@ import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.profile.ui.components.ProfileAboutSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileAppearanceSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileConnectionsSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileDataSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileExerciseSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileGoalsSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileRemindersSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileUnitsSection
-import ph.mart.healthapp.feature.profile.ui.components.ProfileWaterSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAboutSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAppearanceSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileConnectionsSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileDataSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileExerciseSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileGoalsSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileRemindersSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileUnitsSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileWaterSection
 
 private const val EXPORT_FILE_NAME = "fitpulse-export.json"
 
@@ -241,21 +236,6 @@ private fun ProfileContent(
 }
 
 /** Below API 33 the permission doesn't exist and notifications are on by default. */
-private fun Context.canPostNotifications(): Boolean =
-    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-        ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-        PackageManager.PERMISSION_GRANTED
-
-private fun Context.writeText(uri: Uri, text: String): Result<Unit> = runCatching {
-    contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
-        ?: error("No output stream")
-}
-
-private fun Context.readText(uri: Uri): Result<String> = runCatching {
-    contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-        ?: error("No input stream")
-}
-
 @PreviewLightDark
 @Composable
 private fun ProfileScreenPreview() {

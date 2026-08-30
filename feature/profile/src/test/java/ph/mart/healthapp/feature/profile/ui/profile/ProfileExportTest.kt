@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui
+package ph.mart.healthapp.feature.profile.ui.profile
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.components
+package ph.mart.healthapp.feature.profile.ui.profile.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface

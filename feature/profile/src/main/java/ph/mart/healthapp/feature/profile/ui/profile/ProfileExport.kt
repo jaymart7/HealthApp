@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui
+package ph.mart.healthapp.feature.profile.ui.profile
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
