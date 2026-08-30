@@ -162,6 +162,9 @@ private fun SavedMealItemEntity.toSavedMealItem() = SavedMealItem(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 private fun SavedMealItem.toEntity(mealId: Long) = SavedMealItemEntity(
@@ -173,6 +176,9 @@ private fun SavedMealItem.toEntity(mealId: Long) = SavedMealItemEntity(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
@@ -186,6 +192,9 @@ private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 private fun FoodEntryEntity.toSuggestion() = FoodSuggestion(
@@ -196,6 +205,9 @@ private fun FoodEntryEntity.toSuggestion() = FoodSuggestion(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
     // A recent only knows it isn't starred; mergeSuggestions drops it if a favorite claims the name.
     isFavorite = false,
 )
@@ -208,6 +220,9 @@ private fun FavoriteFoodEntity.toSuggestion() = FoodSuggestion(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
     isFavorite = true,
 )
 
@@ -219,6 +234,9 @@ private fun FoodSuggestion.toEntity() = FavoriteFoodEntity(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 private fun FoodEntry.toEntity(date: Long, loggedAt: Long) = FoodEntryEntity(
@@ -233,4 +251,7 @@ private fun FoodEntry.toEntity(date: Long, loggedAt: Long) = FoodEntryEntity(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )

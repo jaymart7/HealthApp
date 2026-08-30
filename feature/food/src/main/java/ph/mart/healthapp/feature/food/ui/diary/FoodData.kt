@@ -51,6 +51,9 @@ fun FoodSuggestion.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 /** Twin of [FoodSuggestion.toAddEntryForm] for a saved meal's item — it skips the form entirely,
@@ -65,6 +68,9 @@ fun SavedMealItem.toFoodEntry(mealType: MealType, dateEpochDay: Long): FoodEntry
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 /** Twin of [FoodSuggestion.toAddEntryForm] again, and for the same reason it isn't a
@@ -81,6 +87,9 @@ fun Recipe.toAddEntryForm(mealType: MealType): AddEntryForm {
         proteinG = serving.proteinG,
         carbsG = serving.carbsG,
         fatG = serving.fatG,
+        fiberG = serving.fiberG,
+        sugarG = serving.sugarG,
+        sodiumMg = serving.sodiumMg,
     )
 }
 
@@ -94,6 +103,9 @@ fun FoodEntry.toSavedMealItem(): SavedMealItem = SavedMealItem(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 sealed interface FoodEvent {

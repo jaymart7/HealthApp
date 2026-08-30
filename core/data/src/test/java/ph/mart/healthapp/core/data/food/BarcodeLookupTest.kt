@@ -33,6 +33,49 @@ class BarcodeLookupTest {
     }
 
     @Test
+    fun `reads fiber, sugar and sodium, and takes sugar from the branded id first`() {
+        val body = """
+            {"foods":[{"gtinUpc":"028400642255","description":"Tortilla chips",
+            "foodNutrients":[{"nutrientId":1008,"value":536},{"nutrientId":1079,"value":4.8},
+            {"nutrientId":2000,"value":3.6},{"nutrientId":1063,"value":99},
+            {"nutrientId":1093,"value":1071}]}]}
+        """.trimIndent()
+
+        val product = (parseFdcProduct(body, "028400642255") as BarcodeLookupResult.Found).product
+
+        assertEquals(5, product.fiberG)
+        assertEquals(4, product.sugarG)
+        assertEquals(1071, product.sodiumMg)
+    }
+
+    @Test
+    fun `sugar falls back to the NLEA id when the branded one is absent`() {
+        val body = """
+            {"foods":[{"gtinUpc":"028400642255","description":"Broccoli, raw",
+            "foodNutrients":[{"nutrientId":1008,"value":34},{"nutrientId":1063,"value":1.7}]}]}
+        """.trimIndent()
+
+        val product = (parseFdcProduct(body, "028400642255") as BarcodeLookupResult.Found).product
+
+        assertEquals(2, product.sugarG)
+    }
+
+    @Test
+    fun `a food reporting none of the three is still a match, at zero`() {
+        val body = """
+            {"foods":[{"gtinUpc":"028400642255","description":"Mystery bar",
+            "foodNutrients":[{"nutrientId":1008,"value":210}]}]}
+        """.trimIndent()
+
+        val product = (parseFdcProduct(body, "028400642255") as BarcodeLookupResult.Found).product
+
+        assertEquals(210, product.calories)
+        assertEquals(0, product.fiberG)
+        assertEquals(0, product.sugarG)
+        assertEquals(0, product.sodiumMg)
+    }
+
+    @Test
     fun `a code FDC does not stock is not found, however many hits it fuzzy-matched`() {
         // What a code FDC cannot tokenize really returns: it falls back to relevance and hands back
         // the top of the branded database. Without the gtinUpc check this would log the nuggets.

@@ -216,13 +216,30 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   rather than a sheet sub-view because an ingredient list plus its editor doesn't fit above a
   keyboard.
 - **Changing a portion reprices the entry.** `AddEntryForm.withPortionAmount()` (and its
-  `SavedMealItem` twin) scale calories and all three macros by the portion ratio, because every
+  `SavedMealItem` twin) scale calories, all three macros and the three micronutrients by the
+  portion ratio, because every
   seeded figure in this app is a figure *for a stated amount* — 539 kcal per 100 g off Open Food
   Facts, an AI estimate for the plate it saw, a recipe's serving. The barcode screen instructs the
   user to "adjust the portion to match what you ate"; without this that instruction wrote 539 kcal
   against 30 g. The factor applies to the *current* pair rather than a remembered original, so
   there is no seed to carry and a run of stepper taps stays within a unit of the one-shot answer.
   A zero starting portion has no price-per-unit, so the amount moves alone.
+- **Fiber, sugar and sodium are reported, never graded.** They ride every path a macro rides —
+  `FoodEntry`, the favorite, the saved-meal item, the recipe serving, the FDC parse, the AI
+  estimate, the export — but they have no *targets*: Mifflin–St Jeor yields calories and a 30/40/30
+  split, and there is nothing on the profile to derive a fiber goal from, so `DailyTargets` and
+  `ConfirmTargetsScreen` are deliberately untouched. Consequences: `MacroBar` stays three segments
+  (fiber is a subset of carbs — a fourth would double-count the day), the three carry **no semantic
+  colour** because they appear in no bar or chart, `MicronutrientLegend` renders *nothing* when all
+  three are zero rather than a row of zeros against no goal, and `MicronutrientInputGroup` is a
+  sibling of `MacroInputGroup` rather than three more rows inside it — one of that component's
+  callers is onboarding's target screen. `0` means unknown-or-none, the same reading a missing FDC
+  macro already gets. The entry group opens itself only when a value arrives non-zero, so a scanned
+  packet shows its sodium without a tap while a quick add keeps the sheet its current height.
+- **FDC reports sugar under two ids** — `2000` on branded rows, `1063` on Foundation ones — so
+  `toScannedProduct` tries the branded id first and falls back. Sodium (`1093`) is the one nutrient
+  in the app counted in milligrams, which is why its stepper steps by 50 and its field is a digit
+  wider than the macro fields.
 - **Every numeric figure is typable, not just steppable.** `StepperValueField` (in
   `NumericStepperField.kt`) backs the calorie, macro, portion, duration and burn values; the ±
   buttons nudge a figure that is already about right. Stepper-only entry meant 320 kcal cost 32
@@ -385,6 +402,10 @@ because of that, not because it was the nicest design available.
 - FoodData Central runs on one signed key shipped in the APK (extractable, and its 3600 req/hour
   budget is shared by every install). A proxy holding the key is the upgrade path if either the
   ceiling or the exposure starts to matter.
+- Google Health's `nutritionLog` still carries only kcal + carbs + fat + the `PROTEIN` nutrient.
+  Pin the v4 nutrient enum names for fiber, sugar and sodium against a live response before adding
+  them — an unknown field fails the *whole* meal push, and this is the same rule the weight
+  timestamp and step-bucket fields are already waiting on.
 - Final mascot illustration (the geometric placeholder "Bibo" is used throughout).
 - Google Health: verification is *not* done. Needs the Cloud project's consent screen branded
   for FitPulse, an Android OAuth client (package + debug **and** release SHA-1) in that same

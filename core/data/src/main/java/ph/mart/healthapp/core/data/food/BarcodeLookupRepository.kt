@@ -16,6 +16,9 @@ data class ScannedProduct(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
 )
 
 sealed interface BarcodeLookupResult {

@@ -18,7 +18,8 @@ You are a nutrition-estimation assistant for a food-logging app. Look at the pho
 the single most prominent food item.
 
 Respond with the food's name, its estimated portion, and its estimated calories and macros for
-that portion. If you are not confident about the identification or the portion estimate, set
+that portion, plus its fiber and sugar in grams and its sodium in milligrams for that same
+portion. If you are not confident about the identification or the portion estimate, set
 confidence to "low"; otherwise "high". If no food is visible in the photo, set foodDetected to
 false and leave the other fields at their defaults.
 """
@@ -33,11 +34,14 @@ private val RESPONSE_SCHEMA = Schema.obj(
         "proteinG" to Schema.integer(),
         "carbsG" to Schema.integer(),
         "fatG" to Schema.integer(),
+        "fiberG" to Schema.integer(),
+        "sugarG" to Schema.integer(),
+        "sodiumMg" to Schema.integer(description = "milligrams, not grams"),
         "confidence" to Schema.enumeration(listOf("high", "low")),
     ),
 )
 
-/** [org.json.JSONObject] parses the flat 9-field response — no kotlinx-serialization dependency
+/** [org.json.JSONObject] parses the flat 12-field response — no kotlinx-serialization dependency
  * needed for this. */
 internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
 
@@ -76,6 +80,11 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
                 proteinG = body.getInt("proteinG"),
                 carbsG = body.getInt("carbsG"),
                 fatG = body.getInt("fatG"),
+                // optInt, not getInt: a response that predates these three fields, or omits them
+                // for a food the model has nothing to say about, still parses as an estimate.
+                fiberG = body.optInt("fiberG"),
+                sugarG = body.optInt("sugarG"),
+                sodiumMg = body.optInt("sodiumMg"),
                 confidence = confidence,
             ),
         )

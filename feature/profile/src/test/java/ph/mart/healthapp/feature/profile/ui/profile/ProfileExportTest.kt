@@ -52,6 +52,9 @@ class ProfileExportTest {
             proteinG = 11,
             carbsG = 54,
             fatG = 6,
+            fiberG = 8,
+            sugarG = 3,
+            sodiumMg = 210,
         ),
     )
 
@@ -146,6 +149,29 @@ class ProfileExportTest {
         assertEquals(DEFAULT_FAST_GOAL_HOURS, payload.profile?.fastingGoalHours)
         // Defaulted on, so an older file doesn't silently drop the exercise credit.
         assertEquals(true, payload.profile?.addExerciseToBudget)
+    }
+
+    /** A file written before fiber, sugar and sodium existed: the three default to 0, which is
+     * exactly what those fields mean everywhere else in the app. */
+    @Test
+    fun `a v6 file without the micronutrients still imports`() {
+        val v6 = """
+            {
+              "schemaVersion": 6,
+              "foodEntries": [{
+                "dateEpochDay": 20000, "name": "Oatmeal", "mealType": "Breakfast",
+                "portionAmount": 1.5, "portionUnit": "cup",
+                "calories": 310, "proteinG": 11, "carbsG": 54, "fatG": 6
+              }]
+            }
+        """.trimIndent()
+
+        val entry = parseExport(v6).getOrThrow().foodEntries.single()
+
+        assertEquals(310, entry.calories)
+        assertEquals(0, entry.fiberG)
+        assertEquals(0, entry.sugarG)
+        assertEquals(0, entry.sodiumMg)
     }
 
     @Test

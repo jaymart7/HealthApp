@@ -38,6 +38,15 @@ private const val NUTRIENT_KJ = 1062
 private const val NUTRIENT_PROTEIN = 1003
 private const val NUTRIENT_FAT = 1004
 private const val NUTRIENT_CARBS = 1005
+private const val NUTRIENT_FIBER = 1079
+
+/** Branded rows report sugar as 2000 ("Sugars, total including NLEA"); Foundation and legacy rows
+ * use 1063. Neither id is present on every food, so both are tried before giving up. */
+private const val NUTRIENT_SUGAR = 2000
+private const val NUTRIENT_SUGAR_NLEA = 1063
+
+/** FDC already reports sodium in milligrams — the one nutrient here that isn't grams. */
+private const val NUTRIENT_SODIUM = 1093
 
 internal sealed interface FdcResponse {
     data class Ok(val body: String) : FdcResponse
@@ -108,6 +117,10 @@ internal fun JsonObject.toScannedProduct(): ScannedProduct? {
         proteinG = nutrients.nutrient(NUTRIENT_PROTEIN)?.roundToInt() ?: 0,
         carbsG = nutrients.nutrient(NUTRIENT_CARBS)?.roundToInt() ?: 0,
         fatG = nutrients.nutrient(NUTRIENT_FAT)?.roundToInt() ?: 0,
+        fiberG = nutrients.nutrient(NUTRIENT_FIBER)?.roundToInt() ?: 0,
+        sugarG = (nutrients.nutrient(NUTRIENT_SUGAR) ?: nutrients.nutrient(NUTRIENT_SUGAR_NLEA))
+            ?.roundToInt() ?: 0,
+        sodiumMg = nutrients.nutrient(NUTRIENT_SODIUM)?.roundToInt() ?: 0,
     )
 }
 

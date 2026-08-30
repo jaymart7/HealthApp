@@ -29,6 +29,22 @@ class NutritionTrendTest {
     }
 
     @Test
+    fun `averages carry fiber, sugar and sodium over logged days only`() {
+        val series = listOf(
+            entry(1, 400, 30, 40, 10).copy(fiberG = 10, sugarG = 20, sodiumMg = 1000),
+            entry(3, 600, 40, 60, 20).copy(fiberG = 20, sugarG = 40, sodiumMg = 2000),
+        ).dailySeries(fromEpochDay = 1, toEpochDay = 3)
+
+        val averages = series.averages()
+
+        // Day 2 is zero-filled and excluded: dividing by three would report a day nobody ate.
+        assertEquals(2, averages.daysLogged)
+        assertEquals(15, averages.fiberG)
+        assertEquals(30, averages.sugarG)
+        assertEquals(1500, averages.sodiumMg)
+    }
+
+    @Test
     fun `entries on the same day are summed`() {
         val series = listOf(
             entry(5, 150, 20, 8, 4),

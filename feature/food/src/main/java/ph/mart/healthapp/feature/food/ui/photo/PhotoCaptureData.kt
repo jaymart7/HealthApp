@@ -27,4 +27,7 @@ fun RecognizedFood.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )

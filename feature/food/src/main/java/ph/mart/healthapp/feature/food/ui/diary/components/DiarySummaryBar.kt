@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.Macros
+import ph.mart.healthapp.core.designsystem.component.MicronutrientLegend
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -100,6 +101,14 @@ fun DiarySummaryBar(
             MacroLegend("Carbs", consumed.carbsG, carbsGoalG, MaterialTheme.colorScheme.tertiary)
             MacroLegend("Fat", consumed.fatG, fatGoalG, MaterialTheme.colorScheme.secondary)
         }
+
+        // Silent on a day nothing was logged for, and on one logged entirely by quick add — which
+        // is why it sits outside the legend Row rather than as a fourth item inside it.
+        MicronutrientLegend(
+            fiberG = consumed.fiberG,
+            sugarG = consumed.sugarG,
+            sodiumMg = consumed.sodiumMg,
+        )
     }
 }
 
@@ -132,7 +141,15 @@ private fun DiarySummaryBarPreview() {
     AppTheme {
         Surface {
             DiarySummaryBar(
-                consumed = DiaryTotals(calories = 940, proteinG = 62, carbsG = 88, fatG = 31),
+                consumed = DiaryTotals(
+                    calories = 940,
+                    proteinG = 62,
+                    carbsG = 88,
+                    fatG = 31,
+                    fiberG = 12,
+                    sugarG = 40,
+                    sodiumMg = 1240,
+                ),
                 goalKcal = 1941,
                 proteinGoalG = 146,
                 carbsGoalG = 194,

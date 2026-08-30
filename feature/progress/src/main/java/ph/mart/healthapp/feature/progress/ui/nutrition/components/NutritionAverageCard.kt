@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.data.food.NutritionAverages
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.MacroBar
+import ph.mart.healthapp.core.designsystem.component.MicronutrientLegend
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -61,6 +62,12 @@ fun NutritionAverageCard(
             MacroLegend("Carbs", averages.carbsG, targets?.carbsG, MaterialTheme.colorScheme.tertiary)
             MacroLegend("Fat", averages.fatG, targets?.fatG, MaterialTheme.colorScheme.secondary)
         }
+        MicronutrientLegend(
+            fiberG = averages.fiberG,
+            sugarG = averages.sugarG,
+            sodiumMg = averages.sodiumMg,
+            modifier = Modifier.padding(top = 8.dp),
+        )
         Text(
             text = "Averaged over ${averages.daysLogged} logged " +
                 if (averages.daysLogged == 1) "day" else "days",
@@ -94,6 +101,9 @@ private fun NutritionAverageCardPreview() {
                     proteinG = 131,
                     carbsG = 186,
                     fatG = 71,
+                    fiberG = 24,
+                    sugarG = 63,
+                    sodiumMg = 2180,
                     daysLogged = 24,
                 ),
                 targets = DailyTargets(calories = 1941, proteinG = 146, carbsG = 194, fatG = 65, floor = 1500),

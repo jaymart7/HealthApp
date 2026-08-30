@@ -21,6 +21,7 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
+import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -127,6 +128,14 @@ internal fun AddEntrySheet(
                 onProteinChange = { onFormChange(form.copy(proteinG = it)) },
                 onCarbsChange = { onFormChange(form.copy(carbsG = it)) },
                 onFatChange = { onFormChange(form.copy(fatG = it)) },
+            )
+            MicronutrientInputGroup(
+                fiberG = form.fiberG,
+                sugarG = form.sugarG,
+                sodiumMg = form.sodiumMg,
+                onFiberChange = { onFormChange(form.copy(fiberG = it)) },
+                onSugarChange = { onFormChange(form.copy(sugarG = it)) },
+                onSodiumChange = { onFormChange(form.copy(sodiumMg = it)) },
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))

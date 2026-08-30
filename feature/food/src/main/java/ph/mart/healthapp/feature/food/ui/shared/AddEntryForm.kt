@@ -21,6 +21,9 @@ data class AddEntryForm(
     val proteinG: Int = 0,
     val carbsG: Int = 0,
     val fatG: Int = 0,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
 )
 
 /** A bare calorie figure is enough — that is the quick add. The guard is deliberately shared with
@@ -42,6 +45,9 @@ fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 /**
@@ -59,6 +65,9 @@ fun FoodEntry.toAddEntryForm(): AddEntryForm = AddEntryForm(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 /** Added to the add-entry sheet's portion-unit pills, so a seeded recipe shows its unit selected
@@ -80,6 +89,9 @@ fun ScannedProduct.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 /**
@@ -105,6 +117,9 @@ fun AddEntryForm.withPortionAmount(amount: Double): AddEntryForm {
         proteinG = scale(proteinG, factor),
         carbsG = scale(carbsG, factor),
         fatG = scale(fatG, factor),
+        fiberG = scale(fiberG, factor),
+        sugarG = scale(sugarG, factor),
+        sodiumMg = scale(sodiumMg, factor),
     )
 }
 
@@ -118,6 +133,9 @@ fun SavedMealItem.withPortionAmount(amount: Double): SavedMealItem {
         proteinG = scale(proteinG, factor),
         carbsG = scale(carbsG, factor),
         fatG = scale(fatG, factor),
+        fiberG = scale(fiberG, factor),
+        sugarG = scale(sugarG, factor),
+        sodiumMg = scale(sodiumMg, factor),
     )
 }
 

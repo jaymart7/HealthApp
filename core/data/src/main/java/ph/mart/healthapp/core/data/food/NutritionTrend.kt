@@ -12,7 +12,12 @@ data class DayNutrition(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
 ) {
+    /** Deliberately unchanged by fiber/sugar/sodium: a day carrying sodium but no calories cannot
+     * exist, so widening the predicate would only add ways for it to lie. */
     val isLogged: Boolean get() = calories > 0 || proteinG > 0 || carbsG > 0 || fatG > 0
 }
 
@@ -31,6 +36,9 @@ fun List<FoodEntry>.dailySeries(fromEpochDay: Long, toEpochDay: Long): List<DayN
             proteinG = totals.proteinG,
             carbsG = totals.carbsG,
             fatG = totals.fatG,
+            fiberG = totals.fiberG,
+            sugarG = totals.sugarG,
+            sodiumMg = totals.sodiumMg,
         )
     }
 }
@@ -40,6 +48,9 @@ data class NutritionAverages(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
     val daysLogged: Int,
 )
 
@@ -47,12 +58,15 @@ data class NutritionAverages(
  * never ate. [NutritionAverages.daysLogged] is shown alongside so a sparse range says so. */
 fun List<DayNutrition>.averages(): NutritionAverages {
     val logged = filter { it.isLogged }
-    if (logged.isEmpty()) return NutritionAverages(0, 0, 0, 0, 0)
+    if (logged.isEmpty()) return NutritionAverages(0, 0, 0, 0, 0, 0, 0, 0)
     return NutritionAverages(
         calories = logged.sumOf { it.calories } / logged.size,
         proteinG = logged.sumOf { it.proteinG } / logged.size,
         carbsG = logged.sumOf { it.carbsG } / logged.size,
         fatG = logged.sumOf { it.fatG } / logged.size,
+        fiberG = logged.sumOf { it.fiberG } / logged.size,
+        sugarG = logged.sumOf { it.sugarG } / logged.size,
+        sodiumMg = logged.sumOf { it.sodiumMg } / logged.size,
         daysLogged = logged.size,
     )
 }

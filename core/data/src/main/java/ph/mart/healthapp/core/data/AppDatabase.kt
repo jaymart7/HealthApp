@@ -50,7 +50,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         StepDayEntity::class,
         FastSessionEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {

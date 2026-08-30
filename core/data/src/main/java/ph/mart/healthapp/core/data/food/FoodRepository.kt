@@ -17,6 +17,9 @@ data class FoodEntry(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
 )
 
 /** A one-tap re-log candidate in the add-entry sheet: either a recently logged food (derived
@@ -30,6 +33,9 @@ data class FoodSuggestion(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
     val isFavorite: Boolean,
 )
 
@@ -53,7 +59,15 @@ const val MAX_SUGGESTIONS = 5
  * query has to exclude it; see [FoodEntryDao.observeRecent][ph.mart.healthapp.core.data.food.local.FoodEntryDao]. */
 const val QUICK_ADD_NAME = "Quick add"
 
-data class DiaryTotals(val calories: Int, val proteinG: Int, val carbsG: Int, val fatG: Int)
+data class DiaryTotals(
+    val calories: Int,
+    val proteinG: Int,
+    val carbsG: Int,
+    val fatG: Int,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
+)
 
 /** Diary aggregation is a pure fold over the (small, single-day) entry list — not a stored
  * entity or a second Room query. */
@@ -63,6 +77,9 @@ fun List<FoodEntry>.dailyTotals(): DiaryTotals = fold(DiaryTotals(0, 0, 0, 0)) {
         proteinG = acc.proteinG + entry.proteinG,
         carbsG = acc.carbsG + entry.carbsG,
         fatG = acc.fatG + entry.fatG,
+        fiberG = acc.fiberG + entry.fiberG,
+        sugarG = acc.sugarG + entry.sugarG,
+        sodiumMg = acc.sodiumMg + entry.sodiumMg,
     )
 }
 

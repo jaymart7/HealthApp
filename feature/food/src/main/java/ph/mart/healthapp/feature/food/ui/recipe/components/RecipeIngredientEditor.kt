@@ -15,6 +15,7 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
+import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
@@ -50,6 +51,9 @@ internal fun RecipeIngredientEditor(
                         proteinG = product.proteinG,
                         carbsG = product.carbsG,
                         fatG = product.fatG,
+                        fiberG = product.fiberG,
+                        sugarG = product.sugarG,
+                        sodiumMg = product.sodiumMg,
                     ),
                 )
             },
@@ -75,6 +79,14 @@ internal fun RecipeIngredientEditor(
             onProteinChange = { onDraftChange(draft.copy(proteinG = it)) },
             onCarbsChange = { onDraftChange(draft.copy(carbsG = it)) },
             onFatChange = { onDraftChange(draft.copy(fatG = it)) },
+        )
+        MicronutrientInputGroup(
+            fiberG = draft.fiberG,
+            sugarG = draft.sugarG,
+            sodiumMg = draft.sodiumMg,
+            onFiberChange = { onDraftChange(draft.copy(fiberG = it)) },
+            onSugarChange = { onDraftChange(draft.copy(sugarG = it)) },
+            onSodiumChange = { onDraftChange(draft.copy(sodiumMg = it)) },
         )
         SecondaryButton(
             label = "Add ingredient",

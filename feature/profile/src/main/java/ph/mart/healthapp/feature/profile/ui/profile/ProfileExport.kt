@@ -46,10 +46,11 @@ internal data class FitPulseExport(
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
  * [FitPulseExport.exercises] and [ExportProfile.addExerciseToBudget]; 4 added
  * [ExportProfile.darkThemeOn]; 5 added [FitPulseExport.moodDays]; 6 added
- * [FitPulseExport.fastSessions] and the profile's fasting fields.
+ * [FitPulseExport.fastSessions] and the profile's fasting fields; 7 added the food entries'
+ * fiber, sugar and sodium.
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 6
+internal const val EXPORT_SCHEMA_VERSION = 7
 
 @Serializable
 internal data class ExportProfile(
@@ -88,6 +89,9 @@ internal data class ExportFoodEntry(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
 )
 
 @Serializable
@@ -257,6 +261,9 @@ private fun FoodEntry.toExport() = ExportFoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 private fun ExportFoodEntry.toFoodEntry() = FoodEntry(
@@ -269,4 +276,7 @@ private fun ExportFoodEntry.toFoodEntry() = FoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )

@@ -13,6 +13,73 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 class AddEntryFormTest {
 
     @Test
+    fun `changing the portion reprices fiber, sugar and sodium with everything else`() {
+        val form = AddEntryForm(
+            name = "Tortilla chips",
+            portionAmount = 100.0,
+            calories = 536,
+            proteinG = 7,
+            carbsG = 64,
+            fatG = 25,
+            fiberG = 5,
+            sugarG = 4,
+            sodiumMg = 1071,
+        )
+
+        val halved = form.withPortionAmount(50.0)
+
+        assertEquals(268, halved.calories)
+        assertEquals(3, halved.fiberG)
+        assertEquals(2, halved.sugarG)
+        assertEquals(536, halved.sodiumMg)
+    }
+
+    @Test
+    fun `a recipe ingredient reprices the three the same way`() {
+        val item = SavedMealItem(
+            name = "Beans",
+            portionAmount = 200.0,
+            portionUnit = "g",
+            calories = 300,
+            proteinG = 20,
+            carbsG = 50,
+            fatG = 2,
+            fiberG = 16,
+            sugarG = 4,
+            sodiumMg = 800,
+        )
+
+        val doubled = item.withPortionAmount(400.0)
+
+        assertEquals(32, doubled.fiberG)
+        assertEquals(8, doubled.sugarG)
+        assertEquals(1600, doubled.sodiumMg)
+    }
+
+    @Test
+    fun `reopening a logged row round-trips the three`() {
+        val entry = FoodEntry(
+            id = 7,
+            name = "Tortilla chips",
+            dateEpochDay = 20_690,
+            mealType = MealType.Snacks,
+            portionAmount = 30.0,
+            portionUnit = "g",
+            calories = 161,
+            proteinG = 2,
+            carbsG = 19,
+            fatG = 8,
+            fiberG = 2,
+            sugarG = 1,
+            sodiumMg = 321,
+        )
+
+        val reopened = entry.toAddEntryForm().toFoodEntry(dateEpochDay = entry.dateEpochDay)
+
+        assertEquals(entry.copy(id = 0), reopened)
+    }
+
+    @Test
     fun `a bare calorie figure is enough`() {
         assertTrue(AddEntryForm(name = "", calories = 650).isValid())
     }
