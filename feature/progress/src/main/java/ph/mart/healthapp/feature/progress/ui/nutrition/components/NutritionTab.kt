@@ -14,7 +14,7 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState

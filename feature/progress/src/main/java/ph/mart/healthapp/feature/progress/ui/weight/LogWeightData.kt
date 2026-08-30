@@ -2,7 +2,7 @@ package ph.mart.healthapp.feature.progress.ui.weight
 
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.WeightEntry
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 
 data class LogWeightUiState(val entries: List<WeightEntry> = emptyList(), val preferredUnit: UnitSystem = UnitSystem.Metric)
 

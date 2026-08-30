@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState

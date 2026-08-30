@@ -19,7 +19,7 @@ import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.streak.weightProgressKg
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
  * Near-read-only container: the water glasses and the day's mood/energy are the only things this

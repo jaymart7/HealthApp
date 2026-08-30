@@ -2,7 +2,7 @@ package ph.mart.healthapp.feature.progress.ui.measurement
 
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 
 data class AddMeasurementUiState(
     val entriesByPart: Map<MeasurementPart, List<MeasurementEntry>> = emptyMap(),

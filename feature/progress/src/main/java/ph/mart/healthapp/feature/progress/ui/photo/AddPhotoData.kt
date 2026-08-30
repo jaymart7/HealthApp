@@ -3,7 +3,7 @@ package ph.mart.healthapp.feature.progress.ui.photo
 import android.graphics.Bitmap
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 
 enum class AddPhotoStep { Pick, Capture, Preview }
 

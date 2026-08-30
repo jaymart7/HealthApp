@@ -24,7 +24,7 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsTabContent

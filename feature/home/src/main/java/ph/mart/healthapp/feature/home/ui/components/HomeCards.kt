@@ -28,7 +28,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.ui.HomeEvent
 import ph.mart.healthapp.feature.home.ui.daysSincePhoto

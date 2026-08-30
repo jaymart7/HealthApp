@@ -38,7 +38,7 @@ import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.epochDayToDate
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
-import ph.mart.healthapp.core.designsystem.component.todayEpochDay
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /** 3-col grid grouped by month header, tap-to-select up to 2 (oldest drops — handled by the
