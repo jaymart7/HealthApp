@@ -48,6 +48,11 @@ fun mergeSuggestions(
  * sheet above the entry form, and a longer one pushes the form off-screen. */
 const val MAX_SUGGESTIONS = 5
 
+/** What an entry logged without a name is stored as — the diary's escape hatch for a meal the
+ * user isn't going to look up. It lives here rather than in `:feature:food` because the recents
+ * query has to exclude it; see [FoodEntryDao.observeRecent][ph.mart.healthapp.core.data.food.local.FoodEntryDao]. */
+const val QUICK_ADD_NAME = "Quick add"
+
 data class DiaryTotals(val calories: Int, val proteinG: Int, val carbsG: Int, val fatG: Int)
 
 /** Diary aggregation is a pure fold over the (small, single-day) entry list — not a stored

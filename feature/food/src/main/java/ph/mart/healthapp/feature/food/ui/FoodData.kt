@@ -4,6 +4,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
@@ -51,15 +52,21 @@ data class AddEntryForm(
     val fatG: Int = 0,
 )
 
-fun AddEntryForm.isValid(): Boolean = name.isNotBlank()
+/** A bare calorie figure is enough — that is the quick add. The guard is deliberately shared with
+ * the photo and barcode confirmation screens: all three log through [toFoodEntry], which fills the
+ * blank, so clearing a name there degrades to a quick add rather than deadlocking the button. */
+fun AddEntryForm.isValid(): Boolean = name.isNotBlank() || calories > 0
 
-/** [dateEpochDay] 0 leaves the stamping to the repository, which means today. */
+/** [dateEpochDay] 0 leaves the stamping to the repository, which means today.
+ *
+ * A blank name is a quick add: it becomes [QUICK_ADD_NAME], and the portion collapses to one
+ * serving because the form's default 100 g would be a number the user never supplied. */
 fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
-    name = name,
+    name = name.ifBlank { QUICK_ADD_NAME },
     dateEpochDay = dateEpochDay,
     mealType = mealType,
-    portionAmount = portionAmount,
-    portionUnit = portionUnit,
+    portionAmount = if (name.isBlank()) 1.0 else portionAmount,
+    portionUnit = if (name.isBlank()) SERVING_UNIT else portionUnit,
     calories = calories,
     proteinG = proteinG,
     carbsG = carbsG,

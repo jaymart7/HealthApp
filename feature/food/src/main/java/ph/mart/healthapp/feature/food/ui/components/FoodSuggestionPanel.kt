@@ -34,7 +34,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 internal fun FoodSuggestionPanel(
     suggestions: List<FoodSuggestion>,
     onSelect: (FoodSuggestion) -> Unit,
-    onQuickAdd: (FoodSuggestion) -> Unit,
+    onLogAgain: (FoodSuggestion) -> Unit,
     onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -49,7 +49,7 @@ internal fun FoodSuggestionPanel(
             SuggestionRow(
                 suggestion = suggestion,
                 onClick = { onSelect(suggestion) },
-                onQuickAdd = { onQuickAdd(suggestion) },
+                onLogAgain = { onLogAgain(suggestion) },
                 onToggleFavorite = { onToggleFavorite(suggestion, !suggestion.isFavorite) },
             )
         }
@@ -60,7 +60,7 @@ internal fun FoodSuggestionPanel(
 private fun SuggestionRow(
     suggestion: FoodSuggestion,
     onClick: () -> Unit,
-    onQuickAdd: () -> Unit,
+    onLogAgain: () -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
     Surface(
@@ -98,7 +98,7 @@ private fun SuggestionRow(
                     },
                 )
             }
-            IconButton(onClick = onQuickAdd, modifier = Modifier.size(44.dp)) {
+            IconButton(onClick = onLogAgain, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = AppIcons.Add,
                     contentDescription = "Log ${suggestion.name} again",
@@ -120,7 +120,7 @@ private fun FoodSuggestionPanelPreview() {
                     FoodSuggestion("Grilled chicken breast", 150.0, "g", 210, 32, 2, 8, isFavorite = false),
                 ),
                 onSelect = {},
-                onQuickAdd = {},
+                onLogAgain = {},
                 onToggleFavorite = { _, _ -> },
                 modifier = Modifier.padding(16.dp),
             )

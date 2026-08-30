@@ -54,7 +54,7 @@ internal class FoodRepositoryImpl(
     }
 
     override fun observeSuggestions(): Flow<List<FoodSuggestion>> =
-        combine(dao.observeRecent(RECENT_LIMIT), favoriteDao.observeFavorites()) { recents, favorites ->
+        combine(dao.observeRecent(RECENT_LIMIT, QUICK_ADD_NAME), favoriteDao.observeFavorites()) { recents, favorites ->
             mergeSuggestions(
                 recents = recents.map { it.toSuggestion() },
                 favorites = favorites.map { it.toSuggestion() },

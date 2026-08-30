@@ -135,6 +135,15 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   genuinely mean today, so don't collapse them into the dated ones.
 - **The diary's top field is a local filter over logged entries**, not a
   database search. Database search is `FoodSearchRepository`/`FoodSearchPanel`.
+- **A nameless entry is a quick add, not an invalid one.** `AddEntryForm.isValid()` accepts a bare
+  calorie figure, and `toFoodEntry()` fills the blank with `QUICK_ADD_NAME` and collapses the
+  portion to one serving — the form's default 100 g is a number the user never supplied. The guard
+  is shared with the photo and barcode confirmation screens on purpose: all three log through
+  `toFoodEntry()`, so no path can write a blank name, and clearing a name on a confirmation screen
+  degrades to a quick add instead of deadlocking the button. `FoodEntryDao.observeRecent` excludes
+  that name so every quick add doesn't collapse into one meaningless row eating a
+  `MAX_SUGGESTIONS` slot — which is also why the suggestion panel's one-tap re-log callback is
+  `onLogAgain`, not `onQuickAdd`.
 - **`Profile.darkThemeOn` is nullable and null means follow the device.** A plain `false`
   default would force light on a phone already in dark mode; the Profile switch resolves it
   with `darkThemeOn ?: isSystemInDarkTheme()`, the same expression `MainActivity` uses to pick

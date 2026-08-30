@@ -12,13 +12,16 @@ internal interface FoodEntryDao {
 
     /** One row per distinct food name — the most recently inserted one, newest first. The
      * `MAX(id)` subquery is what makes "the row for this name" well-defined; a bare
-     * `GROUP BY name` would leave the non-aggregate columns up to SQLite. */
+     * `GROUP BY name` would leave the non-aggregate columns up to SQLite.
+     *
+     * [exclude] is the quick-add name: every nameless entry collapses into one row under it, and
+     * "Quick add · 1 serving · 650 kcal" is not a food anyone wants to re-log. */
     @Query(
         "SELECT * FROM food_entry WHERE id IN " +
-            "(SELECT MAX(id) FROM food_entry WHERE isDeleted = 0 GROUP BY name) " +
+            "(SELECT MAX(id) FROM food_entry WHERE isDeleted = 0 AND name != :exclude GROUP BY name) " +
             "ORDER BY loggedAt DESC LIMIT :limit",
     )
-    fun observeRecent(limit: Int): Flow<List<FoodEntryEntity>>
+    fun observeRecent(limit: Int, exclude: String): Flow<List<FoodEntryEntity>>
 
     /** Bounded history for the Nutrition trend — the whole table is only ever read by export. */
     @Query("SELECT * FROM food_entry WHERE date >= :from AND isDeleted = 0 ORDER BY date ASC, loggedAt ASC")

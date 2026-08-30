@@ -215,7 +215,7 @@ private fun FoodContent(
                     onFormChange = { state.addForm = it },
                     onSelectProduct = { state.addForm = it.toAddEntryForm(activeMealSheet) },
                     onSelectSuggestion = { state.addForm = it.toAddEntryForm(activeMealSheet) },
-                    onQuickAdd = { suggestion ->
+                    onLogAgain = { suggestion ->
                         onEvent(FoodEvent.OnAddEntry(suggestion.toAddEntryForm(activeMealSheet)))
                         state.closeSheet()
                     },
@@ -375,7 +375,7 @@ private fun AddEntrySheet(
     onFormChange: (AddEntryForm) -> Unit,
     onSelectProduct: (ScannedProduct) -> Unit,
     onSelectSuggestion: (FoodSuggestion) -> Unit,
-    onQuickAdd: (FoodSuggestion) -> Unit,
+    onLogAgain: (FoodSuggestion) -> Unit,
     onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
@@ -405,10 +405,25 @@ private fun AddEntrySheet(
             FoodSuggestionPanel(
                 suggestions = suggestions,
                 onSelect = onSelectSuggestion,
-                onQuickAdd = onQuickAdd,
+                onLogAgain = onLogAgain,
                 onToggleFavorite = onToggleFavorite,
             )
             FoodSearchPanel(onSelect = onSelectProduct)
+            // ponytail: on a diary with recipes and recents, a quick add is still a scroll to the
+            // bottom of the sheet. A compact kcal-only row at the top is the upgrade if that
+            // friction shows up.
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = "Or add it yourself",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "Leave the name blank to log calories only.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             FoodItemRow(
                 variant = FoodItemRowVariant.Editable,
                 name = form.name,
@@ -434,7 +449,14 @@ private fun AddEntrySheet(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(label = "Add", onClick = onAdd, enabled = form.isValid(), modifier = Modifier.weight(1f))
+                PrimaryButton(
+                    // The label is the only thing telling the user a nameless entry will be
+                    // accepted; the button itself is enabled the moment there are calories.
+                    label = if (form.name.isBlank()) "Quick add" else "Add",
+                    onClick = onAdd,
+                    enabled = form.isValid(),
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
