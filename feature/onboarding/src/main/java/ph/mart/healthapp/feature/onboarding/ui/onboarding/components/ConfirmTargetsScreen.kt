@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.onboarding.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,12 +29,13 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.onboarding.ui.components.OnboardingStepHeader
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingForm
+import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
 
 /** Onboarding step 5 of 5. Targets are always computed live from [form] via [dailyTargets] — the
  * +/- steppers here only set an override on top, never a second cached number. */
 @Composable
-fun ConfirmTargetsScreen(
+internal fun ConfirmTargetsScreen(
     form: OnboardingForm,
     isCelebrating: Boolean,
     onFormChange: (OnboardingForm) -> Unit,

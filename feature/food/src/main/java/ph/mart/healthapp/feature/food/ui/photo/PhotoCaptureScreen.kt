@@ -59,7 +59,7 @@ private const val SEARCH_SUBTITLE =
 
 /**
  * Hosts the whole 6(+1)-state flow from `PhotoLogging.dc.html`, same shape as
- * [ph.mart.healthapp.feature.onboarding.ui.OnboardingScreen]'s single screen + internal step
+ * [ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingScreen]'s single screen + internal step
  * state: one [NavigationBackHandler], always mounted, whose `onBackCompleted` dispatches on the
  * current [CaptureFlow] rather than applying one behavior to every state.
  */

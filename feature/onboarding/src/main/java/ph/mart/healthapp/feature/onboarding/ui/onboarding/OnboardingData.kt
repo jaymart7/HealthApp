@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.onboarding
 
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.DietaryPreference

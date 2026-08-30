@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.onboarding
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -12,6 +12,13 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.feature.onboarding.ui.health.HealthConnectScreen
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.components.ActivityScreen
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.components.BasicsScreen
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.components.ConfirmTargetsScreen
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.components.DietaryScreen
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.components.GoalScreen
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.components.WelcomeScreen
 
 /**
  * Hosts the whole 7-step wizard. No Nav3 here — the prototype's back is a plain `step - 1` with

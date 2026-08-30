@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.onboarding.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,13 +28,15 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.onboarding.ui.components.OnboardingStepHeader
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingForm
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.clearOverrides
+import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
 
 /** Onboarding step 2 of 5. Age/height/weight steps use only +/- buttons (matches the prototype —
  * there is no typed entry), so age is always clamped into 13..100 and never needs an inline
  * error. Target weight only shows once a goal other than Maintain is picked (step 1). */
 @Composable
-fun BasicsScreen(form: OnboardingForm, onFormChange: (OnboardingForm) -> Unit, onNext: () -> Unit, onBack: () -> Unit) {
+internal fun BasicsScreen(form: OnboardingForm, onFormChange: (OnboardingForm) -> Unit, onNext: () -> Unit, onBack: () -> Unit) {
     val metric = form.units == UnitSystem.Metric
     val heightStep = if (metric) 1.0 else CM_PER_IN
     val weightStep = if (metric) 0.5 else KG_PER_LB

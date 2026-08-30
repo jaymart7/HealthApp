@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.onboarding.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,12 +20,14 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SelectableCard
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.onboarding.ui.components.OnboardingStepHeader
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.DIET_OPTIONS
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.DietOption
+import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
 
 /** Onboarding step 4 of 6. Skip and Next are the same transition — tapping the already-selected
  * card toggles it off (handled by the caller's [onSelect]). */
 @Composable
-fun DietaryScreen(
+internal fun DietaryScreen(
     options: List<DietOption>,
     selected: DietaryPreference?,
     onSelect: (DietaryPreference) -> Unit,

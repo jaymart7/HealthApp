@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.health
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -22,7 +22,7 @@ import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.designsystem.component.HealthDisclosurePanel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.onboarding.ui.components.OnboardingStepHeader
+import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
 
 /**
  * Onboarding step 5 of 6 — the Google Health disclosure, before the profile is even written.
@@ -32,7 +32,7 @@ import ph.mart.healthapp.feature.onboarding.ui.components.OnboardingStepHeader
  * disclosure and the same connect flow live in Profile → Connections for later.
  */
 @Composable
-fun HealthConnectScreen(
+internal fun HealthConnectScreen(
     onNext: () -> Unit,
     onBack: () -> Unit,
     viewModel: OnboardingHealthViewModel = koinViewModel(),

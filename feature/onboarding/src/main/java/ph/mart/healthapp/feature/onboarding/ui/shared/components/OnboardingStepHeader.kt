@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui.components
+package ph.mart.healthapp.feature.onboarding.ui.shared.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import org.koin.androidx.compose.koinViewModel
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
-import ph.mart.healthapp.feature.onboarding.ui.OnboardingScreen
+import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingScreen
 
 sealed interface AppRootState {
     data object Loading : AppRootState

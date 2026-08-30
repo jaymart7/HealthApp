@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.onboarding
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

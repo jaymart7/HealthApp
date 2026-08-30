@@ -314,18 +314,28 @@ because of that, not because it was the nicest design available.
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `mood`, `sleep`) and `:feature:profile`
-  (`profile`, `health`) are the worked examples. Grouping is by *subject*, not by
+  `measurement`, `photo`, `nutrition`, `mood`, `sleep`), `:feature:profile`
+  (`profile`, `health`) and `:feature:onboarding` (`onboarding`, `health`, `shared`)
+  are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
   `recipe/` though `FoodScreen` renders both, and Progress's six tab bodies sit
   with the charts they draw rather than with the shell that dispatches them. Only
   the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.
-- **`:feature:home` and `:feature:onboarding` are deliberately flat**, and should
-  stay that way. Each holds exactly one flow — Home is one screen, onboarding is one
-  wizard whose seven steps are sub-views of `OnboardingScreen`'s `when (step)` — so
-  `ui/` + `ui/components/` is already what the rule above prescribes. Don't "finish
-  the job" by sub-packaging them.
+- **`:feature:home` is deliberately flat**, and should stay that way. It holds exactly
+  one flow with one ViewModel, so `ui/` + `ui/components/` is already what the rule
+  above prescribes. Don't "finish the job" by sub-packaging it.
+- **What earns a flow package is a second ViewModel**, not a second screen.
+  `:feature:onboarding` was flat on the argument that its seven steps are sub-views of
+  `OnboardingScreen`'s `when (step)` — true of six of them, but the Google Health step
+  owns `OnboardingHealthViewModel`, and everywhere else in this repo that means its own
+  package (`:feature:profile`'s `ui/health/` is the near-identical case). So onboarding
+  is `ui/onboarding/` + `ui/health/`, with `OnboardingStepHeader` in `ui/shared/components/`
+  because both flows draw it. The six steps stay sub-views in `ui/onboarding/components/`
+  and keep their `*Screen` names — `:feature:food`'s `ui/photo/components/` does the same
+  with `CaptureScreen`/`AnalyzingScreen`/`ConfirmationScreen`. All seven are `internal`;
+  only `OnboardingScreen` is public, because `AppRoot` renders it directly (onboarding has
+  no `*Navigation.kt` — it is not in the Nav3 graph).
 - **Shared vs. screen-specific placement is not optional.** Used in ≥2 screens
   (`FoodItemRow`, `AIChip`, `MascotAvatar`, `WaterGlassRow`, `CalendarPanel`) →
   `:core:designsystem`, never duplicated into a feature. One screen only → that

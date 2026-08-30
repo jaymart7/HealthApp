@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.onboarding.ui
+package ph.mart.healthapp.feature.onboarding.ui.onboarding.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,7 +27,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 /** Onboarding step 0. No back button — this is the flow's root. "I already have an account" is a
  * no-op per the prototype (no auth system exists yet). */
 @Composable
-fun WelcomeScreen(onGetStarted: () -> Unit) {
+internal fun WelcomeScreen(onGetStarted: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
