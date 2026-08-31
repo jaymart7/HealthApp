@@ -47,6 +47,10 @@ data class Profile(
      * Dark mode switch in Profile. A plain `false` default would force light on a device that is
      * in dark mode. */
     val darkThemeOn: Boolean? = null,
+    /** The name of the mascot the user picked in Profile → Appearance; null means the default, the
+     * same reading [darkThemeOn]'s null has. Held as a String rather than the enum because
+     * `MascotCharacter` lives in `:core:designsystem`, which this module does not depend on. */
+    val mascotName: String? = null,
 )
 
 interface ProfileRepository {

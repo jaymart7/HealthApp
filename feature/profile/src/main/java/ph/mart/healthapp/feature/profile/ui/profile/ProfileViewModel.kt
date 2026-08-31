@@ -18,6 +18,7 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
+import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 
 class ProfileViewModel(
     private val profileRepository: ProfileRepository,
@@ -109,6 +110,11 @@ class ProfileViewModel(
     fun setDarkTheme(enabled: Boolean) = intent {
         val profile = state.profile ?: return@intent
         profileRepository.saveProfile(profile.copy(darkThemeOn = enabled))
+    }
+
+    fun setMascot(character: MascotCharacter) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(mascotName = character.name))
     }
 
     fun buildExport() = intent {

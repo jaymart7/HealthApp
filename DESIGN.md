@@ -424,14 +424,29 @@ clock.
   `scrim` @ 32% alpha. Every sheet wires its own back handling so back closes the sheet, not the
   screen beneath it.
 
-### Signature: Bibo (`MascotAvatar`)
+### Signature: the mascots (`MascotAvatar`)
 
-A `primaryContainer` rounded square with a corner radius of `size / 3`, carrying dot eyes and a
-drawn mouth curve in `onPrimaryContainer` on a canvas at 62% of its box. Five states — Idle,
-Happy, Celebrating, Sleepy, Thinking — with Celebrating adding two `✦` glyphs. **No other detail
-is added at any size.** Bibo is the app's only illustration and its entire mascot vocabulary; the
-final illustration is still outstanding and this geometric form is the placeholder standing in
-for it.
+A `primaryContainer` body carrying eyes and a drawn mouth curve in `onPrimaryContainer` on a
+canvas at 62% of its box. Five states — Idle, Happy, Celebrating, Sleepy, Thinking — with
+Celebrating adding two `✦` glyphs. **No other detail is added at any size.** The mascot is the
+app's only illustration and its entire vocabulary; the final illustration is still outstanding
+and these geometric forms are the placeholder standing in for it.
+
+Three characters, picked in Profile → Appearance. They differ by **silhouette and eye shape
+only** — every one keeps the same body colour, the same feature colour and the same mouth
+geometry, so a state reads identically whichever is chosen and no character can carry a meaning
+of its own:
+
+| | Body | Eyes |
+|---|---|---|
+| **Bibo** (default) | rounded square, radius `size / 3` | round dots |
+| **Pip** | circle | round dots |
+| **Zed** | hexagon, flat top and bottom | slots — rounded rects, wider than tall |
+
+The pick travels as `LocalMascot`, provided once by `AppTheme`. **`character` is never passed
+explicitly outside the picker** — every other caller writes `MascotAvatar(state = …)` and gets
+the user's buddy for free. The body is a *shaped background*, not a clip, so Zed's corners can't
+slice the Celebrating sparkles.
 
 ### Signature: `MacroBar`
 

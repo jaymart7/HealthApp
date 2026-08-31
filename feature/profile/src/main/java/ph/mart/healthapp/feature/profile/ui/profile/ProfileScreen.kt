@@ -36,6 +36,8 @@ import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
+import ph.mart.healthapp.core.designsystem.component.MascotCharacter
+import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAppearanceSection
@@ -148,6 +150,7 @@ fun ProfileScreen(
         messageIsError = messageIsError,
         onSelectUnit = viewModel::setUnit,
         onSetDarkTheme = viewModel::setDarkTheme,
+        onSelectMascot = viewModel::setMascot,
         onSetCalorieTarget = viewModel::setCalorieTarget,
         onSetProteinTarget = viewModel::setProteinTarget,
         onSetCarbsTarget = viewModel::setCarbsTarget,
@@ -187,6 +190,7 @@ private fun ProfileContent(
     messageIsError: Boolean,
     onSelectUnit: (UnitSystem) -> Unit,
     onSetDarkTheme: (Boolean) -> Unit,
+    onSelectMascot: (MascotCharacter) -> Unit,
     onSetCalorieTarget: (Int) -> Unit,
     onSetProteinTarget: (Int) -> Unit,
     onSetCarbsTarget: (Int) -> Unit,
@@ -235,6 +239,8 @@ private fun ProfileContent(
             ProfileAppearanceSection(
                 darkTheme = profile.darkThemeOn ?: isSystemInDarkTheme(),
                 onSetDarkTheme = onSetDarkTheme,
+                mascot = mascotCharacterOf(profile.mascotName),
+                onSelectMascot = onSelectMascot,
             )
             ProfileWaterSection(
                 goalGlasses = profile.waterGoalGlasses,
@@ -287,6 +293,7 @@ private fun ProfileScreenPreview() {
             messageIsError = false,
             onSelectUnit = {},
             onSetDarkTheme = {},
+            onSelectMascot = {},
             onSetCalorieTarget = {},
             onSetProteinTarget = {},
             onSetCarbsTarget = {},

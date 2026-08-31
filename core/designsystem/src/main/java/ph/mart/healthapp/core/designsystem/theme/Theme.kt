@@ -3,6 +3,9 @@ import android.app.UiModeManager
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import ph.mart.healthapp.core.designsystem.component.LocalMascot
+import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -294,6 +297,7 @@ fun systemContrast(): AppContrast {
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     contrast: AppContrast = systemContrast(),
+    mascot: MascotCharacter = MascotCharacter.Bibo,
     content: @Composable() () -> Unit
 ) {
   // Dynamic color (Material You) is disabled project-wide — always use the
@@ -304,10 +308,14 @@ fun AppTheme(
     AppContrast.High -> if (darkTheme) highContrastDarkColorScheme else highContrastLightColorScheme
   }
 
-  MaterialTheme(
-    colorScheme = colorScheme,
-    typography = AppTypography,
-    content = content
-  )
+  // The mascot pick rides the theme because it is an appearance choice like the scheme itself, and
+  // because MascotAvatar has ~16 call sites that would otherwise each have to pass it down.
+  CompositionLocalProvider(LocalMascot provides mascot) {
+    MaterialTheme(
+      colorScheme = colorScheme,
+      typography = AppTypography,
+      content = content
+    )
+  }
 }
 

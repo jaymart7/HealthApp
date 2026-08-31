@@ -35,7 +35,8 @@ class MainActivity : ComponentActivity() {
             // ViewModelStoreOwner and key, so this is the instance AppRoot uses, not a second one.
             val viewModel: AppRootViewModel = koinViewModel()
             val darkThemeOn by viewModel.darkThemeOn.collectAsState()
-            AppTheme(darkTheme = darkThemeOn ?: isSystemInDarkTheme()) {
+            val mascot by viewModel.mascot.collectAsState()
+            AppTheme(darkTheme = darkThemeOn ?: isSystemInDarkTheme(), mascot = mascot) {
                 AppRoot(startTab = startTab, viewModel = viewModel)
             }
         }

@@ -31,4 +31,5 @@ internal data class ProfileEntity(
     val fastingRemindersOn: Boolean = false,
     val darkThemeOn: Boolean? = null,
     val supplementRemindersOn: Boolean = false,
+    val mascotName: String? = null,
 )

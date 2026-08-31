@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import org.koin.androidx.compose.koinViewModel
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.designsystem.component.MascotAvatar
+import ph.mart.healthapp.core.designsystem.component.MascotCharacter
+import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingScreen
 
@@ -35,6 +38,14 @@ class AppRootViewModel(profileRepository: ProfileRepository) : ViewModel() {
     val darkThemeOn: StateFlow<Boolean?> = profileRepository.observeProfile()
         .map { profile -> profile?.darkThemeOn }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Read by [MainActivity] above the theme, for the same reason [darkThemeOn] is, and resolved
+     * here rather than at the ~16 [MascotAvatar] call sites — the theme provides it as a
+     * CompositionLocal. Its "not loaded yet" value is the default character, so onboarding (which
+     * runs with no profile) shows Bibo. */
+    val mascot: StateFlow<MascotCharacter> = profileRepository.observeProfile()
+        .map { profile -> mascotCharacterOf(profile?.mascotName) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MascotCharacter.Bibo)
 }
 
 /**
