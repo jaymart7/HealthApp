@@ -1,5 +1,11 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,10 +37,15 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import kotlin.math.PI
+import kotlin.math.sin
+import kotlin.random.Random
 
 /** The 5 states of the app's geometric mascot. Expression, not identity — every character wears
  * all five, and the mouth geometry below is shared so a state reads the same whichever is picked. */
@@ -107,10 +121,37 @@ fun mascotCharacterOf(name: String?): MascotCharacter =
 val LocalMascot = staticCompositionLocalOf { MascotCharacter.Bibo }
 
 /**
+ * The idle loop. Two linear phases rather than one because a blink and a breath share no period,
+ * and both are shaped to rest at their neutral pose at phase `1f`: Compose pins an infinite
+ * transition to its **end** value when the user turns on *Remove animations*
+ * (`InfiniteTransition` calls `skipToEnd()` and suspends), so a `RepeatMode.Reverse` cycle would
+ * park the mascot mid-bob with its eyes shut for exactly the people who asked for stillness.
+ */
+private const val BLINK_CYCLE_MS = 3600
+private const val BOB_CYCLE_MS = 2600
+
+/** The slice of the cycle the eyes are shut — ~140ms of 3.6s. It ends short of `1f` on purpose. */
+private const val BLINK_START = 0.94f
+private const val BLINK_END = 0.98f
+
+/** How far the mascot drifts, as a fraction of its own height: ~1.3dp at the default 64dp. */
+private const val BOB_FRACTION = 0.02f
+
+internal fun isBlinking(phase: Float): Boolean = phase > BLINK_START && phase < BLINK_END
+
+/** -1..1, and exactly 0 at both ends of the cycle — see [BOB_CYCLE_MS]. */
+internal fun bobOffset(phase: Float): Float = sin(phase * 2f * PI.toFloat())
+
+/**
  * The app's geometric mascot: a filled body in the [character]'s silhouette carrying its eyes, one
  * accent and the shared mouth curve. Everything is drawn on one canvas so an accent can sit above
  * the head, and nothing is clipped — the Celebrating sparkles overhang whatever the body's corners
  * do.
+ *
+ * It blinks every [BLINK_CYCLE_MS] and breathes on [BOB_CYCLE_MS], both driven from one
+ * `rememberInfiniteTransition` inside the component — no call site passes anything for it, and no
+ * call site can forget to. A blink reuses the closed eyes [MascotState.Sleepy] already draws, so
+ * every silhouette shuts them the same way; Sleepy itself never blinks, but it does breathe.
  *
  * [character] defaults to the user's pick and should be left alone everywhere except the picker.
  */
@@ -122,7 +163,43 @@ fun MascotAvatar(
     character: MascotCharacter = LocalMascot.current,
 ) {
     val colors = mascotColors(character)
-    Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
+    // Per-instance, so the five buddies in the picker don't blink in lockstep. Frozen in previews
+    // so the 5x5 grid renders the rest pose instead of catching a random mid-blink.
+    val phaseOffset = if (LocalInspectionMode.current) 0f else remember { Random.nextFloat() }
+    val transition = rememberInfiniteTransition(label = "mascot")
+    val blinkPhase = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(BLINK_CYCLE_MS, easing = LinearEasing),
+            initialStartOffset = StartOffset((phaseOffset * BLINK_CYCLE_MS).toInt()),
+        ),
+        label = "blink",
+    )
+    val bobPhase = transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(BOB_CYCLE_MS, easing = LinearEasing),
+            initialStartOffset = StartOffset((phaseOffset * BOB_CYCLE_MS).toInt()),
+        ),
+        label = "bob",
+    )
+    // The phase moves every frame; the boolean flips twice a cycle. Read straight, the draw below
+    // would invalidate on every one of those frames for a value nobody saw change.
+    val blinking by remember(state) {
+        derivedStateOf { state != MascotState.Sleepy && isBlinking(blinkPhase.value) }
+    }
+    Box(
+        modifier = modifier
+            .size(size)
+            // Read inside the lambda, so the bob settles in the Draw phase and recomposes nothing.
+            // On the Box rather than the Canvas, so the Celebrating sparkles ride along with it.
+            .graphicsLayer {
+                translationY = bobOffset(bobPhase.value) * this.size.height * BOB_FRACTION
+            },
+        contentAlignment = Alignment.Center,
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val body = Rect(
                 left = this.size.width * character.sideInset,
@@ -135,7 +212,7 @@ fun MascotAvatar(
             // Square, centred on the body — for Bibo (which has no insets) that is the 62%-of-box
             // canvas the face has always been drawn into.
             val faceHalf = minOf(body.width, body.height) * 0.62f / 2f
-            drawMascotFace(state, colors.feature, character, Rect(body.center, faceHalf))
+            drawMascotFace(state, colors.feature, character, Rect(body.center, faceHalf), blinking)
         }
         if (state == MascotState.Celebrating) {
             Text(
@@ -282,6 +359,7 @@ private fun DrawScope.drawMascotFace(
     color: Color,
     character: MascotCharacter,
     face: Rect,
+    blinking: Boolean,
 ) {
     val eyeRadius = minOf(face.width, face.height) * 0.09f
     val eyeY = face.top + face.height * 0.38f
@@ -289,8 +367,9 @@ private fun DrawScope.drawMascotFace(
     val centerX = face.center.x
     val strokeWidth = eyeRadius * 0.6f
 
-    if (state == MascotState.Sleepy) {
-        // Closed eyes are the state, not the character — every silhouette shuts them the same way.
+    if (state == MascotState.Sleepy || blinking) {
+        // Closed eyes are the state, not the character — every silhouette shuts them the same way,
+        // which is what lets a blink borrow them rather than draw five more shapes.
         val lineHalf = eyeRadius * 1.2f
         listOf(centerX - eyeGap, centerX + eyeGap).forEach { x ->
             drawLine(
