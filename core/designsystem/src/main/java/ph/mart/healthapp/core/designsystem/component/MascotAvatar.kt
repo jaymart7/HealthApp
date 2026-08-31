@@ -37,7 +37,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * all five, and the mouth geometry below is shared so a state reads the same whichever is picked. */
 enum class MascotState { Idle, Happy, Celebrating, Sleepy, Thinking }
 
-internal enum class MascotBody { RoundedSquare, Circle, Hexagon, Dome, Capsule }
+internal enum class MascotBody { RoundedSquare, Teardrop, Hexagon, Dome, Capsule }
 
 internal enum class EyeStyle { Dot, Ring, Visor, Oval }
 
@@ -55,8 +55,9 @@ internal enum class MascotAccent { None, Blush, Antenna, Ears, Sprout }
  * is left still gives every character its own fill.
  *
  * [topInset]/[sideInset] are fractions of the avatar box. They carve the headroom an accent needs
- * to sit above the head, and they are what make [Sprig] a tall bean rather than a wide one — Bibo's
- * are zero, so its body still fills the box exactly as before.
+ * to sit above the head — or, for [Pip], the room its own taper rises into — and they are what make
+ * [Sprig] a tall bean rather than a wide one. Bibo's are zero, so its body still fills the box
+ * exactly as before.
  */
 enum class MascotCharacter(
     val label: String,
@@ -67,7 +68,7 @@ enum class MascotCharacter(
     internal val sideInset: Float = 0f,
 ) {
     Bibo("Bibo", MascotBody.RoundedSquare, EyeStyle.Dot, MascotAccent.None),
-    Pip("Pip", MascotBody.Circle, EyeStyle.Ring, MascotAccent.Blush),
+    Pip("Pip", MascotBody.Teardrop, EyeStyle.Ring, MascotAccent.Blush, topInset = 0.06f, sideInset = 0.14f),
     Zed("Zed", MascotBody.Hexagon, EyeStyle.Visor, MascotAccent.Antenna, topInset = 0.22f, sideInset = 0.02f),
     Momo("Momo", MascotBody.Dome, EyeStyle.Oval, MascotAccent.Ears, topInset = 0.16f, sideInset = 0.04f),
     Sprig("Sprig", MascotBody.Capsule, EyeStyle.Dot, MascotAccent.Sprout, topInset = 0.24f, sideInset = 0.17f),
@@ -159,10 +160,19 @@ private fun DrawScope.drawBody(character: MascotCharacter, body: Rect, color: Co
             cornerRadius = CornerRadius(body.width / 3f),
         )
 
-        MascotBody.Circle -> drawCircle(
+        // A round base tapering to a soft point — the one silhouette that spends its own headroom
+        // instead of an accent, which is why Pip is the only character with nothing above its head.
+        MascotBody.Teardrop -> drawPath(
+            path = Path().apply {
+                val radius = body.width / 2f
+                val base = Offset(body.center.x, body.bottom - radius)
+                moveTo(base.x, body.top)
+                quadraticTo(base.x + radius * 0.62f, base.y - radius * 0.72f, base.x + radius, base.y)
+                arcTo(Rect(base, radius), 0f, 180f, false)
+                quadraticTo(base.x - radius * 0.62f, base.y - radius * 0.72f, base.x, body.top)
+                close()
+            },
             color = color,
-            radius = minOf(body.width, body.height) / 2f,
-            center = body.center,
         )
 
         MascotBody.Hexagon -> drawPath(
