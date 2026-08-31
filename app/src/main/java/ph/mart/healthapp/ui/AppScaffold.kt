@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
@@ -80,11 +82,27 @@ private enum class ActiveSheet { None, QuickAction, LogExercise, LogWeight, AddP
 @Composable
 fun AppScaffold(
     modifier: Modifier = Modifier,
-    startTab: TopLevelDestination = TopLevelDestination.Home,
+    tabRequest: TopLevelDestination? = null,
+    onTabRequestHandled: () -> Unit = {},
 ) {
-    // [startTab] is how a tapped reminder notification lands where the user would act on it — see
-    // MainActivity. It only seeds the initial stack; nothing re-routes an already-running app.
-    val topLevelBackStack = remember { TopLevelBackStack<NavKey>(startTab.route) }
+    // The list comes from Nav3's own saveable holder, so the whole navigator survives an Activity
+    // recreation — rotation, a font-scale or locale change, process death. Its Android overload
+    // serializes the `@Serializable` route types by reflection, so a new route needs no
+    // registration here. On a restore it ignores the seed and returns what was saved, which is
+    // what the user was actually looking at.
+    val saved = rememberNavBackStack((tabRequest ?: TopLevelDestination.Home).route)
+    val topLevelBackStack = remember(saved) { TopLevelBackStack(saved) }
+
+    // [tabRequest] is how a tapped reminder lands where the user would act on it — see
+    // MainActivity. On a cold start it seeded the stack above and this switch is a no-op; the
+    // case it exists for is a notification arriving while the app is already up. Clearing it is
+    // what lets a second reminder for the same tab land after the user has navigated away.
+    LaunchedEffect(tabRequest) {
+        tabRequest?.let {
+            topLevelBackStack.addTopLevel(it.route)
+            onTabRequestHandled()
+        }
+    }
     var activeSheet by rememberSaveable { mutableStateOf(ActiveSheet.None) }
     val scope = rememberCoroutineScope()
 

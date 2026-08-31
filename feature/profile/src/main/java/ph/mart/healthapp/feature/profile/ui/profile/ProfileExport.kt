@@ -58,10 +58,10 @@ internal data class FitPulseExport(
  * fiber, sugar and sodium; 8 added [FitPulseExport.supplements], [FitPulseExport.supplementDays]
  * and [ExportProfile.supplementRemindersOn]; 9 added [FitPulseExport.bloodPressure]; 10 added
  * [ExportProfile.mascotName]; 11 added [ExportProfile.stepGoal]; 12 added
- * [ExportProfile.mascotPaletteName].
+ * [ExportProfile.mascotPaletteName]; 13 added [ExportExercise.steps].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 12
+internal const val EXPORT_SCHEMA_VERSION = 13
 
 @Serializable
 internal data class ExportProfile(
@@ -118,6 +118,11 @@ internal data class ExportMeasurement(val part: String, val dateEpochDay: Long, 
 @Serializable
 internal data class ExportWaterDay(val dateEpochDay: Long, val glasses: Int)
 
+/** [steps] travels because `ExerciseRepository.addEntry` re-derives a missing one from
+ * `estimatedSteps()` — so without it an imported watch swim came back as 0 and an imported walk
+ * came back with a figure nobody measured, quietly changing what `stepsCreditKcal()` subtracts.
+ * Defaulted, so a file written before v13 still imports and simply gets the estimate it always
+ * did. */
 @Serializable
 internal data class ExportExercise(
     val dateEpochDay: Long,
@@ -125,6 +130,7 @@ internal data class ExportExercise(
     val name: String = "",
     val minutes: Int,
     val burnedKcal: Int,
+    val steps: Int = 0,
 )
 
 /** Mood is history, not convenience data, so unlike favourites and saved meals it belongs in the
@@ -204,7 +210,7 @@ internal fun buildExportJson(
         measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.valueCm) },
         waterDays = waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
         exercises = exercises.map {
-            ExportExercise(it.dateEpochDay, it.type.name, it.name, it.minutes, it.burnedKcal)
+            ExportExercise(it.dateEpochDay, it.type.name, it.name, it.minutes, it.burnedKcal, it.steps)
         },
         moodDays = moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
         fastSessions = fastSessions.mapNotNull { session ->
@@ -244,6 +250,7 @@ internal fun parseExport(text: String): Result<ImportData> = runCatching {
                 name = it.name,
                 minutes = it.minutes,
                 burnedKcal = it.burnedKcal,
+                steps = it.steps,
             )
         },
         moodDays = export.moodDays.map { MoodDay(it.dateEpochDay, it.mood, it.energy) },

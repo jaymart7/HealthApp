@@ -1,5 +1,6 @@
 package ph.mart.healthapp
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,6 +9,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import org.koin.androidx.compose.koinViewModel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
@@ -16,6 +19,11 @@ import ph.mart.healthapp.ui.AppRoot
 import ph.mart.healthapp.ui.AppRootViewModel
 
 class MainActivity : ComponentActivity() {
+
+    /** The tab a reminder asked for, and null once the app has gone there. Mutable state so
+     * [onNewIntent] can re-point an app that is already running; see there. */
+    private var tabRequest by mutableStateOf<TopLevelDestination?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -24,11 +32,14 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             window.isNavigationBarContrastEnforced = false
         }
-        // Cold start only: a reminder tapped while the app is already foregrounded lands on
-        // whatever tab was showing. Add onNewIntent handling if that's ever reported.
-        val startTab = intent?.getStringExtra(EXTRA_TAB)
-            ?.let { name -> TopLevelDestination.entries.firstOrNull { it.name == name } }
-            ?: TopLevelDestination.Home
+        // A reminder can arrive cold *or* while the app is already foregrounded, and the second
+        // case is the common one — the nudge fires while the user is mid-scroll. So the tab is
+        // state rather than a value read once, and [onNewIntent] re-points it.
+        //
+        // Only on a genuinely fresh start, though: after a process-death restore the saved back
+        // stack is where the user actually was, and `intent` is still whatever launched the task,
+        // which may be a notification they tapped days ago.
+        if (savedInstanceState == null) tabRequest = intent.tabExtra()
 
         setContent {
             // Hoisted so the theme can read the profile that AppRoot already gates on — same
@@ -42,8 +53,32 @@ class MainActivity : ComponentActivity() {
                 mascot = mascot,
                 mascotPalette = mascotPalette,
             ) {
-                AppRoot(startTab = startTab, viewModel = viewModel)
+                AppRoot(
+                    tabRequest = tabRequest,
+                    onTabRequestHandled = { tabRequest = null },
+                    viewModel = viewModel,
+                )
             }
         }
     }
+
+    /**
+     * The notification's `FLAG_ACTIVITY_CLEAR_TOP` delivers here rather than recreating the
+     * Activity whenever the task is already up, so without this the tab extra was simply dropped
+     * and the reminder landed on whatever screen happened to be showing.
+     *
+     * Writing to [tabRequest] is what moves the app: `AppScaffold` watches it, switches tabs,
+     * and clears it — so a second notification for a tab the user has since navigated away from
+     * still lands, which a plain non-null value could not do.
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.tabExtra()?.let { tabRequest = it }
+    }
 }
+
+/** Null when the intent carries no tab — an ordinary launcher tap, which must not re-point a
+ * running app. */
+private fun Intent?.tabExtra(): TopLevelDestination? = this?.getStringExtra(EXTRA_TAB)
+    ?.let { name -> TopLevelDestination.entries.firstOrNull { it.name == name } }

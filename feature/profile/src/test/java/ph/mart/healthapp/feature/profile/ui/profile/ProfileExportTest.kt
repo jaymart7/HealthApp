@@ -66,8 +66,10 @@ class ProfileExportTest {
     private val weightEntries = listOf(WeightEntry(20_000, 62.4, "after the gym"))
     private val measurements = listOf(MeasurementEntry(MeasurementPart.Waist, 20_001, 78.5))
     private val waterDays = listOf(WaterDay(20_000, 6), WaterDay(20_001, 9))
+    // The step count is the watch's own figure on an imported workout, so it has to travel: the
+    // repository re-derives a missing one from the MET estimate, which is not what was measured.
     private val exercises = listOf(
-        ExerciseEntry(id = 3, dateEpochDay = 20_001, type = ExerciseType.Run, name = "Riverside", minutes = 32, burnedKcal = 324),
+        ExerciseEntry(id = 3, dateEpochDay = 20_001, type = ExerciseType.Run, name = "Riverside", minutes = 32, burnedKcal = 324, steps = 4_180),
     )
     // The second day is mood-only — 0 is "not tapped", and it has to survive the round trip as 0
     // rather than being dropped or promoted to a score.
@@ -250,6 +252,21 @@ class ProfileExportTest {
 
         assertEquals(emptyList<BloodPressureReading>(), payload.bloodPressure)
         assertEquals(supplements, payload.supplements)
+    }
+
+    /** A v12 file — the schema one version back, written before an exercise carried its steps.
+     * The field defaults to 0, which is what the repository reads as "re-derive the estimate". */
+    @Test
+    fun `a v12 file without exercise steps still imports`() {
+        val v12 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
+            .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 12")
+            // The field is last in the object, so the preceding comma goes with it.
+            .replace(Regex(",\\s*\"steps\": \\d+"), "")
+        val payload = parseExport(v12).getOrThrow()
+
+        assertEquals(1, payload.exercises.size)
+        assertEquals(0, payload.exercises.first().steps)
+        assertEquals(324, payload.exercises.first().burnedKcal)
     }
 
     @Test

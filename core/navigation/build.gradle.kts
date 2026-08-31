@@ -27,4 +27,6 @@ dependencies {
     implementation(libs.androidx.material3.adaptive.navigation3)
     implementation(libs.androidx.navigationevent)
     implementation(libs.androidx.navigationevent.compose)
+
+    testImplementation(libs.junit)
 }

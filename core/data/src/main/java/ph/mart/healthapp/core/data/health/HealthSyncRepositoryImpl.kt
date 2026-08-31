@@ -334,10 +334,21 @@ internal class HealthSyncRepositoryImpl(
         return ok
     }
 
+    /**
+     * Windowed to [BACKFILL_DAYS], the same reach the inbound legs have. Without it the first sync
+     * after connecting POSTed the user's *entire* diary — one request per row, sequentially, for
+     * however many years they had been logging. That is minutes of work on a busy account, and it
+     * contradicts the data-minimisation answer the 30-day read window exists to give: sending a
+     * three-year archive is not a smaller ask than reading one.
+     *
+     * Older entries are simply never sent. They are not marked as sent either, so raising the
+     * window later picks them up rather than stranding them.
+     */
     private suspend fun pushMeals(token: String, entries: List<FoodEntry>): Boolean {
         val alreadySent = links.pushedLocalIds(FOOD_TABLE).toSet()
+        val since = todayEpochDay() - BACKFILL_DAYS
         var ok = true
-        entries.filterNot { it.id in alreadySent }.forEach { entry ->
+        entries.filter { it.dateEpochDay >= since && it.id !in alreadySent }.forEach { entry ->
             val dayStart = epochDayStartMillis(entry.dateEpochDay)
             // A rejected body would otherwise strand the meal forever: no link is recorded, so
             // every later sync retries it and fails again. The second attempt drops the three
@@ -376,7 +387,13 @@ internal class HealthSyncRepositoryImpl(
         val today = todayEpochDay()
         var ok = true
         waterRepository.allDays()
-            .filter { it.dateEpochDay < today && it.dateEpochDay !in alreadySent && it.glasses > 0 }
+            .filter {
+                // Windowed like pushMeals, and for the same reason.
+                it.dateEpochDay >= today - BACKFILL_DAYS &&
+                    it.dateEpochDay < today &&
+                    it.dateEpochDay !in alreadySent &&
+                    it.glasses > 0
+            }
             .forEach { day ->
                 val dayStart = epochDayStartMillis(day.dateEpochDay)
                 val created = create(token, HYDRATION_LOG, hydrationLogBody(day.glasses * GLASS_ML, dayStart))

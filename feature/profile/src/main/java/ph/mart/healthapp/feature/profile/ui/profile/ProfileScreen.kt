@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.profile.ui.profile
 
 import android.Manifest
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ScrollState
@@ -15,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,8 +24,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,6 +90,20 @@ fun ProfileScreen(
     var reminderMessage by remember { mutableStateOf<String?>(null) }
     var pendingReminder by remember { mutableStateOf<ReminderKind?>(null) }
 
+    // Held in state and refreshed on resume, not read during composition. The permission can be
+    // granted from system Settings, and a bare call in the composable body is not a snapshot read
+    // — the "notifications are blocked" line below would go on claiming so until something
+    // unrelated happened to recompose this screen.
+    var canPostNotifications by remember { mutableStateOf(context.canPostNotifications()) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) canPostNotifications = context.canPostNotifications()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // A reminder that can't post a notification is a lie, so the switch only goes on once the
     // permission is actually granted.
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
@@ -92,6 +111,7 @@ fun ProfileScreen(
     ) { granted ->
         val kind = pendingReminder
         pendingReminder = null
+        canPostNotifications = granted
         if (granted && kind != null) {
             viewModel.setReminder(kind, true)
             reminderMessage = null
@@ -164,10 +184,13 @@ fun ProfileScreen(
         onSetStepGoal = viewModel::setStepGoal,
         onSetExerciseBudget = viewModel::setExerciseBudget,
         onToggleReminder = { kind, enabled ->
-            if (!enabled || context.canPostNotifications()) {
+            if (!enabled || canPostNotifications) {
                 viewModel.setReminder(kind, enabled)
                 reminderMessage = null
-            } else {
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                // Always true once we're here — `canPostNotifications` is only ever false above
+                // TIRAMISU — but stated at the point of use so the API-33 permission constant is
+                // visibly guarded, which reading it out of a state variable no longer showed.
                 pendingReminder = kind
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -177,11 +200,9 @@ fun ProfileScreen(
         onOpenHealth = onOpenHealth,
         onOpenLibrary = onOpenLibrary,
         onOpenSupplements = onOpenSupplements,
-        // Re-read on each recomposition rather than watched: the only in-app source of a change is
-        // the launcher above, which sets state anyway.
         reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
             uiState.profile?.let { profile -> ReminderKind.entries.any(profile::reminderEnabled) } == true &&
-                !context.canPostNotifications()
+                !canPostNotifications
         },
         scrollState = scrollState,
     )
