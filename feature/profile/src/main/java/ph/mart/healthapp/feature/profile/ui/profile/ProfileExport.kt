@@ -19,6 +19,8 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterDay
 
@@ -41,16 +43,19 @@ internal data class FitPulseExport(
     val exercises: List<ExportExercise> = emptyList(),
     val moodDays: List<ExportMoodDay> = emptyList(),
     val fastSessions: List<ExportFastSession> = emptyList(),
+    val supplements: List<ExportSupplement> = emptyList(),
+    val supplementDays: List<ExportSupplementDay> = emptyList(),
 )
 
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
  * [FitPulseExport.exercises] and [ExportProfile.addExerciseToBudget]; 4 added
  * [ExportProfile.darkThemeOn]; 5 added [FitPulseExport.moodDays]; 6 added
  * [FitPulseExport.fastSessions] and the profile's fasting fields; 7 added the food entries'
- * fiber, sugar and sodium.
+ * fiber, sugar and sodium; 8 added [FitPulseExport.supplements], [FitPulseExport.supplementDays]
+ * and [ExportProfile.supplementRemindersOn].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 7
+internal const val EXPORT_SCHEMA_VERSION = 8
 
 @Serializable
 internal data class ExportProfile(
@@ -76,6 +81,7 @@ internal data class ExportProfile(
     val fastingGoalHours: Int = DEFAULT_FAST_GOAL_HOURS,
     val fastingRemindersOn: Boolean = false,
     val darkThemeOn: Boolean? = null,
+    val supplementRemindersOn: Boolean = false,
 )
 
 @Serializable
@@ -123,6 +129,32 @@ internal data class ExportMoodDay(val dateEpochDay: Long, val mood: Int, val ene
 @Serializable
 internal data class ExportFastSession(val startMillis: Long, val endMillis: Long, val goalHours: Int)
 
+/**
+ * The id travels, unlike every other row in this file. A [ExportSupplementDay] points at a
+ * supplement by id, so an import that let Room generate fresh ones would restore a log of ticks
+ * with nothing to tick. Soft-deleted supplements ride along for the same reason — a day that
+ * recorded one still has to be able to name it.
+ */
+@Serializable
+internal data class ExportSupplement(
+    val id: Long,
+    val name: String,
+    val dose: String = "",
+    val timesPerDay: Int = 1,
+    val deleted: Boolean = false,
+    val createdAt: Long = 0,
+)
+
+/** [dueTimes] is the day's own snapshot of the target, not today's — restoring it is what stops a
+ * later edit rewriting how a past day scored. Days where nothing was taken aren't written. */
+@Serializable
+internal data class ExportSupplementDay(
+    val dateEpochDay: Long,
+    val supplementId: Long,
+    val taken: Int,
+    val dueTimes: Int,
+)
+
 /** What an import hands back to the ViewModel — domain types only, already validated. */
 internal data class ImportPayload(
     val profile: Profile?,
@@ -133,6 +165,8 @@ internal data class ImportPayload(
     val exercises: List<ExerciseEntry>,
     val moodDays: List<MoodDay>,
     val fastSessions: List<FastSession>,
+    val supplements: List<Supplement>,
+    val supplementDays: List<SupplementDay>,
 )
 
 private val json = Json {
@@ -150,6 +184,8 @@ internal fun buildExportJson(
     exercises: List<ExerciseEntry>,
     moodDays: List<MoodDay>,
     fastSessions: List<FastSession>,
+    supplements: List<Supplement>,
+    supplementDays: List<SupplementDay>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
@@ -163,6 +199,12 @@ internal fun buildExportJson(
         moodDays = moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
         fastSessions = fastSessions.mapNotNull { session ->
             session.endMillis?.let { ExportFastSession(session.startMillis, it, session.goalHours) }
+        },
+        supplements = supplements.map {
+            ExportSupplement(it.id, it.name, it.dose, it.timesPerDay, it.deleted, it.createdAt)
+        },
+        supplementDays = supplementDays.map {
+            ExportSupplementDay(it.dateEpochDay, it.supplementId, it.taken, it.dueTimes)
         },
     ),
 )
@@ -195,6 +237,19 @@ internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
         fastSessions = export.fastSessions.map {
             FastSession(startMillis = it.startMillis, endMillis = it.endMillis, goalHours = it.goalHours)
         },
+        supplements = export.supplements.map {
+            Supplement(
+                id = it.id,
+                name = it.name,
+                dose = it.dose,
+                timesPerDay = it.timesPerDay,
+                deleted = it.deleted,
+                createdAt = it.createdAt,
+            )
+        },
+        supplementDays = export.supplementDays.map {
+            SupplementDay(it.dateEpochDay, it.supplementId, it.taken, it.dueTimes)
+        },
     )
 }
 
@@ -224,6 +279,7 @@ private fun Profile.toExport() = ExportProfile(
     fastingGoalHours = fastingGoalHours,
     fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
+    supplementRemindersOn = supplementRemindersOn,
 )
 
 private fun ExportProfile.toProfile() = Profile(
@@ -249,6 +305,7 @@ private fun ExportProfile.toProfile() = Profile(
     fastingGoalHours = fastingGoalHours,
     fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
+    supplementRemindersOn = supplementRemindersOn,
 )
 
 private fun FoodEntry.toExport() = ExportFoodEntry(

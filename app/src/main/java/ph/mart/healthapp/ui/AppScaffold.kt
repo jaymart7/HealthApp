@@ -34,6 +34,7 @@ import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
+import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
@@ -144,6 +145,7 @@ fun AppScaffold(
                         scrollState = profileScroll,
                         onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },
                         onOpenLibrary = { topLevelBackStack.add(FoodLibraryRoute) },
+                        onOpenSupplements = { topLevelBackStack.add(SupplementsRoute) },
                         onExitFlow = { topLevelBackStack.removeLast() },
                     )
                 },

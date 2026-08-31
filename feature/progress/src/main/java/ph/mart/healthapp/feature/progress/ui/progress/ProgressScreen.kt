@@ -37,6 +37,7 @@ import ph.mart.healthapp.feature.progress.ui.photo.components.PhotosTabContent
 import ph.mart.healthapp.feature.progress.ui.progress.components.ScrollingTab
 import ph.mart.healthapp.feature.progress.ui.progress.components.WeeklyRecapCard
 import ph.mart.healthapp.feature.progress.ui.sleep.components.SleepTabContent
+import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsTabContent
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightTabContent
 
 @Composable
@@ -93,6 +94,7 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     ProgressTab.Sleep -> ScrollingTab(scrollState) { SleepTabContent(uiState, state) }
                     ProgressTab.Heart -> ScrollingTab(scrollState) { HeartTabContent(uiState, state) }
                     ProgressTab.Fasting -> ScrollingTab(scrollState) { FastingTabContent(uiState, state) }
+                    ProgressTab.Supplements -> ScrollingTab(scrollState) { SupplementsTabContent(uiState, state) }
                 }
             }
 

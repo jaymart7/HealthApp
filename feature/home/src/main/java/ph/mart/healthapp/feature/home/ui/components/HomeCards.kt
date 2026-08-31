@@ -47,6 +47,7 @@ import ph.mart.healthapp.feature.home.ui.components.ProgressPhotoReminderCard
 import ph.mart.healthapp.feature.home.ui.components.SleepCard
 import ph.mart.healthapp.feature.home.ui.components.StepsCard
 import ph.mart.healthapp.feature.home.ui.components.StreakCard
+import ph.mart.healthapp.feature.home.ui.components.SupplementsCard
 import ph.mart.healthapp.feature.home.ui.components.WaterCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
 
@@ -166,25 +167,33 @@ internal fun HomeCards(
             modifier = appearModifier(8, appear),
         )
 
+        // Hidden when the list is empty, like the three watch cards above — but for a different
+        // reason: there is nothing to import, there is nothing the user has authored yet.
+        SupplementsCard(
+            supplements = uiState.supplements,
+            onSetTaken = { id, taken -> onEvent(HomeEvent.OnSetSupplementTaken(id, taken)) },
+            modifier = appearModifier(9, appear),
+        )
+
         WeightMetricCard(
             trend = trend,
             goal = uiState.profile?.goal,
             unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            modifier = appearModifier(9, appear),
+            modifier = appearModifier(10, appear),
         )
 
         if (targets != null) {
             MacroSummaryCard(
                 consumed = uiState.totals,
                 targets = targets,
-                modifier = appearModifier(10, appear),
+                modifier = appearModifier(11, appear),
             )
         }
 
         ProgressPhotoReminderCard(
             daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
             onTakePhoto = onAddPhoto,
-            modifier = appearModifier(11, appear),
+            modifier = appearModifier(12, appear),
         )
     }
 }

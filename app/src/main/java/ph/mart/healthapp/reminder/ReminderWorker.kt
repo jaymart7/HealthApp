@@ -9,11 +9,12 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
- * Posts one reminder notification. Which one is carried in the input data, so all five schedules
- * share this single worker.
+ * Posts one reminder notification. Which one is carried in the input data, so every schedule
+ * shares this single worker.
  *
  * Koin's global context is already started (Application.onCreate runs before any worker), so
  * [KoinComponent] is enough — no custom `WorkerFactory`.
@@ -26,6 +27,7 @@ class ReminderWorker(
     private val foodRepository: FoodRepository by inject()
     private val waterRepository: WaterRepository by inject()
     private val profileRepository: ProfileRepository by inject()
+    private val supplementRepository: SupplementRepository by inject()
 
     override suspend fun doWork(): Result {
         val reminder = inputData.getString(KEY_REMINDER)
@@ -45,6 +47,13 @@ class ReminderWorker(
         if (reminder.checksWater) {
             val goal = profileRepository.observeProfile().first()?.waterGoalGlasses ?: return Result.success()
             if (waterRepository.observeToday().first() >= goal) return Result.success()
+        }
+
+        // And for supplements — including the case where there are none at all, which is a
+        // reminder about an empty list.
+        if (reminder.checksSupplements) {
+            val supplements = supplementRepository.observeToday().first()
+            if (supplements.isEmpty() || supplements.all { it.isComplete }) return Result.success()
         }
 
         notify(context, reminder.ordinal, reminder.title, reminder.body, reminder.tab)

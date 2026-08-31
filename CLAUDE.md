@@ -98,7 +98,7 @@ cancels, Confirmation returns to Capture with a discard confirm if edited).
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise`, `mood`, `health`, `fasting`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
+  `exercise`, `mood`, `health`, `fasting`, `supplement`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
 - **Calorie/macro math is Mifflin–St Jeor**, computed live from profile inputs
@@ -370,6 +370,51 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   prompt is sent the gaps (consumed vs target, water, streak, weekly weight delta) and never age,
   sex, height or absolute weight — same data-minimisation rule as the health backfill.
 
+- **A supplement carries a dose *label* and a times-per-day *number*.** The dose is free text —
+  "2000 IU", "5 g", "one scoop" — and nothing parses it, for the same reason fiber, sugar and
+  sodium are reported and never graded: there is no field on the profile a supplement target could
+  be derived from. `timesPerDay` is a real number only because "2x daily" turns the day's tick into
+  a count out of N, which is what makes the Home row a counter rather than a checkbox. One tap
+  advances a dose and wraps to zero at the target, so both shapes share one gesture and a mis-tap
+  is corrected by the gesture that made it — the same call `MoodCard`'s rows make.
+- **`supplement_day.dueTimes` is snapshotted at write time and never re-read.** Dropping a
+  supplement from twice daily to once next month must not turn a past day that read "2 of 2" into
+  "2 of 1" — the rule `fast_session.goalHours` and `step_day.burnedKcal` already follow. The
+  Progress chart therefore prices every bar off that day's own summed `dueTimes`, and
+  `Supplement.timesPerDay` only ever prices *today*.
+- **Ticking one supplement writes the whole day's row set.** `SupplementDao.setTakenOn` inserts a
+  zero row for every active supplement on that day (IGNORE, so it can never reset a count already
+  tapped) inside one `@Transaction`, then sets the one that was tapped. Without the seed the
+  chart's denominator would be only whatever was ticked, and someone who took 1 of 3 would chart
+  100%. *ponytail: a supplement added later the same day gets no row for that day — it starts
+  counting tomorrow.*
+- **A `taken` of 0 is a real row, an absent row is a gap.** Un-ticking is an update, which keeps
+  this domain inside the soft-delete-only rule with no deleted flag on the day table — the same
+  reading `mood_day`'s zero has, and a fully-zeroed day is simply not exported. On the chart the
+  two are drawn differently on purpose: a zero day is a slot with no height (seen and missed), a
+  day with no rows draws nothing (before the user had a list at all).
+- **Deleting a supplement is a soft delete, and the export carries its id.** Past `supplement_day`
+  rows keep a row to name, so removing something today can't rewrite the chart's history — which
+  is also why soft-deleted supplements ride the backup file. The id is the one thing in the whole
+  export that travels verbatim: a day row points at a supplement by id, so letting Room regenerate
+  them on import would restore a log of ticks with nothing to tick.
+- **Supplements are not a streak domain**, same reasoning as mood, sleep and fasting: the streak's
+  four domains are things the user *did* that day, and adding a fifth now would change what a past
+  run meant. `SupplementRepository` has no `observeLoggedDays()`, `loggedDays()` is untouched, and
+  Home's `isDayOne` ignores supplements.
+- **Home hides the card when the list is empty; Profile is the only place it is authored.** The
+  card is hidden rather than rendered as an invitation, like the three watch cards — but for the
+  opposite reason: there is nothing to import, there is nothing the user has written yet. Profile →
+  Supplements has edit and delete and **cannot tick anything**, because a tick belongs to a day and
+  Profile has none — the same division the food library draws against the add-entry sheet. Delete
+  asks first (a supplement is user-authored, like a saved meal), and one sheet with `id == 0`
+  meaning "add" is what keeps the add and the edit on one save path.
+- **The supplement reminder is appended to the `Reminder` enum, never slotted in.** `ordinal` is
+  the notification id, so inserting one beside the other daily reminders would re-point every
+  notification already pending on a device. It rides `checksSupplements`, the third flag of its
+  kind, and stays quiet both when everything is already ticked *and* when the list is empty — a
+  reminder about an empty list is a nudge to open a screen with nothing on it.
+
 ### Google Health
 
 The four requested scopes are Restricted, so the app is capped at 100 users until it passes
@@ -505,11 +550,11 @@ because of that, not because it was the nicest design available.
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `heart`, `fasting`), `:feature:profile`
-  (`profile`, `health`, `library`) and `:feature:onboarding` (`onboarding`, `health`, `shared`)
-  are the worked examples. Grouping is by *subject*, not by
+  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `heart`, `fasting`, `supplement`),
+  `:feature:profile` (`profile`, `health`, `library`, `supplement`) and `:feature:onboarding`
+  (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
-  `recipe/` though `FoodScreen` renders both, and Progress's eight tab bodies sit
+  `recipe/` though `FoodScreen` renders both, and Progress's nine tab bodies sit
   with the charts they draw rather than with the shell that dispatches them. Only
   the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.

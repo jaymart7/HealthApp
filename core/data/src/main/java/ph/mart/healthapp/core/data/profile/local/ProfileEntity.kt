@@ -30,4 +30,5 @@ internal data class ProfileEntity(
     val fastingGoalHours: Int = 16,
     val fastingRemindersOn: Boolean = false,
     val darkThemeOn: Boolean? = null,
+    val supplementRemindersOn: Boolean = false,
 )

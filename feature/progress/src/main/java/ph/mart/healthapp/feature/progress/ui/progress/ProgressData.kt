@@ -13,6 +13,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.supplement.SupplementDay
 
 /** [label] rather than the entry name in the toggle: labels are trimmed to keep the pills wide
  * enough to read — "Measurements" to "Body" and "Nutrition" to "Food". Past five options the
@@ -27,6 +28,7 @@ enum class ProgressTab(val label: String) {
     Sleep("Sleep"),
     Heart("Heart"),
     Fasting("Fasting"),
+    Supplements("Supplements"),
 }
 
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
@@ -56,6 +58,10 @@ data class ProgressUiState(
     /** The profile's current target — the chart's goal line. Each bar carries its own snapshot,
      * so this only ever moves the line, never a bar. */
     val fastingGoalHours: Int = DEFAULT_FAST_GOAL_HOURS,
+    /** Sparse, one row per supplement per day it was due — a day with no rows is a gap, not a
+     * miss. Each row carries the target it was scored against, so a later edit can't rewrite a
+     * bar already drawn. */
+    val supplementDays: List<SupplementDay> = emptyList(),
     /** Every day anything was logged, across all four domains — the streak's definition, reused
      * by the weekly recap so the two can't disagree about what a logged day is. */
     val activeDays: Set<Long> = emptySet(),

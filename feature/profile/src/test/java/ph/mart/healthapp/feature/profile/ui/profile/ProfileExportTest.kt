@@ -19,6 +19,8 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterDay
 
@@ -74,9 +76,22 @@ class ProfileExportTest {
         FastSession(id = 6, startMillis = 1_700_200_000_000L, endMillis = null, goalHours = 16),
     )
 
+    // The third is soft-deleted: it still travels, because supplementDays below names it by id.
+    private val supplements = listOf(
+        Supplement(id = 1, name = "Vitamin D", dose = "2000 IU", createdAt = 1_700_000_000_000L),
+        Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2, createdAt = 1_700_000_001_000L),
+        Supplement(id = 3, name = "Zinc", deleted = true, createdAt = 1_700_000_002_000L),
+    )
+    // The second day carries a dueTimes the supplement no longer has — the snapshot has to survive
+    // the round trip, or restoring the file would rescore a day against today's target.
+    private val supplementDays = listOf(
+        SupplementDay(dateEpochDay = 20_000, supplementId = 1, taken = 1, dueTimes = 1),
+        SupplementDay(dateEpochDay = 20_000, supplementId = 2, taken = 3, dueTimes = 3),
+    )
+
     @Test
     fun `round trips profile food weight measurements water exercise mood and fasting`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(profile, payload.profile)
@@ -93,7 +108,7 @@ class ProfileExportTest {
 
     @Test
     fun `export carries no photo data`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
         assertFalse(json.contains("filePath"))
         assertFalse(json.contains("\"photos\""))
     }
@@ -106,7 +121,7 @@ class ProfileExportTest {
 
     @Test
     fun `unrecognized enum value fails`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
             .replace("\"Waist\"", "\"Elbow\"")
         assertTrue(parseExport(json).isFailure)
     }
@@ -115,7 +130,7 @@ class ProfileExportTest {
      * the v1 case below, checked at the boundary that just moved. */
     @Test
     fun `a v5 file without fasting still imports`() {
-        val v5 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, emptyList())
+        val v5 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, emptyList(), supplements, supplementDays)
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 5")
         val payload = parseExport(v5).getOrThrow()
 
@@ -145,6 +160,8 @@ class ProfileExportTest {
         assertEquals(emptyList<ExerciseEntry>(), payload.exercises)
         assertEquals(emptyList<MoodDay>(), payload.moodDays)
         assertEquals(emptyList<FastSession>(), payload.fastSessions)
+        assertEquals(emptyList<Supplement>(), payload.supplements)
+        assertEquals(emptyList<SupplementDay>(), payload.supplementDays)
         assertEquals(DEFAULT_WATER_GOAL_GLASSES, payload.profile?.waterGoalGlasses)
         assertEquals(DEFAULT_FAST_GOAL_HOURS, payload.profile?.fastingGoalHours)
         // Defaulted on, so an older file doesn't silently drop the exercise credit.
@@ -174,9 +191,35 @@ class ProfileExportTest {
         assertEquals(0, entry.sodiumMg)
     }
 
+    /** The one place an id crosses the file boundary: a supplement day names its supplement by id,
+     * so regenerating ids on import would restore a log of ticks with nothing to tick. */
+    @Test
+    fun `supplement ids and their day snapshots survive the round trip`() {
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
+        val payload = parseExport(json).getOrThrow()
+
+        assertEquals(supplements, payload.supplements)
+        assertEquals(supplementDays, payload.supplementDays)
+        // Every restored day still points at a supplement the file also carried — including the
+        // soft-deleted one.
+        assertTrue(payload.supplementDays.all { day -> payload.supplements.any { it.id == day.supplementId } })
+    }
+
+    /** A v7 file — the schema one version back, written before supplements existed. */
+    @Test
+    fun `a v7 file without supplements still imports`() {
+        val v7 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, emptyList(), emptyList())
+            .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 7")
+        val payload = parseExport(v7).getOrThrow()
+
+        assertEquals(emptyList<Supplement>(), payload.supplements)
+        assertEquals(emptyList<SupplementDay>(), payload.supplementDays)
+        assertFalse(payload.profile!!.supplementRemindersOn)
+    }
+
     @Test
     fun `newer schema version is rejected`() {
-        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 99")
         assertTrue(parseExport(json).isFailure)
     }

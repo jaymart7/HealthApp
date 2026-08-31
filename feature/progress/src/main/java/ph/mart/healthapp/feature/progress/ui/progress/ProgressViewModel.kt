@@ -16,6 +16,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /** Read-only container — nothing on the Progress tab itself writes data (see [ProgressUiState]),
@@ -31,12 +32,13 @@ class ProgressViewModel(
     sleepRepository: SleepRepository,
     heartRepository: HeartRepository,
     fastingRepository: FastingRepository,
+    supplementRepository: SupplementRepository,
 ) : ViewModel(), OrbitContainerHost<ProgressUiState, ProgressUiState, Nothing> {
 
     override val container = orbitContainer<ProgressUiState, Nothing>(ProgressUiState()) {
         observeProgress(
             progressRepository, profileRepository, foodRepository, waterRepository, exerciseRepository,
-            moodRepository, sleepRepository, heartRepository, fastingRepository,
+            moodRepository, sleepRepository, heartRepository, fastingRepository, supplementRepository,
         )
     }
 
@@ -50,6 +52,7 @@ class ProgressViewModel(
         sleepRepository: SleepRepository,
         heartRepository: HeartRepository,
         fastingRepository: FastingRepository,
+        supplementRepository: SupplementRepository,
     ) = intent {
         val progress = combine(
             progressRepository.observeWeightEntries(),
@@ -83,27 +86,31 @@ class ProgressViewModel(
             ::loggedDays,
         )
 
-        // The two watch-only series pair up before the outer combine, which is already at the
-        // five-flow arity the typed overloads stop at — the same shape HomeViewModel uses.
-        val fromWatch = combine(
+        // Sleep, heart and the supplement log group up before the outer combine, which is already
+        // at the five-flow arity the typed overloads stop at — the same shape HomeViewModel uses.
+        // Supplements ride here rather than earning a slot of their own for that reason alone;
+        // they have nothing to do with a watch.
+        val sparseSeries = combine(
             sleepRepository.observeNights(),
             heartRepository.observeDays(),
-            ::Pair,
+            supplementRepository.observeDays(),
+            ::Triple,
         )
 
         combine(
             progress,
             activeDays,
             moodRepository.observeDays(),
-            fromWatch,
+            sparseSeries,
             fastingRepository.observeSessions(),
-        ) { state, days, moodDays, (nights, heartDays), fasts ->
+        ) { state, days, moodDays, (nights, heartDays, supplementDays), fasts ->
             state.copy(
                 activeDays = days,
                 moodDays = moodDays,
                 sleepNights = nights,
                 heartDays = heartDays,
                 fastSessions = fasts,
+                supplementDays = supplementDays,
             )
         }.collect { newState -> reduce { newState } }
     }

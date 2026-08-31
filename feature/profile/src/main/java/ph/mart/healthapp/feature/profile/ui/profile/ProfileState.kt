@@ -17,6 +17,7 @@ enum class ReminderKind(val label: String, val sublabel: String) {
     Photo("Photo cadence", "Every 2 weeks"),
     Water("Water", "Twice a day, 11:00 AM & 4:00 PM"),
     FastingGoal("Fasting goal", "Once, when a fast reaches its target"),
+    Supplements("Supplements", "Once a day, 9:00 AM"),
 }
 
 internal fun Profile.reminderEnabled(kind: ReminderKind): Boolean = when (kind) {
@@ -25,6 +26,7 @@ internal fun Profile.reminderEnabled(kind: ReminderKind): Boolean = when (kind) 
     ReminderKind.Photo -> photoReminderOn
     ReminderKind.Water -> waterRemindersOn
     ReminderKind.FastingGoal -> fastingRemindersOn
+    ReminderKind.Supplements -> supplementRemindersOn
 }
 
 internal fun Profile.withReminder(kind: ReminderKind, enabled: Boolean): Profile = when (kind) {
@@ -33,6 +35,7 @@ internal fun Profile.withReminder(kind: ReminderKind, enabled: Boolean): Profile
     ReminderKind.Photo -> copy(photoReminderOn = enabled)
     ReminderKind.Water -> copy(waterRemindersOn = enabled)
     ReminderKind.FastingGoal -> copy(fastingRemindersOn = enabled)
+    ReminderKind.Supplements -> copy(supplementRemindersOn = enabled)
 }
 
 /** File IO stays in the composable, which owns the picker `Uri`; the ViewModel only ever produces

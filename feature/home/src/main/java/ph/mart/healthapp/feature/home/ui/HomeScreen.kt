@@ -26,6 +26,8 @@ import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.streak.StreakStats
+import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -116,6 +118,10 @@ private fun HomeScreenPreview() {
                 moodLevel = 4,
                 energyLevel = 3,
                 burnedKcal = 320,
+                supplements = listOf(
+                    SupplementToday(Supplement(id = 1, name = "Vitamin D", dose = "2000 IU"), taken = 1),
+                    SupplementToday(Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2), taken = 1),
+                ),
                 streak = StreakStats(current = 12, best = 31, totalDaysLogged = 74),
                 weightProgressKg = 5.2,
             ),

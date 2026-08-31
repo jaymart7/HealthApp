@@ -8,6 +8,7 @@ import ph.mart.healthapp.core.navigation.route.ProfileRoute
 import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
 import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryScreen
 import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
+import ph.mart.healthapp.feature.profile.ui.supplement.SupplementsScreen
 
 /**
  * The Google Health disclosure and connection, one level above the Profile tab. A route rather
@@ -22,10 +23,16 @@ data object HealthConnectionRoute : NavKey
 @Serializable
 data object FoodLibraryRoute : NavKey
 
+/** The supplement list, one level above Profile for the same reasons [FoodLibraryRoute] is: it can
+ * outgrow a sheet, and NavDisplay's back is what returns to Profile. */
+@Serializable
+data object SupplementsRoute : NavKey
+
 fun EntryProviderScope<NavKey>.profileEntries(
     scrollState: ScrollState,
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenSupplements: () -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<ProfileRoute> {
@@ -33,8 +40,10 @@ fun EntryProviderScope<NavKey>.profileEntries(
             scrollState = scrollState,
             onOpenHealth = onOpenHealth,
             onOpenLibrary = onOpenLibrary,
+            onOpenSupplements = onOpenSupplements,
         )
     }
     entry<HealthConnectionRoute> { HealthConnectionScreen(onBack = onExitFlow) }
     entry<FoodLibraryRoute> { FoodLibraryScreen() }
+    entry<SupplementsRoute> { SupplementsScreen() }
 }

@@ -30,6 +30,9 @@ import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.SupplementDay
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.epochDayStartMillis
@@ -57,6 +60,7 @@ fun seedDebugData(koin: Koin) {
         koin.get<ExerciseRepository>().seedExercise(today)
         koin.get<MoodRepository>().seedMood(today)
         koin.get<FastingRepository>().seedFasting(today)
+        koin.get<SupplementRepository>().seedSupplements(today)
     }
 }
 
@@ -166,6 +170,41 @@ private suspend fun MoodRepository.seedMood(today: Long) {
                 energy = if (daysAgo == 3) 0 else random.nextInt(2, 6),
             ),
         )
+    }
+}
+
+/**
+ * Three supplements and twenty days of ticks.
+ *
+ * Written through [SupplementRepository.upsertSupplement]/[SupplementRepository.upsertDay] rather
+ * than `addSupplement`/`setTakenToday`, which stamp today and generate their own ids — a backdated
+ * log needs both fixed. Day 8 is skipped entirely so the adherence chart has a real gap, day 4 is
+ * a zero across the board (a day seen and missed, which the chart draws differently from a gap),
+ * and the creatine rows before day 12 carry `dueTimes = 3` against a supplement that now says 2,
+ * so the snapshot rule is visible on the chart rather than only in a test.
+ */
+private suspend fun SupplementRepository.seedSupplements(today: Long) {
+    val supplements = listOf(
+        Supplement(id = 1, name = "Vitamin D", dose = "2000 IU", timesPerDay = 1, createdAt = 1),
+        Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2, createdAt = 2),
+        Supplement(id = 3, name = "Magnesium", dose = "300 mg", timesPerDay = 1, createdAt = 3),
+    )
+    supplements.forEach { upsertSupplement(it) }
+
+    val random = Random(seed = 23)
+    for (daysAgo in 19 downTo 0) {
+        if (daysAgo == 8) continue
+        supplements.forEach { supplement ->
+            val due = if (supplement.id == 2L && daysAgo >= 12) 3 else supplement.timesPerDay
+            upsertDay(
+                SupplementDay(
+                    dateEpochDay = today - daysAgo,
+                    supplementId = supplement.id,
+                    taken = if (daysAgo == 4) 0 else random.nextInt(0, due + 1),
+                    dueTimes = due,
+                ),
+            )
+        }
     }
 }
 

@@ -14,6 +14,7 @@ import ph.mart.healthapp.core.data.profile.CALORIE_TARGET_KCAL
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
 
@@ -25,6 +26,7 @@ class ProfileViewModel(
     private val exerciseRepository: ExerciseRepository,
     private val moodRepository: MoodRepository,
     private val fastingRepository: FastingRepository,
+    private val supplementRepository: SupplementRepository,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -117,12 +119,14 @@ class ProfileViewModel(
             exercises = exerciseRepository.allEntries(),
             moodDays = moodRepository.allDays(),
             fastSessions = fastingRepository.allSessions(),
+            supplements = supplementRepository.allSupplements(),
+            supplementDays = supplementRepository.allDays(),
         )
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }
 
-    /** Replaces the profile, the food diary, the water log, the exercise log, the mood log and the
-     * fasting log; weight and measurements are
+    /** Replaces the profile, the food diary, the water log, the exercise log, the mood log, the
+     * fasting log and the supplement list with its ticks; weight and measurements are
      * upserted by date, so importing merges history rather than discarding entries the
      * file doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
      * touched. */
@@ -144,6 +148,11 @@ class ProfileViewModel(
                 // timer belongs to the history being replaced, not to the device.
                 fastingRepository.clearAllSessions()
                 payload.fastSessions.forEach { fastingRepository.upsertSession(it) }
+                // Supplements before their days: a day row points at a supplement id, and the ids
+                // are restored verbatim rather than regenerated so the ticks keep their subject.
+                supplementRepository.clearAll()
+                payload.supplements.forEach { supplementRepository.upsertSupplement(it) }
+                payload.supplementDays.forEach { supplementRepository.upsertDay(it) }
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {

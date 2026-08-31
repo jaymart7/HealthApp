@@ -31,6 +31,7 @@ data class Profile(
     val weighInReminderOn: Boolean = true,
     val photoReminderOn: Boolean = false,
     val waterRemindersOn: Boolean = false,
+    val supplementRemindersOn: Boolean = false,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     /** The intermittent-fasting target, in hours. Snapshotted onto each fast at start — see
      * [ph.mart.healthapp.core.data.fasting.FastSession]. */

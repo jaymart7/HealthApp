@@ -46,6 +46,7 @@ import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileFastingSec
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileGoalsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileLibrarySection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileRemindersSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileSupplementsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileUnitsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileWaterSection
 
@@ -63,6 +64,7 @@ private const val NOTIFICATIONS_BLOCKED =
 fun ProfileScreen(
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenSupplements: () -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: ProfileViewModel = koinViewModel(),
 ) {
@@ -167,6 +169,7 @@ fun ProfileScreen(
         onImport = { importLauncher.launch(arrayOf("application/json")) },
         onOpenHealth = onOpenHealth,
         onOpenLibrary = onOpenLibrary,
+        onOpenSupplements = onOpenSupplements,
         // Re-read on each recomposition rather than watched: the only in-app source of a change is
         // the launcher above, which sets state anyway.
         reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
@@ -197,6 +200,7 @@ private fun ProfileContent(
     onImport: () -> Unit,
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenSupplements: () -> Unit,
     reminderMessage: String? = null,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -251,6 +255,7 @@ private fun ProfileContent(
                 message = reminderMessage,
                 messageIsError = true,
             )
+            ProfileSupplementsSection(onOpenSupplements = onOpenSupplements)
             ProfileLibrarySection(onOpenLibrary = onOpenLibrary)
             ProfileConnectionsSection(onOpenHealth = onOpenHealth)
             ProfileDataSection(
@@ -295,6 +300,7 @@ private fun ProfileScreenPreview() {
             onImport = {},
             onOpenHealth = {},
             onOpenLibrary = {},
+            onOpenSupplements = {},
         )
     }
 }
