@@ -8,6 +8,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.health.HeartRepository
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
@@ -34,8 +35,8 @@ import ph.mart.healthapp.core.data.todayEpochDay
  * The streak's four day-series ride in a second combine chained onto the first — `combine` only
  * has typed overloads up to five flows, and the streak's inputs are independent of the day's
  * totals anyway. Today's exercise joins at that same outer combine for the same reason: the inner
- * one is already at the cap. Mood pairs with the running fast, and sleep with steps, so that outer
- * combine stays inside the arity too.
+ * one is already at the cap. Mood pairs with the running fast, and sleep with steps and heart rate,
+ * so that outer combine stays inside the arity too.
  */
 class HomeViewModel(
     profileRepository: ProfileRepository,
@@ -47,6 +48,7 @@ class HomeViewModel(
     private val fastingRepository: FastingRepository,
     sleepRepository: SleepRepository,
     stepsRepository: StepsRepository,
+    heartRepository: HeartRepository,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
 
     override val container = orbitContainer<HomeUiState, Nothing>(HomeUiState()) {
@@ -59,6 +61,7 @@ class HomeViewModel(
             fastingRepository,
             sleepRepository,
             stepsRepository,
+            heartRepository,
         )
     }
 
@@ -100,6 +103,7 @@ class HomeViewModel(
         fastingRepository: FastingRepository,
         sleepRepository: SleepRepository,
         stepsRepository: StepsRepository,
+        heartRepository: HeartRepository,
     ) = intent {
         val todayState = combine(
             profileRepository.observeProfile(),
@@ -128,12 +132,13 @@ class HomeViewModel(
             ::loggedDays,
         )
 
-        // The two Google Health flows pair up before the outer combine: it is already at the
+        // The three Google Health flows group up before the outer combine: it is already at the
         // five-flow arity the typed overloads stop at.
         val fromWatch = combine(
             sleepRepository.observeLastNight(),
             stepsRepository.observeToday(),
-            ::Pair,
+            heartRepository.observeToday(),
+            ::Triple,
         )
 
         // Mood and the running fast pair up for the same reason [fromWatch] does: the outer
@@ -150,7 +155,7 @@ class HomeViewModel(
             exerciseRepository.observeTodayEntries(),
             moodAndFast,
             fromWatch,
-        ) { state, days, exercise, (mood, activeFast), (lastNight, steps) ->
+        ) { state, days, exercise, (mood, activeFast), (lastNight, steps, heart) ->
             state.copy(
                 loaded = true,
                 // Steps fold in here rather than in budgetKcal(), which stays the single place
@@ -159,6 +164,7 @@ class HomeViewModel(
                 stepsCreditKcal = stepsCreditKcal(steps, exercise),
                 lastNight = lastNight,
                 steps = steps,
+                heart = heart,
                 moodLevel = mood.mood,
                 energyLevel = mood.energy,
                 activeFast = activeFast,

@@ -192,9 +192,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **`SegmentedToggle` splits its width evenly until a pill would fall below 64dp, then scrolls.**
   64dp is what five pills already left on a 360dp screen, so every caller with five or fewer
   options (the unit toggles, the four `ChartRange` pills) renders exactly as it did before the
-  floor existed — the branch only ever fires for the six Progress tabs, and on very narrow
+  floor existed — the branch only ever fires for the eight Progress tabs, and on very narrow
   screens, where scrolling replaces clipping. The Progress labels stay trimmed ("Nutrition" reads
-  "Food", "Measurements" reads "Body"); a seventh tab costs nothing but scroll distance now, so
+  "Food", "Measurements" reads "Body"); another tab costs nothing but scroll distance now, so
   never shorten a label further to avoid one.
 - **The recap's weight cell goes blank when the last weigh-in predates the window.**
   `trendVsSevenDaysAgo()` anchors to the latest *entry*, not to today, so without that guard a
@@ -377,7 +377,7 @@ because of that, not because it was the nicest design available.
   advance past data it never wrote), and `pushed` separates "delete what we imported" from
   "delete what we sent". It stays out of the data export for the same reason saved meals do: a
   restored backup on another device has no relationship to those remote names.
-- **Steps are the one type that doesn't ride `health_link`.** The API reports intra-day buckets
+- **Steps are the first of two types that don't ride `health_link`.** The API reports intra-day buckets
   and FitPulse stores a daily total, so there is no one-point-to-one-row relationship for a link
   to record. `MAX(date)` in `step_day` is the cursor instead — still derived from rows actually
   written, which is the property that made the link table's cursor safe. Consequences worth
@@ -401,6 +401,28 @@ because of that, not because it was the nicest design available.
 - **Steps are not a streak domain and not exported**, same reasoning as sleep and `health_link`
   respectively. `step_day` is import-only telemetry with no manual write path; `StepsRepository`
   is read-only and has no `observeLoggedDays()`.
+- **Heart rate takes the step shape, not the `health_link` one**, and for the same reason: the
+  API reports intra-day samples and `heart_day` stores one row per local day, so there is no
+  point-to-row relationship a link could key. `MAX(date)` in `heart_day` is the cursor, the window
+  is day-aligned, days are replaced rather than merged, and nothing is written until every page
+  lands. Not a streak domain, not exported, no manual write path — sleep and steps again.
+- **A heart 403 is neither a revocation nor a sync failure.** Every other type reads a scope
+  `HEALTH_SCOPES` explicitly requests, so a 403 there really is a revocation. Heart rate rides
+  `health_metrics_and_measurements.readonly` on the *assumption* that a BPM reading is a health
+  metric, and no live account has confirmed it. Reporting a wrong guess as a revocation would drop
+  a good connection to "needs consent" forever; reporting it as a failure would put "Couldn't
+  reach Google Health" on the Connections screen after every sync with nothing new to import. So
+  `sync()` takes heart's items on success and discards every other outcome — a wrong guess costs
+  the card and nothing else. Don't make this consistent with the other four until the scope is
+  pinned.
+- **`minBpm` is the day's lowest reading, never a resting heart rate**, and is labelled "Lowest"
+  everywhere it appears. FitPulse aggregates whatever samples the watch happened to take; calling
+  a minimum "resting" would claim a measurement nobody made. The day's other figure is a mean of
+  the samples, but `heartAverages()` over a window is a mean of the *days* — a day the watch
+  sampled twice as often is not twice the day. Progress's Heart tab windows anchored to today,
+  like sleep and mood, and its chart is the one in the app whose bars are **not zero-based**:
+  nobody's heart visits 0–45 bpm, so a zero-based axis would squash the beats that actually
+  differ. Each bar spans that day's lowest reading up to its average.
 - **Every window is re-queried one day behind the cursor.** Watches sync hours late; the primary
   key makes the overlap free. First sync backfills 30 days — asking for only what's needed is
   the data-minimisation answer on the verification form, not a performance tweak.
@@ -451,6 +473,10 @@ because of that, not because it was the nicest design available.
   `physicalTime` fallback; pin it once a live response has been captured.
 - `parseStepsPage` reads the bucket count from `count`, then `steps`, then `delta`, for the same
   reason and with the same fix: pin it to one field once a live response has been captured.
+- `parseHeartPage` hedges twice over — the timestamp from `sampleTime.physicalTime`, then a flat
+  `physicalTime`, then an interval start; the value from `beatsPerMinute`, then `bpm`, then
+  `value` — and the scope heart rate rides is itself a guess. Pinning both against a live response
+  is what lets `sync()` treat a heart 403 like every other type's.
 
 ## Composable structure & previews
 
@@ -466,11 +492,11 @@ because of that, not because it was the nicest design available.
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `fasting`), `:feature:profile`
+  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `heart`, `fasting`), `:feature:profile`
   (`profile`, `health`, `library`) and `:feature:onboarding` (`onboarding`, `health`, `shared`)
   are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
-  `recipe/` though `FoodScreen` renders both, and Progress's six tab bodies sit
+  `recipe/` though `FoodScreen` renders both, and Progress's eight tab bodies sit
   with the charts they draw rather than with the shell that dispatches them. Only
   the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.

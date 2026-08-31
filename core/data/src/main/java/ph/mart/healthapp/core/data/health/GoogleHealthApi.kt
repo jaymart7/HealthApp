@@ -229,6 +229,13 @@ internal enum class HealthDataType(
     Sleep("sleep", "interval.start_time", SESSION_PAGE_SIZE),
     Weight("weight", "physical_time", SAMPLE_PAGE_SIZE),
     Steps("steps", "interval.start_time", SAMPLE_PAGE_SIZE),
+
+    /**
+     * Filtered by `physical_time` rather than an interval: a BPM reading is a point sample, like
+     * [Weight], not a session. Unlike every other entry here it rides a scope FitPulse requested
+     * for something else — see `importHeart`, which is why its 403 is not treated as a revocation.
+     */
+    Heart("heart-rate", "physical_time", SAMPLE_PAGE_SIZE),
 }
 
 /**
@@ -325,6 +332,17 @@ internal data class RemoteSteps(
     override val remoteName: String,
     override val timeMillis: Long,
     val count: Int,
+) : RemotePoint
+
+/**
+ * One heart-rate sample. Like [RemoteSteps] these fold into one row per day, which is why heart
+ * rate is the second imported type that does not ride `health_link`: a single beat count has no
+ * identity worth keying a link by.
+ */
+internal data class RemoteHeart(
+    override val remoteName: String,
+    override val timeMillis: Long,
+    val bpm: Int,
 ) : RemotePoint
 
 /** One imported night. [timeMillis] is when it started; [endMillis] is what dates it. */
@@ -469,6 +487,55 @@ internal fun parseStepsPage(body: String): Page<RemoteSteps> {
     }
     return Page(buckets, root.string("nextPageToken"))
 }
+
+/**
+ * Heart rate comes back as point samples carrying a beat count. The caller groups them by local
+ * day and folds them with [aggregateHeartByDay].
+ *
+ * ponytail: both reads hedge, for the same reason `parseWeightPage` and `parseStepsPage` do — the
+ * timestamp from `sampleTime.physicalTime`, then a flat `physicalTime`, then an interval start;
+ * the value from `beatsPerMinute`, then `bpm`, then `value`. This module has no way to try a live
+ * account. Pin each to one path once a real response has been captured.
+ */
+internal fun parseHeartPage(body: String): Page<RemoteHeart> {
+    val root = parseRoot(body) ?: return Page(emptyList(), null)
+
+    val samples = root["dataPoints"]?.jsonArray.orEmpty().mapNotNull { element ->
+        val point = element as? JsonObject ?: return@mapNotNull null
+        val remoteName = point.string("name") ?: return@mapNotNull null
+        val heart = point["heartRate"]?.jsonObject ?: return@mapNotNull null
+        // An undated sample cannot be placed on a day, so it is dropped rather than invented —
+        // the same treatment parseStepsPage gives a bucket with no interval.
+        val time = parseRfc3339(
+            heart["sampleTime"]?.jsonObject.string("physicalTime")
+                ?: heart.string("physicalTime")
+                ?: heart["interval"]?.jsonObject.string("startTime"),
+        ) ?: return@mapNotNull null
+        val bpm = (heart.number("beatsPerMinute") ?: heart.number("bpm") ?: heart.number("value"))
+            ?.roundToInt() ?: return@mapNotNull null
+        if (bpm <= 0) return@mapNotNull null
+
+        RemoteHeart(remoteName = remoteName, timeMillis = time, bpm = bpm)
+    }
+    return Page(samples, root.string("nextPageToken"))
+}
+
+/**
+ * Samples to one row per local day: the mean rounded to the nearest beat, and the day's lowest
+ * reading exactly as measured.
+ *
+ * Split out of the sync loop rather than folded inline because it is the only real logic on this
+ * path and a test can reach it here — `writeSteps` folds inline and is consequently untested.
+ */
+internal fun aggregateHeartByDay(samples: List<RemoteHeart>): Map<Long, HeartDay> =
+    samples.groupBy { epochDayOf(it.timeMillis) }
+        .mapValues { (day, ofDay) ->
+            HeartDay(
+                dateEpochDay = day,
+                averageBpm = (ofDay.sumOf { it.bpm }.toDouble() / ofDay.size).roundToInt(),
+                minBpm = ofDay.minOf { it.bpm },
+            )
+        }
 
 private fun parseRoot(body: String): JsonObject? =
     runCatching { healthJson.parseToJsonElement(body).jsonObject }.getOrNull()

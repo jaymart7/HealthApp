@@ -39,6 +39,7 @@ import ph.mart.healthapp.feature.home.ui.HomeUiState
 import ph.mart.healthapp.feature.home.ui.components.AIInsightCard
 import ph.mart.healthapp.feature.home.ui.components.CalorieRingCard
 import ph.mart.healthapp.feature.home.ui.components.FastingCard
+import ph.mart.healthapp.feature.home.ui.components.HeartCard
 import ph.mart.healthapp.feature.home.ui.components.MacroSummaryCard
 import ph.mart.healthapp.feature.home.ui.components.MascotGreetingCard
 import ph.mart.healthapp.feature.home.ui.components.MoodCard
@@ -137,7 +138,7 @@ internal fun HomeCards(
             modifier = appearModifier(4, appear),
         )
 
-        // Hidden rather than zeroed when Google Health isn't connected or hasn't synced a night.
+        // Hidden rather than zeroed when Google Health isn't connected or hasn't synced.
         uiState.lastNight?.let { night ->
             SleepCard(night = night, modifier = appearModifier(5, appear))
         }
@@ -150,33 +151,37 @@ internal fun HomeCards(
             )
         }
 
+        uiState.heart?.let { heart ->
+            HeartCard(heart = heart, modifier = appearModifier(7, appear))
+        }
+
         MoodCard(
             mood = uiState.moodLevel,
             energy = uiState.energyLevel,
             onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
             onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
-            modifier = appearModifier(7, appear),
+            modifier = appearModifier(8, appear),
         )
 
         WeightMetricCard(
             trend = trend,
             goal = uiState.profile?.goal,
             unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            modifier = appearModifier(8, appear),
+            modifier = appearModifier(9, appear),
         )
 
         if (targets != null) {
             MacroSummaryCard(
                 consumed = uiState.totals,
                 targets = targets,
-                modifier = appearModifier(9, appear),
+                modifier = appearModifier(10, appear),
             )
         }
 
         ProgressPhotoReminderCard(
             daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
             onTakePhoto = onAddPhoto,
-            modifier = appearModifier(10, appear),
+            modifier = appearModifier(11, appear),
         )
     }
 }

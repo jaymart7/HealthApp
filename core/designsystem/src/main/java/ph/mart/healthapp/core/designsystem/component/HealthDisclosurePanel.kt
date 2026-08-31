@@ -34,8 +34,9 @@ private val DISCLOSURES = listOf(
         "Imported so your workouts and daily steps raise your calorie budget.",
     ),
     Disclosure(
-        "Weight and body measurements",
-        "Imported so your weight trend and goal date use your real weigh-ins.",
+        "Weight, body measurements and heart rate",
+        "Imported so your weight trend and goal date use your real weigh-ins, and to show your " +
+            "daily heart rate.",
     ),
     Disclosure(
         "Sleep",
@@ -66,8 +67,8 @@ fun HealthDisclosurePanel(
         Text(
             text = "FitPulse collects health and fitness data from Google Health to show your " +
                 "workouts and steps and the calories they burned, track your weight trend, and " +
-                "show how you slept. It also sends the meals and water you log to Google Health, " +
-                "so your nutrition stays in one place.",
+                "show your heart rate and how you slept. It also sends the meals and water you " +
+                "log to Google Health, so your nutrition stays in one place.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

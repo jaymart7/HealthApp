@@ -12,6 +12,8 @@ import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.health.local.HealthLinkDao
 import ph.mart.healthapp.core.data.health.local.HealthLinkEntity
+import ph.mart.healthapp.core.data.health.local.HeartDayDao
+import ph.mart.healthapp.core.data.health.local.HeartDayEntity
 import ph.mart.healthapp.core.data.health.local.SleepDayDao
 import ph.mart.healthapp.core.data.health.local.SleepDayEntity
 import ph.mart.healthapp.core.data.health.local.StepDayDao
@@ -44,6 +46,7 @@ internal class HealthSyncRepositoryImpl(
     private val progressRepository: ProgressRepository,
     private val sleepDao: SleepDayDao,
     private val stepDao: StepDayDao,
+    private val heartDao: HeartDayDao,
     private val profileRepository: ProfileRepository,
     private val foodRepository: FoodRepository,
     private val waterRepository: WaterRepository,
@@ -106,6 +109,9 @@ internal class HealthSyncRepositoryImpl(
             Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
             Outcome.Failed -> failed = true
         }
+        // The one type that cannot fail the sync — see importHeart. Its scope is a guess, and a
+        // wrong one has to cost the card, not a permanent error on the Connections screen.
+        (importHeart(token) as? Outcome.Wrote)?.let { imported += it.items }
 
         // Push last: an import that worked is worth reporting even if the outbound leg didn't.
         if (!pushNutrition(token)) failed = true
@@ -237,6 +243,62 @@ internal class HealthSyncRepositoryImpl(
      */
     private suspend fun stepsWindowStart(): Long {
         val latest = stepDao.latestDate() ?: return epochDayStartMillis(todayEpochDay() - BACKFILL_DAYS)
+        return epochDayStartMillis(latest - 1)
+    }
+
+    /**
+     * Heart rate aggregates the way steps do — intra-day samples in, one row per day out — so it
+     * takes the same shape: no `health_link` row, `MAX(date)` as the cursor, a day-aligned window,
+     * and nothing written until every page has landed, so a half-read window cannot replace a good
+     * day's average with a fragment of one. Days are replaced rather than merged, which makes a
+     * re-sync idempotent.
+     *
+     * **This one type can neither revoke nor fail the sync, and that divergence is deliberate.**
+     * Every other type reads a scope `HEALTH_SCOPES` explicitly requests, so a 403 there really
+     * does mean the user revoked it from myaccount.google.com. Heart rate rides
+     * `health_metrics_and_measurements.readonly` on the assumption that a BPM reading is a health
+     * metric — an assumption no live account has confirmed. If it is wrong the API answers 403 on
+     * every sync: reporting that as a revocation would drop a perfectly good connection to "needs
+     * consent" forever, and reporting it as a failure would put "Couldn't reach Google Health" on
+     * the Connections screen after every sync that had nothing new to import. So [sync] reads the
+     * items on success and discards every other outcome — a wrong guess costs the card and
+     * nothing else. Do not "fix" this into consistency with the other four before the scope is
+     * pinned against a live response.
+     */
+    private suspend fun importHeart(token: String): Outcome {
+        val since = heartWindowStart()
+        var pageToken: String? = null
+        val samples = mutableListOf<RemoteHeart>()
+
+        repeat(MAX_PAGES) {
+            val url = dataPointsUrl(HealthDataType.Heart, sinceMillis = since, pageToken = pageToken)
+            val page = when (val response = fetch(url, token)) {
+                is HealthResponse.Ok -> parseHeartPage(response.body)
+                HealthResponse.Forbidden, HealthResponse.Unauthorized, HealthResponse.Failed ->
+                    return Outcome.Failed
+            }
+
+            samples += page.items
+            pageToken = page.nextPageToken ?: return writeHeart(samples)
+        }
+        return writeHeart(samples)
+    }
+
+    private suspend fun writeHeart(samples: List<RemoteHeart>): Outcome {
+        val days = aggregateHeartByDay(samples)
+        days.values.forEach { day ->
+            heartDao.upsert(
+                HeartDayEntity(date = day.dateEpochDay, averageBpm = day.averageBpm, minBpm = day.minBpm),
+            )
+        }
+        return Outcome.Wrote(days.size)
+    }
+
+    /** Day-aligned for the same reason [stepsWindowStart] is: a window starting mid-morning would
+     * return a partial day, and the replace-in-full write would turn a full day's average into an
+     * average of one morning. */
+    private suspend fun heartWindowStart(): Long {
+        val latest = heartDao.latestDate() ?: return epochDayStartMillis(todayEpochDay() - BACKFILL_DAYS)
         return epochDayStartMillis(latest - 1)
     }
 
@@ -458,8 +520,10 @@ internal class HealthSyncRepositoryImpl(
                     SLEEP_TABLE -> sleepDao.delete(link.localId)
                 }
             }
-            // No links to walk: step_day is its own bookkeeping, so it is cleared wholesale.
+            // No links to walk: step_day and heart_day are their own bookkeeping, so they are
+            // cleared wholesale.
             stepDao.clear()
+            heartDao.clear()
         }
         // The links go either way: keeping them would make a later reconnect skip data the user
         // asked us to forget, and keeping them without the rows would point at nothing.

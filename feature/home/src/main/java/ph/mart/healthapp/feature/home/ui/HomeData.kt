@@ -4,6 +4,7 @@ import kotlin.math.abs
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DiaryTotals
+import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
@@ -18,8 +19,8 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
  * Read model. Every field traces back to a repository interface: [profile] from
  * `ProfileRepository`, [totals] from `FoodRepository`, [weightEntries] and [lastPhotoEpochDay]
  * from `ProgressRepository`, [waterGlasses] from `WaterRepository`, [burnedKcal] from
- * `ExerciseRepository` and `StepsRepository` together, [lastNight] and [steps] from
- * `SleepRepository`/`StepsRepository`. Targets are never stored here — they're derived
+ * `ExerciseRepository` and `StepsRepository` together, [lastNight], [steps] and [heart] from
+ * `SleepRepository`/`StepsRepository`/`HeartRepository`. Targets are never stored here — they're derived
  * from [profile] at read time via `dailyTargets()`, so they can't drift from the inputs that
  * produce them. [streak] and [weightProgressKg] are derived the same way, from all three
  * repositories at once — nothing about consistency is stored.
@@ -49,6 +50,9 @@ data class HomeUiState(
     val lastNight: SleepNight? = null,
     /** Today's steps, from Google Health. Hidden the same way [lastNight] is, for the same reason. */
     val steps: StepDay? = null,
+    /** Today's heart rate, from Google Health. Hidden the same way [lastNight] is, for the same
+     * reason — FitPulse cannot count a heartbeat itself, so an absent row is an absent watch. */
+    val heart: HeartDay? = null,
     /** The part of [burnedKcal] that came from [steps] — what the card shows, and already net of
      * any workout that had claimed those steps. */
     val stepsCreditKcal: Int = 0,

@@ -15,6 +15,8 @@ import ph.mart.healthapp.core.data.fasting.local.FastSessionDao
 import ph.mart.healthapp.core.data.fasting.local.FastSessionEntity
 import ph.mart.healthapp.core.data.health.local.HealthLinkDao
 import ph.mart.healthapp.core.data.health.local.HealthLinkEntity
+import ph.mart.healthapp.core.data.health.local.HeartDayDao
+import ph.mart.healthapp.core.data.health.local.HeartDayEntity
 import ph.mart.healthapp.core.data.health.local.SleepDayDao
 import ph.mart.healthapp.core.data.health.local.SleepDayEntity
 import ph.mart.healthapp.core.data.health.local.StepDayDao
@@ -48,9 +50,10 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         HealthLinkEntity::class,
         SleepDayEntity::class,
         StepDayEntity::class,
+        HeartDayEntity::class,
         FastSessionEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -67,5 +70,6 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun healthLinkDao(): HealthLinkDao
     abstract fun sleepDayDao(): SleepDayDao
     abstract fun stepDayDao(): StepDayDao
+    abstract fun heartDayDao(): HeartDayDao
     abstract fun fastSessionDao(): FastSessionDao
 }

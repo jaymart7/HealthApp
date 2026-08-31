@@ -6,6 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.epochDayOf
+import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
@@ -118,6 +119,39 @@ private const val NIGHTS = """
       }
     }
   ]
+}
+"""
+
+private const val HEART = """
+{
+  "dataPoints": [
+    {
+      "name": "users/me/dataTypes/heart-rate/dataPoints/h1",
+      "heartRate": {
+        "sampleTime": { "physicalTime": "2026-04-20T06:30:00Z" },
+        "beatsPerMinute": 62
+      }
+    },
+    {
+      "name": "users/me/dataTypes/heart-rate/dataPoints/h2",
+      "heartRate": {
+        "physicalTime": "2026-04-20T18:30:00Z",
+        "bpm": "74"
+      }
+    },
+    {
+      "name": "users/me/dataTypes/heart-rate/dataPoints/h3",
+      "heartRate": { "beatsPerMinute": 80 }
+    },
+    {
+      "name": "users/me/dataTypes/heart-rate/dataPoints/h4",
+      "heartRate": {
+        "sampleTime": { "physicalTime": "2026-04-20T20:00:00Z" },
+        "beatsPerMinute": 0
+      }
+    }
+  ],
+  "nextPageToken": "heart-2"
 }
 """
 
@@ -310,6 +344,45 @@ class GoogleHealthApiTest {
                 .contains("filter=physical_time+%3E%3D+%221970-01-01T00%3A00%3A00Z%22"),
         )
         assertTrue(dataPointsUrl(HealthDataType.Exercise, 0L, pageToken = "a b").contains("pageToken=a+b"))
+    }
+
+    @Test
+    fun `a heart page reads either timestamp shape and drops what it cannot place or trust`() {
+        val page = parseHeartPage(HEART)
+
+        assertEquals("heart-2", page.nextPageToken)
+        // h3 has no timestamp and h4 reads zero: an unplaceable sample and a broken one.
+        assertEquals(2, page.items.size)
+        assertEquals("users/me/dataTypes/heart-rate/dataPoints/h1", page.items[0].remoteName)
+        assertEquals(62, page.items[0].bpm)
+        // The flat `physicalTime` fallback, with a bpm that came through as a quoted string.
+        assertEquals(74, page.items[1].bpm)
+        assertEquals(0, parseHeartPage("not json").items.size)
+    }
+
+    @Test
+    fun `heart samples fold to one row per local day`() {
+        // Anchored to local day starts rather than to the fixture's UTC instants: which local day
+        // an instant lands on moves with the test JVM's zone, and grouping by local day is the
+        // one thing this is asserting.
+        val day = 20_000L
+        val samples = listOf(
+            RemoteHeart("h1", epochDayStartMillis(day) + 6 * 60 * 60 * 1000L, 62),
+            RemoteHeart("h2", epochDayStartMillis(day) + 18 * 60 * 60 * 1000L, 74),
+            RemoteHeart("h3", epochDayStartMillis(day + 1) + 9 * 60 * 60 * 1000L, 90),
+        )
+
+        val byDay = aggregateHeartByDay(samples)
+
+        assertEquals(2, byDay.size)
+        // The mean of 62 and 74, and the day's lowest reading exactly as measured.
+        assertEquals(68, byDay.getValue(day).averageBpm)
+        assertEquals(62, byDay.getValue(day).minBpm)
+        assertEquals(day, byDay.getValue(day).dateEpochDay)
+        // A single-sample day is its own average and its own minimum.
+        assertEquals(90, byDay.getValue(day + 1).averageBpm)
+        assertEquals(90, byDay.getValue(day + 1).minBpm)
+        assertEquals(emptyMap<Long, HeartDay>(), aggregateHeartByDay(emptyList()))
     }
 
     @Test
