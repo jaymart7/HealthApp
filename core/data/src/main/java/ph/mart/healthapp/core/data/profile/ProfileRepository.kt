@@ -52,6 +52,10 @@ data class Profile(
      * same reading [darkThemeOn]'s null has. Held as a String rather than the enum because
      * `MascotCharacter` lives in `:core:designsystem`, which this module does not depend on. */
     val mascotName: String? = null,
+    /** The name of the mascot colour picked in the same place, held as a String for the same
+     * reason [mascotName] is. Null means the default, and it applies to every buddy at once — the
+     * character and the colour are two choices, not five colours. */
+    val mascotPaletteName: String? = null,
     /**
      * The daily step target, in steps. Deliberately *not* snapshotted per day, unlike
      * [ph.mart.healthapp.core.data.fasting.FastSession.goalHours]: `step_day` rows belong to the

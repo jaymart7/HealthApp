@@ -3,7 +3,9 @@ package ph.mart.healthapp.feature.profile.ui.profile.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,11 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotCharacter
+import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -30,8 +35,8 @@ private val AvatarSize = 48.dp
 /**
  * Until Dark mode is touched the profile stores null and the app follows the device, so [darkTheme]
  * is resolved by the caller rather than read straight off the profile — the switch has to show what
- * the user is actually looking at, not the absence of a choice. [mascot] is resolved the same way
- * and for the same reason.
+ * the user is actually looking at, not the absence of a choice. [mascot] and [palette] are resolved
+ * the same way and for the same reason.
  */
 @Composable
 internal fun ProfileAppearanceSection(
@@ -39,6 +44,8 @@ internal fun ProfileAppearanceSection(
     onSetDarkTheme: (Boolean) -> Unit,
     mascot: MascotCharacter,
     onSelectMascot: (MascotCharacter) -> Unit,
+    palette: MascotPalette,
+    onSelectMascotPalette: (MascotPalette) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SettingsSection(label = "Appearance", modifier = modifier) {
@@ -50,6 +57,11 @@ internal fun ProfileAppearanceSection(
                     trailing = { Switch(checked = darkTheme, onCheckedChange = onSetDarkTheme) },
                 )
                 MascotPickerRow(selected = mascot, onSelect = onSelectMascot)
+                MascotColourRow(
+                    character = mascot,
+                    selected = palette,
+                    onSelect = onSelectMascotPalette,
+                )
             }
         }
     }
@@ -72,29 +84,7 @@ private fun MascotPickerRow(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MascotCharacter.entries.forEach { character ->
                 val isSelected = character == selected
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    // secondaryContainer is the app's "you are here" fill — the nav pill and the
-                    // SegmentedToggle chip already use it, and unlike a border it needs no
-                    // per-character Shape now that every silhouette is drawn on one canvas.
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (isSelected) {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            } else {
-                                Color.Transparent
-                            },
-                        )
-                        .selectable(
-                            selected = isSelected,
-                            role = Role.RadioButton,
-                            onClick = { onSelect(character) },
-                        )
-                        .padding(vertical = 8.dp),
-                ) {
+                PickerCell(selected = isSelected, onClick = { onSelect(character) }) {
                     MascotAvatar(state = MascotState.Happy, size = AvatarSize, character = character)
                     Text(
                         text = character.label,
@@ -111,6 +101,69 @@ private fun MascotPickerRow(
     }
 }
 
+/** The same row, the other axis: one colour worn by every buddy, previewed on the one the user
+ * actually picked rather than on a swatch — the palettes differ in their *feature* colour too, and
+ * a filled circle can't show an eye.
+ *
+ * No visible label under these, unlike the buddies: the scheme flips in dark mode, so a hue name
+ * would be wrong half the time. The palette's name rides a contentDescription instead, since the
+ * avatar draws no text for TalkBack to read. */
+@Composable
+private fun MascotColourRow(
+    character: MascotCharacter,
+    selected: MascotPalette,
+    onSelect: (MascotPalette) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        SettingsRow(
+            label = "Colour",
+            sublabel = "Every buddy wears the one you pick.",
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MascotPalette.entries.forEach { palette ->
+                PickerCell(
+                    selected = palette == selected,
+                    onClick = { onSelect(palette) },
+                    modifier = Modifier.semantics { contentDescription = "${palette.name} colour" },
+                ) {
+                    MascotAvatar(
+                        state = MascotState.Happy,
+                        size = AvatarSize,
+                        character = character,
+                        palette = palette,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** One cell of either row. secondaryContainer is the app's "you are here" fill — the nav pill and
+ * the SegmentedToggle chip already use it, and unlike a border it needs no per-character Shape now
+ * that every silhouette is drawn on one canvas. It is also why no [MascotPalette] may take that
+ * role: a mascot that vanished the moment it was chosen is the one thing a picker must not do. */
+@Composable
+private fun RowScope.PickerCell(
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+            )
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 8.dp),
+        content = content,
+    )
+}
+
 @PreviewLightDark
 @Composable
 private fun ProfileAppearanceSectionPreview() {
@@ -121,6 +174,8 @@ private fun ProfileAppearanceSectionPreview() {
                 onSetDarkTheme = {},
                 mascot = MascotCharacter.Sprig,
                 onSelectMascot = {},
+                palette = MascotPalette.Contrast,
+                onSelectMascotPalette = {},
                 modifier = Modifier.padding(16.dp),
             )
         }

@@ -36,7 +36,12 @@ class MainActivity : ComponentActivity() {
             val viewModel: AppRootViewModel = koinViewModel()
             val darkThemeOn by viewModel.darkThemeOn.collectAsState()
             val mascot by viewModel.mascot.collectAsState()
-            AppTheme(darkTheme = darkThemeOn ?: isSystemInDarkTheme(), mascot = mascot) {
+            val mascotPalette by viewModel.mascotPalette.collectAsState()
+            AppTheme(
+                darkTheme = darkThemeOn ?: isSystemInDarkTheme(),
+                mascot = mascot,
+                mascotPalette = mascotPalette,
+            ) {
                 AppRoot(startTab = startTab, viewModel = viewModel)
             }
         }

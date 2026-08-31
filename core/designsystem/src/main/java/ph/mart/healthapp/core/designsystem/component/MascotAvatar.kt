@@ -58,15 +58,15 @@ internal enum class EyeStyle { Dot, Ring, Visor, Oval }
 internal enum class MascotAccent { None, Blush, Antenna, Ears, Sprout }
 
 /**
- * The mascots the user can pick between in Profile → Appearance. Each varies on four axes —
- * silhouette, fill, eyes and one accent — because two characters that differ only in outline read
- * as the same character badly drawn.
+ * The mascots the user can pick between in Profile → Appearance. Each varies on three axes —
+ * silhouette, eyes and one accent — because two characters that differ only in outline read as the
+ * same character badly drawn. Two of the three separate any pair of them, which is what
+ * `MascotCharacterTest` asserts; colour cannot help, because colour is no longer per character.
  *
- * [Bibo] is the app's original mascot and the default; it renders exactly as it always has.
+ * [Bibo] is the app's original mascot and the default; its silhouette renders exactly as it always
+ * has.
  *
- * Colour comes from [mascotColors]. Mascot fills never use a **tertiary** or **error** role: the
- * first is the AI accent and the carbs colour, the second is reserved for genuinely off-track. What
- * is left still gives every character its own fill.
+ * Colour is [MascotPalette], a second choice the user makes for *every* buddy at once.
  *
  * [topInset]/[sideInset] are fractions of the avatar box. They carve the headroom an accent needs
  * to sit above the head — or, for [Pip], the room its own taper rises into — and they are what make
@@ -90,22 +90,35 @@ enum class MascotCharacter(
 
 internal data class MascotColors(val body: Color, val feature: Color)
 
-/** [Zed] is the one character whose fill is a neutral and whose features are the accent rather than
- * the other way round — a grey chassis with a lit face is what makes it read as a machine.
+/**
+ * The colour the user picks in Profile → Appearance, applied to whichever buddy is picked. Every
+ * pair here was one character's fill before the colour became a choice of its own, so each is
+ * already proven against light, dark and all three contrast schemes — none of them is a new colour.
  *
- * [Pip] is the one whose pair *inverts* with the theme: `inverseSurface` is dark on a light scheme
- * and light on a dark one, so it is the only buddy that swaps ground for figure when the theme
- * does. It cannot take `secondaryContainer` — the picker fills the selected cell with exactly that,
- * and a mascot that vanished the moment it was chosen is the one thing the picker must not do. */
+ * [Soft] is the default because [MascotCharacter.Bibo] is, so an untouched install renders exactly
+ * as it did.
+ *
+ * Three roles are deliberately absent and the list stops at five because of them: **tertiary** and
+ * **tertiaryContainer** are the AI accent and the carbs colour, **error** means genuinely
+ * off-track, and **secondaryContainer** is what both picker rows fill their selected cell with — a
+ * mascot that vanished the moment it was chosen is the one thing a picker must not do.
+ *
+ * [Contrast] is the one pair that *inverts* with the theme: `inverseSurface` is dark on a light
+ * scheme and light on a dark one, so it swaps ground for figure when the theme does. [Neutral] is
+ * the one whose *features* carry the accent rather than its fill — a grey chassis with a lit face,
+ * which is what made Zed read as a machine before any buddy could wear it.
+ */
+enum class MascotPalette { Soft, Bold, Muted, Contrast, Neutral }
+
 @Composable
-internal fun mascotColors(character: MascotCharacter): MascotColors {
+internal fun mascotColors(palette: MascotPalette): MascotColors {
     val scheme = MaterialTheme.colorScheme
-    return when (character) {
-        MascotCharacter.Bibo -> MascotColors(scheme.primaryContainer, scheme.onPrimaryContainer)
-        MascotCharacter.Pip -> MascotColors(scheme.inverseSurface, scheme.inverseOnSurface)
-        MascotCharacter.Zed -> MascotColors(scheme.surfaceContainerHighest, scheme.primary)
-        MascotCharacter.Momo -> MascotColors(scheme.primary, scheme.onPrimary)
-        MascotCharacter.Sprig -> MascotColors(scheme.secondary, scheme.onSecondary)
+    return when (palette) {
+        MascotPalette.Soft -> MascotColors(scheme.primaryContainer, scheme.onPrimaryContainer)
+        MascotPalette.Bold -> MascotColors(scheme.primary, scheme.onPrimary)
+        MascotPalette.Muted -> MascotColors(scheme.secondary, scheme.onSecondary)
+        MascotPalette.Contrast -> MascotColors(scheme.inverseSurface, scheme.inverseOnSurface)
+        MascotPalette.Neutral -> MascotColors(scheme.surfaceContainerHighest, scheme.primary)
     }
 }
 
@@ -119,6 +132,14 @@ fun mascotCharacterOf(name: String?): MascotCharacter =
  * why not one of its ~16 call sites passes a character — only the picker does. `static` because it
  * changes at most once a session. */
 val LocalMascot = staticCompositionLocalOf { MascotCharacter.Bibo }
+
+/** [mascotCharacterOf] for the colour, and it degrades the same way and for the same reasons. */
+fun mascotPaletteOf(name: String?): MascotPalette =
+    MascotPalette.entries.firstOrNull { it.name == name } ?: MascotPalette.Soft
+
+/** Provided by `AppTheme` beside [LocalMascot], off the same profile row. The colour is an
+ * appearance choice like the buddy and the scheme, so it is resolved where those are. */
+val LocalMascotPalette = staticCompositionLocalOf { MascotPalette.Soft }
 
 /**
  * The idle loop. Two linear phases rather than one because a blink and a breath share no period,
@@ -153,7 +174,8 @@ internal fun bobOffset(phase: Float): Float = sin(phase * 2f * PI.toFloat())
  * call site can forget to. A blink reuses the closed eyes [MascotState.Sleepy] already draws, so
  * every silhouette shuts them the same way; Sleepy itself never blinks, but it does breathe.
  *
- * [character] defaults to the user's pick and should be left alone everywhere except the picker.
+ * [character] and [palette] both default to the user's picks and should be left alone everywhere
+ * except the picker that sets them.
  */
 @Composable
 fun MascotAvatar(
@@ -161,8 +183,9 @@ fun MascotAvatar(
     modifier: Modifier = Modifier,
     size: Dp = 64.dp,
     character: MascotCharacter = LocalMascot.current,
+    palette: MascotPalette = LocalMascotPalette.current,
 ) {
-    val colors = mascotColors(character)
+    val colors = mascotColors(palette)
     // Per-instance, so the five buddies in the picker don't blink in lockstep. Frozen in previews
     // so the 5x5 grid renders the rest pose instead of catching a random mid-blink.
     val phaseOffset = if (LocalInspectionMode.current) 0f else remember { Random.nextFloat() }
@@ -488,6 +511,13 @@ private fun MascotAvatarPreview() {
                         MascotState.entries.forEach { state ->
                             MascotAvatar(state = state, size = 56.dp, character = character)
                         }
+                    }
+                }
+                // The other axis: one buddy, every colour. Both grids matter in both schemes —
+                // Contrast inverts between them and Neutral is nearly the surface it sits on.
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MascotPalette.entries.forEach { palette ->
+                        MascotAvatar(state = MascotState.Happy, size = 56.dp, palette = palette)
                     }
                 }
             }

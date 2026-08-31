@@ -17,7 +17,9 @@ import org.koin.androidx.compose.koinViewModel
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotCharacter
+import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
+import ph.mart.healthapp.core.designsystem.component.mascotPaletteOf
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingScreen
 
@@ -46,6 +48,12 @@ class AppRootViewModel(profileRepository: ProfileRepository) : ViewModel() {
     val mascot: StateFlow<MascotCharacter> = profileRepository.observeProfile()
         .map { profile -> mascotCharacterOf(profile?.mascotName) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MascotCharacter.Bibo)
+
+    /** The other half of the mascot's appearance, resolved exactly like [mascot]. Separate because
+     * the character and the colour are separate picks: changing one leaves the other alone. */
+    val mascotPalette: StateFlow<MascotPalette> = profileRepository.observeProfile()
+        .map { profile -> mascotPaletteOf(profile?.mascotPaletteName) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MascotPalette.Soft)
 }
 
 /**

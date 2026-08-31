@@ -56,10 +56,11 @@ internal data class FitPulseExport(
  * [FitPulseExport.fastSessions] and the profile's fasting fields; 7 added the food entries'
  * fiber, sugar and sodium; 8 added [FitPulseExport.supplements], [FitPulseExport.supplementDays]
  * and [ExportProfile.supplementRemindersOn]; 9 added [FitPulseExport.bloodPressure]; 10 added
- * [ExportProfile.mascotName]; 11 added [ExportProfile.stepGoal].
+ * [ExportProfile.mascotName]; 11 added [ExportProfile.stepGoal]; 12 added
+ * [ExportProfile.mascotPaletteName].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 11
+internal const val EXPORT_SCHEMA_VERSION = 12
 
 @Serializable
 internal data class ExportProfile(
@@ -87,6 +88,7 @@ internal data class ExportProfile(
     val darkThemeOn: Boolean? = null,
     val supplementRemindersOn: Boolean = false,
     val mascotName: String? = null,
+    val mascotPaletteName: String? = null,
     val stepGoal: Int = DEFAULT_STEP_GOAL,
 )
 
@@ -314,6 +316,7 @@ private fun Profile.toExport() = ExportProfile(
     darkThemeOn = darkThemeOn,
     supplementRemindersOn = supplementRemindersOn,
     mascotName = mascotName,
+    mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
 )
 
@@ -342,6 +345,7 @@ private fun ExportProfile.toProfile() = Profile(
     darkThemeOn = darkThemeOn,
     supplementRemindersOn = supplementRemindersOn,
     mascotName = mascotName,
+    mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
 )
 

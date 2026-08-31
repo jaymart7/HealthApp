@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.designsystem.component.MascotCharacter
+import ph.mart.healthapp.core.designsystem.component.MascotPalette
 
 class ProfileViewModel(
     private val profileRepository: ProfileRepository,
@@ -121,6 +122,11 @@ class ProfileViewModel(
     fun setMascot(character: MascotCharacter) = intent {
         val profile = state.profile ?: return@intent
         profileRepository.saveProfile(profile.copy(mascotName = character.name))
+    }
+
+    fun setMascotPalette(palette: MascotPalette) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(mascotPaletteName = palette.name))
     }
 
     fun buildExport() = intent {

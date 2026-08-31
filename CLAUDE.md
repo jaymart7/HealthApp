@@ -177,14 +177,38 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   nullable **String**, not the enum, because `MascotCharacter` lives in `:core:designsystem` and
   `:core:data` does not depend on it; `mascotCharacterOf()` resolves it, and null (or a name from a
   newer build) degrades to Bibo, exactly the reading `darkThemeOn`'s null has. Each character varies
-  on **four axes** — silhouette, fill pair, eyes, one accent — because two characters differing only
-  in outline read as the same character badly drawn. What stays shared is the **mouth geometry and
-  the state vocabulary**: all five states read identically whichever buddy is picked, so no
-  character can come to mean something. Fills never take a `tertiary` or `error` role
-  (`tertiaryContainer` is the AI accent, `error` is off-track only). The whole avatar is one
+  on **three axes** — silhouette, eyes, one accent — because two characters differing only in
+  outline read as the same character badly drawn; any two of them differ on at least two of the
+  three, which is what `MascotCharacterTest` asserts now that colour can't help. What stays shared
+  is the **mouth geometry and the state vocabulary**: all five states read identically whichever
+  buddy is picked, so no character can come to mean something. The whole avatar is one
   `Canvas` rather than a shaped `Box` — that is what lets an antenna or an ear sit *above* the head
   (`topInset`/`sideInset` carve the room, and Bibo's are zero so it renders exactly as it always
   has) with nothing clipping the Celebrating sparkles.
+- **Colour is the user's second pick, not the character's.** `MascotPalette` rides `AppTheme` beside
+  `LocalMascot` off `Profile.mascotPaletteName` — a nullable String resolved by `mascotPaletteOf()`,
+  the same shape and the same degrade-to-default reading as `mascotName`, and only the picker passes
+  `palette` explicitly. Its five entries are the five pairs that *were* the characters' fills, so
+  every one is already proven in light, dark and all three contrast schemes and no new colour was
+  invented: `Soft` (Bibo's, the default, so an untouched install is unchanged), `Bold`, `Muted`,
+  `Contrast` (the one pair that inverts with the theme) and `Neutral` (the one whose *features*
+  carry the accent — the grey chassis with a lit face that made Zed read as a machine, now available
+  to any buddy). The list stops there because of what a fill may not be: never `tertiary` or
+  `tertiaryContainer` (the AI accent and the carbs colour), never `error` (off-track only), and
+  never `secondaryContainer` — both picker rows fill their selected cell with exactly that, and a
+  mascot that vanished the moment it was chosen is the one thing a picker must not do. The colour
+  cells carry no visible label, unlike the buddy cells: the scheme flips in dark mode, so a hue name
+  would be wrong half the time — the name rides a `contentDescription` instead.
+- **The mascot blinks and breathes, and both rest at phase `1f`.** One
+  `rememberInfiniteTransition` inside `MascotAvatar` drives a ~140ms blink every 3.6s and a 2.6s bob
+  of 2% of the avatar's height, so no call site passes anything and none can forget to. The end
+  value is the resting pose on purpose: Compose pins an infinite transition to its end and suspends
+  when **Remove animations** is on, so a `RepeatMode.Reverse` cycle would park the mascot mid-bob
+  with its eyes shut for exactly the people who asked for stillness — that is what
+  `MascotAvatarTest` guards. The blink borrows the closed eyes `Sleepy` already draws rather than
+  adding five more shapes; Sleepy never blinks and still breathes. The start offset is per instance
+  so the picker's cells don't blink in lockstep, and frozen under `LocalInspectionMode` so previews
+  render the rest pose.
 - **The weekly recap window is rolling-7-ending-today**, not a calendar week — a calendar week
   reports a half-empty Monday. The card is *hidden* when nothing was logged in the window
   rather than rendering zeros, and its "days logged" uses the streak's four-domain definition

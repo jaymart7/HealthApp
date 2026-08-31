@@ -37,7 +37,9 @@ import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.MascotCharacter
+import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
+import ph.mart.healthapp.core.designsystem.component.mascotPaletteOf
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAppearanceSection
@@ -151,6 +153,7 @@ fun ProfileScreen(
         onSelectUnit = viewModel::setUnit,
         onSetDarkTheme = viewModel::setDarkTheme,
         onSelectMascot = viewModel::setMascot,
+        onSelectMascotPalette = viewModel::setMascotPalette,
         onSetCalorieTarget = viewModel::setCalorieTarget,
         onSetProteinTarget = viewModel::setProteinTarget,
         onSetCarbsTarget = viewModel::setCarbsTarget,
@@ -192,6 +195,7 @@ private fun ProfileContent(
     onSelectUnit: (UnitSystem) -> Unit,
     onSetDarkTheme: (Boolean) -> Unit,
     onSelectMascot: (MascotCharacter) -> Unit,
+    onSelectMascotPalette: (MascotPalette) -> Unit,
     onSetCalorieTarget: (Int) -> Unit,
     onSetProteinTarget: (Int) -> Unit,
     onSetCarbsTarget: (Int) -> Unit,
@@ -243,6 +247,8 @@ private fun ProfileContent(
                 onSetDarkTheme = onSetDarkTheme,
                 mascot = mascotCharacterOf(profile.mascotName),
                 onSelectMascot = onSelectMascot,
+                palette = mascotPaletteOf(profile.mascotPaletteName),
+                onSelectMascotPalette = onSelectMascotPalette,
             )
             ProfileWaterSection(
                 goalGlasses = profile.waterGoalGlasses,
@@ -298,6 +304,7 @@ private fun ProfileScreenPreview() {
             onSelectUnit = {},
             onSetDarkTheme = {},
             onSelectMascot = {},
+            onSelectMascotPalette = {},
             onSetCalorieTarget = {},
             onSetProteinTarget = {},
             onSetCarbsTarget = {},

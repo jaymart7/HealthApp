@@ -39,6 +39,7 @@ private fun ProfileEntity.toProfile() = Profile(
     fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
     mascotName = mascotName,
+    mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
 )
 
@@ -67,5 +68,6 @@ private fun Profile.toEntity() = ProfileEntity(
     fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
     mascotName = mascotName,
+    mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
 )
