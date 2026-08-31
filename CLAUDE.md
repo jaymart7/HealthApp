@@ -200,6 +200,17 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **The recap's weight cell goes blank when the last weigh-in predates the window.**
   `trendVsSevenDaysAgo()` anchors to the latest *entry*, not to today, so without that guard a
   card headed "Last 7 days" would report a delta between two entries from two months ago.
+- **The goal projection is one sentence on three screens, and it names its own window.**
+  `goalProjection()` sits in `:core:data/progress/` — pure derivation, no table, the `streak/`
+  shape — because Home's weight card, Progress's weekly recap and Progress's Weight tab all show
+  it, and `:feature:*` modules never import each other. The words come from
+  `goalProjectionLine()` in `:core:designsystem`, which takes primitives (that module has no
+  `:core:data` dependency) and prints "On the last 30 days' trend, …" off `PROJECTION_WINDOW_DAYS`:
+  the recap card is headed "Last 7 days" while the fit runs over thirty, so a line that left its
+  window implicit would be a card contradicting its own heading. It stays out of `weeklyRecap()`
+  for the same reason — every other field there is a seven-day figure. The line is
+  `onSurfaceVariant` on every surface, never `error`: the delta beside it already carries the
+  verdict colour, and a red date reads as a second one.
 - **A saved meal is a snapshot, not a live link.** Saving copies the section's entries into
   `saved_meal`/`saved_meal_item`; editing or deleting the original diary rows never touches it,
   and deleting the saved meal never touches what was logged from it. Re-logging always writes

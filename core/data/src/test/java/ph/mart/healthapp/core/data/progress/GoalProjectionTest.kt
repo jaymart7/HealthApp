@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.weight
+package ph.mart.healthapp.core.data.progress
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,7 +7,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.profile.Goal
-import ph.mart.healthapp.core.data.progress.WeightEntry
 
 private const val TODAY = 20_000L
 

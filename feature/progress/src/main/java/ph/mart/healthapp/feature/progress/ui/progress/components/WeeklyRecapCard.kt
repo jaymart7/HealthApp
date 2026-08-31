@@ -25,8 +25,11 @@ import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.profile.goalRelativeTrend
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.progress.GoalProjection
+import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.formatWeekday
+import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.BestDay
 import ph.mart.healthapp.feature.progress.ui.progress.RECAP_WINDOW_DAYS
@@ -41,12 +44,19 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
  *
  * The weight colour comes from the shared [goalRelativeTrend], never a green-for-loss default,
  * and reads neutral below [TREND_ARROW_DEADBAND_KG] where the movement is too small to call.
+ *
+ * [projection] is the one figure here that is **not** a seven-day number: the weight cell says
+ * which way the week went, and this says when it arrives. That is why the shared sentence names
+ * its own window — a line under a "Last 7 days" heading that quietly reported a 30-day fit would
+ * be the card contradicting itself. Null (no target weight, a Maintain goal, or too little recent
+ * data) drops the line, the same way the weight cell drops to an em dash.
  */
 @Composable
 fun WeeklyRecapCard(
     recap: WeeklyRecap,
     goal: Goal?,
     unit: UnitSystem,
+    projection: GoalProjection?,
     modifier: Modifier = Modifier,
 ) {
     AppCard(modifier = modifier) {
@@ -79,6 +89,16 @@ fun WeeklyRecapCard(
             }
             if (recap.weightTrend?.hasPrior != true) {
                 Note("No weight change to compare yet.")
+            }
+            projection?.let {
+                Note(
+                    goalProjectionLine(
+                        goalWeightLabel = "${formatKg(it.goalWeightKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                        targetEpochDay = it.targetEpochDay,
+                        reached = it.reached,
+                        windowDays = PROJECTION_WINDOW_DAYS,
+                    ),
+                )
             }
         }
     }
@@ -146,8 +166,15 @@ private fun WeeklyRecapCardPreview() {
                     ),
                     goal = Goal.Lose,
                     unit = UnitSystem.Metric,
+                    projection = GoalProjection(
+                        goalWeightKg = 72.0,
+                        kgPerWeek = -0.4,
+                        targetEpochDay = 20_760,
+                        reached = false,
+                    ),
                 )
-                // Sparse week: water-only days pad the count, and nothing has been weighed.
+                // Sparse week: water-only days pad the count, and nothing has been weighed — so
+                // there is nothing to fit a rate over either.
                 WeeklyRecapCard(
                     recap = WeeklyRecap(
                         daysLogged = 4,
@@ -159,6 +186,7 @@ private fun WeeklyRecapCardPreview() {
                     ),
                     goal = Goal.Lose,
                     unit = UnitSystem.Metric,
+                    projection = null,
                 )
             }
         }

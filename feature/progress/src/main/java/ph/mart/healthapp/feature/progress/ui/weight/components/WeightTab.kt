@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.data.progress.inRange
 import ph.mart.healthapp.core.data.progress.withMovingAverage
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -19,7 +20,6 @@ import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
-import ph.mart.healthapp.feature.progress.ui.weight.goalProjection
 
 @Composable
 internal fun WeightTabContent(uiState: ProgressUiState, state: ProgressScreenState) {

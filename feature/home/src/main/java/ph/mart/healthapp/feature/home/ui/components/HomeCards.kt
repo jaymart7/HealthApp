@@ -27,6 +27,7 @@ import ph.mart.healthapp.core.data.exercise.budgetKcal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
+import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.Motion
@@ -72,6 +73,14 @@ internal fun HomeCards(
     val targets = uiState.profile?.dailyTargets()
     val trend = uiState.weightEntries.trendVsSevenDaysAgo(
         fallbackKg = uiState.profile?.weightKg ?: 0.0,
+    )
+    // Derived here beside the trend, not stored on HomeUiState — a fold over entries the state
+    // already holds, the same way `targets` and `trend` are. Null omits the line.
+    val projection = goalProjection(
+        weightEntries = uiState.weightEntries,
+        goalWeightKg = uiState.profile?.targetWeightKg,
+        goal = uiState.profile?.goal,
+        todayEpochDay = todayEpochDay(),
     )
     // The model's line when it answered, the rules when it didn't — offline, a failed call
     // and a model with nothing to say all land on the same three rules that shipped before
@@ -189,6 +198,7 @@ internal fun HomeCards(
             trend = trend,
             goal = uiState.profile?.goal,
             unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
+            projection = projection,
             modifier = appearModifier(11, appear),
         )
 

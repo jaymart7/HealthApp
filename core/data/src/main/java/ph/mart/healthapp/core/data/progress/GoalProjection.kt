@@ -1,18 +1,17 @@
-package ph.mart.healthapp.feature.progress.ui.weight
+package ph.mart.healthapp.core.data.progress
 
 import kotlin.math.abs
 import kotlin.math.ceil
 import ph.mart.healthapp.core.data.profile.Goal
-import ph.mart.healthapp.core.data.progress.WeightEntry
-import ph.mart.healthapp.feature.progress.ui.progress.RECAP_WINDOW_DAYS
 
 /**
  * "At this rate, when do I get there?" — the one thing the goal line on the chart and the
  * "Goal remaining" cell never answer. Derived, never stored: a fold over the weight entries
- * the screen already holds, the same way [weeklyRecap] is.
+ * the screen already holds, the same way `streakStats` is — no table, no repository, no schema.
  *
- * Feature-local because Progress is the only screen that shows it; the inputs are all
- * `:core:data` types, so nothing here leaks a feature type back down.
+ * It lives here rather than in a feature because three screens show it now: Progress's Weight
+ * tab, Progress's weekly recap, and Home's weight card. `:feature:*` modules never import each
+ * other, so `:core:data` is the only place all three can reach.
  */
 
 /** Long enough that a single bad weigh-in can't steer the fit, short enough to reflect what the
@@ -24,6 +23,11 @@ const val MIN_PROJECTION_ENTRIES = 3
 /** Two weigh-ins two days apart fit a slope of several kg/week. Refuse to project until the
  * window is wide enough for the rate to mean something. */
 const val MIN_PROJECTION_SPAN_DAYS = 14L
+
+/** A projection anchored at today must not be driven off a three-week-old weigh-in. Same seven
+ * days, for the same reason, as the weekly recap's blank weight cell — declared here rather than
+ * shared with it, because the recap's window is feature-local and means something else. */
+const val PROJECTION_STALE_DAYS = 7L
 
 /** Below this the trend is flat: the arithmetic would still hand back a date, but it would be
  * years out and would swing wildly on the next entry. */
@@ -49,15 +53,15 @@ data class GoalProjection(
 
 /**
  * Null means the card is omitted entirely — there is nothing truthful to say yet, the same
- * call [weeklyRecap] makes on an empty week.
+ * call the weekly recap makes on an empty week.
  *
  * The rate is a least-squares slope over the window rather than first-vs-last: every point
  * counts, so one dehydrated morning can't flip the sign. It is order-independent by
  * construction, which is what makes backdating safe here (the property [
  * ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo] gets by comparing dates).
  *
- * The current weight is the latest *entry*, not the fitted value at today, so this card and
- * the "Goal remaining" cell directly above it can never disagree about where the user is.
+ * The current weight is the latest *entry*, not the fitted value at today, so this and the
+ * "Goal remaining" cell above it on the Weight tab can never disagree about where the user is.
  */
 fun goalProjection(
     weightEntries: List<WeightEntry>,
@@ -73,9 +77,7 @@ fun goalProjection(
     val latest = window.maxBy { it.dateEpochDay }
     val oldest = window.minBy { it.dateEpochDay }
     if (latest.dateEpochDay - oldest.dateEpochDay < MIN_PROJECTION_SPAN_DAYS) return null
-    // Same guard, same reason as the recap's blank weight cell: a projection anchored at today
-    // must not be driven off a three-week-old weigh-in.
-    if (latest.dateEpochDay < todayEpochDay - RECAP_WINDOW_DAYS) return null
+    if (latest.dateEpochDay < todayEpochDay - PROJECTION_STALE_DAYS) return null
 
     val slope = window.slopeKgPerDay() ?: return null
     val kgPerWeek = slope * 7

@@ -15,15 +15,16 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.AppCard
-import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.components.Note
-import ph.mart.healthapp.feature.progress.ui.weight.GoalProjection
-import ph.mart.healthapp.feature.progress.ui.weight.PROJECTION_FLAT_KG_PER_WEEK
+import ph.mart.healthapp.core.data.progress.GoalProjection
+import ph.mart.healthapp.core.data.progress.PROJECTION_FLAT_KG_PER_WEEK
+import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
 
 /**
  * "When do I get there?", under the stat row that already says how far there is. Everything is
- * derived in [ph.mart.healthapp.feature.progress.ui.weight.goalProjection]; this only formats.
+ * derived in [ph.mart.healthapp.core.data.progress.goalProjection]; this only formats.
  *
  * Deliberately monochrome — no `error` colour even when the trend points away from the goal.
  * [WeightStatRow] directly above already colours the change cell via `goalRelativeTrend`, so
@@ -45,13 +46,15 @@ fun GoalProjectionCard(
         )
         val goalWeight = "${formatKg(projection.goalWeightKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}"
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            // The sentence itself lives in `:core:designsystem` — Home's weight card and the
+            // weekly recap say the same words, and one copy is what keeps them saying them.
             Text(
-                text = when {
-                    projection.reached -> "You're at your goal weight."
-                    projection.targetEpochDay != null ->
-                        "On this trend, you'll reach $goalWeight around ${formatEpochDay(projection.targetEpochDay)}."
-                    else -> "No date to project at this pace."
-                },
+                text = goalProjectionLine(
+                    goalWeightLabel = goalWeight,
+                    targetEpochDay = projection.targetEpochDay,
+                    reached = projection.reached,
+                    windowDays = PROJECTION_WINDOW_DAYS,
+                ),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )

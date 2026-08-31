@@ -23,6 +23,7 @@ import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -76,6 +77,15 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                         recap = recap,
                         goal = uiState.goal,
                         unit = uiState.preferredUnit,
+                        // ponytail: the Weight tab fits this again for its own card — a fold over
+                        // at most a month of entries, twice, rather than a third signature to
+                        // thread it through every tab body. Hoist it if the series ever grows.
+                        projection = goalProjection(
+                            weightEntries = uiState.weightEntries,
+                            goalWeightKg = uiState.goalWeightKg,
+                            goal = uiState.goal,
+                            todayEpochDay = todayEpochDay(),
+                        ),
                         modifier = Modifier.padding(bottom = 12.dp),
                     )
                 }
