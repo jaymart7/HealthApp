@@ -1,5 +1,6 @@
 package ph.mart.healthapp.ui
 
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
+import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavItem
 import ph.mart.healthapp.core.designsystem.component.DockedFab
@@ -40,6 +42,17 @@ import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
+
+/** What the toolbar says on each route a level above a tab. It lives here rather than on the route
+ * types because `:core:navigation` is a leaf module and this is already the one place that sees
+ * every feature's routes at once. */
+private fun NavKey?.title(): String = when (this) {
+    RecipeBuilderRoute -> "New recipe"
+    HealthConnectionRoute -> "Google Health"
+    FoodLibraryRoute -> "Saved meals & recipes"
+    SupplementsRoute -> "Supplements"
+    else -> ""
+}
 
 private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
     TopLevelDestination.Home -> AppIcons.Home
@@ -89,20 +102,32 @@ fun AppScaffold(
         else -> homeScroll
     }
 
-    // The camera flows are full-bleed surfaces: neither nav bar nor FAB, and they draw under both
-    // system bars (appScaffold.js). Every other route is a tab and stops at the bars.
-    //
-    // The recipe builder joins them for a different reason: it is an authoring screen with its own
-    // Save, and leaving the tab bar up meant a "Log food" FAB floating over it plus a tab tap that
-    // walked away from a half-written recipe without the discard question that back asks.
-    val showChrome = topLevelBackStack.backStack.lastOrNull()
-        .let { it != FoodCaptureRoute && it != RecipeBuilderRoute && it !is BarcodeScanRoute }
+    // A tab wears the nav bar and the FAB; anything a level above wears a toolbar with back
+    // instead. That is the whole rule — no route list to keep in step with the graph.
+    val current = topLevelBackStack.backStack.lastOrNull()
+    val isTopLevel = TopLevelDestination.entries.any { it.route == current }
+
+    // The camera flows are the one exemption: full-bleed surfaces that draw under both system bars
+    // (appScaffold.js) and dispatch back per capture state, so a generic toolbar would break both.
+    val fullBleed = current == FoodCaptureRoute || current is BarcodeScanRoute
+
+    // Tapping the arrow has to run the same handler chain system back runs — the recipe builder
+    // asks before discarding, and popping the stack here would walk straight past that question.
+    val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            contentWindowInsets = if (showChrome) ScaffoldDefaults.contentWindowInsets else WindowInsets(0),
+            contentWindowInsets = if (fullBleed) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
+            topBar = {
+                if (!isTopLevel && !fullBleed) {
+                    AppTopBar(
+                        title = current.title(),
+                        onBack = { backDispatcher?.onBackPressed() },
+                    )
+                }
+            },
             bottomBar = {
-                if (showChrome) {
+                if (isTopLevel) {
                     BottomNavBar(
                         items = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) },
                         selectedIndex = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey },
@@ -121,7 +146,7 @@ fun AppScaffold(
                 }
             },
             floatingActionButton = {
-                if (showChrome) {
+                if (isTopLevel) {
                     DockedFab(
                         onClick = { activeSheet = ActiveSheet.QuickAction },
                         expanded = rememberFabExpanded(currentScroll),

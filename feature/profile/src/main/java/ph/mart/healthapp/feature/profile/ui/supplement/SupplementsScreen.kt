@@ -22,7 +22,6 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
-import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
@@ -61,14 +60,8 @@ private fun SupplementsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .padding(bottom = DockedFabContentPadding),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
-            Text(
-                text = "Supplements",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
             // The empty state is inline rather than a FullScreenState: this screen always carries
             // an Add button, and a full-screen mascot would push the one control off it.
             if (uiState.loaded && uiState.supplements.isEmpty()) {

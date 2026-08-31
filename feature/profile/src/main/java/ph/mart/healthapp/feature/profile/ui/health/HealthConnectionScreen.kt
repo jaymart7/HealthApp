@@ -21,7 +21,6 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.health.HealthConnection
-import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HealthDisclosurePanel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.ui.health.components.ConnectedPanel
@@ -78,8 +77,7 @@ private fun HealthConnectionContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .padding(bottom = DockedFabContentPadding),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
             when (val connection = uiState.connection) {
                 is HealthConnection.Connected -> ConnectedPanel(
@@ -89,7 +87,6 @@ private fun HealthConnectionContent(
                     messageIsError = uiState.messageIsError,
                     onSync = onSync,
                     onDisconnect = { onConfirmDisconnect(true) },
-                    onBack = onBack,
                 )
 
                 // Checking shows the disclosure with its button disabled rather than a spinner:

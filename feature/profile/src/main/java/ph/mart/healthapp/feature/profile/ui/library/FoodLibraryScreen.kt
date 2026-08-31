@@ -23,7 +23,6 @@ import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
-import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -79,14 +78,8 @@ private fun FoodLibraryContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp)
-                .padding(bottom = DockedFabContentPadding),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
-            Text(
-                text = "Saved meals & recipes",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
             if (uiState.savedMeals.isNotEmpty()) {
                 LibrarySection(label = "Saved meals") {
                     uiState.savedMeals.forEach { meal ->

@@ -23,14 +23,8 @@ internal fun ConnectedPanel(
     messageIsError: Boolean,
     onSync: () -> Unit,
     onDisconnect: () -> Unit,
-    onBack: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Google Health",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
         AppCard {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
@@ -77,7 +71,6 @@ internal fun ConnectedPanel(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        SecondaryButton(label = "Back", onClick = onBack, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -98,7 +91,6 @@ private fun ConnectedPanelPreview() {
             messageIsError = false,
             onSync = {},
             onDisconnect = {},
-            onBack = {},
         )
     }
 }
@@ -115,7 +107,6 @@ private fun ConnectedPanelBusyPreview() {
             messageIsError = true,
             onSync = {},
             onDisconnect = {},
-            onBack = {},
         )
     }
 }

@@ -106,11 +106,6 @@ private fun RecipeBuilderContent(
                     // No docked FAB over this route any more, so no clearance to reserve for one.
                     .padding(top = 16.dp, bottom = 24.dp),
             ) {
-                Text(
-                    text = "New recipe",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
                 AppTextField(
                     value = state.name,
                     onValueChange = { state.name = it },
