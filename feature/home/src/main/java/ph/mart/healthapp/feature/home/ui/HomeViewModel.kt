@@ -6,7 +6,10 @@ import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainer
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
@@ -16,12 +19,14 @@ import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.health.stepsCreditKcal
 import ph.mart.healthapp.core.data.insight.InsightRepository
+import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
+import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.streak.weightProgressKg
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
@@ -55,6 +60,7 @@ class HomeViewModel(
     stepsRepository: StepsRepository,
     heartRepository: HeartRepository,
     private val supplementRepository: SupplementRepository,
+    bloodPressureRepository: BloodPressureRepository,
     private val insightRepository: InsightRepository,
     private val networkMonitor: NetworkMonitor,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
@@ -75,6 +81,7 @@ class HomeViewModel(
                 stepsRepository,
                 heartRepository,
                 supplementRepository,
+                bloodPressureRepository,
             )
             requestInsight()
         }
@@ -126,6 +133,7 @@ class HomeViewModel(
         stepsRepository: StepsRepository,
         heartRepository: HeartRepository,
         supplementRepository: SupplementRepository,
+        bloodPressureRepository: BloodPressureRepository,
     ) = intent {
         val todayState = combine(
             profileRepository.observeProfile(),
@@ -163,24 +171,26 @@ class HomeViewModel(
             ::Triple,
         )
 
-        // Mood, the running fast and today's supplements group up for the same reason [fromWatch]
-        // does: the outer combine below is already at the five-flow arity the typed overloads stop
-        // at. Supplements arrive pre-joined with today's counts — the repository does that join so
-        // this file doesn't have to spend two of its five slots on one card.
-        val moodFastAndPills = combine(
+        // Mood, the running fast, today's supplements and the latest blood pressure reading group
+        // up for the same reason [fromWatch] does: the outer combine below is already at the
+        // five-flow arity the typed overloads stop at. Supplements arrive pre-joined with today's
+        // counts — the repository does that join so this file doesn't have to spend two of its
+        // five slots on one card. A `Triple` can't take the fourth, hence the tuple below.
+        val userLogged = combine(
             moodRepository.observeToday(),
             fastingRepository.observeActive(),
             supplementRepository.observeToday(),
-            ::Triple,
+            bloodPressureRepository.observeLatest(),
+            ::UserLogged,
         )
 
         combine(
             todayState,
             activeDays,
             exerciseRepository.observeTodayEntries(),
-            moodFastAndPills,
+            userLogged,
             fromWatch,
-        ) { state, days, exercise, (mood, activeFast, supplements), (lastNight, steps, heart) ->
+        ) { state, days, exercise, logged, (lastNight, steps, heart) ->
             state.copy(
                 loaded = true,
                 // Steps fold in here rather than in budgetKcal(), which stays the single place
@@ -190,10 +200,11 @@ class HomeViewModel(
                 lastNight = lastNight,
                 steps = steps,
                 heart = heart,
-                moodLevel = mood.mood,
-                energyLevel = mood.energy,
-                activeFast = activeFast,
-                supplements = supplements,
+                moodLevel = logged.mood.mood,
+                energyLevel = logged.mood.energy,
+                activeFast = logged.activeFast,
+                supplements = logged.supplements,
+                latestBloodPressure = logged.bloodPressure,
                 addExerciseToBudget = state.profile?.addExerciseToBudget != false,
                 // Read on every emission, not once at flow-construction time, so the streak
                 // doesn't freeze at whatever day the app happened to be opened.
@@ -228,3 +239,12 @@ class HomeViewModel(
         reduce { state.copy(aiInsight = insight) }
     }
 }
+
+/** The four things the user logs by hand, grouped so the outer combine stays inside the typed
+ * overloads' five-flow arity. Private and structural — it never leaves this file. */
+private data class UserLogged(
+    val mood: MoodDay,
+    val activeFast: FastSession?,
+    val supplements: List<SupplementToday>,
+    val bloodPressure: BloodPressureReading?,
+)

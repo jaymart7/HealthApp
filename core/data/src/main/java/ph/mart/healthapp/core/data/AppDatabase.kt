@@ -2,6 +2,8 @@ package ph.mart.healthapp.core.data
 
 import androidx.room3.Database
 import androidx.room3.RoomDatabase
+import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingDao
+import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingEntity
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryDao
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryEntity
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodDao
@@ -57,8 +59,9 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         FastSessionEntity::class,
         SupplementEntity::class,
         SupplementDayEntity::class,
+        BloodPressureReadingEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -78,4 +81,5 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun heartDayDao(): HeartDayDao
     abstract fun fastSessionDao(): FastSessionDao
     abstract fun supplementDao(): SupplementDao
+    abstract fun bloodPressureReadingDao(): BloodPressureReadingDao
 }

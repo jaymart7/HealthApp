@@ -34,6 +34,8 @@ import ph.mart.healthapp.feature.progress.ui.mood.components.MoodTabContent
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionTabContent
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotosTabContent
+import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
+import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureTabContent
 import ph.mart.healthapp.feature.progress.ui.progress.components.ScrollingTab
 import ph.mart.healthapp.feature.progress.ui.progress.components.WeeklyRecapCard
 import ph.mart.healthapp.feature.progress.ui.sleep.components.SleepTabContent
@@ -82,11 +84,12 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     selectedIndex = ProgressTab.entries.indexOf(state.tab),
                     onSelect = { index -> state.tab = ProgressTab.entries[index] },
                 )
-                // Photos scrolls itself (LazyVerticalGrid) — nesting it in the verticalScroll
-                // Column measures it with infinite height and throws. The other two tabs are
-                // plain Columns and need the shared scroll.
+                // Photos and Blood pressure scroll themselves (a LazyVerticalGrid and a
+                // LazyColumn) — nesting either in the verticalScroll Column measures it with
+                // infinite height and throws. The rest are plain Columns and need the shared scroll.
                 when (state.tab) {
                     ProgressTab.Photos -> PhotosTabContent(uiState, state)
+                    ProgressTab.BloodPressure -> BloodPressureTabContent(uiState, state)
                     ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
                     ProgressTab.Nutrition -> ScrollingTab(scrollState) { NutritionTabContent(uiState, state) }
                     ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
@@ -107,6 +110,10 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     unit = uiState.preferredUnit,
                     onClose = { state.selectedPhotoIds = emptyList() },
                 )
+            }
+
+            if (state.activeBloodPressureSheet) {
+                LogBloodPressureSheet(onDismiss = state::closeBloodPressureSheet)
             }
 
             if (state.activeMeasurementSheet) {

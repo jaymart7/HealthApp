@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.profile.ui.profile
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
@@ -45,6 +46,7 @@ internal data class FitPulseExport(
     val fastSessions: List<ExportFastSession> = emptyList(),
     val supplements: List<ExportSupplement> = emptyList(),
     val supplementDays: List<ExportSupplementDay> = emptyList(),
+    val bloodPressure: List<ExportBloodPressureReading> = emptyList(),
 )
 
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
@@ -52,10 +54,10 @@ internal data class FitPulseExport(
  * [ExportProfile.darkThemeOn]; 5 added [FitPulseExport.moodDays]; 6 added
  * [FitPulseExport.fastSessions] and the profile's fasting fields; 7 added the food entries'
  * fiber, sugar and sodium; 8 added [FitPulseExport.supplements], [FitPulseExport.supplementDays]
- * and [ExportProfile.supplementRemindersOn].
+ * and [ExportProfile.supplementRemindersOn]; 9 added [FitPulseExport.bloodPressure].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 8
+internal const val EXPORT_SCHEMA_VERSION = 9
 
 @Serializable
 internal data class ExportProfile(
@@ -155,6 +157,20 @@ internal data class ExportSupplementDay(
     val dueTimes: Int,
 )
 
+/**
+ * Readings are history, not convenience data, so unlike favourites and saved meals they belong in
+ * the file. The row id is dropped — nothing points at a reading, which makes this the
+ * [ExportFastSession] case rather than the [ExportSupplement] one. A [pulseBpm] of 0 means the
+ * figure was never entered.
+ */
+@Serializable
+internal data class ExportBloodPressureReading(
+    val takenAtMillis: Long,
+    val systolic: Int,
+    val diastolic: Int,
+    val pulseBpm: Int = 0,
+)
+
 /** What an import hands back to the ViewModel — domain types only, already validated. */
 internal data class ImportPayload(
     val profile: Profile?,
@@ -167,6 +183,7 @@ internal data class ImportPayload(
     val fastSessions: List<FastSession>,
     val supplements: List<Supplement>,
     val supplementDays: List<SupplementDay>,
+    val bloodPressure: List<BloodPressureReading>,
 )
 
 private val json = Json {
@@ -186,6 +203,7 @@ internal fun buildExportJson(
     fastSessions: List<FastSession>,
     supplements: List<Supplement>,
     supplementDays: List<SupplementDay>,
+    bloodPressure: List<BloodPressureReading>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
@@ -205,6 +223,9 @@ internal fun buildExportJson(
         },
         supplementDays = supplementDays.map {
             ExportSupplementDay(it.dateEpochDay, it.supplementId, it.taken, it.dueTimes)
+        },
+        bloodPressure = bloodPressure.map {
+            ExportBloodPressureReading(it.takenAtMillis, it.systolic, it.diastolic, it.pulseBpm)
         },
     ),
 )
@@ -249,6 +270,14 @@ internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
         },
         supplementDays = export.supplementDays.map {
             SupplementDay(it.dateEpochDay, it.supplementId, it.taken, it.dueTimes)
+        },
+        bloodPressure = export.bloodPressure.map {
+            BloodPressureReading(
+                takenAtMillis = it.takenAtMillis,
+                systolic = it.systolic,
+                diastolic = it.diastolic,
+                pulseBpm = it.pulseBpm,
+            )
         },
     )
 }

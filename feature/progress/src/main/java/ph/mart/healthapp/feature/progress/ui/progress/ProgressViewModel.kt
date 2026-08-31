@@ -4,11 +4,15 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.HeartRepository
+import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
@@ -16,6 +20,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
+import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WaterRepository
 
@@ -33,12 +38,14 @@ class ProgressViewModel(
     heartRepository: HeartRepository,
     fastingRepository: FastingRepository,
     supplementRepository: SupplementRepository,
+    bloodPressureRepository: BloodPressureRepository,
 ) : ViewModel(), OrbitContainerHost<ProgressUiState, ProgressUiState, Nothing> {
 
     override val container = orbitContainer<ProgressUiState, Nothing>(ProgressUiState()) {
         observeProgress(
             progressRepository, profileRepository, foodRepository, waterRepository, exerciseRepository,
             moodRepository, sleepRepository, heartRepository, fastingRepository, supplementRepository,
+            bloodPressureRepository,
         )
     }
 
@@ -53,6 +60,7 @@ class ProgressViewModel(
         heartRepository: HeartRepository,
         fastingRepository: FastingRepository,
         supplementRepository: SupplementRepository,
+        bloodPressureRepository: BloodPressureRepository,
     ) = intent {
         val progress = combine(
             progressRepository.observeWeightEntries(),
@@ -86,15 +94,17 @@ class ProgressViewModel(
             ::loggedDays,
         )
 
-        // Sleep, heart and the supplement log group up before the outer combine, which is already
-        // at the five-flow arity the typed overloads stop at — the same shape HomeViewModel uses.
-        // Supplements ride here rather than earning a slot of their own for that reason alone;
-        // they have nothing to do with a watch.
+        // Sleep, heart, the supplement log and the blood pressure readings group up before the
+        // outer combine, which is already at the five-flow arity the typed overloads stop at — the
+        // same shape HomeViewModel uses. Supplements and blood pressure ride here for that reason
+        // alone; neither has anything to do with a watch. A `Triple` can't take the fourth, hence
+        // the tuple below.
         val sparseSeries = combine(
             sleepRepository.observeNights(),
             heartRepository.observeDays(),
             supplementRepository.observeDays(),
-            ::Triple,
+            bloodPressureRepository.observeReadings(),
+            ::SparseSeries,
         )
 
         combine(
@@ -103,15 +113,25 @@ class ProgressViewModel(
             moodRepository.observeDays(),
             sparseSeries,
             fastingRepository.observeSessions(),
-        ) { state, days, moodDays, (nights, heartDays, supplementDays), fasts ->
+        ) { state, days, moodDays, sparse, fasts ->
             state.copy(
                 activeDays = days,
                 moodDays = moodDays,
-                sleepNights = nights,
-                heartDays = heartDays,
+                sleepNights = sparse.nights,
+                heartDays = sparse.heartDays,
                 fastSessions = fasts,
-                supplementDays = supplementDays,
+                supplementDays = sparse.supplementDays,
+                bloodPressure = sparse.bloodPressure,
             )
         }.collect { newState -> reduce { newState } }
     }
 }
+
+/** The four sparse series, grouped so the outer combine stays inside the typed overloads'
+ * five-flow arity. Private and structural — it never leaves this file. */
+private data class SparseSeries(
+    val nights: List<SleepNight>,
+    val heartDays: List<HeartDay>,
+    val supplementDays: List<SupplementDay>,
+    val bloodPressure: List<BloodPressureReading>,
+)

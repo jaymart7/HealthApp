@@ -14,6 +14,7 @@ import ph.mart.healthapp.core.data.profile.CALORIE_TARGET_KCAL
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -27,6 +28,7 @@ class ProfileViewModel(
     private val moodRepository: MoodRepository,
     private val fastingRepository: FastingRepository,
     private val supplementRepository: SupplementRepository,
+    private val bloodPressureRepository: BloodPressureRepository,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -121,12 +123,14 @@ class ProfileViewModel(
             fastSessions = fastingRepository.allSessions(),
             supplements = supplementRepository.allSupplements(),
             supplementDays = supplementRepository.allDays(),
+            bloodPressure = bloodPressureRepository.allReadings(),
         )
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }
 
     /** Replaces the profile, the food diary, the water log, the exercise log, the mood log, the
-     * fasting log and the supplement list with its ticks; weight and measurements are
+     * fasting log, the supplement list with its ticks and the blood pressure readings; weight and
+     * measurements are
      * upserted by date, so importing merges history rather than discarding entries the
      * file doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
      * touched. */
@@ -153,6 +157,8 @@ class ProfileViewModel(
                 supplementRepository.clearAll()
                 payload.supplements.forEach { supplementRepository.upsertSupplement(it) }
                 payload.supplementDays.forEach { supplementRepository.upsertDay(it) }
+                bloodPressureRepository.clearAllReadings()
+                payload.bloodPressure.forEach { bloodPressureRepository.addReading(it) }
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {

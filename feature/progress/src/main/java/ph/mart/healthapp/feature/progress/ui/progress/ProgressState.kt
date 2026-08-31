@@ -22,12 +22,18 @@ internal class ProgressScreenState(
     selectedPhotoIds: List<Long> = emptyList(),
     activeMeasurementSheet: Boolean = false,
     measurementSheetPart: MeasurementPart? = null,
+    activeBloodPressureSheet: Boolean = false,
+    pendingDeleteReadingId: Long? = null,
 ) {
     var tab: ProgressTab by mutableStateOf(tab)
     var range: ChartRange by mutableStateOf(range)
     var selectedPhotoIds: List<Long> by mutableStateOf(selectedPhotoIds)
     var activeMeasurementSheet: Boolean by mutableStateOf(activeMeasurementSheet)
     var measurementSheetPart: MeasurementPart? by mutableStateOf(measurementSheetPart)
+    var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
+
+    /** The reading whose delete is waiting on its confirmation dialog. */
+    var pendingDeleteReadingId: Long? by mutableStateOf(pendingDeleteReadingId)
 
     fun togglePhotoSelection(id: Long) {
         selectedPhotoIds = when {
@@ -46,12 +52,21 @@ internal class ProgressScreenState(
         activeMeasurementSheet = false
     }
 
+    fun openBloodPressureSheet() {
+        activeBloodPressureSheet = true
+    }
+
+    fun closeBloodPressureSheet() {
+        activeBloodPressureSheet = false
+    }
+
     companion object {
         fun Saver(): Saver<ProgressScreenState, Any> = listSaver(
             save = {
                 listOf(
                     it.tab.name, it.range.name, it.selectedPhotoIds,
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
+                    it.activeBloodPressureSheet, it.pendingDeleteReadingId,
                 )
             },
             restore = { saved ->
@@ -61,6 +76,8 @@ internal class ProgressScreenState(
                     selectedPhotoIds = saved[2] as List<Long>,
                     activeMeasurementSheet = saved[3] as Boolean,
                     measurementSheetPart = (saved[4] as String?)?.let(MeasurementPart::valueOf),
+                    activeBloodPressureSheet = saved[5] as Boolean,
+                    pendingDeleteReadingId = saved[6] as Long?,
                 )
             },
         )

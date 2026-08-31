@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
@@ -88,10 +89,15 @@ class ProfileExportTest {
         SupplementDay(dateEpochDay = 20_000, supplementId = 1, taken = 1, dueTimes = 1),
         SupplementDay(dateEpochDay = 20_000, supplementId = 2, taken = 3, dueTimes = 3),
     )
+    // The second reading carries no pulse: a cuff that shows none writes 0, not a pulse of zero.
+    private val bloodPressure = listOf(
+        BloodPressureReading(id = 1, takenAtMillis = 1_756_600_000_000, systolic = 128, diastolic = 82, pulseBpm = 71),
+        BloodPressureReading(id = 2, takenAtMillis = 1_756_640_000_000, systolic = 121, diastolic = 79),
+    )
 
     @Test
     fun `round trips profile food weight measurements water exercise mood and fasting`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(profile, payload.profile)
@@ -108,7 +114,7 @@ class ProfileExportTest {
 
     @Test
     fun `export carries no photo data`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
         assertFalse(json.contains("filePath"))
         assertFalse(json.contains("\"photos\""))
     }
@@ -121,7 +127,7 @@ class ProfileExportTest {
 
     @Test
     fun `unrecognized enum value fails`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
             .replace("\"Waist\"", "\"Elbow\"")
         assertTrue(parseExport(json).isFailure)
     }
@@ -130,7 +136,7 @@ class ProfileExportTest {
      * the v1 case below, checked at the boundary that just moved. */
     @Test
     fun `a v5 file without fasting still imports`() {
-        val v5 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, emptyList(), supplements, supplementDays)
+        val v5 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, emptyList(), supplements, supplementDays, emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 5")
         val payload = parseExport(v5).getOrThrow()
 
@@ -195,7 +201,7 @@ class ProfileExportTest {
      * so regenerating ids on import would restore a log of ticks with nothing to tick. */
     @Test
     fun `supplement ids and their day snapshots survive the round trip`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(supplements, payload.supplements)
@@ -208,7 +214,7 @@ class ProfileExportTest {
     /** A v7 file — the schema one version back, written before supplements existed. */
     @Test
     fun `a v7 file without supplements still imports`() {
-        val v7 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, emptyList(), emptyList())
+        val v7 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 7")
         val payload = parseExport(v7).getOrThrow()
 
@@ -217,9 +223,35 @@ class ProfileExportTest {
         assertFalse(payload.profile!!.supplementRemindersOn)
     }
 
+    /** Readings are history, so they ride the file. The id is dropped — nothing points at one. */
+    @Test
+    fun `blood pressure readings survive the round trip`() {
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
+        val restored = parseExport(json).getOrThrow().bloodPressure
+
+        assertEquals(2, restored.size)
+        assertEquals(128, restored.first().systolic)
+        assertEquals(82, restored.first().diastolic)
+        assertEquals(71, restored.first().pulseBpm)
+        assertEquals(1_756_600_000_000, restored.first().takenAtMillis)
+        // A reading logged off a cuff that showed no pulse keeps its 0 — "not entered", not zero.
+        assertEquals(0, restored.last().pulseBpm)
+    }
+
+    /** A v8 file — the schema one version back, written before blood pressure existed. */
+    @Test
+    fun `a v8 file without blood pressure still imports`() {
+        val v8 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, emptyList())
+            .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 8")
+        val payload = parseExport(v8).getOrThrow()
+
+        assertEquals(emptyList<BloodPressureReading>(), payload.bloodPressure)
+        assertEquals(supplements, payload.supplements)
+    }
+
     @Test
     fun `newer schema version is rejected`() {
-        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 99")
         assertTrue(parseExport(json).isFailure)
     }

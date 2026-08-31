@@ -37,6 +37,7 @@ import ph.mart.healthapp.feature.home.ui.insightFor
 import ph.mart.healthapp.feature.home.ui.HomeScreenState
 import ph.mart.healthapp.feature.home.ui.HomeUiState
 import ph.mart.healthapp.feature.home.ui.components.AIInsightCard
+import ph.mart.healthapp.feature.home.ui.components.BloodPressureCard
 import ph.mart.healthapp.feature.home.ui.components.CalorieRingCard
 import ph.mart.healthapp.feature.home.ui.components.FastingCard
 import ph.mart.healthapp.feature.home.ui.components.HeartCard
@@ -159,12 +160,21 @@ internal fun HomeCards(
             HeartCard(heart = heart, modifier = appearModifier(7, appear))
         }
 
+        // The latest reading, not today's, and hidden until there is one — see the card.
+        uiState.latestBloodPressure?.let { reading ->
+            BloodPressureCard(
+                reading = reading,
+                todayEpochDay = todayEpochDay(),
+                modifier = appearModifier(8, appear),
+            )
+        }
+
         MoodCard(
             mood = uiState.moodLevel,
             energy = uiState.energyLevel,
             onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
             onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
-            modifier = appearModifier(8, appear),
+            modifier = appearModifier(9, appear),
         )
 
         // Hidden when the list is empty, like the three watch cards above — but for a different
@@ -172,28 +182,28 @@ internal fun HomeCards(
         SupplementsCard(
             supplements = uiState.supplements,
             onSetTaken = { id, taken -> onEvent(HomeEvent.OnSetSupplementTaken(id, taken)) },
-            modifier = appearModifier(9, appear),
+            modifier = appearModifier(10, appear),
         )
 
         WeightMetricCard(
             trend = trend,
             goal = uiState.profile?.goal,
             unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            modifier = appearModifier(10, appear),
+            modifier = appearModifier(11, appear),
         )
 
         if (targets != null) {
             MacroSummaryCard(
                 consumed = uiState.totals,
                 targets = targets,
-                modifier = appearModifier(11, appear),
+                modifier = appearModifier(12, appear),
             )
         }
 
         ProgressPhotoReminderCard(
             daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
             onTakePhoto = onAddPhoto,
-            modifier = appearModifier(12, appear),
+            modifier = appearModifier(13, appear),
         )
     }
 }

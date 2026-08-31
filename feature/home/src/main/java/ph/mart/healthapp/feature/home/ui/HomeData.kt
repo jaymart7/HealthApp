@@ -16,6 +16,7 @@ import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.streak.StreakStats
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
@@ -55,6 +56,9 @@ data class HomeUiState(
     /** Last night, from Google Health. Null when nothing was imported — the card is hidden, not
      * zeroed, because FitPulse has no way to measure sleep itself. */
     val lastNight: SleepNight? = null,
+    /** The most recent reading, whenever it was taken — not today's, unlike the three watch
+     * fields. Null before the first one, which hides the card. See [BloodPressureCard]. */
+    val latestBloodPressure: BloodPressureReading? = null,
     /** Today's steps, from Google Health. Hidden the same way [lastNight] is, for the same reason. */
     val steps: StepDay? = null,
     /** Today's heart rate, from Google Health. Hidden the same way [lastNight] is, for the same

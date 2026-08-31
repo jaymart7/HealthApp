@@ -98,7 +98,8 @@ cancels, Confirmation returns to Capture with a discard confirm if edited).
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise`, `mood`, `health`, `fasting`, `supplement`. Two non-domains sit beside them: `network/` (a `NetworkMonitor`
+  `exercise`, `mood`, `health`, `fasting`, `supplement`, `bloodpressure`. Two
+  non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
 - **Calorie/macro math is Mifflin–St Jeor**, computed live from profile inputs
@@ -370,6 +371,46 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   prompt is sent the gaps (consumed vs target, water, streak, weekly weight delta) and never age,
   sex, height or absolute weight — same data-minimisation rule as the health backfill.
 
+- **A blood pressure reading is a reading, not a day.** `blood_pressure_reading` holds
+  `takenAtMillis` per row, because morning and evening readings are the entire point and a
+  day-keyed table where the second overwrites the first throws away what is being tracked — the
+  opposite call to `mood_day` and `heart_day`, which aggregate because that is all the source
+  gives. There is deliberately **no stored date column**: `BloodPressureReading.dateEpochDay`
+  derives it with `epochDayOf`, so the two can never disagree, the same reason `fast_session`
+  carries no status flag beside its null `endMillis`. The tab folds the readings with `byDay()`
+  before charting, and `averages()` is a mean of the **days** — a morning someone measured four
+  times is not four mornings, `heartAverages`' rule. Un-deleting is not a thing, so the delete is
+  soft like a diary row's.
+- **`pulseBpm` of 0 is "not entered", never a pulse of zero**, and it keeps its own denominator in
+  `averages()` — mood's rule, so a month of readings off a cuff that shows no pulse reports a blank
+  pulse rather than a quietly halved one. It never reaches `heart_day`: that table is the watch's,
+  and folding a cuff reading into it would claim a measurement the watch never took. `addReading`
+  clamps the two pressures into their ranges but leaves a zero pulse alone, since clamping it would
+  invent a figure nobody read.
+- **`categoryOf` is checked worst-first, and the order is load-bearing.** 185/70 is a crisis; a
+  normal-first chain would read its diastolic and call the same reading Elevated. Only
+  `BloodPressureCategory.severe` (Crisis alone) is coloured, in `error` — the trend-arrow rule
+  applied once, rather than a five-colour scale that would have the app grading a reading. The
+  labels carry no advice copy: naming the band is what makes 128/82 mean something, and that is
+  the whole of the claim.
+- **Blood pressure has a Google Health scope, and it is deliberately not requested.** The four the
+  app already asks for cap it at 100 users pending OAuth verification and a CASA assessment; a
+  fifth would need its own justification on that form. Manual entry only, like measurements — and
+  not a streak domain, for the reason mood, sleep, fasting and supplements aren't.
+- **Home shows the *latest* reading, not today's.** The three watch cards are hidden when today has
+  no row because a watch fills them in nightly; nobody takes their blood pressure daily, so a card
+  that vanished on the six days between readings would be a card nobody ever saw. It is hidden only
+  until the first reading exists, like `SupplementsCard`. It is read-only and does not navigate:
+  logging needs the sheet, and the sheet lives in `:feature:progress`.
+- **The Blood pressure tab scrolls itself**, joining Photos outside `ScrollingTab` — its list is
+  per-reading rather than per-day, so a 3M window can hold a couple of hundred rows. Its delete
+  asks first rather than raising an undo snackbar: the diary's swipe-and-undo needs a snackbar host
+  Progress doesn't have. `BloodPressureViewModel` carries both the save and the delete because the
+  tab and its sheet sit under one `ViewModelStoreOwner`, which leaves `ProgressViewModel` the
+  read-only container its KDoc says it is. The sheet asks for no date or time — a reading is
+  stamped when Save is tapped, and transcribing a paper log is not the workflow a backdated
+  weigh-in is.
+
 - **A supplement carries a dose *label* and a times-per-day *number*.** The dose is free text —
   "2000 IU", "5 g", "one scoop" — and nothing parses it, for the same reason fiber, sugar and
   sodium are reported and never graded: there is no field on the profile a supplement target could
@@ -550,11 +591,12 @@ because of that, not because it was the nicest design available.
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `heart`, `fasting`, `supplement`),
+  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `heart`, `fasting`, `supplement`,
+  `pressure`, plus a `shared/` holding `RangeBarChart`, which Heart and Blood pressure both draw),
   `:feature:profile` (`profile`, `health`, `library`, `supplement`) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
-  `recipe/` though `FoodScreen` renders both, and Progress's nine tab bodies sit
+  `recipe/` though `FoodScreen` renders both, and Progress's ten tab bodies sit
   with the charts they draw rather than with the shell that dispatches them. Only
   the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.

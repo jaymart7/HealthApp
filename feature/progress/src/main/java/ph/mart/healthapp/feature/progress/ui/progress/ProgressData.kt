@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.progress.ui.progress
 
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DayNutrition
@@ -29,6 +30,7 @@ enum class ProgressTab(val label: String) {
     Heart("Heart"),
     Fasting("Fasting"),
     Supplements("Supplements"),
+    BloodPressure("Blood pressure"),
 }
 
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
@@ -62,6 +64,9 @@ data class ProgressUiState(
      * miss. Each row carries the target it was scored against, so a later edit can't rewrite a
      * bar already drawn. */
     val supplementDays: List<SupplementDay> = emptyList(),
+    /** Sparse and per *reading*, not per day — the only series here that can hold several points
+     * on one day. The tab folds it with `byDay()` before charting it. */
+    val bloodPressure: List<BloodPressureReading> = emptyList(),
     /** Every day anything was logged, across all four domains — the streak's definition, reused
      * by the weekly recap so the two can't disagree about what a logged day is. */
     val activeDays: Set<Long> = emptySet(),

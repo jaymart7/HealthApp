@@ -27,6 +27,7 @@ import ph.mart.healthapp.core.data.food.di.foodDataModule
 import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.di.healthDataModule
 import ph.mart.healthapp.core.data.insight.di.insightDataModule
+import ph.mart.healthapp.core.data.bloodpressure.di.bloodPressureDataModule
 import ph.mart.healthapp.core.data.mood.di.moodDataModule
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.di.profileDataModule
@@ -72,6 +73,7 @@ class FitPulseApplication : Application() {
                 moodDataModule,
                 fastingDataModule,
                 supplementDataModule,
+                bloodPressureDataModule,
                 healthDataModule,
                 onboardingModule,
                 foodModule,

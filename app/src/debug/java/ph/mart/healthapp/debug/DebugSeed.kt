@@ -7,6 +7,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.koin.core.Koin
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -61,6 +63,7 @@ fun seedDebugData(koin: Koin) {
         koin.get<MoodRepository>().seedMood(today)
         koin.get<FastingRepository>().seedFasting(today)
         koin.get<SupplementRepository>().seedSupplements(today)
+        koin.get<BloodPressureRepository>().seedBloodPressure(today)
     }
 }
 
@@ -170,6 +173,40 @@ private suspend fun MoodRepository.seedMood(today: Long) {
                 energy = if (daysAgo == 3) 0 else random.nextInt(2, 6),
             ),
         )
+    }
+}
+
+/**
+ * Three weeks of readings, most days one and a few days two — the sparse, several-per-day shape
+ * the tab's `byDay()` fold exists for. One crisis reading, so the only coloured category is
+ * visible without typing one in.
+ *
+ * Written through [BloodPressureRepository.addReading] like a real save: the timestamp is the
+ * datum, so a backdated reading is just a backdated millisecond.
+ */
+private suspend fun BloodPressureRepository.seedBloodPressure(today: Long) {
+    val random = Random(seed = 29)
+    for (daysAgo in 20 downTo 0) {
+        if (daysAgo % 3 == 1) continue
+        val morning = epochDayStartMillis(today - daysAgo) + 7 * 3_600_000L
+        addReading(
+            BloodPressureReading(
+                takenAtMillis = morning,
+                systolic = if (daysAgo == 11) 186 else random.nextInt(116, 138),
+                diastolic = if (daysAgo == 11) 74 else random.nextInt(72, 89),
+                pulseBpm = if (daysAgo % 5 == 0) 0 else random.nextInt(58, 82),
+            ),
+        )
+        if (daysAgo % 4 == 0) {
+            addReading(
+                BloodPressureReading(
+                    takenAtMillis = morning + 12 * 3_600_000L,
+                    systolic = random.nextInt(118, 134),
+                    diastolic = random.nextInt(70, 86),
+                    pulseBpm = random.nextInt(58, 82),
+                ),
+            )
+        }
     }
 }
 
