@@ -52,9 +52,14 @@ fun SegmentedToggle(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val pillWidth = pillWidth(maxWidth, options.size)
         val pillPx = with(LocalDensity.current) { pillWidth.toPx() }
+        val padPx = with(LocalDensity.current) { TrackPadding.toPx() }
+        val viewportPx = with(LocalDensity.current) { maxWidth.toPx() }
         // Without this a restored selection off the right-hand end opens with no visible chip.
-        // scrollTo clamps, so there is no bounds math to get wrong.
-        LaunchedEffect(selectedIndex, pillPx) { scroll.scrollTo((selectedIndex * pillPx).roundToInt()) }
+        // scroll.maxValue is a key because it is 0 until the first layout, so the reveal this
+        // effect exists for would otherwise clamp to 0 and never happen.
+        LaunchedEffect(selectedIndex, pillPx, viewportPx, scroll.maxValue) {
+            scrollTargetFor(selectedIndex, pillPx, padPx, viewportPx, scroll.value)?.let { scroll.scrollTo(it) }
+        }
 
         Row(
             modifier = Modifier
@@ -87,6 +92,21 @@ fun SegmentedToggle(
 
 private fun pillWidth(available: Dp, count: Int): Dp =
     maxOf((available - TrackPadding * 2) / count.coerceAtLeast(1), MinPillWidth)
+
+/**
+ * The offset that brings pill [index] into view, or null when it already is — the minimum move,
+ * because sliding a pill that was already visible drags the track out from under the finger that
+ * tapped it. Offsets are content coordinates: the track padding sits inside the scroll.
+ */
+internal fun scrollTargetFor(index: Int, pillPx: Float, padPx: Float, viewportPx: Float, currentPx: Int): Int? {
+    val leading = index * pillPx
+    val trailing = leading + pillPx + padPx * 2
+    return when {
+        leading < currentPx -> leading.roundToInt()
+        trailing > currentPx + viewportPx -> (trailing - viewportPx).roundToInt()
+        else -> null
+    }
+}
 
 @PreviewLightDark
 @Composable
