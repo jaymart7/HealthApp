@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.mood
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import ph.mart.healthapp.core.data.forToday
 import ph.mart.healthapp.core.data.mood.local.MoodDayDao
 import ph.mart.healthapp.core.data.mood.local.MoodDayEntity
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -10,9 +11,8 @@ internal class MoodRepositoryImpl(private val dao: MoodDayDao) : MoodRepository 
 
     /** Resolved here, not in a caller: `todayEpochDay()` is internal to this module, same as
      * `WaterRepositoryImpl.observeToday()`. */
-    override fun observeToday(): Flow<MoodDay> {
-        val today = todayEpochDay()
-        return dao.observeForDate(today).map { it?.toDomain() ?: MoodDay(today, mood = 0, energy = 0) }
+    override fun observeToday(): Flow<MoodDay> = forToday { today ->
+        dao.observeForDate(today).map { it?.toDomain() ?: MoodDay(today, mood = 0, energy = 0) }
     }
 
     override suspend fun setTodayMood(level: Int) {

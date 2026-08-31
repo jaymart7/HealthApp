@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryDao
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryEntity
+import ph.mart.healthapp.core.data.forToday
 import ph.mart.healthapp.core.data.health.estimatedSteps
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.streak.STREAK_WINDOW_DAYS
@@ -11,7 +12,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 
 internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : ExerciseRepository {
 
-    override fun observeTodayEntries(): Flow<List<ExerciseEntry>> = observeEntries(todayEpochDay())
+    override fun observeTodayEntries(): Flow<List<ExerciseEntry>> = forToday(::observeEntries)
 
     override fun observeEntries(dateEpochDay: Long): Flow<List<ExerciseEntry>> =
         dao.observeForDate(dateEpochDay).map { entities -> entities.map { it.toExerciseEntry() } }
@@ -44,9 +45,10 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
     }
 
     /** Window anchored here, not in the caller, for the same reason [observeLoggedDays]'s is. */
-    override fun observeRecentEntries(): Flow<List<ExerciseEntry>> =
-        dao.observeSince(todayEpochDay() - ChartRange.OneYear.days!!)
+    override fun observeRecentEntries(): Flow<List<ExerciseEntry>> = forToday { today ->
+        dao.observeSince(today - ChartRange.OneYear.days!!)
             .map { entities -> entities.map { it.toExerciseEntry() } }
+    }
 
     override suspend fun allEntries(): List<ExerciseEntry> = dao.allActive().map { it.toExerciseEntry() }
 
@@ -54,9 +56,11 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
         dao.softDeleteAll()
     }
 
-    /** Window anchored here, not in the caller — `todayEpochDay()` is internal to this module. */
-    override fun observeLoggedDays(): Flow<Set<Long>> =
-        dao.observeLoggedDaysSince(todayEpochDay() - STREAK_WINDOW_DAYS).map { it.toSet() }
+    /** Window anchored here, not in the caller — `todayEpochDay()` is internal to this module.
+     * Re-pointed at each midnight, like every other today-derived window. */
+    override fun observeLoggedDays(): Flow<Set<Long>> = forToday { today ->
+        dao.observeLoggedDaysSince(today - STREAK_WINDOW_DAYS).map { it.toSet() }
+    }
 }
 
 private fun ExerciseEntryEntity.toExerciseEntry() = ExerciseEntry(

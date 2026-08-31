@@ -33,6 +33,7 @@ import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.di.profileDataModule
 import ph.mart.healthapp.core.data.progress.di.progressDataModule
 import ph.mart.healthapp.core.data.supplement.di.supplementDataModule
+import ph.mart.healthapp.core.data.transfer.di.transferDataModule
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.water.di.waterDataModule
 import ph.mart.healthapp.debug.seedDebugData
@@ -75,6 +76,7 @@ class FitPulseApplication : Application() {
                 supplementDataModule,
                 bloodPressureDataModule,
                 healthDataModule,
+                transferDataModule,
                 onboardingModule,
                 foodModule,
                 homeModule,

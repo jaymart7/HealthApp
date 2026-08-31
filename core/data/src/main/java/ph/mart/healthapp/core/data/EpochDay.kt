@@ -1,6 +1,11 @@
 package ph.mart.healthapp.core.data
 
 import java.util.Calendar
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 
 /**
  * Today as a local-midnight epoch day — the key every dated table in this module uses.
@@ -46,3 +51,35 @@ fun epochDayStartMillis(epochDay: Long): Long {
     }
     return calendar.timeInMillis
 }
+
+/**
+ * Today, re-emitted at each local midnight.
+ *
+ * Every "today-only" repository overload flatMaps this rather than resolving [todayEpochDay]
+ * once when its flow is built. That was a real bug, not a tidiness point: the reads resolved the
+ * day at construction while every write resolved it fresh at call time, so an app left open past
+ * midnight showed yesterday's water while `setToday()` wrote today's row — a tap that visibly did
+ * nothing.
+ *
+ * The delay is computed off [epochDayStartMillis], so it stays right across DST rather than
+ * assuming a day is 86,400,000ms. Doze can defer the wake-up; the day is recomputed whenever it
+ * does fire, so a late one self-corrects instead of drifting.
+ *
+ * The home-screen widget does not use this — Glance holds no live flow, and its
+ * `updatePeriodMillis` is what restarts its queries over midnight.
+ */
+fun todayFlow(): Flow<Long> = flow {
+    while (true) {
+        val today = todayEpochDay()
+        emit(today)
+        delay((epochDayStartMillis(today + 1) - System.currentTimeMillis()).coerceAtLeast(1L))
+    }
+}
+
+/**
+ * The wrapper every today-only overload is written in terms of: `observeToday() =
+ * forToday(::observeDay)`. Internal because a `:feature:*` module asking "what is today" wants
+ * [todayFlow] itself, not a query re-pointer.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+internal fun <T> forToday(dated: (Long) -> Flow<T>): Flow<T> = todayFlow().flatMapLatest(dated)

@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.supplement
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import ph.mart.healthapp.core.data.forToday
 import ph.mart.healthapp.core.data.supplement.local.SupplementDao
 import ph.mart.healthapp.core.data.supplement.local.SupplementDayEntity
 import ph.mart.healthapp.core.data.supplement.local.SupplementEntity
@@ -18,9 +19,8 @@ internal class SupplementRepositoryImpl(private val dao: SupplementDao) : Supple
      * blocks are already at the five-flow arity the typed overloads stop at, and a supplement
      * without today's count is not a thing either screen wants.
      */
-    override fun observeToday(): Flow<List<SupplementToday>> {
-        val today = todayEpochDay()
-        return combine(dao.observeActive(), dao.observeForDate(today)) { supplements, days ->
+    override fun observeToday(): Flow<List<SupplementToday>> = forToday { today ->
+        combine(dao.observeActive(), dao.observeForDate(today)) { supplements, days ->
             val taken = days.associate { it.supplementId to it.taken }
             supplements.map { SupplementToday(it.toSupplement(), taken[it.id] ?: 0) }
         }

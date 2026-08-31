@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.food.local.FoodEntryEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealDao
 import ph.mart.healthapp.core.data.food.local.SavedMealEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealItemEntity
+import ph.mart.healthapp.core.data.forToday
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /** Recents are read a little deeper than [MAX_SUGGESTIONS], so favorites crowding the front of
@@ -26,7 +27,7 @@ internal class FoodRepositoryImpl(
     private val savedMealDao: SavedMealDao,
 ) : FoodRepository {
 
-    override fun observeTodayEntries(): Flow<List<FoodEntry>> = observeEntries(todayEpochDay())
+    override fun observeTodayEntries(): Flow<List<FoodEntry>> = forToday(::observeEntries)
 
     override fun observeEntries(dateEpochDay: Long): Flow<List<FoodEntry>> =
         dao.observeForDate(dateEpochDay).map { entities -> entities.map { it.toFoodEntry() } }
@@ -131,13 +132,13 @@ internal class FoodRepositoryImpl(
         savedMealDao.rename(id, name)
     }
 
-    override fun observeDailyNutrition(): Flow<List<DayNutrition>> {
-        // Anchored on today here, not in the feature layer: todayEpochDay() is internal to this
-        // module, and the window has to match the query's lower bound exactly for the series to
-        // stay dense.
-        val today = todayEpochDay()
+    // Anchored on today here, not in the feature layer: todayEpochDay() is internal to this
+    // module, and the window has to match the query's lower bound exactly for the series to stay
+    // dense. It rides forToday so the dense series gains its new day at midnight rather than
+    // ending yesterday for as long as the process lives.
+    override fun observeDailyNutrition(): Flow<List<DayNutrition>> = forToday { today ->
         val from = today - TREND_WINDOW_DAYS
-        return dao.observeSince(from).map { entities ->
+        dao.observeSince(from).map { entities ->
             entities.map { it.toFoodEntry() }.dailySeries(fromEpochDay = from, toEpochDay = today)
         }
     }

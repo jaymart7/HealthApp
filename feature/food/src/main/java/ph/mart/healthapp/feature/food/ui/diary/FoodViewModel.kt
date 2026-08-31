@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.data.todayFlow
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -41,6 +42,7 @@ class FoodViewModel(
 
     override val container = orbitContainer<FoodUiState, FoodSideEffect>(FoodUiState()) {
         observeDiary(foodRepository, profileRepository, waterRepository, exerciseRepository, stepsRepository)
+        followMidnight()
     }
 
     fun handleEvent(event: FoodEvent) {
@@ -59,6 +61,17 @@ class FoodViewModel(
             is FoodEvent.OnDeleteSavedMeal -> onDeleteSavedMeal(event.id)
             is FoodEvent.OnDeleteRecipe -> onDeleteRecipe(event.id)
         }
+    }
+
+    /**
+     * A diary left open overnight stayed pointed at yesterday while every write went to the real
+     * today — so an entry added at 00:05 landed on a day the screen wasn't showing.
+     *
+     * `compareAndSet` is the whole guard: the day only advances when the diary is still on what
+     * *was* today. A user who deliberately stepped back to Tuesday stays on Tuesday.
+     */
+    private fun followMidnight() = intent {
+        todayFlow().collect { today -> selectedDate.compareAndSet(today - 1, today) }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

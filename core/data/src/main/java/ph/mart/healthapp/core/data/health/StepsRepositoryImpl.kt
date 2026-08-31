@@ -2,14 +2,14 @@ package ph.mart.healthapp.core.data.health
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import ph.mart.healthapp.core.data.forToday
 import ph.mart.healthapp.core.data.health.local.StepDayDao
 import ph.mart.healthapp.core.data.health.local.StepDayEntity
-import ph.mart.healthapp.core.data.todayEpochDay
 
 internal class StepsRepositoryImpl(private val dao: StepDayDao) : StepsRepository {
 
     /** Today-only overload kept beside the dated one: Home genuinely means today. */
-    override fun observeToday(): Flow<StepDay?> = observeSteps(todayEpochDay())
+    override fun observeToday(): Flow<StepDay?> = forToday(::observeSteps)
 
     override fun observeSteps(dateEpochDay: Long): Flow<StepDay?> =
         dao.observeForDate(dateEpochDay).map { it?.toStepDay() }

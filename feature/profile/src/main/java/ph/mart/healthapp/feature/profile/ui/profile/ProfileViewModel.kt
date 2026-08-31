@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
+import ph.mart.healthapp.core.data.transfer.DataTransferRepository
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.designsystem.component.MascotCharacter
@@ -32,6 +33,7 @@ class ProfileViewModel(
     private val fastingRepository: FastingRepository,
     private val supplementRepository: SupplementRepository,
     private val bloodPressureRepository: BloodPressureRepository,
+    private val dataTransferRepository: DataTransferRepository,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -146,37 +148,14 @@ class ProfileViewModel(
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }
 
-    /** Replaces the profile, the food diary, the water log, the exercise log, the mood log, the
-     * fasting log, the supplement list with its ticks and the blood pressure readings; weight and
-     * measurements are
-     * upserted by date, so importing merges history rather than discarding entries the
-     * file doesn't mention. Nothing is written at all if the file fails to parse. Photos are never
-     * touched. */
+    /** Parse here, write there. The whole replay is one transaction inside `:core:data` — see
+     * [DataTransferRepository]; running it from this file a row at a time meant a crash mid-import
+     * left the diary wiped and half-restored. Nothing is written at all if the file fails to
+     * parse. Photos are never touched. */
     fun import(text: String) = intent {
         parseExport(text).fold(
-            onSuccess = { payload ->
-                payload.profile?.let { profileRepository.saveProfile(it) }
-                foodRepository.deleteAllEntries()
-                payload.foodEntries.forEach { foodRepository.addEntry(it) }
-                payload.weightEntries.forEach { progressRepository.upsertWeightEntry(it) }
-                payload.measurements.forEach { progressRepository.upsertMeasurementEntry(it) }
-                waterRepository.clearAllDays()
-                payload.waterDays.forEach { waterRepository.upsertDay(it) }
-                exerciseRepository.deleteAllEntries()
-                payload.exercises.forEach { exerciseRepository.addEntry(it) }
-                moodRepository.clearAllDays()
-                payload.moodDays.forEach { moodRepository.upsertDay(it) }
-                // Clears a running fast too, which is the honest reading of replace-in-full: the
-                // timer belongs to the history being replaced, not to the device.
-                fastingRepository.clearAllSessions()
-                payload.fastSessions.forEach { fastingRepository.upsertSession(it) }
-                // Supplements before their days: a day row points at a supplement id, and the ids
-                // are restored verbatim rather than regenerated so the ticks keep their subject.
-                supplementRepository.clearAll()
-                payload.supplements.forEach { supplementRepository.upsertSupplement(it) }
-                payload.supplementDays.forEach { supplementRepository.upsertDay(it) }
-                bloodPressureRepository.clearAllReadings()
-                payload.bloodPressure.forEach { bloodPressureRepository.addReading(it) }
+            onSuccess = { data ->
+                dataTransferRepository.replaceAll(data)
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {

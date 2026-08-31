@@ -23,6 +23,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementDay
+import ph.mart.healthapp.core.data.transfer.ImportData
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterDay
 
@@ -177,21 +178,6 @@ internal data class ExportBloodPressureReading(
     val pulseBpm: Int = 0,
 )
 
-/** What an import hands back to the ViewModel — domain types only, already validated. */
-internal data class ImportPayload(
-    val profile: Profile?,
-    val foodEntries: List<FoodEntry>,
-    val weightEntries: List<WeightEntry>,
-    val measurements: List<MeasurementEntry>,
-    val waterDays: List<WaterDay>,
-    val exercises: List<ExerciseEntry>,
-    val moodDays: List<MoodDay>,
-    val fastSessions: List<FastSession>,
-    val supplements: List<Supplement>,
-    val supplementDays: List<SupplementDay>,
-    val bloodPressure: List<BloodPressureReading>,
-)
-
 private val json = Json {
     prettyPrint = true
     ignoreUnknownKeys = true
@@ -238,12 +224,12 @@ internal fun buildExportJson(
 
 /** Parses and validates in one step — a malformed file, an unknown enum name, or a future schema
  * version all come back as [Result.failure] so the caller can show a message and write nothing. */
-internal fun parseExport(text: String): Result<ImportPayload> = runCatching {
+internal fun parseExport(text: String): Result<ImportData> = runCatching {
     val export = json.decodeFromString<FitPulseExport>(text)
     require(export.schemaVersion <= EXPORT_SCHEMA_VERSION) {
         "This file was written by a newer version of FitPulse."
     }
-    ImportPayload(
+    ImportData(
         profile = export.profile?.toProfile(),
         foodEntries = export.foodEntries.map { it.toFoodEntry() },
         weightEntries = export.weightEntries.map { WeightEntry(it.dateEpochDay, it.weightKg, it.note) },
