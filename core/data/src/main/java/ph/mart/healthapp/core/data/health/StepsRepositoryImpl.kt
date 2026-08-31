@@ -13,6 +13,9 @@ internal class StepsRepositoryImpl(private val dao: StepDayDao) : StepsRepositor
 
     override fun observeSteps(dateEpochDay: Long): Flow<StepDay?> =
         dao.observeForDate(dateEpochDay).map { it?.toStepDay() }
+
+    override fun observeDays(): Flow<List<StepDay>> =
+        dao.observeAll().map { entities -> entities.map { it.toStepDay() } }
 }
 
 private fun StepDayEntity.toStepDay() =

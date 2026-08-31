@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryDao
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryEntity
 import ph.mart.healthapp.core.data.health.estimatedSteps
+import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.streak.STREAK_WINDOW_DAYS
 import ph.mart.healthapp.core.data.todayEpochDay
 
@@ -41,6 +42,11 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
     override suspend fun deleteEntry(id: Long) {
         dao.softDelete(id)
     }
+
+    /** Window anchored here, not in the caller, for the same reason [observeLoggedDays]'s is. */
+    override fun observeRecentEntries(): Flow<List<ExerciseEntry>> =
+        dao.observeSince(todayEpochDay() - ChartRange.OneYear.days!!)
+            .map { entities -> entities.map { it.toExerciseEntry() } }
 
     override suspend fun allEntries(): List<ExerciseEntry> = dao.allActive().map { it.toExerciseEntry() }
 

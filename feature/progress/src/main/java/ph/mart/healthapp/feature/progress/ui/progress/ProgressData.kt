@@ -3,9 +3,12 @@ package ph.mart.healthapp.feature.progress.ui.progress
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.DayNutrition
+import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
@@ -23,6 +26,7 @@ import ph.mart.healthapp.core.data.supplement.SupplementDay
 enum class ProgressTab(val label: String) {
     Weight("Weight"),
     Nutrition("Food"),
+    Activity("Activity"),
     Photos("Photos"),
     Measurements("Body"),
     Mood("Mood"),
@@ -46,6 +50,15 @@ data class ProgressUiState(
     val preferredUnit: UnitSystem = UnitSystem.Metric,
     /** Dense, one row per day for the last year — the Nutrition tab slices it per selected range. */
     val dailyNutrition: List<DayNutrition> = emptyList(),
+    /** Sparse and import-only, one row per day the watch reported — the Activity tab's steps
+     * series, and half of its burn series. */
+    val stepDays: List<StepDay> = emptyList(),
+    /** The last year of logged workouts — the other half of the Activity tab's burn series. The
+     * diary owns a *day's* entries; this is the window the charts fold. */
+    val exerciseEntries: List<ExerciseEntry> = emptyList(),
+    /** The profile's current step target — the steps chart's goal line and the denominator of its
+     * "hit today's goal" count. Not snapshotted per day; see [ph.mart.healthapp.core.data.profile.Profile.stepGoal]. */
+    val stepGoal: Int = DEFAULT_STEP_GOAL,
     /** Sparse — logged days only, unlike [dailyNutrition]. The Mood tab places them by date. */
     val moodDays: List<MoodDay> = emptyList(),
     /** Sparse too, and import-only: FitPulse cannot measure sleep, so a night with no row is a

@@ -32,4 +32,5 @@ internal data class ProfileEntity(
     val darkThemeOn: Boolean? = null,
     val supplementRemindersOn: Boolean = false,
     val mascotName: String? = null,
+    val stepGoal: Int = 10_000,
 )

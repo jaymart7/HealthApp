@@ -160,6 +160,7 @@ internal fun HomeCards(
         uiState.steps?.let { steps ->
             StepsCard(
                 steps = steps,
+                goal = uiState.stepGoal,
                 creditKcal = if (uiState.addExerciseToBudget) uiState.stepsCreditKcal else 0,
                 modifier = appearModifier(6, appear),
             )

@@ -18,6 +18,10 @@ interface ExerciseRepository {
     suspend fun updateEntry(entry: ExerciseEntry)
     suspend fun deleteEntry(id: Long)
 
+    /** The last year's entries, oldest first — the Progress Activity tab's burn series. Windowed
+     * in the impl, like [observeLoggedDays], because `todayEpochDay()` is internal to this module. */
+    fun observeRecentEntries(): Flow<List<ExerciseEntry>>
+
     /** Full history, oldest first — for data export. */
     suspend fun allEntries(): List<ExerciseEntry>
 

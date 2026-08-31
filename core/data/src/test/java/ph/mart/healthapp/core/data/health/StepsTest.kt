@@ -1,9 +1,11 @@
 package ph.mart.healthapp.core.data.health
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.progress.ChartRange
 
 /** The step credit's arithmetic — every branch that decides how much a day's walking is worth. */
 class StepsTest {
@@ -71,5 +73,59 @@ class StepsTest {
     fun `the day's burn adds the uncredited walking on top of the workouts`() {
         val entries = listOf(walk(40, 150, 4000))
         assertEquals(150 + 150, dayBurnedKcal(entries, day(steps = 8000, burnedKcal = 300)))
+    }
+
+    // --- The Activity tab's two series ---
+
+    private fun stepDay(day: Long, steps: Int, burnedKcal: Int = steps / 27) =
+        StepDay(dateEpochDay = day, steps = steps, burnedKcal = burnedKcal)
+
+    @Test
+    fun `the steps window is anchored to today and keeps its gaps`() {
+        val today = 20_000L
+        val days = listOf(stepDay(today - 40, 9_000), stepDay(today - 5, 8_000), stepDay(today, 12_000))
+        // Anchored to today, not to the latest row: a month's window drops the 40-day-old day and
+        // says nothing about the 34 days with no row between the two that remain.
+        assertEquals(listOf(today - 5, today), days.inRange(ChartRange.OneMonth, today).map { it.dateEpochDay })
+        assertEquals(3, days.inRange(ChartRange.OneYear, today).size)
+    }
+
+    @Test
+    fun `step averages report nulls on an empty window and count hits against the goal passed`() {
+        val empty = emptyList<StepDay>().stepAverages(goal = 10_000)
+        assertNull(empty.averageSteps)
+        assertNull(empty.bestSteps)
+        assertEquals(0, empty.daysHitGoal)
+        assertEquals(0, empty.days)
+
+        val days = listOf(stepDay(1, 8_000), stepDay(2, 12_000), stepDay(3, 10_000))
+        val averages = days.stepAverages(goal = 10_000)
+        assertEquals(10_000, averages.averageSteps)
+        assertEquals(12_000, averages.bestSteps)
+        // The goal is not snapshotted per day, so the same window scores differently against a
+        // different goal — which is exactly why the stat is labelled "today's goal".
+        assertEquals(2, averages.daysHitGoal)
+        assertEquals(1, days.stepAverages(goal = 11_000).daysHitGoal)
+    }
+
+    @Test
+    fun `the burn series covers every day either source has`() {
+        val series = burnSeries(
+            steps = listOf(stepDay(2, 8_000, burnedKcal = 300)),
+            exercise = listOf(walk(40, 150, 4000).copy(dateEpochDay = 3)),
+        )
+        assertEquals(listOf(2L, 3L), series.map { it.dateEpochDay })
+        // A step-only day carries no workout; a workout-only day carries no step credit.
+        assertEquals(BurnDay(dateEpochDay = 2, burnedKcal = 300, workouts = 0, minutes = 0), series[0])
+        assertEquals(BurnDay(dateEpochDay = 3, burnedKcal = 150, workouts = 1, minutes = 40), series[1])
+    }
+
+    @Test
+    fun `a day's bar agrees with the budget's own figure, so an imported walk isn't counted twice`() {
+        val entries = listOf(walk(40, 150, 4000).copy(dateEpochDay = 7))
+        val day = stepDay(7, 8_000, burnedKcal = 300)
+        val bar = burnSeries(steps = listOf(day), exercise = entries).single()
+        assertEquals(dayBurnedKcal(entries, day), bar.burnedKcal)
+        assertEquals(300, bar.burnedKcal)
     }
 }

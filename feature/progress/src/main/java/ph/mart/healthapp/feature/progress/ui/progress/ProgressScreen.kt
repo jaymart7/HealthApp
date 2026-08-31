@@ -28,6 +28,7 @@ import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
+import ph.mart.healthapp.feature.progress.ui.activity.components.ActivityTabContent
 import ph.mart.healthapp.feature.progress.ui.fasting.components.FastingTabContent
 import ph.mart.healthapp.feature.progress.ui.heart.components.HeartTabContent
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsTabContent
@@ -102,6 +103,7 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     ProgressTab.BloodPressure -> BloodPressureTabContent(uiState, state)
                     ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
                     ProgressTab.Nutrition -> ScrollingTab(scrollState) { NutritionTabContent(uiState, state) }
+                    ProgressTab.Activity -> ScrollingTab(scrollState) { ActivityTabContent(uiState, state) }
                     ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
                     ProgressTab.Mood -> ScrollingTab(scrollState) { MoodTabContent(uiState, state) }
                     ProgressTab.Sleep -> ScrollingTab(scrollState) { SleepTabContent(uiState, state) }

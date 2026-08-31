@@ -158,6 +158,7 @@ fun ProfileScreen(
         onResetTargets = viewModel::resetTargets,
         onSetWaterGoal = viewModel::setWaterGoal,
         onSetFastingGoal = viewModel::setFastingGoal,
+        onSetStepGoal = viewModel::setStepGoal,
         onSetExerciseBudget = viewModel::setExerciseBudget,
         onToggleReminder = { kind, enabled ->
             if (!enabled || context.canPostNotifications()) {
@@ -198,6 +199,7 @@ private fun ProfileContent(
     onResetTargets: () -> Unit,
     onSetWaterGoal: (Int) -> Unit,
     onSetFastingGoal: (Int) -> Unit,
+    onSetStepGoal: (Int) -> Unit,
     onSetExerciseBudget: (Boolean) -> Unit,
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
@@ -252,6 +254,8 @@ private fun ProfileContent(
                 onSetGoal = onSetFastingGoal,
             )
             ProfileExerciseSection(
+                stepGoal = profile.stepGoal,
+                onSetStepGoal = onSetStepGoal,
                 addToBudget = profile.addExerciseToBudget,
                 onSetAddToBudget = onSetExerciseBudget,
             )
@@ -301,6 +305,7 @@ private fun ProfileScreenPreview() {
             onResetTargets = {},
             onSetWaterGoal = {},
             onSetFastingGoal = {},
+            onSetStepGoal = {},
             onSetExerciseBudget = {},
             onToggleReminder = { _, _ -> },
             onExport = {},

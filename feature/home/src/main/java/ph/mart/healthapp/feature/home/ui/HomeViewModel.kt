@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.health.HeartRepository
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
+import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.health.stepsCreditKcal
 import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.mood.MoodDay
@@ -151,6 +152,7 @@ class HomeViewModel(
                 waterGlasses = waterGlasses,
                 waterGoalGlasses = profile?.waterGoalGlasses ?: DEFAULT_WATER_GOAL_GLASSES,
                 fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
+                stepGoal = profile?.stepGoal ?: DEFAULT_STEP_GOAL,
             )
         }
 

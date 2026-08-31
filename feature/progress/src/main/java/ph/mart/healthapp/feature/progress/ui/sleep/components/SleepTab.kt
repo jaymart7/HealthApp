@@ -21,8 +21,14 @@ import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
+import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
+import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
+
+/** A full night. The y-axis never shrinks below it, so a run of four-hour nights reads as short
+ * rather than filling the canvas the way an auto-ranged axis would let it. */
+private const val FULL_NIGHT_MINUTES = 480
 
 @Composable
 internal fun SleepTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
@@ -45,10 +51,11 @@ internal fun SleepTabContent(uiState: ProgressUiState, state: ProgressScreenStat
         val today = todayEpochDay()
         val from = today - (state.range.days ?: ChartRange.OneYear.days!!)
         val nights = uiState.sleepNights.inRange(state.range, today)
-        SleepTrendChart(
-            nights = nights,
+        DayBarChart(
+            bars = nights.map { DayBar(it.dateEpochDay, it.minutesAsleep) },
             fromEpochDay = from,
             toEpochDay = today,
+            minAxisValue = FULL_NIGHT_MINUTES,
             modifier = Modifier.padding(top = 16.dp),
         )
         val averages = nights.sleepAverages()

@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.profile
 
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 
 enum class Sex { Male, Female }
@@ -51,6 +52,14 @@ data class Profile(
      * same reading [darkThemeOn]'s null has. Held as a String rather than the enum because
      * `MascotCharacter` lives in `:core:designsystem`, which this module does not depend on. */
     val mascotName: String? = null,
+    /**
+     * The daily step target, in steps. Deliberately *not* snapshotted per day, unlike
+     * [ph.mart.healthapp.core.data.fasting.FastSession.goalHours]: `step_day` rows belong to the
+     * watch and are REPLACEd wholesale on every re-sync, so a target stored beside them would be
+     * overwritten by the next import. Raising the goal therefore re-scores past days, and the
+     * Progress stat that counts them says it means today's goal.
+     */
+    val stepGoal: Int = DEFAULT_STEP_GOAL,
 )
 
 interface ProfileRepository {

@@ -6,14 +6,19 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.health.HeartDay
+import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.health.HeartRepository
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.SleepRepository
+import ph.mart.healthapp.core.data.health.StepDay
+import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -26,7 +31,8 @@ import ph.mart.healthapp.core.data.water.WaterRepository
 
 /** Read-only container — nothing on the Progress tab itself writes data (see [ProgressUiState]),
  * so there's no handleEvent/Event pair here, unlike the other screens in this feature. The water
- * and exercise repositories are read for one thing only: the weekly recap's logged-day count. */
+ * repository is read for one thing only: the weekly recap's logged-day count. Exercise is read
+ * twice — for that count, and for the Activity tab's burn series. */
 class ProgressViewModel(
     progressRepository: ProgressRepository,
     profileRepository: ProfileRepository,
@@ -39,13 +45,14 @@ class ProgressViewModel(
     fastingRepository: FastingRepository,
     supplementRepository: SupplementRepository,
     bloodPressureRepository: BloodPressureRepository,
+    stepsRepository: StepsRepository,
 ) : ViewModel(), OrbitContainerHost<ProgressUiState, ProgressUiState, Nothing> {
 
     override val container = orbitContainer<ProgressUiState, Nothing>(ProgressUiState()) {
         observeProgress(
             progressRepository, profileRepository, foodRepository, waterRepository, exerciseRepository,
             moodRepository, sleepRepository, heartRepository, fastingRepository, supplementRepository,
-            bloodPressureRepository,
+            bloodPressureRepository, stepsRepository,
         )
     }
 
@@ -61,6 +68,7 @@ class ProgressViewModel(
         fastingRepository: FastingRepository,
         supplementRepository: SupplementRepository,
         bloodPressureRepository: BloodPressureRepository,
+        stepsRepository: StepsRepository,
     ) = intent {
         val progress = combine(
             progressRepository.observeWeightEntries(),
@@ -80,6 +88,7 @@ class ProgressViewModel(
                 // Computed live off the profile, same as every other place targets are shown.
                 targets = profile?.dailyTargets(),
                 fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
+                stepGoal = profile?.stepGoal ?: DEFAULT_STEP_GOAL,
             )
         }
 
@@ -107,25 +116,44 @@ class ProgressViewModel(
             ::SparseSeries,
         )
 
+        // The fasts ride with the Activity tab's two series for the same arity reason, not because
+        // they have anything to do with each other.
+        val activity = combine(
+            fastingRepository.observeSessions(),
+            stepsRepository.observeDays(),
+            exerciseRepository.observeRecentEntries(),
+            ::ActivitySeries,
+        )
+
         combine(
             progress,
             activeDays,
             moodRepository.observeDays(),
             sparseSeries,
-            fastingRepository.observeSessions(),
-        ) { state, days, moodDays, sparse, fasts ->
+            activity,
+        ) { state, days, moodDays, sparse, activitySeries ->
             state.copy(
                 activeDays = days,
                 moodDays = moodDays,
                 sleepNights = sparse.nights,
                 heartDays = sparse.heartDays,
-                fastSessions = fasts,
+                fastSessions = activitySeries.fasts,
                 supplementDays = sparse.supplementDays,
                 bloodPressure = sparse.bloodPressure,
+                stepDays = activitySeries.stepDays,
+                exerciseEntries = activitySeries.exercise,
             )
         }.collect { newState -> reduce { newState } }
     }
 }
+
+/** The four sparse series, grouped so the outer combine stays inside the typed overloads'
+ * five-flow arity. Private and structural — it never leaves this file. */
+private data class ActivitySeries(
+    val fasts: List<FastSession>,
+    val stepDays: List<StepDay>,
+    val exercise: List<ExerciseEntry>,
+)
 
 /** The four sparse series, grouped so the outer combine stays inside the typed overloads'
  * five-flow arity. Private and structural — it never leaves this file. */

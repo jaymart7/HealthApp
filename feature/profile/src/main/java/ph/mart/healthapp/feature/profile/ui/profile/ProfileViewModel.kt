@@ -7,6 +7,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.health.STEP_GOAL_STEPS
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
@@ -100,6 +101,11 @@ class ProfileViewModel(
     fun setFastingGoal(hours: Int) = intent {
         val profile = state.profile ?: return@intent
         profileRepository.saveProfile(profile.copy(fastingGoalHours = hours.coerceIn(FAST_GOAL_HOURS)))
+    }
+
+    fun setStepGoal(steps: Int) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(stepGoal = steps.coerceIn(STEP_GOAL_STEPS)))
     }
 
     fun setExerciseBudget(enabled: Boolean) = intent {

@@ -482,6 +482,27 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   notification already pending on a device. It rides `checksSupplements`, the third flag of its
   kind, and stays quiet both when everything is already ticked *and* when the list is empty — a
   reminder about an empty list is a nudge to open a screen with nothing on it.
+- **The step goal is current-only, and that is the opposite call to `fast_session.goalHours`.**
+  `Profile.stepGoal` (nudge-only over `STEP_GOAL_STEPS`, on Profile → Exercise beside the budget
+  switch) is *not* snapshotted per day, so raising it re-scores every past day's "hit". Forced,
+  not sloppy: `step_day` rows belong to the watch and `StepDayDao.upsert` REPLACEs them wholesale
+  on every re-sync, so a target parked beside them would be overwritten by the next import. The
+  Progress stat is therefore labelled "Hit today's goal", and the goal line moves under bars
+  already drawn — the one place in the app where that is allowed.
+- **The Activity tab draws two charts because steps and kcal share no axis.** Steps come from
+  `step_day` (import-only, sparse, windowed anchored to today like sleep and heart) and the burn
+  series from `burnSeries()` in `:core:data/health/Activity.kt`, which folds `step_day` and
+  `exercise_entry` with the existing `dayBurnedKcal()` so an imported walk is never counted twice.
+  It lives in its own file only because JVM erasure puts every top-level `List<T>.inRange` in one
+  file facade. The burn chart shows what was *burned* and so ignores `addExerciseToBudget` — that
+  switch decides what reaches the budget, not what happened. Steps are still not a streak domain
+  and still not exported.
+- **`DayBarChart` is the zero-based day-bar drawing; `RangeBarChart` is the floating-bar one.**
+  Sleep, Fasting and both Activity charts call the first (`minAxisValue` is the floor a full night
+  or a full day sets, `goalValue` the dashed line); Heart and Blood pressure call the second,
+  which is deliberately not zero-based. Mood, Nutrition and Supplements keep their own canvases —
+  two series with a legend, a target line over a dense series, and percentages. A fifth near-copy
+  of the same `Canvas` is the thing to avoid, not a fourth parameter on `DayBarChart`.
 
 ### Google Health
 
@@ -619,12 +640,13 @@ because of that, not because it was the nicest design available.
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `mood`, `sleep`, `heart`, `fasting`, `supplement`,
-  `pressure`, plus a `shared/` holding `RangeBarChart`, which Heart and Blood pressure both draw),
+  `measurement`, `photo`, `nutrition`, `activity`, `mood`, `sleep`, `heart`, `fasting`,
+  `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart` and `DayBarChart`, which
+  between them draw every tab's bars except Mood's, Nutrition's and Supplements'),
   `:feature:profile` (`profile`, `health`, `library`, `supplement`) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
-  `recipe/` though `FoodScreen` renders both, and Progress's ten tab bodies sit
+  `recipe/` though `FoodScreen` renders both, and Progress's eleven tab bodies sit
   with the charts they draw rather than with the shell that dispatches them. Only
   the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.

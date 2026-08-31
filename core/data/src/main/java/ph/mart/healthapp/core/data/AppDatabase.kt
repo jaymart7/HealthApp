@@ -61,7 +61,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         SupplementDayEntity::class,
         BloodPressureReadingEntity::class,
     ],
-    version = 19,
+    version = 20,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {

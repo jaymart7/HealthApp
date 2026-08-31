@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.DietaryPreference
@@ -55,10 +56,10 @@ internal data class FitPulseExport(
  * [FitPulseExport.fastSessions] and the profile's fasting fields; 7 added the food entries'
  * fiber, sugar and sodium; 8 added [FitPulseExport.supplements], [FitPulseExport.supplementDays]
  * and [ExportProfile.supplementRemindersOn]; 9 added [FitPulseExport.bloodPressure]; 10 added
- * [ExportProfile.mascotName].
+ * [ExportProfile.mascotName]; 11 added [ExportProfile.stepGoal].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 10
+internal const val EXPORT_SCHEMA_VERSION = 11
 
 @Serializable
 internal data class ExportProfile(
@@ -86,6 +87,7 @@ internal data class ExportProfile(
     val darkThemeOn: Boolean? = null,
     val supplementRemindersOn: Boolean = false,
     val mascotName: String? = null,
+    val stepGoal: Int = DEFAULT_STEP_GOAL,
 )
 
 @Serializable
@@ -312,6 +314,7 @@ private fun Profile.toExport() = ExportProfile(
     darkThemeOn = darkThemeOn,
     supplementRemindersOn = supplementRemindersOn,
     mascotName = mascotName,
+    stepGoal = stepGoal,
 )
 
 private fun ExportProfile.toProfile() = Profile(
@@ -339,6 +342,7 @@ private fun ExportProfile.toProfile() = Profile(
     darkThemeOn = darkThemeOn,
     supplementRemindersOn = supplementRemindersOn,
     mascotName = mascotName,
+    stepGoal = stepGoal,
 )
 
 private fun FoodEntry.toExport() = ExportFoodEntry(

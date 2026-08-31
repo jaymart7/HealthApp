@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.home.ui
 
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.health.HeartDay
@@ -64,6 +65,8 @@ data class HomeUiState(
     /** Today's heart rate, from Google Health. Hidden the same way [lastNight] is, for the same
      * reason — FitPulse cannot count a heartbeat itself, so an absent row is an absent watch. */
     val heart: HeartDay? = null,
+    /** The profile's daily step target — [StepsCard]'s denominator. */
+    val stepGoal: Int = DEFAULT_STEP_GOAL,
     /** The part of [burnedKcal] that came from [steps] — what the card shows, and already net of
      * any workout that had claimed those steps. */
     val stepsCreditKcal: Int = 0,

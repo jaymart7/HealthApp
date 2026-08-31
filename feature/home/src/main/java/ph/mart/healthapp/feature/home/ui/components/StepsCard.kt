@@ -23,13 +23,16 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
  * Today's steps, from Google Health. Same rule as [SleepCard]: one source, so the caller hides the
  * card entirely rather than rendering a zero for a user who never connected.
  *
+ * [goal] is the profile's current target, shown under the count so the number the user set has a
+ * place it is actually read. It is not snapshotted per day — see `Profile.stepGoal`.
+ *
  * [creditKcal] is what these steps added to the day's calorie budget, already net of any workout
  * that claimed them and already zero when the user has switched the exercise credit off. It is
  * shown because the calorie ring's goal moves when it changes, and a number that moves for no
  * visible reason reads as a bug.
  */
 @Composable
-fun StepsCard(steps: StepDay, creditKcal: Int, modifier: Modifier = Modifier) {
+fun StepsCard(steps: StepDay, goal: Int, creditKcal: Int, modifier: Modifier = Modifier) {
     AppCard(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -46,6 +49,11 @@ fun StepsCard(steps: StepDay, creditKcal: Int, modifier: Modifier = Modifier) {
                     text = steps.formatSteps(),
                     style = MaterialTheme.typography.headlineSmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "of ${formatSteps(goal)}",
+                    style = MaterialTheme.typography.bodySmall.tabularNums,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (creditKcal > 0) {
                     Text(
@@ -72,11 +80,13 @@ private fun StepsCardPreview() {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(16.dp)) {
                 StepsCard(
                     steps = StepDay(dateEpochDay = 20_000, steps = 8432, burnedKcal = 302),
+                    goal = 10_000,
                     creditKcal = 302,
                 )
                 // The same day with the exercise credit switched off.
                 StepsCard(
                     steps = StepDay(dateEpochDay = 20_000, steps = 8432, burnedKcal = 302),
+                    goal = 10_000,
                     creditKcal = 0,
                 )
             }

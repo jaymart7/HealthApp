@@ -11,6 +11,11 @@ internal interface StepDayDao {
     @Query("SELECT * FROM step_day WHERE date = :date")
     fun observeForDate(date: Long): Flow<StepDayEntity?>
 
+    /** Every imported day, oldest first — the Progress tab's Steps series. Sparse by nature: a day
+     * the watch never recorded has no row, and the chart draws that gap. */
+    @Query("SELECT * FROM step_day ORDER BY date")
+    fun observeAll(): Flow<List<StepDayEntity>>
+
     /**
      * REPLACE, not accumulate: a sync re-queries whole days and writes the total the API reports
      * right now, so re-running it is idempotent and a bucket the watch later revised corrects

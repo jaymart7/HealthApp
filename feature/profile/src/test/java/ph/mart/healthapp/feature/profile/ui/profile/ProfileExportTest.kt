@@ -8,6 +8,7 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
@@ -41,6 +42,7 @@ class ProfileExportTest {
         waterRemindersOn = true,
         waterGoalGlasses = 10,
         darkThemeOn = true,
+        stepGoal = 12_000,
     )
 
     private val foodEntries = listOf(
@@ -170,6 +172,7 @@ class ProfileExportTest {
         assertEquals(emptyList<SupplementDay>(), payload.supplementDays)
         assertEquals(DEFAULT_WATER_GOAL_GLASSES, payload.profile?.waterGoalGlasses)
         assertEquals(DEFAULT_FAST_GOAL_HOURS, payload.profile?.fastingGoalHours)
+        assertEquals(DEFAULT_STEP_GOAL, payload.profile?.stepGoal)
         // Defaulted on, so an older file doesn't silently drop the exercise credit.
         assertEquals(true, payload.profile?.addExerciseToBudget)
     }

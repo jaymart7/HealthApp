@@ -15,6 +15,11 @@ internal interface ExerciseEntryDao {
     @Query("SELECT DISTINCT date FROM exercise_entry WHERE date >= :from AND isDeleted = 0")
     fun observeLoggedDaysSince(from: Long): Flow<List<Long>>
 
+    /** Every entry since [from], oldest first — the Progress Activity tab's burn series. Bounded
+     * rather than unbounded: the charts never look past a year. */
+    @Query("SELECT * FROM exercise_entry WHERE date >= :from AND isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
+    fun observeSince(from: Long): Flow<List<ExerciseEntryEntity>>
+
     @Query("SELECT * FROM exercise_entry WHERE isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
     suspend fun allActive(): List<ExerciseEntryEntity>
 

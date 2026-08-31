@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.fasting.dateEpochDay
+import ph.mart.healthapp.core.data.fasting.durationMinutes
 import ph.mart.healthapp.core.data.fasting.fastingAverages
 import ph.mart.healthapp.core.data.fasting.inRange
 import ph.mart.healthapp.core.data.health.formatDuration
@@ -21,8 +23,14 @@ import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
+import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
+import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
+
+/** The y-axis never shrinks below a day, so a run of short fasts reads as short rather than
+ * filling the canvas the way an auto-ranged axis would let it. */
+private const val FULL_DAY_MINUTES = 24 * 60
 
 @Composable
 internal fun FastingTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
@@ -45,11 +53,16 @@ internal fun FastingTabContent(uiState: ProgressUiState, state: ProgressScreenSt
         val today = todayEpochDay()
         val from = today - (state.range.days ?: ChartRange.OneYear.days!!)
         val sessions = uiState.fastSessions.inRange(state.range, today)
-        FastingTrendChart(
-            sessions = sessions,
-            goalHours = uiState.fastingGoalHours,
+        DayBarChart(
+            // A completed fast is placed on the day it ended, and priced with nowMillis = 0
+            // because every session here has an end.
+            bars = sessions.map { DayBar(it.dateEpochDay, it.durationMinutes(nowMillis = 0)) },
             fromEpochDay = from,
             toEpochDay = today,
+            minAxisValue = FULL_DAY_MINUTES,
+            // A fast's whole point is whether it cleared the target, and a bar you have to measure
+            // against an axis doesn't say that.
+            goalValue = uiState.fastingGoalHours * 60,
             modifier = Modifier.padding(top = 16.dp),
         )
         val averages = sessions.fastingAverages()
