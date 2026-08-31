@@ -176,9 +176,15 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   already is — and only the picker passes `character` explicitly. `Profile.mascotName` is a
   nullable **String**, not the enum, because `MascotCharacter` lives in `:core:designsystem` and
   `:core:data` does not depend on it; `mascotCharacterOf()` resolves it, and null (or a name from a
-  newer build) degrades to Bibo, exactly the reading `darkThemeOn`'s null has. The characters differ
-  by silhouette and eye shape only — same `primaryContainer` body, same mouth geometry — so the five
-  states stay one vocabulary and no character can come to mean something.
+  newer build) degrades to Bibo, exactly the reading `darkThemeOn`'s null has. Each character varies
+  on **four axes** — silhouette, fill pair, eyes, one accent — because two characters differing only
+  in outline read as the same character badly drawn. What stays shared is the **mouth geometry and
+  the state vocabulary**: all five states read identically whichever buddy is picked, so no
+  character can come to mean something. Fills never take a `tertiary` or `error` role
+  (`tertiaryContainer` is the AI accent, `error` is off-track only). The whole avatar is one
+  `Canvas` rather than a shaped `Box` — that is what lets an antenna or an ear sit *above* the head
+  (`topInset`/`sideInset` carve the room, and Bibo's are zero so it renders exactly as it always
+  has) with nothing clipping the Celebrating sparkles.
 - **The weekly recap window is rolling-7-ending-today**, not a calendar week — a calendar week
   reports a half-empty Monday. The card is *hidden* when nothing was logged in the window
   rather than rendering zeros, and its "days logged" uses the streak's four-domain definition
@@ -582,8 +588,8 @@ because of that, not because it was the nicest design available.
   names — the v4 reference publishes no `Nutrient` enum values. Pin the three against a live
   response and `nutritionLogBody`'s `micronutrients` flag *and* `pushMeals`' retry both go, the
   same outstanding job as the weight timestamp and the step-bucket field.
-- Final mascot illustration. The geometric placeholders (Bibo, Pip, Zed) are used throughout;
-  a commissioned set replaces the three drawings, not the picker around them.
+- Final mascot illustration. The geometric placeholders (Bibo, Pip, Zed, Momo, Sprig) are used
+  throughout; a commissioned set replaces the five drawings, not the picker around them.
 - Google Health: verification is *not* done. Needs the Cloud project's consent screen branded
   for FitPulse, an Android OAuth client (package + debug **and** release SHA-1) in that same
   project, per-scope justifications submitted, and a CASA Letter of Validation. Note that

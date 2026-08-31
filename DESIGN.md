@@ -148,9 +148,10 @@ two-family pairing: **Poppins** carries display, headline, and title with a geom
 value — calories, weight, macros — renders with tabular figures (`TextStyle.tabularNums`) so
 digits don't jitter as they update. Nothing is animated for spectacle; things settle.
 
-Bibo, the geometric mascot, is where the personality is concentrated: a rounded-square
+Bibo, the default geometric mascot, is where the personality is concentrated: a rounded-square
 `primaryContainer` body with dot eyes and a drawn mouth curve, in five states (Idle, Happy,
-Celebrating, Sleepy, Thinking) and no other detail at any size. The system deliberately spends
+Celebrating, Sleepy, Thinking) and no other detail at any size. Four other buddies can be picked
+in their place; they share his states and his mouth, never his silhouette or his fill. The system deliberately spends
 its warmth in one place — the mascot, the copy, and the container fills — and stays disciplined
 everywhere else. **`Color.kt` is the normative source for every value listed above:** it is a
 frozen Material Theme Builder export carrying light and dark at standard, medium, and high
@@ -164,7 +165,7 @@ source of truth.
 - Generous and soft: pill buttons, 20dp cards, 16dp interiors, 48dp touch targets
 - Depth by tonal surface layering; shadow is reserved for things that genuinely float
 - Semantic color is fixed app-wide — a macro is the same color in every chart on every screen
-- Personality lives in Bibo and the copy, never in one-off visual exceptions
+- Personality lives in the mascot and the copy, never in one-off visual exceptions
 
 ## Colors
 
@@ -312,8 +313,8 @@ One continuous family of rounded rectangles, scaled by how much the element want
 - **8dp**: the `AIChip`.
 - **4dp / 2dp**: the macro bar and the step progress bar — small enough to read as a seam rather
   than a corner.
-- **Mascot**: `size / 3`, so Bibo's corner radius scales with him and he reads identically at
-  32dp and 96dp.
+- **Mascot**: Bibo's `width / 3`, so his corner radius scales with him and he reads identically
+  at 32dp and 96dp. The other four buddies are their own silhouettes, drawn as paths.
 
 Borders are 1dp `outline` (fields, secondary buttons) or 2dp `primary` (a selected
 `SelectableCard`). There is no third border weight.
@@ -426,27 +427,37 @@ clock.
 
 ### Signature: the mascots (`MascotAvatar`)
 
-A `primaryContainer` body carrying eyes and a drawn mouth curve in `onPrimaryContainer` on a
-canvas at 62% of its box. Five states — Idle, Happy, Celebrating, Sleepy, Thinking — with
-Celebrating adding two `✦` glyphs. **No other detail is added at any size.** The mascot is the
-app's only illustration and its entire vocabulary; the final illustration is still outstanding
-and these geometric forms are the placeholder standing in for it.
+A filled body carrying eyes, one accent and a drawn mouth curve, on a face square at 62% of the
+body. Five states — Idle, Happy, Celebrating, Sleepy, Thinking — with Celebrating adding two `✦`
+glyphs. **No other detail is added at any size.** The mascot is the app's only illustration and
+its entire vocabulary; the final illustration is still outstanding and these geometric forms are
+the placeholder standing in for it.
 
-Three characters, picked in Profile → Appearance. They differ by **silhouette and eye shape
-only** — every one keeps the same body colour, the same feature colour and the same mouth
-geometry, so a state reads identically whichever is chosen and no character can carry a meaning
-of its own:
+Five characters, picked in Profile → Appearance. Each varies on **four axes** — silhouette, fill
+pair, eyes and one accent — because two characters differing only in outline read as the same
+character badly drawn. What every one shares is the **mouth geometry and the five states**, so a
+state reads identically whichever buddy is chosen and no character carries a meaning of its own:
 
-| | Body | Eyes |
-|---|---|---|
-| **Bibo** (default) | rounded square, radius `size / 3` | round dots |
-| **Pip** | circle | round dots |
-| **Zed** | hexagon, flat top and bottom | slots — rounded rects, wider than tall |
+| | Body | Fill / feature | Eyes | Accent |
+|---|---|---|---|---|
+| **Bibo** (default) | rounded square, radius `width / 3` | `primaryContainer` / `onPrimaryContainer` | round dots | — |
+| **Pip** | circle | `secondaryContainer` / `onSecondaryContainer` | rings | blush on the cheeks |
+| **Zed** | hexagon, flat top and bottom | `surfaceContainerHighest` / `primary` | one visor slot across both eyes | antenna |
+| **Momo** | dome — round top, softer base | `primary` / `onPrimary` | tall ovals | two ears |
+| **Sprig** | capsule, narrow | `secondary` / `onSecondary` | round dots | stem and leaf |
+
+Zed is the one character whose fill is a neutral and whose features carry the accent rather than
+the other way round — a grey chassis with a lit face is what makes it read as a machine. **No
+mascot fill takes a `tertiary` or `error` role:** `tertiaryContainer` is the AI accent and
+`error` means genuinely off-track.
 
 The pick travels as `LocalMascot`, provided once by `AppTheme`. **`character` is never passed
 explicitly outside the picker** — every other caller writes `MascotAvatar(state = …)` and gets
-the user's buddy for free. The body is a *shaped background*, not a clip, so Zed's corners can't
-slice the Celebrating sparkles.
+the user's buddy for free. The whole avatar is one `Canvas`, never a clipped `Box`: that is what
+lets an antenna or an ear sit *above* the head (`topInset`/`sideInset` carve the headroom, and
+Bibo's are zero so it fills its box exactly as it always did) with nothing slicing the
+Celebrating sparkles. The picker marks the selected buddy with a `secondaryContainer` cell rather
+than an outline, since there is no per-character `Shape` to trace any more.
 
 ### Signature: `MacroBar`
 

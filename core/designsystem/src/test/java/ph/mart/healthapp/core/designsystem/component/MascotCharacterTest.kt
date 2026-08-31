@@ -20,4 +20,12 @@ class MascotCharacterTest {
         assertEquals(MascotCharacter.Bibo, mascotCharacterOf("Nonexistent"))
         assertEquals(MascotCharacter.Bibo, mascotCharacterOf("bibo"))
     }
+
+    @Test
+    fun `no two characters share the same silhouette, eyes and accent`() {
+        // The drawing itself can't be asserted on; a copy-pasted entry is the one failure mode
+        // that would ship two buddies rendering identically.
+        val looks = MascotCharacter.entries.map { Triple(it.body, it.eyes, it.accent) }
+        assertEquals(MascotCharacter.entries.size, looks.toSet().size)
+    }
 }

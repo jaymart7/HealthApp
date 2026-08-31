@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.GenericShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,12 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -36,38 +37,55 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * all five, and the mouth geometry below is shared so a state reads the same whichever is picked. */
 enum class MascotState { Idle, Happy, Celebrating, Sleepy, Thinking }
 
-/** Flat top and bottom with points at left and right mid-height: the flat edges are what leave
- * room for the same eyes and mouth every other character draws. */
-private val HexagonShape = GenericShape { size, _ ->
-    moveTo(size.width * 0.25f, 0f)
-    lineTo(size.width * 0.75f, 0f)
-    lineTo(size.width, size.height * 0.5f)
-    lineTo(size.width * 0.75f, size.height)
-    lineTo(size.width * 0.25f, size.height)
-    lineTo(0f, size.height * 0.5f)
-    close()
-}
+internal enum class MascotBody { RoundedSquare, Circle, Hexagon, Dome, Capsule }
 
-internal enum class EyeStyle { Dot, Slot }
+internal enum class EyeStyle { Dot, Ring, Visor, Oval }
+
+internal enum class MascotAccent { None, Blush, Antenna, Ears, Sprout }
 
 /**
- * The mascots the user can pick between in Profile → Appearance. They differ by **silhouette and
- * eye shape only** — every one keeps [MaterialTheme.colorScheme.primaryContainer] for its body and
- * `onPrimaryContainer` for its features, so the mascot never competes with the nav bar's
- * `secondaryContainer` pill and `tertiaryContainer` stays reserved for AI output.
+ * The mascots the user can pick between in Profile → Appearance. Each varies on four axes —
+ * silhouette, fill, eyes and one accent — because two characters that differ only in outline read
+ * as the same character badly drawn.
  *
- * [Bibo] is the default and the app's original mascot; it renders exactly as it always has.
+ * [Bibo] is the app's original mascot and the default; it renders exactly as it always has.
+ *
+ * Colour comes from [mascotColors]. Mascot fills never use a **tertiary** or **error** role: the
+ * first is the AI accent and the carbs colour, the second is reserved for genuinely off-track. What
+ * is left still gives every character its own fill.
+ *
+ * [topInset]/[sideInset] are fractions of the avatar box. They carve the headroom an accent needs
+ * to sit above the head, and they are what make [Sprig] a tall bean rather than a wide one — Bibo's
+ * are zero, so its body still fills the box exactly as before.
  */
-enum class MascotCharacter(val label: String, internal val eyes: EyeStyle) {
-    Bibo("Bibo", EyeStyle.Dot),
-    Pip("Pip", EyeStyle.Dot),
-    Zed("Zed", EyeStyle.Slot),
-    ;
+enum class MascotCharacter(
+    val label: String,
+    internal val body: MascotBody,
+    internal val eyes: EyeStyle,
+    internal val accent: MascotAccent,
+    internal val topInset: Float = 0f,
+    internal val sideInset: Float = 0f,
+) {
+    Bibo("Bibo", MascotBody.RoundedSquare, EyeStyle.Dot, MascotAccent.None),
+    Pip("Pip", MascotBody.Circle, EyeStyle.Ring, MascotAccent.Blush),
+    Zed("Zed", MascotBody.Hexagon, EyeStyle.Visor, MascotAccent.Antenna, topInset = 0.22f, sideInset = 0.02f),
+    Momo("Momo", MascotBody.Dome, EyeStyle.Oval, MascotAccent.Ears, topInset = 0.16f, sideInset = 0.04f),
+    Sprig("Sprig", MascotBody.Capsule, EyeStyle.Dot, MascotAccent.Sprout, topInset = 0.24f, sideInset = 0.17f),
+}
 
-    fun shape(size: Dp): Shape = when (this) {
-        Bibo -> RoundedCornerShape(size / 3)
-        Pip -> CircleShape
-        Zed -> HexagonShape
+internal data class MascotColors(val body: Color, val feature: Color)
+
+/** [Zed] is the one character whose fill is a neutral and whose features are the accent rather than
+ * the other way round — a grey chassis with a lit face is what makes it read as a machine. */
+@Composable
+internal fun mascotColors(character: MascotCharacter): MascotColors {
+    val scheme = MaterialTheme.colorScheme
+    return when (character) {
+        MascotCharacter.Bibo -> MascotColors(scheme.primaryContainer, scheme.onPrimaryContainer)
+        MascotCharacter.Pip -> MascotColors(scheme.secondaryContainer, scheme.onSecondaryContainer)
+        MascotCharacter.Zed -> MascotColors(scheme.surfaceContainerHighest, scheme.primary)
+        MascotCharacter.Momo -> MascotColors(scheme.primary, scheme.onPrimary)
+        MascotCharacter.Sprig -> MascotColors(scheme.secondary, scheme.onSecondary)
     }
 }
 
@@ -83,9 +101,10 @@ fun mascotCharacterOf(name: String?): MascotCharacter =
 val LocalMascot = staticCompositionLocalOf { MascotCharacter.Bibo }
 
 /**
- * The app's geometric mascot: a [MaterialTheme.colorScheme.primaryContainer] body in the
- * [character]'s silhouette, carrying eyes + a mouth curve in
- * [MaterialTheme.colorScheme.onPrimaryContainer]. No other detail is added at any size.
+ * The app's geometric mascot: a filled body in the [character]'s silhouette carrying its eyes, one
+ * accent and the shared mouth curve. Everything is drawn on one canvas so an accent can sit above
+ * the head, and nothing is clipped — the Celebrating sparkles overhang whatever the body's corners
+ * do.
  *
  * [character] defaults to the user's pick and should be left alone everywhere except the picker.
  */
@@ -96,30 +115,33 @@ fun MascotAvatar(
     size: Dp = 64.dp,
     character: MascotCharacter = LocalMascot.current,
 ) {
-    val containerColor = MaterialTheme.colorScheme.primaryContainer
-    val featureColor = MaterialTheme.colorScheme.onPrimaryContainer
-    Box(
-        // Shaped background rather than a clip: the Celebrating sparkles sit near the corners, and
-        // a clip would slice them off whichever silhouette cuts the most corner (Zed's).
-        modifier = modifier
-            .size(size)
-            .background(containerColor, character.shape(size)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.size(size * 0.62f)) {
-            drawMascotFace(state, featureColor, character.eyes)
+    val colors = mascotColors(character)
+    Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val body = Rect(
+                left = this.size.width * character.sideInset,
+                top = this.size.height * character.topInset,
+                right = this.size.width * (1f - character.sideInset),
+                bottom = this.size.height,
+            )
+            drawAccent(character, body, colors.feature)
+            drawBody(character, body, colors.body)
+            // Square, centred on the body — for Bibo (which has no insets) that is the 62%-of-box
+            // canvas the face has always been drawn into.
+            val faceHalf = minOf(body.width, body.height) * 0.62f / 2f
+            drawMascotFace(state, colors.feature, character, Rect(body.center, faceHalf))
         }
         if (state == MascotState.Celebrating) {
             Text(
                 text = "✦",
-                color = featureColor,
+                color = colors.feature,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(x = -size * 0.12f, y = size * 0.08f),
             )
             Text(
                 text = "✦",
-                color = featureColor,
+                color = colors.feature,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .offset(x = size * 0.1f, y = size * 0.28f),
@@ -128,55 +150,191 @@ fun MascotAvatar(
     }
 }
 
-private fun DrawScope.drawMascotFace(state: MascotState, color: Color, eyes: EyeStyle) {
-    val eyeRadius = size.minDimension * 0.09f
-    val eyeY = size.height * 0.38f
-    val eyeGap = size.width * 0.22f
-    val centerX = size.width / 2f
+private fun DrawScope.drawBody(character: MascotCharacter, body: Rect, color: Color) {
+    when (character.body) {
+        MascotBody.RoundedSquare -> drawRoundRect(
+            color = color,
+            topLeft = body.topLeft,
+            size = body.size,
+            cornerRadius = CornerRadius(body.width / 3f),
+        )
+
+        MascotBody.Circle -> drawCircle(
+            color = color,
+            radius = minOf(body.width, body.height) / 2f,
+            center = body.center,
+        )
+
+        MascotBody.Hexagon -> drawPath(
+            // Flat top and bottom, points at left and right mid-height — the flat edges leave room
+            // for the same eyes and mouth every other character draws.
+            path = Path().apply {
+                moveTo(body.left + body.width * 0.25f, body.top)
+                lineTo(body.left + body.width * 0.75f, body.top)
+                lineTo(body.right, body.center.y)
+                lineTo(body.left + body.width * 0.75f, body.bottom)
+                lineTo(body.left + body.width * 0.25f, body.bottom)
+                lineTo(body.left, body.center.y)
+                close()
+            },
+            color = color,
+        )
+
+        MascotBody.Dome -> drawPath(
+            path = Path().apply {
+                addRoundRect(
+                    RoundRect(
+                        rect = body,
+                        topLeft = CornerRadius(body.width * 0.48f),
+                        topRight = CornerRadius(body.width * 0.48f),
+                        bottomLeft = CornerRadius(body.width * 0.16f),
+                        bottomRight = CornerRadius(body.width * 0.16f),
+                    ),
+                )
+            },
+            color = color,
+        )
+
+        MascotBody.Capsule -> drawRoundRect(
+            color = color,
+            topLeft = body.topLeft,
+            size = body.size,
+            cornerRadius = CornerRadius(body.width / 2f),
+        )
+    }
+}
+
+/** Drawn before the body so a stem or an ear tucks behind it rather than butting against its edge.
+ *
+ * Every accent is sized off `body.top` — the headroom the character's `topInset` carved — rather
+ * than off the body, so none of them can reach past the top of the box the Canvas clips to. That
+ * makes the insets a knob for how *big* an accent reads, never for whether it survives. */
+private fun DrawScope.drawAccent(character: MascotCharacter, body: Rect, color: Color) {
+    val head = body.top
+    val centerX = body.center.x
+    when (character.accent) {
+        // Blush sits on the cheeks, over the body — see drawMascotFace.
+        MascotAccent.None, MascotAccent.Blush -> Unit
+
+        MascotAccent.Antenna -> {
+            val bulb = head * 0.30f
+            val bulbY = head * 0.36f
+            drawLine(
+                color = color,
+                start = Offset(centerX, body.top + body.height * 0.1f),
+                end = Offset(centerX, bulbY),
+                strokeWidth = bulb * 0.5f,
+                cap = StrokeCap.Round,
+            )
+            drawCircle(color, radius = bulb, center = Offset(centerX, bulbY))
+        }
+
+        MascotAccent.Ears -> listOf(0.26f, 0.74f).forEach { x ->
+            val tipX = body.left + body.width * x
+            drawPath(
+                path = Path().apply {
+                    moveTo(tipX - body.width * 0.13f, body.top + body.height * 0.09f)
+                    lineTo(tipX, head * 0.10f)
+                    lineTo(tipX + body.width * 0.13f, body.top + body.height * 0.09f)
+                    close()
+                },
+                color = color,
+            )
+        }
+
+        MascotAccent.Sprout -> {
+            val stemTop = head * 0.45f
+            drawLine(
+                color = color,
+                start = Offset(centerX, body.top + body.height * 0.06f),
+                end = Offset(centerX, stemTop),
+                strokeWidth = body.width * 0.06f,
+                cap = StrokeCap.Round,
+            )
+            // Rotating the oval about the stem's tip lifts its far corner by width * sin(28°); the
+            // cap is what keeps that corner inside the box on a narrow headroom.
+            val leafWidth = minOf(body.width * 0.46f, stemTop * 2f)
+            val pivot = Offset(centerX, stemTop)
+            rotate(degrees = -28f, pivot = pivot) {
+                drawOval(color = color, topLeft = pivot, size = Size(leafWidth, leafWidth * 0.52f))
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawMascotFace(
+    state: MascotState,
+    color: Color,
+    character: MascotCharacter,
+    face: Rect,
+) {
+    val eyeRadius = minOf(face.width, face.height) * 0.09f
+    val eyeY = face.top + face.height * 0.38f
+    val eyeGap = face.width * 0.22f
+    val centerX = face.center.x
     val strokeWidth = eyeRadius * 0.6f
 
     if (state == MascotState.Sleepy) {
+        // Closed eyes are the state, not the character — every silhouette shuts them the same way.
         val lineHalf = eyeRadius * 1.2f
-        drawLine(
-            color = color,
-            start = Offset(centerX - eyeGap - lineHalf, eyeY),
-            end = Offset(centerX - eyeGap + lineHalf, eyeY),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            color = color,
-            start = Offset(centerX + eyeGap - lineHalf, eyeY),
-            end = Offset(centerX + eyeGap + lineHalf, eyeY),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round,
-        )
-    } else when (eyes) {
-        EyeStyle.Dot -> {
-            drawCircle(color, radius = eyeRadius, center = Offset(centerX - eyeGap, eyeY))
-            drawCircle(color, radius = eyeRadius, center = Offset(centerX + eyeGap, eyeY))
+        listOf(centerX - eyeGap, centerX + eyeGap).forEach { x ->
+            drawLine(
+                color = color,
+                start = Offset(x - lineHalf, eyeY),
+                end = Offset(x + lineHalf, eyeY),
+                strokeWidth = strokeWidth,
+                cap = StrokeCap.Round,
+            )
+        }
+    } else when (character.eyes) {
+        EyeStyle.Dot -> listOf(centerX - eyeGap, centerX + eyeGap).forEach { x ->
+            drawCircle(color, radius = eyeRadius, center = Offset(x, eyeY))
         }
 
-        EyeStyle.Slot -> {
-            val slot = Size(eyeRadius * 2.6f, eyeRadius * 1.4f)
-            val corner = CornerRadius(slot.height / 2f)
-            drawRoundRect(
+        EyeStyle.Ring -> listOf(centerX - eyeGap, centerX + eyeGap).forEach { x ->
+            drawCircle(
                 color = color,
-                topLeft = Offset(centerX - eyeGap - slot.width / 2f, eyeY - slot.height / 2f),
-                size = slot,
-                cornerRadius = corner,
+                radius = eyeRadius * 1.3f,
+                center = Offset(x, eyeY),
+                style = Stroke(width = strokeWidth * 1.2f),
             )
+        }
+
+        // One slot across both eye positions rather than two — a visor, not a pair of eyes.
+        EyeStyle.Visor -> {
+            val height = eyeRadius * 1.5f
+            val width = eyeGap * 2f + eyeRadius * 2.4f
             drawRoundRect(
                 color = color,
-                topLeft = Offset(centerX + eyeGap - slot.width / 2f, eyeY - slot.height / 2f),
+                topLeft = Offset(centerX - width / 2f, eyeY - height / 2f),
+                size = Size(width, height),
+                cornerRadius = CornerRadius(height / 2f),
+            )
+        }
+
+        EyeStyle.Oval -> listOf(centerX - eyeGap, centerX + eyeGap).forEach { x ->
+            val slot = Size(eyeRadius * 1.6f, eyeRadius * 2.7f)
+            drawRoundRect(
+                color = color,
+                topLeft = Offset(x - slot.width / 2f, eyeY - slot.height / 2f),
                 size = slot,
-                cornerRadius = corner,
+                cornerRadius = CornerRadius(slot.width / 2f),
             )
         }
     }
 
-    val mouthY = size.height * 0.64f
-    val mouthWidth = size.width * 0.34f
+    if (character.accent == MascotAccent.Blush && state != MascotState.Sleepy) {
+        listOf(centerX - eyeGap * 1.9f, centerX + eyeGap * 1.9f).forEach { x ->
+            drawCircle(
+                color = color.copy(alpha = 0.35f),
+                radius = eyeRadius * 1.1f,
+                center = Offset(x, eyeY + face.height * 0.16f),
+            )
+        }
+    }
+
+    val mouthY = face.top + face.height * 0.64f
+    val mouthWidth = face.width * 0.34f
     when (state) {
         MascotState.Idle -> drawArc(
             color = color,
@@ -234,11 +392,7 @@ private fun MascotAvatarPreview() {
                 MascotCharacter.entries.forEach { character ->
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         MascotState.entries.forEach { state ->
-                            MascotAvatar(
-                                state = state,
-                                size = 56.dp,
-                                character = character,
-                            )
+                            MascotAvatar(state = state, size = 56.dp, character = character)
                         }
                     }
                 }

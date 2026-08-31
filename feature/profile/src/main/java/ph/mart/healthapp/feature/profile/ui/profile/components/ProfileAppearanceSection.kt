@@ -1,11 +1,12 @@
 package ph.mart.healthapp.feature.profile.ui.profile.components
 
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -13,6 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -22,7 +25,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-private val AvatarSize = 56.dp
+private val AvatarSize = 48.dp
 
 /**
  * Until Dark mode is touched the profile stores null and the app follows the device, so [darkTheme]
@@ -53,7 +56,9 @@ internal fun ProfileAppearanceSection(
 }
 
 /** One tap, one buddy — the pick reaches every mascot in the app through the theme, so there is
- * nothing to confirm and no second screen to open. */
+ * nothing to confirm and no second screen to open. The cells share the width evenly rather than
+ * sitting at their natural size: five 56dp avatars overflowed a 360dp screen, and a scrolling row
+ * would hide a buddy behind no affordance. */
 @Composable
 private fun MascotPickerRow(
     selected: MascotCharacter,
@@ -64,33 +69,38 @@ private fun MascotPickerRow(
             label = "Buddy",
             sublabel = "Who greets you on Home and turns up across the app.",
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MascotCharacter.entries.forEach { character ->
                 val isSelected = character == selected
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.selectable(
-                        selected = isSelected,
-                        role = Role.RadioButton,
-                        onClick = { onSelect(character) },
-                    ),
+                    // secondaryContainer is the app's "you are here" fill — the nav pill and the
+                    // SegmentedToggle chip already use it, and unlike a border it needs no
+                    // per-character Shape now that every silhouette is drawn on one canvas.
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.secondaryContainer
+                            } else {
+                                Color.Transparent
+                            },
+                        )
+                        .selectable(
+                            selected = isSelected,
+                            role = Role.RadioButton,
+                            onClick = { onSelect(character) },
+                        )
+                        .padding(vertical = 8.dp),
                 ) {
-                    MascotAvatar(
-                        state = MascotState.Happy,
-                        size = AvatarSize,
-                        character = character,
-                        modifier = if (isSelected) {
-                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, character.shape(AvatarSize))
-                        } else {
-                            Modifier
-                        },
-                    )
+                    MascotAvatar(state = MascotState.Happy, size = AvatarSize, character = character)
                     Text(
                         text = character.label,
                         style = MaterialTheme.typography.labelMedium,
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.onSecondaryContainer
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         },
@@ -109,7 +119,7 @@ private fun ProfileAppearanceSectionPreview() {
             ProfileAppearanceSection(
                 darkTheme = true,
                 onSetDarkTheme = {},
-                mascot = MascotCharacter.Zed,
+                mascot = MascotCharacter.Sprig,
                 onSelectMascot = {},
                 modifier = Modifier.padding(16.dp),
             )
