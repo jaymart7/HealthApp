@@ -77,13 +77,18 @@ enum class MascotCharacter(
 internal data class MascotColors(val body: Color, val feature: Color)
 
 /** [Zed] is the one character whose fill is a neutral and whose features are the accent rather than
- * the other way round — a grey chassis with a lit face is what makes it read as a machine. */
+ * the other way round — a grey chassis with a lit face is what makes it read as a machine.
+ *
+ * [Pip] is the one whose pair *inverts* with the theme: `inverseSurface` is dark on a light scheme
+ * and light on a dark one, so it is the only buddy that swaps ground for figure when the theme
+ * does. It cannot take `secondaryContainer` — the picker fills the selected cell with exactly that,
+ * and a mascot that vanished the moment it was chosen is the one thing the picker must not do. */
 @Composable
 internal fun mascotColors(character: MascotCharacter): MascotColors {
     val scheme = MaterialTheme.colorScheme
     return when (character) {
         MascotCharacter.Bibo -> MascotColors(scheme.primaryContainer, scheme.onPrimaryContainer)
-        MascotCharacter.Pip -> MascotColors(scheme.secondaryContainer, scheme.onSecondaryContainer)
+        MascotCharacter.Pip -> MascotColors(scheme.inverseSurface, scheme.inverseOnSurface)
         MascotCharacter.Zed -> MascotColors(scheme.surfaceContainerHighest, scheme.primary)
         MascotCharacter.Momo -> MascotColors(scheme.primary, scheme.onPrimary)
         MascotCharacter.Sprig -> MascotColors(scheme.secondary, scheme.onSecondary)

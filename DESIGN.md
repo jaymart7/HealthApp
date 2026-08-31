@@ -441,13 +441,16 @@ state reads identically whichever buddy is chosen and no character carries a mea
 | | Body | Fill / feature | Eyes | Accent |
 |---|---|---|---|---|
 | **Bibo** (default) | rounded square, radius `width / 3` | `primaryContainer` / `onPrimaryContainer` | round dots | — |
-| **Pip** | teardrop — round base tapering to a soft point | `secondaryContainer` / `onSecondaryContainer` | rings | blush on the cheeks |
+| **Pip** | teardrop — round base tapering to a soft point | `inverseSurface` / `inverseOnSurface` | rings | blush on the cheeks |
 | **Zed** | hexagon, flat top and bottom | `surfaceContainerHighest` / `primary` | one visor slot across both eyes | antenna |
 | **Momo** | dome — round top, softer base | `primary` / `onPrimary` | tall ovals | two ears |
 | **Sprig** | capsule, narrow | `secondary` / `onSecondary` | round dots | stem and leaf |
 
 Pip is the one character that spends its headroom on its own silhouette rather than on an
-accent — the taper *is* the thing above its head. Zed is the one character whose fill is a neutral and whose features carry the accent rather than
+accent — the taper *is* the thing above its head — and the one whose fill inverts with the theme,
+dark on a light scheme and light on a dark one. It deliberately does **not** take
+`secondaryContainer`: the picker fills the selected cell with that, and the chosen buddy must not
+disappear into it. Zed is the one character whose fill is a neutral and whose features carry the accent rather than
 the other way round — a grey chassis with a lit face is what makes it read as a machine. **No
 mascot fill takes a `tertiary` or `error` role:** `tertiaryContainer` is the AI accent and
 `error` means genuinely off-track.
