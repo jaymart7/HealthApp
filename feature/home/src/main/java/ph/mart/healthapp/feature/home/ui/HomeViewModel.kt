@@ -2,6 +2,8 @@ package ph.mart.healthapp.feature.home.ui
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import org.orbitmvi.orbit.OrbitContainer
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
@@ -13,7 +15,9 @@ import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.health.stepsCreditKcal
+import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
@@ -49,21 +53,28 @@ class HomeViewModel(
     sleepRepository: SleepRepository,
     stepsRepository: StepsRepository,
     heartRepository: HeartRepository,
+    private val insightRepository: InsightRepository,
+    private val networkMonitor: NetworkMonitor,
 ) : ViewModel(), OrbitContainerHost<HomeUiState, HomeUiState, Nothing> {
 
-    override val container = orbitContainer<HomeUiState, Nothing>(HomeUiState()) {
-        observeHome(
-            profileRepository,
-            foodRepository,
-            progressRepository,
-            exerciseRepository,
-            moodRepository,
-            fastingRepository,
-            sleepRepository,
-            stepsRepository,
-            heartRepository,
-        )
-    }
+    // Explicitly typed, unlike the other containers in this app: [requestInsight] reads
+    // `container.stateFlow`, and a container whose type is inferred from a body that
+    // mentions itself is a recursion the compiler can't unpick.
+    override val container: OrbitContainer<HomeUiState, HomeUiState, Nothing> =
+        orbitContainer<HomeUiState, Nothing>(HomeUiState()) {
+            observeHome(
+                profileRepository,
+                foodRepository,
+                progressRepository,
+                exerciseRepository,
+                moodRepository,
+                fastingRepository,
+                sleepRepository,
+                stepsRepository,
+                heartRepository,
+            )
+            requestInsight()
+        }
 
     fun handleEvent(event: HomeEvent) {
         when (event) {
@@ -176,6 +187,29 @@ class HomeViewModel(
                     weightProgressKg(state.weightEntries, it.goal, it.weightKg)
                 },
             )
-        }.collect { newState -> reduce { newState } }
+        }.collect { newState ->
+            // [newState] is rebuilt from the repositories on every emission, so a plain
+            // `reduce { newState }` would drop the model's line the moment a glass of water was
+            // tapped. The insight isn't derived from Room, so it is carried across by hand.
+            reduce { newState.copy(aiInsight = state.aiInsight) }
+        }
+    }
+
+    /**
+     * One call per ViewModel, not per emission: Home re-reads its flows on every water tap and
+     * every logged meal, and none of those is a new day's worth of news. The repository caches
+     * per day on top of that, so leaving Home and coming back costs nothing either.
+     *
+     * Waits for a *populated* first state — the default [HomeUiState] is all-zero, which reads as
+     * day one, and a model asked about a day with nothing in it writes a sentence about nothing.
+     * Offline it never asks at all, and any null answer leaves [HomeUiState.aiInsight] null,
+     * which `HomeCards` reads as "use [insightFor]".
+     */
+    private fun requestInsight() = intent {
+        val ready = container.stateFlow.first { it.loaded && !it.isDayOne && it.profile != null }
+        if (!networkMonitor.isOnline()) return@intent
+        val request = ready.toInsightRequest() ?: return@intent
+        val insight = insightRepository.dailyInsight(request, todayEpochDay()) ?: return@intent
+        reduce { state.copy(aiInsight = insight) }
     }
 }

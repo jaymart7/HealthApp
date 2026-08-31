@@ -71,7 +71,10 @@ internal fun HomeCards(
     val trend = uiState.weightEntries.trendVsSevenDaysAgo(
         fallbackKg = uiState.profile?.weightKg ?: 0.0,
     )
-    val insight = targets?.let { insightFor(uiState.totals, it, trend) }
+    // The model's line when it answered, the rules when it didn't — offline, a failed call
+    // and a model with nothing to say all land on the same three rules that shipped before
+    // there was a model at all.
+    val insight = uiState.aiInsight ?: targets?.let { insightFor(uiState.totals, it, trend) }
 
     // Keyed on Unit, so the entrance runs once when the screen arrives and never again — logging
     // a glass of water must not re-run the curtain.

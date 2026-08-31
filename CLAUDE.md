@@ -356,6 +356,19 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   pushed by `FitPulseApplication`'s collector the moment Room emits. But the today-only
   repository overloads resolve `todayEpochDay()` when their flow is *built*, so a Glance session
   that spans midnight would keep reporting yesterday; the 30-minute tick is what restarts it.
+- **The AI insight is an upgrade to the insight card, never its source.** Home renders
+  `uiState.aiInsight ?: insightFor(...)`: the three rules that shipped before there was a model
+  still draw the card offline, on a failed call, and when the model answers `NONE` — the offline
+  rule applied to the one Gemini feature that isn't food recognition. Consequences worth keeping:
+  the answer comes back as **plain text, not JSON**, so the only validation (`sanitizeInsight`) is
+  a pure function a JVM test can reach, unlike the photo path's `org.json` parse; it is cached in
+  one `@Volatile` day-keyed field rather than a table, because an insight is derived like the
+  streak and has no meaning tomorrow; and `HomeViewModel` asks **once per ViewModel**, waiting for
+  a loaded, non-day-one state, because the state flow re-emits on every glass of water. That last
+  one is why `observeHome`'s collect carries `aiInsight` across by hand — it rebuilds the whole
+  state from Room, and a plain `reduce { newState }` would erase the line on the next tap. The
+  prompt is sent the gaps (consumed vs target, water, streak, weekly weight delta) and never age,
+  sex, height or absolute weight — same data-minimisation rule as the health backfill.
 
 ### Google Health
 

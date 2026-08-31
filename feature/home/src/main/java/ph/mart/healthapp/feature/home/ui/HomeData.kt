@@ -7,9 +7,12 @@ import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
+import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.profile.DailyTargets
+import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
+import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.streak.StreakStats
@@ -61,6 +64,9 @@ data class HomeUiState(
     val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),
     /** Null when the goal is Maintain (no direction to move) or nothing has been weighed yet. */
     val weightProgressKg: Double? = null,
+    /** The model's line, once it answers. Null until then and null forever offline or on a failed
+     * call — `HomeCards` falls back to [insightFor], so the card never waits on the network. */
+    val aiInsight: String? = null,
 )
 
 /** All Home writes: today's glass count, today's mood/energy, and the fasting timer. Everything
@@ -124,6 +130,36 @@ fun insightFor(totals: DiaryTotals, targets: DailyTargets, trend: WeightTrendDis
 
 /** Signed, one decimal, tabular-friendly — e.g. "-0.6", "+1.2". */
 fun formatDelta(deltaKg: Double): String = "%+.1f".format(deltaKg)
+
+/**
+ * The same two derivations `HomeCards` makes to draw the day — `dailyTargets()` and
+ * `trendVsSevenDaysAgo()` — handed to the model instead of to the cards, so the sentence it
+ * writes is priced off exactly the numbers on screen.
+ *
+ * Null with no profile: there is no target to be over or under, and Home has nothing to show yet
+ * either.
+ */
+internal fun HomeUiState.toInsightRequest(): InsightRequest? {
+    val profile = profile ?: return null
+    val targets = profile.dailyTargets()
+    val trend = weightEntries.trendVsSevenDaysAgo(fallbackKg = profile.weightKg)
+    return InsightRequest(
+        goal = profile.goal,
+        caloriesConsumed = totals.calories,
+        caloriesTarget = targets.calories,
+        proteinG = totals.proteinG,
+        proteinTargetG = targets.proteinG,
+        carbsG = totals.carbsG,
+        carbsTargetG = targets.carbsG,
+        fatG = totals.fatG,
+        fatTargetG = targets.fatG,
+        waterGlasses = waterGlasses,
+        waterGoalGlasses = waterGoalGlasses,
+        streakDays = streak.current,
+        // Null rather than 0.0 with nothing to compare against — see [InsightRequest].
+        weightDeltaKg = trend.deltaKg.takeIf { trend.hasPrior },
+    )
+}
 
 /** Greeting copy is the prototype's verbatim, keyed off the local hour. */
 fun greetingFor(hour: Int): String {
