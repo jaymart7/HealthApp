@@ -1,13 +1,17 @@
 package ph.mart.healthapp.feature.profile.ui.profile.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,9 +32,14 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.mascotSwatchColor
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 private val AvatarSize = 48.dp
+
+/** Smaller than an avatar because it carries no face — but the cell around it is still the tap
+ * target, so the row's touch area is unchanged. */
+private val SwatchSize = 32.dp
 
 /**
  * Until Dark mode is touched the profile stores null and the app follows the device, so [darkTheme]
@@ -57,11 +66,7 @@ internal fun ProfileAppearanceSection(
                     trailing = { Switch(checked = darkTheme, onCheckedChange = onSetDarkTheme) },
                 )
                 MascotPickerRow(selected = mascot, onSelect = onSelectMascot)
-                MascotColourRow(
-                    character = mascot,
-                    selected = palette,
-                    onSelect = onSelectMascotPalette,
-                )
+                MascotColourRow(selected = palette, onSelect = onSelectMascotPalette)
             }
         }
     }
@@ -101,16 +106,15 @@ private fun MascotPickerRow(
     }
 }
 
-/** The same row, the other axis: one colour worn by every buddy, previewed on the one the user
- * actually picked rather than on a swatch — the palettes differ in their *feature* colour too, and
- * a filled circle can't show an eye.
+/** The same row, the other axis: one colour worn by every buddy, shown as a plain swatch. Every
+ * circle carries an `outlineVariant` ring whatever its fill — [MascotPalette.Neutral] is a near
+ * neighbour of the card behind it, and a swatch nobody can find is not a swatch.
  *
  * No visible label under these, unlike the buddies: the scheme flips in dark mode, so a hue name
- * would be wrong half the time. The palette's name rides a contentDescription instead, since the
- * avatar draws no text for TalkBack to read. */
+ * would be wrong half the time. The palette's name rides a contentDescription instead, since a
+ * circle gives TalkBack nothing to read. */
 @Composable
 private fun MascotColourRow(
-    character: MascotCharacter,
     selected: MascotPalette,
     onSelect: (MascotPalette) -> Unit,
 ) {
@@ -126,11 +130,11 @@ private fun MascotColourRow(
                     onClick = { onSelect(palette) },
                     modifier = Modifier.semantics { contentDescription = "${palette.name} colour" },
                 ) {
-                    MascotAvatar(
-                        state = MascotState.Happy,
-                        size = AvatarSize,
-                        character = character,
-                        palette = palette,
+                    Box(
+                        modifier = Modifier
+                            .size(SwatchSize)
+                            .background(mascotSwatchColor(palette), CircleShape)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
                     )
                 }
             }

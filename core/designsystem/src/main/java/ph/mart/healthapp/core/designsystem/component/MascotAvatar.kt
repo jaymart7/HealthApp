@@ -133,6 +133,12 @@ fun mascotCharacterOf(name: String?): MascotCharacter =
  * changes at most once a session. */
 val LocalMascot = staticCompositionLocalOf { MascotCharacter.Bibo }
 
+/** The palette's fill on its own, for the swatch the Profile picker draws. Public where
+ * [mascotColors] is internal because a plain circle needs the body colour and nothing else — the
+ * feature colour has no meaning without a face to put it on. */
+@Composable
+fun mascotSwatchColor(palette: MascotPalette): Color = mascotColors(palette).body
+
 /** [mascotCharacterOf] for the colour, and it degrades the same way and for the same reasons. */
 fun mascotPaletteOf(name: String?): MascotPalette =
     MascotPalette.entries.firstOrNull { it.name == name } ?: MascotPalette.Soft

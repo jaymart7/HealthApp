@@ -197,8 +197,11 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `tertiaryContainer` (the AI accent and the carbs colour), never `error` (off-track only), and
   never `secondaryContainer` — both picker rows fill their selected cell with exactly that, and a
   mascot that vanished the moment it was chosen is the one thing a picker must not do. The colour
-  cells carry no visible label, unlike the buddy cells: the scheme flips in dark mode, so a hue name
-  would be wrong half the time — the name rides a `contentDescription` instead.
+  cells are plain swatches sharing the buddy row's `PickerCell`, each ringed in `outlineVariant`
+  whatever its fill — `Neutral` is a near neighbour of the card behind it. They carry no visible
+  label, unlike the buddy cells: the scheme flips in dark mode, so a hue name would be wrong half
+  the time — the name rides a `contentDescription` instead. `mascotSwatchColor()` is public where
+  `mascotColors()` is internal because a circle needs the fill and nothing else.
 - **The mascot blinks and breathes, and both rest at phase `1f`.** One
   `rememberInfiniteTransition` inside `MascotAvatar` drives a ~140ms blink every 3.6s and a 2.6s bob
   of 2% of the avatar's height, so no call site passes anything and none can forget to. The end
