@@ -31,6 +31,8 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.icon.DualStateIcon
 import ph.mart.healthapp.core.navigation.route.TopLevelBackStack
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
+import ph.mart.healthapp.feature.coach.ui.CoachRoute
+import ph.mart.healthapp.feature.coach.ui.coachEntries
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
@@ -49,6 +51,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
  * types because `:core:navigation` is a leaf module and this is already the one place that sees
  * every feature's routes at once. */
 private fun NavKey?.title(): String = when (this) {
+    CoachRoute -> "Coach"
     RecipeBuilderRoute -> "New recipe"
     HealthConnectionRoute -> "Google Health"
     FoodLibraryRoute -> "Saved meals & recipes"
@@ -176,7 +179,12 @@ fun AppScaffold(
                 backStack = topLevelBackStack.backStack,
                 onBack = { topLevelBackStack.removeLast() },
                 entryProvider = entryProvider {
-                    homeEntries(scrollState = homeScroll, onAddPhoto = { activeSheet = ActiveSheet.AddPhoto })
+                    homeEntries(
+                        scrollState = homeScroll,
+                        onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
+                        onOpenCoach = { topLevelBackStack.add(CoachRoute) },
+                    )
+                    coachEntries()
                     foodEntries(
                         scrollState = foodScroll,
                         onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },

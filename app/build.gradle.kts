@@ -70,6 +70,7 @@ dependencies {
     implementation(project(":feature:home"))
     implementation(project(":feature:food"))
     implementation(project(":feature:progress"))
+    implementation(project(":feature:coach"))
     implementation(project(":feature:profile"))
 
     implementation(platform(libs.firebase.bom))

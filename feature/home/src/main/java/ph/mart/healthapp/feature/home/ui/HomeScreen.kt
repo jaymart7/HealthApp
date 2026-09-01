@@ -37,7 +37,12 @@ import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.ui.components.HomeCards
 
 @Composable
-fun HomeScreen(onAddPhoto: () -> Unit, scrollState: ScrollState = rememberScrollState(), viewModel: HomeViewModel = koinViewModel()) {
+fun HomeScreen(
+    onAddPhoto: () -> Unit,
+    onOpenCoach: () -> Unit,
+    scrollState: ScrollState = rememberScrollState(),
+    viewModel: HomeViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
     val state = rememberHomeScreenState()
     HomeContent(
@@ -45,6 +50,7 @@ fun HomeScreen(onAddPhoto: () -> Unit, scrollState: ScrollState = rememberScroll
         state = state,
         scrollState = scrollState,
         onAddPhoto = onAddPhoto,
+        onOpenCoach = onOpenCoach,
         onEvent = viewModel::handleEvent,
     )
 }
@@ -54,6 +60,7 @@ private fun HomeContent(
     uiState: HomeUiState,
     state: HomeScreenState,
     onAddPhoto: () -> Unit,
+    onOpenCoach: () -> Unit,
     onEvent: (HomeEvent) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -81,6 +88,7 @@ private fun HomeContent(
                     state = state,
                     scrollState = scrollState,
                     onAddPhoto = onAddPhoto,
+                    onOpenCoach = onOpenCoach,
                     onEvent = onEvent,
                 )
             }
@@ -127,6 +135,7 @@ private fun HomeScreenPreview() {
             ),
             state = HomeScreenState(),
             onAddPhoto = {},
+            onOpenCoach = {},
             onEvent = {},
         )
     }
@@ -140,6 +149,7 @@ private fun HomeScreenDayOnePreview() {
             uiState = HomeUiState(loaded = true, profile = PreviewProfile),
             state = HomeScreenState(),
             onAddPhoto = {},
+            onOpenCoach = {},
             onEvent = {},
         )
     }

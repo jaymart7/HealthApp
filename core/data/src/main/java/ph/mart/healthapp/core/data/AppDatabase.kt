@@ -32,6 +32,8 @@ import ph.mart.healthapp.core.data.progress.local.MeasurementEntryEntity
 import ph.mart.healthapp.core.data.progress.local.ProgressPhotoDao
 import ph.mart.healthapp.core.data.progress.local.ProgressPhotoEntity
 import ph.mart.healthapp.core.data.progress.local.WeightEntryDao
+import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
+import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
 import ph.mart.healthapp.core.data.progress.local.WeightEntryEntity
 import ph.mart.healthapp.core.data.supplement.local.SupplementDao
 import ph.mart.healthapp.core.data.supplement.local.SupplementDayEntity
@@ -60,8 +62,9 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         SupplementEntity::class,
         SupplementDayEntity::class,
         BloodPressureReadingEntity::class,
+        ChatMessageEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -82,4 +85,5 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun fastSessionDao(): FastSessionDao
     abstract fun supplementDao(): SupplementDao
     abstract fun bloodPressureReadingDao(): BloodPressureReadingDao
+    abstract fun chatMessageDao(): ChatMessageDao
 }

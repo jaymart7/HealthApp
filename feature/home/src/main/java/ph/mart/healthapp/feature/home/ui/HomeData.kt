@@ -1,6 +1,5 @@
 package ph.mart.healthapp.feature.home.ui
 
-import kotlin.math.abs
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.fasting.FastSession
@@ -9,12 +8,8 @@ import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.insight.InsightRequest
-import ph.mart.healthapp.core.data.profile.DailyTargets
-import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.data.insight.insightRequest
 import ph.mart.healthapp.core.data.profile.Profile
-import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
-import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
-import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
@@ -128,50 +123,21 @@ fun daysSincePhoto(lastPhotoEpochDay: Long?, todayEpochDay: Long): Long? =
     lastPhotoEpochDay?.let { (todayEpochDay - it).coerceAtLeast(0) }
 
 /**
- * The one insight line, derived from the day's real numbers rather than a hardcoded string.
- * First matching rule wins; null hides the card entirely. Deliberately not a model call — a
- * Gemini-backed insight is a separate piece of work, not Phase 7 assembly.
- */
-fun insightFor(totals: DiaryTotals, targets: DailyTargets, trend: WeightTrendDisplay): String? = when {
-    totals.calories > targets.calories ->
-        "You're ${totals.calories - targets.calories} kcal over today's target."
-    targets.proteinG > 0 && totals.calories > 0 && totals.proteinG < targets.proteinG * 0.6 ->
-        "You're ${targets.proteinG - totals.proteinG}g short on protein today."
-    trend.hasPrior && abs(trend.deltaKg) >= TREND_ARROW_DEADBAND_KG ->
-        "${formatDelta(trend.deltaKg)} kg over the last week — keep it steady."
-    else -> null
-}
-
-/** Signed, one decimal, tabular-friendly — e.g. "-0.6", "+1.2". */
-fun formatDelta(deltaKg: Double): String = "%+.1f".format(deltaKg)
-
-/**
- * The same two derivations `HomeCards` makes to draw the day — `dailyTargets()` and
- * `trendVsSevenDaysAgo()` — handed to the model instead of to the cards, so the sentence it
- * writes is priced off exactly the numbers on screen.
+ * Today's payload for the model, off state Home has already combined for its cards — the coach
+ * builds the identical request from flows instead (`observeInsightRequest`), and both land in
+ * [insightRequest] so the two can't drift.
  *
  * Null with no profile: there is no target to be over or under, and Home has nothing to show yet
  * either.
  */
-internal fun HomeUiState.toInsightRequest(): InsightRequest? {
-    val profile = profile ?: return null
-    val targets = profile.dailyTargets()
-    val trend = weightEntries.trendVsSevenDaysAgo(fallbackKg = profile.weightKg)
-    return InsightRequest(
-        goal = profile.goal,
-        caloriesConsumed = totals.calories,
-        caloriesTarget = targets.calories,
-        proteinG = totals.proteinG,
-        proteinTargetG = targets.proteinG,
-        carbsG = totals.carbsG,
-        carbsTargetG = targets.carbsG,
-        fatG = totals.fatG,
-        fatTargetG = targets.fatG,
+internal fun HomeUiState.toInsightRequest(): InsightRequest? = profile?.let {
+    insightRequest(
+        profile = it,
+        totals = totals,
+        weightEntries = weightEntries,
         waterGlasses = waterGlasses,
         waterGoalGlasses = waterGoalGlasses,
         streakDays = streak.current,
-        // Null rather than 0.0 with nothing to compare against — see [InsightRequest].
-        weightDeltaKg = trend.deltaKg.takeIf { trend.hasPrior },
     )
 }
 

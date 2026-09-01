@@ -32,5 +32,6 @@ include(":feature:onboarding")
 include(":feature:home")
 include(":feature:food")
 include(":feature:progress")
+include(":feature:coach")
 include(":feature:profile")
  

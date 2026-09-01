@@ -64,13 +64,7 @@ private fun promptFor(request: InsightRequest): String = buildString {
         "You are a nutrition coach writing one short line for a food-tracking app's home screen.",
     )
     appendLine("Today so far, for a user whose goal is ${request.goal.name.lowercase()} weight:")
-    appendLine("- Calories: ${request.caloriesConsumed} of ${request.caloriesTarget} kcal")
-    appendLine("- Protein: ${request.proteinG} of ${request.proteinTargetG} g")
-    appendLine("- Carbs: ${request.carbsG} of ${request.carbsTargetG} g")
-    appendLine("- Fat: ${request.fatG} of ${request.fatTargetG} g")
-    appendLine("- Water: ${request.waterGlasses} of ${request.waterGoalGlasses} glasses")
-    appendLine("- Logging streak: ${request.streakDays} days")
-    request.weightDeltaKg?.let { appendLine("- Weight change over the last week: %+.1f kg".format(it)) }
+    append(dayNumbersBlock(request))
     appendLine()
     appendLine(
         "Reply with exactly one sentence, in the second person, under 120 characters, based only " +

@@ -46,7 +46,7 @@ duplicate versions here or in a parallel catalog.
 :core:data              Room, repositories, all persistence
 :core:camera            CameraX wrapper
 :core:navigation        route types
-:feature:onboarding | home | food | progress | profile
+:feature:onboarding | home | food | progress | profile | coach
 ```
 
 ### Predictive back
@@ -98,7 +98,7 @@ cancels, Confirmation returns to Capture with a discard confirm if edited).
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise`, `mood`, `health`, `fasting`, `supplement`, `bloodpressure`. Two
+  `exercise`, `mood`, `health`, `fasting`, `supplement`, `bloodpressure`, `coach`. Two
   non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
@@ -423,6 +423,45 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   pushed by `FitPulseApplication`'s collector the moment Room emits. But the today-only
   repository overloads resolve `todayEpochDay()` when their flow is *built*, so a Glance session
   that spans midnight would keep reporting yesterday; the 30-minute tick is what restarts it.
+- **The coach and the daily insight describe the same day, in one place.** `InsightRequest` is
+  the *only* payload either sends — the goal, the calorie/macro/water gaps, the streak and the
+  weekly weight delta, still never age, sex, height, absolute weight, name or email. `insightFor()`
+  and `insightRequest()` moved into `:core:data/insight/` when the coach arrived, because two
+  feature modules now need them and `:feature:*` modules never import each other — the same call
+  `goalProjection()` made. Home builds the request from state it has already combined for its
+  cards; the coach has no such state and uses `observeInsightRequest()`, which combines the seven
+  flows itself. Both land in `insightRequest()`, and both prompts format their numbers with
+  `dayNumbersBlock()`, so a field added to one is shown by the other — a coach contradicting the
+  card that sent the user to it is the failure this prevents. The coach is additionally told *what
+  it does not know* (no yesterday, no individual meals, no weight) and pointed at the tab that
+  does, because a free-form question will otherwise be answered with an invented figure the diary
+  contradicts two taps away.
+- **A question is only persisted once it is answered.** `CoachRepository.send()` writes both rows
+  in one `@Transaction` when the reply lands, so `chat_message` needs no `pending` column and there
+  are no half-conversations to reconcile after process death. A call killed by leaving the screen
+  loses the un-sent question — the reading `FastingRepository.discardActive()` gives an unfinished
+  fast: it never became history. A retry is therefore a fresh send, not a repair, which is why
+  `CoachFailure` carries the question text. Clearing the chat is a soft delete like everything
+  else, and it *asks first* — a conversation is user-authored, the saved-meal rule, not the
+  diary's swipe-and-undo.
+- **The coach's model is rebuilt on every send; the insight's is a field.** Its system instruction
+  carries the day's numbers, and those move while the screen is open — a glass logged in another
+  tab must not leave it quoting a stale figure. A `GenerativeModel` is a config object, so this
+  costs nothing. Nothing is cached either, unlike the insight's one line per day: every question is
+  its own answer. `sanitizeReply` is the whole trust boundary and keeps line breaks where
+  `sanitizeInsight` collapses them (an answer legitimately spans a short paragraph), and rejects
+  past `MAX_REPLY_CHARS` rather than truncating, for the reason the insight cap gives.
+- **The mascot greeting card is the app's one door to the coach.** The insight card would be the
+  more contextual tap and is the wrong one: it is hidden on day one, hidden when the model has
+  nothing to say, and gone once dismissed, so a door on it is a door that isn't there most days.
+  The `AIChip` under the greeting is what makes the tap visible. `CoachRoute` is a route above the
+  Home tab rather than a fifth tab or a sheet — `AppScaffold`'s existing `isTopLevel` rule then
+  gives it a back toolbar with no bottom bar and no FAB, which is exactly what a chat with a
+  keyboard wants, and no new case was added there.
+- **The coach is not exported, not a streak domain, has no reminder and no widget surface.** The
+  backup file is a record of what the user *did*; a conversation about one day's numbers has no
+  meaning restored on another device — `health_link`'s reasoning. And talking to a coach is not
+  logging.
 - **The AI insight is an upgrade to the insight card, never its source.** Home renders
   `uiState.aiInsight ?: insightFor(...)`: the three rules that shipped before there was a model
   still draw the card offline, on a failed call, and when the model answers `NONE` — the offline
@@ -689,9 +728,9 @@ because of that, not because it was the nicest design available.
   with the charts they draw rather than with the shell that dispatches them. Only
   the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.
-- **`:feature:home` is deliberately flat**, and should stay that way. It holds exactly
-  one flow with one ViewModel, so `ui/` + `ui/components/` is already what the rule
-  above prescribes. Don't "finish the job" by sub-packaging it.
+- **`:feature:home` and `:feature:coach` are deliberately flat**, and should stay that way.
+  Each holds exactly one flow with one ViewModel, so `ui/` + `ui/components/` is already what
+  the rule above prescribes. Don't "finish the job" by sub-packaging them.
 - **What earns a flow package is a second ViewModel**, not a second screen.
   `:feature:onboarding` was flat on the argument that its seven steps are sub-views of
   `OnboardingScreen`'s `when (step)` — true of six of them, but the Google Health step

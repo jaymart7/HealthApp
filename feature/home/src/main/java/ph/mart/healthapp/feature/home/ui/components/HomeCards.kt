@@ -34,7 +34,7 @@ import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.ui.HomeEvent
 import ph.mart.healthapp.feature.home.ui.daysSincePhoto
 import ph.mart.healthapp.feature.home.ui.greetingFor
-import ph.mart.healthapp.feature.home.ui.insightFor
+import ph.mart.healthapp.core.data.insight.insightFor
 import ph.mart.healthapp.feature.home.ui.HomeScreenState
 import ph.mart.healthapp.feature.home.ui.HomeUiState
 import ph.mart.healthapp.feature.home.ui.components.AIInsightCard
@@ -65,6 +65,7 @@ internal fun HomeCards(
     state: HomeScreenState,
     scrollState: ScrollState,
     onAddPhoto: () -> Unit,
+    onOpenCoach: () -> Unit,
     onEvent: (HomeEvent) -> Unit,
 ) {
     // ponytail: the greeting is fixed for the life of the composition — it won't re-read the
@@ -100,7 +101,11 @@ internal fun HomeCards(
             .padding(bottom = DockedFabContentPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        MascotGreetingCard(greeting = greeting, modifier = appearModifier(0, appear))
+        MascotGreetingCard(
+            greeting = greeting,
+            onOpenCoach = onOpenCoach,
+            modifier = appearModifier(0, appear),
+        )
 
         // The insight's *arrival* is the news, so it gets its own entrance rather than a slot in
         // the stagger — and its exit is what stops the seven cards below from jumping on dismiss.

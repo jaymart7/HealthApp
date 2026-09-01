@@ -28,6 +28,7 @@ import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.di.healthDataModule
 import ph.mart.healthapp.core.data.insight.di.insightDataModule
 import ph.mart.healthapp.core.data.bloodpressure.di.bloodPressureDataModule
+import ph.mart.healthapp.core.data.coach.di.coachDataModule
 import ph.mart.healthapp.core.data.mood.di.moodDataModule
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.di.profileDataModule
@@ -37,6 +38,7 @@ import ph.mart.healthapp.core.data.transfer.di.transferDataModule
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.water.di.waterDataModule
 import ph.mart.healthapp.debug.seedDebugData
+import ph.mart.healthapp.feature.coach.di.coachModule
 import ph.mart.healthapp.feature.food.di.foodModule
 import ph.mart.healthapp.feature.home.di.homeModule
 import ph.mart.healthapp.feature.onboarding.di.onboardingModule
@@ -68,6 +70,7 @@ class FitPulseApplication : Application() {
                 profileDataModule,
                 foodDataModule,
                 insightDataModule,
+                coachDataModule,
                 progressDataModule,
                 waterDataModule,
                 exerciseDataModule,
@@ -80,6 +83,7 @@ class FitPulseApplication : Application() {
                 onboardingModule,
                 foodModule,
                 homeModule,
+                coachModule,
                 progressModule,
                 profileModule,
                 module { viewModelOf(::AppRootViewModel) },

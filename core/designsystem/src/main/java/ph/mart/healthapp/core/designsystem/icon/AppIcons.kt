@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.designsystem.icon
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
@@ -53,6 +54,7 @@ object AppIcons {
     val Edit: ImageVector = Icons.Outlined.Edit
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
+    val Send: ImageVector = Icons.AutoMirrored.Filled.Send
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment
     val TrendDown: ImageVector = Icons.Filled.ArrowDownward
     val TrendUp: ImageVector = Icons.Filled.ArrowUpward
