@@ -14,7 +14,7 @@ import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
-enum class ScanFlow { Scanning, LookingUp, Confirmation, NotFound, Offline, PermissionDenied }
+enum class ScanFlow { Scanning, LookingUp, Confirmation, NotFound, NoBarcode, Offline, PermissionDenied }
 
 @Composable
 internal fun rememberBarcodeScanScreen(): BarcodeScanScreenState = remember { BarcodeScanScreenState() }

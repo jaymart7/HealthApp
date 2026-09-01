@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.food.ui.barcode
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,9 +33,11 @@ import androidx.core.content.ContextCompat
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.camera.rememberBarcodeScanController
+import ph.mart.healthapp.core.camera.scanBarcode
 import ph.mart.healthapp.core.data.food.BarcodeLookupResult
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
@@ -65,6 +69,7 @@ fun BarcodeScanScreen(
 ) {
     val state = rememberBarcodeScanScreen()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var hasCameraPermission by remember {
         mutableStateOf(
@@ -88,6 +93,25 @@ fun BarcodeScanScreen(
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
+
+    // A barcode read out of a picture already taken joins the flow where the live decoder does:
+    // straight into the lookup, so nothing downstream distinguishes the two.
+    val galleryLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) {
+                state.flow = ScanFlow.LookingUp
+                scope.launch {
+                    val code = scanBarcode(context, uri)
+                    // Cancel puts the viewfinder back up; a late answer must not steal it again.
+                    if (state.flow != ScanFlow.LookingUp) return@launch
+                    if (code == null) {
+                        state.flow = ScanFlow.NoBarcode
+                    } else {
+                        viewModel.handleEvent(BarcodeScanEvent.OnBarcodeScanned(code))
+                    }
+                }
+            }
+        }
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
@@ -121,7 +145,7 @@ fun BarcodeScanScreen(
                     state.rescan()
                 }
 
-                ScanFlow.NotFound, ScanFlow.Offline, ScanFlow.PermissionDenied -> onExit()
+                ScanFlow.NotFound, ScanFlow.NoBarcode, ScanFlow.Offline, ScanFlow.PermissionDenied -> onExit()
             }
         },
     )
@@ -139,6 +163,14 @@ fun BarcodeScanScreen(
                     }
                     ScanScreen(
                         onClose = onExit,
+                        onPickPhoto = {
+                            galleryLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                            )
+                        },
+                        // The not-found path's manual entry, reached without a scan: a blank
+                        // confirmation form one back step from the viewfinder.
+                        onEnterManually = state::startManualEntry,
                         cameraPreview = { scanController.Preview(modifier = Modifier.fillMaxSize()) },
                     )
                 }
@@ -174,6 +206,24 @@ fun BarcodeScanScreen(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                     heading = "We don't have that product",
                     body = "It isn't in the product database yet — you can still add it by hand, or scan a different item.",
+                    actions = {
+                        PrimaryButton(
+                            label = "Add it manually",
+                            onClick = state::startManualEntry,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        SecondaryButton(
+                            label = "Scan again",
+                            onClick = state::rescan,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    },
+                )
+
+                ScanFlow.NoBarcode -> FullScreenState(
+                    icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                    heading = "No barcode in that photo",
+                    body = "I couldn't read a product barcode there — try a clearer shot of the pack, scan it live, or add the item by hand.",
                     actions = {
                         PrimaryButton(
                             label = "Add it manually",

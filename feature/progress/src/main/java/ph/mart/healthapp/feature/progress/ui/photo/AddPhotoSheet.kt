@@ -1,7 +1,6 @@
 package ph.mart.healthapp.feature.progress.ui.photo
 
 import android.graphics.Bitmap
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,6 +41,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.camera.decodeRotatedBitmap
 import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
@@ -66,10 +66,12 @@ fun AddPhotoSheet(onDismiss: () -> Unit, viewModel: AddPhotoViewModel = koinView
     }
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) {
-            @Suppress("DEPRECATION")
-            state.photo = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+        if (uri != null) scope.launch {
+            // Subsampled and EXIF-rotated by the same decoder the capture path uses — a full-size
+            // 48MP gallery JPEG is an OutOfMemoryError, not a slow frame.
+            state.photo = decodeRotatedBitmap(context, uri) ?: return@launch
             state.step = AddPhotoStep.Preview
         }
     }

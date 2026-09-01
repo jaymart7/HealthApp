@@ -132,6 +132,18 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **The barcode route carries the day** (`BarcodeScanRoute(dateEpochDay)`) so a
   scan lands on the day you're looking at; photo capture stays today-only,
   because the FAB launches it outside the diary's date context.
+- **Both viewfinders carry a gallery door and a manual door** (`ViewfinderActions`, in
+  `:feature:food`'s `ui/shared/components/` because the two flows share it). A picked image runs
+  the pipeline its screen's live camera runs — `decodeRotatedBitmap(context, uri)` then
+  `startAnalysis` for the photo flow, `scanBarcode(context, uri)` then the same lookup for the
+  barcode one — so nothing downstream can tell a pick from a capture, and the offline and cancel
+  paths are the ones that already existed. Manual entry stays *inside* the flow (the photo flow's
+  `NoFood` search screen, the barcode flow's blank confirmation): back returns to the camera, which
+  is why neither needs a route or an exit signal to the diary. `ScanFlow.NoBarcode` is its own
+  state rather than a flag on `NotFound` — "no barcode in that photo" and "we don't have that
+  product" are different answers, and a flag would need resetting on every path back to Scanning.
+  The gallery affordance is icon-only for a layout reason recorded at the call site; the flash icon
+  the prototype drew beside it is still absent, since nothing implements it.
 - **FoodData Central has no barcode endpoint, and the `gtinUpc` check is what makes a scan
   trustworthy.** A scan is a `foods/search` restricted to `dataType=Branded`, and search is not a
   lookup: an unlisted code usually answers HTTP 200 with an empty `foods`, but a code that tokenizes

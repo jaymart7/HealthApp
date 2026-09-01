@@ -2,7 +2,9 @@ package ph.mart.healthapp.feature.food.ui.photo
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +29,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.camera.CameraCaptureController
+import ph.mart.healthapp.core.camera.decodeRotatedBitmap
 import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.food.RecognitionResult
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
@@ -75,6 +78,12 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
     LaunchedEffect(Unit) {
         if (!hasCameraPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
     }
+    // A picked image joins the flow exactly where a capture does — nothing downstream of
+    // [startAnalysis] can tell the two apart.
+    val galleryLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            if (uri != null) startAnalysis(viewModel, scope, state) { decodeRotatedBitmap(context, uri) }
+        }
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
@@ -136,14 +145,15 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                 CaptureFlow.Capture -> if (hasCameraPermission) {
                     CaptureScreen(
                         onClose = onExit,
-                        onCapture = {
-                            onCaptureRequested(
-                                viewModel,
-                                scope,
-                                cameraController,
-                                state
+                        onCapture = { startAnalysis(viewModel, scope, state) { cameraController.capture() } },
+                        onPickPhoto = {
+                            galleryLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                             )
                         },
+                        // The same manual door RetryScreen's "Log manually" opens: search or hand
+                        // entry, one back step from the camera rather than out of the flow.
+                        onEnterManually = { state.flow = CaptureFlow.NoFood },
                         cameraPreview = { cameraController.Preview(modifier = Modifier.fillMaxSize()) },
                     )
                 }
@@ -234,18 +244,24 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
     }
 }
 
-private fun onCaptureRequested(
+/**
+ * The one path into [CaptureFlow.Analyzing], whether the photo comes off the sensor
+ * ([CameraCaptureController.capture]) or out of the gallery. The offline check runs before the
+ * photo is loaded — recognition is the online part, and there is no point decoding first. A null
+ * [loadPhoto] means the picker handed back something undecodable; the camera stays up.
+ */
+private fun startAnalysis(
     viewModel: PhotoCaptureViewModel,
     scope: CoroutineScope,
-    cameraController: CameraCaptureController,
     state: PhotoCaptureScreenState,
+    loadPhoto: suspend () -> Bitmap?,
 ) {
     if (!viewModel.isOnline()) {
         state.flow = CaptureFlow.Offline
         return
     }
     scope.launch {
-        val photo = cameraController.capture()
+        val photo = loadPhoto() ?: return@launch
         state.photo = photo
         state.flow = CaptureFlow.Analyzing
         viewModel.handleEvent(PhotoCaptureEvent.OnCapture(photo))

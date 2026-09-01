@@ -3,7 +3,9 @@ package ph.mart.healthapp.feature.food.ui.photo.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,6 +30,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.ui.shared.components.ViewfinderActions
 
 /**
  * Full-bleed camera chrome. Always black/white regardless of app theme — a camera viewfinder's
@@ -39,6 +42,8 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 internal fun CaptureScreen(
     onClose: () -> Unit,
     onCapture: () -> Unit,
+    onPickPhoto: () -> Unit,
+    onEnterManually: () -> Unit,
     modifier: Modifier = Modifier,
     cameraPreview: @Composable () -> Unit = {},
 ) {
@@ -79,18 +84,28 @@ internal fun CaptureScreen(
                 )
             }
 
-            Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(horizontal = 32.dp, vertical = 32.dp)) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp, vertical = 32.dp),
+            ) {
+                // The two doors out of the camera: a picture already taken, or no picture at all.
+                // The flash icon that used to flank the shutter is still gone rather than labelled —
+                // it was prototype chrome with no handler behind it, and a control that looks
+                // tappable and does nothing is worse than an absent one.
+                ViewfinderActions(onPickPhoto = onPickPhoto, onEnterManually = onEnterManually)
+
                 // An empty Surface is invisible to a screen reader, and this one is the whole
-                // point of the screen. The flash and gallery icons that used to flank it are gone
-                // rather than labelled: both were prototype chrome with no handler behind them,
-                // and a control that looks tappable and does nothing is worse than an absent one.
+                // point of the screen.
                 Surface(
                     onClick = onCapture,
                     shape = CircleShape,
                     color = Color.White,
                     border = BorderStroke(4.dp, Color.White.copy(alpha = 0.5f)),
                     modifier = Modifier
-                        .align(Alignment.Center)
                         .size(72.dp)
                         .semantics {
                             contentDescription = "Take photo"
@@ -106,6 +121,6 @@ internal fun CaptureScreen(
 @Composable
 private fun CaptureScreenPreview() {
     AppTheme {
-        CaptureScreen(onClose = {}, onCapture = {})
+        CaptureScreen(onClose = {}, onCapture = {}, onPickPhoto = {}, onEnterManually = {})
     }
 }

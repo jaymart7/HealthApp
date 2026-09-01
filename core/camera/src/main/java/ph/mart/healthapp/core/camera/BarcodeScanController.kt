@@ -1,5 +1,7 @@
 package ph.mart.healthapp.core.camera
 
+import android.content.Context
+import android.net.Uri
 import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
@@ -22,14 +24,14 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * The scanning twin of [CameraCaptureController]: same [LifecycleCameraController] + [PreviewView]
  * path, but bound to `IMAGE_ANALYSIS` instead of capture, with ML Kit reading each frame.
- *
- * Restricted to the four retail product formats — a QR code on a coffee bag is not a food barcode,
- * and narrowing the format set is also what keeps the decoder fast.
  */
 interface BarcodeScanController {
     @Composable
@@ -53,16 +55,7 @@ fun rememberBarcodeScanController(onBarcode: (String) -> Unit): BarcodeScanContr
     }
 
     DisposableEffect(controller, lifecycleOwner) {
-        val scanner = BarcodeScanning.getClient(
-            BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(
-                    Barcode.FORMAT_EAN_13,
-                    Barcode.FORMAT_EAN_8,
-                    Barcode.FORMAT_UPC_A,
-                    Barcode.FORMAT_UPC_E,
-                )
-                .build(),
-        )
+        val scanner = retailBarcodeScanner()
         val delivered = AtomicBoolean(false)
         controller.setImageAnalysisAnalyzer(ContextCompat.getMainExecutor(context)) { proxy ->
             analyze(scanner, proxy, delivered) { currentOnBarcode(it) }
@@ -87,6 +80,44 @@ fun rememberBarcodeScanController(onBarcode: (String) -> Unit): BarcodeScanContr
         }
     }
 }
+
+/**
+ * Reads a barcode out of an already-taken picture — the gallery door on the scanning viewfinder.
+ * Null when there is no readable retail barcode in it, which is an ordinary outcome (a photo of a
+ * plate, a blurry pack) rather than a failure. [InputImage.fromFilePath] applies the image's own
+ * EXIF rotation, so this needs none of [decodeRotatedBitmap]'s work.
+ */
+suspend fun scanBarcode(context: Context, uri: Uri): String? {
+    val scanner = retailBarcodeScanner()
+    return try {
+        suspendCancellableCoroutine { continuation ->
+            scanner.process(InputImage.fromFilePath(context, uri))
+                .addOnSuccessListener { barcodes ->
+                    continuation.resume(barcodes.firstNotNullOfOrNull { it.rawValue })
+                }
+                .addOnFailureListener { continuation.resume(null) }
+        }
+    } catch (e: IOException) {
+        // The picker can hand back a Uri whose stream is gone by the time it is opened.
+        null
+    } finally {
+        scanner.close()
+    }
+}
+
+/** The four retail product formats, shared by the live analyzer and the one-shot above — a QR code
+ * on a coffee bag is not a food barcode, and narrowing the format set is also what keeps the
+ * decoder fast. */
+private fun retailBarcodeScanner(): BarcodeScanner = BarcodeScanning.getClient(
+    BarcodeScannerOptions.Builder()
+        .setBarcodeFormats(
+            Barcode.FORMAT_EAN_13,
+            Barcode.FORMAT_EAN_8,
+            Barcode.FORMAT_UPC_A,
+            Barcode.FORMAT_UPC_E,
+        )
+        .build(),
+)
 
 /** Every frame must be closed exactly once or the analyzer starves, hence the
  * `addOnCompleteListener` rather than closing inside the success branch. */

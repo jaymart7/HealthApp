@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
+import ph.mart.healthapp.feature.food.ui.shared.components.ViewfinderActions
 
 /**
  * The barcode viewfinder — [CaptureScreen] without a shutter button, since the decoder fires by
@@ -37,6 +38,8 @@ import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 @Composable
 internal fun ScanScreen(
     onClose: () -> Unit,
+    onPickPhoto: () -> Unit,
+    onEnterManually: () -> Unit,
     modifier: Modifier = Modifier,
     cameraPreview: @Composable () -> Unit = {},
 ) {
@@ -75,6 +78,14 @@ internal fun ScanScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
+
+            // Same two doors the food-photo viewfinder carries: read a barcode out of a picture
+            // already taken, or skip the pack entirely and type the item in.
+            ViewfinderActions(
+                onPickPhoto = onPickPhoto,
+                onEnterManually = onEnterManually,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
+            )
         }
     }
 }
@@ -83,6 +94,6 @@ internal fun ScanScreen(
 @Composable
 private fun ScanScreenPreview() {
     AppTheme {
-        ScanScreen(onClose = {})
+        ScanScreen(onClose = {}, onPickPhoto = {}, onEnterManually = {})
     }
 }
