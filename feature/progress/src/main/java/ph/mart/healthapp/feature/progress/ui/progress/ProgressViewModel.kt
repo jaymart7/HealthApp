@@ -25,6 +25,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
+import ph.mart.healthapp.core.data.streak.weightProgressKg
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -89,6 +90,11 @@ class ProgressViewModel(
                 targets = profile?.dailyTargets(),
                 fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
                 stepGoal = profile?.stepGoal ?: DEFAULT_STEP_GOAL,
+                // The same call HomeViewModel makes, from the one lambda that already holds both
+                // halves — no extra flow, and the outer combine's arity is untouched.
+                weightProgressKg = profile?.let {
+                    weightProgressKg(weightEntries, it.goal, it.weightKg)
+                },
             )
         }
 

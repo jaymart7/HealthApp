@@ -35,6 +35,7 @@ enum class ProgressTab(val label: String) {
     Fasting("Fasting"),
     Supplements("Supplements"),
     BloodPressure("Blood pressure"),
+    Badges("Badges"),
 }
 
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
@@ -81,7 +82,12 @@ data class ProgressUiState(
      * on one day. The tab folds it with `byDay()` before charting it. */
     val bloodPressure: List<BloodPressureReading> = emptyList(),
     /** Every day anything was logged, across all four domains — the streak's definition, reused
-     * by the weekly recap so the two can't disagree about what a logged day is. */
+     * by the weekly recap and the Badges tab so none of the three can disagree about what a
+     * logged day is. */
     val activeDays: Set<Long> = emptySet(),
+    /** Kilograms moved in the goal's direction, or null for a Maintain goal — computed in the
+     * ViewModel off the profile, exactly as `HomeUiState` does, so the Badges tab and Home's
+     * streak card can't report different journeys. */
+    val weightProgressKg: Double? = null,
     val targets: DailyTargets? = null,
 )

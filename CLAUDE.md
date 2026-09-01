@@ -119,6 +119,21 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   A day counts if *anything* was logged — food, water, weigh-in, or exercise.
 - **No streak celebration toast.** The badge lighting up is the reward;
   announcing it would need persisted "already celebrated" state.
+- **Progress → Badges is derived, and that is what keeps the no-celebration rule intact.** Seven
+  families of thresholds on one tab, every figure a fold over what `ProgressViewModel` already
+  combines — no table, no schema bump, no repository, no export, and nothing to notify off.
+  `badgeGroups()` sits in `:feature:progress/ui/achievement/` rather than `:core:data` for
+  `weeklyRecap()`'s reason: one screen shows it and every input is a `:core:data` type. Two of the
+  seven read their thresholds straight off `StreakBadge` and `WeightBadge` rather than a retyped
+  copy, so the tab and Home's streak card can never disagree about what a badge is worth; the
+  streak family scores off `best`, never `current`, for the same reason `earnedBadges()` does. The
+  weight family is *absent* for a Maintain goal (no direction to move), matching the card's hidden
+  weight line — but a negative delta reads as zero rather than vanishing, because a badge row that
+  disappeared on a bad week is a row nobody could trust. `BadgeDot` moved to `:core:designsystem`
+  when the tab arrived (two screens draw it now), carrying its KDoc about why the colour fade is
+  not the ruled-out celebration. *ponytail: days-logged and workouts ride windowed inputs — a dense
+  year of nutrition, a rolling year of exercise — so both stop well inside a year; a `COUNT(*)`
+  flow on the two DAOs is the upgrade path if that ever grates.*
 - **`budgetKcal()` is the only place burned calories fold into the day**, and
   `Profile.addExerciseToBudget` (default on) can switch that credit off —
   `calculateDailyTargets()` already applies an activity multiplier, so crediting
