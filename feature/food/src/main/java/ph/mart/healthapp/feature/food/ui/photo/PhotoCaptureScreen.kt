@@ -2,19 +2,13 @@ package ph.mart.healthapp.feature.food.ui.photo
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,12 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -41,16 +30,14 @@ import ph.mart.healthapp.core.camera.CameraCaptureController
 import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.food.RecognitionResult
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
-import ph.mart.healthapp.core.designsystem.component.FullScreenState
-import ph.mart.healthapp.core.designsystem.component.MascotAvatar
-import ph.mart.healthapp.core.designsystem.component.MascotState
-import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.photo.components.AnalyzingScreen
+import ph.mart.healthapp.feature.food.ui.photo.components.CameraPermissionScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ManualSearchScreen
+import ph.mart.healthapp.feature.food.ui.photo.components.PhotoOfflineScreen
+import ph.mart.healthapp.feature.food.ui.photo.components.RetryScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
 import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
@@ -186,20 +173,10 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     )
                 }
 
-                CaptureFlow.Retry -> FullScreenState(
-                    icon = { RetryPhotoIcon(state.photo) },
-                    heading = "We couldn't analyze that photo",
-                    body = "Try taking the photo again with better lighting, or log the meal manually.",
-                    actions = {
-                        PrimaryButton(
-                            label = "Retry",
-                            onClick = { state.flow = CaptureFlow.Capture },
-                            modifier = Modifier.fillMaxWidth())
-                        SecondaryButton(
-                            label = "Log manually instead",
-                            onClick = { state.flow = CaptureFlow.NoFood },
-                            modifier = Modifier.fillMaxWidth())
-                    },
+                CaptureFlow.Retry -> RetryScreen(
+                    photo = state.photo,
+                    onRetry = { state.flow = CaptureFlow.Capture },
+                    onLogManually = { state.flow = CaptureFlow.NoFood },
                 )
 
                 CaptureFlow.NoFood -> ManualSearchScreen(
@@ -219,61 +196,27 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
                 )
 
-                CaptureFlow.Offline -> FullScreenState(
-                    icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                    heading = "No connection",
-                    body = if (retriedWhileOffline) {
-                        "Still nothing. Photo logging needs a connection — you can log manually in the meantime."
-                    } else {
-                        "Photo logging needs a connection. You can still log manually — everything else works offline."
-                    },
-                    actions = {
-                        PrimaryButton(
-                            label = "Log manually",
-                            onClick = { state.flow = CaptureFlow.NoFood },
-                            modifier = Modifier.fillMaxWidth())
-                        SecondaryButton(
-                            label = "Try again",
-                            onClick = {
-                                if (viewModel.isOnline()) {
-                                    retriedWhileOffline = false
-                                    state.flow = CaptureFlow.Capture
-                                } else {
-                                    retriedWhileOffline = true
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                CaptureFlow.Offline -> PhotoOfflineScreen(
+                    retried = retriedWhileOffline,
+                    onLogManually = { state.flow = CaptureFlow.NoFood },
+                    onRetry = {
+                        if (viewModel.isOnline()) {
+                            retriedWhileOffline = false
+                            state.flow = CaptureFlow.Capture
+                        } else {
+                            retriedWhileOffline = true
+                        }
                     },
                 )
 
-                CaptureFlow.PermissionDenied -> {
+                CaptureFlow.PermissionDenied -> CameraPermissionScreen(
                     // Once the prompt is spent, launching it again does nothing at all and the
                     // screen becomes a dead end — Settings is the only door left.
-                    val settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA)
-                    FullScreenState(
-                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                        heading = "Camera access needed",
-                        body = if (settingsOnly) {
-                            "Camera access is off for FitPulse. Turn it on in Settings to log meals from a photo, or go back and log manually."
-                        } else {
-                            "Grant camera access to log meals from a photo, or go back and log manually."
-                        },
-                        actions = {
-                            PrimaryButton(
-                                label = if (settingsOnly) "Open settings" else "Grant access",
-                                onClick = {
-                                    if (settingsOnly) {
-                                        context.openAppSettings()
-                                    } else {
-                                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth())
-                            SecondaryButton(label = "Back", onClick = onExit, modifier = Modifier.fillMaxWidth())
-                        },
-                    )
-                }
+                    settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA),
+                    onGrant = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                    onOpenSettings = { context.openAppSettings() },
+                    onBack = onExit,
+                )
             }
 
             state.pendingDiscard?.let { discard ->
@@ -307,18 +250,4 @@ private fun onCaptureRequested(
         state.flow = CaptureFlow.Analyzing
         viewModel.handleEvent(PhotoCaptureEvent.OnCapture(photo))
     }
-}
-
-@Composable
-private fun RetryPhotoIcon(photo: Bitmap?) {
-    if (photo == null) return
-    Image(
-        bitmap = photo.asImageBitmap(),
-        contentDescription = null,
-        contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(160.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .alpha(0.6f),
-    )
 }
