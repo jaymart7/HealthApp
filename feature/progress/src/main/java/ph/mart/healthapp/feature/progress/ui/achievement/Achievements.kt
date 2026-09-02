@@ -10,13 +10,13 @@ import ph.mart.healthapp.core.data.streak.WeightBadge
  * "What have I earned, and what's next" — the question neither Home's streak card (one family,
  * five dots) nor the charts answer. Derived, never stored: every figure is a fold over what
  * [ph.mart.healthapp.feature.progress.ui.progress.ProgressViewModel] already combines, the same
- * way [ph.mart.healthapp.feature.progress.ui.progress.weeklyRecap] is.
+ * way [ph.mart.healthapp.feature.progress.ui.progress.recap] is.
  *
  * Nothing here persists anything, which is what keeps CLAUDE.md's no-celebration rule intact: a
  * toast when a badge lights up would need an "already celebrated" flag, and there is none to add.
  *
  * Feature-local because Progress is the only screen that shows it and every input is a
- * `:core:data` type, so nothing leaks a feature type downward — `weeklyRecap`'s reasoning. It
+ * `:core:data` type, so nothing leaks a feature type downward — `recap`'s reasoning. It
  * moves down to `:core:data` the day a second feature needs it, the way `insightFor()` did.
  */
 

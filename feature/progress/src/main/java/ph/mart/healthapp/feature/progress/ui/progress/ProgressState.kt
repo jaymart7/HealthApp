@@ -23,7 +23,8 @@ internal class ProgressScreenState(
     activeMeasurementSheet: Boolean = false,
     measurementSheetPart: MeasurementPart? = null,
     activeBloodPressureSheet: Boolean = false,
-    activeShareSheet: Boolean = false,
+    activeRecap: Boolean = false,
+    recapPeriod: RecapPeriod = DEFAULT_RECAP_PERIOD,
     activeTimelapse: Boolean = false,
     pendingDeleteReadingId: Long? = null,
 ) {
@@ -33,7 +34,8 @@ internal class ProgressScreenState(
     var activeMeasurementSheet: Boolean by mutableStateOf(activeMeasurementSheet)
     var measurementSheetPart: MeasurementPart? by mutableStateOf(measurementSheetPart)
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
-    var activeShareSheet: Boolean by mutableStateOf(activeShareSheet)
+    var activeRecap: Boolean by mutableStateOf(activeRecap)
+    var recapPeriod: RecapPeriod by mutableStateOf(recapPeriod)
     var activeTimelapse: Boolean by mutableStateOf(activeTimelapse)
 
     /** The reading whose delete is waiting on its confirmation dialog. */
@@ -64,12 +66,12 @@ internal class ProgressScreenState(
         activeBloodPressureSheet = false
     }
 
-    fun openShareSheet() {
-        activeShareSheet = true
+    fun openRecap() {
+        activeRecap = true
     }
 
-    fun closeShareSheet() {
-        activeShareSheet = false
+    fun closeRecap() {
+        activeRecap = false
     }
 
     fun openTimelapse() {
@@ -86,7 +88,7 @@ internal class ProgressScreenState(
                 listOf(
                     it.tab.name, it.range.name, it.selectedPhotoIds,
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
-                    it.activeBloodPressureSheet, it.activeShareSheet, it.activeTimelapse,
+                    it.activeBloodPressureSheet, it.activeRecap, it.recapPeriod.name, it.activeTimelapse,
                     it.pendingDeleteReadingId,
                 )
             },
@@ -98,9 +100,10 @@ internal class ProgressScreenState(
                     activeMeasurementSheet = saved[3] as Boolean,
                     measurementSheetPart = (saved[4] as String?)?.let(MeasurementPart::valueOf),
                     activeBloodPressureSheet = saved[5] as Boolean,
-                    activeShareSheet = saved[6] as Boolean,
-                    activeTimelapse = saved[7] as Boolean,
-                    pendingDeleteReadingId = saved[8] as Long?,
+                    activeRecap = saved[6] as Boolean,
+                    recapPeriod = RecapPeriod.valueOf(saved[7] as String),
+                    activeTimelapse = saved[8] as Boolean,
+                    pendingDeleteReadingId = saved[9] as Long?,
                 )
             },
         )

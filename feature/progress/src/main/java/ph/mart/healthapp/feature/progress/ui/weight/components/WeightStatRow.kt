@@ -55,7 +55,7 @@ fun WeightStatRow(
     }
 }
 
-/** Shared with [WeeklyRecapCard] — same screen, same feature, so it stays here rather than
+/** Shared with [RecapCard] — same screen, same feature, so it stays here rather than
  * being promoted to `:core:designsystem` (that rule is about components used across screens). */
 @Composable
 internal fun StatCell(label: String, value: String, valueColor: Color? = null) {

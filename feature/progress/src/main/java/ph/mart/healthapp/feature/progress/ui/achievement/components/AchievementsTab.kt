@@ -34,7 +34,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
  * Every badge in the app on one surface. The tab takes no `ProgressScreenState` — unlike the chart
  * tabs it has no range to slice and no sheet to open.
  *
- * The copy lives here rather than in the derivation, the division `WeeklyRecapCard` already draws:
+ * The copy lives here rather than in the derivation, the division `RecapCard` already draws:
  * `:core:data`-shaped folds count, the card names.
  */
 @Composable

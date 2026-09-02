@@ -126,7 +126,7 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   families of thresholds on one tab, every figure a fold over what `ProgressViewModel` already
   combines — no table, no schema bump, no repository, no export, and nothing to notify off.
   `badgeGroups()` sits in `:feature:progress/ui/achievement/` rather than `:core:data` for
-  `weeklyRecap()`'s reason: one screen shows it and every input is a `:core:data` type. Two of the
+  `recap()`'s reason: one screen shows it and every input is a `:core:data` type. Two of the
   seven read their thresholds straight off `StreakBadge` and `WeightBadge` rather than a retyped
   copy, so the tab and Home's streak card can never disagree about what a badge is worth; the
   streak family scores off `best`, never `current`, for the same reason `earnedBadges()` does. The
@@ -278,11 +278,37 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   the row would both delay the gesture and compete with the list's scroll), and every row carries
   **Move up / Move down** accessibility actions, because a drag nobody using TalkBack can perform
   is not a control.
-- **The weekly recap window is rolling-7-ending-today**, not a calendar week — a calendar week
-  reports a half-empty Monday. The card is *hidden* when nothing was logged in the window
+- **Every recap window is rolling-and-ending-today**, never a calendar week or month — a calendar
+  week reports a half-empty Monday. The card is *hidden* when nothing was logged in the window
   rather than rendering zeros, and its "days logged" uses the streak's four-domain definition
   while its calorie average uses food days only — the two denominators can differ, so the card
   says which is which.
+- **`RecapPeriod` is a third window vocabulary, and it is not `ChartRange`.** `ChartRange` has no
+  week, and `List<WeightEntry>.inRange` deliberately anchors to the latest *entry* — which is
+  right for a chart re-centring on its data and wrong for a page headed "Last 30 days". So
+  `recap()` slices every sparse input itself against `today - (days - 1)`, and only the dense
+  `dailyNutrition` gets a `takeLast`. The card's weight cell stays the *seven-day*
+  `trendVsSevenDaysAgo` on every period, because that is the figure it has always shown;
+  `Recap.weightArcKg` is the window's own start-to-latest answer, and the screen labels both so
+  neither can be read as the other. A single weigh-in in the window reports **no** arc rather
+  than a zero delta — one end is not two.
+- **The recap screen is an overlay inside the Progress tab, not a route.** A route earns its own
+  `ViewModelStoreOwner`, and with it a second copy of `ProgressViewModel`'s twelve repositories,
+  to render a page that writes nothing — so it reads `ProgressUiState` verbatim and folds its own
+  `recap()`, the call `TimelapseScreen` and `PhotoComparisonScreen` already make (and, like them,
+  it wires its own `NavigationBackHandler`, or back would leave the tab). The Progress header's
+  icon opens it; the week share it used to open lives inside it now, on whichever period is
+  showing. Its movement row and its lift notes are drawn for Month and Year only, which is what
+  leaves the shipped weekly card untouched.
+- **The share image is one card, never the page.** `captureToPicture` records what was *drawn*,
+  so capturing the recap's scrolling column would hand the chooser a screenshot clipped at the
+  fold. `ShareRecapSheet` therefore still renders exactly one `RecapCard` plus the brand footer —
+  the preview is the PNG, which is the whole contract.
+- **Badges are absent from the recap, and that is not an oversight.** `BadgeGroup` records no earn
+  date, so "badges earned last month" is unanswerable; a windowed report showing all-time badges
+  would be a category error. The Badges tab already answers it. *ponytail: add them when a badge
+  records when it was earned.* Sleep, heart, blood pressure, fasting and supplements are out for a
+  plainer reason — each would be another card on one page, and none has earned the scroll yet.
 - **Mood is not a streak domain.** The streak's definition of a logged day stays food, water,
   weigh-in, exercise — a two-tap reflection holding a 40-day run would cheapen it, and folding
   mood in retroactively lengthens past runs. So `MoodRepository` has no `observeLoggedDays()`,
@@ -316,7 +342,7 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `goalProjectionLine()` in `:core:designsystem`, which takes primitives (that module has no
   `:core:data` dependency) and prints "On the last 30 days' trend, …" off `PROJECTION_WINDOW_DAYS`:
   the recap card is headed "Last 7 days" while the fit runs over thirty, so a line that left its
-  window implicit would be a card contradicting its own heading. It stays out of `weeklyRecap()`
+  window implicit would be a card contradicting its own heading. It stays out of `recap()`
   for the same reason — every other field there is a seven-day figure. The line is
   `onSurfaceVariant` on every surface, never `error`: the delta beside it already carries the
   verdict colour, and a red date reads as a second one.

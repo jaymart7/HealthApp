@@ -48,8 +48,8 @@ import ph.mart.healthapp.feature.progress.ui.photo.components.PhotosTabContent
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureTabContent
 import ph.mart.healthapp.feature.progress.ui.progress.components.ScrollingTab
-import ph.mart.healthapp.feature.progress.ui.progress.components.ShareRecapSheet
-import ph.mart.healthapp.feature.progress.ui.progress.components.WeeklyRecapCard
+import ph.mart.healthapp.feature.progress.ui.progress.components.RecapCard
+import ph.mart.healthapp.feature.progress.ui.progress.components.RecapScreen
 import ph.mart.healthapp.feature.progress.ui.sleep.components.SleepTabContent
 import ph.mart.healthapp.feature.progress.ui.strength.components.StrengthTabContent
 import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsTabContent
@@ -66,10 +66,11 @@ fun ProgressScreen(scrollState: ScrollState = rememberScrollState(), viewModel: 
 private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState, scrollState: ScrollState = rememberScrollState()) {
     // Above the sub-tab toggle, not inside a tab: the recap spans nutrition, weight and
     // consistency at once. Null (nothing logged this week) omits the card entirely rather than
-    // rendering an all-zero one on day one — and takes the share affordance with it, since there
-    // is then nothing to show anyone. Hoisted out of the Column because the share sheet is its
-    // sibling and shows the same card.
-    val recap = weeklyRecap(
+    // rendering an all-zero one on day one — and takes the recap door with it, since there is
+    // then nothing to report. Always the week here; the longer periods are the recap screen's,
+    // which folds its own. Hoisted out of the Column because that screen is its sibling.
+    val weekRecap = recap(
+        period = DEFAULT_RECAP_PERIOD,
         dailyNutrition = uiState.dailyNutrition,
         activeDays = uiState.activeDays,
         weightEntries = uiState.weightEntries,
@@ -101,19 +102,19 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     )
                     // Outside the card, not in it: the icon would otherwise be drawn into the
                     // image the capture takes.
-                    if (recap != null) {
-                        IconButton(onClick = state::openShareSheet) {
+                    if (weekRecap != null) {
+                        IconButton(onClick = state::openRecap) {
                             Icon(
                                 imageVector = AppIcons.Share,
-                                contentDescription = "Share this week",
+                                contentDescription = "Recap",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
-                if (recap != null) {
-                    WeeklyRecapCard(
-                        recap = recap,
+                if (weekRecap != null) {
+                    RecapCard(
+                        recap = weekRecap,
                         goal = uiState.goal,
                         unit = uiState.preferredUnit,
                         projection = projection,
@@ -164,13 +165,16 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                 )
             }
 
-            if (state.activeShareSheet && recap != null) {
-                ShareRecapSheet(
-                    recap = recap,
-                    goal = uiState.goal,
-                    unit = uiState.preferredUnit,
+            // A full-screen overlay inside the tab, like the two photo ones — it reads the same
+            // combined state, so it needs neither a route nor a second ViewModel. It owns its own
+            // share sheet, which is why nothing here does.
+            if (state.activeRecap) {
+                RecapScreen(
+                    uiState = uiState,
+                    period = state.recapPeriod,
                     projection = projection,
-                    onDismiss = state::closeShareSheet,
+                    onPeriodChange = { state.recapPeriod = it },
+                    onClose = state::closeRecap,
                 )
             }
 

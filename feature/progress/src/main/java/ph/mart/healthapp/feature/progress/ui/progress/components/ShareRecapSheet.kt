@@ -31,15 +31,20 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.BestDay
-import ph.mart.healthapp.feature.progress.ui.progress.WeeklyRecap
+import ph.mart.healthapp.feature.progress.ui.progress.Recap
+import ph.mart.healthapp.feature.progress.ui.progress.RecapPeriod
 import ph.mart.healthapp.feature.progress.ui.shared.captureToPicture
 import ph.mart.healthapp.feature.progress.ui.shared.sharePng
 
 /**
- * Preview-then-share for the weekly recap: the sheet shows exactly the PNG that leaves the app,
- * which is why the branding can exist here without ever appearing on the Progress screen.
+ * Preview-then-share for the recap: the sheet shows exactly the PNG that leaves the app, which is
+ * why the branding can exist here without ever appearing on the Progress screen.
  *
- * [WeeklyRecapCard] is rendered verbatim — every figure, and every colour rule behind it, stays
+ * The image is one card rather than the whole recap page on purpose — `captureToPicture` records
+ * what was *drawn*, so capturing a scrolling column would hand the chooser a screenshot clipped
+ * at the fold.
+ *
+ * [RecapCard] is rendered verbatim — every figure, and every colour rule behind it, stays
  * the card's. This only adds the opaque ground a shared image needs (a captured layer is
  * transparent wherever nothing painted) and the footer that says which app drew it.
  *
@@ -48,7 +53,7 @@ import ph.mart.healthapp.feature.progress.ui.shared.sharePng
  */
 @Composable
 internal fun ShareRecapSheet(
-    recap: WeeklyRecap,
+    recap: Recap,
     goal: Goal?,
     unit: UnitSystem,
     projection: GoalProjection?,
@@ -66,7 +71,7 @@ internal fun ShareRecapSheet(
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(vertical = 8.dp),
         ) {
-            WeeklyRecapCard(recap = recap, goal = goal, unit = unit, projection = projection)
+            RecapCard(recap = recap, goal = goal, unit = unit, projection = projection)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -102,7 +107,8 @@ internal fun ShareRecapSheet(
 private fun ShareRecapSheetPreview() {
     AppTheme {
         ShareRecapSheet(
-            recap = WeeklyRecap(
+            recap = Recap(
+                period = RecapPeriod.Week,
                 daysLogged = 6,
                 averages = NutritionAverages(1940, 141, 196, 68, daysLogged = 5),
                 targets = DailyTargets(calories = 2000, proteinG = 150, carbsG = 200, fatG = 67, floor = 1500),
