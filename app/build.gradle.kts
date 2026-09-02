@@ -66,6 +66,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:camera"))
     implementation(project(":core:navigation"))
+    implementation(project(":core:today"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:home"))
     implementation(project(":feature:food"))
@@ -81,6 +82,8 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
+    // The phone half of the watch companion: pushes today, receives the wrist's two writes.
+    implementation(libs.play.services.wearable)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

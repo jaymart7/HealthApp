@@ -1,10 +1,11 @@
-package ph.mart.healthapp.widget
+package ph.mart.healthapp.today
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.fasting.FastSession
@@ -14,13 +15,18 @@ import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.today.glassesAfterAdd
+import ph.mart.healthapp.core.today.progress
+import ph.mart.healthapp.core.today.remainingKcal
+import ph.mart.healthapp.core.today.waterGoalReached
 
 /**
- * The widget's arithmetic, which is the only part of it that can be checked off-device — a Glance
- * composable needs a real app-widget host.
+ * The snapshot's arithmetic — the only part of the glanceable surfaces that can be checked
+ * off-device, since a Glance composable needs a real app-widget host and a Wear one needs a watch.
  */
-class TodayWidgetStateTest {
+class TodaySnapshotTest {
 
     private val profile = Profile(
         sex = Sex.Male,
@@ -42,7 +48,7 @@ class TodayWidgetStateTest {
         addExercise: Boolean = true,
         activeFast: FastSession? = null,
         nowMillis: Long = NOW,
-    ) = todayWidgetState(
+    ) = todaySnapshot(
         profile = profile.copy(addExerciseToBudget = addExercise),
         totals = DiaryTotals(consumed, 0, 0, 0),
         glasses = glasses,
@@ -99,7 +105,7 @@ class TodayWidgetStateTest {
 
     @Test
     fun `a missing profile yields the onboarding state rather than dividing by zero`() {
-        val state = todayWidgetState(null, DiaryTotals(0, 0, 0, 0), 0, emptyList(), null, 0)
+        val state = todaySnapshot(null, DiaryTotals(0, 0, 0, 0), 0, emptyList(), null, 0)
         assertTrue(state.onboarding)
         assertEquals(0f, state.progress, 0f)
     }
@@ -135,6 +141,30 @@ class TodayWidgetStateTest {
     fun `a fast past its target reports it as reached`() {
         val state = stateFor(activeFast = FastSession(startMillis = NOW - 17 * HOUR, goalHours = 16))
         assertTrue(state.fastingGoalReached)
+    }
+
+    @Test
+    fun `the water label is converted on the phone, since the watch has no profile`() {
+        assertEquals("1.3 L", stateFor(glasses = 5).waterLabel)
+        assertEquals(
+            "40 fl oz",
+            todaySnapshot(
+                profile = profile.copy(preferredUnit = UnitSystem.Imperial),
+                totals = DiaryTotals(0, 0, 0, 0),
+                glasses = 5,
+                exercise = emptyList(),
+                steps = null,
+                streakDays = 0,
+            ).waterLabel,
+        )
+    }
+
+    /** The watch can outlive the push that produced a snapshot, so the day it describes travels
+     * with it rather than being assumed to be the reader's today. */
+    @Test
+    fun `the snapshot carries the day it describes`() {
+        assertEquals(epochDayOf(NOW), stateFor().dateEpochDay)
+        assertEquals(20_000L, stateFor().copy(dateEpochDay = 20_000L).dateEpochDay)
     }
 
     private companion object {

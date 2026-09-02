@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">FitPulse</string>
+    <string name="tile_label">Today</string>
+    <string name="tile_description">Today\'s calories and water, with one-tap logging.</string>
+</resources>

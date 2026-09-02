@@ -46,7 +46,9 @@ duplicate versions here or in a parallel catalog.
 :core:data              Room, repositories, all persistence
 :core:camera            CameraX wrapper
 :core:navigation        route types
+:core:today             TodaySnapshot — the day-at-a-glance summary + the watch wire format
 :feature:onboarding | home | food | progress | profile | coach
+:wear                   the Wear OS companion app + its tile (its own APK)
 ```
 
 ### Predictive back
@@ -471,9 +473,64 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   Standard-only, since `UiModeManager.getContrast()` has no Glance equivalent. `lightScheme`
   and `darkScheme` in `Theme.kt` are public for exactly this one caller.
 - **The widget's `updatePeriodMillis` is about midnight, not freshness.** Every in-app change is
-  pushed by `FitPulseApplication`'s collector the moment Room emits. But the today-only
-  repository overloads resolve `todayEpochDay()` when their flow is *built*, so a Glance session
-  that spans midnight would keep reporting yesterday; the 30-minute tick is what restarts it.
+  pushed by `FitPulseApplication`'s collector the moment Room emits, and the flows themselves
+  re-point at midnight (`todayFlow()`), so the tick is not what keeps a *live* session honest.
+  It is what restarts a session that ended — a widget nobody has touched since yesterday has no
+  collector left to re-point.
+- **One snapshot type, three glanceable surfaces.** `TodaySnapshot` in `:core:today` is what the
+  home-screen widget, the watch app and the watch tile all draw, and `todaySnapshotFlow()` in
+  `:app/today/` is the only thing that builds one. The widget's Glance session and
+  `FitPulseApplication`'s collector were two near-identical `combine` chains over the same Room
+  flows before the watch arrived, which is exactly how two surfaces come to disagree about today;
+  there is now one chain and `distinctUntilChanged` compares the snapshot itself rather than a bag
+  of raw flow values. `todayFlow()` is in that combine for the streak alone — every other input is
+  a today-only overload that re-points itself, but `streakStats` takes the day as an argument.
+- **`:core:today` depends on kotlinx.serialization and nothing else, and that is the whole point.**
+  It is on the watch's classpath, so a dependency on `:core:data` there would ship Room, Firebase
+  AI and play-services-auth to a wrist. Two consequences: `unit: UnitSystem` became
+  `waterLabel: String` (the phone owns the profile, so the phone formats it with the existing
+  `waterVolumeLabel()`), and `formatClockTime`/`todayEpochDay` are duplicated as two stdlib
+  one-liners in `:wear/ui/Clock.kt` rather than shared. The snapshot travels as one JSON string in
+  one `DataMap` key, not a key per field: the two APKs update independently, and `decodeSnapshot`
+  drops a field it doesn't know rather than throwing.
+- **The watch has no database and is not getting one.** Room stays the phone's, and the Data
+  Layer's own persisted data item *is* the watch's cache — the last snapshot is readable with the
+  phone switched off, so a cold start out of range draws the morning's numbers instead of a
+  spinner. Nothing pushed yet is drawn as "Open FitPulse on your phone", never as zeros: a watch
+  reporting a 0 kcal day the user has been eating through is worse than one admitting it doesn't
+  know. `TodaySnapshot.dateEpochDay` is what lets the watch tell yesterday's push from today's.
+- **The watch sends an intent to log, never a row.** Two messages, `/fitpulse/add-glass` and
+  `/fitpulse/toggle-fast`, both with **no payload**: `PhoneWearListenerService` re-reads Room
+  before writing, exactly as the widget's button does, so a wrist showing breakfast's snapshot
+  can't add a glass to a stale count or end a fast the phone already ended. The glass goes through
+  the shared `addGlass()` so the two surfaces cap at the same goal. A message that isn't delivered
+  is *reported* — the watch has no Room to write to, and an optimistic tick that evaporated on the
+  next push would be worse than a refused one. *ponytail: no offline queue; a data-item outbox
+  deleted by the phone once applied is the upgrade path.*
+- **The watch is pinned to the dark scheme and to Wear's own typography.** `Profile.darkThemeOn`
+  reaches the widget because a home screen can be light; a watch face is black by convention and
+  by battery, and Wear Material 3 is drawn against black. Colours still come from the frozen
+  `Color.kt` (`:wear` maps the `*Dark` vals into Wear's `ColorScheme`, and the tile maps the same
+  vals into protolayout's identically-named one — two classes with no common supertype, so a
+  shared mapper would be longer than either). Contrast schemes are absent for the widget's reason:
+  no `UiModeManager.getContrast()` equivalent. Typography is Wear's, the call Glance forced and
+  this one makes freely: its scale is drawn for a round display.
+- **The tile shows and never writes; the watch app is where the taps are.** A tile's targets are
+  coarse enough that "+1 glass" there is a glass logged by a sleeve, and the app it opens is one
+  tap away. It has no lifecycle to hold a ViewModel, so it reads the stored data item directly —
+  the call `TodayWidget` and `ReminderWorker` make. A phone cannot poke a tile either, so
+  `WearDataListenerService` on the *watch* turns a push into a refresh request; the tile's
+  30-minute freshness interval is the fallback for a push that never came, not the mechanism. It
+  is built on `Material3TileService` (suspend, no `ListenableFuture` plumbing) with
+  `allowDynamicTheme = false` — dynamic colour is disabled app-wide, and a tile following the
+  watch face's wallpaper would be the one FitPulse surface that didn't.
+- **`:wear` is one screen with no navigation graph.** The watch app is today; the diary, the
+  charts and the coach stay on the phone, and saying that by omission beats a wrist-sized diary.
+  It keeps the house architecture (Koin + Orbit, the `*Data`/`*State`/`*ViewModel`/`*Screen`
+  quartet, flat like `:feature:home` and `:feature:coach`) because that rule is binding; the tile
+  and the two listener services do not, because they are system surfaces. Its `applicationId` and
+  version must move with `:app`'s — that is what pairs the two halves rather than shipping two
+  products — and it is signed with the same key.
 - **The coach and the daily insight describe the same day, in one place.** `InsightRequest` is
   the *only* payload either sends — the goal, the calorie/macro/water gaps, the streak and the
   weekly weight delta, still never age, sex, height, absolute weight, name or email. `insightFor()`
@@ -832,6 +889,10 @@ because of that, not because it was the nicest design available.
   with the charts they draw rather than with the shell that dispatches them. Only
   the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.
+- **`:wear` follows the same rules on a smaller graph**: `ui/` + `ui/components/` + `ui/theme/`,
+  one flow, one ViewModel — flat for the reason `:feature:home` is. Its previews are
+  `@WearPreviewDevices` / `@WearPreviewFontScales` rather than `@PreviewLightDark`: the watch has
+  one scheme but several shapes and font scales, which is where a wrist layout actually breaks.
 - **`:feature:home` and `:feature:coach` are deliberately flat**, and should stay that way.
   Each holds exactly one flow with one ViewModel, so `ui/` + `ui/components/` is already what
   the rule above prescribes. Don't "finish the job" by sub-packaging them.

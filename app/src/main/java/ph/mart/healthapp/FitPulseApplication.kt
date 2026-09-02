@@ -32,6 +32,7 @@ import ph.mart.healthapp.core.data.coach.di.coachDataModule
 import ph.mart.healthapp.core.data.mood.di.moodDataModule
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.di.profileDataModule
+import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.di.progressDataModule
 import ph.mart.healthapp.core.data.supplement.di.supplementDataModule
 import ph.mart.healthapp.core.data.transfer.di.transferDataModule
@@ -49,7 +50,9 @@ import ph.mart.healthapp.reminder.ReminderScheduler
 import ph.mart.healthapp.reminder.enabledIn
 import ph.mart.healthapp.reminder.fastingGoalDelayMillis
 import ph.mart.healthapp.reminder.fastingGoalTargetMillis
+import ph.mart.healthapp.today.todaySnapshotFlow
 import ph.mart.healthapp.ui.AppRootViewModel
+import ph.mart.healthapp.wear.pushTodayToWear
 import ph.mart.healthapp.widget.TodayWidget
 
 class FitPulseApplication : Application() {
@@ -94,7 +97,8 @@ class FitPulseApplication : Application() {
 
         scheduleReminders(koinApp.koin.get())
         scheduleFastingGoal(koinApp.koin.get(), koinApp.koin.get())
-        updateWidget(
+        updateGlanceables(
+            koinApp.koin.get(),
             koinApp.koin.get(),
             koinApp.koin.get(),
             koinApp.koin.get(),
@@ -150,37 +154,43 @@ class FitPulseApplication : Application() {
     }
 
     /**
-     * Keeps the home-screen widget honest, in the same derived-not-commanded shape as
-     * [scheduleReminders]: nothing in the app tells the widget to redraw, this reconciles it off
-     * the same Room flows the widget itself reads.
+     * Keeps the glanceable surfaces honest, in the same derived-not-commanded shape as
+     * [scheduleReminders]: nothing in the app tells the widget to redraw or the watch to update,
+     * this reconciles both off the same Room flows the widget itself reads.
      *
-     * The profile flow is in the combine so a target edit, a water-goal change, or the dark-mode
-     * switch all reach the widget — not just food and water. Exercise and steps are here because
-     * the widget's budget is derived from both, and a Google Health sync writes both: without
-     * them a finished sync would leave the widget showing yesterday's budget until the next tick.
-     * The running fast is here so starting or ending one moves the widget's line immediately —
-     * it pairs with water ahead of the combine, which is already at the arity the typed overloads
-     * stop at. Day rollover is not covered here (the today-only overloads resolve their date once);
-     * `updatePeriodMillis` handles that.
+     * There is one flow, not one per surface — [todaySnapshotFlow] is what the widget's Glance
+     * session collects too, so the home screen and the wrist cannot disagree about today. Two
+     * near-identical `combine` chains lived here and in `TodayWidget` before the watch arrived,
+     * which is exactly how that disagreement starts.
+     *
+     * `distinctUntilChanged` now compares the snapshot itself — a data class — rather than the
+     * bag of raw flow values it used to, so a Room emission that changes nothing the surfaces
+     * draw no longer wakes either of them.
      */
-    private fun updateWidget(
+    private fun updateGlanceables(
         foodRepository: FoodRepository,
         waterRepository: WaterRepository,
         profileRepository: ProfileRepository,
         exerciseRepository: ExerciseRepository,
         stepsRepository: StepsRepository,
         fastingRepository: FastingRepository,
+        progressRepository: ProgressRepository,
     ) {
         applicationScope.launch {
-            combine(
-                foodRepository.observeTodayEntries(),
-                combine(waterRepository.observeToday(), fastingRepository.observeActive(), ::Pair),
-                profileRepository.observeProfile(),
-                exerciseRepository.observeTodayEntries(),
-                stepsRepository.observeToday(),
-            ) { food, water, profile, exercise, steps -> listOf(food, water, profile, exercise, steps) }
+            todaySnapshotFlow(
+                profileRepository = profileRepository,
+                foodRepository = foodRepository,
+                waterRepository = waterRepository,
+                exerciseRepository = exerciseRepository,
+                progressRepository = progressRepository,
+                stepsRepository = stepsRepository,
+                fastingRepository = fastingRepository,
+            )
                 .distinctUntilChanged()
-                .collect { TodayWidget().updateAll(this@FitPulseApplication) }
+                .collect { snapshot ->
+                    TodayWidget().updateAll(this@FitPulseApplication)
+                    pushTodayToWear(this@FitPulseApplication, snapshot)
+                }
         }
     }
 }

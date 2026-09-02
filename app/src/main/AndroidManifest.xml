@@ -42,6 +42,18 @@
                 android:resource="@xml/today_widget_info" />
         </receiver>
 
+        <!-- The watch's two writes (a glass, a fast) arrive here. Exported because Play
+             Services binds it; the path prefix is what keeps one filter covering both, and the
+             service reads nothing it wasn't sent — every value is re-read from Room. -->
+        <service
+            android:name=".wear.PhoneWearListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/fitpulse/" />
+            </intent-filter>
+        </service>
+
         <!-- Grants a read on one rendered PNG at a time so the share chooser's target can open
              it; scoped to cacheDir/share (see @xml/file_paths), never filesDir. -->
         <provider

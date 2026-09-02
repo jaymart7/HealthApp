@@ -32,8 +32,11 @@ import androidx.glance.text.TextStyle
 import ph.mart.healthapp.MainActivity
 import ph.mart.healthapp.core.data.fasting.formatClockTime
 import ph.mart.healthapp.core.data.health.formatSteps
-import ph.mart.healthapp.core.data.water.waterVolumeLabel
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
+import ph.mart.healthapp.core.today.TodaySnapshot
+import ph.mart.healthapp.core.today.progress
+import ph.mart.healthapp.core.today.remainingKcal
+import ph.mart.healthapp.core.today.waterGoalReached
 import ph.mart.healthapp.reminder.EXTRA_TAB
 
 private val WATER_ROW_MIN_HEIGHT = 100.dp
@@ -44,7 +47,7 @@ private val WATER_ROW_MIN_HEIGHT = 100.dp
  * No hex is written here — every color still comes from the frozen palette by way of the schemes.
  */
 @Composable
-internal fun TodayWidgetContent(state: TodayWidgetState) {
+internal fun TodayWidgetContent(state: TodaySnapshot) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -83,7 +86,7 @@ private fun OnboardingContent() {
 }
 
 @Composable
-private fun CaloriesContent(state: TodayWidgetState) {
+private fun CaloriesContent(state: TodaySnapshot) {
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -152,14 +155,13 @@ private fun CaloriesContent(state: TodayWidgetState) {
 }
 
 @Composable
-private fun WaterRow(state: TodayWidgetState) {
+private fun WaterRow(state: TodaySnapshot) {
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Water ${state.glasses} / ${state.goalGlasses} · " +
-                waterVolumeLabel(state.glasses, state.unit),
+            text = "Water ${state.glasses} / ${state.goalGlasses} · " + state.waterLabel,
             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp),
             modifier = GlanceModifier.defaultWeight(),
         )
@@ -185,7 +187,7 @@ private fun WaterRow(state: TodayWidgetState) {
 /** Omitted entirely when nothing is running, like the steps line — a fast you haven't started is
  * not a zero. */
 @Composable
-private fun FastingRow(state: TodayWidgetState) {
+private fun FastingRow(state: TodaySnapshot) {
     val until = state.fastingUntilMillis ?: return
     Spacer(GlanceModifier.height(4.dp))
     Text(
