@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -52,6 +53,7 @@ object AppIcons {
     val Close: ImageVector = Icons.Filled.Close
     val Compare: ImageVector = Icons.Filled.SwapHoriz
     val Delete: ImageVector = Icons.Outlined.Delete
+    val DragHandle: ImageVector = Icons.Filled.DragHandle
     val Edit: ImageVector = Icons.Outlined.Edit
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary

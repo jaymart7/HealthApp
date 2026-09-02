@@ -34,4 +34,5 @@ internal data class ProfileEntity(
     val mascotName: String? = null,
     val mascotPaletteName: String? = null,
     val stepGoal: Int = 10_000,
+    val homeLayout: String? = null,
 )

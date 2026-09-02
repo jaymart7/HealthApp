@@ -53,6 +53,7 @@ import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileDataSectio
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileExerciseSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileFastingSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileGoalsSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileHomeLayoutSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileLibrarySection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileRemindersSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileSupplementsSection
@@ -74,6 +75,7 @@ fun ProfileScreen(
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSupplements: () -> Unit,
+    onOpenHomeLayout: () -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: ProfileViewModel = koinViewModel(),
 ) {
@@ -200,6 +202,7 @@ fun ProfileScreen(
         onOpenHealth = onOpenHealth,
         onOpenLibrary = onOpenLibrary,
         onOpenSupplements = onOpenSupplements,
+        onOpenHomeLayout = onOpenHomeLayout,
         reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
             uiState.profile?.let { profile -> ReminderKind.entries.any(profile::reminderEnabled) } == true &&
                 !canPostNotifications
@@ -232,6 +235,7 @@ private fun ProfileContent(
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSupplements: () -> Unit,
+    onOpenHomeLayout: () -> Unit,
     reminderMessage: String? = null,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -271,6 +275,7 @@ private fun ProfileContent(
                 palette = mascotPaletteOf(profile.mascotPaletteName),
                 onSelectMascotPalette = onSelectMascotPalette,
             )
+            ProfileHomeLayoutSection(onOpenHomeLayout = onOpenHomeLayout)
             ProfileWaterSection(
                 goalGlasses = profile.waterGoalGlasses,
                 unit = profile.preferredUnit,
@@ -341,6 +346,7 @@ private fun ProfileScreenPreview() {
             onOpenHealth = {},
             onOpenLibrary = {},
             onOpenSupplements = {},
+            onOpenHomeLayout = {},
         )
     }
 }

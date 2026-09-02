@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,6 +30,8 @@ import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
+import ph.mart.healthapp.core.designsystem.component.HomeCard
+import ph.mart.healthapp.core.designsystem.component.homeCardLayout
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.ui.HomeEvent
@@ -54,7 +57,10 @@ import ph.mart.healthapp.feature.home.ui.components.WaterCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
 
 /**
- * Every card on a populated Home, in order, with the stagger applied.
+ * Every card on a populated Home, in the user's order, with the stagger applied.
+ *
+ * The greeting and the insight are pinned above the customizable block — see
+ * [ph.mart.healthapp.core.designsystem.component.HomeCard] for why those two never move.
  *
  * No `@PreviewLightDark` of its own: this *is* the populated screen, so `HomeScreenPreview` in
  * HomeScreen.kt already renders it — a second preview here would be the same picture.
@@ -87,6 +93,15 @@ internal fun HomeCards(
     // and a model with nothing to say all land on the same three rules that shipped before
     // there was a model at all.
     val insight = uiState.aiInsight ?: targets?.let { insightFor(uiState.totals, it, trend) }
+
+    // Derived here beside `targets` and `projection`, off the profile the state already holds —
+    // nothing about the layout is stored on HomeUiState. Null (an untouched install) is the
+    // declaration order with nothing hidden.
+    //
+    // ponytail: a hidden card's flows are still collected — HomeViewModel combines everything in
+    // one chain, and splitting it per card would be a large conditional-flow change for a gain
+    // nobody has measured. Gate the combine if a profiler ever says it costs something.
+    val layout = homeCardLayout(uiState.profile?.homeLayout)
 
     // Keyed on Unit, so the entrance runs once when the screen arrives and never again — logging
     // a glass of water must not re-run the curtain.
@@ -122,105 +137,118 @@ internal fun HomeCards(
             AIInsightCard(text = shown.value, onDismiss = { state.insightDismissed = true })
         }
 
-        if (targets != null) {
-            CalorieRingCard(
-                consumedKcal = uiState.totals.calories,
-                goalKcal = budgetKcal(targets.calories, uiState.burnedKcal, uiState.addExerciseToBudget),
-                burnedKcal = if (uiState.addExerciseToBudget) uiState.burnedKcal else 0,
-                modifier = appearModifier(1, appear),
-            )
+        // One pass over the user's order. Every data gate below is the one that was already
+        // there: the switch can only ever *remove* a card, never force one that has nothing to
+        // draw, so a Sleep card left on with no watch stays as absent as it was before.
+        layout.filter { it.visible }.forEachIndexed { index, (card, _) ->
+            // Keyed on the card, not its position, so the entrance state stays with the card the
+            // user just moved rather than with the slot it left.
+            key(card) {
+                val appearance = appearModifier(index, appear)
+                when (card) {
+                    HomeCard.Calories -> if (targets != null) {
+                        CalorieRingCard(
+                            consumedKcal = uiState.totals.calories,
+                            goalKcal = budgetKcal(targets.calories, uiState.burnedKcal, uiState.addExerciseToBudget),
+                            burnedKcal = if (uiState.addExerciseToBudget) uiState.burnedKcal else 0,
+                            modifier = appearance,
+                        )
+                    }
+
+                    HomeCard.Streak -> StreakCard(
+                        streak = uiState.streak,
+                        weightProgressKg = uiState.weightProgressKg,
+                        unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
+                        modifier = appearance,
+                    )
+
+                    HomeCard.Water -> WaterCard(
+                        glasses = uiState.waterGlasses,
+                        goalGlasses = uiState.waterGoalGlasses,
+                        unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
+                        onSetGlasses = { glasses -> onEvent(HomeEvent.OnSetWaterGlasses(glasses)) },
+                        modifier = appearance,
+                    )
+
+                    // Always shown when it's on, unlike the two Google Health cards below: a fast
+                    // that hasn't started is an invitation, not an absence of data.
+                    HomeCard.Fasting -> FastingCard(
+                        activeFast = uiState.activeFast,
+                        goalHours = uiState.fastingGoalHours,
+                        onStart = { onEvent(HomeEvent.OnStartFast) },
+                        onEnd = { onEvent(HomeEvent.OnEndFast) },
+                        onDiscard = { onEvent(HomeEvent.OnDiscardFast) },
+                        modifier = appearance,
+                    )
+
+                    // Hidden rather than zeroed when Google Health isn't connected or hasn't synced.
+                    HomeCard.Sleep -> uiState.lastNight?.let { night ->
+                        SleepCard(night = night, modifier = appearance)
+                    }
+
+                    HomeCard.Steps -> uiState.steps?.let { steps ->
+                        StepsCard(
+                            steps = steps,
+                            goal = uiState.stepGoal,
+                            creditKcal = if (uiState.addExerciseToBudget) uiState.stepsCreditKcal else 0,
+                            modifier = appearance,
+                        )
+                    }
+
+                    HomeCard.Heart -> uiState.heart?.let { heart ->
+                        HeartCard(heart = heart, modifier = appearance)
+                    }
+
+                    // The latest reading, not today's, and hidden until there is one — see the card.
+                    HomeCard.BloodPressure -> uiState.latestBloodPressure?.let { reading ->
+                        BloodPressureCard(
+                            reading = reading,
+                            todayEpochDay = todayEpochDay(),
+                            modifier = appearance,
+                        )
+                    }
+
+                    HomeCard.Mood -> MoodCard(
+                        mood = uiState.moodLevel,
+                        energy = uiState.energyLevel,
+                        onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
+                        onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
+                        modifier = appearance,
+                    )
+
+                    // Hidden when the list is empty, like the three watch cards above — but for a
+                    // different reason: there is nothing to import, there is nothing the user has
+                    // authored yet.
+                    HomeCard.Supplements -> SupplementsCard(
+                        supplements = uiState.supplements,
+                        onSetTaken = { id, taken -> onEvent(HomeEvent.OnSetSupplementTaken(id, taken)) },
+                        modifier = appearance,
+                    )
+
+                    HomeCard.Weight -> WeightMetricCard(
+                        trend = trend,
+                        goal = uiState.profile?.goal,
+                        unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
+                        projection = projection,
+                        modifier = appearance,
+                    )
+
+                    HomeCard.Macros -> if (targets != null) {
+                        MacroSummaryCard(
+                            consumed = uiState.totals,
+                            targets = targets,
+                            modifier = appearance,
+                        )
+                    }
+
+                    HomeCard.ProgressPhoto -> ProgressPhotoReminderCard(
+                        daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
+                        onTakePhoto = onAddPhoto,
+                        modifier = appearance,
+                    )
+                }
+            }
         }
-
-        StreakCard(
-            streak = uiState.streak,
-            weightProgressKg = uiState.weightProgressKg,
-            unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            modifier = appearModifier(2, appear),
-        )
-
-        WaterCard(
-            glasses = uiState.waterGlasses,
-            goalGlasses = uiState.waterGoalGlasses,
-            unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            onSetGlasses = { glasses -> onEvent(HomeEvent.OnSetWaterGlasses(glasses)) },
-            modifier = appearModifier(3, appear),
-        )
-
-        // Always shown, unlike the two Google Health cards below: a fast that hasn't started is
-        // an invitation, not an absence of data.
-        FastingCard(
-            activeFast = uiState.activeFast,
-            goalHours = uiState.fastingGoalHours,
-            onStart = { onEvent(HomeEvent.OnStartFast) },
-            onEnd = { onEvent(HomeEvent.OnEndFast) },
-            onDiscard = { onEvent(HomeEvent.OnDiscardFast) },
-            modifier = appearModifier(4, appear),
-        )
-
-        // Hidden rather than zeroed when Google Health isn't connected or hasn't synced.
-        uiState.lastNight?.let { night ->
-            SleepCard(night = night, modifier = appearModifier(5, appear))
-        }
-
-        uiState.steps?.let { steps ->
-            StepsCard(
-                steps = steps,
-                goal = uiState.stepGoal,
-                creditKcal = if (uiState.addExerciseToBudget) uiState.stepsCreditKcal else 0,
-                modifier = appearModifier(6, appear),
-            )
-        }
-
-        uiState.heart?.let { heart ->
-            HeartCard(heart = heart, modifier = appearModifier(7, appear))
-        }
-
-        // The latest reading, not today's, and hidden until there is one — see the card.
-        uiState.latestBloodPressure?.let { reading ->
-            BloodPressureCard(
-                reading = reading,
-                todayEpochDay = todayEpochDay(),
-                modifier = appearModifier(8, appear),
-            )
-        }
-
-        MoodCard(
-            mood = uiState.moodLevel,
-            energy = uiState.energyLevel,
-            onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
-            onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
-            modifier = appearModifier(9, appear),
-        )
-
-        // Hidden when the list is empty, like the three watch cards above — but for a different
-        // reason: there is nothing to import, there is nothing the user has authored yet.
-        SupplementsCard(
-            supplements = uiState.supplements,
-            onSetTaken = { id, taken -> onEvent(HomeEvent.OnSetSupplementTaken(id, taken)) },
-            modifier = appearModifier(10, appear),
-        )
-
-        WeightMetricCard(
-            trend = trend,
-            goal = uiState.profile?.goal,
-            unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric,
-            projection = projection,
-            modifier = appearModifier(11, appear),
-        )
-
-        if (targets != null) {
-            MacroSummaryCard(
-                consumed = uiState.totals,
-                targets = targets,
-                modifier = appearModifier(12, appear),
-            )
-        }
-
-        ProgressPhotoReminderCard(
-            daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
-            onTakePhoto = onAddPhoto,
-            modifier = appearModifier(13, appear),
-        )
     }
 }
 

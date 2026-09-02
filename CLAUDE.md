@@ -239,6 +239,42 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   adding five more shapes; Sleepy never blinks and still breathes. The start offset is per instance
   so the picker's cells don't blink in lockstep, and frozen under `LocalInspectionMode` so previews
   render the rest pose.
+- **The Home card order is one nullable String on `Profile`, not a `home_card` table.**
+  `homeLayout` holds the card names in display order with a `-` prefix on the hidden ones, and
+  `homeCardLayout()`/`encodeHomeCardLayout()` in `:core:designsystem` are the only things that read
+  or write that format — the exact shape `mascotName` takes, for the exact reason: the card
+  vocabulary (`HomeCard`) lives in `:core:designsystem` beside `MascotCharacter` because the screen
+  that renders it (`:feature:home`) and the picker that sets it (`:feature:profile`) are two feature
+  modules, and those never import each other. `:core:data` therefore stores the *name*. Null means
+  the declaration order with nothing hidden, and "Reset to default" writes **null rather than the
+  default encoded**: a stored default is a pin, and it would freeze that install's Home against
+  every card a later build adds. The parser bends in two directions for the same reason — a name
+  this build doesn't know is **dropped** (a card retired later can't leave a hole), a card the
+  string never mentions is **appended visible** (a card added later must not be silently hidden from
+  exactly the users who customised their Home). `HomeCardLayoutTest` guards both.
+- **The greeting and the AI insight are pinned; the other thirteen cards move.** The greeting is the
+  app's one door to the coach, so hiding it would strand a whole feature, and the insight owns an
+  expand/collapse whose *exit* is what stops the cards below it jumping — neither survives being
+  dropped into an arbitrary slot. Everything else on Home is one `forEachIndexed` over the resolved
+  layout, each slot `key`ed on its card so the entrance stagger follows a card across a reorder
+  rather than staying with the slot it left.
+- **A visibility switch can only ever remove a card, never force one.** Every data gate that was in
+  `HomeCards` stays inside its `when` branch: Sleep left *on* with no watch synced is as absent as
+  it was before the editor existed, and the editor row says so under the switch (`HomeCard.note`) —
+  a control that looks broken is worse than one that explains itself. A hidden card's flows are
+  still collected: Home combines everything in one chain, and splitting it per card would be a
+  large conditional-flow change for an unmeasured gain.
+- **Profile → Home layout authors; Home renders.** The same division the supplement list draws
+  against Home's card, and it is why the editor is a route above Profile (`SupplementsRoute`'s
+  argument — a thirteen-row list outgrows a sheet) with its own `HomeLayoutViewModel`: a second
+  `ViewModelStoreOwner` sharing `ProfileViewModel` would spin up a second copy of all ten of that
+  one's repositories to write a single column. The screen seeds a working copy off the first
+  *loaded* emission and never re-seeds — its own writes come back through Room, and re-seeding on
+  one mid-drag would yank the row out from under the finger. Rows are a fixed height so the drag
+  works off one constant instead of measuring, the handle alone starts the drag (a long-press on
+  the row would both delay the gesture and compete with the list's scroll), and every row carries
+  **Move up / Move down** accessibility actions, because a drag nobody using TalkBack can perform
+  is not a control.
 - **The weekly recap window is rolling-7-ending-today**, not a calendar week — a calendar week
   reports a half-empty Monday. The card is *hidden* when nothing was logged in the window
   rather than rendering zeros, and its "days logged" uses the streak's four-domain definition
@@ -789,7 +825,7 @@ because of that, not because it was the nicest design available.
   `measurement`, `photo`, `nutrition`, `activity`, `strength`, `mood`, `sleep`, `heart`, `fasting`,
   `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart` and `DayBarChart`, which
   between them draw every tab's bars except Mood's, Nutrition's and Supplements'),
-  `:feature:profile` (`profile`, `health`, `library`, `supplement`) and `:feature:onboarding`
+  `:feature:profile` (`profile`, `health`, `library`, `supplement`, `layout`) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
   `recipe/` though `FoodScreen` renders both, and Progress's eleven tab bodies sit

@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProfileRoute
 import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
+import ph.mart.healthapp.feature.profile.ui.layout.HomeLayoutScreen
 import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryScreen
 import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
 import ph.mart.healthapp.feature.profile.ui.supplement.SupplementsScreen
@@ -28,11 +29,17 @@ data object FoodLibraryRoute : NavKey
 @Serializable
 data object SupplementsRoute : NavKey
 
+/** The Home card order and visibility, one level above Profile for the reasons [SupplementsRoute]
+ * is: a thirteen-row list that outgrows a sheet, and NavDisplay's back returns to Profile. */
+@Serializable
+data object HomeLayoutRoute : NavKey
+
 fun EntryProviderScope<NavKey>.profileEntries(
     scrollState: ScrollState,
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSupplements: () -> Unit,
+    onOpenHomeLayout: () -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<ProfileRoute> {
@@ -41,9 +48,11 @@ fun EntryProviderScope<NavKey>.profileEntries(
             onOpenHealth = onOpenHealth,
             onOpenLibrary = onOpenLibrary,
             onOpenSupplements = onOpenSupplements,
+            onOpenHomeLayout = onOpenHomeLayout,
         )
     }
     entry<HealthConnectionRoute> { HealthConnectionScreen(onBack = onExitFlow) }
     entry<FoodLibraryRoute> { FoodLibraryScreen() }
     entry<SupplementsRoute> { SupplementsScreen() }
+    entry<HomeLayoutRoute> { HomeLayoutScreen() }
 }

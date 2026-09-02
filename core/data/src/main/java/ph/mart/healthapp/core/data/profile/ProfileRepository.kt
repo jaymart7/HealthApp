@@ -64,6 +64,15 @@ data class Profile(
      * Progress stat that counts them says it means today's goal.
      */
     val stepGoal: Int = DEFAULT_STEP_GOAL,
+    /**
+     * Which Home cards show, and in what order, as the comma-separated string
+     * `ph.mart.healthapp.core.designsystem.component.homeCardLayout` parses (a `-` prefix hides
+     * one). Held as a String rather than the card list for the same reason [mascotName] is: the
+     * card vocabulary lives in `:core:designsystem`, which this module does not depend on. Null
+     * means the default order with nothing hidden — the same reading [mascotName]'s null has, and
+     * what "Reset to default" writes back.
+     */
+    val homeLayout: String? = null,
 )
 
 interface ProfileRepository {
