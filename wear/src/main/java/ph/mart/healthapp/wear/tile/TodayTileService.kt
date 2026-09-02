@@ -6,7 +6,8 @@ import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.DimensionBuilders.expand
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
 import androidx.wear.protolayout.TimelineBuilders.Timeline
-import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.filledVariantProgressIndicatorColors
+import androidx.wear.protolayout.material3.CardDefaults.filledTonalCardColors
+import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.filledTonalProgressIndicatorColors
 import androidx.wear.protolayout.material3.ColorScheme
 import androidx.wear.protolayout.material3.GraphicDataCardStyle.Companion.largeGraphicDataCardStyle
 import androidx.wear.protolayout.material3.MaterialScope
@@ -106,6 +107,11 @@ class TodayTileService : Material3TileService(
      * so a glance at the tile and a glance at the watch app never differ. Water rides the edge
      * button because it is the one line worth a second figure; the streak and steps are the app's,
      * not the tile's, which is what keeps this readable at arm's length.
+     *
+     * Tonal card, tonal ring: a `surfaceContainer` card with a `primary` ring is both the pairing
+     * protolayout documents and what every FitPulse card already looks like. The filled default
+     * would make the tile a green slab — and pairing it with the *variant* ring colours, as this
+     * first did, draws the arc in a colour picked for a different background.
      */
     private fun MaterialScope.todayLayout(snapshot: TodaySnapshot, openApp: Clickable) =
         primaryLayout(
@@ -115,10 +121,11 @@ class TodayTileService : Material3TileService(
                     onClick = openApp,
                     height = expand(),
                     style = largeGraphicDataCardStyle(),
+                    colors = filledTonalCardColors(),
                     graphic = {
                         circularProgressIndicator(
                             staticProgress = snapshot.progress,
-                            colors = filledVariantProgressIndicatorColors(),
+                            colors = filledTonalProgressIndicatorColors(),
                         )
                     },
                     title = {
