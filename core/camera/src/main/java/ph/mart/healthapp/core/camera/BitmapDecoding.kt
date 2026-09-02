@@ -34,7 +34,8 @@ internal suspend fun decodeRotatedBitmap(file: File): Bitmap? =
  * buffered whole. IO-dispatched: both callers arrive on the main thread. */
 private suspend fun decodeRotatedBitmap(openStream: () -> InputStream?): Bitmap? = withContext(Dispatchers.IO) {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    openStream()?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return@withContext null
+    openStream()?.use { BitmapFactory.decodeStream(it, null, bounds) }
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@withContext null
 
     val options = BitmapFactory.Options().apply {
         inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight)
