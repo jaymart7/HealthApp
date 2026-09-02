@@ -42,6 +42,7 @@ import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
 import ph.mart.healthapp.feature.profile.ui.HomeLayoutRoute
+import ph.mart.healthapp.feature.profile.ui.RoutinesRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
@@ -58,6 +59,7 @@ private fun NavKey?.title(): String = when (this) {
     is StrengthWorkoutRoute -> if (this.editingId > 0) "Edit workout" else "Strength workout"
     HealthConnectionRoute -> "Google Health"
     FoodLibraryRoute -> "Saved meals & recipes"
+    RoutinesRoute -> "Workout routines"
     SupplementsRoute -> "Supplements"
     HomeLayoutRoute -> "Home layout"
     else -> ""
@@ -203,6 +205,7 @@ fun AppScaffold(
                         scrollState = profileScroll,
                         onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },
                         onOpenLibrary = { topLevelBackStack.add(FoodLibraryRoute) },
+                        onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },
                         onOpenSupplements = { topLevelBackStack.add(SupplementsRoute) },
                         onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },
                         onExitFlow = { topLevelBackStack.removeLast() },

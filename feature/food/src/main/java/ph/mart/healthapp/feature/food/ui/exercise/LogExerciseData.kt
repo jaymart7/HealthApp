@@ -2,6 +2,9 @@ package ph.mart.healthapp.feature.food.ui.exercise
 
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.LiftPerformance
+import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -22,11 +25,20 @@ data class LogExerciseUiState(
     /** The most recent strength session — what "Repeat last workout" seeds from. */
     val lastWorkout: ExerciseEntry? = null,
     val recentLifts: List<String> = emptyList(),
+    /** The saved routines, newest first — the "Start a routine" chips. */
+    val routines: List<Routine> = emptyList(),
+    /** What each lift looked like the last time it was trained, keyed by
+     * [ph.mart.healthapp.core.data.exercise.liftKey]. Drawn under the exercise field as one line,
+     * and it is also what a started routine seeds its loads from. */
+    val lastLifts: Map<String, LiftPerformance> = emptyMap(),
     /** False until [LogExerciseEvent.OnOpenStrength] has answered. The strength screen holds its
      * content back on it: seeding a `rememberSaveable` form from a row that arrives an emission
      * later would re-key the saver and wipe what the user had already typed. */
     val strengthLoaded: Boolean = false,
-)
+) {
+    /** [lastLifts] reduced to the one figure a routine needs: what was on the bar. */
+    val lastLoads: Map<String, Double> get() = lastLifts.mapValues { it.value.topSet.weightKg }
+}
 
 /**
  * [burnedEdited] latches the moment the user touches the kcal stepper: after that, changing the
@@ -96,8 +108,13 @@ sealed interface LogExerciseEvent {
     ) : LogExerciseEvent
 
     /** Fired once when the strength screen opens: it resolves the workout being corrected (if
-     * [editingId] is non-zero), the session to repeat, and the lift-name chips, in one intent. */
+     * [editingId] is non-zero), the session to repeat, the lift-name chips and what each lift was
+     * last trained at, in one intent — and starts observing the saved routines. */
     data class OnOpenStrength(val editingId: Long = 0) : LogExerciseEvent
+
+    /** Names the workout on screen as a routine. It logs nothing: [OnSave] is still what writes
+     * the session, and the two are deliberately independent. */
+    data class OnSaveRoutine(val name: String, val lifts: List<RoutineLift>) : LogExerciseEvent
 }
 
 sealed interface LogExerciseSideEffect {

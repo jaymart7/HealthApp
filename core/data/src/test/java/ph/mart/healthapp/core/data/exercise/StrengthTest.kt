@@ -130,4 +130,45 @@ class StrengthTest {
         assertEquals(listOf("Bench press", "Squat", "Row"), entries.recentLiftNames())
         assertEquals(listOf("Bench press", "Squat"), entries.recentLiftNames(limit = 2))
     }
+
+    @Test
+    fun `last time is the most recent session of a lift, not its best ever`() {
+        val entries = listOf(
+            workout(TODAY - 14, StrengthSet("Bench press", reps = 3, weightKg = 80.0)),
+            workout(
+                TODAY - 3,
+                StrengthSet("Bench press", reps = 8, weightKg = 60.0),
+                StrengthSet("Bench press", reps = 8, weightKg = 62.5),
+                StrengthSet("Row", reps = 10, weightKg = 40.0),
+            ),
+        )
+
+        val last = entries.lastPerformances()
+
+        val bench = last.getValue("bench press")
+        assertEquals(TODAY - 3, bench.dateEpochDay)
+        // The heavier day is still the personal record; this is what to put on the bar today.
+        assertEquals(62.5, bench.topSet.weightKg, 0.001)
+        assertEquals(2, bench.sets)
+        assertEquals(setOf("bench press", "row"), last.keys)
+    }
+
+    @Test
+    fun `a lift typed two ways has one last time`() {
+        val entries = listOf(
+            workout(TODAY - 5, StrengthSet("Squat", reps = 5, weightKg = 100.0)),
+            workout(TODAY - 1, StrengthSet("squat", reps = 5, weightKg = 102.5)),
+        )
+
+        val last = entries.lastPerformances()
+
+        assertEquals(1, last.size)
+        assertEquals(102.5, last.getValue("squat").topSet.weightKg, 0.001)
+    }
+
+    @Test
+    fun `a cardio row contributes no last time`() {
+        val cardio = ExerciseEntry(id = 1, dateEpochDay = TODAY, type = ExerciseType.Run, minutes = 30, burnedKcal = 300)
+        assertEquals(emptyMap<String, LiftPerformance>(), listOf(cardio).lastPerformances())
+    }
 }

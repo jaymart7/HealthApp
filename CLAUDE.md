@@ -100,7 +100,8 @@ cancels, Confirmation returns to Capture with a discard confirm if edited).
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise`, `mood`, `health`, `fasting`, `supplement`, `bloodpressure`, `coach`. Two
+  `exercise` (logged activity *and* the routines that seed one), `mood`, `health`, `fasting`,
+  `supplement`, `bloodpressure`, `coach`. Two
   non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
@@ -610,12 +611,46 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   again doesn't reset the date. The tab's stats re-fold over the *selected* window so they can't
   describe different days from the chart above them, while records stay all-time: re-scoring a best
   against a 1M filter would retire records every month.
-- **"Repeat last workout" instead of named routines.** It reads back the entry that already exists,
-  so it costs no schema, and `recentStrength` selects on *having sets* rather than on
-  `type = 'Strength'` — a strength session logged through the sheet has none, and a run of those
-  would fill the limit with workouts there is nothing to repeat or suggest from (it also keeps an
-  enum name out of the SQL). Named A/B/C routines — the saved-meal/recipe pattern applied to
-  workouts — are the upgrade path, not a gap.
+- **"Repeat last workout" reads back the entry that already exists**, so it costs no schema, and
+  `recentStrength` selects on *having sets* rather than on `type = 'Strength'` — a strength session
+  logged through the sheet has none, and a run of those would fill the limit with workouts there is
+  nothing to repeat or suggest from (it also keeps an enum name out of the SQL).
+- **A routine is a saved meal for workouts, and it stores no load.** `routine`/`routine_lift` mirror
+  `saved_meal`/`saved_meal_item` down to the plain non-FK child column and the join-in-Kotlin fold,
+  because it is the same idea: a thing authored once by *naming what is already on screen* and
+  re-used later, never linked to what it produced — rename or delete one and not a row of history
+  moves. What earns the second concept is what a routine deliberately leaves out: `routine_lift` is
+  `(exerciseName, sets, reps)`, and a programme is "Squat 3×5" whose load moves every week, so a
+  stored target would go stale within days and turn the routine into something to maintain.
+  `toSets()` prices each seeded set at **what was last lifted** (`lastPerformances()`, falling back
+  to 0 — bodyweight, a real value here), which is progressive overload for free and one column
+  fewer. *ponytail: a per-lift target load is the upgrade path if users ask; it would ride the
+  entity and win over the last-lifted figure in `toSets()`.*
+- **`lastPerformances()` is derived off a read the screen already makes.** No table and no query of
+  its own — a third fold over the `recentStrengthEntries()` that already feeds the repeat seed and
+  the lift chips, so the three can never disagree. It answers "what do I put on the bar today"
+  where `personalRecords()` answers "how strong am I", which is why it takes the most recent
+  session's top set rather than the all-time best, and it is keyed by `liftKey()` (trim +
+  lowercase) because lift names are free text and the chip row already matches them that way. It is
+  drawn under the *exercise field*, not beside the routine chips: a freestyle session needs the
+  number as much as a routine does. *ponytail: `RECENT_STRENGTH_WORKOUTS` = 10 is the ceiling — a
+  lift untouched for ten sessions reads as new and seeds at bodyweight; a per-lift `MAX(date)`
+  query is the upgrade.*
+- **A routine is authored by naming a workout, never in a builder.** "Save as routine" collapses the
+  set list with `toRoutineLifts()` (`groupBy` the lift, count the sets, take the *modal* reps — 8/8/6
+  is a routine of 8s with a set that fell short), which is the gesture "Save this meal" makes on a
+  diary section, and it saves nothing else: logging the session is still the Save button beside it.
+  Starting one shares "Repeat last workout"'s guard — offered only while the set list is empty,
+  because it seeds the whole list. There is no confirmation toast when a routine is saved (the
+  saved-meal path has none either); the button reports its own result and re-arms when the set list
+  changes, so a fuller session can be saved again.
+- **Profile → Workout routines renames and deletes; it cannot start one.** The division the food
+  library draws against the add-entry sheet: starting a routine needs a workout in progress and a
+  day, and Profile has neither. It is `FoodLibraryScreen`'s twin one domain over, which is what
+  moved `LibraryRow` and `RenameSheet` into `:feature:profile`'s `ui/shared/components/`. Routines
+  are **not exported**, for the reason saved meals and recipes aren't — convenience data, not
+  history — so no export schema bump; and nothing else moved, because a started routine saves as an
+  ordinary `ExerciseEntry` with sets.
 - **The sheet hands off to a screen; it does not redirect.** Picking Strength grows one "Log sets
   instead →" button rather than navigating on the chip tap, so the plain duration-and-kcal path
   stays reachable — that path is what an imported watch session is. A screen because a set list
@@ -882,7 +917,9 @@ because of that, not because it was the nicest design available.
   `measurement`, `photo`, `nutrition`, `activity`, `strength`, `mood`, `sleep`, `heart`, `fasting`,
   `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart` and `DayBarChart`, which
   between them draw every tab's bars except Mood's, Nutrition's and Supplements'),
-  `:feature:profile` (`profile`, `health`, `library`, `supplement`, `layout`) and `:feature:onboarding`
+  `:feature:profile` (`profile`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
+  `shared/` holding `LibraryRow` and `RenameSheet`, which the food library and the routine library
+  both draw) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
   owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
   `recipe/` though `FoodScreen` renders both, and Progress's eleven tab bodies sit

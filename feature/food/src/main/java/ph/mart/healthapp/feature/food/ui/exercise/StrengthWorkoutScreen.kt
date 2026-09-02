@@ -32,7 +32,13 @@ import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.LiftPerformance
+import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthSet
+import ph.mart.healthapp.core.data.exercise.liftKey
+import ph.mart.healthapp.core.data.exercise.toRoutineLifts
+import ph.mart.healthapp.core.data.exercise.toSets
 import ph.mart.healthapp.core.data.exercise.volumeKg
 import ph.mart.healthapp.core.data.exercise.volumeLabel
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -42,6 +48,8 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseFormFields
+import ph.mart.healthapp.feature.food.ui.exercise.components.NameChipRow
+import ph.mart.healthapp.feature.food.ui.exercise.components.SaveRoutineSheet
 import ph.mart.healthapp.feature.food.ui.exercise.components.StrengthSetEditor
 import ph.mart.healthapp.feature.food.ui.exercise.components.StrengthSetList
 import ph.mart.healthapp.feature.food.ui.exercise.components.canAdd
@@ -114,6 +122,14 @@ private fun StrengthWorkoutContent(
     var discardOpen by rememberSaveable { mutableStateOf(false) }
     val draft = StrengthSet(draftName, draftReps, draftKg)
 
+    // The routine sheet's name, and what it was saved as. There is no toast or snackbar here (the
+    // saved-meal path has none either), so the button reporting its own result is the confirmation.
+    var routineName by rememberSaveable { mutableStateOf("") }
+    var routineSheetOpen by rememberSaveable { mutableStateOf(false) }
+    var savedRoutineName by rememberSaveable { mutableStateOf<String?>(null) }
+    // Adding or removing a set makes it a different workout, so it can be saved again.
+    LaunchedEffect(form.sets.size) { savedRoutineName = null }
+
     fun commit(set: StrengthSet) {
         state.form = form.copy(sets = form.sets + set)
     }
@@ -154,6 +170,29 @@ private fun StrengthWorkoutContent(
                     )
                 }
 
+                // Same guard, same reason: a routine seeds the whole list, so offering it once a
+                // set is down would overwrite what is already there.
+                if (uiState.routines.isNotEmpty() && form.sets.isEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Start a routine",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        NameChipRow(
+                            names = uiState.routines.map { it.name },
+                            // Names are what the row shows, so the tapped one is what finds the
+                            // routine back — two routines sharing a name seed the newer, which is
+                            // the one the chip nearer the start is.
+                            onSelect = { name ->
+                                uiState.routines.firstOrNull { it.name == name }?.let { routine ->
+                                    state.form = form.copy(sets = routine.toSets(uiState.lastLoads))
+                                }
+                            },
+                        )
+                    }
+                }
+
                 StrengthSetList(
                     sets = form.sets,
                     unit = uiState.preferredUnit,
@@ -171,6 +210,7 @@ private fun StrengthWorkoutContent(
                         draftReps = it.reps
                         draftKg = it.weightKg
                     },
+                    lastPerformance = uiState.lastLifts[draftName.liftKey()],
                     // The draft deliberately survives the commit: three sets of the same lift at
                     // the same load is the shape of most programmes, so pressing Add again *is*
                     // the repeat gesture and no second button is needed for it.
@@ -183,6 +223,18 @@ private fun StrengthWorkoutContent(
                     onFormChange = { state.form = it },
                     showTypeChips = false,
                 )
+
+                if (form.sets.isNotEmpty()) {
+                    SecondaryButton(
+                        label = savedRoutineName?.let { "Saved as \"$it\"" } ?: "Save as routine",
+                        onClick = {
+                            routineName = form.name.trim()
+                            routineSheetOpen = true
+                        },
+                        enabled = savedRoutineName == null,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                     SecondaryButton(
@@ -199,6 +251,22 @@ private fun StrengthWorkoutContent(
                         modifier = Modifier.weight(1f),
                     )
                 }
+            }
+
+            if (routineSheetOpen) {
+                val lifts = form.sets.toRoutineLifts()
+                SaveRoutineSheet(
+                    name = routineName,
+                    liftCount = lifts.size,
+                    setCount = form.sets.size,
+                    onNameChange = { routineName = it },
+                    onDismiss = { routineSheetOpen = false },
+                    onSave = {
+                        onEvent(LogExerciseEvent.OnSaveRoutine(routineName, lifts))
+                        savedRoutineName = routineName.trim()
+                        routineSheetOpen = false
+                    },
+                )
             }
 
             if (discardOpen) {
@@ -249,6 +317,14 @@ private fun StrengthWorkoutScreenPreview() {
             uiState = LogExerciseUiState(
                 weightKg = 74.0,
                 recentLifts = listOf("Bench press", "Squat", "Row"),
+                lastLifts = mapOf(
+                    "bench press" to LiftPerformance(
+                        exerciseName = "Bench press",
+                        dateEpochDay = 20_000,
+                        topSet = StrengthSet("Bench press", reps = 8, weightKg = 57.5),
+                        sets = 3,
+                    ),
+                ),
                 strengthLoaded = true,
                 editing = ExerciseEntry(
                     id = 1,
@@ -271,7 +347,8 @@ private fun StrengthWorkoutScreenPreview() {
     }
 }
 
-/** A fresh workout with a session to repeat — the state the button exists for. */
+/** A fresh workout with a session to repeat and routines to start — the state those two rows
+ * exist for. */
 @PreviewLightDark
 @Composable
 private fun StrengthWorkoutScreenEmptyPreview() {

@@ -5,6 +5,9 @@ import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.RoutineRepository
+import ph.mart.healthapp.core.data.exercise.lastPerformances
 import ph.mart.healthapp.core.data.exercise.recentLiftNames
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -24,9 +27,14 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
  */
 class LogExerciseViewModel(
     private val exerciseRepository: ExerciseRepository,
+    private val routineRepository: RoutineRepository,
     profileRepository: ProfileRepository,
     progressRepository: ProgressRepository,
 ) : ViewModel(), OrbitContainerHost<LogExerciseUiState, LogExerciseUiState, LogExerciseSideEffect> {
+
+    /** The strength screen's `LaunchedEffect` re-fires on an Activity recreation while this
+     * ViewModel survives it, so the routine collection has to be started at most once. */
+    private var routinesObserved = false
 
     override val container = orbitContainer<LogExerciseUiState, LogExerciseSideEffect>(LogExerciseUiState()) {
         observeWeight(profileRepository, progressRepository)
@@ -36,6 +44,7 @@ class LogExerciseViewModel(
         when (event) {
             is LogExerciseEvent.OnSave -> onSave(event.form, event.dateEpochDay, event.editingId)
             is LogExerciseEvent.OnOpenStrength -> onOpenStrength(event.editingId)
+            is LogExerciseEvent.OnSaveRoutine -> onSaveRoutine(event.name, event.lifts)
         }
     }
 
@@ -60,8 +69,9 @@ class LogExerciseViewModel(
         }
     }
 
-    /** One read for all three: the row being corrected, the session to repeat, and the chips.
-     * [strengthLoaded] is what the screen waits on before it composes a form. */
+    /** One read for all four: the row being corrected, the session to repeat, the chips, and what
+     * each lift was last trained at. [strengthLoaded] is what the screen waits on before it
+     * composes a form. */
     private fun onOpenStrength(editingId: Long) = intent {
         val recent = exerciseRepository.recentStrengthEntries()
         val editing = editingId.takeIf { it > 0 }?.let { exerciseRepository.entry(it) }
@@ -72,9 +82,29 @@ class LogExerciseViewModel(
                 // on screen, which is the one session it can't usefully seed.
                 lastWorkout = recent.firstOrNull { it.id != editingId },
                 recentLifts = recent.recentLiftNames(),
+                // A third fold over the same read — no extra query, and it cannot disagree with
+                // the chips it sits beside.
+                lastLifts = recent.lastPerformances(),
                 strengthLoaded = true,
             )
         }
+        observeRoutines()
+    }
+
+    /** Observed rather than read once, unlike everything above: saving a routine from this screen
+     * has to show up in its own chip row without a reload. */
+    private fun observeRoutines() {
+        if (routinesObserved) return
+        routinesObserved = true
+        intent {
+            routineRepository.observeRoutines().collect { routines ->
+                reduce { state.copy(routines = routines) }
+            }
+        }
+    }
+
+    private fun onSaveRoutine(name: String, lifts: List<RoutineLift>) = intent {
+        routineRepository.addRoutine(name, lifts)
     }
 
     private fun onSave(form: LogExerciseForm, dateEpochDay: Long, editingId: Long?) = intent {

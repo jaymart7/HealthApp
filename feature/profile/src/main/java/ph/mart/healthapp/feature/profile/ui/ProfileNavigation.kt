@@ -9,6 +9,7 @@ import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
 import ph.mart.healthapp.feature.profile.ui.layout.HomeLayoutScreen
 import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryScreen
 import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
+import ph.mart.healthapp.feature.profile.ui.routine.RoutinesScreen
 import ph.mart.healthapp.feature.profile.ui.supplement.SupplementsScreen
 
 /**
@@ -24,6 +25,11 @@ data object HealthConnectionRoute : NavKey
 @Serializable
 data object FoodLibraryRoute : NavKey
 
+/** The workout routines, one level above Profile for the reasons [FoodLibraryRoute] is — it is
+ * that screen's twin, one domain over. */
+@Serializable
+data object RoutinesRoute : NavKey
+
 /** The supplement list, one level above Profile for the same reasons [FoodLibraryRoute] is: it can
  * outgrow a sheet, and NavDisplay's back is what returns to Profile. */
 @Serializable
@@ -38,6 +44,7 @@ fun EntryProviderScope<NavKey>.profileEntries(
     scrollState: ScrollState,
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenRoutines: () -> Unit,
     onOpenSupplements: () -> Unit,
     onOpenHomeLayout: () -> Unit,
     onExitFlow: () -> Unit,
@@ -47,12 +54,14 @@ fun EntryProviderScope<NavKey>.profileEntries(
             scrollState = scrollState,
             onOpenHealth = onOpenHealth,
             onOpenLibrary = onOpenLibrary,
+            onOpenRoutines = onOpenRoutines,
             onOpenSupplements = onOpenSupplements,
             onOpenHomeLayout = onOpenHomeLayout,
         )
     }
     entry<HealthConnectionRoute> { HealthConnectionScreen(onBack = onExitFlow) }
     entry<FoodLibraryRoute> { FoodLibraryScreen() }
+    entry<RoutinesRoute> { RoutinesScreen() }
     entry<SupplementsRoute> { SupplementsScreen() }
     entry<HomeLayoutRoute> { HomeLayoutScreen() }
 }

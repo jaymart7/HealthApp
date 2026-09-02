@@ -101,6 +101,50 @@ fun List<ExerciseEntry>.personalRecords(): List<LiftRecord> = withSets()
     }
     .sortedWith(compareByDescending<LiftRecord> { it.dateEpochDay }.thenBy { it.exerciseName })
 
+/**
+ * The last time a lift was trained: the sets of it in the most recent workout that contained it,
+ * and the heaviest of those by [estimatedOneRepMax].
+ *
+ * Distinct from [LiftRecord], which is all-time and answers "how strong am I". This answers "what
+ * do I put on the bar today", which is the question actually being asked while a set is typed.
+ */
+data class LiftPerformance(
+    val exerciseName: String,
+    val dateEpochDay: Long,
+    val topSet: StrengthSet,
+    val sets: Int,
+)
+
+/**
+ * One [LiftPerformance] per lift, keyed by [liftKey] — free-text names, matched the way the chip
+ * row matches them.
+ *
+ * Derived, no table and no query of its own: the strength screen already reads
+ * [RECENT_STRENGTH_WORKOUTS] workouts for its repeat seed and its chips, and this is a third fold
+ * over that same list.
+ *
+ * ponytail: that window is the ceiling — a lift untouched for ten sessions reads as new and seeds
+ * at bodyweight. A per-lift `MAX(date)` query is the upgrade if a routine user with a long split
+ * ever notices.
+ */
+fun List<ExerciseEntry>.lastPerformances(): Map<String, LiftPerformance> = withSets()
+    // Oldest first, so a later workout's entry simply overwrites an earlier one's.
+    .sortedBy { it.dateEpochDay }
+    .flatMap { entry -> entry.sets.map { entry to it } }
+    .filter { (_, set) -> set.exerciseName.isNotBlank() }
+    .groupBy { (entry, set) -> set.exerciseName.liftKey() to entry.dateEpochDay }
+    .entries
+    .associate { (key, dated) ->
+        val (name, day) = key
+        val sets = dated.map { it.second }
+        name to LiftPerformance(
+            exerciseName = sets.first().exerciseName.trim(),
+            dateEpochDay = day,
+            topSet = sets.maxBy { it.estimatedOneRepMaxKg() },
+            sets = sets.size,
+        )
+    }
+
 data class StrengthTotals(val workouts: Int, val sets: Int, val volumeKg: Double)
 
 fun List<ExerciseEntry>.strengthTotals(): StrengthTotals {
@@ -162,3 +206,7 @@ fun List<StrengthSet>.summaryLabel(unit: UnitSystem): String {
         volumeLabel(volume, unit).takeIf { volume > 0 },
     ).joinToString(" · ")
 }
+
+/** "Last: 60 kg × 8 · 3 sets" — the one line under the exercise field that says what to beat. */
+fun LiftPerformance.label(unit: UnitSystem): String =
+    "Last: ${topSet.loadLabel(unit)} · $sets ${if (sets == 1) "set" else "sets"}"

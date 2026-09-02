@@ -74,6 +74,7 @@ private const val NOTIFICATIONS_BLOCKED =
 fun ProfileScreen(
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenRoutines: () -> Unit,
     onOpenSupplements: () -> Unit,
     onOpenHomeLayout: () -> Unit,
     scrollState: ScrollState = rememberScrollState(),
@@ -201,6 +202,7 @@ fun ProfileScreen(
         onImport = { importLauncher.launch(arrayOf("application/json")) },
         onOpenHealth = onOpenHealth,
         onOpenLibrary = onOpenLibrary,
+        onOpenRoutines = onOpenRoutines,
         onOpenSupplements = onOpenSupplements,
         onOpenHomeLayout = onOpenHomeLayout,
         reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
@@ -234,6 +236,7 @@ private fun ProfileContent(
     onImport: () -> Unit,
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenRoutines: () -> Unit,
     onOpenSupplements: () -> Unit,
     onOpenHomeLayout: () -> Unit,
     reminderMessage: String? = null,
@@ -298,7 +301,7 @@ private fun ProfileContent(
                 messageIsError = true,
             )
             ProfileSupplementsSection(onOpenSupplements = onOpenSupplements)
-            ProfileLibrarySection(onOpenLibrary = onOpenLibrary)
+            ProfileLibrarySection(onOpenLibrary = onOpenLibrary, onOpenRoutines = onOpenRoutines)
             ProfileConnectionsSection(onOpenHealth = onOpenHealth)
             ProfileDataSection(
                 onExport = onExport,
@@ -345,6 +348,7 @@ private fun ProfileScreenPreview() {
             onImport = {},
             onOpenHealth = {},
             onOpenLibrary = {},
+            onOpenRoutines = {},
             onOpenSupplements = {},
             onOpenHomeLayout = {},
         )

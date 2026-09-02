@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.library.components
+package ph.mart.healthapp.feature.profile.ui.shared.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,8 +22,8 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
- * Renames one saved meal or recipe. Same shape as `SaveMealSheet`, which is where the name was
- * typed in the first place — seeded with the current one, so the fast path is a small edit.
+ * Renames one saved meal, recipe or workout routine. Same shape as the sheet that named it in the
+ * first place — seeded with the current name, so the fast path is a small edit.
  *
  * The draft lives here rather than in the screen: it is discarded on dismiss, and there is nothing
  * on the other side of Save that needs to have seen it.

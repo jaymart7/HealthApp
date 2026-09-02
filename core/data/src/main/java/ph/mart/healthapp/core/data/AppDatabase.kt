@@ -6,6 +6,9 @@ import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingDao
 import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingEntity
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryDao
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryEntity
+import ph.mart.healthapp.core.data.exercise.local.RoutineDao
+import ph.mart.healthapp.core.data.exercise.local.RoutineEntity
+import ph.mart.healthapp.core.data.exercise.local.RoutineLiftEntity
 import ph.mart.healthapp.core.data.exercise.local.StrengthSetEntity
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodDao
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodEntity
@@ -55,6 +58,8 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         WaterDayEntity::class,
         ExerciseEntryEntity::class,
         StrengthSetEntity::class,
+        RoutineEntity::class,
+        RoutineLiftEntity::class,
         MoodDayEntity::class,
         HealthLinkEntity::class,
         SleepDayEntity::class,
@@ -66,7 +71,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         BloodPressureReadingEntity::class,
         ChatMessageEntity::class,
     ],
-    version = 24,
+    version = 25,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -79,6 +84,7 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun progressPhotoDao(): ProgressPhotoDao
     abstract fun waterDayDao(): WaterDayDao
     abstract fun exerciseEntryDao(): ExerciseEntryDao
+    abstract fun routineDao(): RoutineDao
     abstract fun moodDayDao(): MoodDayDao
     abstract fun healthLinkDao(): HealthLinkDao
     abstract fun sleepDayDao(): SleepDayDao

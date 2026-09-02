@@ -27,8 +27,8 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.profile.ui.library.components.LibraryRow
-import ph.mart.healthapp.feature.profile.ui.library.components.RenameSheet
+import ph.mart.healthapp.feature.profile.ui.shared.components.LibraryRow
+import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 
 /**
  * Every saved meal and recipe, one Nav3 level above Profile — the only screen that can reach past

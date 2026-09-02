@@ -1,26 +1,21 @@
 package ph.mart.healthapp.feature.food.ui.exercise.components
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.exercise.LiftPerformance
 import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.exercise.formatLoad
+import ph.mart.healthapp.core.data.exercise.label
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
@@ -43,6 +38,11 @@ private fun loadStep(unit: UnitSystem): Double = if (unit == UnitSystem.Imperial
  * The load is entered and displayed in the user's own unit and stored in kilograms, the rule every
  * weight in this app follows. A load of zero is bodyweight and is a valid set, so [canAdd] turns
  * on reps and a name, never on the weight.
+ *
+ * [lastPerformance] is what the named lift looked like the last time it was trained, printed as one
+ * line under the field. It is the number a lifter opens the app for, and it belongs here rather
+ * than beside the routine chips because it has to be right where the next load is typed — a
+ * freestyle session gets it exactly as a routine does.
  */
 @Composable
 internal fun StrengthSetEditor(
@@ -52,6 +52,7 @@ internal fun StrengthSetEditor(
     onDraftChange: (StrengthSet) -> Unit,
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
+    lastPerformance: LiftPerformance? = null,
 ) {
     val step = loadStep(unit)
     val displayLoad = draft.weightKg.kgToDisplayUnit(unit)
@@ -63,8 +64,15 @@ internal fun StrengthSetEditor(
             placeholder = "Bench press",
             onValueChange = { onDraftChange(draft.copy(exerciseName = it)) },
         )
+        if (lastPerformance != null) {
+            Text(
+                text = lastPerformance.label(unit),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         if (recentLifts.isNotEmpty()) {
-            LiftNameChipRow(
+            NameChipRow(
                 names = recentLifts,
                 selected = draft.exerciseName,
                 onSelect = { onDraftChange(draft.copy(exerciseName = it)) },
@@ -112,39 +120,6 @@ internal fun StrengthSetEditor(
 /** A named lift with at least one rep. The load is deliberately not checked — zero is bodyweight. */
 internal fun StrengthSet.canAdd(): Boolean = exerciseName.isNotBlank() && reps > 0
 
-/** [ExerciseTypeChipRow]'s pill, over names rather than a fixed enum — they size to their labels
- * and scroll, because a lift name is as long as it is. */
-@Composable
-private fun LiftNameChipRow(names: List<String>, selected: String, onSelect: (String) -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-    ) {
-        names.forEach { name ->
-            val isSelected = name.equals(selected, ignoreCase = true)
-            Surface(
-                onClick = { onSelect(name) },
-                shape = RoundedCornerShape(999.dp),
-                color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-                contentColor = if (isSelected) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                border = BorderStroke(
-                    width = if (isSelected) 1.5.dp else 1.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                ),
-                modifier = Modifier.height(36.dp),
-            ) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
-                    Text(text = name, style = MaterialTheme.typography.labelMedium)
-                }
-            }
-        }
-    }
-}
-
 @PreviewLightDark
 @Composable
 private fun StrengthSetEditorPreview() {
@@ -156,6 +131,12 @@ private fun StrengthSetEditorPreview() {
                 recentLifts = listOf("Bench press", "Squat", "Deadlift"),
                 onDraftChange = {},
                 onAdd = {},
+                lastPerformance = LiftPerformance(
+                    exerciseName = "Bench press",
+                    dateEpochDay = 20_000,
+                    topSet = StrengthSet("Bench press", reps = 8, weightKg = 57.5),
+                    sets = 3,
+                ),
                 modifier = Modifier.padding(16.dp),
             )
         }

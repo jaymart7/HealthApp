@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.library.components
+package ph.mart.healthapp.feature.profile.ui.shared.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,12 +20,13 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
- * One saved meal or recipe, as the library lists it: rename and delete, and **no way to log it**.
- * Logging needs a meal slot and a day, and Profile has neither — the add-entry sheet's panels stay
- * the place a saved meal is used.
+ * One saved meal, recipe or workout routine, as its library lists it: rename and delete, and **no
+ * way to use it**. Logging a meal needs a meal slot and a day, and starting a routine needs a
+ * workout in progress; Profile has none of those — the add-entry sheet's panels and the strength
+ * screen's chips stay the places those things are used.
  *
- * [contents] names the items rather than only counting them. A row reading "4 items · 540 kcal" is
- * a row you delete blind, and the items are already loaded, so saying which four costs nothing.
+ * [contents] names the parts rather than only counting them. A row reading "4 items · 540 kcal" is
+ * a row you delete blind, and they are already loaded, so saying which four costs nothing.
  */
 @Composable
 internal fun LibraryRow(
