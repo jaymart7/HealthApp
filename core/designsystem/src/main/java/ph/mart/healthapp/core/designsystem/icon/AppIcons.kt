@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.Delete
@@ -55,6 +56,7 @@ object AppIcons {
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
     val Send: ImageVector = Icons.AutoMirrored.Filled.Send
+    val Share: ImageVector = Icons.Filled.Share
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment
     val TrendDown: ImageVector = Icons.Filled.ArrowDownward
     val TrendUp: ImageVector = Icons.Filled.ArrowUpward

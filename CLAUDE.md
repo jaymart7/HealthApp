@@ -832,4 +832,6 @@ because of that, not because it was the nicest design available.
 - **Propose architecture and flag concerns before writing code.** If something
   looks wrong for Android, say so before implementing it literally.
 - **Never create a branch.** Work on `main` and commit there directly once the
-  implementation is done and verified.
+  implementation is done — a build or a test run is not a precondition for the
+  commit. Say plainly what was and wasn't verified in the commit message or the
+  reply; don't hold the work uncommitted waiting on a check.

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The one shared directory. Everything written here is a rendered card the user asked to
+     share; nothing in filesDir (progress photos, the Room database) is reachable through it. -->
+<paths>
+    <cache-path name="share" path="share/" />
+</paths>
