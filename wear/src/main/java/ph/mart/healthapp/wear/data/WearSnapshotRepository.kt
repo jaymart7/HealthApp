@@ -11,6 +11,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import ph.mart.healthapp.core.today.KEY_SNAPSHOT
 import ph.mart.healthapp.core.today.MSG_ADD_GLASS
@@ -39,7 +41,15 @@ class WearSnapshotRepository(private val context: Context) {
      * range; the listener is what makes a glass logged on the phone show up on the wrist without
      * a refresh.
      */
-    val snapshots: Flow<TodaySnapshot?> = callbackFlow {
+    val snapshots: Flow<TodaySnapshot?> = flow {
+        // Seeded before the listener is attached, not after: the read does IO, and a push landing
+        // while it was in flight would otherwise be overwritten by the older stored value and stay
+        // wrong until the next one.
+        emit(latestSnapshot(context))
+        emitAll(dataChanges())
+    }
+
+    private fun dataChanges(): Flow<TodaySnapshot?> = callbackFlow {
         val client = Wearable.getDataClient(context)
         val listener = DataClient.OnDataChangedListener { events ->
             events.forEach { event ->
@@ -50,7 +60,6 @@ class WearSnapshotRepository(private val context: Context) {
             events.release()
         }
         client.addListener(listener)
-        send(latestSnapshot(context))
         awaitClose { client.removeListener(listener) }
     }
 
