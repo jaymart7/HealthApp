@@ -33,7 +33,8 @@ import ph.mart.healthapp.feature.food.ui.shared.isValid
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /**
- * The diary's log-a-food sheet: four shortcut panels that seed the form, then the form itself.
+ * The diary's log-a-food sheet: four shortcut panels that seed the form, then the form itself —
+ * and, above them all, the one door in the app to a food the user hasn't decided on yet.
  *
  * [editing] turns the same sheet into the correct-a-logged-row sheet. The panels go with it: they
  * all seed a *new* log, and two of them ([onLogSavedMeal], [onLogAgain]) write rows the moment
@@ -58,6 +59,9 @@ internal fun AddEntrySheet(
     onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
+    /** Null when there is no day to suggest against — no profile yet, or nothing left in the
+     * budget. Hidden rather than disabled: a control that can't answer shouldn't be there. */
+    onGetIdeas: (() -> Unit)? = null,
     editing: Boolean = false,
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
@@ -69,6 +73,9 @@ internal fun AddEntrySheet(
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!editing) {
+                // Above the panels, because it answers a different question: they are faster
+                // ways to log something already decided on, this is what to decide.
+                onGetIdeas?.let { SecondaryButton(label = "Get meal ideas", onClick = it) }
                 // Both panels seed the fields below; they stay editable either way, so this is a
                 // shortcut past typing rather than a separate entry mode. Already-logged foods come
                 // first — they cost no network round-trip and are the likelier match.

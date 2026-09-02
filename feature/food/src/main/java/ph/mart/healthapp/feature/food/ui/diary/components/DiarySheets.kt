@@ -18,10 +18,12 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.diary.FoodEvent
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.FoodUiState
+import ph.mart.healthapp.feature.food.ui.diary.mealIdeaRequest
 import ph.mart.healthapp.feature.food.ui.diary.rememberFoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.diary.toSavedMealItem
 import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
+import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasScreen
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
 /**
@@ -76,6 +78,11 @@ internal fun DiarySheets(
             onToggleFavorite = { suggestion, favorite ->
                 onEvent(FoodEvent.OnToggleFavorite(suggestion, favorite))
             },
+            onGetIdeas = if (state.editingEntryId == null && uiState.mealIdeaRequest(activeMealSheet) != null) {
+                { state.openIdeas(activeMealSheet) }
+            } else {
+                null
+            },
             onDismiss = state::closeSheet,
             onAdd = {
                 val editingId = state.editingEntryId
@@ -89,6 +96,22 @@ internal fun DiarySheets(
                 state.closeSheet()
             },
             editing = state.editingEntryId != null,
+        )
+    }
+
+    // A full-screen overlay over the diary, drawn last so it covers it — the shape the recap
+    // and the timelapse use over the Progress tab, and the reason neither is a route. The request
+    // is rebuilt from the live state each time, so a day that moved while the overlay was opening
+    // asks against what is actually left.
+    val ideasFor = state.ideasFor
+    val ideasRequest = ideasFor?.let { uiState.mealIdeaRequest(it) }
+    if (ideasRequest != null) {
+        MealIdeasScreen(
+            request = ideasRequest,
+            suggestions = uiState.suggestions,
+            recipes = uiState.recipes,
+            onSelect = state::selectIdea,
+            onClose = state::closeIdeas,
         )
     }
 

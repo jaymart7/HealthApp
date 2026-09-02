@@ -3,13 +3,20 @@ package ph.mart.healthapp.feature.food.ui.diary
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
+import ph.mart.healthapp.core.data.food.MealIdea
+import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.health.StepDay
+import ph.mart.healthapp.core.data.exercise.budgetKcal
+import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.profile.DailyTargets
+import ph.mart.healthapp.core.data.profile.DietaryPreference
+import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
@@ -29,6 +36,11 @@ data class FoodUiState(
     /** From the profile — whether [exercise]'s burn raises the summary bar's goal. */
     val addExerciseToBudget: Boolean = true,
     val targets: DailyTargets? = null,
+    /** From the profile, and read by the meal-ideas screen alone — the diary itself has no use
+     * for either. [diet] is what the user picked in onboarding, and until that screen existed it
+     * was stored, migrated and exported without a single reader. */
+    val goal: Goal? = null,
+    val diet: DietaryPreference? = null,
     val suggestions: List<FoodSuggestion> = emptyList(),
     /** Not the day's — saved meals are date-independent, and re-loggable onto any day. */
     val savedMeals: List<SavedMeal> = emptyList(),
@@ -132,3 +144,56 @@ sealed interface FoodEvent {
     data class OnDeleteSavedMeal(val id: Long) : FoodEvent
     data class OnDeleteRecipe(val id: Long) : FoodEvent
 }
+
+/**
+ * What the meal-ideas screen asks with, or null when the day can't be described yet: no profile
+ * means no target, and no target means no gap to fill.
+ *
+ * Built here, off state the diary has already combined, rather than in a ViewModel of its own —
+ * that is the whole reason meal ideas is an overlay and not a route. The budget is the *same*
+ * arithmetic the summary bar draws (`budgetKcal` over `dayBurnedKcal`), so the screen can never
+ * offer more calories than the bar above it says are left.
+ *
+ * Null again once the day is full: there is nothing to suggest, and a card offering ideas against
+ * a spent budget is a control that can't answer — Home's rule for the supplements card.
+ */
+fun FoodUiState.mealIdeaRequest(mealType: MealType): MealIdeaRequest? {
+    val targets = targets ?: return null
+    val goal = goal ?: return null
+    val totals = entries.dailyTotals()
+    val budget = budgetKcal(
+        targetKcal = targets.calories,
+        burnedKcal = dayBurnedKcal(exercise, steps),
+        addExercise = addExerciseToBudget,
+    )
+    val remainingKcal = budget - totals.calories
+    if (remainingKcal < MIN_IDEA_KCAL) return null
+    return MealIdeaRequest(
+        goal = goal,
+        mealType = mealType,
+        remainingKcal = remainingKcal,
+        remainingProteinG = targets.proteinG - totals.proteinG,
+        remainingCarbsG = targets.carbsG - totals.carbsG,
+        remainingFatG = targets.fatG - totals.fatG,
+        diet = diet,
+    )
+}
+
+/** Below this there is no meal left in the day, only a mint. */
+private const val MIN_IDEA_KCAL = 100
+
+/** Twin of [FoodSuggestion.toAddEntryForm] — an idea seeds the sheet's fields exactly like a
+ * recent or a search hit does, and stays editable and repriceable after. */
+fun MealIdea.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryForm(
+    mealType = mealType,
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
+)

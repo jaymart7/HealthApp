@@ -9,6 +9,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.food.MealIdea
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
@@ -32,6 +33,7 @@ internal class FoodScreenState(
     savedMealName: String = "",
     editingEntryId: Long? = null,
     editingExerciseId: Long? = null,
+    ideasFor: MealType? = null,
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -40,6 +42,10 @@ internal class FoodScreenState(
     var exerciseSheetOpen: Boolean by mutableStateOf(exerciseSheetOpen)
     var exerciseExpanded: Boolean by mutableStateOf(exerciseExpanded)
     var calendarOpen: Boolean by mutableStateOf(calendarOpen)
+
+    /** Which meal the ideas overlay is suggesting for — null when it's closed. It replaces the
+     * sheet rather than sitting over it: the sheet is where a picked idea comes back to. */
+    var ideasFor: MealType? by mutableStateOf(ideasFor)
 
     /**
      * Which logged row each sheet is *correcting* rather than adding to — null means a new entry.
@@ -70,6 +76,31 @@ internal class FoodScreenState(
     fun closeSheet() {
         activeMealSheet = null
         editingEntryId = null
+    }
+
+    /** Straight from the add-entry sheet, which closes behind it — the handover "New recipe" and
+     * "Log sets instead" both make, so back from the overlay lands on the diary rather than
+     * reopening a form the user has walked away from. */
+    fun openIdeas(mealType: MealType) {
+        closeSheet()
+        ideasFor = mealType
+    }
+
+    fun closeIdeas() {
+        ideasFor = null
+    }
+
+    /**
+     * An idea is a seed, never a row: it reopens the sheet it came from with the fields filled in,
+     * where the portion stepper reprices it and Add commits it. That is the same landing a recipe,
+     * a recent and a search hit already have, which is why picking one writes nothing.
+     */
+    fun selectIdea(idea: MealIdea) {
+        val mealType = ideasFor ?: return
+        ideasFor = null
+        addForm = idea.toAddEntryForm(mealType)
+        editingEntryId = null
+        activeMealSheet = mealType
     }
 
     fun openExerciseSheet(entry: ExerciseEntry? = null) {
@@ -107,7 +138,7 @@ internal class FoodScreenState(
                     listOf(
                         it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen,
                         it.saveMealFor?.name, it.savedMealName,
-                        it.editingEntryId, it.editingExerciseId,
+                        it.editingEntryId, it.editingExerciseId, it.ideasFor?.name,
                     )
             },
             restore = { saved ->
@@ -132,6 +163,7 @@ internal class FoodScreenState(
                     savedMealName = saved[14 + MealType.entries.size] as String,
                     editingEntryId = saved[15 + MealType.entries.size] as Long?,
                     editingExerciseId = saved[16 + MealType.entries.size] as Long?,
+                    ideasFor = (saved[17 + MealType.entries.size] as String?)?.let(MealType::valueOf),
                 )
             },
         )

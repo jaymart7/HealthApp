@@ -105,6 +105,8 @@ class FoodViewModel(
                     steps = steps,
                     addExerciseToBudget = profile?.addExerciseToBudget != false,
                     targets = profile?.dailyTargets(),
+                    goal = profile?.goal,
+                    diet = profile?.dietaryPreference,
                     suggestions = suggestions,
                     waterGlasses = waterGlasses,
                     waterGoalGlasses = profile?.waterGoalGlasses ?: DEFAULT_WATER_GOAL_GLASSES,

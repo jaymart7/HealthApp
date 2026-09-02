@@ -726,6 +726,46 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   and the field is defaulted so a v13 file still imports. Google Health is import-only for exercise
   and has no shape for a set, so nothing changed there.
 
+- **Meal ideas is the one screen that answers "what should I eat?", and it is an overlay, not a
+  route.** Everything it needs — the day's gap, the recents, the recipes — is already combined by
+  the diary underneath, so `MealIdeasScreen` reads `FoodUiState` and folds `mealIdeaRequest()`
+  itself, exactly as `RecapScreen` and `TimelapseScreen` read `ProgressUiState`: a route would have
+  earned its own `ViewModelStoreOwner` and with it a second copy of `FoodViewModel`'s five
+  repositories to draw a screen that writes nothing. `MealIdeasViewModel` therefore takes two
+  dependencies — the model call and `NetworkMonitor` — and it wires its own `NavigationBackHandler`,
+  or back would leave the Food tab. **Picking an idea seeds the add-entry sheet, it does not log**:
+  an estimate has to be repriceable by the portion stepper, and the sheet is the landing a recipe, a
+  recent and a search hit already have, so the feature adds no write path at all. The button sits
+  *above* the sheet's four panels because it answers a different question — they are faster ways to
+  log something already decided on.
+- **`MealIdeaRequest` is a second payload off the device, and it is narrower than the first.**
+  `InsightRequest` describes the whole day (water, streak, the week's weight delta) because a
+  one-line nudge can be about any of it; an idea can only be about the gap it fills, so a payload
+  shaped for this call sends strictly less than reusing that one would. Still no age, sex, height,
+  absolute weight, name or diary rows. The one field neither other call carries is
+  **`Profile.dietaryPreference`** — collected in onboarding, stored, migrated and exported since
+  Phase 1 with *no reader in the app* until this screen: a four-value enum the user chose, and the
+  difference between an idea and suggesting chicken to a vegan. `None` and null send no diet line at
+  all, because "no restrictions" is one more thing for a model to over-read.
+- **The offline answer is the user's own foods, and it is also the failed-call answer.**
+  `localMealIdeas()` in `:core:data/food/` is pure derivation over the two lists the sheet already
+  loaded — no table, no repository, no query, the `mergeSuggestions()` shape — keeping what fits the
+  remaining calories and leading with protein, because that is the gap `insightFor()` already nags
+  about and a rule the user can predict. It is drawn with **no `AIChip`**: those rows are things
+  they logged, and the AI accent over them would be a lie about where they came from. `fitting()` is
+  the trust boundary on the model's side, a pure function for `sanitizeInsight`'s reason (the
+  `org.json` parse around it is stubbed on the JVM) — it drops a nameless or zero-calorie idea
+  outright and anything past 1.2× of what's left, because the header says how much is left and a
+  card twice that size makes the screen a liar. An empty result is reported as `Failed`, since the
+  fallback list beats a heading over nothing. Nothing is cached: the budget moves with every row
+  logged, so an idea from two meals ago answers a question nobody is asking — the coach's rule, not
+  the daily insight's.
+- **The button is hidden, never disabled, when there is no day to ask about.** No profile means no
+  target and no gap; under `MIN_IDEA_KCAL` (100) there is no meal left in the day, only a mint. Same
+  rule the supplements card follows — a control that can't answer shouldn't be there. The budget it
+  spends is `budgetKcal()` over `dayBurnedKcal()`, the *same* arithmetic the diary's summary bar
+  draws, so the screen can never offer more calories than the bar above it says are left.
+
 - **A blood pressure reading is a reading, not a day.** `blood_pressure_reading` holds
   `takenAtMillis` per row, because morning and evening readings are the entire point and a
   day-keyed table where the second overwrites the first throws away what is being tracked — the
@@ -998,7 +1038,7 @@ because of that, not because it was the nicest design available.
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
-  `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
+  `recipe`, `search`, `ideas`, `shared`), `:feature:progress` (`progress`, `weight`,
   `measurement`, `photo`, `nutrition`, `activity`, `strength`, `mood`, `sleep`, `heart`, `fasting`,
   `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart`, `DayBarChart` and
   `SharePng` (the capture-and-share pair two flows draw), the first two of which
