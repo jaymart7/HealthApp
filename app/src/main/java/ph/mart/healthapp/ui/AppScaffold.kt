@@ -189,6 +189,11 @@ fun AppScaffold(
                         scrollState = homeScroll,
                         onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
                         onOpenCoach = { topLevelBackStack.add(CoachRoute) },
+                        // Day 0 is today, the convention the FAB's own sheet uses — the plan card
+                        // only ever starts today's workout.
+                        onStartRoutine = { routineId ->
+                            topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
+                        },
                     )
                     coachEntries()
                     foodEntries(

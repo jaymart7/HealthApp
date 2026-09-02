@@ -18,6 +18,16 @@ internal data class RoutineEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val createdAt: Long,
+    /**
+     * The weekdays this routine is planned for, as a bitmask — bit 0 is Monday, bit 6 is Sunday,
+     * and 0 is "not scheduled". One column rather than a `routine_day` table: seven booleans per
+     * routine is not a relation, and this is the call `Profile.homeLayout` makes one table over.
+     *
+     * Deliberately **not** snapshotted anywhere — the opposite of `fast_session.goalHours`, and the
+     * call `Profile.stepGoal` makes: re-planning your week re-scores this week's strip, because a
+     * routine is intent, not history. Nothing about a logged workout moves with it.
+     */
+    val days: Int = 0,
     val isDeleted: Boolean = false,
 )
 

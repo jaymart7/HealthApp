@@ -19,6 +19,10 @@ interface RoutineRepository {
 
     suspend fun renameRoutine(id: Long, name: String)
 
+    /** The weekdays this routine is planned for, as the bitmask `TrainingPlan.kt` reads. Its own
+     * call rather than part of a whole-routine upsert, for the reason [renameRoutine] is one. */
+    suspend fun setRoutineDays(id: Long, days: Int)
+
     /** Soft delete, like everything else the user authored — and it touches no logged workout,
      * since nothing links one back to a routine. */
     suspend fun deleteRoutine(id: Long)

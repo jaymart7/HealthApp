@@ -2,6 +2,8 @@ package ph.mart.healthapp.feature.home.ui
 
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
+import ph.mart.healthapp.core.data.exercise.PlanDay
+import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.health.HeartDay
@@ -67,6 +69,14 @@ data class HomeUiState(
     val stepsCreditKcal: Int = 0,
     /** From the profile — whether [burnedKcal] raises the calorie ring's goal. */
     val addExerciseToBudget: Boolean = true,
+    /** Every saved routine, for the training-plan card: which are planned for today, and whether
+     * anything is planned at all (an empty plan hides the card, `SupplementsCard`'s rule). The
+     * card derives both from this rather than storing a second copy — the `targets`/`projection`
+     * treatment. Not part of [isDayOne]: a plan is intent, not a logged day. */
+    val routines: List<Routine> = emptyList(),
+    /** This Monday-to-Sunday week, scored against the plan — see `trainingWeek()`, which is the
+     * only place adherence is defined. */
+    val trainingWeek: List<PlanDay> = emptyList(),
     val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),
     /** Null when the goal is Maintain (no direction to move) or nothing has been weighed yet. */
     val weightProgressKg: Double? = null,

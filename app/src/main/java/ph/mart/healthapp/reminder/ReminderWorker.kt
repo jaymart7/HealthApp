@@ -7,7 +7,12 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.RoutineRepository
+import ph.mart.healthapp.core.data.exercise.plannedOn
+import ph.mart.healthapp.core.data.exercise.withSets
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -28,6 +33,8 @@ class ReminderWorker(
     private val waterRepository: WaterRepository by inject()
     private val profileRepository: ProfileRepository by inject()
     private val supplementRepository: SupplementRepository by inject()
+    private val routineRepository: RoutineRepository by inject()
+    private val exerciseRepository: ExerciseRepository by inject()
 
     override suspend fun doWork(): Result {
         val reminder = inputData.getString(KEY_REMINDER)
@@ -54,6 +61,19 @@ class ReminderWorker(
         if (reminder.checksSupplements) {
             val supplements = supplementRepository.observeToday().first()
             if (supplements.isEmpty() || supplements.all { it.isComplete }) return Result.success()
+        }
+
+        // And for the training plan: quiet on a rest day, and quiet once something has been
+        // lifted today. "Lifted" is a workout with sets — the same discriminator `trainingWeek()`
+        // scores the week's dots with, so the notification and the card can't disagree.
+        if (reminder.checksPlan) {
+            val today = todayEpochDay()
+            if (routineRepository.observeRoutines().first().plannedOn(today).isEmpty()) {
+                return Result.success()
+            }
+            if (exerciseRepository.observeTodayEntries().first().withSets().isNotEmpty()) {
+                return Result.success()
+            }
         }
 
         notify(context, reminder.ordinal, reminder.title, reminder.body, reminder.tab)

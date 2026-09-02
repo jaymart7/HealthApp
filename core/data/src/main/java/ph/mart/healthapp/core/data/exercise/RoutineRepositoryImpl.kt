@@ -22,6 +22,10 @@ internal class RoutineRepositoryImpl(private val dao: RoutineDao) : RoutineRepos
         dao.rename(id, name.trim())
     }
 
+    override suspend fun setRoutineDays(id: Long, days: Int) {
+        dao.setDays(id, days)
+    }
+
     override suspend fun deleteRoutine(id: Long) {
         dao.softDelete(id)
     }
@@ -36,6 +40,7 @@ private fun joinLifts(routines: List<RoutineEntity>, lifts: List<RoutineLiftEnti
             id = routine.id,
             name = routine.name,
             lifts = byRoutine[routine.id].orEmpty().map { RoutineLift(it.exerciseName, it.sets, it.reps) },
+            days = routine.days,
         )
     }
 }

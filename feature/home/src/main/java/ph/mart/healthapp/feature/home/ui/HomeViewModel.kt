@@ -8,7 +8,11 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineRepository
+import ph.mart.healthapp.core.data.exercise.trainingWeek
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
@@ -55,6 +59,7 @@ class HomeViewModel(
     progressRepository: ProgressRepository,
     private val waterRepository: WaterRepository,
     exerciseRepository: ExerciseRepository,
+    routineRepository: RoutineRepository,
     private val moodRepository: MoodRepository,
     private val fastingRepository: FastingRepository,
     sleepRepository: SleepRepository,
@@ -76,6 +81,7 @@ class HomeViewModel(
                 foodRepository,
                 progressRepository,
                 exerciseRepository,
+                routineRepository,
                 moodRepository,
                 fastingRepository,
                 sleepRepository,
@@ -128,6 +134,7 @@ class HomeViewModel(
         foodRepository: FoodRepository,
         progressRepository: ProgressRepository,
         exerciseRepository: ExerciseRepository,
+        routineRepository: RoutineRepository,
         moodRepository: MoodRepository,
         fastingRepository: FastingRepository,
         sleepRepository: SleepRepository,
@@ -186,13 +193,25 @@ class HomeViewModel(
             ::UserLogged,
         )
 
+        // Today's workouts, the plan, and the year window the plan strip scores this week off.
+        // Grouped for [fromWatch]'s reason — the outer combine is at the typed overloads' five —
+        // and grouped *with* today's entries because all three are the same domain. Both flows
+        // already existed; the plan added no query.
+        val training = combine(
+            exerciseRepository.observeTodayEntries(),
+            routineRepository.observeRoutines(),
+            exerciseRepository.observeRecentEntries(),
+            ::Training,
+        )
+
         combine(
             todayState,
             activeDays,
-            exerciseRepository.observeTodayEntries(),
+            training,
             userLogged,
             fromWatch,
-        ) { state, days, exercise, logged, (lastNight, steps, heart) ->
+        ) { state, days, training, logged, (lastNight, steps, heart) ->
+            val exercise = training.today
             state.copy(
                 loaded = true,
                 // Steps fold in here rather than in budgetKcal(), which stays the single place
@@ -211,6 +230,10 @@ class HomeViewModel(
                 // Read on every emission, not once at flow-construction time, so the streak
                 // doesn't freeze at whatever day the app happened to be opened.
                 streak = days.streakStats(todayEpochDay()),
+                routines = training.routines,
+                // Read here rather than at flow-construction time, for the streak's reason: an app
+                // left open past midnight must not keep scoring yesterday's week.
+                trainingWeek = trainingWeek(training.routines, training.recent, todayEpochDay()),
                 weightProgressKg = state.profile?.let {
                     weightProgressKg(state.weightEntries, it.goal, it.weightKg)
                 },
@@ -241,6 +264,14 @@ class HomeViewModel(
         reduce { state.copy(aiInsight = insight) }
     }
 }
+
+/** Today's workouts, the routines planned across the week, and the windowed history the plan
+ * strip is scored against. Grouped and private for [UserLogged]'s reason. */
+private data class Training(
+    val today: List<ExerciseEntry>,
+    val routines: List<Routine>,
+    val recent: List<ExerciseEntry>,
+)
 
 /** The four things the user logs by hand, grouped so the outer combine stays inside the typed
  * overloads' five-flow arity. Private and structural — it never leaves this file. */

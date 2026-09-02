@@ -26,11 +26,20 @@ data class BarcodeScanRoute(val dateEpochDay: Long) : NavKey
 data object RecipeBuilderRoute : NavKey
 
 /** Authoring a strength workout — reached from the log-exercise sheet, and from tapping a logged
- * one to correct it. It carries the day like [BarcodeScanRoute] does, so a workout logged while
- * reviewing a past day lands on that day; [editingId] of 0 is a new one, and a non-zero id is the
- * row being superseded, resolved by the screen rather than passed through the back stack. */
+ * one to correct it — and, from Home's training-plan card, to start today's routine. It carries the
+ * day like [BarcodeScanRoute] does, so a workout logged while reviewing a past day lands on that
+ * day; [editingId] of 0 is a new one, and a non-zero id is the row being superseded, resolved by
+ * the screen rather than passed through the back stack.
+ *
+ * [routineId] seeds a new workout from a saved routine, and is resolved the same way for the same
+ * reason: the back stack carries an id, never a row. It is meaningless beside a non-zero
+ * [editingId] — a workout being corrected already has its sets. */
 @Serializable
-data class StrengthWorkoutRoute(val dateEpochDay: Long, val editingId: Long = 0) : NavKey
+data class StrengthWorkoutRoute(
+    val dateEpochDay: Long,
+    val editingId: Long = 0,
+    val routineId: Long = 0,
+) : NavKey
 
 fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
@@ -52,6 +61,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
         StrengthWorkoutScreen(
             dateEpochDay = key.dateEpochDay,
             editingId = key.editingId,
+            routineId = key.routineId,
             onExit = onExitFlow,
         )
     }

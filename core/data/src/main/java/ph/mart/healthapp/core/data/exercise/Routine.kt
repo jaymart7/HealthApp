@@ -12,6 +12,10 @@ data class Routine(
     val id: Long,
     val name: String,
     val lifts: List<RoutineLift>,
+    /** The weekdays it is planned for — see `RoutineEntity.days` and `TrainingPlan.kt`. Defaulted
+     * so every construction site that predates the plan stays valid, the `ExerciseEntry.sets`
+     * precedent. */
+    val days: Int = 0,
 )
 
 /** One planned lift. There is deliberately no load: see [RoutineLift]'s entity KDoc and [toSets].

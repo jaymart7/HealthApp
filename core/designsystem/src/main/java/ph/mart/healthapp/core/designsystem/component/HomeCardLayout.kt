@@ -26,6 +26,7 @@ enum class HomeCard(val label: String, val note: String? = null) {
     Streak("Streak"),
     Water("Water"),
     Fasting("Fasting"),
+    Workout("Today's workout", "Shows once a routine has days set"),
     Sleep("Sleep", WATCH_NOTE),
     Steps("Steps", WATCH_NOTE),
     Heart("Heart rate", WATCH_NOTE),

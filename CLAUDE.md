@@ -651,6 +651,34 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   are **not exported**, for the reason saved meals and recipes aren't — convenience data, not
   history — so no export schema bump; and nothing else moved, because a started routine saves as an
   ordinary `ExerciseEntry` with sets.
+- **The training plan is one `Int` column on `routine`, not a `routine_day` table.** A weekday
+  bitmask (bit 0 = Monday), `0` = unscheduled: seven booleans per routine is not a relation, and
+  this is the call `Profile.homeLayout` makes one table over. `Routine.days` is defaulted so every
+  construction site that predates it stayed valid (`ExerciseEntry.sets`' precedent), and
+  `TrainingPlan.kt` holds the whole model — pure, no repository of its own, the `streak/` and
+  `goalProjection()` shape. The schedule is **current-only and never snapshotted**, the opposite
+  call to `fast_session.goalHours` and the same one `Profile.stepGoal` makes: re-planning your week
+  re-scores this week's strip, because a routine is intent, not history.
+- **A planned day is "done" when *anything* was lifted, not when the routine was performed.**
+  `trainingWeek()` scores a day off `withSets()` — the same discriminator the Strength tab uses —
+  because nothing links a logged workout back to the routine that seeded it, and the plan
+  deliberately does not add that link. So the Home card's Start button gives way to "Logged" on a
+  day with any strength session in it, and the reminder stays quiet on that day too. *ponytail: a
+  freestyle session ticks the Push day; a `routineId` on `exercise_entry` is the upgrade path.*
+- **Home's plan card is hidden until a routine has days set, and then a rest day says so.** The
+  first half is `SupplementsCard`'s rule (nothing is missing, nothing has been authored yet); the
+  second is its opposite, because once a plan exists "nothing today" is the answer the user opened
+  Home for. `plannedSoFar()` counts only elapsed days — a Monday must not report Friday as missed —
+  and the ratio is dropped entirely when the week has asked for nothing yet, since "0 of 0" reads
+  as a broken counter rather than a rest.
+- **Profile → Workout routines authors the plan; Home starts it.** The weekday picker hangs off
+  `LibraryRow`'s new `trailing` slot (null for both food libraries, which are untouched), and Home
+  reaches `StrengthWorkoutRoute`'s new `routineId` through `AppScaffold` — `:feature:home` cannot
+  import `:feature:food`, the shape `onOpenCoach` already has. A started routine seeds through
+  `toSets()`, the *same* path the strength screen's own chips take, so an opened-from-Home workout
+  and a chip-tapped one are the same workout. Routines are still not exported, so `days` isn't
+  either.
+
 - **The sheet hands off to a screen; it does not redirect.** Picking Strength grows one "Log sets
   instead →" button rather than navigating on the chip tap, so the plain duration-and-kcal path
   stays reachable — that path is what an imported watch session is. A screen because a set list

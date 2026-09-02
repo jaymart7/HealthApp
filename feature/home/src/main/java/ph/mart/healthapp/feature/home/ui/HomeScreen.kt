@@ -40,6 +40,7 @@ import ph.mart.healthapp.feature.home.ui.components.HomeCards
 fun HomeScreen(
     onAddPhoto: () -> Unit,
     onOpenCoach: () -> Unit,
+    onStartRoutine: (Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -51,6 +52,7 @@ fun HomeScreen(
         scrollState = scrollState,
         onAddPhoto = onAddPhoto,
         onOpenCoach = onOpenCoach,
+        onStartRoutine = onStartRoutine,
         onEvent = viewModel::handleEvent,
     )
 }
@@ -61,6 +63,7 @@ private fun HomeContent(
     state: HomeScreenState,
     onAddPhoto: () -> Unit,
     onOpenCoach: () -> Unit,
+    onStartRoutine: (Long) -> Unit,
     onEvent: (HomeEvent) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -89,6 +92,7 @@ private fun HomeContent(
                     scrollState = scrollState,
                     onAddPhoto = onAddPhoto,
                     onOpenCoach = onOpenCoach,
+                    onStartRoutine = onStartRoutine,
                     onEvent = onEvent,
                 )
             }
@@ -136,6 +140,7 @@ private fun HomeScreenPreview() {
             state = HomeScreenState(),
             onAddPhoto = {},
             onOpenCoach = {},
+            onStartRoutine = {},
             onEvent = {},
         )
     }
@@ -150,6 +155,7 @@ private fun HomeScreenDayOnePreview() {
             state = HomeScreenState(),
             onAddPhoto = {},
             onOpenCoach = {},
+            onStartRoutine = {},
             onEvent = {},
         )
     }

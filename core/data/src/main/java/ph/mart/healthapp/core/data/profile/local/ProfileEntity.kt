@@ -31,6 +31,7 @@ internal data class ProfileEntity(
     val fastingRemindersOn: Boolean = false,
     val darkThemeOn: Boolean? = null,
     val supplementRemindersOn: Boolean = false,
+    val workoutRemindersOn: Boolean = false,
     val mascotName: String? = null,
     val mascotPaletteName: String? = null,
     val stepGoal: Int = 10_000,

@@ -41,4 +41,8 @@ internal interface RoutineDao {
      * one typo away from rewriting what the routine is. */
     @Query("UPDATE routine SET name = :name WHERE id = :id")
     suspend fun rename(id: Long, name: String)
+
+    /** One column, for [rename]'s reason — and the whole write surface of the training plan. */
+    @Query("UPDATE routine SET days = :days WHERE id = :id")
+    suspend fun setDays(id: Long, days: Int)
 }

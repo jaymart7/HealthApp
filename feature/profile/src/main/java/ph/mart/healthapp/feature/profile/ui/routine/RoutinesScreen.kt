@@ -25,6 +25,7 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.ui.routine.components.WeekdayPicker
 import ph.mart.healthapp.feature.profile.ui.shared.components.LibraryRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 
@@ -76,6 +77,14 @@ private fun RoutinesContent(
                     contents = routine.lifts.contents(),
                     onRename = { renaming = routine },
                     onDelete = { pendingDelete = routine },
+                    // Authored here and rendered on Home — the division this screen already draws
+                    // against the strength screen, one field over.
+                    trailing = {
+                        WeekdayPicker(
+                            days = routine.days,
+                            onDaysChange = { days -> onEvent(RoutinesEvent.OnSetDays(routine.id, days)) },
+                        )
+                    },
                 )
             }
         }
@@ -124,6 +133,7 @@ private fun RoutinesPreview() {
                             RoutineLift("Overhead press", sets = 3, reps = 8),
                             RoutineLift("Dip", sets = 2, reps = 10),
                         ),
+                        days = 0b0010101,
                     ),
                     Routine(id = 2, name = "Legs", lifts = listOf(RoutineLift("Squat", sets = 5, reps = 5))),
                 ),

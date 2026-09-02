@@ -22,6 +22,7 @@ class RoutinesViewModel(
         when (event) {
             is RoutinesEvent.OnDelete -> onDelete(event.id)
             is RoutinesEvent.OnRename -> onRename(event.id, event.name)
+            is RoutinesEvent.OnSetDays -> onSetDays(event.id, event.days)
         }
     }
 
@@ -37,5 +38,9 @@ class RoutinesViewModel(
 
     private fun onRename(id: Long, name: String) = intent {
         routineRepository.renameRoutine(id, name)
+    }
+
+    private fun onSetDays(id: Long, days: Int) = intent {
+        routineRepository.setRoutineDays(id, days)
     }
 }

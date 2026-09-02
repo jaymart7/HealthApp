@@ -27,6 +27,10 @@ data class LogExerciseUiState(
     val recentLifts: List<String> = emptyList(),
     /** The saved routines, newest first — the "Start a routine" chips. */
     val routines: List<Routine> = emptyList(),
+    /** The routine this screen was opened *on*, when Home's plan card started one. Resolved here
+     * rather than passed down the back stack, exactly like [editing], and folded into the form's
+     * seed so the screen composes once — see [strengthLoaded]. */
+    val seedRoutine: Routine? = null,
     /** What each lift looked like the last time it was trained, keyed by
      * [ph.mart.healthapp.core.data.exercise.liftKey]. Drawn under the exercise field as one line,
      * and it is also what a started routine seeds its loads from. */
@@ -110,7 +114,7 @@ sealed interface LogExerciseEvent {
     /** Fired once when the strength screen opens: it resolves the workout being corrected (if
      * [editingId] is non-zero), the session to repeat, the lift-name chips and what each lift was
      * last trained at, in one intent — and starts observing the saved routines. */
-    data class OnOpenStrength(val editingId: Long = 0) : LogExerciseEvent
+    data class OnOpenStrength(val editingId: Long = 0, val routineId: Long = 0) : LogExerciseEvent
 
     /** Names the workout on screen as a routine. It logs nothing: [OnSave] is still what writes
      * the session, and the two are deliberately independent. */

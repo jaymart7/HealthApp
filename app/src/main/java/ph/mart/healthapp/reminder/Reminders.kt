@@ -26,9 +26,9 @@ const val KEY_REMINDER = "reminder"
  * Profile switches already promise in their sublabels (`ReminderKind` in `:feature:profile`):
  * meals 3x daily, weigh-in Monday 8:00, photos every 2 weeks.
  *
- * [mealType] is set only on the three meal reminders, [checksWater] only on the two water ones and
- * [checksSupplements] only on the supplement one; all three are what let the worker stay quiet
- * about something already logged today.
+ * [mealType] is set only on the three meal reminders, [checksWater] only on the two water ones,
+ * [checksSupplements] only on the supplement one and [checksPlan] only on the training one; all
+ * four are what let the worker stay quiet about something already logged today.
  */
 enum class Reminder(
     val periodDays: Long,
@@ -41,6 +41,8 @@ enum class Reminder(
     val mealType: MealType?,
     val checksWater: Boolean = false,
     val checksSupplements: Boolean = false,
+    /** Silent on a day the training plan doesn't ask for, and on a day already lifted. */
+    val checksPlan: Boolean = false,
 ) {
     Breakfast(1, 8, null, "Breakfast logged?", "Add it while you remember the portions.", TopLevelDestination.Food, MealType.Breakfast),
     Lunch(1, 13, null, "Lunch logged?", "A quick entry keeps today's macros honest.", TopLevelDestination.Food, MealType.Lunch),
@@ -52,6 +54,9 @@ enum class Reminder(
     // Appended rather than slotted in beside the other daily ones: [ordinal] is the notification
     // id, so inserting mid-list would re-point every notification already pending on a device.
     Supplements(1, 9, null, "Supplements", "Tick off what you've taken today.", TopLevelDestination.Home, null, checksSupplements = true),
+    // Appended for [Supplements]' reason — [ordinal] is the notification id. Late afternoon: early
+    // enough to still train today, late enough that a morning session has already been logged.
+    Workout(1, 17, null, "Training day", "Today's routine is on the plan.", TopLevelDestination.Home, null, checksPlan = true),
     ;
 
     val uniqueName: String get() = "reminder-$name"
@@ -65,6 +70,7 @@ fun Reminder.enabledIn(profile: Profile): Boolean = when (this) {
     Reminder.Photo -> profile.photoReminderOn
     Reminder.WaterMidday, Reminder.WaterAfternoon -> profile.waterRemindersOn
     Reminder.Supplements -> profile.supplementRemindersOn
+    Reminder.Workout -> profile.workoutRemindersOn
 }
 
 /**

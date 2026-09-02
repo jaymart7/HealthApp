@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.food.ui.exercise
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
@@ -43,7 +44,7 @@ class LogExerciseViewModel(
     fun handleEvent(event: LogExerciseEvent) {
         when (event) {
             is LogExerciseEvent.OnSave -> onSave(event.form, event.dateEpochDay, event.editingId)
-            is LogExerciseEvent.OnOpenStrength -> onOpenStrength(event.editingId)
+            is LogExerciseEvent.OnOpenStrength -> onOpenStrength(event.editingId, event.routineId)
             is LogExerciseEvent.OnSaveRoutine -> onSaveRoutine(event.name, event.lifts)
         }
     }
@@ -72,9 +73,15 @@ class LogExerciseViewModel(
     /** One read for all four: the row being corrected, the session to repeat, the chips, and what
      * each lift was last trained at. [strengthLoaded] is what the screen waits on before it
      * composes a form. */
-    private fun onOpenStrength(editingId: Long) = intent {
+    private fun onOpenStrength(editingId: Long, routineId: Long) = intent {
         val recent = exerciseRepository.recentStrengthEntries()
         val editing = editingId.takeIf { it > 0 }?.let { exerciseRepository.entry(it) }
+        // Read before [strengthLoaded] flips, not off the collection below: the screen seeds its
+        // saveable form the moment it composes, and a routine arriving one emission later would
+        // re-key that saver — the same trap the hold-back exists for.
+        val seedRoutine = routineId.takeIf { it > 0 && editingId <= 0 }?.let { id ->
+            routineRepository.observeRoutines().first().firstOrNull { it.id == id }
+        }
         reduce {
             state.copy(
                 editing = editing,
@@ -85,6 +92,7 @@ class LogExerciseViewModel(
                 // A third fold over the same read — no extra query, and it cannot disagree with
                 // the chips it sits beside.
                 lastLifts = recent.lastPerformances(),
+                seedRoutine = seedRoutine,
                 strengthLoaded = true,
             )
         }

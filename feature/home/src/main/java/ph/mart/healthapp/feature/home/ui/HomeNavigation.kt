@@ -10,7 +10,9 @@ import ph.mart.healthapp.core.navigation.route.HomeRoute
  * (same shape as `foodEntries(onExitCapture = ...)`).
  *
  * [onOpenCoach] is wired the same way, and for a second reason: `CoachRoute` lives in
- * `:feature:coach`, which this module must not import.
+ * `:feature:coach`, which this module must not import. [onStartRoutine] is a third of the same
+ * shape — the training-plan card starts a workout on `StrengthWorkoutRoute`, which lives in
+ * `:feature:food`.
  *
  * [scrollState] is hoisted for the same reason: the FAB's scroll-collapse and tap-active-tab-to-
  * scroll-to-top both live in AppScaffold, which can't see a ScrollState created inside the screen. */
@@ -18,8 +20,14 @@ fun EntryProviderScope<NavKey>.homeEntries(
     scrollState: ScrollState,
     onAddPhoto: () -> Unit,
     onOpenCoach: () -> Unit,
+    onStartRoutine: (Long) -> Unit,
 ) {
     entry<HomeRoute> {
-        HomeScreen(onAddPhoto = onAddPhoto, onOpenCoach = onOpenCoach, scrollState = scrollState)
+        HomeScreen(
+            onAddPhoto = onAddPhoto,
+            onOpenCoach = onOpenCoach,
+            onStartRoutine = onStartRoutine,
+            scrollState = scrollState,
+        )
     }
 }

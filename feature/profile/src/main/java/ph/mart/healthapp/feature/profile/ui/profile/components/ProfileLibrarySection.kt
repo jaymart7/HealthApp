@@ -38,7 +38,7 @@ internal fun ProfileLibrarySection(
             AppCard(onClick = onOpenRoutines) {
                 SettingsRow(
                     label = "Workout routines",
-                    sublabel = "Rename or delete a routine you've saved",
+                    sublabel = "Set which days you train, rename or delete",
                 )
             }
         }

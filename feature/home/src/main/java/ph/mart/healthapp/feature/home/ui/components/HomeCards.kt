@@ -24,7 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import java.util.Calendar
+import ph.mart.healthapp.core.data.exercise.anyScheduled
 import ph.mart.healthapp.core.data.exercise.budgetKcal
+import ph.mart.healthapp.core.data.exercise.plannedOn
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
@@ -53,6 +55,7 @@ import ph.mart.healthapp.feature.home.ui.components.SleepCard
 import ph.mart.healthapp.feature.home.ui.components.StepsCard
 import ph.mart.healthapp.feature.home.ui.components.StreakCard
 import ph.mart.healthapp.feature.home.ui.components.SupplementsCard
+import ph.mart.healthapp.feature.home.ui.components.TrainingPlanCard
 import ph.mart.healthapp.feature.home.ui.components.WaterCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
 
@@ -72,6 +75,7 @@ internal fun HomeCards(
     scrollState: ScrollState,
     onAddPhoto: () -> Unit,
     onOpenCoach: () -> Unit,
+    onStartRoutine: (Long) -> Unit,
     onEvent: (HomeEvent) -> Unit,
 ) {
     // ponytail: the greeting is fixed for the life of the composition — it won't re-read the
@@ -180,6 +184,19 @@ internal fun HomeCards(
                         onDiscard = { onEvent(HomeEvent.OnDiscardFast) },
                         modifier = appearance,
                     )
+
+                    // Hidden until a routine has days set — nothing is missing, nothing has been
+                    // planned yet (`SupplementsCard`'s rule). A day with nothing planned still
+                    // draws: "Rest day" is the answer, not an absence.
+                    HomeCard.Workout -> if (uiState.routines.anyScheduled()) {
+                        TrainingPlanCard(
+                            todayRoutines = uiState.routines.plannedOn(todayEpochDay()),
+                            week = uiState.trainingWeek,
+                            trained = uiState.trainingWeek.any { it.isToday && it.trained },
+                            onStart = onStartRoutine,
+                            modifier = appearance,
+                        )
+                    }
 
                     // Hidden rather than zeroed when Google Health isn't connected or hasn't synced.
                     HomeCard.Sleep -> uiState.lastNight?.let { night ->

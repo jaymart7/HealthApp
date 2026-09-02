@@ -63,17 +63,21 @@ import ph.mart.healthapp.feature.food.ui.exercise.components.canAdd
  * gives: a list plus its editor doesn't fit above a keyboard.
  *
  * [editingId] of 0 is a new workout. Non-zero names a logged one, which the ViewModel resolves —
- * the route carries an id, not the row.
+ * the route carries an id, not the row. [routineId] is the same shape for the opposite direction:
+ * a routine to start from, which Home's training-plan card names when it opens this screen.
  */
 @Composable
 fun StrengthWorkoutScreen(
     dateEpochDay: Long,
     editingId: Long,
+    routineId: Long = 0,
     onExit: () -> Unit,
     viewModel: LogExerciseViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
-    LaunchedEffect(editingId) { viewModel.handleEvent(LogExerciseEvent.OnOpenStrength(editingId)) }
+    LaunchedEffect(editingId, routineId) {
+        viewModel.handleEvent(LogExerciseEvent.OnOpenStrength(editingId, routineId))
+    }
     viewModel.collectSideEffect { effect ->
         when (effect) {
             LogExerciseSideEffect.Saved -> onExit()
@@ -108,8 +112,15 @@ private fun StrengthWorkoutContent(
     // Strength whatever it arrived as: this screen draws no type chips, and it can be reached
     // from the edit sheet with a cardio row already seeded in it. Saving sets against a Run is
     // the one outcome the missing chip row makes possible.
-    val seed = remember(uiState.editing) {
-        (uiState.editing?.toLogExerciseForm() ?: LogExerciseForm()).copy(type = ExerciseType.Strength)
+    //
+    // A started routine seeds the same form the chip row below would have — one seeding path, so
+    // an opened-from-Home workout and a chip-tapped one are the same workout.
+    val seed = remember(uiState.editing, uiState.seedRoutine) {
+        val started = uiState.seedRoutine
+        val form = uiState.editing?.toLogExerciseForm()
+            ?: started?.let { LogExerciseForm(name = it.name, sets = it.toSets(uiState.lastLoads)) }
+            ?: LogExerciseForm()
+        form.copy(type = ExerciseType.Strength)
     }
     val state = rememberLogExerciseState(seed)
     val form = state.form.withEstimate(uiState.weightKg)

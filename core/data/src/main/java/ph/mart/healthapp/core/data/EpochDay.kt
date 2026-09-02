@@ -53,6 +53,20 @@ fun epochDayStartMillis(epochDay: Long): Long {
 }
 
 /**
+ * Which weekday an epoch day falls on, **Monday = 0** through Sunday = 6 — the bit positions
+ * `routine.days` is a mask over.
+ *
+ * Monday-first rather than `Calendar`'s Sunday-first because a training week is a training week:
+ * the plan strip on Home reads Mon…Sun, and one conversion here beats seven off-by-ones at the
+ * call sites. Built on [epochDayStartMillis] so it inherits that function's DST correctness.
+ */
+fun weekdayIndex(epochDay: Long): Int {
+    val calendar = Calendar.getInstance().apply { timeInMillis = epochDayStartMillis(epochDay) }
+    // Calendar.SUNDAY is 1 and Calendar.MONDAY is 2, so +5 mod 7 lands Monday on 0.
+    return (calendar.get(Calendar.DAY_OF_WEEK) + 5) % 7
+}
+
+/**
  * Today, re-emitted at each local midnight.
  *
  * Every "today-only" repository overload flatMaps this rather than resolving [todayEpochDay]

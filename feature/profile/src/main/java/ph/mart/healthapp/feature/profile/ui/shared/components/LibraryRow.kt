@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.profile.ui.shared.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +28,10 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  *
  * [contents] names the parts rather than only counting them. A row reading "4 items · 540 kcal" is
  * a row you delete blind, and they are already loaded, so saying which four costs nothing.
+ *
+ * [trailing] is drawn full-width under the row, and is how the routine library hangs its weekday
+ * picker on a row the food library shares — seven chips do not fit beside two icon buttons. Null by
+ * default, so the two food libraries render exactly as they did.
  */
 @Composable
 internal fun LibraryRow(
@@ -36,50 +41,56 @@ internal fun LibraryRow(
     onRename: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    trailing: (@Composable () -> Unit)? = null,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         shape = MaterialTheme.shapes.medium,
         modifier = modifier.fillMaxWidth(),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = summary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (contents.isNotEmpty()) {
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = contents,
-                        style = MaterialTheme.typography.labelSmall,
+                        text = name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = summary,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (contents.isNotEmpty()) {
+                        Text(
+                            text = contents,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                IconButton(onClick = onRename, modifier = Modifier.size(44.dp)) {
+                    Icon(
+                        imageVector = AppIcons.Edit,
+                        contentDescription = "Rename $name",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
+                    Icon(
+                        imageVector = AppIcons.Delete,
+                        contentDescription = "Delete $name",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            IconButton(onClick = onRename, modifier = Modifier.size(44.dp)) {
-                Icon(
-                    imageVector = AppIcons.Edit,
-                    contentDescription = "Rename $name",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
-                Icon(
-                    imageVector = AppIcons.Delete,
-                    contentDescription = "Delete $name",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            trailing?.let { content ->
+                Box(modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) { content() }
             }
         }
     }
