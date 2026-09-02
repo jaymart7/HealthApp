@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.progress.di
 
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
+import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementViewModel
 import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoViewModel
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureViewModel
@@ -14,4 +15,5 @@ val progressModule = module {
     viewModelOf(::AddPhotoViewModel)
     viewModelOf(::AddMeasurementViewModel)
     viewModelOf(::BloodPressureViewModel)
+    viewModelOf(::EnergyCheckInViewModel)
 }

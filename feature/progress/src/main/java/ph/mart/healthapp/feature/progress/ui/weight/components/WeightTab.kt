@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.profile.EnergyCheckIn
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.progress.WeightEntry
@@ -18,11 +19,16 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.ui.energy.components.EnergyCheckInCard
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 
 @Composable
-internal fun WeightTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
+internal fun WeightTabContent(
+    uiState: ProgressUiState,
+    state: ProgressScreenState,
+    checkIn: EnergyCheckIn? = null,
+) {
     if (uiState.weightEntries.isEmpty()) {
         FullScreenState(
             icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
@@ -67,6 +73,15 @@ internal fun WeightTabContent(uiState: ProgressUiState, state: ProgressScreenSta
             GoalProjectionCard(
                 projection = projection,
                 unit = uiState.preferredUnit,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
+        // Under the projection, because it measures the trend that card projects. Null (no food
+        // logged in the last four weeks) omits it entirely, the projection card's own rule.
+        checkIn?.let {
+            EnergyCheckInCard(
+                checkIn = it,
+                onOpen = state::openEnergyCheckIn,
                 modifier = Modifier.padding(top = 12.dp),
             )
         }

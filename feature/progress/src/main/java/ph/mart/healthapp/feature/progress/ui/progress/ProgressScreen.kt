@@ -16,6 +16,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -26,7 +27,9 @@ import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
+import ph.mart.healthapp.core.data.profile.EnergyCheckIn
 import ph.mart.healthapp.core.data.profile.Goal
+import ph.mart.healthapp.core.data.profile.energyCheckIn
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.goalProjection
@@ -36,6 +39,9 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.achievement.components.AchievementsTabContent
 import ph.mart.healthapp.feature.progress.ui.activity.components.ActivityTabContent
+import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
+import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
+import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.fasting.components.FastingTabContent
 import ph.mart.healthapp.feature.progress.ui.heart.components.HeartTabContent
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
@@ -59,11 +65,36 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.WeightTabContent
 fun ProgressScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProgressViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val state = rememberProgressScreenState()
-    ProgressContent(uiState = uiState, state = state, scrollState = scrollState)
+    // The one thing on this tab that writes has its own container, so ProgressViewModel stays
+    // read-only. It is read here rather than inside the card because the card and the overlay
+    // must fold the same numbers, and the profile is the one input ProgressUiState doesn't carry.
+    val energyViewModel: EnergyCheckInViewModel = koinViewModel()
+    val energyState by energyViewModel.collectAsState()
+    val today = todayEpochDay()
+    val checkIn = energyState.profile?.let { profile ->
+        remember(uiState.dailyNutrition, uiState.weightEntries, profile, today) {
+            energyCheckIn(uiState.dailyNutrition, uiState.weightEntries, profile, today)
+        }
+    }
+    ProgressContent(
+        uiState = uiState,
+        state = state,
+        scrollState = scrollState,
+        checkIn = checkIn,
+        addExerciseToBudget = energyState.profile?.addExerciseToBudget ?: true,
+        onApplyTarget = { kcal -> energyViewModel.handleEvent(EnergyCheckInEvent.OnApply(kcal)) },
+    )
 }
 
 @Composable
-private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState, scrollState: ScrollState = rememberScrollState()) {
+private fun ProgressContent(
+    uiState: ProgressUiState,
+    state: ProgressScreenState,
+    scrollState: ScrollState = rememberScrollState(),
+    checkIn: EnergyCheckIn? = null,
+    addExerciseToBudget: Boolean = true,
+    onApplyTarget: (Int) -> Unit = {},
+) {
     // Above the sub-tab toggle, not inside a tab: the recap spans nutrition, weight and
     // consistency at once. Null (nothing logged this week) omits the card entirely rather than
     // rendering an all-zero one on day one — and takes the recap door with it, since there is
@@ -132,7 +163,9 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                 when (state.tab) {
                     ProgressTab.Photos -> PhotosTabContent(uiState, state)
                     ProgressTab.BloodPressure -> BloodPressureTabContent(uiState, state)
-                    ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
+                    ProgressTab.Weight -> ScrollingTab(scrollState) {
+                        WeightTabContent(uiState, state, checkIn)
+                    }
                     ProgressTab.Nutrition -> ScrollingTab(scrollState) { NutritionTabContent(uiState, state) }
                     ProgressTab.Activity -> ScrollingTab(scrollState) { ActivityTabContent(uiState, state) }
                     ProgressTab.Strength -> ScrollingTab(scrollState) { StrengthTabContent(uiState, state) }
@@ -175,6 +208,18 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     projection = projection,
                     onPeriodChange = { state.recapPeriod = it },
                     onClose = state::closeRecap,
+                )
+            }
+
+            // The third overlay, and the only one that writes — the apply goes back up to the
+            // container that owns the profile rather than being reached for down here.
+            if (state.activeEnergyCheckIn && checkIn != null) {
+                EnergyCheckInScreen(
+                    checkIn = checkIn,
+                    unit = uiState.preferredUnit,
+                    addExerciseToBudget = addExerciseToBudget,
+                    onApply = onApplyTarget,
+                    onClose = state::closeEnergyCheckIn,
                 )
             }
 

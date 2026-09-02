@@ -351,6 +351,36 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   for the same reason — every other field there is a seven-day figure. The line is
   `onSurfaceVariant` on every surface, never `error`: the delta beside it already carries the
   verdict colour, and a red date reads as a second one.
+- **The energy check-in measures the target the formula guessed, and it stores nothing.**
+  `energyCheckIn()` sits in `:core:data/profile/` — pure derivation, no table, `goalProjection()`'s
+  shape — and back-computes maintenance as `average intake - slope × 7700`: the deficit the weight
+  change accounts for, added back onto what was eaten. Its window is **28 days, not the
+  projection's 30**, because a 30-day mean carries four extra weekdays and weekend intake is
+  systematically higher — four whole weeks weigh every day of the week equally. It fits the rate
+  with `List<WeightEntry>.slopeKgPerDay()`, the projection's own least-squares fit made `internal`
+  rather than copied, so the two cards on the Weight tab can never quote different trends; the goal
+  adjustment and both clamps are `DailyTargets`', for the same reason. It refuses rather than
+  guesses — half the window logged, four weigh-ins over a fortnight, a weigh-in inside the last
+  seven days, and a maintenance inside `MAINTENANCE_SANITY_KCAL` — but still reports the two counts,
+  because a card that goes quiet without saying why gives nobody a reason to keep weighing in.
+- **Applying it writes `Profile.calorieOverrideKcal`, which is why there is no dismissal state.**
+  A measured target *is* a pin — it should not keep drifting with the next weigh-in — so it reuses
+  the column a typed target already uses, inherits "Reset to calculated" as its undo, and adds no
+  schema, no migration and no export bump. Applying also drives `deltaKcal` to zero, so the button
+  takes itself away with nothing persisted; a "dismissed" flag would be state that exists only to
+  hide a suggestion the arithmetic has already withdrawn. `MIN_MEANINGFUL_DELTA_KCAL` (75) is where
+  the adjustment drops inside the estimate's own noise. The overlay is `RecapScreen`'s call — an
+  overlay in the Progress tab with its own `NavigationBackHandler`, not a route — but unlike the
+  recap it writes, so it carries `EnergyCheckInViewModel` (`BloodPressureViewModel`'s precedent) and
+  `ProgressViewModel` stays read-only. It shows every figure it measured from: a screen that tells
+  someone to eat 250 kcal more without showing its working is asking to be believed rather than
+  read.
+- **A measured maintenance already contains the user's workouts, and the check-in only says so.**
+  `budgetKcal()` is still the one place burned calories fold in, so with `addExerciseToBudget` on,
+  a workout is credited on top of a target that already accounted for it. The overlay names the
+  switch and the screen it lives on and changes nothing itself — the warn-and-point shape
+  `HomeCard.note` uses. *ponytail: no Home card, no coach field, no reminder and no history of past
+  adjustments — nothing is stored, so there is nothing to chart.*
 - **A saved meal is a snapshot, not a live link.** Saving copies the section's entries into
   `saved_meal`/`saved_meal_item`; editing or deleting the original diary rows never touches it,
   and deleting the saved meal never touches what was logged from it. Re-logging always writes

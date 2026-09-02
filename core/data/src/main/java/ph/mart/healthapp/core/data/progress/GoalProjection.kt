@@ -100,8 +100,11 @@ fun goalProjection(
 }
 
 /** Least-squares slope of weight over day, x centred on the mean day. Null when every entry
- * shares one date — impossible past the span guard, but division is division. */
-private fun List<WeightEntry>.slopeKgPerDay(): Double? {
+ * shares one date — impossible past the span guard, but division is division.
+ *
+ * Internal rather than file-private because the energy check-in fits the same rate over the same
+ * entries; one implementation is what stops the two screens quoting different trends. */
+internal fun List<WeightEntry>.slopeKgPerDay(): Double? {
     val meanDay = sumOf { it.dateEpochDay.toDouble() } / size
     val meanKg = sumOf { it.weightKg } / size
     val denominator = sumOf { (it.dateEpochDay - meanDay) * (it.dateEpochDay - meanDay) }

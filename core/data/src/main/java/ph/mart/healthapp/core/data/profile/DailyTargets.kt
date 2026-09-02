@@ -9,7 +9,9 @@ private val ACTIVITY_MULTIPLIER = mapOf(
     ActivityLevel.Very to 1.725,
 )
 
-private val GOAL_ADJUSTMENT_KCAL = mapOf(
+/** Internal rather than file-private because [ph.mart.healthapp.core.data.profile.energyCheckIn]
+ * prices its recommendation off the same adjustment this does — a second copy is a second answer. */
+internal val GOAL_ADJUSTMENT_KCAL = mapOf(
     Goal.Lose to -500,
     Goal.Maintain to 0,
     Goal.Build to 300,

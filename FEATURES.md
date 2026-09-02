@@ -108,6 +108,9 @@ Fasting · Supplements · Blood pressure · Badges.
 - Badges: seven derived families — streak, days logged, weight moved, workouts, fasts,
   longest fast, photos.
 - Recap: rolling 7/30/365-day summary, shareable as a single-card PNG.
+- Energy check-in: maintenance calories measured from 28 days of logged intake against the real
+  weight trend, with a one-tap adjustment of the calorie target (a card on the Weight tab, opening
+  a full overlay that shows its working).
 - Logging sheets: weigh-in (backdatable), measurements, progress photo, blood pressure.
 
 ## AI (Firebase AI Logic / Gemini)
@@ -124,8 +127,8 @@ Fasting · Supplements · Blood pressure · Badges.
 Sections: Goals · Units · Water · Fasting · Exercise · Reminders · Appearance · Connections ·
 Home layout · Supplements · Saved meals & recipes · Workout routines · Data · About.
 
-- Editable calorie and macro targets with "Reset to calculated"; a manual calorie target
-  reprices the split.
+- Editable calorie and macro targets with "Reset to calculated" — which also undoes a target
+  applied from the energy check-in; a manual calorie target reprices the split.
 - Metric/imperial toggles; water glass size and daily goal; fasting goal hours; step goal.
 - Light / dark / follow-device; mascot character and palette pickers.
 - Supplements: name, dose label, times per day; edit and delete.
