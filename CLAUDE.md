@@ -731,6 +731,37 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   that vanished on the six days between readings would be a card nobody ever saw. It is hidden only
   until the first reading exists, like `SupplementsCard`. It is read-only and does not navigate:
   logging needs the sheet, and the sheet lives in `:feature:progress`.
+- **A timelapse is a way of looking at the grid, not a thing to store.** `TimelapseScreen` plays
+  `uiState.photos` (already ascending by date, already combined) in place — no schema, no
+  repository, no ViewModel, the `badgeGroups()` and `goalProjection()` shape — which is also why it
+  sits in `ui/photo/components/` beside `PhotoComparisonScreen` rather than earning a flow package:
+  a second ViewModel is what earns one. Playback **loops** rather than stopping at the end, since
+  stopping would need a restart control for a gesture the loop gives away free, and scrubbing
+  pauses it — a slider that kept advancing under the finger fights whoever is looking for one
+  particular week. The Photos tab offers it at **two** photos, the same floor the comparison slider
+  has: one control appearing without the other reads as a bug.
+- **One share sheet serves both photo shares.** A before/after *is* a two-frame strip, so the
+  comparison slider hands `SharePhotoStripSheet` its two photos and the timelapse hands it the
+  whole set; `sampleFrames()` spreads up to four evenly with the first and last always in, because a
+  strip whose ends aren't the start and the end of the run isn't the story being told. The capture
+  itself (`Modifier.captureToPicture` + `sharePng`) moved to `ui/shared/` when the second caller
+  arrived — `ShareRecapSheet` had owned it — so the two images can't drift apart in how they reach
+  the chooser, and both still render exactly the PNG that leaves the app. Photo shares stay
+  PNG-only: an MP4 needs either a new media3 dependency or an EGL renderer, since a `MediaCodec`
+  input surface can't be `lockCanvas`'d at minSdk 24. *ponytail: media3-transformer is the upgrade
+  path if a video is ever asked for.*
+- **`rememberBitmapFromFile` downsamples, and every progress photo in the app goes through it.**
+  `inSampleSize` against the width the caller actually draws into (`GRID_TILE_PX` for a grid cell,
+  `FULL_FRAME_PX` otherwise) — a grid holding a year of camera JPEGs was keeping every one at
+  capture resolution, and a timelapse cycling them would have finished the job. The player holds
+  the last decoded frame across a swap: the function re-keys on the path and reports null while the
+  next decode is in flight, which at eight frames a second would strobe the frame to empty.
+  *ponytail: no bitmap cache — one downsampled decode per frame off the IO dispatcher; an LRU is
+  the upgrade if the fast speed stutters.*
+- **Both photo overlays take back themselves.** `PhotoComparisonScreen` and `TimelapseScreen` are
+  full-screen overlays inside the Progress tab, not routes, so each wires its own
+  `NavigationBackHandler` — without one, back out of a comparison left the Progress tab entirely
+  rather than clearing the selection.
 - **The Blood pressure tab scrolls itself**, joining Photos outside `ScrollingTab` — its list is
   per-reading rather than per-day, so a 3M window can hold a couple of hundred rows. Its delete
   asks first rather than raising an undo snackbar: the diary's swipe-and-undo needs a snackbar host
@@ -943,7 +974,8 @@ because of that, not because it was the nicest design available.
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
   `measurement`, `photo`, `nutrition`, `activity`, `strength`, `mood`, `sleep`, `heart`, `fasting`,
-  `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart` and `DayBarChart`, which
+  `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart`, `DayBarChart` and
+  `SharePng` (the capture-and-share pair two flows draw), the first two of which
   between them draw every tab's bars except Mood's, Nutrition's and Supplements'),
   `:feature:profile` (`profile`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
   `shared/` holding `LibraryRow` and `RenameSheet`, which the food library and the routine library

@@ -1,6 +1,9 @@
 package ph.mart.healthapp.feature.progress.ui.photo.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -9,6 +12,7 @@ import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
@@ -24,12 +28,24 @@ internal fun PhotosTabContent(uiState: ProgressUiState, state: ProgressScreenSta
         )
         return
     }
-    ProgressPhotoGrid(
-        photos = uiState.photos,
-        selectedIds = state.selectedPhotoIds,
-        onToggleSelect = state::togglePhotoSelection,
-        modifier = Modifier.fillMaxSize(),
-    )
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Two photos is the least that plays as a sequence, and it is also the point at which
+        // the comparison slider becomes reachable — one control appearing without the other
+        // would read as a bug.
+        if (uiState.photos.size >= 2) {
+            SecondaryButton(
+                label = "Play timelapse",
+                onClick = state::openTimelapse,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            )
+        }
+        ProgressPhotoGrid(
+            photos = uiState.photos,
+            selectedIds = state.selectedPhotoIds,
+            onToggleSelect = state::togglePhotoSelection,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }
 
 @PreviewLightDark

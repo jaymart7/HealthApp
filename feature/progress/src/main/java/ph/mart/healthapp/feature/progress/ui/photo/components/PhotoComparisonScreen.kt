@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,7 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,6 +44,9 @@ import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
@@ -58,6 +64,13 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
  */
 @Composable
 fun PhotoComparisonScreen(photoA: ProgressPhoto, photoB: ProgressPhoto, unit: UnitSystem, onClose: () -> Unit, modifier: Modifier = Modifier) {
+    var sharing by rememberSaveable { mutableStateOf(false) }
+
+    // A full-screen overlay, not a route: back has to clear the selection rather than leave the
+    // Progress tab entirely.
+    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+    NavigationBackHandler(state = navigationState, onBackCompleted = onClose)
+
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(text = "Compare photos", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
@@ -70,8 +83,16 @@ fun PhotoComparisonScreen(photoA: ProgressPhoto, photoB: ProgressPhoto, unit: Un
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            SecondaryButton(label = "Close", onClick = onClose)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SecondaryButton(label = "Share", onClick = { sharing = true }, modifier = Modifier.weight(1f))
+                SecondaryButton(label = "Close", onClick = onClose, modifier = Modifier.weight(1f))
+            }
         }
+    }
+
+    if (sharing) {
+        // A before/after is a two-frame strip, so it shares through the same sheet the timelapse does.
+        SharePhotoStripSheet(photos = listOf(photoA, photoB), unit = unit, onDismiss = { sharing = false })
     }
 }
 

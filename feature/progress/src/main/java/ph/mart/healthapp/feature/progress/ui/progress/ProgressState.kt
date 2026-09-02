@@ -24,6 +24,7 @@ internal class ProgressScreenState(
     measurementSheetPart: MeasurementPart? = null,
     activeBloodPressureSheet: Boolean = false,
     activeShareSheet: Boolean = false,
+    activeTimelapse: Boolean = false,
     pendingDeleteReadingId: Long? = null,
 ) {
     var tab: ProgressTab by mutableStateOf(tab)
@@ -33,6 +34,7 @@ internal class ProgressScreenState(
     var measurementSheetPart: MeasurementPart? by mutableStateOf(measurementSheetPart)
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
     var activeShareSheet: Boolean by mutableStateOf(activeShareSheet)
+    var activeTimelapse: Boolean by mutableStateOf(activeTimelapse)
 
     /** The reading whose delete is waiting on its confirmation dialog. */
     var pendingDeleteReadingId: Long? by mutableStateOf(pendingDeleteReadingId)
@@ -70,13 +72,22 @@ internal class ProgressScreenState(
         activeShareSheet = false
     }
 
+    fun openTimelapse() {
+        activeTimelapse = true
+    }
+
+    fun closeTimelapse() {
+        activeTimelapse = false
+    }
+
     companion object {
         fun Saver(): Saver<ProgressScreenState, Any> = listSaver(
             save = {
                 listOf(
                     it.tab.name, it.range.name, it.selectedPhotoIds,
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
-                    it.activeBloodPressureSheet, it.activeShareSheet, it.pendingDeleteReadingId,
+                    it.activeBloodPressureSheet, it.activeShareSheet, it.activeTimelapse,
+                    it.pendingDeleteReadingId,
                 )
             },
             restore = { saved ->
@@ -88,7 +99,8 @@ internal class ProgressScreenState(
                     measurementSheetPart = (saved[4] as String?)?.let(MeasurementPart::valueOf),
                     activeBloodPressureSheet = saved[5] as Boolean,
                     activeShareSheet = saved[6] as Boolean,
-                    pendingDeleteReadingId = saved[7] as Long?,
+                    activeTimelapse = saved[7] as Boolean,
+                    pendingDeleteReadingId = saved[8] as Long?,
                 )
             },
         )

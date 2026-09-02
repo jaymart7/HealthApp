@@ -43,6 +43,7 @@ import ph.mart.healthapp.feature.progress.ui.measurement.components.Measurements
 import ph.mart.healthapp.feature.progress.ui.mood.components.MoodTabContent
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionTabContent
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotoComparisonScreen
+import ph.mart.healthapp.feature.progress.ui.photo.components.TimelapseScreen
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotosTabContent
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureTabContent
@@ -152,6 +153,14 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     photoB = newer,
                     unit = uiState.preferredUnit,
                     onClose = { state.selectedPhotoIds = emptyList() },
+                )
+            }
+
+            if (state.activeTimelapse && uiState.photos.size >= 2) {
+                TimelapseScreen(
+                    photos = uiState.photos,
+                    unit = uiState.preferredUnit,
+                    onClose = state::closeTimelapse,
                 )
             }
 

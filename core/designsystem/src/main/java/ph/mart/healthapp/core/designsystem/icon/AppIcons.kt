@@ -18,7 +18,9 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Restaurant
@@ -57,6 +59,8 @@ object AppIcons {
     val Edit: ImageVector = Icons.Outlined.Edit
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
+    val Pause: ImageVector = Icons.Filled.Pause
+    val Play: ImageVector = Icons.Filled.PlayArrow
     val Send: ImageVector = Icons.AutoMirrored.Filled.Send
     val Share: ImageVector = Icons.Filled.Share
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment

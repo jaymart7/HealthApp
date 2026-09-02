@@ -1,8 +1,5 @@
 package ph.mart.healthapp.feature.progress.ui.progress.components
 
-import android.content.Context
-import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.Picture
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,19 +13,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.drawscope.draw
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
-import java.io.File
-import java.io.FileOutputStream
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import ph.mart.healthapp.core.data.food.NutritionAverages
@@ -45,6 +32,8 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.BestDay
 import ph.mart.healthapp.feature.progress.ui.progress.WeeklyRecap
+import ph.mart.healthapp.feature.progress.ui.shared.captureToPicture
+import ph.mart.healthapp.feature.progress.ui.shared.sharePng
 
 /**
  * Preview-then-share for the weekly recap: the sheet shows exactly the PNG that leaves the app,
@@ -73,21 +62,7 @@ internal fun ShareRecapSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // Redirect this subtree's draw into a Picture and then play it back into the real
-                // canvas: the API-24-safe capture. GraphicsLayer.toImageBitmap() is the shorter
-                // call but only pays off above the app's minSdk.
-                .drawWithCache {
-                    val width = size.width.toInt()
-                    val height = size.height.toInt()
-                    onDrawWithContent {
-                        val pictureCanvas = Canvas(picture.beginRecording(width, height))
-                        draw(this, layoutDirection, pictureCanvas, size) {
-                            this@onDrawWithContent.drawContent()
-                        }
-                        picture.endRecording()
-                        drawIntoCanvas { it.nativeCanvas.drawPicture(picture) }
-                    }
-                }
+                .captureToPicture(picture)
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(vertical = 8.dp),
         ) {
@@ -112,7 +87,7 @@ internal fun ShareRecapSheet(
                     // Zero until the sheet has drawn a frame — a tap that fast would otherwise
                     // hand the chooser an empty file.
                     if (picture.width > 0) {
-                        shareRecapPng(context, picture)
+                        sharePng(context, picture, "fitpulse-recap.png")
                         onDismiss()
                     }
                 }
@@ -120,31 +95,6 @@ internal fun ShareRecapSheet(
             modifier = Modifier.padding(top = 16.dp),
         )
     }
-}
-
-/**
- * One file, overwritten: the last card shared is the only one worth keeping, and a fixed name
- * means nothing accumulates in the cache. The grant is read-only and scoped to `cacheDir/share`
- * by `@xml/file_paths` — nothing in `filesDir` (the progress photos, the database) is reachable
- * through the provider.
- */
-private suspend fun shareRecapPng(context: Context, picture: Picture) {
-    val uri = withContext(Dispatchers.IO) {
-        // Software bitmap on every API: Bitmap.createBitmap(picture) is shorter above API 28 but
-        // yields a hardware bitmap, and compressing one of those is its own compatibility story.
-        val bitmap = Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888)
-        android.graphics.Canvas(bitmap).drawPicture(picture)
-        val dir = File(context.cacheDir, "share").apply { mkdirs() }
-        val file = File(dir, "fitpulse-recap.png")
-        FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-    }
-    val send = Intent(Intent.ACTION_SEND).apply {
-        type = "image/png"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(send, null))
 }
 
 @PreviewLightDark
