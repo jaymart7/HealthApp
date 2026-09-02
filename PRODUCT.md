@@ -52,16 +52,9 @@ Four things a neighboring tracker could not truthfully claim at once:
 
 ## Capabilities and Constraints
 
-Confirmed and shipping:
-
-- Onboarding that computes targets from Mifflin–St Jeor (age, sex, height, weight,
-  activity, goal), with a 1200/1500 kcal safety floor the user can override past a warning.
-- Food diary by meal, with AI photo capture, barcode scanning (ML Kit + FoodData Central),
-  manual search, and a local filter over already-logged entries.
-- Water, exercise logging (MET-estimated burn, editable, with an opt-out calorie credit),
-  weight and body measurements, progress photos with comparison.
-- Streaks and badges, derived — no table, no persisted celebration state.
-- Profile: units, goals, reminders, data export, appearance (light/dark/system).
+Confirmed and shipping: see **`FEATURES.md`** — the full index of every screen, card, tab
+and off-phone surface, plus the "Deliberately absent" list of what was ruled out. It is the
+one place that list is kept current; don't start a second one here.
 
 Constraints that bind future work:
 

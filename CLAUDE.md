@@ -19,6 +19,11 @@ for layout, copy, and interaction on anything *not yet built*, and
 so its own "Deferred" list is stale. For what components actually exist, read
 `:core:designsystem`.
 
+**`FEATURES.md` is the index of what already ships** — every screen, card, tab
+and surface, plus a "Deliberately absent" list of what was ruled out. Read it
+before proposing or building a feature, and add a line to it when one lands.
+It says *what*; this file says *why*.
+
 ## Stack
 
 - **Package:** `ph.mart.healthapp`

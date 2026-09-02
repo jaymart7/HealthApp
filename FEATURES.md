@@ -1,0 +1,197 @@
+# FEATURES.md — what FitPulse already does
+
+The shipped-feature index. **Read this before proposing or building a feature** — if it's
+listed here it exists, and if it's under "Deliberately absent" it was ruled out on purpose.
+
+This file says *what* exists, one line each. `CLAUDE.md` says *why* and is the binding
+architecture reference; nothing here restates it.
+
+---
+
+## Surfaces
+
+**Four tabs** (`:core:navigation`): `HomeRoute` · `FoodRoute` · `ProgressRoute` · `ProfileRoute`.
+
+**Routes above a tab** (own back toolbar, no bottom bar/FAB):
+`CoachRoute` · `FoodCaptureRoute` · `BarcodeScanRoute(dateEpochDay)` · `RecipeBuilderRoute` ·
+`StrengthWorkoutRoute` · `HealthConnectionRoute` · `FoodLibraryRoute` · `RoutinesRoute` ·
+`SupplementsRoute` · `HomeLayoutRoute`.
+
+**In-tab overlays** (no route, no second ViewModelStoreOwner): weekly/monthly/yearly recap ·
+photo timelapse · photo comparison slider · meal ideas.
+
+**Off-phone surfaces:** Glance home-screen widget (`:app/widget/`) · Wear OS app (`:wear`) ·
+Wear tile · WorkManager notifications (`:app/reminder/`).
+
+**Onboarding** is not in the nav graph — `AppRoot` swaps it out once a profile is written.
+
+---
+
+## Onboarding
+
+- Welcome screen with mascot and "I already have an account" (a no-op — no auth exists).
+- Basics: age, sex, height, weight, units.
+- Activity level; goal (lose / maintain / gain).
+- Dietary preference (four-value enum; read only by meal ideas).
+- Google Health disclosure + connect step (step 5 of 6, before Confirm).
+- Confirm targets: Mifflin–St Jeor calories + 30/40/30 macro split, editable, 1200/1500 kcal
+  warn-don't-block floor.
+
+## Home
+
+Fourteen cards, all reorderable/hideable except the pinned greeting and AI insight:
+
+Calories (ring) · Streak · Water · Fasting · Today's workout · Sleep · Steps · Heart rate ·
+Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
+
+- Mascot greeting card — the app's one door to the coach.
+- AI insight card (dismissible, with a rules-based offline fallback).
+- Card order and visibility edited in Profile → Home layout (drag handle + move up/down a11y
+  actions); "Reset to default" restores declaration order.
+- Mascot picker: five characters (Bibo, Pip, Zed, Momo, Sprig) × five palettes; blink + breathe
+  animation that rests when system animations are off.
+
+## Food diary
+
+- Diary by meal section (breakfast/lunch/dinner/snack), any past day, never forward past today.
+- Add-entry sheet: name, calories, protein/carbs/fat, fiber/sugar/sodium, portion + unit.
+- Quick add — a bare calorie figure with no name.
+- Every numeric field is typable and steppable; changing a portion reprices the whole entry.
+- Edit a logged row (supersedes it: soft-delete + insert, keeps its place in the day).
+- Swipe to delete with Undo snackbar.
+- Local text filter over the day's logged entries.
+- Recent-food suggestions with one-tap re-log.
+- Favorites.
+- Saved meals — snapshot a diary section, re-log as separate rows.
+- Recipes — a saved meal with servings; logs as one priced row.
+- Food search (USDA FoodData Central).
+- Water row in the diary; water goal and glass size configurable.
+- Meal ideas — AI suggestions sized to the day's remaining calories, with an offline fallback
+  built from the user's own recents and recipes; picking one seeds the add sheet, never logs.
+
+## Camera & barcode
+
+- AI photo food logging: capture → analyze → confirm, with retry, offline and manual-search paths.
+- Barcode scanning (ML Kit) → FoodData Central branded lookup, with a `gtinUpc` match check.
+- Both viewfinders carry a gallery door and a manual-entry door.
+- Camera permission screen; predictive back branches per flow state.
+- Progress photo capture with a date-stamped file.
+
+## Exercise & strength
+
+- Log a workout: type, duration, MET-estimated burn (editable; stops re-estimating once touched).
+- Burned calories credited to the day's budget, with a Profile switch to opt out.
+- Strength workouts: a full set editor (lift name, reps, weight in the user's unit), lift-name
+  chips from recent sessions, last-lifted load shown per lift.
+- Bodyweight sets (0 kg) are a real value.
+- "Repeat last workout" seeds the whole set list.
+- Routines: save a session as a routine (modal reps), start one to seed sets at last-lifted loads.
+- Training plan: a weekday picker per routine; Home shows today's routine and a week ratio.
+- Edit or delete a logged workout (sets re-pointed in the same transaction).
+
+## Progress
+
+Thirteen tabs: Weight · Food · Activity · Strength · Photos · Body · Mood · Sleep · Heart ·
+Fasting · Supplements · Blood pressure · Badges.
+
+- Weight: chart with 1W/1M/3M/1Y ranges, trend arrow, goal projection sentence.
+- Food: calories + macros against target over the window.
+- Activity: two charts — daily steps (imported) and daily burn.
+- Strength: volume chart, all-time personal records ranked by estimated 1RM (Epley).
+- Photos: grid, before/after comparison slider, timelapse player, share as a PNG strip.
+- Body: five measurement sites (chest, waist, hips, arms, thighs), chart + history.
+- Mood + energy: two series, separate denominators.
+- Sleep / Heart: watch-imported, charted anchored to today.
+- Fasting: session hours vs. goal line.
+- Supplements: percent-taken per day.
+- Blood pressure: floating-bar chart, category label per reading, manual log sheet.
+- Badges: seven derived families — streak, days logged, weight moved, workouts, fasts,
+  longest fast, photos.
+- Recap: rolling 7/30/365-day summary, shareable as a single-card PNG.
+- Logging sheets: weigh-in (backdatable), measurements, progress photo, blood pressure.
+
+## AI (Firebase AI Logic / Gemini)
+
+- Photo food recognition (the food-logging path above).
+- Daily insight — one line on Home, cached per day, falls back to three local rules.
+- Coach — a chat screen told the day's numbers and what it doesn't know; history persisted,
+  clearable with a confirm.
+- Meal ideas (above).
+- Every AI path degrades to a manual or local-derivation path offline.
+
+## Profile & settings
+
+Sections: Goals · Units · Water · Fasting · Exercise · Reminders · Appearance · Connections ·
+Home layout · Supplements · Saved meals & recipes · Workout routines · Data · About.
+
+- Editable calorie and macro targets with "Reset to calculated"; a manual calorie target
+  reprices the split.
+- Metric/imperial toggles; water glass size and daily goal; fasting goal hours; step goal.
+- Light / dark / follow-device; mascot character and palette pickers.
+- Supplements: name, dose label, times per day; edit and delete.
+- Food library and routine library: rename and delete (neither can log or start anything).
+- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 15, import is all-or-nothing.
+
+## Google Health sync
+
+REST against `health.googleapis.com/v4` (not Health Connect, not Google Fit), OAuth via
+play-services-auth. Import: workouts, weight, sleep, steps, heart rate. Push: meals and water.
+Connection state is live, never a stored flag. First sync backfills 30 days.
+
+## Reminders
+
+Nine WorkManager notifications behind six Profile switches: three meal reminders · weigh-in
+(Mondays) · progress photo (fortnightly) · two water checks · supplements · training day.
+Plus a one-shot fasting-goal notification (a seventh switch), derived off the active fast rather
+than scheduled periodically.
+
+## Wear & widget
+
+- Widget: today's calories (linear bar), water with a +1 glass button, streak, fasting target time.
+- Wear app: one screen — calories ring, water, fasting, streak; buttons to add a glass and
+  toggle a fast (both send an intent, never a row).
+- Wear tile: read-only glance, opens the app.
+- All three draw one `TodaySnapshot` (`:core:today`), pushed over the Data Layer.
+
+## Design system (`:core:designsystem`)
+
+AIChip · AppBottomSheet · AppCard · AppTextField · AppTopBar · BadgeDot · BottomNavBar · Buttons ·
+CalendarPanel · DateFormat · DiscardConfirmDialog · DockedFab · FoodItemRow · FullScreenState ·
+GoalProjectionLine · HealthDisclosurePanel · HomeCardLayout · MacroBar · MacroInputGroup ·
+MascotAvatar · MascotSpeechBubble · MicronutrientInputGroup · MicronutrientLegend ·
+NumericStepperField · SegmentedToggle · SelectableCard · SheetDatePicker · StepProgressBar ·
+WaterGlassRow.
+
+Charts live in `:feature:progress/ui/shared/`: `DayBarChart` (zero-based) and `RangeBarChart`
+(floating bars), plus the capture-and-share pair.
+
+---
+
+## Deliberately absent
+
+Ruled out on the record. Don't re-propose without saying why the reasoning has changed —
+each one is argued in `CLAUDE.md`.
+
+- **Accounts, sign-in, server sync.** No auth system exists. Nothing may assume one.
+- **Monetization.** No pricing, subscription or paywall has been decided.
+- **A streak celebration toast.** The badge lighting up is the reward.
+- **Mood, sleep, fasting, supplements and steps are not streak domains.** The streak is food,
+  water, weigh-in, exercise — adding a fifth rewrites what past runs meant.
+- **Badges in the recap.** No badge records when it was earned.
+- **Sleep, heart, blood pressure, fasting, supplements in the recap.** Not enough scroll earned.
+- **Blood pressure's Google Health scope.** Deliberately not requested — manual entry only.
+- **Not exported:** saved meals, recipes, routines, `health_link`, coach history, steps, sleep,
+  heart, running fasts.
+- **No MP4 photo share.** PNG strips only.
+- **No HTTP client dependency.** `HttpURLConnection` + kotlinx.serialization, on purpose.
+- **No Health Connect, no Google Fit.** The Google Health API only.
+- **Dynamic color (Material You) is off**, and `Color.kt` is frozen.
+- **No hard deletes** anywhere except an unfinished fast and a superseded workout's sets.
+- **The watch has no database**, and the tile never writes.
+- **No planned meals** — the diary never steps past today.
+
+## Open backlog
+
+`CLAUDE.md` → **Backlog** holds the outstanding work (FDC key proxy, Google Health verification
+and the unpinned response fields, the final mascot illustration). Inline `ponytail:` comments
+mark known ceilings and their upgrade paths.
