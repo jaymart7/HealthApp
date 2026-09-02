@@ -1,14 +1,13 @@
 {
   "project_info": {
-    "project_number": "1033727502839",
-    "firebase_url": "https://moviefied-3d48b.firebaseio.com",
-    "project_id": "moviefied-3d48b",
-    "storage_bucket": "moviefied-3d48b.firebasestorage.app"
+    "project_number": "609834767104",
+    "project_id": "fitpulse-8d951",
+    "storage_bucket": "fitpulse-8d951.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1033727502839:android:bba380e512e336b47726f2",
+        "mobilesdk_app_id": "1:609834767104:android:c0e06dc19f6a60491e59e5",
         "android_client_info": {
           "package_name": "ph.mart.healthapp"
         }
@@ -16,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyATYh1hKZLpRRChd7lh6PB6YjEeGQqTWQU"
+          "current_key": "AIzaSyD8_8MCzVORBa7EAQi-9qBMURW5-5NHg_8"
         }
       ],
       "services": {
@@ -24,45 +23,6 @@
           "other_platform_oauth_client": []
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:1033727502839:android:6788894c13fbd0547726f2",
-        "android_client_info": {
-          "package_name": "ph.mart.media"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyATYh1hKZLpRRChd7lh6PB6YjEeGQqTWQU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:1033727502839:android:53c2755479c6fc6a7726f2",
-        "android_client_info": {
-          "package_name": "ph.mart.moviefied"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyATYh1hKZLpRRChd7lh6PB6YjEeGQqTWQU"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      },
-      "admob_app_id": "ca-app-pub-2092412908565069~3168580479"
     }
   ],
   "configuration_version": "1"
