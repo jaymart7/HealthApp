@@ -16,6 +16,29 @@ data class ExerciseEntry(
     val burnedKcal: Int,
     /** Steps this activity contributed to the day. See `stepsCreditKcal()` for what it's for. */
     val steps: Int = 0,
+    /**
+     * What was lifted, for a strength session — empty for everything else, which is what makes
+     * this one field rather than a second kind of workout. A strength entry is an ordinary
+     * [ExerciseEntry], so the streak, [budgetKcal] and `burnSeries()` pick it up with no special
+     * case, and an imported watch session simply arrives with none.
+     */
+    val sets: List<StrengthSet> = emptyList(),
+)
+
+/**
+ * One set of one lift. The exercise's name rides on every set rather than on a level of its own:
+ * "the exercises in this workout" is a `groupBy` over these, which is one table fewer than the
+ * three a workout/exercise/set hierarchy would need — the call `SavedMealItemEntity` makes with
+ * its plain `mealId` column.
+ *
+ * [weightKg] of 0 is **bodyweight**, and that is a real value, not the "never entered" reading
+ * `mood_day`'s zero and `pulseBpm`'s zero have. It counts no volume and claims no personal
+ * record, because neither figure means anything without a load — see [estimatedOneRepMax].
+ */
+data class StrengthSet(
+    val exerciseName: String,
+    val reps: Int,
+    val weightKg: Double,
 )
 
 /**

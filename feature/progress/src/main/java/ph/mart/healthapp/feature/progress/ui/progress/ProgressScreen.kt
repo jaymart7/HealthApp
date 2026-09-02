@@ -42,6 +42,7 @@ import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureTa
 import ph.mart.healthapp.feature.progress.ui.progress.components.ScrollingTab
 import ph.mart.healthapp.feature.progress.ui.progress.components.WeeklyRecapCard
 import ph.mart.healthapp.feature.progress.ui.sleep.components.SleepTabContent
+import ph.mart.healthapp.feature.progress.ui.strength.components.StrengthTabContent
 import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsTabContent
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightTabContent
 
@@ -105,6 +106,7 @@ private fun ProgressContent(uiState: ProgressUiState, state: ProgressScreenState
                     ProgressTab.Weight -> ScrollingTab(scrollState) { WeightTabContent(uiState, state) }
                     ProgressTab.Nutrition -> ScrollingTab(scrollState) { NutritionTabContent(uiState, state) }
                     ProgressTab.Activity -> ScrollingTab(scrollState) { ActivityTabContent(uiState, state) }
+                    ProgressTab.Strength -> ScrollingTab(scrollState) { StrengthTabContent(uiState, state) }
                     ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
                     ProgressTab.Mood -> ScrollingTab(scrollState) { MoodTabContent(uiState, state) }
                     ProgressTab.Sleep -> ScrollingTab(scrollState) { SleepTabContent(uiState, state) }

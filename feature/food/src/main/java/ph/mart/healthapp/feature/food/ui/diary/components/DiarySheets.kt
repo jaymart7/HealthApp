@@ -39,6 +39,7 @@ internal fun DiarySheets(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onNewRecipe: () -> Unit,
+    onOpenStrength: (Long, Long) -> Unit,
 ) {
     var pendingDeleteSavedMeal by remember { mutableStateOf<SavedMeal?>(null) }
     var pendingDeleteRecipe by remember { mutableStateOf<Recipe?>(null) }
@@ -121,6 +122,13 @@ internal fun DiarySheets(
     if (state.exerciseSheetOpen && (state.editingExerciseId == null || editingExercise != null)) {
         LogExerciseSheet(
             onDismiss = state::closeExerciseSheet,
+            // Closing first means back from the workout screen lands on the diary rather than
+            // reopening a stale sheet — the same handover "New recipe" makes.
+            onOpenStrength = { date ->
+                val id = state.editingExerciseId ?: 0
+                state.closeExerciseSheet()
+                onOpenStrength(date, id)
+            },
             dateEpochDay = uiState.selectedDate,
             editing = editingExercise,
         )
@@ -186,6 +194,7 @@ private fun DiarySheetsPreview() {
                 state = rememberFoodScreenState().apply { calendarOpen = true },
                 onEvent = {},
                 onNewRecipe = {},
+                onOpenStrength = { _, _ -> },
             )
         }
     }

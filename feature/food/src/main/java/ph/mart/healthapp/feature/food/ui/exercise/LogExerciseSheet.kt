@@ -18,21 +18,24 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
-import ph.mart.healthapp.core.designsystem.component.AppTextField
-import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseTypeChipRow
+import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseFormFields
 
 /** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; the FAB's
  * quick-action sheet leaves it 0, which the repository stamps as today.
  *
  * [editing] is the logged activity being corrected, if any — the same sheet, seeded and saving
- * over that row instead of adding one. */
+ * over that row instead of adding one.
+ *
+ * [onOpenStrength] leaves for the strength workout screen, carrying the day. It is offered only
+ * once Strength is picked, and it is a door rather than an automatic redirect on purpose: the
+ * plain duration-and-kcal path is what an imported watch session is, and it stays reachable. */
 @Composable
 fun LogExerciseSheet(
     onDismiss: () -> Unit,
+    onOpenStrength: (Long) -> Unit,
     dateEpochDay: Long = 0,
     editing: ExerciseEntry? = null,
     viewModel: LogExerciseViewModel = koinViewModel(),
@@ -50,6 +53,7 @@ fun LogExerciseSheet(
         dateEpochDay = dateEpochDay,
         editingId = editing?.id,
         onDismiss = onDismiss,
+        onOpenStrength = { onOpenStrength(dateEpochDay) },
         onEvent = viewModel::handleEvent,
     )
 }
@@ -61,6 +65,7 @@ private fun LogExerciseContent(
     dateEpochDay: Long,
     editingId: Long?,
     onDismiss: () -> Unit,
+    onOpenStrength: () -> Unit,
     onEvent: (LogExerciseEvent) -> Unit,
 ) {
     // Seeded from the form's own fields, so the estimate is right on the first frame too — the
@@ -75,50 +80,20 @@ private fun LogExerciseContent(
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            ExerciseTypeChipRow(
-                selected = form.type,
-                onSelect = { state.form = form.copy(type = it).withEstimate(uiState.weightKg) },
+            ExerciseFormFields(
+                form = form,
+                weightKg = uiState.weightKg,
+                onFormChange = { state.form = it },
             )
-            AppTextField(
-                label = "Note (optional)",
-                value = form.name,
-                onValueChange = { state.form = form.copy(name = it) },
-            )
-            NumericStepperField(
-                label = "Duration",
-                value = "${form.minutes}",
-                unitSuffix = "min",
-                onValueChange = {
-                    state.form = form.copy(minutes = it.toIntOrNull() ?: 0).withEstimate(uiState.weightKg)
-                },
-                onIncrement = {
-                    state.form = form.copy(minutes = form.minutes + MINUTES_STEP).withEstimate(uiState.weightKg)
-                },
-                onDecrement = {
-                    state.form = form.copy(minutes = (form.minutes - MINUTES_STEP).coerceAtLeast(MINUTES_STEP))
-                        .withEstimate(uiState.weightKg)
-                },
-            )
-            NumericStepperField(
-                // Estimation stops the moment the field is edited by hand, so the label has to
-                // stop saying "estimated" at the same moment — otherwise it describes a
-                // calculation that is no longer running.
-                label = if (form.burnedEdited) {
-                    "Burned · your figure"
-                } else {
-                    "Burned · estimated from ${form.type.label.lowercase()} at your latest weight"
-                },
-                value = "${form.burnedKcal}",
-                unitSuffix = "kcal",
-                onValueChange = { state.form = form.copy(burnedKcal = it.toIntOrNull() ?: 0, burnedEdited = true) },
-                onIncrement = { state.form = form.copy(burnedKcal = form.burnedKcal + KCAL_STEP, burnedEdited = true) },
-                onDecrement = {
-                    state.form = form.copy(
-                        burnedKcal = (form.burnedKcal - KCAL_STEP).coerceAtLeast(0),
-                        burnedEdited = true,
-                    )
-                },
-            )
+            // Sets need a list and an editor, which don't fit above a keyboard — the argument the
+            // recipe builder already made. So the sheet hands off rather than growing a sub-view.
+            if (form.type == ExerciseType.Strength) {
+                SecondaryButton(
+                    label = "Log sets instead →",
+                    onClick = onOpenStrength,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
@@ -142,6 +117,24 @@ private fun LogExerciseSheetPreview() {
             dateEpochDay = 0,
             editingId = null,
             onDismiss = {},
+            onOpenStrength = {},
+            onEvent = {},
+        )
+    }
+}
+
+/** Strength picked: the one type that offers a door out to a screen that can hold a set list. */
+@PreviewLightDark
+@Composable
+private fun LogExerciseSheetStrengthPreview() {
+    AppTheme {
+        LogExerciseContent(
+            uiState = LogExerciseUiState(weightKg = 74.0),
+            state = LogExerciseState(form = LogExerciseForm(type = ExerciseType.Strength, minutes = 45)),
+            dateEpochDay = 0,
+            editingId = null,
+            onDismiss = {},
+            onOpenStrength = {},
             onEvent = {},
         )
     }
@@ -162,6 +155,7 @@ private fun LogExerciseSheetEditingPreview() {
             dateEpochDay = 0,
             editingId = 1,
             onDismiss = {},
+            onOpenStrength = {},
             onEvent = {},
         )
     }

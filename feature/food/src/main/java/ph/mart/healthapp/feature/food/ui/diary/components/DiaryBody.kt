@@ -55,6 +55,7 @@ internal fun DiaryBody(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onScanBarcode: (Long) -> Unit,
+    onOpenStrength: (Long, Long) -> Unit,
     snackbarHostState: SnackbarHostState,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -161,10 +162,19 @@ internal fun DiaryBody(
 
             ExerciseSection(
                 entries = uiState.exercise,
+                unit = uiState.unit,
                 expanded = state.exerciseExpanded,
                 onToggle = { state.exerciseExpanded = !state.exerciseExpanded },
                 onAdd = { state.openExerciseSheet() },
-                onEditEntry = { entry -> state.openExerciseSheet(entry) },
+                // A workout with sets reopens on the screen that can show them; everything
+                // else reopens in the sheet that logged it.
+                onEditEntry = { entry ->
+                    if (entry.sets.isEmpty()) {
+                        state.openExerciseSheet(entry)
+                    } else {
+                        onOpenStrength(uiState.selectedDate, entry.id)
+                    }
+                },
                 onDeleteEntry = { entry ->
                     onEvent(FoodEvent.OnDeleteExercise(entry.id))
                     scope.launch {
@@ -193,6 +203,7 @@ private fun DiaryBodyPreview() {
             state = rememberFoodScreenState(),
             onEvent = {},
             onScanBarcode = {},
+            onOpenStrength = { _, _ -> },
             snackbarHostState = SnackbarHostState(),
         )
     }

@@ -6,6 +6,7 @@ import kotlinx.serialization.json.Json
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
@@ -58,10 +59,11 @@ internal data class FitPulseExport(
  * fiber, sugar and sodium; 8 added [FitPulseExport.supplements], [FitPulseExport.supplementDays]
  * and [ExportProfile.supplementRemindersOn]; 9 added [FitPulseExport.bloodPressure]; 10 added
  * [ExportProfile.mascotName]; 11 added [ExportProfile.stepGoal]; 12 added
- * [ExportProfile.mascotPaletteName]; 13 added [ExportExercise.steps].
+ * [ExportProfile.mascotPaletteName]; 13 added [ExportExercise.steps]; 14 added
+ * [ExportExercise.sets].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 13
+internal const val EXPORT_SCHEMA_VERSION = 14
 
 @Serializable
 internal data class ExportProfile(
@@ -131,7 +133,14 @@ internal data class ExportExercise(
     val minutes: Int,
     val burnedKcal: Int,
     val steps: Int = 0,
+    val sets: List<ExportStrengthSet> = emptyList(),
 )
+
+/** A strength session's lifts. History, not convenience data — a workout you can't see the sets of
+ * is the record this feature exists to keep. Defaulted, so a pre-v14 file (and every cardio row)
+ * still imports as the setless workout it always was. A [weightKg] of 0 is bodyweight. */
+@Serializable
+internal data class ExportStrengthSet(val exerciseName: String, val reps: Int, val weightKg: Double)
 
 /** Mood is history, not convenience data, so unlike favourites and saved meals it belongs in the
  * file. A 0 on either field means that row was never tapped. */
@@ -209,8 +218,11 @@ internal fun buildExportJson(
         weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note) },
         measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.valueCm) },
         waterDays = waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
-        exercises = exercises.map {
-            ExportExercise(it.dateEpochDay, it.type.name, it.name, it.minutes, it.burnedKcal, it.steps)
+        exercises = exercises.map { entry ->
+            ExportExercise(
+                entry.dateEpochDay, entry.type.name, entry.name, entry.minutes, entry.burnedKcal, entry.steps,
+                sets = entry.sets.map { ExportStrengthSet(it.exerciseName, it.reps, it.weightKg) },
+            )
         },
         moodDays = moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
         fastSessions = fastSessions.mapNotNull { session ->
@@ -243,14 +255,15 @@ internal fun parseExport(text: String): Result<ImportData> = runCatching {
             MeasurementEntry(enumOf<MeasurementPart>(it.part, MeasurementPart.entries), it.dateEpochDay, it.valueCm)
         },
         waterDays = export.waterDays.map { WaterDay(it.dateEpochDay, it.glasses) },
-        exercises = export.exercises.map {
+        exercises = export.exercises.map { entry ->
             ExerciseEntry(
-                dateEpochDay = it.dateEpochDay,
-                type = enumOf(it.type, ExerciseType.entries),
-                name = it.name,
-                minutes = it.minutes,
-                burnedKcal = it.burnedKcal,
-                steps = it.steps,
+                dateEpochDay = entry.dateEpochDay,
+                type = enumOf(entry.type, ExerciseType.entries),
+                name = entry.name,
+                minutes = entry.minutes,
+                burnedKcal = entry.burnedKcal,
+                steps = entry.steps,
+                sets = entry.sets.map { StrengthSet(it.exerciseName, it.reps, it.weightKg) },
             )
         },
         moodDays = export.moodDays.map { MoodDay(it.dateEpochDay, it.mood, it.energy) },

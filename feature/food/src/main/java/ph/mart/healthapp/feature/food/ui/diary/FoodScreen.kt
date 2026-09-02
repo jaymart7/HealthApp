@@ -35,6 +35,7 @@ import ph.mart.healthapp.feature.food.ui.diary.components.DiarySheets
 fun FoodScreen(
     onScanBarcode: (Long) -> Unit,
     onNewRecipe: () -> Unit,
+    onOpenStrength: (Long, Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: FoodViewModel = koinViewModel(),
 ) {
@@ -46,6 +47,7 @@ fun FoodScreen(
         onEvent = viewModel::handleEvent,
         onScanBarcode = onScanBarcode,
         onNewRecipe = onNewRecipe,
+        onOpenStrength = onOpenStrength,
         scrollState = scrollState,
     )
 }
@@ -57,6 +59,7 @@ private fun FoodContent(
     onEvent: (FoodEvent) -> Unit,
     onScanBarcode: (Long) -> Unit,
     onNewRecipe: () -> Unit,
+    onOpenStrength: (Long, Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
 ) {
     // Back off a past day returns to today rather than leaving the tab — one level, same rule the
@@ -78,11 +81,18 @@ private fun FoodContent(
                 state = state,
                 onEvent = onEvent,
                 onScanBarcode = onScanBarcode,
+                onOpenStrength = onOpenStrength,
                 snackbarHostState = snackbarHostState,
                 scrollState = scrollState,
             )
 
-            DiarySheets(uiState = uiState, state = state, onEvent = onEvent, onNewRecipe = onNewRecipe)
+            DiarySheets(
+                uiState = uiState,
+                state = state,
+                onEvent = onEvent,
+                onNewRecipe = onNewRecipe,
+                onOpenStrength = onOpenStrength,
+            )
 
             // Above the docked FAB, so an Undo is never the thing hidden behind it.
             SnackbarHost(
@@ -123,6 +133,7 @@ private fun FoodScreenPreview() {
             onEvent = {},
             onScanBarcode = {},
             onNewRecipe = {},
+            onOpenStrength = { _, _ -> },
         )
     }
 }

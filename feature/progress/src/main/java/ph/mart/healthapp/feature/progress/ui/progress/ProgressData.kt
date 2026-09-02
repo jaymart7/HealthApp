@@ -27,6 +27,7 @@ enum class ProgressTab(val label: String) {
     Weight("Weight"),
     Nutrition("Food"),
     Activity("Activity"),
+    Strength("Strength"),
     Photos("Photos"),
     Measurements("Body"),
     Mood("Mood"),

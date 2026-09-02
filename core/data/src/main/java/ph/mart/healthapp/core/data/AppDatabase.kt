@@ -6,6 +6,7 @@ import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingDao
 import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingEntity
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryDao
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryEntity
+import ph.mart.healthapp.core.data.exercise.local.StrengthSetEntity
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodDao
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodEntity
 import ph.mart.healthapp.core.data.food.local.FoodEntryDao
@@ -53,6 +54,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         ProgressPhotoEntity::class,
         WaterDayEntity::class,
         ExerciseEntryEntity::class,
+        StrengthSetEntity::class,
         MoodDayEntity::class,
         HealthLinkEntity::class,
         SleepDayEntity::class,
@@ -64,7 +66,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         BloodPressureReadingEntity::class,
         ChatMessageEntity::class,
     ],
-    version = 22,
+    version = 23,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {

@@ -25,6 +25,15 @@ interface ExerciseRepository {
     /** Full history, oldest first — for data export. */
     suspend fun allEntries(): List<ExerciseEntry>
 
+    /** The newest strength workouts, newest first — the strength screen's "repeat last workout"
+     * seed (the first of them) and its lift-name chips. A one-shot read rather than a flow: the
+     * screen asks once on entry, and neither figure changes while it is open. */
+    suspend fun recentStrengthEntries(limit: Int = RECENT_STRENGTH_WORKOUTS): List<ExerciseEntry>
+
+    /** One workout by id, sets included — the strength route carries an id, not the row, so the
+     * screen has to resolve it itself. Null once it has been deleted. */
+    suspend fun entry(id: Long): ExerciseEntry?
+
     /** Soft-deletes every entry, for import's replace-in-full semantics. */
     suspend fun deleteAllEntries()
 

@@ -7,6 +7,7 @@ import org.junit.Test
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.fasting.FastSession
@@ -70,6 +71,17 @@ class ProfileExportTest {
     // repository re-derives a missing one from the MET estimate, which is not what was measured.
     private val exercises = listOf(
         ExerciseEntry(id = 3, dateEpochDay = 20_001, type = ExerciseType.Run, name = "Riverside", minutes = 32, burnedKcal = 324, steps = 4_180),
+        // A strength session's sets are history, not convenience data — the workout is meaningless
+        // in a backup without them. The bodyweight set is the interesting one: 0 kg is a real
+        // value here, and a round trip that silently dropped it would lose a set.
+        ExerciseEntry(
+            id = 4, dateEpochDay = 20_002, type = ExerciseType.Strength, name = "Push day",
+            minutes = 45, burnedKcal = 260,
+            sets = listOf(
+                StrengthSet("Bench press", reps = 8, weightKg = 62.5),
+                StrengthSet("Dip", reps = 12, weightKg = 0.0),
+            ),
+        ),
     )
     // The second day is mood-only — 0 is "not tapped", and it has to survive the round trip as 0
     // rather than being dropped or promoted to a score.
@@ -260,11 +272,11 @@ class ProfileExportTest {
     fun `a v12 file without exercise steps still imports`() {
         val v12 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 12")
-            // The field is last in the object, so the preceding comma goes with it.
+            // Dropped mid-object now that `sets` follows it, so the preceding comma goes.
             .replace(Regex(",\\s*\"steps\": \\d+"), "")
         val payload = parseExport(v12).getOrThrow()
 
-        assertEquals(1, payload.exercises.size)
+        assertEquals(exercises.size, payload.exercises.size)
         assertEquals(0, payload.exercises.first().steps)
         assertEquals(324, payload.exercises.first().burnedKcal)
     }
@@ -274,5 +286,32 @@ class ProfileExportTest {
         val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 99")
         assertTrue(parseExport(json).isFailure)
+    }
+
+    /** The sets survive the file, bodyweight zero included. The ids do not: an `autoGenerate` key
+     * has no meaning in the database a backup is restored into, and nothing points at a workout. */
+    @Test
+    fun `a strength workout keeps its sets through the file`() {
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
+        val restored = parseExport(json).getOrThrow().exercises
+
+        assertEquals(exercises.map { it.copy(id = 0) }, restored)
+        assertEquals(emptyList<StrengthSet>(), restored.first().sets)
+        assertEquals(0.0, restored.last().sets.last().weightKg, 0.001)
+    }
+
+    /** A v13 file — the schema one version back, written before sets existed. Its workouts still
+     * import, as the setless rows they always were. */
+    @Test
+    fun `a v13 file without sets still imports`() {
+        val v13 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
+            .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 13")
+            // The field is last in the object, so the preceding comma goes with it.
+            .replace(Regex(",\\s*\"sets\": \\[[^]]*]"), "")
+        val restored = parseExport(v13).getOrThrow().exercises
+
+        assertEquals(exercises.size, restored.size)
+        assertTrue(restored.all { it.sets.isEmpty() })
+        assertEquals(4_180, restored.first().steps)
     }
 }

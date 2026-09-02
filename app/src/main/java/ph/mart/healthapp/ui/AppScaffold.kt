@@ -36,6 +36,7 @@ import ph.mart.healthapp.feature.coach.ui.coachEntries
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
+import ph.mart.healthapp.feature.food.ui.StrengthWorkoutRoute
 import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
@@ -53,6 +54,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
 private fun NavKey?.title(): String = when (this) {
     CoachRoute -> "Coach"
     RecipeBuilderRoute -> "New recipe"
+    is StrengthWorkoutRoute -> if (this.editingId > 0) "Edit workout" else "Strength workout"
     HealthConnectionRoute -> "Google Health"
     FoodLibraryRoute -> "Saved meals & recipes"
     SupplementsRoute -> "Supplements"
@@ -189,6 +191,9 @@ fun AppScaffold(
                         scrollState = foodScroll,
                         onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },
                         onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
+                        onOpenStrength = { date, editingId ->
+                            topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
+                        },
                         onExitFlow = { topLevelBackStack.removeLast() },
                     )
                     progressEntries(scrollState = progressScroll)
@@ -217,7 +222,15 @@ fun AppScaffold(
                 onLogWeight = { activeSheet = ActiveSheet.LogWeight },
                 onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
             )
-            ActiveSheet.LogExercise -> LogExerciseSheet(onDismiss = { activeSheet = ActiveSheet.None })
+            ActiveSheet.LogExercise -> LogExerciseSheet(
+                onDismiss = { activeSheet = ActiveSheet.None },
+                // The FAB's sheet carries no day, so the workout screen it opens gets 0 too —
+                // which the repository stamps as today, exactly as the sheet's own save would.
+                onOpenStrength = { date ->
+                    activeSheet = ActiveSheet.None
+                    topLevelBackStack.add(StrengthWorkoutRoute(date, 0))
+                },
+            )
             ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.None -> Unit

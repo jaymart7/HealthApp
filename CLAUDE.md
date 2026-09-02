@@ -491,6 +491,59 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   prompt is sent the gaps (consumed vs target, water, streak, weekly weight delta) and never age,
   sex, height or absolute weight — same data-minimisation rule as the health backfill.
 
+- **A strength workout is an `ExerciseEntry` with sets, not a second kind of thing.** One table for
+  the workout, one child table for the sets, and `sets.isEmpty()` is what says "cardio" — the
+  discriminator rule `saved_meal.servings` already follows. So the streak, `budgetKcal()`,
+  `burnSeries()`, the diary row and the Google Health import all keep working with no special case,
+  and `ExerciseEntry.sets` is defaulted precisely so every existing construction site stayed valid.
+  Two levels, not three: each `strength_set` row carries its own `exerciseName`, and "the exercises
+  in this workout" is a `groupBy` — the call `saved_meal_item` makes with its plain `mealId` column,
+  down to `entryId` being an indexed column rather than a foreign key.
+- **A set's `weightKg` of 0 is bodyweight, and that is a real value** — not the "never entered"
+  reading `mood_day`'s zero and `pulseBpm`'s zero have. It counts no volume and
+  `estimatedOneRepMax` returns 0 for it, so a bodyweight set charts and lists without ever claiming
+  a record in kilograms; the editor's "Add set" therefore gates on a name and reps, never the load.
+- **An edit supersedes the workout, so `replace()` re-points its sets in the same transaction.**
+  The id changes (the existing rule), which would orphan the children — so the old rows are
+  hard-deleted and re-inserted under the new id. That is not a breach of soft-delete-only for the
+  reason `discardActive()` gives: the superseding row carries the history, and a child of a row
+  that no longer exists never became history of its own. `strength_set` consequently has no
+  `isDeleted` column at all; every read joins back to `exercise_entry` filtering on the parent's.
+- **Records and volume are derived, no table** — `badgeGroups()`/`goalProjection()`'s call. That is
+  why the Progress Strength tab needed **no `ProgressViewModel` change**: `exerciseEntries` already
+  carried the year window, and once the sets rode on the entry the tab had its data. Ranking is by
+  **estimated 1RM (Epley), not heaviest weight** — 100 kg × 1 and 80 kg × 8 are not comparable on
+  the bar alone — and `LiftRecord.dateEpochDay` is when the best was *first* hit, so matching it
+  again doesn't reset the date. The tab's stats re-fold over the *selected* window so they can't
+  describe different days from the chart above them, while records stay all-time: re-scoring a best
+  against a 1M filter would retire records every month.
+- **"Repeat last workout" instead of named routines.** It reads back the entry that already exists,
+  so it costs no schema, and `recentStrength` selects on *having sets* rather than on
+  `type = 'Strength'` — a strength session logged through the sheet has none, and a run of those
+  would fill the limit with workouts there is nothing to repeat or suggest from (it also keeps an
+  enum name out of the SQL). Named A/B/C routines — the saved-meal/recipe pattern applied to
+  workouts — are the upgrade path, not a gap.
+- **The sheet hands off to a screen; it does not redirect.** Picking Strength grows one "Log sets
+  instead →" button rather than navigating on the chip tap, so the plain duration-and-kcal path
+  stays reachable — that path is what an imported watch session is. A screen because a set list
+  plus its editor doesn't fit above a keyboard, the recipe builder's argument, and
+  `StrengthWorkoutRoute` gets its back toolbar from `AppScaffold`'s existing `isTopLevel` rule with
+  no new case. Two things fall out: the screen forces its seed to `Strength` (it draws no type
+  chips, and can be reached from the edit sheet with a cardio row already in it), and it holds its
+  content back until `strengthLoaded` — `rememberLogExerciseState` keys its saveable on the seed,
+  so composing blank and re-seeding when the row lands would wipe what had been typed, the guard
+  `DiarySheets` already applies. Tapping a logged row routes there only when it has sets.
+- **The set editor's draft survives a commit, which is why there is no "same again" button.** Three
+  sets of one lift at one load is the shape of most programmes, so pressing "Add set" again *is*
+  the repeat gesture. The load steps by a plate (2.5 kg, 5 lb) rather than by 1, and is entered and
+  shown in the user's unit while stored in kilograms — the rule every weight in this app follows.
+  Lift names are free text with chips derived from recent workouts: a fixed exercise list would be
+  wrong for somebody within a week, and the chips cost no schema.
+- **Sets are exported (schema v14) and are not pushed to Google Health.** They are history, not
+  convenience data — a workout you can't see the lifts of is the record the feature exists to keep,
+  and the field is defaulted so a v13 file still imports. Google Health is import-only for exercise
+  and has no shape for a set, so nothing changed there.
+
 - **A blood pressure reading is a reading, not a day.** `blood_pressure_reading` holds
   `takenAtMillis` per row, because morning and evening readings are the entire point and a
   day-keyed table where the second overwrites the first throws away what is being tracked — the
@@ -733,7 +786,7 @@ because of that, not because it was the nicest design available.
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `activity`, `mood`, `sleep`, `heart`, `fasting`,
+  `measurement`, `photo`, `nutrition`, `activity`, `strength`, `mood`, `sleep`, `heart`, `fasting`,
   `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart` and `DayBarChart`, which
   between them draw every tab's bars except Mood's, Nutrition's and Supplements'),
   `:feature:profile` (`profile`, `health`, `library`, `supplement`) and `:feature:onboarding`
@@ -746,7 +799,10 @@ because of that, not because it was the nicest design available.
 - **`:feature:home` and `:feature:coach` are deliberately flat**, and should stay that way.
   Each holds exactly one flow with one ViewModel, so `ui/` + `ui/components/` is already what
   the rule above prescribes. Don't "finish the job" by sub-packaging them.
-- **What earns a flow package is a second ViewModel**, not a second screen.
+- **What earns a flow package is a second ViewModel**, not a second screen. `StrengthWorkoutScreen`
+  is the counter-example that proves it: a route with its own back handler and discard dialog, yet
+  it sits in `:feature:food`'s existing `ui/exercise/` because it shares `LogExerciseViewModel` with
+  the sheet — one form, two presentations, and `ExerciseFormFields` is the trio they both draw.
   `:feature:onboarding` was flat on the argument that its seven steps are sub-views of
   `OnboardingScreen`'s `when (step)` — true of six of them, but the Google Health step
   owns `OnboardingHealthViewModel`, and everywhere else in this repo that means its own

@@ -18,7 +18,10 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.StrengthSet
+import ph.mart.healthapp.core.data.exercise.summaryLabel
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.food.ui.diary.components.MealSectionHeader
@@ -39,6 +42,7 @@ internal fun ExerciseSection(
     onAdd: () -> Unit,
     onDeleteEntry: (ExerciseEntry) -> Unit,
     onEditEntry: (ExerciseEntry) -> Unit,
+    unit: UnitSystem = UnitSystem.Metric,
 ) {
     Column {
         MealSectionHeader(
@@ -64,6 +68,7 @@ internal fun ExerciseSection(
                 key(entry.id) {
                     SwipeableExerciseRow(
                         entry = entry,
+                        unit = unit,
                         onDelete = { onDeleteEntry(entry) },
                         onEdit = { onEditEntry(entry) },
                     )
@@ -74,7 +79,12 @@ internal fun ExerciseSection(
 }
 
 @Composable
-private fun SwipeableExerciseRow(entry: ExerciseEntry, onDelete: () -> Unit, onEdit: () -> Unit) {
+private fun SwipeableExerciseRow(
+    entry: ExerciseEntry,
+    unit: UnitSystem,
+    onDelete: () -> Unit,
+    onEdit: () -> Unit,
+) {
     SwipeToDeleteRow(onDelete = onDelete) {
         Row(
             modifier = Modifier
@@ -97,6 +107,15 @@ private fun SwipeableExerciseRow(entry: ExerciseEntry, onDelete: () -> Unit, onE
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                // What was lifted, on its own line — a strength row's whole point, and the only
+                // thing that distinguishes it from the cardio rows above it.
+                if (entry.sets.isNotEmpty()) {
+                    Text(
+                        text = entry.sets.summaryLabel(unit),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             Text(
                 text = "${entry.burnedKcal} kcal",
@@ -116,6 +135,18 @@ private fun ExerciseSectionPreview() {
                 entries = listOf(
                     ExerciseEntry(id = 1, type = ExerciseType.Run, name = "Riverside loop", minutes = 30, burnedKcal = 363),
                     ExerciseEntry(id = 2, type = ExerciseType.Yoga, minutes = 45, burnedKcal = 166),
+                    ExerciseEntry(
+                        id = 3,
+                        type = ExerciseType.Strength,
+                        name = "Push day",
+                        minutes = 45,
+                        burnedKcal = 260,
+                        sets = listOf(
+                            StrengthSet("Bench press", 8, 60.0),
+                            StrengthSet("Bench press", 8, 62.5),
+                            StrengthSet("Dip", 10, 0.0),
+                        ),
+                    ),
                 ),
                 expanded = true,
                 onToggle = {},

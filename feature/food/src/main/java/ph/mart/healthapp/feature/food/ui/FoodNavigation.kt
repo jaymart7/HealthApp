@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.FoodRoute
 import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
+import ph.mart.healthapp.feature.food.ui.exercise.StrengthWorkoutScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 
@@ -24,16 +25,36 @@ data class BarcodeScanRoute(val dateEpochDay: Long) : NavKey
 @Serializable
 data object RecipeBuilderRoute : NavKey
 
+/** Authoring a strength workout — reached from the log-exercise sheet, and from tapping a logged
+ * one to correct it. It carries the day like [BarcodeScanRoute] does, so a workout logged while
+ * reviewing a past day lands on that day; [editingId] of 0 is a new one, and a non-zero id is the
+ * row being superseded, resolved by the screen rather than passed through the back stack. */
+@Serializable
+data class StrengthWorkoutRoute(val dateEpochDay: Long, val editingId: Long = 0) : NavKey
+
 fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
     onScanBarcode: (Long) -> Unit,
     onNewRecipe: () -> Unit,
+    onOpenStrength: (Long, Long) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<FoodRoute> {
-        FoodScreen(scrollState = scrollState, onScanBarcode = onScanBarcode, onNewRecipe = onNewRecipe)
+        FoodScreen(
+            scrollState = scrollState,
+            onScanBarcode = onScanBarcode,
+            onNewRecipe = onNewRecipe,
+            onOpenStrength = onOpenStrength,
+        )
     }
     entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }
+    entry<StrengthWorkoutRoute> { key ->
+        StrengthWorkoutScreen(
+            dateEpochDay = key.dateEpochDay,
+            editingId = key.editingId,
+            onExit = onExitFlow,
+        )
+    }
     entry<FoodCaptureRoute> { PhotoCaptureScreen(onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
 }

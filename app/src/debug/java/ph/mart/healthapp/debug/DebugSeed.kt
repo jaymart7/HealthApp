@@ -12,6 +12,7 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.FastingRepository
@@ -152,6 +153,32 @@ private suspend fun ExerciseRepository.seedExercise(today: Long) {
                 type = type,
                 minutes = minutes,
                 burnedKcal = estimateBurnedKcal(type, minutes, seedProfile.weightKg),
+            ),
+        )
+    }
+    seedStrength(today)
+}
+
+/**
+ * Four lifting sessions on a light progression, so the Strength tab has bars, a record per lift,
+ * and something to repeat. The last week's bench beats the first by one plate, which is what makes
+ * the record's date meaningful rather than always the newest row; the dips are bodyweight, the
+ * case where a set counts no volume and claims no one-rep max.
+ */
+private suspend fun ExerciseRepository.seedStrength(today: Long) {
+    val weeks = listOf(60.0, 62.5, 62.5, 65.0)
+    weeks.forEachIndexed { index, benchKg ->
+        val day = today - (weeks.size - 1 - index) * 7L - 1
+        addEntry(
+            ExerciseEntry(
+                dateEpochDay = day,
+                type = ExerciseType.Strength,
+                name = "Push day",
+                minutes = 50,
+                burnedKcal = estimateBurnedKcal(ExerciseType.Strength, 50, seedProfile.weightKg),
+                sets = List(3) { StrengthSet("Bench press", reps = 8, weightKg = benchKg) } +
+                    List(3) { StrengthSet("Overhead press", reps = 8, weightKg = benchKg - 25) } +
+                    List(2) { StrengthSet("Dip", reps = 12, weightKg = 0.0) },
             ),
         )
     }
