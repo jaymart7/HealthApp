@@ -34,6 +34,7 @@ import ph.mart.healthapp.feature.food.ui.diary.components.DiarySheets
 @Composable
 fun FoodScreen(
     onScanBarcode: (Long) -> Unit,
+    onSpeakFood: (Long) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
@@ -46,6 +47,7 @@ fun FoodScreen(
         state = state,
         onEvent = viewModel::handleEvent,
         onScanBarcode = onScanBarcode,
+        onSpeakFood = onSpeakFood,
         onNewRecipe = onNewRecipe,
         onOpenStrength = onOpenStrength,
         scrollState = scrollState,
@@ -58,6 +60,7 @@ private fun FoodContent(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onScanBarcode: (Long) -> Unit,
+    onSpeakFood: (Long) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
@@ -81,6 +84,7 @@ private fun FoodContent(
                 state = state,
                 onEvent = onEvent,
                 onScanBarcode = onScanBarcode,
+                onSpeakFood = onSpeakFood,
                 onOpenStrength = onOpenStrength,
                 snackbarHostState = snackbarHostState,
                 scrollState = scrollState,
@@ -132,6 +136,7 @@ private fun FoodScreenPreview() {
             state = FoodScreenState(),
             onEvent = {},
             onScanBarcode = {},
+            onSpeakFood = {},
             onNewRecipe = {},
             onOpenStrength = { _, _ -> },
         )

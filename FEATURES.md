@@ -13,7 +13,8 @@ architecture reference; nothing here restates it.
 **Four tabs** (`:core:navigation`): `HomeRoute` · `FoodRoute` · `ProgressRoute` · `ProfileRoute`.
 
 **Routes above a tab** (own back toolbar, no bottom bar/FAB):
-`CoachRoute` · `FoodCaptureRoute` · `BarcodeScanRoute(dateEpochDay)` · `RecipeBuilderRoute` ·
+`CoachRoute` · `FoodCaptureRoute` · `BarcodeScanRoute(dateEpochDay)` ·
+`VoiceLogRoute(dateEpochDay)` · `RecipeBuilderRoute` ·
 `StrengthWorkoutRoute` · `HealthConnectionRoute` · `FoodLibraryRoute` · `RoutinesRoute` ·
 `SupplementsRoute` · `HomeLayoutRoute`.
 
@@ -65,6 +66,9 @@ Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
 - Saved meals — snapshot a diary section, re-log as separate rows.
 - Recipes — a saved meal with servings; logs as one priced row.
 - Food search (USDA FoodData Central).
+- Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at
+  once, every parsed row editable and repriceable before anything is written. Speech is the
+  system's own dialog; typing is the same path.
 - Water row in the diary; water goal and glass size configurable.
 - Meal ideas — AI suggestions sized to the day's remaining calories, with an offline fallback
   built from the user's own recents and recipes; picking one seeds the add sheet, never logs.
@@ -120,6 +124,7 @@ Fasting · Supplements · Blood pressure · Badges.
 - Coach — a chat screen told the day's numbers and what it doesn't know; history persisted,
   clearable with a confirm.
 - Meal ideas (above).
+- Talk-to-log (above) — a sentence parsed into several priced diary rows.
 - Every AI path degrades to a manual or local-derivation path offline.
 
 ## Profile & settings

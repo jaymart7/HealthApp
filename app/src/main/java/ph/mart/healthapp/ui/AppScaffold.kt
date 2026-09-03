@@ -37,6 +37,7 @@ import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
 import ph.mart.healthapp.feature.food.ui.StrengthWorkoutRoute
+import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
 import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
@@ -57,6 +58,7 @@ private fun NavKey?.title(): String = when (this) {
     CoachRoute -> "Coach"
     RecipeBuilderRoute -> "New recipe"
     is StrengthWorkoutRoute -> if (this.editingId > 0) "Edit workout" else "Strength workout"
+    is VoiceLogRoute -> "Say what you ate"
     HealthConnectionRoute -> "Google Health"
     FoodLibraryRoute -> "Saved meals & recipes"
     RoutinesRoute -> "Workout routines"
@@ -199,6 +201,7 @@ fun AppScaffold(
                     foodEntries(
                         scrollState = foodScroll,
                         onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },
+                        onSpeakFood = { date -> topLevelBackStack.add(VoiceLogRoute(date)) },
                         onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
                         onOpenStrength = { date, editingId ->
                             topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
@@ -225,6 +228,12 @@ fun AppScaffold(
         when (activeSheet) {
             ActiveSheet.QuickAction -> QuickActionSheet(
                 onDismiss = { activeSheet = ActiveSheet.None },
+                // Day 0 is today — the FAB carries no diary date, the convention
+                // StrengthWorkoutRoute already uses from here.
+                onSpeakFood = {
+                    activeSheet = ActiveSheet.None
+                    topLevelBackStack.add(VoiceLogRoute(0))
+                },
                 onLogFood = {
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(FoodCaptureRoute)

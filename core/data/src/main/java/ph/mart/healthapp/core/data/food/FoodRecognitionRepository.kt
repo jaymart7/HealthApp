@@ -4,6 +4,14 @@ import android.graphics.Bitmap
 
 enum class RecognitionConfidence { High, Low }
 
+/**
+ * One food FitPulse identified from something the user gave it — a photo, or a sentence they said
+ * or typed. Both are an identification carrying a [confidence], which is why the voice path reuses
+ * this rather than adding a fourth ten-field type beside it.
+ *
+ * It is not a [MealIdea]: that one means "you could eat this", and an idea is not an identification
+ * of anything.
+ */
 data class RecognizedFood(
     val name: String,
     val portionAmount: Double,

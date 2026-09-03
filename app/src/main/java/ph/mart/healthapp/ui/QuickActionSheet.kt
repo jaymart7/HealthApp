@@ -14,17 +14,22 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** The FAB's quick-action sheet: Log food / Log exercise / Log weight / Add photo, each routing
- * to a real destination. */
+/** The FAB's quick-action sheet: Say what you ate / Log food / Log exercise / Log weight / Add
+ * photo, each routing to a real destination.
+ *
+ * The sentence sits above the camera because it is the path that works with the plate already
+ * cleared, and because it is the only one of the two that can log a whole meal at once. */
 @Composable
 fun QuickActionSheet(
     onDismiss: () -> Unit,
+    onSpeakFood: () -> Unit,
     onLogFood: () -> Unit,
     onLogExercise: () -> Unit,
     onLogWeight: () -> Unit,
     onAddPhoto: () -> Unit,
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
+        QuickActionRow(label = "Say what you ate", onClick = onSpeakFood)
         QuickActionRow(label = "Log food", onClick = onLogFood)
         QuickActionRow(label = "Log exercise", onClick = onLogExercise)
         QuickActionRow(label = "Log weight", onClick = onLogWeight)
@@ -51,6 +56,7 @@ private fun QuickActionSheetPreview() {
     AppTheme {
         QuickActionSheet(
             onDismiss = {},
+            onSpeakFood = {},
             onLogFood = {},
             onLogExercise = {},
             onLogWeight = {},

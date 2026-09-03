@@ -9,7 +9,6 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.feature.food.ui.diary.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreenState
-import ph.mart.healthapp.feature.food.ui.photo.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm

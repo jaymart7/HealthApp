@@ -795,6 +795,47 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   fallback list beats a heading over nothing. Nothing is cached: the budget moves with every row
   logged, so an idea from two meals ago answers a question nobody is asking — the coach's rule, not
   the daily insight's.
+- **Talk-to-log is the photo flow with a sentence where the plate goes**, and that is what keeps it
+  small. `VoiceLogRoute(dateEpochDay)` carries the day like `BarcodeScanRoute` (0 from the FAB means
+  today, `StrengthWorkoutRoute`'s convention), `VoiceLogViewModel` takes
+  `PhotoCaptureViewModel`'s three dependencies exactly, one always-mounted `NavigationBackHandler`
+  branches per state, and the write is the batched `addEntries()` a saved meal already logs
+  through. It reuses **`RecognizedFood`** rather than adding a fourth ten-field type beside
+  `MealIdea`, `ScannedProduct` and `AddEntryForm`: a parse is an identification carrying a
+  confidence, exactly as a photo is — which is why `RecognizedFood.toAddEntryForm()` moved to
+  `ui/shared/` when the second caller arrived. `MealIdea` stays separate for the reason its KDoc
+  already gives: an idea is not an identification of anything.
+- **The sentence is the narrowest payload FitPulse sends.** `InsightRequest` describes the whole
+  day and `MealIdeaRequest` the gap that is left; `MealParseRepository.parse()` sends the user's own
+  words and nothing else — no goal, no gaps, no diet, no profile, because parsing "two eggs" needs
+  none of them. It is capped at `MAX_PARSE_CHARS` on the way out (a dictated meal is a sentence) and
+  at `MAX_PARSED_FOODS` on the way back, and the prompt's load-bearing constraint is *only the foods
+  actually named*: a model asked what someone ate will otherwise butter the toast and milk the
+  coffee, and every invention is a row the user has to notice and delete.
+- **`loggable()` is a thin trust boundary because the review screen is the real one.** It drops a
+  nameless or zero-calorie item — not a shorter item, not one — and stops there. There is
+  deliberately no per-item calorie *ceiling* like `fitting()`'s: an idea is offered against a budget
+  the header has just quoted, while a parse is a claim about a meal already eaten, and every figure
+  is shown and adjustable before Log writes anything. `NoFoodFound` is its own result rather than an
+  empty `Success`, `ScanFlow.NoBarcode`'s call: "you named nothing edible" and "the call failed" get
+  different screens and different buttons.
+- **One meal slot for the whole batch, and picking an idea's landing is not this screen's.** A
+  sentence is one meal; a slot per row would ask four questions to log one breakfast. Rows are
+  collapsed by default and open one at a time — the list is the thing being checked, and five
+  expanded forms is not a list. Changing the slot moves the parsed copy too, so it never counts as
+  an edit to discard, the call `PhotoCaptureScreenState.selectMealType` makes.
+- **Speech is the system's dialog, never an in-app `SpeechRecognizer`.** `RecognizerIntent` needs no
+  `RECORD_AUDIO`, so there is no permission screen to write, nothing to deny permanently, and no
+  listener lifecycle or dozen error codes to map; the transcript lands in a field that stays
+  editable, and typing is the identical path. The mic is *hidden* where no recognizer is installed
+  rather than failing on tap — Home's supplements-card rule — which is the only thing the manifest's
+  `<queries>` entry exists for. *ponytail: no live waveform and no partial transcript; an in-app
+  recognizer behind a permission screen is the upgrade path if dictation ever needs to feel
+  in-house.*
+- **The offline screen offers no "Log manually" button**, unlike `PhotoOfflineScreen`. That flow's
+  manual door is a state inside itself; back out of this route lands on the diary, where the
+  add-entry sheet already is, so the copy says so and saves a button that only navigates.
+
 - **The button is hidden, never disabled, when there is no day to ask about.** No profile means no
   target and no gap; under `MIN_IDEA_KCAL` (100) there is no meal left in the day, only a mint. Same
   rule the supplements card follows — a control that can't answer shouldn't be there. The budget it

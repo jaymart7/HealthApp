@@ -5,6 +5,16 @@
     <!-- Reminders post notifications; the switches live in Profile and the schedule in ph.mart.healthapp.reminder. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Lets SpeechRecognizer.isRecognitionAvailable() answer on API 30+, which is what hides
+         the "say what you ate" mic on a device with no recognizer rather than showing a button
+         that fails on tap. FitPulse never binds a RecognitionService itself — the transcript
+         comes back from the system's own dialog. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".FitPulseApplication"
         android:allowBackup="true"

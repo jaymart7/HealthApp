@@ -55,6 +55,7 @@ internal fun DiaryBody(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onScanBarcode: (Long) -> Unit,
+    onSpeakFood: (Long) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     snackbarHostState: SnackbarHostState,
     scrollState: ScrollState = rememberScrollState(),
@@ -82,6 +83,15 @@ internal fun DiaryBody(
                 placeholder = "Filter this day's foods…",
                 modifier = Modifier.weight(1f),
             )
+            // The two fast paths that belong to the day being shown, so both carry it: a scan or a
+            // sentence taken while reviewing Tuesday is logged to Tuesday.
+            IconButton(onClick = { onSpeakFood(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    imageVector = AppIcons.Mic,
+                    contentDescription = "Say what you ate",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             IconButton(onClick = { onScanBarcode(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = AppIcons.Barcode,
@@ -203,6 +213,7 @@ private fun DiaryBodyPreview() {
             state = rememberFoodScreenState(),
             onEvent = {},
             onScanBarcode = {},
+            onSpeakFood = {},
             onOpenStrength = { _, _ -> },
             snackbarHostState = SnackbarHostState(),
         )

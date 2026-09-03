@@ -6,10 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -41,6 +38,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.ideas.components.MealIdeaCard
+import ph.mart.healthapp.feature.food.ui.shared.components.ThinkingState
 
 /**
  * The one screen in FitPulse that answers "what should I eat?" rather than "what did I eat?".
@@ -116,7 +114,8 @@ private fun MealIdeasContent(
 
             Box(modifier = Modifier.weight(1f)) {
                 when (uiState) {
-                    MealIdeasUiState.Idle, MealIdeasUiState.Loading -> Thinking()
+                    MealIdeasUiState.Idle, MealIdeasUiState.Loading ->
+                        ThinkingState(line = "Thinking of something that fits…")
                     is MealIdeasUiState.Ideas -> IdeaList(
                         ideas = uiState.ideas,
                         note = "Tap one to adjust the portion and log it.",
@@ -180,25 +179,6 @@ private fun IdeaList(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         ideas.forEach { idea -> MealIdeaCard(idea = idea, onSelect = { onSelect(idea) }) }
-    }
-}
-
-/** The indeterminate bar and one honest line, `AnalyzingScreen`'s rule — nothing rotates, and
- * nothing promises progress the call can't report. */
-@Composable
-private fun Thinking() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-    ) {
-        MascotAvatar(state = MascotState.Thinking, size = 88.dp)
-        LinearProgressIndicator(modifier = Modifier.size(width = 200.dp, height = 4.dp))
-        Text(
-            text = "Thinking of something that fits…",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 

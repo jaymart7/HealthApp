@@ -10,6 +10,7 @@ import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
 import ph.mart.healthapp.feature.food.ui.exercise.StrengthWorkoutScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
+import ph.mart.healthapp.feature.food.ui.voice.VoiceLogScreen
 
 /** The FAB's "Log food" destination — the real 6(+1)-state photo-logging flow (Phase 5). */
 @Serializable
@@ -41,9 +42,16 @@ data class StrengthWorkoutRoute(
     val routineId: Long = 0,
 ) : NavKey
 
+/** Logging a meal by saying or typing a sentence. Carries the day like [BarcodeScanRoute], and
+ * for the same reason — a meal described while reviewing a past day belongs to that day; `0` is
+ * today, the convention [StrengthWorkoutRoute] uses from Home and the FAB. */
+@Serializable
+data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
+
 fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
     onScanBarcode: (Long) -> Unit,
+    onSpeakFood: (Long) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onExitFlow: () -> Unit,
@@ -52,6 +60,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
         FoodScreen(
             scrollState = scrollState,
             onScanBarcode = onScanBarcode,
+            onSpeakFood = onSpeakFood,
             onNewRecipe = onNewRecipe,
             onOpenStrength = onOpenStrength,
         )
@@ -67,4 +76,5 @@ fun EntryProviderScope<NavKey>.foodEntries(
     }
     entry<FoodCaptureRoute> { PhotoCaptureScreen(onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
+    entry<VoiceLogRoute> { key -> VoiceLogScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
 }

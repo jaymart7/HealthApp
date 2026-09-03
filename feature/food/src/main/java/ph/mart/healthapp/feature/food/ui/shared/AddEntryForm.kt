@@ -4,6 +4,7 @@ import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
+import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 
@@ -75,7 +76,27 @@ fun FoodEntry.toAddEntryForm(): AddEntryForm = AddEntryForm(
 const val SERVING_UNIT = "serving"
 
 /**
- * Twin of [RecognizedFood.toAddEntryForm][ph.mart.healthapp.feature.food.ui.photo.toAddEntryForm].
+ * What the camera saw, or what the user said they ate — both arrive as a [RecognizedFood].
+ *
+ * Here rather than in `photo/` because the voice flow seeds one form per parsed item through it,
+ * and a helper two flows reach for does not stay in whichever one declared it first.
+ */
+fun RecognizedFood.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryForm(
+    mealType = mealType,
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
+)
+
+/**
+ * Twin of [RecognizedFood.toAddEntryForm].
  *
  * Here rather than in `barcode/` because the photo flow's manual-search fallback seeds the form
  * from a scanned product too.
