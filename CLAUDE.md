@@ -24,6 +24,11 @@ and surface, plus a "Deliberately absent" list of what was ruled out. Read it
 before proposing or building a feature, and add a line to it when one lands.
 It says *what*; this file says *why*.
 
+**`ROADMAP.md` is the index of what is planned** — one implementable spec per
+feature, each naming its module, its schema cost, its pre-argued decisions and
+what it deliberately excludes. A feature moves out of it into `FEATURES.md`
+when it lands, and its decisions move into this file. It says *what next*.
+
 ## Stack
 
 - **Package:** `ph.mart.healthapp`

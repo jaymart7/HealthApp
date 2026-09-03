@@ -4,7 +4,8 @@ The shipped-feature index. **Read this before proposing or building a feature** 
 listed here it exists, and if it's under "Deliberately absent" it was ruled out on purpose.
 
 This file says *what* exists, one line each. `CLAUDE.md` says *why* and is the binding
-architecture reference; nothing here restates it.
+architecture reference; nothing here restates it. `ROADMAP.md` says *what next* — full specs
+for planned features, and the list of what was weighed and deferred.
 
 ---
 
@@ -200,6 +201,7 @@ each one is argued in `CLAUDE.md`.
 
 ## Open backlog
 
+`ROADMAP.md` holds the planned features — eight specs, in order, each ready to implement.
 `CLAUDE.md` → **Backlog** holds the outstanding work (FDC key proxy, Google Health verification
 and the unpinned response fields, the final mascot illustration). Inline `ponytail:` comments
 mark known ceilings and their upgrade paths.
