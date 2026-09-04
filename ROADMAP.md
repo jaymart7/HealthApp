@@ -26,60 +26,15 @@ rather than adding more literals to extract.
 
 | # | Feature | Scope | Schema |
 |---|---------|-------|--------|
-| 1 | Weekly recap notification | four modules | DB 27, export 16 |
-| 2 | Custom food library | three modules | none (reuses `favorite_food`) |
-| 3 | Automatic local backup | a package move, then `:app` | — |
-| 4 | UI test pass + CI gate | infrastructure | — |
-| 5 | Localization scaffolding | every module | — |
-| 6 | Tablet / foldable adaptive layout | four modules | — |
+| 1 | Custom food library | three modules | none (reuses `favorite_food`) |
+| 2 | Automatic local backup | a package move, then `:app` | — |
+| 3 | UI test pass + CI gate | infrastructure | — |
+| 4 | Localization scaffolding | every module | — |
+| 5 | Tablet / foldable adaptive layout | four modules | — |
 
 ---
 
-## 1. Weekly recap notification
-
-**What.** A Sunday-evening nudge that opens the recap overlay on the week just finished.
-
-**Where.** `:app/reminder/Reminders.kt` + `ReminderWorker.kt`, `MainActivity.kt`,
-`ui/AppScaffold.kt`, `feature/progress/ui/ProgressNavigation.kt` + `progress/ProgressScreen.kt`,
-`feature/profile` (the switch row), `:core:data/profile/` (one column + migration) and the export
-DTOs.
-
-**Schema / export.** `AppDatabase` 26 → 27 for `Profile.recapReminderOn`;
-`EXPORT_SCHEMA_VERSION` 15 → 16 — every other reminder switch is exported, so this one is too.
-
-### Decisions
-
-- **`Reminder.WeeklyRecap` is appended to the enum, never slotted in.** `ordinal` is the
-  notification id — the rule `Supplements` and `Workout` each recorded when they landed. Sunday
-  19:00, `periodDays = 7`, `dayOfWeek = Calendar.SUNDAY`: late enough that the week is over,
-  early enough to still be read.
-- **It gets its own Profile switch, defaulting off**, matching every reminder added after the
-  first two (`photoReminderOn`, `waterRemindersOn`, `supplementRemindersOn`, `workoutRemindersOn`
-  and `fastingRemindersOn` are all `false`). `enabledIn()` gains a branch.
-- **It stays quiet on an empty week**, the guard every other reminder carries in its own form.
-  The worker cannot fold `recap()` — that is twelve repositories — so the guard is the streak's
-  own four-domain `observeLoggedDays()`, intersected with the last seven days: a week with
-  nothing logged has no recap to open, and the card itself is hidden in exactly that case.
-- **Tapping it opens the overlay, not merely the tab.** A recap the user still has to find is the
-  problem the notification exists to fix. `EXTRA_TAB` gains `EXTRA_OVERLAY`, carried exactly as
-  `tabRequest` is — nullable state in `MainActivity`, consumed and cleared in the screen that
-  acts on it — which is what lets a second Sunday re-open it after the user closed the first.
-  `progressEntries(openRecap =, onOpenRecapHandled =)` is the shape `homeEntries(onOpenCoach = …)`
-  already has, and `:app` is its only caller.
-- **The recap stays an overlay.** Nothing here makes it a route; a route would earn its own
-  `ViewModelStoreOwner` and a second copy of `ProgressViewModel`'s twelve repositories to render a
-  page that writes nothing.
-
-**Deliberately excluded.** The week's numbers in the notification body — the worker would need
-`ProgressViewModel`'s whole dependency set to write one sentence. No monthly or yearly variant:
-the overlay's period toggle is one tap away once it is open.
-
-**Check.** Add the Sunday case to the existing `nextRunMillis` test, and one JVM test of the
-quiet-week predicate as a pure function over a day set.
-
----
-
-## 2. Custom food library
+## 1. Custom food library
 
 **What.** Author a food once — name, portion, macros, micronutrients — without having logged it
 first; edit it later; find it in food search. Rename and delete from Profile.
@@ -129,7 +84,7 @@ to one result, the custom one winning.
 
 ---
 
-## 3. Automatic local backup
+## 2. Automatic local backup
 
 **What.** A weekly job writing the existing export JSON to app storage, keeping the last three,
 plus making Android's own backup coverage explicit rather than accidental.
@@ -187,7 +142,7 @@ for the rotation keeping exactly the newest three.
 
 ---
 
-## 4. UI test pass + CI gate
+## 3. UI test pass + CI gate
 
 **What.** Instrumented Compose tests for the flows that would otherwise break silently, and a
 GitHub Actions workflow running build + unit tests on push.
@@ -224,7 +179,7 @@ is a separate decision and not on this roadmap.
 
 ---
 
-## 5. Localization scaffolding
+## 4. Localization scaffolding
 
 **What.** Move every user-facing string out of Kotlin and into per-module `strings.xml`. No
 translation is added; this is the work that makes one possible.
@@ -268,7 +223,7 @@ is also what stops the next feature adding literals back.
 
 ---
 
-## 6. Tablet / foldable adaptive layout
+## 5. Tablet / foldable adaptive layout
 
 **What.** The app assumes a phone. Make the four tabs and the routes above them work on a large
 window, a folded/unfolded foldable, and in split screen.

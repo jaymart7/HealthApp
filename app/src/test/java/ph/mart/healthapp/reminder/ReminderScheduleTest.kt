@@ -3,6 +3,7 @@ package ph.mart.healthapp.reminder
 import java.util.Calendar
 import java.util.TimeZone
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -61,6 +62,40 @@ class ReminderScheduleTest {
     fun `weekly early on the Monday itself runs that same morning`() {
         val now = at(2026, Calendar.AUGUST, 24, 7)
         assertEquals("2026-08-24 08:00", describe(nextRunMillis(hour = 8, dayOfWeek = Calendar.MONDAY, nowMillis = now, zone = ZONE)))
+    }
+
+    @Test
+    fun `weekly from a Tuesday waits for the coming Sunday`() {
+        val now = at(2026, Calendar.AUGUST, 25, 9)
+        assertEquals("2026-08-30 19:00", describe(nextRunMillis(hour = 19, dayOfWeek = Calendar.SUNDAY, nowMillis = now, zone = ZONE)))
+    }
+
+    @Test
+    fun `weekly early on the Sunday itself runs that same evening`() {
+        val now = at(2026, Calendar.AUGUST, 30, 9)
+        assertEquals("2026-08-30 19:00", describe(nextRunMillis(hour = 19, dayOfWeek = Calendar.SUNDAY, nowMillis = now, zone = ZONE)))
+    }
+
+    // The recap's quiet-week guard: the same predicate `recap()` returns null on, so the
+    // notification can never open an overlay with nothing in it.
+
+    @Test
+    fun `one logged day anywhere in the week is enough`() {
+        assertTrue(hasRecapToShow(setOf(20_000L), todayEpochDay = 20_006))
+        assertTrue(hasRecapToShow(setOf(20_006L), todayEpochDay = 20_006))
+        assertTrue(hasRecapToShow(setOf(20_003L), todayEpochDay = 20_006))
+    }
+
+    @Test
+    fun `an empty week stays quiet`() {
+        assertFalse(hasRecapToShow(emptySet(), todayEpochDay = 20_006))
+    }
+
+    /** The window is seven days ending today — a day on either side of it does not count. */
+    @Test
+    fun `a day outside the seven does not count`() {
+        assertFalse(hasRecapToShow(setOf(19_999L), todayEpochDay = 20_006))
+        assertFalse(hasRecapToShow(setOf(20_007L), todayEpochDay = 20_006))
     }
 
     // The fasting goal is the one one-shot: its target comes from when the user stopped eating,

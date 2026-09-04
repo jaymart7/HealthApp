@@ -44,6 +44,10 @@ class ProfileExportTest {
         waterGoalGlasses = 10,
         darkThemeOn = true,
         stepGoal = 12_000,
+        // Both landed in v16 — set here so the round trip actually covers them rather than
+        // passing on two defaults that happen to agree.
+        workoutRemindersOn = true,
+        recapReminderOn = true,
     )
 
     private val foodEntries = listOf(
@@ -279,6 +283,22 @@ class ProfileExportTest {
         assertEquals(exercises.size, payload.exercises.size)
         assertEquals(0, payload.exercises.first().steps)
         assertEquals(324, payload.exercises.first().burnedKcal)
+    }
+
+    /** A v15 file — written before the weekly recap switch existed, and before the training-day
+     * switch was noticed missing from the export at all. Both default to off, which is what a
+     * restore onto a fresh install should do rather than failing to parse. */
+    @Test
+    fun `a v15 file without the recap and workout switches still imports`() {
+        val v15 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure)
+            .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 15")
+            .replace(Regex(",\\s*\"workoutRemindersOn\": (true|false)"), "")
+            .replace(Regex(",\\s*\"recapReminderOn\": (true|false)"), "")
+        val payload = parseExport(v15).getOrThrow()
+
+        assertFalse(payload.profile!!.workoutRemindersOn)
+        assertFalse(payload.profile!!.recapReminderOn)
+        assertEquals(12_000, payload.profile!!.stepGoal)
     }
 
     @Test

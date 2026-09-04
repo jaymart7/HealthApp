@@ -60,10 +60,12 @@ internal data class FitPulseExport(
  * and [ExportProfile.supplementRemindersOn]; 9 added [FitPulseExport.bloodPressure]; 10 added
  * [ExportProfile.mascotName]; 11 added [ExportProfile.stepGoal]; 12 added
  * [ExportProfile.mascotPaletteName]; 13 added [ExportExercise.steps]; 14 added
- * [ExportExercise.sets]; 15 added [ExportProfile.homeLayout].
+ * [ExportExercise.sets]; 15 added [ExportProfile.homeLayout]; 16 added
+ * [ExportProfile.recapReminderOn] — and [ExportProfile.workoutRemindersOn], which landed on
+ * `Profile` after v15 and was simply missed here, so a restored backup silently lost it.
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 15
+internal const val EXPORT_SCHEMA_VERSION = 16
 
 @Serializable
 internal data class ExportProfile(
@@ -90,6 +92,8 @@ internal data class ExportProfile(
     val fastingRemindersOn: Boolean = false,
     val darkThemeOn: Boolean? = null,
     val supplementRemindersOn: Boolean = false,
+    val workoutRemindersOn: Boolean = false,
+    val recapReminderOn: Boolean = false,
     val mascotName: String? = null,
     val mascotPaletteName: String? = null,
     val stepGoal: Int = DEFAULT_STEP_GOAL,
@@ -322,6 +326,8 @@ private fun Profile.toExport() = ExportProfile(
     fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
     supplementRemindersOn = supplementRemindersOn,
+    workoutRemindersOn = workoutRemindersOn,
+    recapReminderOn = recapReminderOn,
     mascotName = mascotName,
     mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
@@ -352,6 +358,8 @@ private fun ExportProfile.toProfile() = Profile(
     fastingRemindersOn = fastingRemindersOn,
     darkThemeOn = darkThemeOn,
     supplementRemindersOn = supplementRemindersOn,
+    workoutRemindersOn = workoutRemindersOn,
+    recapReminderOn = recapReminderOn,
     mascotName = mascotName,
     mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,

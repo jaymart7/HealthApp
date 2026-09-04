@@ -14,6 +14,8 @@ import ph.mart.healthapp.core.data.exercise.withSets
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.water.WaterRepository
 
@@ -35,6 +37,7 @@ class ReminderWorker(
     private val supplementRepository: SupplementRepository by inject()
     private val routineRepository: RoutineRepository by inject()
     private val exerciseRepository: ExerciseRepository by inject()
+    private val progressRepository: ProgressRepository by inject()
 
     override suspend fun doWork(): Result {
         val reminder = inputData.getString(KEY_REMINDER)
@@ -76,6 +79,20 @@ class ReminderWorker(
             }
         }
 
+        // And for the weekly recap: quiet on a week with nothing logged in it. The fold is the
+        // streak's own four domains, the same combine `ProgressViewModel` and
+        // `observeInsightRequest` already make — so the notification and the card it opens can
+        // never disagree about whether there is a week to report.
+        if (reminder.checksRecap) {
+            val days = loggedDays(
+                foodRepository.observeDailyNutrition().first(),
+                waterRepository.observeLoggedDays().first(),
+                progressRepository.observeWeightEntries().first(),
+                exerciseRepository.observeLoggedDays().first(),
+            )
+            if (!hasRecapToShow(days, todayEpochDay())) return Result.success()
+        }
+
         notify(
             context,
             reminder.ordinal,
@@ -83,6 +100,7 @@ class ReminderWorker(
             reminder.body,
             reminder.tab,
             waterAction = reminder.checksWater,
+            action = reminder.action,
         )
         return Result.success()
     }

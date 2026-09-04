@@ -7,8 +7,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import java.util.Calendar
 import java.util.TimeZone
+import ph.mart.healthapp.EXTRA_ACTION
 import ph.mart.healthapp.MainActivity
 import ph.mart.healthapp.R
+import ph.mart.healthapp.ShortcutAction
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.goalReachedMillis
 import ph.mart.healthapp.core.data.food.MealType
@@ -31,8 +33,9 @@ const val KEY_REMINDER = "reminder"
  * meals 3x daily, weigh-in Monday 8:00, photos every 2 weeks.
  *
  * [mealType] is set only on the three meal reminders, [checksWater] only on the two water ones,
- * [checksSupplements] only on the supplement one and [checksPlan] only on the training one; all
- * four are what let the worker stay quiet about something already logged today.
+ * [checksSupplements] only on the supplement one, [checksPlan] only on the training one and
+ * [checksRecap] only on the weekly recap; all five are what let the worker stay quiet about
+ * something already logged today — or, for the recap, about a week with nothing in it.
  */
 enum class Reminder(
     val periodDays: Long,
@@ -47,6 +50,15 @@ enum class Reminder(
     val checksSupplements: Boolean = false,
     /** Silent on a day the training plan doesn't ask for, and on a day already lifted. */
     val checksPlan: Boolean = false,
+    /** Silent on a week with nothing logged in it — see [hasRecapToShow]. */
+    val checksRecap: Boolean = false,
+    /**
+     * What the tap should *do* once it lands on [tab], beyond arriving there. Null for every
+     * reminder whose tab is the whole answer; [ShortcutAction] for the one that isn't, because a
+     * route request delivered by an intent that must re-point an already-running app is exactly
+     * what that enum is for — the argument `HealthSync` already made.
+     */
+    val action: ShortcutAction? = null,
 ) {
     Breakfast(1, 8, null, "Breakfast logged?", "Add it while you remember the portions.", TopLevelDestination.Food, MealType.Breakfast),
     Lunch(1, 13, null, "Lunch logged?", "A quick entry keeps today's macros honest.", TopLevelDestination.Food, MealType.Lunch),
@@ -61,6 +73,17 @@ enum class Reminder(
     // Appended for [Supplements]' reason — [ordinal] is the notification id. Late afternoon: early
     // enough to still train today, late enough that a morning session has already been logged.
     Workout(1, 17, null, "Training day", "Today's routine is on the plan.", TopLevelDestination.Home, null, checksPlan = true),
+    // Appended for [Supplements]' reason once more — [ordinal] is the notification id. Sunday
+    // 19:00: late enough that the week is over, early enough to still be read.
+    WeeklyRecap(
+        7, 19, Calendar.SUNDAY,
+        "Your week in review",
+        "Seven days done — see how they went.",
+        TopLevelDestination.Progress,
+        null,
+        checksRecap = true,
+        action = ShortcutAction.OpenRecap,
+    ),
     ;
 
     val uniqueName: String get() = "reminder-$name"
@@ -75,6 +98,7 @@ fun Reminder.enabledIn(profile: Profile): Boolean = when (this) {
     Reminder.WaterMidday, Reminder.WaterAfternoon -> profile.waterRemindersOn
     Reminder.Supplements -> profile.supplementRemindersOn
     Reminder.Workout -> profile.workoutRemindersOn
+    Reminder.WeeklyRecap -> profile.recapReminderOn
 }
 
 /**
@@ -95,12 +119,31 @@ internal fun fastingGoalDelayMillis(targetMillis: Long?, nowMillis: Long): Long?
     targetMillis?.takeIf { it > nowMillis }?.minus(nowMillis)
 
 /**
+ * True when the last seven days hold at least one logged day — the four-domain definition, so
+ * [ph.mart.healthapp.core.data.streak.loggedDays] is what the caller folds.
+ *
+ * This is deliberately the *same* predicate `recap()` returns null on, which is what makes the
+ * notification unable to open an empty overlay: a week with nothing in it has no recap to show, and
+ * the card on the Progress tab is hidden in exactly that case. The 6 is `RecapPeriod.Week.days - 1`
+ * spelled out — that enum is a `:feature:progress` UI type, and `:app/reminder` has no business
+ * importing one. If the two ever drift, `RecapScreen` already degrades to its empty state.
+ *
+ * Pure, like [fastingGoalTargetMillis], so the unit test can drive it over a plain day set.
+ */
+internal fun hasRecapToShow(loggedDays: Set<Long>, todayEpochDay: Long): Boolean =
+    (todayEpochDay - 6..todayEpochDay).any { it in loggedDays }
+
+/**
  * Posts one notification, tapping through to [tab]. Shared by [ReminderWorker] and
  * [FastingGoalWorker] so the two don't hold two copies of the same builder — and so a change to
  * how FitPulse notifies reaches both.
  *
  * [id] must be stable per notification kind: it is what lets a repeat replace its predecessor
  * rather than stack another row in the shade.
+ *
+ * [action] rides [EXTRA_ACTION] beside the tab, for the reminder whose tap has to *do* something
+ * once it lands rather than merely arrive — `MainActivity` resolves it exactly as it resolves a
+ * launcher shortcut, so nothing new parses it.
  *
  * [waterAction] adds the one action button in the app. Only water gets one: [addGlass] is a single
  * unambiguous write, already shared with the widget and the watch so all three cap at the same
@@ -114,10 +157,12 @@ internal fun notify(
     body: String,
     tab: TopLevelDestination,
     waterAction: Boolean = false,
+    action: ShortcutAction? = null,
 ) {
     val intent = Intent(context, MainActivity::class.java)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         .putExtra(EXTRA_TAB, tab.name)
+        .apply { action?.let { putExtra(EXTRA_ACTION, it.name) } }
     val pendingIntent = PendingIntent.getActivity(
         context,
         id,

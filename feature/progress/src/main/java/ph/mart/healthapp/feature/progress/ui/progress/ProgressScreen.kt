@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -35,10 +36,23 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOvervie
 import ph.mart.healthapp.feature.progress.ui.progress.components.RecapScreen
 import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 
+/** [openRecap] is the weekly recap notification asking for its overlay — see `progressEntries`.
+ * Consumed once and reported back, so a second notification can re-open a recap the user closed. */
 @Composable
-fun ProgressScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProgressViewModel = koinViewModel()) {
+fun ProgressScreen(
+    scrollState: ScrollState = rememberScrollState(),
+    openRecap: Boolean = false,
+    onOpenRecapHandled: () -> Unit = {},
+    viewModel: ProgressViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
     val state = rememberProgressScreenState()
+    LaunchedEffect(openRecap) {
+        if (openRecap) {
+            state.openRecap()
+            onOpenRecapHandled()
+        }
+    }
     // The one thing on this tab that writes has its own container, so ProgressViewModel stays
     // read-only. It is read here rather than inside the card because the card and the overlay
     // must fold the same numbers, and the profile is the one input ProgressUiState doesn't carry.

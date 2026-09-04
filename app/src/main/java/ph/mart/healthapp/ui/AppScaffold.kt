@@ -119,6 +119,12 @@ fun AppScaffold(
     }
     var activeSheet by rememberSaveable { mutableStateOf(ActiveSheet.None) }
 
+    // The recap notification's request, held here rather than consumed inside the effect below:
+    // the Progress tab may not be composed yet when the intent lands, so this has to survive until
+    // the screen that owns the overlay can act on it. Cleared on consumption like [tabRequest],
+    // which is what lets a second Sunday re-open a recap the user has since closed.
+    var openRecapRequest by rememberSaveable { mutableStateOf(false) }
+
     // A launcher shortcut is the FAB's sheet with the tap already made, so every branch here is a
     // line QuickActionSheet's own wiring already runs — day 0 included, for the reason the FAB
     // passes it. Cleared on consumption like [tabRequest], which is what lets the same shortcut
@@ -131,6 +137,10 @@ fun AppScaffold(
             // Not a shortcut: Health Connect's rationale tap, which has to land on the screen that
             // explains what FitPulse reads. That is the same route Profile's own row opens.
             ShortcutAction.HealthSync -> topLevelBackStack.add(HealthConnectionRoute)
+            // Also not a shortcut: the weekly recap notification. The tab switch is already free —
+            // the same intent carries EXTRA_TAB — so all this does is ask the screen to open its
+            // overlay once it is there.
+            ShortcutAction.OpenRecap -> openRecapRequest = true
             // A write, not a destination — MainActivity handles it.
             ShortcutAction.AddWater, null -> Unit
         }
@@ -230,7 +240,11 @@ fun AppScaffold(
                         },
                         onExitFlow = { topLevelBackStack.removeLast() },
                     )
-                    progressEntries(scrollState = progressScroll)
+                    progressEntries(
+                        scrollState = progressScroll,
+                        openRecap = openRecapRequest,
+                        onOpenRecapHandled = { openRecapRequest = false },
+                    )
                     profileEntries(
                         scrollState = profileScroll,
                         onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },

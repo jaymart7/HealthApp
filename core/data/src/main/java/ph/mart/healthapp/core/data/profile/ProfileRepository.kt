@@ -36,6 +36,10 @@ data class Profile(
     /** Off by default, like every reminder but meals and the weigh-in: it only makes sense once a
      * routine has weekdays, and a nudge nobody asked for is worse than one they go and find. */
     val workoutRemindersOn: Boolean = false,
+    /** Off by default, like every reminder but meals and the weigh-in. It is the one nudge that
+     * points at a *report* rather than at something to log, which is exactly why it has to be opted
+     * into: a weekly summary nobody asked for reads as marketing. */
+    val recapReminderOn: Boolean = false,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     /** The intermittent-fasting target, in hours. Snapshotted onto each fast at start — see
      * [ph.mart.healthapp.core.data.fasting.FastSession]. */

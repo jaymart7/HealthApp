@@ -646,6 +646,32 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   in the shade with an updated count would be a second surface reporting today's water, and the
   widget is that. Nothing pushes to the widget or the watch from the receiver — the Application's
   `todaySnapshotFlow` collector fires the moment Room emits.
+- **The weekly recap notification is the only one whose tap does more than pick a tab, and it rides
+  `ShortcutAction` to say so.** `Reminder.WeeklyRecap` is appended for `Supplements`' and
+  `Workout`'s reason — `ordinal` is the notification id — at Sunday 19:00, late enough that the
+  week is over and early enough to still be read. Its intent carries `EXTRA_TAB=Progress` *and*
+  `EXTRA_ACTION=OpenRecap`: the first is the mechanism that already existed, the second is a new
+  `ShortcutAction` entry rather than the `EXTRA_OVERLAY` extra plus a third nullable state in
+  `MainActivity` that would have been a second copy of one delivery mechanism — exactly the
+  argument `HealthSync` made when it rode that enum instead of growing its own. So `Reminder` gains
+  a nullable `action` and `notify()` a nullable param, and nothing new parses an intent.
+  `AppScaffold` holds the request as state (`openRecapRequest`) rather than consuming it in the
+  effect, because the Progress tab may not be composed when the intent lands; clearing it on
+  consumption is what lets a second Sunday re-open a recap the user has closed, `tabRequest`'s own
+  shape. **The recap stays an overlay** — nothing here makes it a route, which would earn a second
+  copy of `ProgressViewModel`'s twelve repositories to draw a page that writes nothing.
+- **The quiet-week guard is literally `recap()`'s own null test.** `hasRecapToShow()` asks whether
+  the last seven days hold one logged day, over the streak's four-domain `loggedDays()` — the same
+  fold `ProgressViewModel` and `observeInsightRequest` already make — so the notification cannot
+  open an overlay the card on that tab is hidden for. The worker cannot fold `recap()` itself
+  (twelve repositories), and it does not need to. The window's `6` is `RecapPeriod.Week.days - 1`
+  spelled out: that enum is a `:feature:progress` UI type and `:app/reminder` has no business
+  importing one, and if the two ever drift `RecapScreen` already degrades to its empty state. The
+  week's numbers stay *out* of the notification body for the same repository-count reason.
+- **The v16 export bump carries two switches, not one.** `recapReminderOn` is the new one;
+  `workoutRemindersOn` landed on `Profile` after v15 shipped and was simply missed, so a restored
+  backup silently lost a training-day switch the user had set. Both are defaulted, so a v15 file
+  still imports — the rule every addition follows.
 - **The home-screen widget lives in `:app`, for the same reason reminders do** — a widget is a
   system surface, not a screen. It reads the repository interfaces directly (no ViewModel; there
   is no Compose lifecycle to hold one) and gets them from Koin's global context via

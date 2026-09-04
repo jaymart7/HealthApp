@@ -44,8 +44,13 @@ const val EXTRA_ACTION = "ph.mart.healthapp.shortcut.ACTION"
  * It rides this enum anyway because what it needs is exactly what a shortcut needs: a route
  * request, delivered by an intent, that must re-point an app already running. A fourth nullable
  * state beside [tabRequest] and [shortcutRequest] would be a third copy of one mechanism.
+ *
+ * [OpenRecap] rides it for that same argument, one surface over: it is the weekly recap
+ * notification's tap, which carries [EXTRA_TAB] to reach the Progress tab and this to open the
+ * recap overlay once it is there. Its notification is the only one whose tab is not the whole
+ * answer — "a recap the user still has to find" is the thing it exists to fix.
  */
-enum class ShortcutAction { SpeakFood, LogFood, AddWater, LogWeight, HealthSync }
+enum class ShortcutAction { SpeakFood, LogFood, AddWater, LogWeight, HealthSync, OpenRecap }
 
 /** Pure over the extra's string so a JVM test can reach it, and an unknown name degrades to null —
  * the reading `mascotCharacterOf` already gives `Profile.mascotName`, and what lets a shortcut
@@ -61,7 +66,7 @@ class MainActivity : ComponentActivity() {
 
     /** What a launcher shortcut asked for, in [tabRequest]'s exact shape and for its exact reason:
      * a shortcut tapped on an already-running app must re-point it the way a second notification
-     * does. Only ever the three navigational actions — see [handle]. */
+     * does. Only ever the navigational actions — see [handle]. */
     private var shortcutRequest by mutableStateOf<ShortcutAction?>(null)
 
     // Reached through Koin's global context, the trick every surface with no ViewModel uses
@@ -131,7 +136,7 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Three of the four shortcuts are a destination and go to `AppScaffold`; water is a *write*,
+     * Everything but water is a destination and goes to `AppScaffold`; water is a *write*,
      * and runs the shared [addGlass] the widget's button and the watch's already run — count and
      * goal re-read there, so a launcher tap cannot add a glass against a stale count or past the
      * goal. Home follows it so the water card shows the new count.
