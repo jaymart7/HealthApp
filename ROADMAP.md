@@ -23,68 +23,18 @@ or a decision in its decision log; where a spec changes one, it says so explicit
 Cheap and self-contained first; the test/CI gate before the two large mechanical items.
 (The adaptive work was item 5 and has landed; localization was meant to precede it so the new
 layout code would be written against `stringResource` — it wasn't, so the rail, the two pane
-placeholders and the detail header carry literals for that pass to pick up.)
+placeholders and the detail header carry literals for that pass to pick up. The custom food
+library has landed too, and its own literals join that list.)
 
 | # | Feature | Scope | Schema |
 |---|---------|-------|--------|
-| 1 | Custom food library | three modules | none (reuses `favorite_food`) |
-| 2 | Automatic local backup | a package move, then `:app` | — |
-| 3 | UI test pass + CI gate | infrastructure | — |
-| 4 | Localization scaffolding | every module | — |
+| 1 | Automatic local backup | a package move, then `:app` | — |
+| 2 | UI test pass + CI gate | infrastructure | — |
+| 3 | Localization scaffolding | every module | — |
 
 ---
 
-## 1. Custom food library
-
-**What.** Author a food once — name, portion, macros, micronutrients — without having logged it
-first; edit it later; find it in food search. Rename and delete from Profile.
-
-**Where.** `:core:data/food/` (`FoodRepository`, `FoodRepositoryImpl`, `local/FavoriteFoodDao.kt`),
-`feature/food/ui/search/` and `ui/shared/`, `feature/profile/ui/library/`.
-
-**Schema / export.** **No new table and no migration.** `favorite_food` is already keyed by
-`name` and already carries the full nutrition snapshot including fiber, sugar and sodium, with
-`isFavorite` as its soft-delete flag. Custom foods stay **out of the export**, for the reason
-saved meals, recipes and routines are out — convenience data, not history. No export bump.
-
-### Decisions
-
-- **A custom food is a `favorite_food` row with no diary row behind it.** That table was already
-  designed to survive its origin — "carries its own macros so a re-star doesn't depend on the
-  original diary row still being there" — so authoring one directly needs no new concept, only a
-  write path and an edit path. Resist adding a `custom_food` table: it would be the same columns
-  keyed the same way, and two tables answering "what are this food's macros" is how the search
-  panel and the suggestion list come to disagree.
-- **`name` stays the identity**, case-insensitively, the key `mergeSuggestions` already dedupes
-  on. Authoring a food whose name matches an existing favorite **edits that row** rather than
-  creating a rival — the primary key already enforces it, and the UI should say so rather than
-  letting the write silently win.
-- **Custom foods are searchable; recents and favorites are not.** The diary's top field is a
-  local filter over logged entries, `searchCommonFoods()` is the food search, and this is
-  the first thing the user owns that belongs in the second. That search returns
-  `ScannedProduct`s, so a custom food maps to one on the way out — a text search and a barcode
-  scan already resolve to the same type, and a third would fork the confirmation screen.
-- **The user's own foods lead, and they are drawn with no AI accent.** `COMMON_FOODS` follows,
-  deduped against them by the same case-insensitive name key — a custom "Chicken breast" replaces
-  the built-in one rather than sitting beside it. Neither half touches the network.
-- **Profile → Saved meals & recipes gains the third list; it cannot log.** The division the food
-  library already draws: logging needs a meal slot and a day, and Profile has neither. Delete
-  asks first — a custom food is user-authored, the saved-meal rule, not the diary's
-  swipe-and-undo. Rename is the one column `LibraryRow`'s existing `RenameSheet` already writes.
-- **Authoring reuses the add-entry form; it does not get a second one.** `AddEntryForm` already
-  holds every field including the micronutrient group and the portion repricing, and its
-  `isValid()` is the shared guard three log paths already run through.
-
-**Deliberately excluded.** Per-food targets or grading — fiber, sugar and sodium are reported,
-never graded. No barcode attached to a custom food (barcode memory is declined, below). No
-export, no sync, no sharing a food between installs.
-
-**Check.** One JVM test that a custom food and a `COMMON_FOODS` entry with the same name collapse
-to one result, the custom one winning.
-
----
-
-## 2. Automatic local backup
+## 1. Automatic local backup
 
 **What.** A weekly job writing the existing export JSON to app storage, keeping the last three,
 plus making Android's own backup coverage explicit rather than accidental.
@@ -142,7 +92,7 @@ for the rotation keeping exactly the newest three.
 
 ---
 
-## 3. UI test pass + CI gate
+## 2. UI test pass + CI gate
 
 **What.** Instrumented Compose tests for the flows that would otherwise break silently, and a
 GitHub Actions workflow running build + unit tests on push.
@@ -179,7 +129,7 @@ is a separate decision and not on this roadmap.
 
 ---
 
-## 4. Localization scaffolding
+## 3. Localization scaffolding
 
 **What.** Move every user-facing string out of Kotlin and into per-module `strings.xml`. No
 translation is added; this is the work that makes one possible.

@@ -73,11 +73,14 @@ Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
 - Swipe to delete with Undo snackbar.
 - Local text filter over the day's logged entries.
 - Recent-food suggestions with one-tap re-log.
-- Favorites.
+- Favorites — starring a food is also how you author one: it becomes yours.
+- Your own foods — save what's in the add-entry form as a food ("Save as my food") without
+  logging it first, and it leads every later food search ahead of the built-in list, replacing
+  the built-in row of the same name.
 - Saved meals — snapshot a diary section, re-log as separate rows.
 - Recipes — a saved meal with servings; logs as one priced row.
-- Food search — a built-in list of ~120 common foods, offline and instant; the empty
-  field lists all of them, eight at a time.
+- Food search — the user's own foods first, then a built-in list of ~120 common foods, offline
+  and instant; the empty field lists all of them, eight at a time.
 - Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at
   once, every parsed row editable and repriceable before anything is written. Speech is the
   system's own dialog; typing is the same path.
@@ -154,14 +157,15 @@ a summary row under the grids.
 ## Profile & settings
 
 Sections: Goals · Units · Water · Fasting · Exercise · Reminders · Appearance · Connections ·
-Home layout · Supplements · Saved meals & recipes · Workout routines · Data · About.
+Home layout · Supplements · Food library · Workout routines · Data · About.
 
 - Editable calorie and macro targets with "Reset to calculated" — which also undoes a target
   applied from the energy check-in; a manual calorie target reprices the split.
 - Metric/imperial toggles; water glass size and daily goal; fasting goal hours; step goal.
 - Light / dark / follow-device; mascot character and palette pickers.
 - Supplements: name, dose label, times per day; edit and delete.
-- Food library and routine library: rename and delete (neither can log or start anything).
+- Food library — your own foods, saved meals and recipes — and routine library: rename and
+  delete (neither can log or start anything).
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 15, import is all-or-nothing.
 
 ## Health sync — two providers, one entry point

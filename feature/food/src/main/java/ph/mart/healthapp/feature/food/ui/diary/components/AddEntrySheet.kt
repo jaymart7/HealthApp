@@ -29,6 +29,7 @@ import ph.mart.healthapp.feature.food.ui.recipe.components.RecipePanel
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
+import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.isValid
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
@@ -59,6 +60,8 @@ internal fun AddEntrySheet(
     onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
+    /** Keeps the form as a food the user owns, without logging it. */
+    onSaveMyFood: () -> Unit = {},
     /** Null when there is no day to suggest against — no profile yet, or nothing left in the
      * budget. Hidden rather than disabled: a control that can't answer shouldn't be there. */
     onGetIdeas: (() -> Unit)? = null,
@@ -144,6 +147,18 @@ internal fun AddEntrySheet(
                 onSugarChange = { onFormChange(form.copy(sugarG = it)) },
                 onSodiumChange = { onFormChange(form.copy(sodiumMg = it)) },
             )
+            // The authoring door, and the whole of it: the form above already holds every field a
+            // food has, so keeping one is one more button rather than a second screen. Hidden
+            // until there is something worth keeping — the rule the meal-ideas button follows —
+            // and absent while correcting a logged row, where the panels are gone for the same
+            // reason. Saving the same name twice edits it, which is how a food is corrected later.
+            if (!editing && form.isSaveableFood()) {
+                SecondaryButton(
+                    label = "Save as my food",
+                    onClick = onSaveMyFood,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                 SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(

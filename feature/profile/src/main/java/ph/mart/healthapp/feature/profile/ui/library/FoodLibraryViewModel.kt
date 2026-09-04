@@ -7,8 +7,8 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.food.FoodRepository
 
 /**
- * Reads both unlimited lists and writes the two things this screen can do to them. No side
- * effects: a rename and a delete are both writes the flows report back on their own.
+ * Reads all three unlimited lists and writes the two things this screen can do to any of them. No
+ * side effects: a rename and a delete are both writes the flows report back on their own.
  */
 class FoodLibraryViewModel(
     private val foodRepository: FoodRepository,
@@ -20,6 +20,8 @@ class FoodLibraryViewModel(
 
     fun handleEvent(event: FoodLibraryEvent) {
         when (event) {
+            is FoodLibraryEvent.OnDeleteMyFood -> onDeleteMyFood(event.name)
+            is FoodLibraryEvent.OnRenameMyFood -> onRenameMyFood(event.oldName, event.newName)
             is FoodLibraryEvent.OnDeleteSavedMeal -> onDeleteSavedMeal(event.id)
             is FoodLibraryEvent.OnDeleteRecipe -> onDeleteRecipe(event.id)
             is FoodLibraryEvent.OnRenameSavedMeal -> onRenameSavedMeal(event.id, event.name)
@@ -29,12 +31,21 @@ class FoodLibraryViewModel(
 
     private fun observeLibrary() = intent {
         combine(
+            foodRepository.observeMyFoods(),
             foodRepository.observeAllSavedMeals(),
             foodRepository.observeAllRecipes(),
-        ) { savedMeals, recipes -> savedMeals to recipes }
-            .collect { (savedMeals, recipes) ->
-                reduce { state.copy(savedMeals = savedMeals, recipes = recipes) }
+        ) { myFoods, savedMeals, recipes -> Triple(myFoods, savedMeals, recipes) }
+            .collect { (myFoods, savedMeals, recipes) ->
+                reduce { state.copy(myFoods = myFoods, savedMeals = savedMeals, recipes = recipes) }
             }
+    }
+
+    private fun onDeleteMyFood(name: String) = intent {
+        foodRepository.deleteMyFood(name)
+    }
+
+    private fun onRenameMyFood(oldName: String, newName: String) = intent {
+        foodRepository.renameMyFood(oldName, newName.trim())
     }
 
     private fun onDeleteSavedMeal(id: Long) = intent {

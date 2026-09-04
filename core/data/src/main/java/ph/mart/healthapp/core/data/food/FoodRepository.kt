@@ -115,7 +115,32 @@ interface FoodRepository {
      * foods, deduped by name. */
     fun observeSuggestions(): Flow<List<FoodSuggestion>>
 
+    /**
+     * Stars or un-stars a food — and, since a starred food *is* a food the user owns, this is also
+     * the whole write path behind the food library: authoring one from the add-entry sheet is the
+     * same upsert with no diary row behind it, and deleting one from Profile is the same
+     * soft delete. [FoodSuggestion.name] is `favorite_food`'s primary key, so saving a food whose
+     * name already exists edits that row rather than creating a rival. Don't add a twin for
+     * "custom foods": there is one table and one concept. [deleteMyFood] is the same soft delete
+     * by name alone, for the library screen, which holds no suggestion to pass.
+     */
     suspend fun setFavorite(suggestion: FoodSuggestion, favorite: Boolean)
+
+    /**
+     * Every food the user owns, by name — what the food search leads with, ahead of
+     * [COMMON_FOODS], and what the food library lists. Unlike [observeSuggestions] this is neither
+     * merged with recents nor capped: the panel's window is what keeps the add-entry sheet short,
+     * and a food the user authored has to stay findable however many they have.
+     */
+    fun observeMyFoods(): Flow<List<ScannedProduct>>
+
+    /** Un-stars a food by name — [setFavorite]'s soft delete, for the library screen. Anything
+     * already logged from it stays in the diary: a `favorite_food` row never was the log. */
+    suspend fun deleteMyFood(name: String)
+
+    /** Moves a food to a new name. Name is its identity, so this retires the old row rather than
+     * updating a column — see `FavoriteFoodDao.rename`. */
+    suspend fun renameMyFood(oldName: String, newName: String)
 
     /** The newest [MAX_SAVED_MEALS] saved meals, each with its items. */
     fun observeSavedMeals(): Flow<List<SavedMeal>>

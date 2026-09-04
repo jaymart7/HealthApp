@@ -70,7 +70,7 @@ private fun NavKey?.title(): String = when (this) {
     is StrengthWorkoutRoute -> if (this.editingId > 0) "Edit workout" else "Strength workout"
     is VoiceLogRoute -> "Say what you ate"
     HealthConnectionRoute -> "Google Health"
-    FoodLibraryRoute -> "Saved meals & recipes"
+    FoodLibraryRoute -> "Food library"
     RoutinesRoute -> "Workout routines"
     SupplementsRoute -> "Supplements"
     HomeLayoutRoute -> "Home layout"

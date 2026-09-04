@@ -197,3 +197,24 @@ private fun food(
     sugarG = sugar,
     sodiumMg = sodium,
 )
+
+/**
+ * The whole food search once the user owns foods of their own: **their list leads**, then
+ * [COMMON_FOODS], deduped against it by the same case-insensitive name key [mergeSuggestions]
+ * already treats as identity — a custom "Chicken breast, cooked" *replaces* the built-in row
+ * rather than sitting beside it, so the search can never offer two answers for one food.
+ *
+ * Both halves take the same substring filter, so a query narrows the user's foods exactly as it
+ * narrows the built-in list, and neither half touches the network.
+ */
+fun searchFoods(query: String, myFoods: List<ScannedProduct>): List<ScannedProduct> {
+    if (myFoods.isEmpty()) return searchCommonFoods(query)
+    val term = query.trim()
+    val mine = if (term.isEmpty()) myFoods else myFoods.filter { it.name.contains(term, ignoreCase = true) }
+    val claimed = mine.mapTo(mutableSetOf()) { it.nameKey() }
+    return mine + searchCommonFoods(query).filterNot { it.nameKey() in claimed }
+}
+
+/** Name is the identity of a food the user owns — it is `favorite_food`'s primary key — and it is
+ * matched the way [mergeSuggestions] matches one: trimmed and case-insensitively. */
+private fun ScannedProduct.nameKey(): String = name.trim().lowercase()

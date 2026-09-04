@@ -22,6 +22,7 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
+import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
@@ -31,11 +32,14 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.LibraryRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 
 /**
- * Every saved meal and recipe, one Nav3 level above Profile — the only screen that can reach past
- * the newest-[ph.mart.healthapp.core.data.food.MAX_SAVED_MEALS] window the add-entry sheet's panels
- * read. Without it a sixth saved meal is out of view *and* out of reach of its own delete button.
+ * Everything the user owns in the food domain — their own foods, their saved meals, their recipes —
+ * one Nav3 level above Profile. It is the only screen that can reach past the newest-N windows the
+ * add-entry sheet's panels read: without it a sixth saved meal, or a starred food that has slipped
+ * out of the suggestion panel, is out of view *and* out of reach of its own delete button.
  *
- * Rename and delete only. Logging needs a meal slot and a day, and Profile has neither.
+ * Rename and delete only. Logging needs a meal slot and a day, and Profile has neither — which is
+ * also why the foods list here can't be edited field by field: that is the add-entry sheet's form,
+ * and saving the same name again is what corrects one.
  */
 @Composable
 fun FoodLibraryScreen(
@@ -49,11 +53,13 @@ fun FoodLibraryScreen(
  * `rememberSaveable` holder for the same reason `FoodScreen` keeps its own: a dialog that survives
  * process death would reopen asking about a row the user has stopped looking at. */
 private sealed interface Target {
-    val id: Long
     val name: String
 
-    data class Meal(override val id: Long, override val name: String) : Target
-    data class Dish(override val id: Long, override val name: String) : Target
+    /** A food has no id — its name *is* its key in `favorite_food`, which is why renaming one is
+     * a move rather than an update. */
+    data class Food(override val name: String) : Target
+    data class Meal(val id: Long, override val name: String) : Target
+    data class Dish(val id: Long, override val name: String) : Target
 }
 
 @Composable
@@ -69,7 +75,7 @@ private fun FoodLibraryContent(
             FullScreenState(
                 icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                 heading = "Nothing saved yet",
-                body = "Save a meal from the diary, or build a recipe, and it shows up here.",
+                body = "Save a food or a meal from the diary, or build a recipe, and it shows up here.",
             )
             return@Surface
         }
@@ -80,6 +86,21 @@ private fun FoodLibraryContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
         ) {
+            if (uiState.myFoods.isNotEmpty()) {
+                // First: it is the list the user authored deliberately, and the one the food
+                // search leads with.
+                LibrarySection(label = "My foods") {
+                    uiState.myFoods.forEach { food ->
+                        LibraryRow(
+                            name = food.name,
+                            summary = food.summary(),
+                            contents = food.macroLine(),
+                            onRename = { renaming = Target.Food(food.name) },
+                            onDelete = { pendingDelete = Target.Food(food.name) },
+                        )
+                    }
+                }
+            }
             if (uiState.savedMeals.isNotEmpty()) {
                 LibrarySection(label = "Saved meals") {
                     uiState.savedMeals.forEach { meal ->
@@ -112,7 +133,11 @@ private fun FoodLibraryContent(
     // A saved meal is something the user built, and its delete sits beside the rename — so it asks
     // first, rather than deleting with an undo the way a swiped diary row does.
     pendingDelete?.let { target ->
-        val noun = if (target is Target.Meal) "saved meal" else "recipe"
+        val noun = when (target) {
+            is Target.Food -> "food"
+            is Target.Meal -> "saved meal"
+            is Target.Dish -> "recipe"
+        }
         DiscardConfirmDialog(
             title = "Delete ${target.name}?",
             body = "This $noun is removed for good. Anything already logged from it stays in your diary.",
@@ -121,6 +146,7 @@ private fun FoodLibraryContent(
             onConfirm = {
                 onEvent(
                     when (target) {
+                        is Target.Food -> FoodLibraryEvent.OnDeleteMyFood(target.name)
                         is Target.Meal -> FoodLibraryEvent.OnDeleteSavedMeal(target.id)
                         is Target.Dish -> FoodLibraryEvent.OnDeleteRecipe(target.id)
                     },
@@ -138,6 +164,7 @@ private fun FoodLibraryContent(
             onRename = { name ->
                 onEvent(
                     when (target) {
+                        is Target.Food -> FoodLibraryEvent.OnRenameMyFood(target.name, name)
                         is Target.Meal -> FoodLibraryEvent.OnRenameSavedMeal(target.id, name)
                         is Target.Dish -> FoodLibraryEvent.OnRenameRecipe(target.id, name)
                     },
@@ -166,6 +193,10 @@ private fun FoodLibraryPreview() {
     AppTheme {
         FoodLibraryContent(
             uiState = FoodLibraryUiState(
+                myFoods = listOf(
+                    ScannedProduct("Mum's adobo", 1.0, "serving", 420, 28, 12, 28),
+                    ScannedProduct("Whey, chocolate", 30.0, "g", 120, 24, 3, 1),
+                ),
                 savedMeals = listOf(
                     SavedMeal(
                         id = 1,

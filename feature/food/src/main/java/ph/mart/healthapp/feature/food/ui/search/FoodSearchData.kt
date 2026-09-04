@@ -4,12 +4,18 @@ import ph.mart.healthapp.core.data.food.COMMON_FOODS
 import ph.mart.healthapp.core.data.food.ScannedProduct
 
 /**
- * [results] is the whole match, [page] the slice the panel is showing. No status type: the search
- * is a filter over a list already in memory, so there is no searching, no offline and no failure
- * left to model — the one answer the panel still has to draw is "nothing matched".
+ * [results] is the whole match — the user's own foods ahead of the built-in list, see
+ * [searchFoods][ph.mart.healthapp.core.data.food.searchFoods] — and [page] the slice the panel is
+ * showing. No status type: the search is a filter over two lists already in memory, so there is no
+ * searching, no offline and no failure left to model — the one answer the panel still has to draw
+ * is "nothing matched".
+ *
+ * [myFoods] is held rather than only folded because the fold has two triggers: a keystroke, and
+ * Room emitting after a food is saved or renamed somewhere else in the app.
  */
 data class FoodSearchUiState(
     val query: String = "",
+    val myFoods: List<ScannedProduct> = emptyList(),
     val results: List<ScannedProduct> = COMMON_FOODS,
     val page: Int = 0,
 )

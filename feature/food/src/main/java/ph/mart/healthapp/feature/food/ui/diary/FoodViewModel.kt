@@ -23,6 +23,7 @@ import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
+import ph.mart.healthapp.feature.food.ui.shared.toSuggestion
 
 /** No side effects: the add-entry sheet dismisses itself optimistically in [FoodScreen], same
  * pattern [ph.mart.healthapp.ui.QuickActionSheet] already uses — nothing here needs to round-trip
@@ -53,6 +54,7 @@ class FoodViewModel(
             is FoodEvent.OnDeleteEntry -> onDeleteEntry(event.id)
             is FoodEvent.OnRestoreEntry -> onRestoreEntry(event.entry)
             is FoodEvent.OnToggleFavorite -> onToggleFavorite(event)
+            is FoodEvent.OnSaveMyFood -> onSaveMyFood(event.form)
             is FoodEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
             is FoodEvent.OnDeleteExercise -> onDeleteExercise(event.id)
             is FoodEvent.OnRestoreExercise -> onRestoreExercise(event.entry)
@@ -157,6 +159,11 @@ class FoodViewModel(
 
     private fun onToggleFavorite(event: FoodEvent.OnToggleFavorite) = intent {
         foodRepository.setFavorite(event.suggestion, event.favorite)
+    }
+
+    /** The star's write, from the form instead of a suggestion row. */
+    private fun onSaveMyFood(form: AddEntryForm) = intent {
+        foodRepository.setFavorite(form.toSuggestion(), favorite = true)
     }
 
     private fun onSaveMeal(name: String, items: List<SavedMealItem>) = intent {

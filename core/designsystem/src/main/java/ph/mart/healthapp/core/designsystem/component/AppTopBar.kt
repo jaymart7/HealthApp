@@ -55,7 +55,7 @@ fun AppTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) 
 private fun AppTopBarPreview() {
     AppTheme {
         Surface {
-            AppTopBar(title = "Saved meals & recipes", onBack = {})
+            AppTopBar(title = "Food library", onBack = {})
         }
     }
 }

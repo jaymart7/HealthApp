@@ -31,8 +31,8 @@ internal fun ProfileLibrarySection(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppCard(onClick = onOpenLibrary) {
                 SettingsRow(
-                    label = "Saved meals & recipes",
-                    sublabel = "Rename or delete anything you've saved",
+                    label = "Food library",
+                    sublabel = "Your foods, saved meals and recipes",
                 )
             }
             AppCard(onClick = onOpenRoutines) {

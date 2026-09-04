@@ -522,6 +522,50 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   fresh entries stamped with the diary's *selected* day. The panel shows the newest
   `MAX_SAVED_MEALS` only, and saved meals stay out of the data export for the same reason
   favorites do — convenience data, not history.
+- **A food the user owns and a starred favorite are one row, and that collapse *is* the food
+  library.** `favorite_food` was already designed to survive its origin — it carries its own macros
+  "so a re-star doesn't depend on the original diary row still being there" — so authoring a food
+  from the add-entry form needed a write path and nothing else: `setFavorite()` is that path, and
+  starring a diary row is authoring-by-example. `ROADMAP.md`'s spec asked for custom foods to be
+  searchable while starred favorites stayed out, which needs a column to tell them apart; the
+  builder is still `fallbackToDestructiveMigration(dropAllTables = true)`, so that column costs
+  every install's database, and a second concept whose only difference is which surface it appears
+  on is not worth one. The collapse also closes an existing hole: a starred food past the
+  newest-`MAX_SUGGESTIONS` window used to be out of view *and* out of reach of its own star.
+  Custom foods stay **out of the export**, the rule saved meals, recipes and routines follow.
+- **`searchFoods()` is the whole search, and the user's foods replace rather than join.** The pure
+  fold sits in `:core:data/food/CommonFoods.kt` beside `searchCommonFoods()`, which it calls —
+  `localMealIdeas()`'s shape, no table and no query. A custom "Chicken breast, cooked" *replaces*
+  the built-in row of that name, deduped on the trimmed lowercase name `mergeSuggestions()`
+  already treats as identity, because a search offering two answers for one food is the thing the
+  user authored theirs to stop. It hands back `ScannedProduct`s: a barcode hit, a staple and one of
+  the user's own foods all seed the form through the one `ScannedProduct.toAddEntryForm()`, and a
+  third type would fork the confirmation screen. `FoodSearchViewModel` consequently takes one
+  dependency where its KDoc used to boast of none — the built-in half is still a list in the APK,
+  so there is still nothing to debounce and no network to check.
+- **Renaming a food is a move, not an `UPDATE`.** `name` is `favorite_food`'s primary key, so
+  `FavoriteFoodDao.rename` writes the row again under the new name and retires the old one in one
+  `@Transaction` — `FoodEntryDao.replace`'s rule, so the library never emits a frame with the row
+  in neither place. The old name stays as an `isFavorite = 0` tombstone keeping its macros, which
+  is what the table has always done; renaming onto a name that already exists overwrites it,
+  because name *is* the identity here. That identity is also why saving the same name twice from
+  the sheet is an **edit** — which is the whole of "edit a food later", and why the library screen
+  renames and deletes but never opens a form of its own.
+- **"Save as my food" is one button on the sheet that already holds every field.** `AddEntryForm`
+  carries the portion, the macros, the micronutrients and `withPortionAmount()` repricing, so
+  authoring is a button rather than a second screen. Hidden until there is a name *and* calories
+  (the meal-ideas button's rule, and a nameless food is a quick add), absent while correcting a
+  logged row for the reason the four panels are, and it does **not** close the sheet or clear the
+  form: keeping a food and logging it are two intentions and the user may want both. No
+  confirmation toast — the saved-meal rule — because the food appears starred in the suggestion
+  panel directly above it the moment Room emits.
+- **Profile → Food library holds three lists now and still cannot log.** The foods list is drawn
+  first (it is the one authored deliberately, and the one search leads with), on the same shared
+  `LibraryRow` and `RenameSheet` the saved meals, recipes and routines use, with the same
+  ask-first delete a user-authored thing gets. `FoodLibraryViewModel` reaches the foods by name —
+  `deleteMyFood(name)` and `renameMyFood(old, new)` rather than a `FoodSuggestion` it would have
+  to fabricate, since `:feature:profile` cannot import `:feature:food`'s converters. The screen's
+  title moved from "Saved meals & recipes" to **"Food library"** in its three literal sites.
 - **A recipe is a saved meal with a servings count, and logs as one row.** Both live in
   `saved_meal`/`saved_meal_item`; `servings IS NULL` *is* the discriminator, and two DAO queries
   keep the lists apart so neither can evict the other from its own newest-5 window. The difference

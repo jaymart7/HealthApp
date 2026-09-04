@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.food.ui.shared
 
 import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
 import ph.mart.healthapp.core.data.food.RecognizedFood
@@ -70,6 +71,32 @@ fun FoodEntry.toAddEntryForm(): AddEntryForm = AddEntryForm(
     sugarG = sugarG,
     sodiumMg = sodiumMg,
 )
+
+/**
+ * The form as a food the user owns, for "Save as my food".
+ *
+ * A food the user authored and a food they starred are the same `favorite_food` row — see
+ * `FoodRepository.setFavorite` — so authoring needs no second type and no second write path, only
+ * this map. The name is the row's identity, which is what makes saving the same name twice an edit.
+ */
+fun AddEntryForm.toSuggestion(): FoodSuggestion = FoodSuggestion(
+    name = name.trim(),
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
+    isFavorite = true,
+)
+
+/** A food with no name is a quick add and a food with no calories is nothing — neither is
+ * something to keep. The sheet hides the button rather than disabling it, so this is what it
+ * hides on. */
+fun AddEntryForm.isSaveableFood(): Boolean = name.isNotBlank() && calories > 0
 
 /** Added to the add-entry sheet's portion-unit pills, so a seeded recipe shows its unit selected
  * instead of no pill at all — and so a leftovers-by-hand entry can say "serving" too. */

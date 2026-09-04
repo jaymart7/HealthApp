@@ -78,6 +78,12 @@ internal fun DiarySheets(
             onToggleFavorite = { suggestion, favorite ->
                 onEvent(FoodEvent.OnToggleFavorite(suggestion, favorite))
             },
+            // The sheet stays open and the form is left alone: keeping a food and logging it are
+            // two different intentions, and the user may well want both. No toast — the saved
+            // meal's rule — because the food appears starred in the suggestion panel just above
+            // the moment Room emits, which is the same "the badge lighting up is the reward"
+            // answer the streak gives.
+            onSaveMyFood = { onEvent(FoodEvent.OnSaveMyFood(state.addForm)) },
             onGetIdeas = if (state.editingEntryId == null && uiState.mealIdeaRequest(activeMealSheet) != null) {
                 { state.openIdeas(activeMealSheet) }
             } else {

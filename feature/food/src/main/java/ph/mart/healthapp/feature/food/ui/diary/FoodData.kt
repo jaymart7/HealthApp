@@ -134,6 +134,11 @@ sealed interface FoodEvent {
      * the user asked for and all they can see. */
     data class OnRestoreEntry(val entry: FoodEntry) : FoodEvent
     data class OnToggleFavorite(val suggestion: FoodSuggestion, val favorite: Boolean) : FoodEvent
+
+    /** Keeps what is in the form as a food the user owns, without logging it. The same write
+     * [OnToggleFavorite] makes — a starred food and an authored one are one row — so saving a name
+     * that already exists edits it rather than adding a rival. */
+    data class OnSaveMyFood(val form: AddEntryForm) : FoodEvent
     data class OnSetWaterGlasses(val glasses: Int) : FoodEvent
     data class OnDeleteExercise(val id: Long) : FoodEvent
 

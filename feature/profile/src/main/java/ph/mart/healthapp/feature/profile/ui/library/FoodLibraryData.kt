@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.profile.ui.library
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
+import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.food.totalKcal
 
@@ -12,13 +13,29 @@ import ph.mart.healthapp.core.data.food.totalKcal
  * be reached, which is the whole reason it exists.
  */
 data class FoodLibraryUiState(
+    /** Every food the user owns — authored from the add-entry sheet, or starred there, which is
+     * the same row. Not a window either: the search panel is where they are *used*, and this is
+     * the only screen that can rename or remove one. */
+    val myFoods: List<ScannedProduct> = emptyList(),
     val savedMeals: List<SavedMeal> = emptyList(),
     val recipes: List<Recipe> = emptyList(),
 ) {
-    /** Distinguishes "nothing saved" from "not loaded yet" for the empty state — both lists are
+    /** Distinguishes "nothing saved" from "not loaded yet" for the empty state — every list is
      * empty on the first frame, and a mascot that flashes before the rows arrive reads as a bug. */
-    val loaded: Boolean get() = savedMeals.isNotEmpty() || recipes.isNotEmpty()
+    val loaded: Boolean get() = myFoods.isNotEmpty() || savedMeals.isNotEmpty() || recipes.isNotEmpty()
 }
+
+/** "165 kcal · 100 g" — a food is priced for a stated amount everywhere else in the app, so the
+ * row says which amount rather than a bare figure. */
+fun ScannedProduct.summary(): String = "$calories kcal · ${portionLabel()} $portionUnit"
+
+/** The macros, for the row's third line — the same job the item names do for a saved meal: a row
+ * that only quotes calories is a row you delete blind, and they are already loaded. */
+fun ScannedProduct.macroLine(): String = "P ${proteinG}g · C ${carbsG}g · F ${fatG}g"
+
+/** 100 g, not 100.0 g. */
+private fun ScannedProduct.portionLabel(): String =
+    if (portionAmount % 1.0 == 0.0) portionAmount.toInt().toString() else portionAmount.toString()
 
 /** "3 items · 540 kcal" — what the row says a saved meal is. */
 fun SavedMeal.summary(): String =
@@ -34,6 +51,8 @@ fun Recipe.summary(): String = "${perServing().calories} kcal per serving · mak
 fun List<SavedMealItem>.contents(): String = joinToString { it.name }
 
 sealed interface FoodLibraryEvent {
+    data class OnDeleteMyFood(val name: String) : FoodLibraryEvent
+    data class OnRenameMyFood(val oldName: String, val newName: String) : FoodLibraryEvent
     data class OnDeleteSavedMeal(val id: Long) : FoodLibraryEvent
     data class OnDeleteRecipe(val id: Long) : FoodLibraryEvent
     data class OnRenameSavedMeal(val id: Long, val name: String) : FoodLibraryEvent

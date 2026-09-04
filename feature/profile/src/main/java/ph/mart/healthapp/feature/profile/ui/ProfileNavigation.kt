@@ -27,7 +27,7 @@ import ph.mart.healthapp.feature.profile.ui.supplement.SupplementsScreen
 @Serializable
 data object HealthConnectionRoute : NavKey
 
-/** Saved meals and recipes, also one level above Profile. A route rather than a sheet: it is a
+/** The food library — the user's own foods, saved meals and recipes — also one level above Profile. A route rather than a sheet: it is a
  * list that can outgrow a sheet, and NavDisplay's back is what returns to Profile. */
 @Serializable
 data object FoodLibraryRoute : NavKey
@@ -58,7 +58,7 @@ private fun ProfileDetailPlaceholder() {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
         heading = "Pick a section",
-        body = "Saved meals, routines, supplements, your Home layout and Google Health open here.",
+        body = "Your food library, routines, supplements, your Home layout and Google Health open here.",
     )
 }
 

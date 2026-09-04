@@ -78,6 +78,17 @@ internal class FoodRepositoryImpl(
         if (favorite) favoriteDao.upsert(suggestion.toEntity()) else favoriteDao.clearFavorite(suggestion.name)
     }
 
+    override fun observeMyFoods(): Flow<List<ScannedProduct>> =
+        favoriteDao.observeFavorites().map { rows -> rows.map { it.toProduct() } }
+
+    override suspend fun deleteMyFood(name: String) {
+        favoriteDao.clearFavorite(name)
+    }
+
+    override suspend fun renameMyFood(oldName: String, newName: String) {
+        favoriteDao.rename(oldName, newName)
+    }
+
     override fun observeSavedMeals(): Flow<List<SavedMeal>> = savedMeals(MAX_SAVED_MEALS)
 
     override fun observeAllSavedMeals(): Flow<List<SavedMeal>> = savedMeals(NO_LIMIT)
@@ -249,6 +260,22 @@ private fun FavoriteFoodEntity.toSuggestion() = FoodSuggestion(
     sugarG = sugarG,
     sodiumMg = sodiumMg,
     isFavorite = true,
+)
+
+/** The same row the suggestion panel stars, as the food search returns it. [ScannedProduct] rather
+ * than a third type: a barcode hit, a built-in staple and one of the user's own foods all seed the
+ * add-entry form through the one `ScannedProduct.toAddEntryForm()`. */
+private fun FavoriteFoodEntity.toProduct() = ScannedProduct(
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
 )
 
 private fun FoodSuggestion.toEntity() = FavoriteFoodEntity(
