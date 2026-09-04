@@ -17,7 +17,7 @@ internal class BloodPressureRepositoryImpl(
 
     /** Clamped rather than rejected: a stepper held down or a stray digit lands on the nearest
      * reading a cuff could have produced, instead of failing a save the user can't diagnose. */
-    override suspend fun addReading(reading: BloodPressureReading) {
+    override suspend fun addReading(reading: BloodPressureReading): Long =
         dao.insert(
             BloodPressureReadingEntity(
                 takenAtMillis = reading.takenAtMillis,
@@ -28,7 +28,6 @@ internal class BloodPressureRepositoryImpl(
                 pulseBpm = if (reading.pulseBpm <= 0) 0 else reading.pulseBpm.coerceIn(PULSE_RANGE),
             ),
         )
-    }
 
     override suspend fun deleteReading(id: Long) = dao.softDelete(id)
 

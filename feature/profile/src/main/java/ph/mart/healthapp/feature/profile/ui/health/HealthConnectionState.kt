@@ -1,10 +1,13 @@
 package ph.mart.healthapp.feature.profile.ui.health
 
 import android.app.PendingIntent
+import ph.mart.healthapp.core.data.health.HealthConnectState
 import ph.mart.healthapp.core.data.health.HealthConnection
 
 data class HealthConnectionUiState(
     val connection: HealthConnection = HealthConnection.Checking,
+    /** Health Connect's own state — the local provider, drawn above the cloud one. */
+    val connect: HealthConnectState = HealthConnectState.Checking,
     /** A network call or a Play services round trip is in flight; the buttons are disabled. */
     val busy: Boolean = false,
     val message: String? = null,
@@ -13,7 +16,14 @@ data class HealthConnectionUiState(
     val confirmingDisconnect: Boolean = false,
 )
 
-/** Google's consent screen is an Activity, so only the composable can launch it. */
+/** Both consent flows are Activities, so only the composable can launch either. */
 sealed interface HealthConnectionSideEffect {
     data class LaunchConsent(val pendingIntent: PendingIntent) : HealthConnectionSideEffect
+
+    /** Health Connect's own permission sheet. The set is plain permission strings, which is what
+     *  keeps this module free of `androidx.health.connect` — see `connectPermissionContract`. */
+    data class RequestConnectPermissions(val permissions: Set<String>) : HealthConnectionSideEffect
+
+    /** Health Connect is installed but too old. Only the Activity can leave for the Play Store. */
+    data object OpenHealthConnectListing : HealthConnectionSideEffect
 }

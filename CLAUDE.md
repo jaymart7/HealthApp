@@ -41,9 +41,11 @@ when it lands, and its decisions move into this file. It says *what next*.
 - **Also in use:** ML Kit barcode scanning, Firebase AI + App Check,
   WorkManager (reminders), USDA FoodData Central (`api.nal.usda.gov/fdc/v1`) over
   `HttpURLConnection` + kotlinx.serialization — no HTTP client dependency, don't add one
+- **Health Connect** (`androidx.health.connect:connect-client`) — the *local* health
+  provider, Android 9+, read-only. `implementation`-scoped in `:core:data` only
 - **Google Health API** (`health.googleapis.com/v4`, the Fitbit Web API's
-  successor — *not* Health Connect, *not* Google Fit): REST over the same
-  `HttpURLConnection`, OAuth via `play-services-auth`'s Authorization API
+  successor — *not* Google Fit): REST over the same `HttpURLConnection`, OAuth via
+  `play-services-auth`'s Authorization API
 
 Versions live in `gradle/libs.versions.toml`. Read it — never restate or
 duplicate versions here or in a parallel catalog.
@@ -1102,11 +1104,88 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   two series with a legend, a target line over a dense series, and percentages. A fifth near-copy
   of the same `Canvas` is the thing to avoid, not a fourth parameter on `DayBarChart`.
 
+### Health Connect
+
+The local provider, and the one that wins. Everything here exists because there are now *two*
+providers for the same six types, and two writers for one table is the failure to design against.
+
+- **Precedence, never a merge.** `cloudMetrics()` in `:core:data/health/HealthConnect.kt` is the
+  whole rule: Health Connect owns every type it is granted, the Google Health API owns the rest,
+  and `sync()` decides it once so the two legs can never both write a table. There is deliberately
+  **no fuzzy time-window matcher** — the same watch commonly feeds Health Connect *and* the Google
+  cloud with no shared identifier, so a tolerance-based matcher would be wrong in both directions
+  with nothing to appeal to. Precedence needs no tolerance to be right. Partial grants are ordinary
+  (Health Connect lets a user allow steps and deny heart), which is why `HealthConnectState.Available`
+  carries a *set* and why the split falls out for free.
+- **The handover is one-way and windowed, and that is the only dedup with a judgement in it.**
+  Someone who synced the cloud for a month and then grants Health Connect would hold every workout
+  twice: the two providers key `health_link` differently (`users/me/dataTypes/…` against a
+  `hc:`-prefixed record id), so nothing correlates them. `supersededByConnect()` retires the cloud
+  rows by *provenance and window* instead — this type, imported not pushed, inside the window
+  Health Connect is about to re-import. Anything older stays, because it is outside the new
+  provider's reach and so can never be duplicated; deleting it would throw away history nothing
+  will backfill. Steps and heart rate need none of this: they record no link and their day rows are
+  replace-in-full, so a handover is free.
+- **One set of writers, both providers.** The Health Connect reader hands back the same `Remote*`
+  types the cloud's parsers produce, so `store()`, `writeSteps()`, `writeHeart()`, `weightWriter()`
+  and `writeSleepNight()` are shared verbatim — a workout is the same diary row whichever leg
+  fetched it, deduped by the same table and cursored by the same rule. `weightWriter(note)` is the
+  only thing that tells them apart on screen, and its skip-a-taken-day guard is what keeps a typed
+  weigh-in winning over both.
+- **Cursors are per provider, day tables are not.** Each `HealthMetric.connectDataType` is distinct
+  from every `HealthDataType.id`, so `MAX(remoteTimeMillis)` per type is independent and revoking
+  one leg cannot advance the other past data it never wrote. Steps and heart rate share the cloud's
+  own `MAX(date)` cursor, because those tables belong to whichever provider last wrote them.
+- **One version gate, in `HealthConnectSource.client()`.** The SDK's classes ship inside the APK so
+  naming one is safe at any API level; *calling* into one is not, because it reaches platform APIs
+  this app's minSdk 24 predates. So every entry point resolves through `client()` and returns the
+  do-nothing answer when it is null, `:core:data`'s manifest carries
+  `tools:overrideLibrary="androidx.health.connect.client"`, and the reads are `@RequiresApi(P)` so
+  lint agrees with the runtime. `read()` repeats the explicit `SDK_INT` check because lint's flow
+  analysis can follow one but not a nullable factory.
+- **`:feature:profile` never imports `androidx.health.connect`.** The permission contract crosses
+  the boundary as a framework `ActivityResultContract<Set<String>, Set<String>>` and the state as
+  the app's own `HealthConnectState` — the rule `GoogleHealthAuth` follows by handing back a
+  `PendingIntent`. That is the only thing `androidx.activity` is in `:core:data` for.
+- **Blood pressure is Health Connect's alone.** It was manual-only because the cloud scope was
+  ruled out at verification; `READ_BLOOD_PRESSURE` costs no CASA assessment, so it is the sixth
+  type here and has no cloud twin (`cloudDataTypeOf` returns null for it). `blood_pressure_reading`
+  autogenerates ids, so nothing keeps an imported reading apart from the same one typed by hand —
+  `alreadyHeld()` is the guard, and it demands *identical* figures within a minute. That is not the
+  matcher ruled out above: the only thing tolerated is which second the two writers stamped.
+  An imported reading carries `pulseBpm = 0`, because Health Connect records a pulse as a
+  `HeartRateRecord` and claiming one the cuff never reported would be an invention.
+- **A session's burn and steps are estimates, not the watch's figures.** Health Connect keeps
+  calories in a separate `ActiveCaloriesBurnedRecord`, so `estimateBurnedKcal()` and
+  `estimatedSteps()` price an imported session — the same two functions the diary's own exercise
+  sheet seeds, and both stay editable on the row. *ponytail: one `aggregate()` per session reads
+  the real figure at the cost of a call per workout; worth it only if the estimates read wrong.*
+- **Read-only, and not getting a write path.** Meals and water still go out over the cloud, so
+  `pushNutrition` is untouched, no `WRITE_*` permission is requested and there is no Play
+  health-write declaration to file. *ponytail: a windowed read rather than `getChanges(token)` — a
+  changes token is state that must survive process death, where a window needs nothing because the
+  cursor is already derived from rows actually written.*
+- **The rationale intent rides `ShortcutAction`.** Health Connect's "why does this app want my
+  data?" tap arrives as an intent *action* (two of them — the pre-14 one and the `activity-alias`
+  the platform uses from 14), not an `EXTRA_ACTION` extra, but what it needs is what a shortcut
+  needs: a route request delivered by an intent that must re-point an app already running. So
+  `ShortcutAction` grew a `HealthSync` entry rather than the app growing a fourth nullable state
+  beside `tabRequest` and `shortcutRequest`. `HealthConnectionScreen` is its target, which is why
+  that screen carries its own rationale passage rather than extending `HealthDisclosurePanel` —
+  that component's bullets are written against `HEALTH_SCOPES` in the order the cloud requests
+  them, and each provider needs a passage a reviewer can read on its own.
+- **Onboarding is untouched.** Step 5 still offers the cloud grant alone; stacking a second
+  permission sheet at the app's highest-friction moment is its own decision, and Health Connect is
+  opted into from Profile → Google Health.
+
 ### Google Health
 
 The four requested scopes are Restricted, so the app is capped at 100 users until it passes
 OAuth App Verification plus an annual CASA/OWASP-ASVS assessment. Everything below exists
-because of that, not because it was the nicest design available.
+because of that, not because it was the nicest design available. Health Connect now covers the
+same types locally where it is granted, which shrinks how often this leg runs but does not
+retire it: it is still the only leg that pushes, and the only one on a device without Health
+Connect.
 
 - **No refresh token, no client secret, no credentials file on the device.** Google holds the
   grant; `GoogleHealthAuth.authorize()` mints a fresh ~1-hour access token silently on every
@@ -1200,6 +1279,9 @@ because of that, not because it was the nicest design available.
 
 ## Backlog
 
+- Health Connect reads health data, which needs the Play Console data-types declaration form —
+  a separate obligation from the Google Health API's OAuth verification and CASA assessment
+  below, and cheaper: no CASA, and no per-scope justification.
 - FoodData Central runs on one signed key shipped in the APK (extractable, and its 3600 req/hour
   budget is shared by every install). A proxy holding the key is the upgrade path if either the
   ceiling or the exposure starts to matter.

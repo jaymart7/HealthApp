@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.health
 
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContract
 
 /** What the Profile card and the onboarding step render. */
 sealed interface HealthConnection {
@@ -28,17 +29,37 @@ sealed interface HealthSyncResult {
 }
 
 /**
- * FitPulse's side of the Google Health API. Reads the user's workouts into the same
- * `exercise_entry` table the diary writes to, so an imported workout is an ordinary entry from
- * every other screen's point of view — including `budgetKcal()` and the logging streak.
+ * FitPulse's health integration — **two providers, one entry point.**
+ *
+ * Health Connect reads the same six types on-device (see [HealthConnectSource]); the Google Health
+ * API reads whatever is left and is the only leg that pushes. Everything imported lands in the
+ * table the diary already writes to, so an imported workout is an ordinary entry from every other
+ * screen's point of view — including `budgetKcal()` and the logging streak — whichever provider
+ * fetched it.
+ *
+ * [sync] is the single entry point precisely so precedence is decided in one place: two
+ * orchestrators is how two surfaces come to disagree about which provider owns a table. The
+ * Connections screen and the onboarding step both call it and neither knows the difference.
  *
  * Sync is on-connect and on-demand only. There is no background job: a periodic network read of
  * health data is a thing that has to be justified at verification, and "when the user asks"
- * covers the need.
+ * covers the need. Health Connect makes that cheap rather than unnecessary — it still polls, it
+ * just polls a local provider.
  */
 interface HealthSyncRepository {
     /** Silent — never shows UI. Safe to call whenever a screen that displays state appears. */
     suspend fun connection(): HealthConnection
+
+    /** Health Connect's side of the same question, and just as silent. */
+    suspend fun connectState(): HealthConnectState
+
+    /**
+     * The contract the Connections screen hands `rememberLauncherForActivityResult`. It comes from
+     * here rather than being built in `:feature:profile` so that module never imports
+     * `androidx.health.connect` — the rule [GoogleHealthAuth] follows by handing back a
+     * `PendingIntent` instead of a Play services type.
+     */
+    fun connectPermissionContract(): ActivityResultContract<Set<String>, Set<String>>
 
     /** Hands back the result of the consent Activity. True when a token came back. */
     suspend fun completeConsent(data: Intent?): Boolean

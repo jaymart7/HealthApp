@@ -19,6 +19,11 @@ internal interface HealthLinkDao {
     @Query("SELECT * FROM health_link WHERE pushed = :pushed")
     suspend fun links(pushed: Boolean): List<HealthLinkEntity>
 
+    /** Every imported link of one type, for the Health Connect handover to sift — see
+     *  `supersededByConnect`, which does the windowing in Kotlin so it stays JVM-testable. */
+    @Query("SELECT * FROM health_link WHERE pushed = 0 AND dataType = :dataType")
+    suspend fun importedLinks(dataType: String): List<HealthLinkEntity>
+
     /** Which local rows have already been sent, so a push never sends the same meal twice. */
     @Query("SELECT localId FROM health_link WHERE pushed = 1 AND localTable = :localTable")
     suspend fun pushedLocalIds(localTable: String): List<Long>

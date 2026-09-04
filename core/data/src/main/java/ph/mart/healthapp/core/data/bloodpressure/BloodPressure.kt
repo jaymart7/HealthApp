@@ -146,8 +146,10 @@ interface BloodPressureRepository {
     /** Every reading, oldest first — the Progress tab's series and its list. */
     fun observeReadings(): Flow<List<BloodPressureReading>>
 
-    /** Values outside the three ranges are clamped, never rejected. */
-    suspend fun addReading(reading: BloodPressureReading)
+    /** Values outside the three ranges are clamped, never rejected. Returns the new row id, which
+     *  the Health Connect import records against the record it came from — the shape
+     *  [ph.mart.healthapp.core.data.exercise.ExerciseRepository.addEntry] already has. */
+    suspend fun addReading(reading: BloodPressureReading): Long
 
     /** Soft delete, like a diary row — a mistyped reading is removed, never erased. */
     suspend fun deleteReading(id: Long)

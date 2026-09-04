@@ -17,8 +17,9 @@ internal interface BloodPressureReadingDao {
     @Query("SELECT * FROM blood_pressure_reading WHERE isDeleted = 0 ORDER BY takenAtMillis ASC")
     suspend fun allActive(): List<BloodPressureReadingEntity>
 
+    /** Returns the new row id, which a Health Connect import records against the record. */
     @Insert
-    suspend fun insert(entity: BloodPressureReadingEntity)
+    suspend fun insert(entity: BloodPressureReadingEntity): Long
 
     @Query("UPDATE blood_pressure_reading SET isDeleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)

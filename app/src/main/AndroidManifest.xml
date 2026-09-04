@@ -41,10 +41,34 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Health Connect's "why does this app want my data?" tap, for Android 13 and
+                 below. It lands here rather than on a screen of its own because MainActivity is
+                 the app's only Activity and every route is a Nav3 key inside its back stack — the
+                 same reason @xml/shortcuts carries EXTRA_ACTION. See ShortcutAction.HealthSync. -->
+            <intent-filter>
+                <action android:name="androidx.health.connect.action.SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- The same tap on Android 14+, where Health Connect is part of the platform and routes
+             it through the permission-usage intent instead. An alias rather than a second Activity
+             so both paths reach one screen; the START_VIEW_PERMISSION_USAGE permission is what
+             stops anything but the system launching it. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- The water reminder's "+1 glass" button. Not exported: nothing outside the app has any
              business logging a glass, and the notification's own PendingIntent is not a caller. -->

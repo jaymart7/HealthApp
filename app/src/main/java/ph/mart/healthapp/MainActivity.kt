@@ -30,13 +30,22 @@ import ph.mart.healthapp.ui.AppRootViewModel
 const val EXTRA_ACTION = "ph.mart.healthapp.shortcut.ACTION"
 
 /**
- * The launcher shortcuts, and the whole vocabulary [EXTRA_ACTION] can carry. It is the FAB's
- * quick-action rows rather than a list of its own — a shortcut is [ph.mart.healthapp.ui.QuickActionSheet]
- * with the tap pre-made, so each one resolves to the same route or the same sheet that sheet's row
- * does. [AddWater] is the one exception and is handled here rather than in `AppScaffold`: water is
- * an inline glass row on a Home card, not a sheet or a route, so there is nothing to navigate to.
+ * Every request that reaches the app as an *intent* rather than as a tap, and the whole vocabulary
+ * [EXTRA_ACTION] can carry.
+ *
+ * The first four are the launcher shortcuts, and they are the FAB's quick-action rows rather than a
+ * list of their own — a shortcut is [ph.mart.healthapp.ui.QuickActionSheet] with the tap pre-made,
+ * so each resolves to the same route or the same sheet that sheet's row does. [AddWater] is the one
+ * exception and is handled here rather than in `AppScaffold`: water is an inline glass row on a
+ * Home card, not a sheet or a route, so there is nothing to navigate to.
+ *
+ * [HealthSync] is not a shortcut and arrives differently — it is Health Connect's "why does this
+ * app want my data?" tap, which carries an intent *action* and no extra (see [healthRationale]).
+ * It rides this enum anyway because what it needs is exactly what a shortcut needs: a route
+ * request, delivered by an intent, that must re-point an app already running. A fourth nullable
+ * state beside [tabRequest] and [shortcutRequest] would be a third copy of one mechanism.
  */
-enum class ShortcutAction { SpeakFood, LogFood, AddWater, LogWeight }
+enum class ShortcutAction { SpeakFood, LogFood, AddWater, LogWeight, HealthSync }
 
 /** Pure over the extra's string so a JVM test can reach it, and an unknown name degrades to null —
  * the reading `mascotCharacterOf` already gives `Profile.mascotName`, and what lets a shortcut
@@ -145,4 +154,18 @@ private fun Intent?.tabExtra(): TopLevelDestination? = this?.getStringExtra(EXTR
 /** [tabExtra]'s twin for a shortcut. The resolution is [shortcutActionOf] rather than inline so a
  * JVM test can drive it — `Intent` is not on a unit test's classpath in any usable form. */
 private fun Intent?.shortcutAction(): ShortcutAction? =
-    shortcutActionOf(this?.getStringExtra(EXTRA_ACTION))
+    shortcutActionOf(this?.getStringExtra(EXTRA_ACTION)) ?: this?.healthRationale()
+
+/**
+ * Health Connect's rationale tap, on both paths: the `SHOW_PERMISSIONS_RATIONALE` action on
+ * Android 13 and below, and the permission-usage action the `activity-alias` catches on 14+. It is
+ * an action rather than an extra because the system composes the intent, not `@xml/shortcuts` —
+ * which is the whole reason it can't simply be another [EXTRA_ACTION] value.
+ */
+private fun Intent.healthRationale(): ShortcutAction? = when (action) {
+    "androidx.health.connect.action.SHOW_PERMISSIONS_RATIONALE",
+    "android.intent.action.VIEW_PERMISSION_USAGE",
+    -> ShortcutAction.HealthSync
+
+    else -> null
+}

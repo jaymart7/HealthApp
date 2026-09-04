@@ -54,6 +54,13 @@ dependencies {
     // it hands back is a plain String everywhere else, and no `:feature:*` module sees the type.
     implementation(libs.play.services.auth)
 
+    // Health Connect, the local provider. Scoped here for the same reason Room and
+    // play-services-auth are: no `:feature:*` build file names it, and nothing above this module
+    // sees an `androidx.health.connect` type — the permission contract crosses the boundary as a
+    // framework `ActivityResultContract`, which is the only thing `androidx.activity` is here for.
+    implementation(libs.androidx.health.connect.client)
+    implementation(libs.androidx.activity)
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
 

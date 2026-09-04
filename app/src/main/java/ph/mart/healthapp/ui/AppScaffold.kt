@@ -128,6 +128,9 @@ fun AppScaffold(
             ShortcutAction.SpeakFood -> topLevelBackStack.add(VoiceLogRoute(0))
             ShortcutAction.LogFood -> topLevelBackStack.add(FoodCaptureRoute(0))
             ShortcutAction.LogWeight -> activeSheet = ActiveSheet.LogWeight
+            // Not a shortcut: Health Connect's rationale tap, which has to land on the screen that
+            // explains what FitPulse reads. That is the same route Profile's own row opens.
+            ShortcutAction.HealthSync -> topLevelBackStack.add(HealthConnectionRoute)
             // A write, not a destination — MainActivity handles it.
             ShortcutAction.AddWater, null -> Unit
         }

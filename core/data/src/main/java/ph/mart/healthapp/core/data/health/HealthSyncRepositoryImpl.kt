@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.health
 
 import android.content.Intent
 import kotlinx.coroutines.flow.first
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.food.FoodEntry
@@ -28,6 +29,7 @@ private const val WEIGHT_TABLE = "weight_entry"
 private const val SLEEP_TABLE = "sleep_day"
 private const val FOOD_TABLE = "food_entry"
 private const val WATER_TABLE = "water_day"
+private const val BLOOD_PRESSURE_TABLE = "blood_pressure_reading"
 
 /**
  * ponytail: a page cap instead of a real budget. 25 sessions per page × 20 pages is over a year of
@@ -50,7 +52,9 @@ internal class HealthSyncRepositoryImpl(
     private val profileRepository: ProfileRepository,
     private val foodRepository: FoodRepository,
     private val waterRepository: WaterRepository,
+    private val bloodPressureRepository: BloodPressureRepository,
     private val networkMonitor: NetworkMonitor,
+    private val connect: HealthConnectSource,
 ) : HealthSyncRepository {
 
     /**
@@ -71,52 +75,197 @@ internal class HealthSyncRepositoryImpl(
         HealthAuthResult.Unavailable -> HealthConnection.Unavailable
     }
 
+    override suspend fun connectState(): HealthConnectState = connect.state()
+
+    override fun connectPermissionContract() = connect.permissionContract()
+
     override suspend fun completeConsent(data: Intent?): Boolean {
         cachedToken = auth.tokenFromConsentResult(data)
         return cachedToken != null
     }
 
     override suspend fun sync(): HealthSyncResult {
-        if (!networkMonitor.isOnline()) return HealthSyncResult.Offline
+        // The local leg first. Not only because Health Connect is the preferred provider: which
+        // types it is granted is what decides which cloud legs run at all — see `cloudMetrics`,
+        // where that precedence is decided once so the two legs can never both write a table.
+        val granted = connect.state().granted
+        var imported = syncConnect(granted)
+        val cloud = cloudMetrics(granted)
+
+        // Health Connect needs no network, so an offline sync that answered locally is a sync that
+        // worked. Offline is only the whole answer when there was no local leg to run.
+        if (!networkMonitor.isOnline()) {
+            return if (granted.isEmpty()) HealthSyncResult.Offline else HealthSyncResult.Imported(imported)
+        }
         val token = cachedToken ?: when (val result = auth.authorize()) {
             is HealthAuthResult.Granted -> result.accessToken.also { cachedToken = it }
-            is HealthAuthResult.NeedsConsent -> return HealthSyncResult.NeedsConsent(result.pendingIntent)
-            HealthAuthResult.Unavailable -> return HealthSyncResult.Failed
+            // A local import that already landed is worth reporting rather than discarding: the
+            // Connections screen renders the Google panel's own consent state beside the Health
+            // Connect one, so nothing is hidden by not making it this call's return value.
+            is HealthAuthResult.NeedsConsent ->
+                return if (imported > 0) HealthSyncResult.Imported(imported)
+                else HealthSyncResult.NeedsConsent(result.pendingIntent)
+
+            HealthAuthResult.Unavailable ->
+                return if (imported > 0) HealthSyncResult.Imported(imported) else HealthSyncResult.Failed
         }
 
-        var imported = 0
         var failed = false
 
         // Each type is independent: a weight page that 500s must not throw away the workouts that
-        // already landed, so the failure is remembered and the rest still runs.
-        when (val result = importExercise(token)) {
-            is Outcome.Wrote -> imported += result.items
-            Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
-            Outcome.Failed -> failed = true
+        // already landed, so the failure is remembered and the rest still runs. A type Health
+        // Connect answered is skipped outright — one writer per table per sync, so a Revoked here
+        // can only ever come from a type the local leg did not cover.
+        if (HealthMetric.Exercise in cloud) {
+            when (val result = importExercise(token)) {
+                is Outcome.Wrote -> imported += result.items
+                Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.Failed -> failed = true
+            }
         }
-        when (val result = importWeight(token)) {
-            is Outcome.Wrote -> imported += result.items
-            Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
-            Outcome.Failed -> failed = true
+        if (HealthMetric.Weight in cloud) {
+            when (val result = importWeight(token)) {
+                is Outcome.Wrote -> imported += result.items
+                Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.Failed -> failed = true
+            }
         }
-        when (val result = importSleep(token)) {
-            is Outcome.Wrote -> imported += result.items
-            Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
-            Outcome.Failed -> failed = true
+        if (HealthMetric.Sleep in cloud) {
+            when (val result = importSleep(token)) {
+                is Outcome.Wrote -> imported += result.items
+                Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.Failed -> failed = true
+            }
         }
-        when (val result = importSteps(token)) {
-            is Outcome.Wrote -> imported += result.items
-            Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
-            Outcome.Failed -> failed = true
+        if (HealthMetric.Steps in cloud) {
+            when (val result = importSteps(token)) {
+                is Outcome.Wrote -> imported += result.items
+                Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.Failed -> failed = true
+            }
         }
         // The one type that cannot fail the sync — see importHeart. Its scope is a guess, and a
         // wrong one has to cost the card, not a permanent error on the Connections screen.
-        (importHeart(token) as? Outcome.Wrote)?.let { imported += it.items }
+        if (HealthMetric.Heart in cloud) {
+            (importHeart(token) as? Outcome.Wrote)?.let { imported += it.items }
+        }
 
         // Push last: an import that worked is worth reporting even if the outbound leg didn't.
+        // Cloud-only whatever Health Connect is granted — FitPulse writes nothing to Health
+        // Connect, so there is no second push path to keep in step with this one.
         if (!pushNutrition(token)) failed = true
 
         return if (failed && imported == 0) HealthSyncResult.Failed else HealthSyncResult.Imported(imported)
+    }
+
+    /**
+     * The local leg.
+     *
+     * It runs before the cloud one for two reasons. Which types it covers decides which cloud legs
+     * run at all; and the handover it performs ([retireSupersededCloudRows]) has to happen before
+     * the cloud could write a second copy of the same window.
+     */
+    private suspend fun syncConnect(granted: Set<HealthMetric>): Int {
+        if (granted.isEmpty()) return 0
+        // Priced at one weight for the whole window, exactly as importSteps prices its own: the
+        // latest weigh-in, else the profile's. No profile means onboarding is unfinished, and
+        // there is nothing to price a session or a day of walking against.
+        val weightKg = latestWeightKg() ?: return 0
+        val windows = granted.associateWith { connectWindowStart(it) }
+        windows.forEach { (metric, since) -> retireSupersededCloudRows(metric, since) }
+        return writeConnect(connect.read(windows, weightKg), weightKg)
+    }
+
+    /**
+     * Where Health Connect's window opens, per type — the same two cursor rules the cloud leg
+     * already follows, reused rather than re-derived.
+     *
+     * Steps and heart rate share the cloud leg's own cursor (`MAX(date)` in their day tables),
+     * because those tables are replace-in-full and belong to whichever provider last wrote them;
+     * that is also what makes a handover of those two need no dedup at all. Everything else keys
+     * off `health_link`, under Health Connect's *own* data type, so the two providers' cursors are
+     * independent and revoking one cannot advance the other past data it never wrote.
+     */
+    private suspend fun connectWindowStart(metric: HealthMetric): Long = when (metric) {
+        HealthMetric.Steps -> stepsWindowStart()
+        HealthMetric.Heart -> heartWindowStart()
+        else -> windowStart(metric.connectDataType)
+    }
+
+    /**
+     * The handover, run once per granted metric before Health Connect writes anything.
+     *
+     * Steps and heart rate fall out for free: neither records a link, so [HealthLinkDao.importedLinks]
+     * answers empty and their day rows are simply replaced. Blood pressure has no cloud type at all.
+     * What is left is exercise, weight and sleep — the three that could genuinely hold two copies.
+     */
+    private suspend fun retireSupersededCloudRows(metric: HealthMetric, sinceMillis: Long) {
+        val cloudType = cloudDataTypeOf(metric) ?: return
+        val superseded = supersededByConnect(links.importedLinks(cloudType), cloudType, sinceMillis)
+        if (superseded.isEmpty()) return
+        superseded.forEach { deleteImportedRow(it) }
+        links.delete(superseded.map { it.remoteName })
+    }
+
+    /**
+     * The Google Health type a metric imports as. Blood pressure has none: its scope was
+     * deliberately not requested at verification, which is why Health Connect is its only importer.
+     */
+    private fun cloudDataTypeOf(metric: HealthMetric): String? = when (metric) {
+        HealthMetric.Exercise -> HealthDataType.Exercise.id
+        HealthMetric.Weight -> HealthDataType.Weight.id
+        HealthMetric.Sleep -> HealthDataType.Sleep.id
+        HealthMetric.Steps -> HealthDataType.Steps.id
+        HealthMetric.Heart -> HealthDataType.Heart.id
+        HealthMetric.BloodPressure -> null
+    }
+
+    /**
+     * Every writer here is the one the cloud leg already uses, which is the point: a workout that
+     * came from Health Connect and one that came from the Google Health API are the same diary row,
+     * written by the same code, deduped by the same table.
+     */
+    private suspend fun writeConnect(records: ConnectRecords, weightKg: Double): Int {
+        var written = 0
+        written += store(records.exercise, HealthMetric.Exercise.connectDataType, EXERCISE_TABLE) { remote ->
+            exerciseRepository.addEntry(remote.toExerciseEntry())
+        }
+        written += store(
+            records.weight,
+            HealthMetric.Weight.connectDataType,
+            WEIGHT_TABLE,
+            weightWriter(note = "Health Connect"),
+        )
+        written += store(records.sleep, HealthMetric.Sleep.connectDataType, SLEEP_TABLE) { writeSleepNight(it) }
+        written += store(
+            records.bloodPressure,
+            HealthMetric.BloodPressure.connectDataType,
+            BLOOD_PRESSURE_TABLE,
+            bloodPressureWriter(),
+        )
+        // The two aggregating types keep their own bookkeeping and record no link — see importSteps.
+        if (records.steps.isNotEmpty()) written += writeSteps(stepTotals(records.steps), weightKg)
+        if (records.heart.isNotEmpty()) written += writeHeart(records.heart)
+        return written
+    }
+
+    /**
+     * A cuff reading typed by hand and also written to Health Connect is one measurement, but
+     * `blood_pressure_reading` autogenerates its ids, so nothing keeps the two apart the way
+     * `health_link`'s primary key keeps two imports apart — see [alreadyHeld]. The held list is
+     * read once per sync and grown as rows land, so one batch cannot duplicate inside itself either.
+     */
+    private suspend fun bloodPressureWriter(): suspend (RemoteBloodPressure) -> Long {
+        val held = bloodPressureRepository.observeReadings().first().toMutableList()
+        return { remote ->
+            if (remote.alreadyHeld(held)) {
+                SKIPPED
+            } else {
+                val reading = remote.toBloodPressureReading()
+                held += reading
+                bloodPressureRepository.addReading(reading)
+            }
+        }
     }
 
     private sealed interface Outcome {
@@ -136,25 +285,33 @@ internal class HealthSyncRepositoryImpl(
         exerciseRepository.addEntry(remote.toExerciseEntry())
     }
 
+    private suspend fun importWeight(token: String): Outcome = importAll(
+        dataType = HealthDataType.Weight,
+        token = token,
+        localTable = WEIGHT_TABLE,
+        parse = ::parseWeightPage,
+        write = weightWriter(note = "Google Health"),
+    )
+
     /**
      * `weight_entry` holds one row per day, so an imported weigh-in must not overwrite one the
      * user typed. Days that already have an entry are skipped rather than replaced — the manual
      * number is the one they chose to record.
+     *
+     * Shared by both providers, and [note] is what tells them apart on the row. The taken-days set
+     * is built per call rather than per sync deliberately: each leg reads the table as it finds it,
+     * so whichever runs first wins a day and the second skips it.
      */
-    private suspend fun importWeight(token: String): Outcome {
-        val takenDays = progressRepository.observeWeightEntries().first().map { it.dateEpochDay }.toMutableSet()
-        return importAll(
-            dataType = HealthDataType.Weight,
-            token = token,
-            localTable = WEIGHT_TABLE,
-            parse = ::parseWeightPage,
-        ) { remote ->
+    private suspend fun weightWriter(note: String): suspend (RemoteWeight) -> Long {
+        val takenDays = progressRepository.observeWeightEntries().first()
+            .mapTo(mutableSetOf()) { it.dateEpochDay }
+        return { remote ->
             val day = epochDayOf(remote.timeMillis)
             if (!takenDays.add(day)) {
                 SKIPPED
             } else {
                 progressRepository.upsertWeightEntry(
-                    WeightEntry(dateEpochDay = day, weightKg = remote.weightKg, note = "Google Health"),
+                    WeightEntry(dateEpochDay = day, weightKg = remote.weightKg, note = note),
                 )
                 // The table is keyed by date, so the date is the local id.
                 day
@@ -162,13 +319,16 @@ internal class HealthSyncRepositoryImpl(
         }
     }
 
-    /** Keyed by the day the night ended — see [SleepDayEntity]. */
     private suspend fun importSleep(token: String) = importAll(
         dataType = HealthDataType.Sleep,
         token = token,
         localTable = SLEEP_TABLE,
         parse = ::parseSleepPage,
-    ) { remote ->
+        write = ::writeSleepNight,
+    )
+
+    /** Keyed by the day the night ended — see [SleepDayEntity]. Shared by both providers. */
+    private suspend fun writeSleepNight(remote: RemoteSleep): Long {
         val day = epochDayOf(remote.endMillis)
         sleepDao.upsert(
             SleepDayEntity(
@@ -178,7 +338,7 @@ internal class HealthSyncRepositoryImpl(
                 endMillis = remote.endMillis,
             ),
         )
-        day
+        return day
     }
 
     /**
@@ -194,17 +354,11 @@ internal class HealthSyncRepositoryImpl(
      * total with a low one.
      */
     private suspend fun importSteps(token: String): Outcome {
-        // Priced at one weight for the whole window: the latest weigh-in, else the profile's.
-        // The MET estimate is coarse by construction, so a per-day weight would be false
-        // precision. No profile means onboarding is unfinished and there is nothing to price at.
-        val weightKg = progressRepository.observeWeightEntries().first()
-            .maxByOrNull { it.dateEpochDay }?.weightKg
-            ?: profileRepository.observeProfile().first()?.weightKg
-            ?: return Outcome.Wrote(0)
+        val weightKg = latestWeightKg() ?: return Outcome.Wrote(0)
 
         val since = stepsWindowStart()
         var pageToken: String? = null
-        val totals = mutableMapOf<Long, Int>()
+        var totals: Map<Long, Int> = emptyMap()
 
         repeat(MAX_PAGES) {
             val url = dataPointsUrl(HealthDataType.Steps, sinceMillis = since, pageToken = pageToken)
@@ -218,22 +372,42 @@ internal class HealthSyncRepositoryImpl(
                 HealthResponse.Unauthorized, HealthResponse.Failed -> return Outcome.Failed
             }
 
-            page.items.forEach { bucket ->
-                val day = epochDayOf(bucket.timeMillis)
-                totals[day] = (totals[day] ?: 0) + bucket.count
-            }
-            pageToken = page.nextPageToken ?: return writeSteps(totals, weightKg)
+            totals = stepTotals(page.items, into = totals)
+            pageToken = page.nextPageToken ?: return Outcome.Wrote(writeSteps(totals, weightKg))
         }
-        return writeSteps(totals, weightKg)
+        return Outcome.Wrote(writeSteps(totals, weightKg))
     }
 
-    private suspend fun writeSteps(totals: Map<Long, Int>, weightKg: Double): Outcome {
+    /**
+     * One weight for a whole sync: the latest weigh-in, else the profile's. The MET estimate is
+     * coarse by construction, so a per-day weight would be false precision. Null means onboarding
+     * is unfinished and there is nothing to price against.
+     */
+    private suspend fun latestWeightKg(): Double? =
+        progressRepository.observeWeightEntries().first().maxByOrNull { it.dateEpochDay }?.weightKg
+            ?: profileRepository.observeProfile().first()?.weightKg
+
+    /** Buckets to daily totals — the fold both providers' step reads go through. */
+    private fun stepTotals(
+        buckets: List<RemoteSteps>,
+        into: Map<Long, Int> = emptyMap(),
+    ): Map<Long, Int> {
+        val totals = into.toMutableMap()
+        buckets.forEach { bucket ->
+            val day = epochDayOf(bucket.timeMillis)
+            totals[day] = (totals[day] ?: 0) + bucket.count
+        }
+        return totals
+    }
+
+    /** Returns the days written, so both legs can add it to one count. */
+    private suspend fun writeSteps(totals: Map<Long, Int>, weightKg: Double): Int {
         totals.forEach { (day, steps) ->
             stepDao.upsert(
                 StepDayEntity(date = day, steps = steps, burnedKcal = stepsBurnedKcal(steps, weightKg)),
             )
         }
-        return Outcome.Wrote(totals.size)
+        return totals.size
     }
 
     /**
@@ -279,19 +453,20 @@ internal class HealthSyncRepositoryImpl(
             }
 
             samples += page.items
-            pageToken = page.nextPageToken ?: return writeHeart(samples)
+            pageToken = page.nextPageToken ?: return Outcome.Wrote(writeHeart(samples))
         }
-        return writeHeart(samples)
+        return Outcome.Wrote(writeHeart(samples))
     }
 
-    private suspend fun writeHeart(samples: List<RemoteHeart>): Outcome {
+    /** Returns the days written, so both legs can add it to one count. */
+    private suspend fun writeHeart(samples: List<RemoteHeart>): Int {
         val days = aggregateHeartByDay(samples)
         days.values.forEach { day ->
             heartDao.upsert(
                 HeartDayEntity(date = day.dateEpochDay, averageBpm = day.averageBpm, minBpm = day.minBpm),
             )
         }
-        return Outcome.Wrote(days.size)
+        return days.size
     }
 
     /** Day-aligned for the same reason [stepsWindowStart] is: a window starting mid-morning would
@@ -441,7 +616,7 @@ internal class HealthSyncRepositoryImpl(
         parse: (String) -> Page<T>,
         write: suspend (T) -> Long,
     ): Outcome {
-        val since = windowStart(dataType)
+        val since = windowStart(dataType.id)
         var pageToken: String? = null
         var imported = 0
 
@@ -458,7 +633,7 @@ internal class HealthSyncRepositoryImpl(
                     return if (imported > 0) Outcome.Wrote(imported) else Outcome.Failed
             }
 
-            imported += store(page.items, dataType, localTable, write)
+            imported += store(page.items, dataType.id, localTable, write)
             pageToken = page.nextPageToken ?: return Outcome.Wrote(imported)
         }
         return Outcome.Wrote(imported)
@@ -484,7 +659,7 @@ internal class HealthSyncRepositoryImpl(
      */
     private suspend fun <T : RemotePoint> store(
         items: List<T>,
-        dataType: HealthDataType,
+        dataType: String,
         localTable: String,
         write: suspend (T) -> Long,
     ): Int {
@@ -497,7 +672,7 @@ internal class HealthSyncRepositoryImpl(
             links.upsert(
                 HealthLinkEntity(
                     remoteName = remote.remoteName,
-                    dataType = dataType.id,
+                    dataType = dataType,
                     localTable = localTable,
                     localId = localId,
                     remoteTimeMillis = remote.timeMillis,
@@ -510,8 +685,8 @@ internal class HealthSyncRepositoryImpl(
     }
 
     /** Cursor, overlapped by a day so a late-arriving data point isn't skipped. See the constants. */
-    private suspend fun windowStart(dataType: HealthDataType): Long {
-        val latest = links.latestImportedTime(dataType.id)
+    private suspend fun windowStart(dataType: String): Long {
+        val latest = links.latestImportedTime(dataType)
             ?: return System.currentTimeMillis() - BACKFILL_DAYS * DAY_MILLIS
         return latest - SYNC_OVERLAP_MILLIS
     }
@@ -530,13 +705,7 @@ internal class HealthSyncRepositoryImpl(
             }
         }
         if (deleteImported) {
-            links.links(pushed = false).forEach { link ->
-                when (link.localTable) {
-                    EXERCISE_TABLE -> exerciseRepository.deleteEntry(link.localId)
-                    WEIGHT_TABLE -> progressRepository.deleteWeightEntry(link.localId)
-                    SLEEP_TABLE -> sleepDao.delete(link.localId)
-                }
-            }
+            links.links(pushed = false).forEach { deleteImportedRow(it) }
             // No links to walk: step_day and heart_day are their own bookkeeping, so they are
             // cleared wholesale.
             stepDao.clear()
@@ -547,5 +716,22 @@ internal class HealthSyncRepositoryImpl(
         links.clear()
         cachedToken?.let { auth.revoke(it) }
         cachedToken = null
+    }
+
+    /**
+     * One imported row, gone. Shared by [disconnect] and the Health Connect handover
+     * ([retireSupersededCloudRows]), so a row retired by either path leaves the same way — a soft
+     * delete through the repository that owns it, never a hard one.
+     *
+     * Steps and heart rate have no branch because they record no link: both are cleared wholesale
+     * by [disconnect] and replaced in full by a re-import.
+     */
+    private suspend fun deleteImportedRow(link: HealthLinkEntity) {
+        when (link.localTable) {
+            EXERCISE_TABLE -> exerciseRepository.deleteEntry(link.localId)
+            WEIGHT_TABLE -> progressRepository.deleteWeightEntry(link.localId)
+            SLEEP_TABLE -> sleepDao.delete(link.localId)
+            BLOOD_PRESSURE_TABLE -> bloodPressureRepository.deleteReading(link.localId)
+        }
     }
 }

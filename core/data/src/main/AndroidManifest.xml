@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- health-connect-client declares minSdk 26 and this app ships to 24. Overriding the merger
+         is safe because no Health Connect class is ever touched below API 28: the client lives
+         behind one @RequiresApi(28) holder in HealthConnectRepositoryImpl, and every entry point
+         there returns HealthConnectState.Unsupported before it is built. See that file. -->
+    <uses-sdk tools:overrideLibrary="androidx.health.connect.client" />
+
+    <!-- Read-only, one permission per HealthMetric and in that enum's order, so this list and
+         HealthConnect.kt can be read side by side. FitPulse writes nothing to Health Connect:
+         meals and water go out over the Google Health API, which is why no WRITE_* appears. -->
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
 
 </manifest>

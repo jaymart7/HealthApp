@@ -28,6 +28,7 @@ firebaseAppCheck = "18.0.0"
 googleServices = "4.4.4"
 work = "2.11.2"
 glance = "1.1.1"
+healthConnect = "1.1.0"
 playServicesAuth = "22.0.0"
 playServicesWearable = "20.0.1"
 wearCompose = "1.6.2"
@@ -91,6 +92,10 @@ firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debu
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+androidx-health-connect-client = { module = "androidx.health.connect:connect-client", version.ref = "healthConnect" }
+# Not activity-compose: :core:data needs ActivityResultContract alone, so the permission contract
+# can be built beside the client and handed to :feature:profile as a framework type.
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activityCompose" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
 
 androidx-wear-compose-material3 = { module = "androidx.wear.compose:compose-material3", version.ref = "wearCompose" }

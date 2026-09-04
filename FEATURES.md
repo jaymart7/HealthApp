@@ -158,11 +158,20 @@ Home layout · Supplements · Saved meals & recipes · Workout routines · Data 
 - Food library and routine library: rename and delete (neither can log or start anything).
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 15, import is all-or-nothing.
 
-## Google Health sync
+## Health sync — two providers, one entry point
 
-REST against `health.googleapis.com/v4` (not Health Connect, not Google Fit), OAuth via
-play-services-auth. Import: workouts, weight, sleep, steps, heart rate. Push: meals and water.
-Connection state is live, never a stored flag. First sync backfills 30 days.
+**Health Connect** (`androidx.health.connect:connect-client`, Android 9+): on-device, no account
+and no network. Reads workouts, weight, sleep, steps, heart rate **and blood pressure** — the
+sixth type, which the cloud leg deliberately never asked for. Read-only; FitPulse writes nothing
+back. Permissions are per type and a partial grant is ordinary.
+
+**Google Health API** (REST against `health.googleapis.com/v4`, not Google Fit; OAuth via
+play-services-auth): imports whatever Health Connect isn't granted, and is the only leg that
+pushes — meals and water.
+
+Health Connect wins per type; the cloud fills the gaps. One `sync()` runs both, so precedence is
+decided in one place. Both connection states are live, never stored flags. First sync backfills
+30 days, and a handover retires the cloud rows inside that window so nothing lands twice.
 
 ## Reminders
 
@@ -207,12 +216,17 @@ each one is argued in `CLAUDE.md`.
   water, weigh-in, exercise — adding a fifth rewrites what past runs meant.
 - **Badges in the recap.** No badge records when it was earned.
 - **Sleep, heart, blood pressure, fasting, supplements in the recap.** Not enough scroll earned.
-- **Blood pressure's Google Health scope.** Deliberately not requested — manual entry only.
+- **Blood pressure's Google Health scope.** Deliberately not requested. Health Connect reads it
+  instead — that permission costs no CASA assessment.
 - **Not exported:** saved meals, recipes, routines, `health_link`, coach history, steps, sleep,
   heart, running fasts.
 - **No MP4 photo share.** PNG strips only.
 - **No HTTP client dependency.** `HttpURLConnection` + kotlinx.serialization, on purpose.
-- **No Health Connect, no Google Fit.** The Google Health API only.
+- **No Google Fit.** Health Connect and the Google Health API, nothing else.
+- **Nothing is written to Health Connect.** Read-only — meals and water go out over the cloud leg.
+- **No fuzzy dedup matcher between the two providers.** Precedence per type, and a windowed
+  handover. The same watch feeds both with no shared identifier, so a tolerance-based matcher
+  would be wrong in both directions.
 - **Dynamic color (Material You) is off**, and `Color.kt` is frozen.
 - **No hard deletes** anywhere except an unfinished fast and a superseded workout's sets.
 - **The watch has no database**, and the tile never writes.
