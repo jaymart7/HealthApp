@@ -12,9 +12,11 @@ import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 import ph.mart.healthapp.feature.food.ui.voice.VoiceLogScreen
 
-/** The FAB's "Log food" destination — the real 6(+1)-state photo-logging flow (Phase 5). */
+/** The photo-logging flow — the real 6(+1)-state one (Phase 5). Carries the day like
+ * [BarcodeScanRoute], and for the same reason: a plate photographed while reviewing a past day
+ * belongs to that day. `0` is today, which is what the FAB and the launcher shortcut pass. */
 @Serializable
-data object FoodCaptureRoute : NavKey
+data class FoodCaptureRoute(val dateEpochDay: Long) : NavKey
 
 /** The food diary's barcode entry point — the scan/lookup/confirm flow. Carries the diary's
  * selected day, so a scan taken while reviewing a past day is logged to that day. */
@@ -52,6 +54,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
     onScanBarcode: (Long) -> Unit,
     onSpeakFood: (Long) -> Unit,
+    onCapturePhoto: (Long) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onExitFlow: () -> Unit,
@@ -61,6 +64,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
             scrollState = scrollState,
             onScanBarcode = onScanBarcode,
             onSpeakFood = onSpeakFood,
+            onCapturePhoto = onCapturePhoto,
             onNewRecipe = onNewRecipe,
             onOpenStrength = onOpenStrength,
         )
@@ -74,7 +78,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
             onExit = onExitFlow,
         )
     }
-    entry<FoodCaptureRoute> { PhotoCaptureScreen(onExit = onExitFlow) }
+    entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<VoiceLogRoute> { key -> VoiceLogScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
 }

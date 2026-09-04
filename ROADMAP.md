@@ -26,52 +26,16 @@ rather than adding more literals to extract.
 
 | # | Feature | Scope | Schema |
 |---|---------|-------|--------|
-| 1 | Log to a past day from the diary | one route type | — |
-| 2 | Weekly recap notification | four modules | DB 27, export 16 |
-| 3 | Custom food library | three modules | none (reuses `favorite_food`) |
-| 4 | Automatic local backup | a package move, then `:app` | — |
-| 5 | UI test pass + CI gate | infrastructure | — |
-| 6 | Localization scaffolding | every module | — |
-| 7 | Tablet / foldable adaptive layout | four modules | — |
+| 1 | Weekly recap notification | four modules | DB 27, export 16 |
+| 2 | Custom food library | three modules | none (reuses `favorite_food`) |
+| 3 | Automatic local backup | a package move, then `:app` | — |
+| 4 | UI test pass + CI gate | infrastructure | — |
+| 5 | Localization scaffolding | every module | — |
+| 6 | Tablet / foldable adaptive layout | four modules | — |
 
 ---
 
-## 1. Log to a past day from the diary
-
-**What.** The photo-logging flow lands on the day the diary is showing, not always today.
-
-**Where.** `feature/food/ui/FoodNavigation.kt`, `ui/photo/` (`PhotoCaptureScreen`,
-`PhotoCaptureViewModel`, `PhotoCaptureData`), `ui/diary/components/DiaryBody.kt`,
-`app/ui/AppScaffold.kt`, plus the `CLAUDE.md` decision rewrite.
-
-**Schema / export.** None.
-
-### Decisions
-
-- **`FoodCaptureRoute` becomes `data class FoodCaptureRoute(val dateEpochDay: Long)`**, joining
-  `BarcodeScanRoute`, `VoiceLogRoute` and `StrengthWorkoutRoute`. `0` is today — the convention
-  those three already use from the FAB and from Home's plan card.
-- **The FAB stays today-only, and that is not the bug being fixed.** It launches outside the
-  diary's date context; that reasoning is intact and it keeps passing `0`. What changes is that
-  the **diary grows its own camera door**, beside the barcode and voice doors it already has, and
-  that one carries `state.selectedDate`.
-- **The date threads to `toFoodEntry()`, the same path the barcode flow already runs**, so
-  nothing downstream can tell a past-day photo log from a past-day scan.
-- **The `CLAUDE.md` decision is rewritten, not deleted.** "The barcode route carries the day …
-  photo capture stays today-only, because the FAB launches it outside the diary's date context"
-  becomes the sharper general rule: *the FAB is today-only; every in-diary door carries the
-  diary's day.*
-
-**Deliberately excluded.** Forward-dated logging — the diary still never steps past today, and
-there are still no planned meals. No date picker inside the camera flow: the day comes from the
-screen you left, never from a control on a viewfinder.
-
-**Check.** Extend the existing photo-flow test — a non-zero `dateEpochDay` reaches the written
-entry, and `0` still writes today.
-
----
-
-## 2. Weekly recap notification
+## 1. Weekly recap notification
 
 **What.** A Sunday-evening nudge that opens the recap overlay on the week just finished.
 
@@ -115,7 +79,7 @@ quiet-week predicate as a pure function over a day set.
 
 ---
 
-## 3. Custom food library
+## 2. Custom food library
 
 **What.** Author a food once — name, portion, macros, micronutrients — without having logged it
 first; edit it later; find it in food search. Rename and delete from Profile.
@@ -165,7 +129,7 @@ to one result, the custom one winning.
 
 ---
 
-## 4. Automatic local backup
+## 3. Automatic local backup
 
 **What.** A weekly job writing the existing export JSON to app storage, keeping the last three,
 plus making Android's own backup coverage explicit rather than accidental.
@@ -223,7 +187,7 @@ for the rotation keeping exactly the newest three.
 
 ---
 
-## 5. UI test pass + CI gate
+## 4. UI test pass + CI gate
 
 **What.** Instrumented Compose tests for the flows that would otherwise break silently, and a
 GitHub Actions workflow running build + unit tests on push.
@@ -260,7 +224,7 @@ is a separate decision and not on this roadmap.
 
 ---
 
-## 6. Localization scaffolding
+## 5. Localization scaffolding
 
 **What.** Move every user-facing string out of Kotlin and into per-module `strings.xml`. No
 translation is added; this is the work that makes one possible.
@@ -304,7 +268,7 @@ is also what stops the next feature adding literals back.
 
 ---
 
-## 7. Tablet / foldable adaptive layout
+## 6. Tablet / foldable adaptive layout
 
 **What.** The app assumes a phone. Make the four tabs and the routes above them work on a large
 window, a folded/unfolded foldable, and in split screen.
@@ -346,7 +310,7 @@ Drag-and-drop between panes. A tablet-specific visual design — the spacing sca
 palette and the type scale are unchanged. This is layout only.
 
 **Check.** `@PreviewScreenSizes` on the four tab screens plus `AppScaffold`, and one instrumented
-test (from item 5) that back from a detail pane on a large window lands where it does on a phone.
+test (from item 4) that back from a detail pane on a large window lands where it does on a phone.
 
 ---
 

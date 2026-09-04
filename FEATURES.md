@@ -14,7 +14,7 @@ for planned features, and the list of what was weighed and deferred.
 **Four tabs** (`:core:navigation`): `HomeRoute` · `FoodRoute` · `ProgressRoute` · `ProfileRoute`.
 
 **Routes above a tab** (own back toolbar, no bottom bar/FAB):
-`CoachRoute` · `FoodCaptureRoute` · `BarcodeScanRoute(dateEpochDay)` ·
+`CoachRoute` · `FoodCaptureRoute(dateEpochDay)` · `BarcodeScanRoute(dateEpochDay)` ·
 `VoiceLogRoute(dateEpochDay)` · `RecipeBuilderRoute` ·
 `StrengthWorkoutRoute` · `HealthConnectionRoute` · `FoodLibraryRoute` · `RoutinesRoute` ·
 `SupplementsRoute` · `HomeLayoutRoute`.
@@ -83,6 +83,8 @@ Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
 
 - AI photo food logging: capture → analyze → confirm, with retry, offline and manual-search paths.
 - Barcode scanning (ML Kit) → FoodData Central branded lookup, with a `gtinUpc` match check.
+- The diary's mic, barcode and camera doors all log to the day being reviewed; the FAB and the
+  launcher shortcuts log to today.
 - Both viewfinders carry a gallery door and a manual-entry door.
 - Camera permission screen; predictive back branches per flow state.
 - Progress photo capture with a date-stamped file.
@@ -208,7 +210,7 @@ each one is argued in `CLAUDE.md`.
 
 ## Open backlog
 
-`ROADMAP.md` holds the planned features — seven specs, in order, each ready to implement.
+`ROADMAP.md` holds the planned features — six specs, in order, each ready to implement.
 `CLAUDE.md` → **Backlog** holds the outstanding work (FDC key proxy, Google Health verification
 and the unpinned response fields, the final mascot illustration). Inline `ponytail:` comments
 mark known ceilings and their upgrade paths.

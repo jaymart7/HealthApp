@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -48,6 +49,7 @@ object AppIcons {
     val Add: ImageVector = Icons.Filled.Add
     val Barcode: ImageVector = Icons.Filled.QrCodeScanner
     val Bookmark: ImageVector = Icons.Filled.BookmarkAdd
+    val Camera: ImageVector = Icons.Filled.PhotoCamera
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown

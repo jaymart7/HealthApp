@@ -157,9 +157,16 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Diary date navigation:** forward stepping stops at today (there are no
   planned meals), and system back from a past day returns to today rather than
   leaving the tab.
-- **The barcode route carries the day** (`BarcodeScanRoute(dateEpochDay)`) so a
-  scan lands on the day you're looking at; photo capture stays today-only,
-  because the FAB launches it outside the diary's date context.
+- **The FAB is today-only; every in-diary door carries the diary's day.**
+  `BarcodeScanRoute`, `VoiceLogRoute` and `FoodCaptureRoute` all take a
+  `dateEpochDay`, and the diary's three icon doors pass `uiState.selectedDate`, so a
+  scan, a sentence or a photo taken while reviewing Tuesday lands on Tuesday. `0`
+  means today, and it is what the FAB's sheet and the launcher shortcuts pass —
+  both launch outside the diary's date context and have no day to carry. The date
+  threads to `toFoodEntry(dateEpochDay)` in all three flows, so nothing downstream
+  can tell one past-day log from another. Forward-dating is still absent: the diary
+  never steps past today, and there are no planned meals. The day comes from the
+  screen you left, never from a control on a viewfinder.
 - **Both viewfinders carry a gallery door and a manual door** (`ViewfinderActions`, in
   `:feature:food`'s `ui/shared/components/` because the two flows share it). A picked image runs
   the pipeline its screen's live camera runs — `decodeRotatedBitmap(context, uri)` then

@@ -126,7 +126,7 @@ fun AppScaffold(
     LaunchedEffect(shortcutRequest) {
         when (shortcutRequest) {
             ShortcutAction.SpeakFood -> topLevelBackStack.add(VoiceLogRoute(0))
-            ShortcutAction.LogFood -> topLevelBackStack.add(FoodCaptureRoute)
+            ShortcutAction.LogFood -> topLevelBackStack.add(FoodCaptureRoute(0))
             ShortcutAction.LogWeight -> activeSheet = ActiveSheet.LogWeight
             // A write, not a destination — MainActivity handles it.
             ShortcutAction.AddWater, null -> Unit
@@ -156,7 +156,7 @@ fun AppScaffold(
 
     // The camera flows are the one exemption: full-bleed surfaces that draw under both system bars
     // (appScaffold.js) and dispatch back per capture state, so a generic toolbar would break both.
-    val fullBleed = current == FoodCaptureRoute || current is BarcodeScanRoute
+    val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute
 
     // Tapping the arrow has to run the same handler chain system back runs — the recipe builder
     // asks before discarding, and popping the stack here would walk straight past that question.
@@ -220,6 +220,7 @@ fun AppScaffold(
                         scrollState = foodScroll,
                         onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },
                         onSpeakFood = { date -> topLevelBackStack.add(VoiceLogRoute(date)) },
+                        onCapturePhoto = { date -> topLevelBackStack.add(FoodCaptureRoute(date)) },
                         onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
                         onOpenStrength = { date, editingId ->
                             topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
@@ -254,7 +255,7 @@ fun AppScaffold(
                 },
                 onLogFood = {
                     activeSheet = ActiveSheet.None
-                    topLevelBackStack.add(FoodCaptureRoute)
+                    topLevelBackStack.add(FoodCaptureRoute(0))
                 },
                 onLogExercise = { activeSheet = ActiveSheet.LogExercise },
                 onLogWeight = { activeSheet = ActiveSheet.LogWeight },

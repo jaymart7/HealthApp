@@ -56,7 +56,11 @@ private const val SEARCH_SUBTITLE =
  * current [CaptureFlow] rather than applying one behavior to every state.
  */
 @Composable
-fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = koinViewModel()) {
+fun PhotoCaptureScreen(
+    dateEpochDay: Long,
+    onExit: () -> Unit,
+    viewModel: PhotoCaptureViewModel = koinViewModel(),
+) {
     val state = rememberPhotoCaptureScreen()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -176,7 +180,11 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                         onFormChange = { state.form = it },
                         onMealTypeSelect = state::selectMealType,
                         onSearchInstead = { state.flow = CaptureFlow.NoFood },
-                        onLogMeal = { viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry())) },
+                        // The diary's day, not today — a plate photographed while reviewing
+                        // Tuesday belongs to Tuesday.
+                        onLogMeal = {
+                            viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay)))
+                        },
                         // Back already asks before throwing away edits; the button that means the
                         // same thing asked nothing at all.
                         onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
@@ -202,7 +210,9 @@ fun PhotoCaptureScreen(onExit: () -> Unit, viewModel: PhotoCaptureViewModel = ko
                     subtitle = SEARCH_SUBTITLE,
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
-                    onLogEntry = { viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry())) },
+                    onLogEntry = {
+                        viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay)))
+                    },
                     onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
                 )
 

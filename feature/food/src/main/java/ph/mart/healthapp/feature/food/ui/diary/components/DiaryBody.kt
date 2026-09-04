@@ -56,6 +56,7 @@ internal fun DiaryBody(
     onEvent: (FoodEvent) -> Unit,
     onScanBarcode: (Long) -> Unit,
     onSpeakFood: (Long) -> Unit,
+    onCapturePhoto: (Long) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     snackbarHostState: SnackbarHostState,
     scrollState: ScrollState = rememberScrollState(),
@@ -83,8 +84,9 @@ internal fun DiaryBody(
                 placeholder = "Filter this day's foods…",
                 modifier = Modifier.weight(1f),
             )
-            // The two fast paths that belong to the day being shown, so both carry it: a scan or a
-            // sentence taken while reviewing Tuesday is logged to Tuesday.
+            // The three fast paths that belong to the day being shown, so all three carry it: a
+            // sentence, a scan or a photo taken while reviewing Tuesday is logged to Tuesday. The
+            // FAB's copies of these carry 0 instead — it launches outside the diary's date context.
             IconButton(onClick = { onSpeakFood(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = AppIcons.Mic,
@@ -96,6 +98,13 @@ internal fun DiaryBody(
                 Icon(
                     imageVector = AppIcons.Barcode,
                     contentDescription = "Scan barcode",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            IconButton(onClick = { onCapturePhoto(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    imageVector = AppIcons.Camera,
+                    contentDescription = "Log food with a photo",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -214,6 +223,7 @@ private fun DiaryBodyPreview() {
             onEvent = {},
             onScanBarcode = {},
             onSpeakFood = {},
+            onCapturePhoto = {},
             onOpenStrength = { _, _ -> },
             snackbarHostState = SnackbarHostState(),
         )
