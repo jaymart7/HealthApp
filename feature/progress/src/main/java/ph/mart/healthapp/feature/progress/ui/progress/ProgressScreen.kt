@@ -2,7 +2,9 @@ package ph.mart.healthapp.feature.progress.ui.progress
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -11,7 +13,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DayNutrition
@@ -24,6 +29,9 @@ import ph.mart.healthapp.core.data.profile.energyCheckIn
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.designsystem.component.FullScreenState
+import ph.mart.healthapp.core.designsystem.component.MascotAvatar
+import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
@@ -41,6 +49,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 @Composable
 fun ProgressScreen(
     scrollState: ScrollState = rememberScrollState(),
+    twoPane: Boolean = false,
     openRecap: Boolean = false,
     onOpenRecapHandled: () -> Unit = {},
     viewModel: ProgressViewModel = koinViewModel(),
@@ -68,11 +77,18 @@ fun ProgressScreen(
         uiState = uiState,
         state = state,
         scrollState = scrollState,
+        twoPane = twoPane,
         checkIn = checkIn,
         addExerciseToBudget = energyState.profile?.addExerciseToBudget ?: true,
         onApplyTarget = { kcal -> energyViewModel.handleEvent(EnergyCheckInEvent.OnApply(kcal)) },
     )
 }
+
+/** The overview is a two-column grid of cards; a detail page is a chart and its stats. Weighted
+ * rather than a fixed list pane, because at 840dp there is barely room for the grid and at 1600dp
+ * a pinned 360dp list would leave the chart swimming. */
+private const val OverviewPaneWeight = 0.4f
+private const val DetailPaneWeight = 0.6f
 
 /**
  * Overview or one subject's page — [ProgressScreenState.selectedSubject] is the whole navigator.
@@ -83,6 +99,11 @@ fun ProgressScreen(
  * scroll position survives the round trip because [scrollState] is hoisted all the way up in
  * `AppScaffold`, and a detail page holds its own.
  *
+ * [twoPane] is what makes that decision pay twice. This tab was already a list beside a detail in
+ * one screen, so a window with room for both draws both — a `Row` over the `selectedSubject` that
+ * already exists, no route, no `ListDetailSceneStrategy` (which needs two nav entries and would
+ * charge the second repository set the swap-in was chosen to avoid), and nothing new to save.
+ *
  * The four overlays and two sheets sit outside the swap, so a comparison, a timelapse, the recap or
  * the energy check-in can be opened from either surface and drawn over both.
  */
@@ -91,6 +112,7 @@ private fun ProgressContent(
     uiState: ProgressUiState,
     state: ProgressScreenState,
     scrollState: ScrollState = rememberScrollState(),
+    twoPane: Boolean = false,
     checkIn: EnergyCheckIn? = null,
     addExerciseToBudget: Boolean = true,
     onApplyTarget: (Int) -> Unit = {},
@@ -118,23 +140,49 @@ private fun ProgressContent(
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             val subject = state.selectedSubject
-            if (subject == null) {
+            val overview = @Composable { modifier: Modifier ->
                 ProgressOverview(
                     uiState = uiState,
                     state = state,
                     weekRecap = weekRecap,
                     projection = projection,
                     scrollState = scrollState,
+                    modifier = modifier,
                 )
-            } else {
+            }
+            val detail = @Composable { open: Subject, modifier: Modifier ->
                 SubjectDetail(
-                    subject = subject,
+                    subject = open,
                     uiState = uiState,
                     state = state,
                     checkIn = checkIn,
                     projection = projection,
                     canShare = weekRecap != null,
+                    // Beside its own overview, a page is a pane rather than a level: back would have
+                    // nothing to go back to, and the arrow would point at a list already on screen.
+                    embedded = twoPane,
+                    modifier = modifier,
                 )
+            }
+            if (twoPane) {
+                Row(modifier = Modifier.fillMaxSize()) {
+                    overview(Modifier.weight(OverviewPaneWeight))
+                    VerticalDivider()
+                    if (subject == null) {
+                        FullScreenState(
+                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+                            heading = "Pick a subject",
+                            body = "Tap a card and its page opens here.",
+                            modifier = Modifier.weight(DetailPaneWeight),
+                        )
+                    } else {
+                        detail(subject, Modifier.weight(DetailPaneWeight))
+                    }
+                }
+            } else if (subject == null) {
+                overview(Modifier)
+            } else {
+                detail(subject, Modifier)
             }
 
             val selectedPhotos = uiState.photos.filter { it.id in state.selectedPhotoIds }
@@ -234,5 +282,28 @@ private fun ProgressDetailPreview() {
             uiState = previewState(),
             state = ProgressScreenState(selectedSubject = Subject.Weight),
         )
+    }
+}
+
+/** The same two states again with room for both panes — the overview keeps its grid, the page it
+ * came from sits beside it, and the header has lost its arrow. */
+@PreviewScreenSizes
+@Composable
+private fun ProgressTwoPanePreview() {
+    AppTheme {
+        ProgressContent(
+            uiState = previewState(),
+            state = ProgressScreenState(selectedSubject = Subject.Weight),
+            twoPane = true,
+        )
+    }
+}
+
+/** Nothing picked yet: the detail pane says what it is for rather than sitting blank. */
+@PreviewScreenSizes
+@Composable
+private fun ProgressTwoPaneEmptyPreview() {
+    AppTheme {
+        ProgressContent(uiState = previewState(), state = ProgressScreenState(), twoPane = true)
     }
 }

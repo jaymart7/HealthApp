@@ -12,15 +12,19 @@ import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
  * not a route `AppScaffold` could push itself.
  *
  * [scrollState] is hoisted for the usual reason: the FAB's scroll-collapse lives in AppScaffold,
- * which can't see a ScrollState created inside the screen. */
+ * which can't see a ScrollState created inside the screen. [twoPane] comes from there too: that is
+ * the one place in the app that reads the window's width, so this tab is told rather than asking —
+ * which is also why `:feature:progress` needs no adaptive dependency of its own. */
 fun EntryProviderScope<NavKey>.progressEntries(
     scrollState: ScrollState,
+    twoPane: Boolean = false,
     openRecap: Boolean = false,
     onOpenRecapHandled: () -> Unit = {},
 ) {
     entry<ProgressRoute> {
         ProgressScreen(
             scrollState = scrollState,
+            twoPane = twoPane,
             openRecap = openRecap,
             onOpenRecapHandled = onOpenRecapHandled,
         )

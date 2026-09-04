@@ -1,9 +1,16 @@
 package ph.mart.healthapp.feature.profile.ui
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import ph.mart.healthapp.core.designsystem.component.FullScreenState
+import ph.mart.healthapp.core.designsystem.component.MascotAvatar
+import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.navigation.route.ProfileRoute
 import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
 import ph.mart.healthapp.feature.profile.ui.layout.HomeLayoutScreen
@@ -40,6 +47,22 @@ data object SupplementsRoute : NavKey
 @Serializable
 data object HomeLayoutRoute : NavKey
 
+/**
+ * What the detail pane shows before a row has been tapped. Only ever drawn on a window wide enough
+ * to hold two panes — on a phone the detail simply isn't there yet, which is a state with nothing to
+ * render. Deliberately not a call to action: every one of these five is one tap away in the list
+ * beside it, and naming one would make it the recommended one.
+ */
+@Composable
+private fun ProfileDetailPlaceholder() {
+    FullScreenState(
+        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+        heading = "Pick a section",
+        body = "Saved meals, routines, supplements, your Home layout and Google Health open here.",
+    )
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 fun EntryProviderScope<NavKey>.profileEntries(
     scrollState: ScrollState,
     onOpenHealth: () -> Unit,
@@ -49,7 +72,12 @@ fun EntryProviderScope<NavKey>.profileEntries(
     onOpenHomeLayout: () -> Unit,
     onExitFlow: () -> Unit,
 ) {
-    entry<ProfileRoute> {
+    // Profile is the list and its five sub-routes are the detail, so at expanded width they draw
+    // beside it rather than over it. `AppScaffold` owns the width rule and only hands `NavDisplay`
+    // the strategy once there is room; the metadata is inert at every narrower width.
+    entry<ProfileRoute>(
+        metadata = ListDetailSceneStrategy.listPane(detailPlaceholder = { ProfileDetailPlaceholder() }),
+    ) {
         ProfileScreen(
             scrollState = scrollState,
             onOpenHealth = onOpenHealth,
@@ -59,9 +87,10 @@ fun EntryProviderScope<NavKey>.profileEntries(
             onOpenHomeLayout = onOpenHomeLayout,
         )
     }
-    entry<HealthConnectionRoute> { HealthConnectionScreen(onBack = onExitFlow) }
-    entry<FoodLibraryRoute> { FoodLibraryScreen() }
-    entry<RoutinesRoute> { RoutinesScreen() }
-    entry<SupplementsRoute> { SupplementsScreen() }
-    entry<HomeLayoutRoute> { HomeLayoutScreen() }
+    val detail = ListDetailSceneStrategy.detailPane()
+    entry<HealthConnectionRoute>(metadata = detail) { HealthConnectionScreen(onBack = onExitFlow) }
+    entry<FoodLibraryRoute>(metadata = detail) { FoodLibraryScreen() }
+    entry<RoutinesRoute>(metadata = detail) { RoutinesScreen() }
+    entry<SupplementsRoute>(metadata = detail) { SupplementsScreen() }
+    entry<HomeLayoutRoute>(metadata = detail) { HomeLayoutScreen() }
 }

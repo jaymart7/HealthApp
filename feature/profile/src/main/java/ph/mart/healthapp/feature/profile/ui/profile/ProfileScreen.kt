@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -316,6 +317,7 @@ private fun ProfileContent(
 
 /** Below API 33 the permission doesn't exist and notifications are on by default. */
 @PreviewLightDark
+@PreviewScreenSizes
 @Composable
 private fun ProfileScreenPreview() {
     AppTheme {

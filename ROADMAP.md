@@ -20,9 +20,10 @@ or a decision in its decision log; where a spec changes one, it says so explicit
 
 ## Order
 
-Cheap and self-contained first; the test/CI gate before the two large mechanical items;
-localization before the adaptive work, so new layout code is written against `stringResource`
-rather than adding more literals to extract.
+Cheap and self-contained first; the test/CI gate before the two large mechanical items.
+(The adaptive work was item 5 and has landed; localization was meant to precede it so the new
+layout code would be written against `stringResource` — it wasn't, so the rail, the two pane
+placeholders and the detail header carry literals for that pass to pick up.)
 
 | # | Feature | Scope | Schema |
 |---|---------|-------|--------|
@@ -30,7 +31,6 @@ rather than adding more literals to extract.
 | 2 | Automatic local backup | a package move, then `:app` | — |
 | 3 | UI test pass + CI gate | infrastructure | — |
 | 4 | Localization scaffolding | every module | — |
-| 5 | Tablet / foldable adaptive layout | four modules | — |
 
 ---
 
@@ -215,57 +215,11 @@ an over-count including keys and SQL, so expect 800–1000 genuinely user-facing
   419-file single diff is unreviewable.
 
 **Deliberately excluded.** Any actual translation. Plurals beyond where a string is already
-pluralised in Kotlin today. RTL layout work — `supportsRtl` is already true and untested, which
-is the adaptive item's neighbour, not this one. In-app locale switching.
+pluralised in Kotlin today. RTL layout work — `supportsRtl` is already true and untested, and it
+is the adaptive work's neighbour rather than this item's. In-app locale switching.
 
 **Check.** `lint` with `HardcodedText` promoted to error for the modules already converted, which
 is also what stops the next feature adding literals back.
-
----
-
-## 5. Tablet / foldable adaptive layout
-
-**What.** The app assumes a phone. Make the four tabs and the routes above them work on a large
-window, a folded/unfolded foldable, and in split screen.
-
-**Where.** `:core:navigation` (which already carries
-`androidx.compose.material3.adaptive:adaptive-navigation3` as an unused `implementation`
-dependency), `app/ui/AppScaffold.kt`, `:core:designsystem/component/BottomNavBar.kt`, and the
-list-plus-detail screens in `:feature:progress` and `:feature:food`.
-
-**Schema / export.** None.
-
-### Decisions
-
-- **The dependency is already in the catalog and already on `:core:navigation`'s classpath**,
-  unused. This work is what it was added for; no new dependency.
-- **A navigation rail replaces the bottom bar at medium width and above**, and the docked FAB
-  moves into it. `BottomNavBar` lives in `:core:designsystem` and takes an items list — the rail
-  is a sibling component there, chosen in `AppScaffold`, not a `when` inside the bar.
-- **Nav3 Scenes carry the two-pane cases, not a hand-rolled `if (isTablet)`.** The `navigation-3`
-  and `adaptive` skills are binding here; a scene is what keeps back behaving on a device that
-  folds mid-flow.
-- **Which screens earn a second pane:** Progress (thirteen tabs beside their content), the food
-  diary (day list beside the add sheet), and Profile (sections beside the detail routes that are
-  full screens today). **Home stays one column, wider** — a two-pane Home would need a second
-  card order to author, and `Profile.homeLayout` stores one.
-- **The overlays stay overlays at every width.** Recap, timelapse, comparison, energy check-in and
-  meal ideas are full-screen by design and read state from the tab beneath them; making one a
-  pane would give it a `ViewModelStoreOwner` and the second repository set that was the whole
-  argument against a route.
-- **The camera flows stay full-bleed and single-pane.** `AppScaffold`'s `fullBleed` exemption is
-  unchanged — a viewfinder beside a list is not a viewfinder.
-- **Predictive back is re-checked per scene, never assumed.** Every sheet, sub-view and
-  multi-state flow wires its own handler today; a scene showing two of them at once changes what
-  "one level back" means, and that is the failure mode to test for on a foldable.
-- **`:wear` is untouched.** It is one screen with no navigation graph, and that is deliberate.
-
-**Deliberately excluded.** Desktop/ChromeOS keyboard and pointer work, TV, Auto, XR.
-Drag-and-drop between panes. A tablet-specific visual design — the spacing scale, the frozen
-palette and the type scale are unchanged. This is layout only.
-
-**Check.** `@PreviewScreenSizes` on the four tab screens plus `AppScaffold`, and one instrumented
-test (from item 4) that back from a detail pane on a large window lands where it does on a phone.
 
 ---
 
@@ -282,6 +236,10 @@ what would reopen it.
   dead offline and a rescan re-spends the app-wide 3600 req/hour key budget. Reopened by: either
   the FDC ceiling or the exposure starting to matter — the proxy already on `CLAUDE.md`'s backlog
   is the neighbouring fix.
+- **A second pane for the food diary.** The adaptive work shipped without one: the diary is a
+  single scrolling day with no list to put beside it, and its add sheet is an `AppBottomSheet`
+  whose panels and form are built for a sheet's scroll. Reopened by: the calendar swap-in
+  (`FoodScreenState.calendarOpen`) beside the day, which is the pane that would earn itself.
 - **Keeping the analyzed meal photo on the diary entry.** A visual food history. Declined as the
   heaviest of the three: storage growth, downsampling, and an export question the export has
   always answered "no" to for images.

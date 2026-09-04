@@ -74,6 +74,53 @@ sheet returns to the sheet's fields, one level; onboarding back steps one step
 and preserves data; the photo flow branches per state (Capture exits, Analyzing
 cancels, Confirmation returns to Capture with a discard confirm if edited).
 
+### Window width
+
+`AppScaffold` is the **only** place in the app that reads the window's width, and everything
+downstream is handed a plain `Boolean`. Two breakpoints, from `currentWindowAdaptiveInfo()`:
+`WIDTH_DP_MEDIUM_LOWER_BOUND` (600) swaps the bottom bar for a `NavRail`, and
+`WIDTH_DP_EXPANDED_LOWER_BOUND` (840) splits Progress and Profile into two panes. Below 600dp
+nothing about this feature is reachable, so a phone renders exactly the path it always did.
+
+- **`NavRail` is `BottomNavBar`'s sibling in `:core:designsystem`, not a `when` inside it.** Same
+  `BottomNavItem` list, index and callback, same `secondaryContainer` pill — one bar rotated, not a
+  second design — and `AppScaffold` picks. Deliberately **not**
+  `NavigationSuiteScaffold`: that artifact is not on the classpath, and its M3 defaults would
+  replace the hand-drawn pill, which is a phone-visual regression for a tablet feature. The docked
+  FAB moves into the rail *collapsed* — an extended FAB does not fit 80dp, and
+  `rememberFabExpanded` is a scroll affordance a rail has nothing to say about. The rail's tabs sit
+  in a `weight(1f)` column arranged `SpaceEvenly`, because the window that is wide is usually the
+  one that is short: a landscape phone is ~410dp tall and a fixed stack put the fourth tab off the
+  bottom edge.
+- **`showsTabChrome` is a pure function, and `beneath` is what keeps it honest.** A tab always
+  wears the rail/bar and the FAB; so does a Profile detail at two-pane width, because its tab root
+  is still on screen beside it. The five routes that qualify are one `ProfileDetailRoutes` set read
+  by *both* the pane metadata and the chrome rule, so the scene and the chrome cannot disagree —
+  and the entry beneath must be `ProfileRoute`, so Health Connect's rationale intent landing on the
+  Home tab stays single-pane. It is the one branch here a JVM test can reach, and `TabChromeTest`
+  is that test.
+- **The top bar is *not* folded into that rule.** In a two-pane Profile it spans both panes, names
+  the detail and keeps its back arrow — back is the only way to dismiss a pane back to its
+  placeholder. That is a deliberate departure from the `adaptive` skill's "no back arrow in a
+  list-detail layout", which assumes the list is the way out.
+- **`BackNavigationBehavior.PopLatest`, never the default.** Closing a Profile detail leaves the
+  list beside its placeholder, which is *still* a two-pane scaffold value, so
+  `PopUntilScaffoldValueChange` keeps popping and back walks out of the tab. One press is one
+  entry, which is what `NavDisplay`'s `onBack` (`TopLevelBackStack.removeLast()`) already means.
+- **Profile is a Nav3 list-detail scene; Progress is a `Row`.** Profile's five sub-routes are real
+  nav entries, so they take `ListDetailSceneStrategy` metadata — the skill's binding call, and
+  `shouldHandleSinglePaneLayout = false` plus gating `sceneStrategies` on the expanded breakpoint is
+  what leaves narrow windows on the path they were already on. Progress cannot: its detail is a
+  swap-in over `selectedSubject`, and routing it to earn a scene would buy a second
+  `ViewModelStoreOwner` and a second copy of twelve repositories — the exact thing the swap-in was
+  chosen to avoid. So the tab draws its own two panes and `SubjectDetail` takes an `embedded` flag:
+  no back handler and no back arrow, because a pane beside its own list is not a level.
+- **Home, the diary and the camera flows stay one pane at every width.** A two-pane Home would need
+  a second card order to author and `Profile.homeLayout` stores one; the diary has no list to put
+  beside its day (see `ROADMAP.md`'s declined note); `fullBleed` is unchanged, because a viewfinder
+  beside a list is not a viewfinder. Single columns are **not** width-capped either — that is a
+  visual-design decision and this work is layout only.
+
 ## Non-negotiable constraints
 
 - **`Color.kt` is frozen.** `:core:designsystem/theme/Color.kt` is a complete

@@ -64,6 +64,12 @@ private val SelfScrolling = setOf(Subject.Photos, Subject.BloodPressure)
  * follows that back has to be handled here, or it would leave the tab entirely, and that the bottom
  * bar and the FAB stay up, which is what the handoff draws.
  *
+ * [embedded] is that same page drawn as a *pane*, beside the overview it came from, on a window with
+ * room for both. Two things go, and both for one reason — there is no level to come back from: it
+ * registers no back handler (back would close a page whose list is already on screen, and then leave
+ * the tab on the next press) and its header draws no arrow. Everything else is identical, so the two
+ * widths cannot show different pages.
+ *
  * The chrome is fixed for all thirteen and the body varies: hero, chips, a chart card holding its
  * own range toggle, the stat rows. A subject with no data yet is still a real page — its
  * `FullScreenState` and the switcher to its siblings, and **no call to action**: Progress reads,
@@ -79,9 +85,12 @@ internal fun SubjectDetail(
     projection: GoalProjection?,
     canShare: Boolean,
     modifier: Modifier = Modifier,
+    embedded: Boolean = false,
 ) {
-    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
-    NavigationBackHandler(state = navigationState, onBackCompleted = state::closeSubject)
+    if (!embedded) {
+        val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+        NavigationBackHandler(state = navigationState, onBackCompleted = state::closeSubject)
+    }
 
     val today = todayEpochDay()
     val summaries = remember(uiState, today) { summarizeAll(uiState, today) }
@@ -95,7 +104,7 @@ internal fun SubjectDetail(
         Column(modifier = Modifier.fillMaxSize()) {
             DetailHeader(
                 title = subject.label,
-                onBack = state::closeSubject,
+                onBack = if (embedded) null else state::closeSubject,
                 onShare = if (canShare) state::openRecap else null,
             )
             when {

@@ -52,11 +52,15 @@ private val RangePillWidth = 40.dp
  * *route* a level above a tab gets. A subject page is a swap-in inside the Progress tab — it keeps
  * the bottom bar and the FAB — so it draws its own back arrow, and back goes to the overview
  * rather than out of the tab.
+ *
+ * [onBack] is null on a window wide enough to draw the page beside that overview: an arrow pointing
+ * at a list already on screen is an arrow with nowhere to go. Nullable like [onShare] beside it, and
+ * for the same reason — the row closes up rather than showing a dead control.
  */
 @Composable
 internal fun DetailHeader(
     title: String,
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     onShare: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
@@ -64,18 +68,20 @@ internal fun DetailHeader(
         modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack, modifier = Modifier.size(TapTarget)) {
-            Icon(
-                imageVector = AppIcons.Back,
-                contentDescription = "Back to Progress",
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+        if (onBack != null) {
+            IconButton(onClick = onBack, modifier = Modifier.size(TapTarget)) {
+                Icon(
+                    imageVector = AppIcons.Back,
+                    contentDescription = "Back to Progress",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
         Text(
             text = title,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f).padding(start = 4.dp),
+            modifier = Modifier.weight(1f).padding(start = if (onBack != null) 4.dp else 8.dp),
         )
         if (onShare != null) {
             IconButton(onClick = onShare, modifier = Modifier.size(TapTarget)) {

@@ -16,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
@@ -111,6 +112,7 @@ private val PreviewProfile = Profile(
 )
 
 @PreviewLightDark
+@PreviewScreenSizes
 @Composable
 private fun HomeScreenPreview() {
     val today = todayEpochDay()

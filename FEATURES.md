@@ -29,6 +29,12 @@ Wear tile · WorkManager notifications (`:app/reminder/`).
 Weigh in. The first three of those are the FAB sheet's own rows; water writes a glass and lands
 on Home.
 
+**Window width** (`AppScaffold`, the app's one reader of it): at ≥600dp the bottom bar becomes a
+`NavRail` with the FAB in it; at ≥840dp the Progress tab draws its overview beside the open
+subject page, and the Profile tab draws its five sub-routes beside Profile as a Nav3 list-detail
+scene. Narrower than 600dp is unchanged. Home, the diary and the camera flows stay one pane at
+every width.
+
 **Onboarding** is not in the nav graph — `AppRoot` swaps it out once a profile is written.
 
 ---

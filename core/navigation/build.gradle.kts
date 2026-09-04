@@ -24,7 +24,10 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.kotlinx.serialization.core)
-    implementation(libs.androidx.material3.adaptive.navigation3)
+    // api, not implementation: the list-detail scene strategy is wired in `:app`'s AppScaffold and
+    // its pane metadata is declared in `:feature:profile`'s ProfileNavigation. Both reach it through
+    // this module, which is the one that already owns how the app navigates.
+    api(libs.androidx.material3.adaptive.navigation3)
     implementation(libs.androidx.navigationevent)
     implementation(libs.androidx.navigationevent.compose)
 
