@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Static shortcuts, never ShortcutManager dynamic ones: a dynamic shortcut needs code that runs
+  to publish it and state to keep it in step with what it points at, and nothing here varies per
+  user. A shortcut cannot name a Nav3 route, so each carries EXTRA_ACTION and MainActivity
+  resolves it — the same mechanism a reminder's EXTRA_TAB uses.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_voice"
+        android:shortcutId="SpeakFood"
+        android:shortcutLongLabel="@string/shortcut_speak_food_long"
+        android:shortcutShortLabel="@string/shortcut_speak_food_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="ph.mart.healthapp.MainActivity"
+            android:targetPackage="ph.mart.healthapp">
+            <extra
+                android:name="ph.mart.healthapp.shortcut.ACTION"
+                android:value="SpeakFood" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_food"
+        android:shortcutId="LogFood"
+        android:shortcutLongLabel="@string/shortcut_log_food_long"
+        android:shortcutShortLabel="@string/shortcut_log_food_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="ph.mart.healthapp.MainActivity"
+            android:targetPackage="ph.mart.healthapp">
+            <extra
+                android:name="ph.mart.healthapp.shortcut.ACTION"
+                android:value="LogFood" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_water"
+        android:shortcutId="AddWater"
+        android:shortcutLongLabel="@string/shortcut_add_water_long"
+        android:shortcutShortLabel="@string/shortcut_add_water_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="ph.mart.healthapp.MainActivity"
+            android:targetPackage="ph.mart.healthapp">
+            <extra
+                android:name="ph.mart.healthapp.shortcut.ACTION"
+                android:value="AddWater" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_weight"
+        android:shortcutId="LogWeight"
+        android:shortcutLongLabel="@string/shortcut_log_weight_long"
+        android:shortcutShortLabel="@string/shortcut_log_weight_short">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="ph.mart.healthapp.MainActivity"
+            android:targetPackage="ph.mart.healthapp">
+            <extra
+                android:name="ph.mart.healthapp.shortcut.ACTION"
+                android:value="LogWeight" />
+        </intent>
+    </shortcut>
+
+</shortcuts>

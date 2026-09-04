@@ -25,6 +25,10 @@ photo timelapse · photo comparison slider · meal ideas.
 **Off-phone surfaces:** Glance home-screen widget (`:app/widget/`) · Wear OS app (`:wear`) ·
 Wear tile · WorkManager notifications (`:app/reminder/`).
 
+**Launcher shortcuts** (`@xml/shortcuts`, static): Say what you ate · Log food · Add water ·
+Weigh in. The first three of those are the FAB sheet's own rows; water writes a glass and lands
+on Home.
+
 **Onboarding** is not in the nav graph — `AppRoot` swaps it out once a profile is written.
 
 ---
@@ -153,7 +157,9 @@ Connection state is live, never a stored flag. First sync backfills 30 days.
 Nine WorkManager notifications behind six Profile switches: three meal reminders · weigh-in
 (Mondays) · progress photo (fortnightly) · two water checks · supplements · training day.
 Plus a one-shot fasting-goal notification (a seventh switch), derived off the active fast rather
-than scheduled periodically.
+than scheduled periodically. The two water checks carry a **+1 glass** action button — the only
+action button in the app; tapping it logs the glass without opening anything and cancels the
+notification.
 
 ## Wear & widget
 
@@ -202,7 +208,7 @@ each one is argued in `CLAUDE.md`.
 
 ## Open backlog
 
-`ROADMAP.md` holds the planned features — eight specs, in order, each ready to implement.
+`ROADMAP.md` holds the planned features — seven specs, in order, each ready to implement.
 `CLAUDE.md` → **Backlog** holds the outstanding work (FDC key proxy, Google Health verification
 and the unpinned response fields, the final mascot illustration). Inline `ponytail:` comments
 mark known ceilings and their upgrade paths.

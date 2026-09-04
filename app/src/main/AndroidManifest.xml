@@ -25,10 +25,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FitPulse">
+        <!-- singleTop because a launcher shortcut's intent cannot carry flags (@xml/shortcuts
+             inflates action/target/extras, not flags): without it a shortcut tapped on a running
+             app would stack a second MainActivity instead of reaching onNewIntent. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.FitPulse"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -36,7 +40,17 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- The water reminder's "+1 glass" button. Not exported: nothing outside the app has any
+             business logging a glass, and the notification's own PendingIntent is not a caller. -->
+        <receiver
+            android:name=".reminder.WaterActionReceiver"
+            android:exported="false" />
 
         <!-- The home-screen widget. Exported because the launcher hosts it; it carries no data
              of its own and every read goes through the same repositories the app uses. -->

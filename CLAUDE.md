@@ -539,6 +539,42 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.
+- **Launcher shortcuts are static resources, never `ShortcutManager` dynamic ones.** A dynamic
+  shortcut needs code that runs to publish it and state to keep it in step with what it points at;
+  a static one is a resource the launcher reads, and nothing in the four varies per user. A
+  shortcut *cannot* name a route — routes are Nav3 keys inside a Compose back stack, not Activity
+  intents — so `@xml/shortcuts` carries `EXTRA_ACTION`, the sibling `EXTRA_TAB` already had, and
+  `MainActivity` resolves it with `shortcutActionOf()` into nullable state cleared once consumed:
+  `tabRequest`'s exact shape, which is what lets a shortcut tapped on an already-running app
+  re-point it the way a second notification does. `shortcutActionOf` takes the extra's **String**
+  rather than the `Intent` for the reason `mascotCharacterOf` does — it is the pure half a JVM test
+  can reach, and an unknown name (a shortcut pinned by an older build) degrades to null.
+- **`EXTRA_ACTION`'s vocabulary is the FAB sheet's rows, and water is its one exception.** A
+  shortcut is `QuickActionSheet` with the tap pre-made, so *Say what you ate*, *Log food* and
+  *Weigh in* resolve to the same `topLevelBackStack.add(…)` or the same `ActiveSheet` value that
+  sheet's own row does, each carrying day `0` — a launcher tap has no diary date, the reason the
+  FAB itself passes `0`. **Add water has neither**: water is an inline `WaterGlassRow` on a Home
+  card, and that card can be hidden by `Profile.homeLayout`, so a navigational shortcut could land
+  on a screen with no water on it. It is therefore handled in `MainActivity` as a *write* — the
+  shared `addGlass()`, then Home so the card shows the new count — and `AppScaffold`'s `when` says
+  so rather than pretending it is a destination.
+- **`MainActivity` is `singleTop` because `@xml/shortcuts` cannot carry intent flags.**
+  `Intent.parseIntent` inflates `action`, the target, `data`, `mimeType` and `<extra>`, and no
+  `flags`, so the notification's `FLAG_ACTIVITY_CLEAR_TOP` has no shortcut equivalent; without
+  `singleTop` a shortcut tapped on a running app would stack a second `MainActivity` instead of
+  reaching `onNewIntent`. It is also what makes that method's comment true for both callers.
+- **Only the water reminder gets an action button, and answering it cancels it.** `addGlass()` is a
+  single unambiguous write already shared with the widget and the watch, so a fourth surface caps
+  at the same goal for free; "Log breakfast" has no single write — it needs the sheet, and a button
+  that opened a sheet would be the tap the notification body already is. `WaterActionReceiver`
+  re-reads Room before writing, the rule `PhoneWearListenerService` follows (a notification posted
+  at 11:00 and tapped at 14:00 must not write against the count that was true when it was posted),
+  reaching the repositories through Koin's global context and doing the write inside `goAsync()` —
+  `onReceive` is on the main thread, so the wear service's `runBlocking` is not available here. The
+  notification id is the `Reminder.ordinal` already, so the cancel is one call; a notification left
+  in the shade with an updated count would be a second surface reporting today's water, and the
+  widget is that. Nothing pushes to the widget or the watch from the receiver — the Application's
+  `todaySnapshotFlow` collector fires the moment Room emits.
 - **The home-screen widget lives in `:app`, for the same reason reminders do** — a widget is a
   system surface, not a screen. It reads the repository interfaces directly (no ViewModel; there
   is no Compose lifecycle to hold one) and gets them from Koin's global context via

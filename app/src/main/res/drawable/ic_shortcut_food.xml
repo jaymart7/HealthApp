@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Launcher shortcut icon. The circle and the glyph carry literal colours for
+  ic_notification.xml's reason: a resource the launcher inflates cannot read a Compose
+  theme token. The circle is @color/shortcut_background so the glyph stays legible on a
+  light or a dark launcher, which a bare tinted glyph would not.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/shortcut_background"
+        android:pathData="M12,12m-12,0a12,12 0 1,0 24,0a12,12 0 1,0 -24,0" />
+    <group
+        android:pivotX="12"
+        android:pivotY="12"
+        android:scaleX="0.55"
+        android:scaleY="0.55">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M11,9H9V2H7v7H5V2H3v7c0,2.12 1.66,3.84 3.75,3.97V22h2.5v-9.03C11.34,12.84 13,11.12 13,9V2h-2v7z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M16,6v8h2.5v8H21V2c-2.76,0 -5,2.24 -5,4z" />
+    </group>
+</vector>

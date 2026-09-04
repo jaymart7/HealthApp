@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">FitPulse</string>
     <string name="widget_description">Today\'s calories, streak, and water — with one-tap logging.</string>
+
+    <!-- Launcher shortcuts (@xml/shortcuts). Labels must be string resources, unlike the
+         reminder titles, which stay Kotlin fields on the Reminder enum. -->
+    <string name="shortcut_speak_food_short">Say what you ate</string>
+    <string name="shortcut_speak_food_long">Log a meal by saying it</string>
+    <string name="shortcut_log_food_short">Log food</string>
+    <string name="shortcut_log_food_long">Photograph a meal</string>
+    <string name="shortcut_add_water_short">Add water</string>
+    <string name="shortcut_add_water_long">Log a glass of water</string>
+    <string name="shortcut_log_weight_short">Weigh in</string>
+    <string name="shortcut_log_weight_long">Log today\'s weight</string>
 </resources>

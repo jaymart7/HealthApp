@@ -18,6 +18,10 @@ import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 /** Intent extra naming the tab a notification tap should land on — read by MainActivity. */
 const val EXTRA_TAB = "ph.mart.healthapp.reminder.TAB"
 
+/** Intent extra carrying the notification's own id to [WaterActionReceiver], which is what lets
+ * answering the nudge cancel it. */
+const val EXTRA_NOTIFICATION_ID = "ph.mart.healthapp.reminder.NOTIFICATION_ID"
+
 /** Input-data key carrying [Reminder.name] into [ReminderWorker]. */
 const val KEY_REMINDER = "reminder"
 
@@ -97,8 +101,20 @@ internal fun fastingGoalDelayMillis(targetMillis: Long?, nowMillis: Long): Long?
  *
  * [id] must be stable per notification kind: it is what lets a repeat replace its predecessor
  * rather than stack another row in the shade.
+ *
+ * [waterAction] adds the one action button in the app. Only water gets one: [addGlass] is a single
+ * unambiguous write, already shared with the widget and the watch so all three cap at the same
+ * goal. "Log breakfast" has no single write — it needs the sheet, and a button that opened a sheet
+ * would be the tap the notification body already is.
  */
-internal fun notify(context: Context, id: Int, title: String, body: String, tab: TopLevelDestination) {
+internal fun notify(
+    context: Context,
+    id: Int,
+    title: String,
+    body: String,
+    tab: TopLevelDestination,
+    waterAction: Boolean = false,
+) {
     val intent = Intent(context, MainActivity::class.java)
         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         .putExtra(EXTRA_TAB, tab.name)
@@ -108,13 +124,28 @@ internal fun notify(context: Context, id: Int, title: String, body: String, tab:
         intent,
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
-    val notification = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
+    val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification)
         .setContentTitle(title)
         .setContentText(body)
         .setContentIntent(pendingIntent)
         .setAutoCancel(true)
-        .build()
+    if (waterAction) {
+        val actionIntent = Intent(context, WaterActionReceiver::class.java)
+            .putExtra(EXTRA_NOTIFICATION_ID, id)
+        // Request code [id] rather than 0: the two water reminders differ only in their extra,
+        // and FLAG_UPDATE_CURRENT on a shared code would let one rewrite the other's intent.
+        val actionPendingIntent = PendingIntent.getBroadcast(
+            context,
+            id,
+            actionIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        // The icon is required by the signature and ignored by every phone launcher since API 24;
+        // reusing the small icon beats a second drawable nothing renders.
+        builder.addAction(R.drawable.ic_notification, "+1 glass", actionPendingIntent)
+    }
+    val notification = builder.build()
     // The caller's areNotificationsEnabled() check already covers the permission; this catch is
     // only for the race where it's revoked between that check and here.
     runCatching { NotificationManagerCompat.from(context).notify(id, notification) }

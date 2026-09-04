@@ -26,64 +26,17 @@ rather than adding more literals to extract.
 
 | # | Feature | Scope | Schema |
 |---|---------|-------|--------|
-| 1 | Launcher shortcuts + notification actions | `:app` only | — |
-| 2 | Log to a past day from the diary | one route type | — |
-| 3 | Weekly recap notification | four modules | DB 27, export 16 |
-| 4 | Custom food library | three modules | none (reuses `favorite_food`) |
-| 5 | Automatic local backup | a package move, then `:app` | — |
-| 6 | UI test pass + CI gate | infrastructure | — |
-| 7 | Localization scaffolding | every module | — |
-| 8 | Tablet / foldable adaptive layout | four modules | — |
+| 1 | Log to a past day from the diary | one route type | — |
+| 2 | Weekly recap notification | four modules | DB 27, export 16 |
+| 3 | Custom food library | three modules | none (reuses `favorite_food`) |
+| 4 | Automatic local backup | a package move, then `:app` | — |
+| 5 | UI test pass + CI gate | infrastructure | — |
+| 6 | Localization scaffolding | every module | — |
+| 7 | Tablet / foldable adaptive layout | four modules | — |
 
 ---
 
-## 1. Launcher shortcuts + notification actions
-
-**What.** Long-pressing the launcher icon offers *Say what you ate · Log food · Add water ·
-Weigh in*. The two water reminders grow a **+1 glass** action button.
-
-**Where.** `:app` only. New `app/src/main/res/xml/shortcuts.xml` and
-`app/src/main/java/ph/mart/healthapp/reminder/WaterActionReceiver.kt`; edits to
-`AndroidManifest.xml`, `MainActivity.kt`, `ui/AppScaffold.kt`, `reminder/Reminders.kt`.
-
-**Schema / export.** None.
-
-### Decisions
-
-- **Shortcuts are static, in `shortcuts.xml`, never `ShortcutManager` dynamic ones.** A dynamic
-  shortcut needs code that runs to publish it and state to keep it in step with what it points
-  at; a static one is a resource the launcher reads. Nothing here varies per user.
-- **A shortcut cannot name a route, so it reuses the reminder's own intent mechanism.** Routes
-  are Nav3 keys inside a Compose back stack, not Activity intents. `EXTRA_TAB` gains a sibling
-  `EXTRA_ACTION`, read in `MainActivity` beside `Intent.tabExtra()` and held as nullable state
-  cleared once consumed — `tabRequest`'s exact shape, which is what lets a shortcut tapped on an
-  already-running app re-point it the way a second notification does.
-- **`EXTRA_ACTION`'s vocabulary is the FAB sheet's rows, not a new one.** A shortcut is
-  `QuickActionSheet` with the tap pre-made, so it resolves to the same `ActiveSheet` value or the
-  same `topLevelBackStack.add(…)` call, and every one carries day `0` — a launcher tap has no
-  diary date, the reason the FAB itself passes `0`.
-- **Only the water reminder gets an action button.** `addGlass()` is a single unambiguous write
-  the widget already performs, and it is shared so both surfaces cap at the same goal. "Log
-  breakfast" has no single write — it needs the sheet, and a button that opened a sheet would be
-  the tap the notification body already is.
-- **The receiver re-reads Room before writing**, the rule `PhoneWearListenerService` follows: a
-  notification posted at 11:00 and tapped at 14:00 must not add a glass against the count that
-  was true when it was posted. `WaterActionReceiver` reaches the repository through Koin's global
-  context via `KoinComponent`, the trick `ReminderWorker` uses, and does the write inside
-  `goAsync()`.
-- **Answering the nudge cancels it** rather than rewriting its text. The notification id is the
-  `Reminder.ordinal` already, so the cancel is one call; a notification that stays in the shade
-  with an updated count is a second surface reporting today's water, and the widget is that.
-
-**Deliberately excluded.** Dynamic and pinned shortcuts; shortcut usage ranking; a "log it"
-action on the meal reminders; inline reply on anything.
-
-**Check.** `Intent.actionExtra()` is a pure function like `tabExtra()` — one JVM test that a
-known extra resolves and an unknown one degrades to null, the reading `mascotName` already gets.
-
----
-
-## 2. Log to a past day from the diary
+## 1. Log to a past day from the diary
 
 **What.** The photo-logging flow lands on the day the diary is showing, not always today.
 
@@ -118,7 +71,7 @@ entry, and `0` still writes today.
 
 ---
 
-## 3. Weekly recap notification
+## 2. Weekly recap notification
 
 **What.** A Sunday-evening nudge that opens the recap overlay on the week just finished.
 
@@ -162,7 +115,7 @@ quiet-week predicate as a pure function over a day set.
 
 ---
 
-## 4. Custom food library
+## 3. Custom food library
 
 **What.** Author a food once — name, portion, macros, micronutrients — without having logged it
 first; edit it later; find it in food search. Rename and delete from Profile.
@@ -212,7 +165,7 @@ to one result, the custom one winning.
 
 ---
 
-## 5. Automatic local backup
+## 4. Automatic local backup
 
 **What.** A weekly job writing the existing export JSON to app storage, keeping the last three,
 plus making Android's own backup coverage explicit rather than accidental.
@@ -270,7 +223,7 @@ for the rotation keeping exactly the newest three.
 
 ---
 
-## 6. UI test pass + CI gate
+## 5. UI test pass + CI gate
 
 **What.** Instrumented Compose tests for the flows that would otherwise break silently, and a
 GitHub Actions workflow running build + unit tests on push.
@@ -307,7 +260,7 @@ is a separate decision and not on this roadmap.
 
 ---
 
-## 7. Localization scaffolding
+## 6. Localization scaffolding
 
 **What.** Move every user-facing string out of Kotlin and into per-module `strings.xml`. No
 translation is added; this is the work that makes one possible.
@@ -351,7 +304,7 @@ is also what stops the next feature adding literals back.
 
 ---
 
-## 8. Tablet / foldable adaptive layout
+## 7. Tablet / foldable adaptive layout
 
 **What.** The app assumes a phone. Make the four tabs and the routes above them work on a large
 window, a folded/unfolded foldable, and in split screen.
@@ -393,7 +346,7 @@ Drag-and-drop between panes. A tablet-specific visual design — the spacing sca
 palette and the type scale are unchanged. This is layout only.
 
 **Check.** `@PreviewScreenSizes` on the four tab screens plus `AppScaffold`, and one instrumented
-test (from item 6) that back from a detail pane on a large window lands where it does on a phone.
+test (from item 5) that back from a detail pane on a large window lands where it does on a phone.
 
 ---
 

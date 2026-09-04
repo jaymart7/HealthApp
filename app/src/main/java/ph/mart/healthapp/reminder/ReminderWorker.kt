@@ -76,7 +76,14 @@ class ReminderWorker(
             }
         }
 
-        notify(context, reminder.ordinal, reminder.title, reminder.body, reminder.tab)
+        notify(
+            context,
+            reminder.ordinal,
+            reminder.title,
+            reminder.body,
+            reminder.tab,
+            waterAction = reminder.checksWater,
+        )
         return Result.success()
     }
 }

@@ -22,6 +22,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
+import ph.mart.healthapp.ShortcutAction
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavItem
@@ -95,6 +96,8 @@ fun AppScaffold(
     modifier: Modifier = Modifier,
     tabRequest: TopLevelDestination? = null,
     onTabRequestHandled: () -> Unit = {},
+    shortcutRequest: ShortcutAction? = null,
+    onShortcutRequestHandled: () -> Unit = {},
 ) {
     // The list comes from Nav3's own saveable holder, so the whole navigator survives an Activity
     // recreation — rotation, a font-scale or locale change, process death. Its Android overload
@@ -115,6 +118,21 @@ fun AppScaffold(
         }
     }
     var activeSheet by rememberSaveable { mutableStateOf(ActiveSheet.None) }
+
+    // A launcher shortcut is the FAB's sheet with the tap already made, so every branch here is a
+    // line QuickActionSheet's own wiring already runs — day 0 included, for the reason the FAB
+    // passes it. Cleared on consumption like [tabRequest], which is what lets the same shortcut
+    // land twice.
+    LaunchedEffect(shortcutRequest) {
+        when (shortcutRequest) {
+            ShortcutAction.SpeakFood -> topLevelBackStack.add(VoiceLogRoute(0))
+            ShortcutAction.LogFood -> topLevelBackStack.add(FoodCaptureRoute)
+            ShortcutAction.LogWeight -> activeSheet = ActiveSheet.LogWeight
+            // A write, not a destination — MainActivity handles it.
+            ShortcutAction.AddWater, null -> Unit
+        }
+        shortcutRequest?.let { onShortcutRequestHandled() }
+    }
     val scope = rememberCoroutineScope()
 
     // Hoisted out of the screens so the FAB can watch the active tab's scroll and re-tapping a tab

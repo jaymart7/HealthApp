@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
 import ph.mart.healthapp.core.designsystem.component.mascotPaletteOf
+import ph.mart.healthapp.ShortcutAction
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingScreen
 
@@ -66,12 +67,19 @@ class AppRootViewModel(profileRepository: ProfileRepository) : ViewModel() {
 fun AppRoot(
     tabRequest: TopLevelDestination? = null,
     onTabRequestHandled: () -> Unit = {},
+    shortcutRequest: ShortcutAction? = null,
+    onShortcutRequestHandled: () -> Unit = {},
     viewModel: AppRootViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     when (state) {
         AppRootState.Loading -> Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {}
         AppRootState.Onboarding -> OnboardingScreen()
-        AppRootState.Ready -> AppScaffold(tabRequest = tabRequest, onTabRequestHandled = onTabRequestHandled)
+        AppRootState.Ready -> AppScaffold(
+            tabRequest = tabRequest,
+            onTabRequestHandled = onTabRequestHandled,
+            shortcutRequest = shortcutRequest,
+            onShortcutRequestHandled = onShortcutRequestHandled,
+        )
     }
 }
