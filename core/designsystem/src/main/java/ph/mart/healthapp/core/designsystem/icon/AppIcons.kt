@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
@@ -69,5 +70,8 @@ object AppIcons {
     val Share: ImageVector = Icons.Filled.Share
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment
     val TrendDown: ImageVector = Icons.Filled.ArrowDownward
+    /** The third trend glyph — a movement too small to call, or too few readings to call one.
+     * Colour alone never carries the verdict, so a neutral trend needs a glyph of its own. */
+    val TrendFlat: ImageVector = Icons.Filled.Remove
     val TrendUp: ImageVector = Icons.Filled.ArrowUpward
 }

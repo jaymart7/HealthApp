@@ -20,9 +20,6 @@ import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.BadgeDot
-import ph.mart.healthapp.core.designsystem.component.FullScreenState
-import ph.mart.healthapp.core.designsystem.component.MascotAvatar
-import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.ui.achievement.BadgeFamily
@@ -31,23 +28,14 @@ import ph.mart.healthapp.feature.progress.ui.achievement.badgeGroups
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 
 /**
- * Every badge in the app on one surface. The tab takes no `ProgressScreenState` — unlike the chart
- * tabs it has no range to slice and no sheet to open.
+ * Every badge in the app on one surface. The page takes no `ProgressScreenState` — unlike the chart
+ * subjects it has no range to slice and no sheet to open, and its empty state is `SubjectDetail`'s.
  *
  * The copy lives here rather than in the derivation, the division `RecapCard` already draws:
  * `:core:data`-shaped folds count, the card names.
  */
 @Composable
-internal fun AchievementsTabContent(uiState: ProgressUiState) {
-    if (uiState.activeDays.isEmpty()) {
-        FullScreenState(
-            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-            heading = "No badges yet",
-            body = "Log anything — a meal, a glass of water, a workout — and the first one lights up.",
-        )
-        return
-    }
-
+internal fun AchievementsDetailBody(uiState: ProgressUiState) {
     val groups = badgeGroups(
         // Read here rather than at flow-construction time, so the streak can't freeze at whatever
         // day the app was opened — HomeViewModel's reason for doing the same.
@@ -165,11 +153,11 @@ internal fun captionFor(group: BadgeGroup, unit: UnitSystem): String {
 
 @PreviewLightDark
 @Composable
-private fun AchievementsTabPreview() {
+private fun AchievementsDetailPreview() {
     val today = todayEpochDay()
     val hour = 3_600_000L
     AppTheme {
-        AchievementsTabContent(
+        AchievementsDetailBody(
             uiState = ProgressUiState(
                 activeDays = (today - 30..today).toSet(),
                 weightProgressKg = 5.2,
@@ -183,10 +171,3 @@ private fun AchievementsTabPreview() {
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun AchievementsTabEmptyPreview() {
-    AppTheme {
-        AchievementsTabContent(uiState = ProgressUiState())
-    }
-}

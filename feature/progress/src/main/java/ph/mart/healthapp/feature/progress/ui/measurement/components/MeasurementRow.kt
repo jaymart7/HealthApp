@@ -81,7 +81,7 @@ private fun Sparkline(values: List<Double>, modifier: Modifier = Modifier) {
     }
 }
 
-private fun formatCm(value: Double): String =
+internal fun formatCm(value: Double): String =
     if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark

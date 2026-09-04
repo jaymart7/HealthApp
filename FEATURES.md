@@ -103,10 +103,20 @@ Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
 
 ## Progress
 
-Thirteen tabs: Weight · Food · Activity · Strength · Photos · Body · Mood · Sleep · Heart ·
-Fasting · Supplements · Blood pressure · Badges.
+An **overview** with a per-subject **detail page** behind every card. Thirteen subjects in four
+groups: Body (Weight · Photos · Measurements) · Nutrition (Food · Fasting · Supplements) ·
+Training (Activity · Strength) · Wellbeing (Sleep · Mood · Heart · Blood pressure), plus Badges as
+a summary row under the grids.
 
-- Weight: chart with 1W/1M/3M/1Y ranges, trend arrow, goal projection sentence.
+- Overview: week recap ("Across everything"), one insight card carrying the goal projection, four
+  grouped grids of subject cards — value, a 26dp preview (sparkline, day bars or a photo strip) and
+  a trend line — then the Badges row. A subject with nothing logged draws as a dashed "Nothing yet"
+  card that still opens its page; a group with nothing tracked collapses to one expandable row.
+- Detail page: back arrow, hero figure, fact chips, one chart card holding its own 1M/3M/6M/1Y
+  range toggle and legend, stat rows, and a switcher to the rest of the group. The range is
+  remembered per subject for the session. Empty subjects get a mascot page and no call to action.
+- Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
+  goal chip, and an insight card carrying the projection and the energy check-in.
 - Food: calories + macros against target over the window.
 - Activity: two charts — daily steps (imported) and daily burn.
 - Strength: volume chart, all-time personal records ranked by estimated 1RM (Epley).
@@ -121,8 +131,8 @@ Fasting · Supplements · Blood pressure · Badges.
   longest fast, photos.
 - Recap: rolling 7/30/365-day summary, shareable as a single-card PNG.
 - Energy check-in: maintenance calories measured from 28 days of logged intake against the real
-  weight trend, with a one-tap adjustment of the calorie target (a card on the Weight tab, opening
-  a full overlay that shows its working).
+  weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
+  opening a full overlay that shows its working).
 - Logging sheets: weigh-in (backdatable), measurements, progress photo, blood pressure.
 
 ## AI (Firebase AI Logic / Gemini)

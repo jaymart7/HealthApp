@@ -55,3 +55,8 @@ fun formatEpochDay(epochDay: Long): String =
 /** "Tuesday" — unambiguous inside a week-long window, where the full date is too long a label. */
 fun formatWeekday(epochDay: Long): String =
     SimpleDateFormat("EEEE", Locale.getDefault()).format(epochDayToDate(epochDay))
+
+/** "Sep" — the x-axis label a chart spanning months can fit. Short by necessity: four of them
+ * share the width of a phone. */
+fun formatMonth(epochDay: Long): String =
+    SimpleDateFormat("MMM", Locale.getDefault()).format(epochDayToDate(epochDay))

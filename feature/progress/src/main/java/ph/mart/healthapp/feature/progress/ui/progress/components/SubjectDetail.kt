@@ -1,0 +1,292 @@
+package ph.mart.healthapp.feature.progress.ui.progress.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import ph.mart.healthapp.core.data.profile.EnergyCheckIn
+import ph.mart.healthapp.core.data.progress.GoalProjection
+import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
+import ph.mart.healthapp.core.designsystem.component.FullScreenState
+import ph.mart.healthapp.core.designsystem.component.MascotAvatar
+import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.ui.achievement.components.AchievementsDetailBody
+import ph.mart.healthapp.feature.progress.ui.activity.components.ActivityDetailBody
+import ph.mart.healthapp.feature.progress.ui.fasting.components.FastingDetailBody
+import ph.mart.healthapp.feature.progress.ui.heart.components.HeartDetailBody
+import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsDetailBody
+import ph.mart.healthapp.feature.progress.ui.mood.components.MoodDetailBody
+import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionDetailBody
+import ph.mart.healthapp.feature.progress.ui.photo.components.PhotosDetailBody
+import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureDetailBody
+import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
+import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
+import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.SubjectSummary
+import ph.mart.healthapp.feature.progress.ui.progress.subjectsIn
+import ph.mart.healthapp.feature.progress.ui.progress.summarizeAll
+import ph.mart.healthapp.feature.progress.ui.sleep.components.SleepDetailBody
+import ph.mart.healthapp.feature.progress.ui.strength.components.StrengthDetailBody
+import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsDetailBody
+import ph.mart.healthapp.feature.progress.ui.weight.components.WeightDetailBody
+
+/**
+ * Photos draws a `LazyVerticalGrid` and Blood pressure a `LazyColumn`; nesting either in a
+ * `verticalScroll` column measures it with infinite height and throws. They own their scroll, so
+ * the page gives them the room and keeps the switcher off the bottom of it.
+ */
+private val SelfScrolling = setOf(Subject.Photos, Subject.BloodPressure)
+
+/**
+ * One subject's page — the surface behind every card on the overview.
+ *
+ * It is a **swap-in inside the Progress tab, not a route**. A route would earn its own
+ * `ViewModelStoreOwner` and with it a second copy of `ProgressViewModel`'s twelve repositories, to
+ * draw a page that writes nothing — the same argument `RecapScreen` and `TimelapseScreen` make. It
+ * follows that back has to be handled here, or it would leave the tab entirely, and that the bottom
+ * bar and the FAB stay up, which is what the handoff draws.
+ *
+ * The chrome is fixed for all thirteen and the body varies: hero, chips, a chart card holding its
+ * own range toggle, the stat rows. A subject with no data yet is still a real page — its
+ * `FullScreenState` and the switcher to its siblings, and **no call to action**: Progress reads,
+ * and gains no logging entry point. Blood pressure is the single exception, because the sheet it
+ * would open already lives on this screen.
+ */
+@Composable
+internal fun SubjectDetail(
+    subject: Subject,
+    uiState: ProgressUiState,
+    state: ProgressScreenState,
+    checkIn: EnergyCheckIn?,
+    projection: GoalProjection?,
+    canShare: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+    NavigationBackHandler(state = navigationState, onBackCompleted = state::closeSubject)
+
+    val today = todayEpochDay()
+    val summaries = remember(uiState, today) { summarizeAll(uiState, today) }
+    val summary = summaries[subject] ?: SubjectSummary(subject)
+    // Keyed on the subject, so hopping to a sibling opens at the top rather than at the offset the
+    // page before it was left at. The overview's own scroll is hoisted in `AppScaffold` and
+    // untouched by any of this, which is what preserves it across the round trip.
+    val scrollState = rememberScrollState()
+
+    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            DetailHeader(
+                title = subject.label,
+                onBack = state::closeSubject,
+                onShare = if (canShare) state::openRecap else null,
+            )
+            when {
+                !summary.tracked -> EmptyDetail(subject = subject, state = state, summaries = summaries)
+
+                subject in SelfScrolling -> Column(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+                ) {
+                    Body(subject, uiState, state, checkIn, projection)
+                }
+
+                else -> Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = DockedFabContentPadding),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Body(subject, uiState, state, checkIn, projection)
+                    Switcher(subject = subject, summaries = summaries, state = state)
+                }
+            }
+        }
+    }
+}
+
+/** The per-subject page content. Each body owns its own hero, chips, chart card and stat rows —
+ * the shapes differ enough (a photo grid has no chart, Badges has no range) that a single slot
+ * table would be a struct of nullable lambdas describing nothing. */
+@Composable
+private fun ColumnScope.Body(
+    subject: Subject,
+    uiState: ProgressUiState,
+    state: ProgressScreenState,
+    checkIn: EnergyCheckIn?,
+    projection: GoalProjection?,
+) {
+    when (subject) {
+        Subject.Weight -> WeightDetailBody(uiState, state, checkIn, projection)
+        Subject.Photos -> PhotosDetailBody(uiState, state)
+        Subject.Measurements -> MeasurementsDetailBody(uiState, state)
+        Subject.Nutrition -> NutritionDetailBody(uiState, state)
+        Subject.Fasting -> FastingDetailBody(uiState, state)
+        Subject.Supplements -> SupplementsDetailBody(uiState, state)
+        Subject.Activity -> ActivityDetailBody(uiState, state)
+        Subject.Strength -> StrengthDetailBody(uiState, state)
+        Subject.Sleep -> SleepDetailBody(uiState, state)
+        Subject.Mood -> MoodDetailBody(uiState, state)
+        Subject.Heart -> HeartDetailBody(uiState, state)
+        Subject.BloodPressure -> BloodPressureDetailBody(uiState, state)
+        Subject.Badges -> AchievementsDetailBody(uiState)
+    }
+}
+
+@Composable
+private fun EmptyDetail(
+    subject: Subject,
+    state: ProgressScreenState,
+    summaries: Map<Subject, SubjectSummary>,
+    modifier: Modifier = Modifier,
+) {
+    val copy = emptyCopy(subject)
+    Column(modifier = modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+        Box(modifier = Modifier.weight(1f)) {
+            FullScreenState(
+                icon = { MascotAvatar(state = copy.mascot, size = 64.dp) },
+                heading = copy.heading,
+                body = copy.body,
+                // Blood pressure alone: the sheet is already on this screen, so pointing at it
+                // adds no entry point. Every other subject is filled from somewhere else in the
+                // app, and a button that only navigated would be a button explaining a screen.
+                actions = if (subject == Subject.BloodPressure) {
+                    {
+                        PrimaryButton(
+                            label = "Log a reading",
+                            onClick = state::openBloodPressureSheet,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                } else {
+                    null
+                },
+            )
+        }
+        Switcher(subject = subject, summaries = summaries, state = state)
+        Box(modifier = Modifier.padding(bottom = DockedFabContentPadding))
+    }
+}
+
+@Composable
+private fun Switcher(
+    subject: Subject,
+    summaries: Map<Subject, SubjectSummary>,
+    state: ProgressScreenState,
+) {
+    val group = subject.group ?: return
+    val siblings = subjectsIn(group)
+        .filter { it != subject }
+        .map { sibling ->
+            val summary = summaries[sibling]
+            sibling to summary?.takeIf { it.tracked }?.let { "${it.value} ${it.unit.orEmpty()}".trim() }
+        }
+    SiblingSwitcher(groupLabel = group.label, siblings = siblings, onSelect = state::open)
+}
+
+/** What a subject with nothing in it says. The copy each tab already carried, moved here so the
+ * empty page and the empty card can be read against each other in one place. */
+private data class EmptyCopy(val heading: String, val body: String, val mascot: MascotState)
+
+private fun emptyCopy(subject: Subject): EmptyCopy = when (subject) {
+    Subject.Weight -> EmptyCopy(
+        "No weight logged yet",
+        "Log your weight from the button on any tab and your trend shows up here.",
+        MascotState.Sleepy,
+    )
+    Subject.Photos -> EmptyCopy(
+        "No progress photos yet",
+        "Add your first photo from the button on any tab to start tracking changes over time.",
+        MascotState.Sleepy,
+    )
+    Subject.Measurements -> EmptyCopy(
+        "No measurements yet",
+        "Add a chest, waist, hips, arm or thigh reading and it charts here.",
+        MascotState.Idle,
+    )
+    Subject.Nutrition -> EmptyCopy(
+        "Nothing logged yet",
+        "Log a few meals in the diary and your calorie trend shows up here.",
+        MascotState.Sleepy,
+    )
+    Subject.Fasting -> EmptyCopy(
+        "No fasts yet",
+        "Start one from the Home screen and it lands here when you end it.",
+        MascotState.Sleepy,
+    )
+    Subject.Supplements -> EmptyCopy(
+        "No supplements ticked yet",
+        "Add what you take in Profile, then tick it off on Home and it shows up here.",
+        MascotState.Sleepy,
+    )
+    Subject.Activity -> EmptyCopy(
+        "No activity yet",
+        "Connect Google Health for steps, or log a workout from the diary.",
+        MascotState.Idle,
+    )
+    Subject.Strength -> EmptyCopy(
+        "Nothing lifted yet",
+        "Log a strength workout from the diary and its sets show up here.",
+        MascotState.Idle,
+    )
+    Subject.Sleep -> EmptyCopy(
+        "No sleep data yet",
+        "Sleep arrives from your paired watch. Connect Google Health in Profile and your nights " +
+            "show up here.",
+        MascotState.Sleepy,
+    )
+    Subject.Mood -> EmptyCopy(
+        "No mood logged yet",
+        "Tap how you're feeling on the Home screen and it shows up here.",
+        MascotState.Sleepy,
+    )
+    Subject.Heart -> EmptyCopy(
+        "No heart data yet",
+        "Connect Google Health in Profile and your readings show up here.",
+        MascotState.Idle,
+    )
+    Subject.BloodPressure -> EmptyCopy(
+        "No readings yet",
+        "Log the two numbers off your cuff and they'll chart here.",
+        MascotState.Idle,
+    )
+    Subject.Badges -> EmptyCopy(
+        "No badges yet",
+        "Log anything — a meal, a glass of water, a workout — and the first one lights up.",
+        MascotState.Idle,
+    )
+}
+
+/** A subject with nothing in it is still a real page, with a way on to its siblings. */
+@PreviewLightDark
+@Composable
+private fun SubjectDetailEmptyPreview() {
+    AppTheme {
+        SubjectDetail(
+            subject = Subject.Sleep,
+            uiState = ProgressUiState(),
+            state = ProgressScreenState(selectedSubject = Subject.Sleep),
+            checkIn = null,
+            projection = null,
+            canShare = false,
+        )
+    }
+}

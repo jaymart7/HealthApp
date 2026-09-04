@@ -1,12 +1,13 @@
 package ph.mart.healthapp.feature.progress.ui.pressure.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,103 +21,101 @@ import ph.mart.healthapp.core.data.bloodpressure.inRange
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
-import ph.mart.healthapp.core.designsystem.component.FullScreenState
-import ph.mart.healthapp.core.designsystem.component.MascotAvatar
-import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureEvent
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureViewModel
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
+import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
+import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
+import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
+import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
+import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
+import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
+import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
 import ph.mart.healthapp.feature.progress.ui.shared.components.RangeBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.RangeBarChart
-import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
 
 /** Breathing room above and below the window's own readings, so no bar sits flat on an edge. */
 private const val AXIS_PAD_MMHG = 10
 
 /**
- * Scrolls itself, like the Photos tab and unlike the other eight: the reading list is per-reading
- * rather than per-day, so a 3M window can hold a couple of hundred rows. That is why
- * `ProgressScreen` dispatches this one outside `ScrollingTab`.
+ * Scrolls itself, like the Photos page and unlike every other subject: the list is per-*reading*
+ * rather than per-day, so a 3M window can hold a couple of hundred rows. `SubjectDetail` names it
+ * in `SelfScrolling` for that reason, and hands it the room instead of a scrolling column.
+ *
+ * The one subject on this screen that writes, which is why it carries its own ViewModel and
+ * `ProgressViewModel` stays the read-only container its KDoc says it is.
  */
 @Composable
-internal fun BloodPressureTabContent(
+internal fun BloodPressureDetailBody(
     uiState: ProgressUiState,
     state: ProgressScreenState,
     viewModel: BloodPressureViewModel = koinViewModel(),
 ) {
-    BloodPressureTabBody(uiState = uiState, state = state, onEvent = viewModel::handleEvent)
+    BloodPressureDetailContent(uiState = uiState, state = state, onEvent = viewModel::handleEvent)
 }
 
 @Composable
-private fun BloodPressureTabBody(
+private fun BloodPressureDetailContent(
     uiState: ProgressUiState,
     state: ProgressScreenState,
     onEvent: (BloodPressureEvent) -> Unit,
 ) {
-    if (uiState.bloodPressure.isEmpty()) {
-        // An invitation, not a "connect something" — unlike Heart and Sleep, there is nothing to
-        // import here. The only way a reading arrives is the user typing one in.
-        FullScreenState(
-            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-            heading = "No readings yet",
-            body = "Log the two numbers off your cuff and they'll chart here.",
-            actions = {
-                PrimaryButton(
-                    label = "Log a reading",
-                    onClick = { state.openBloodPressureSheet() },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            },
-        )
-        return
-    }
-
     // Windowed by date rather than sliced off the end, like heart, sleep and mood: the readings
     // are sparse, so the chart needs the window's bounds to know where the gaps are.
     val today = todayEpochDay()
-    val from = today - (state.range.days ?: ChartRange.OneYear.days!!)
-    val readings = uiState.bloodPressure.inRange(state.range, today)
+    val range = state.rangeFor(Subject.BloodPressure)
+    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val readings = uiState.bloodPressure.inRange(range, today)
     val averages = readings.averages()
 
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = DockedFabContentPadding),
         modifier = Modifier.fillMaxSize(),
     ) {
         item {
-            SegmentedToggle(
-                options = ChartRange.entries.map { it.label },
-                selectedIndex = ChartRange.entries.indexOf(state.range),
-                onSelect = { index -> state.range = ChartRange.entries[index] },
+            HeroValue(
+                value = averages.systolic?.let { "$it/${averages.diastolic}" } ?: "—",
+                caption = "mmHg average",
             )
         }
         item {
-            // Each day as one bar spanning its mean diastolic up to its mean systolic.
-            RangeBarChart(
-                bars = readings.byDay().map { RangeBar(it.dateEpochDay, low = it.diastolic, high = it.systolic) },
-                fromEpochDay = from,
-                toEpochDay = today,
-                axisPad = AXIS_PAD_MMHG,
-                modifier = Modifier.padding(top = 16.dp),
-            )
+            FactChipRow(chips = listOf(FactChip("${averages.readings} readings in this window")))
         }
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+            ChartCard(
+                title = "Readings",
+                range = range,
+                onRangeChange = { state.setRange(Subject.BloodPressure, it) },
+                legend = listOf(
+                    LegendEntry("Diastolic to systolic, per day", MaterialTheme.colorScheme.secondary),
+                ),
             ) {
-                StatCell(label = "Systolic", value = statLabel(averages.systolic))
-                StatCell(label = "Diastolic", value = statLabel(averages.diastolic))
-                // Hidden rather than "—" when no reading in the window carried one: the pulse
-                // keeps its own denominator, so an absent one is absent, not zero.
-                if (averages.pulseBpm != null) {
-                    StatCell(label = "Pulse", value = statLabel(averages.pulseBpm))
-                }
-                StatCell(label = "Readings", value = "${averages.readings}")
+                // Each day as one bar spanning its mean diastolic up to its mean systolic.
+                RangeBarChart(
+                    bars = readings.byDay().map { RangeBar(it.dateEpochDay, low = it.diastolic, high = it.systolic) },
+                    fromEpochDay = from,
+                    toEpochDay = today,
+                    axisPad = AXIS_PAD_MMHG,
+                )
             }
+        }
+        item {
+            StatRowsCard(
+                rows = listOfNotNull(
+                    StatRow("Systolic", statLabel(averages.systolic)),
+                    StatRow("Diastolic", statLabel(averages.diastolic)),
+                    // Dropped rather than "—" when no reading in the window carried one: the pulse
+                    // keeps its own denominator, so an absent one is absent, not zero.
+                    averages.pulseBpm?.let { StatRow("Pulse", statLabel(it)) },
+                    StatRow("Readings", "${averages.readings}"),
+                ),
+            )
         }
         item {
             PrimaryButton(
@@ -156,10 +155,10 @@ private fun statLabel(value: Int?): String = value?.toString() ?: "—"
 
 @PreviewLightDark
 @Composable
-private fun BloodPressureTabPreview() {
+private fun BloodPressureDetailPreview() {
     AppTheme {
         Surface {
-            BloodPressureTabBody(
+            BloodPressureDetailContent(
                 uiState = ProgressUiState(
                     bloodPressure = listOf(
                         Triple(132, 86, 74), Triple(128, 82, 71), Triple(121, 79, 0), Triple(126, 84, 68),
@@ -180,13 +179,3 @@ private fun BloodPressureTabPreview() {
     }
 }
 
-/** Nothing logged yet: an invitation with the button that fixes it. */
-@PreviewLightDark
-@Composable
-private fun BloodPressureTabEmptyPreview() {
-    AppTheme {
-        Surface {
-            BloodPressureTabBody(uiState = ProgressUiState(), state = ProgressScreenState(), onEvent = {})
-        }
-    }
-}

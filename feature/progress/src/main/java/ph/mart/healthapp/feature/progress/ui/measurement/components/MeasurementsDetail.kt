@@ -15,8 +15,16 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 
+/**
+ * A list, not a chart — five body parts each with their own sparse history, which is a table of
+ * rows rather than a series with an axis. No range toggle for the same reason: there is nothing to
+ * slice, and every part's whole history fits in its row's sparkline.
+ *
+ * The one subject page with a write on it besides Blood pressure, because the sheet it opens is the
+ * screen's own — tapping a row pre-fills it with that part.
+ */
 @Composable
-internal fun MeasurementsTabContent(uiState: ProgressUiState, state: ProgressScreenState) {
+internal fun MeasurementsDetailBody(uiState: ProgressUiState, state: ProgressScreenState) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         MeasurementPart.entries.filter { it in uiState.measurements }.forEach { part ->
             MeasurementRow(
@@ -36,10 +44,10 @@ internal fun MeasurementsTabContent(uiState: ProgressUiState, state: ProgressScr
 
 @PreviewLightDark
 @Composable
-private fun MeasurementsTabPreview() {
+private fun MeasurementsDetailPreview() {
     val today = todayEpochDay()
     AppTheme {
-        MeasurementsTabContent(
+        MeasurementsDetailBody(
             uiState = ProgressUiState(
                 measurements = mapOf(
                     MeasurementPart.Waist to listOf(
@@ -53,9 +61,3 @@ private fun MeasurementsTabPreview() {
     }
 }
 
-/** Nothing tracked yet: the tab is just its add button. */
-@PreviewLightDark
-@Composable
-private fun MeasurementsTabEmptyPreview() {
-    AppTheme { MeasurementsTabContent(uiState = ProgressUiState(), state = ProgressScreenState()) }
-}

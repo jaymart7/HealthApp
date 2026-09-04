@@ -19,26 +19,6 @@ import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 
-/** [label] rather than the entry name in the toggle: labels are trimmed to keep the pills wide
- * enough to read — "Measurements" to "Body" and "Nutrition" to "Food". Past five options the
- * toggle stops splitting the width evenly and scrolls instead (see SegmentedToggle), which is
- * what makes every tab past the fifth possible without trimming any further. */
-enum class ProgressTab(val label: String) {
-    Weight("Weight"),
-    Nutrition("Food"),
-    Activity("Activity"),
-    Strength("Strength"),
-    Photos("Photos"),
-    Measurements("Body"),
-    Mood("Mood"),
-    Sleep("Sleep"),
-    Heart("Heart"),
-    Fasting("Fasting"),
-    Supplements("Supplements"),
-    BloodPressure("Blood pressure"),
-    Badges("Badges"),
-}
-
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
  * all happen through the FAB's [ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet]/
  * [ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet] or the screen-local

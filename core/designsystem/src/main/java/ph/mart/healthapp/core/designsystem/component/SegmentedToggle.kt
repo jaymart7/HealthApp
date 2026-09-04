@@ -39,7 +39,16 @@ private val MinPillWidth = 64.dp
 /** Track padding, taken off before the split so evenly-sized pills add up to the track exactly. */
 private val TrackPadding = 4.dp
 
-/** Pill-track toggle, list-driven (N options), [MaterialTheme.colorScheme.secondaryContainer] selected chip. */
+/**
+ * Pill-track toggle, list-driven (N options), [MaterialTheme.colorScheme.secondaryContainer]
+ * selected chip.
+ *
+ * [minPillWidth] is the floor below which the track scrolls instead of splitting evenly. The
+ * default is what a `labelLarge` word needs; a caller whose options are all two characters
+ * ("1M", "3M") can lower it, and Progress's in-card range toggle does — four pills beside a card
+ * title do not fit at the default on a 360dp screen, and scrolling four two-character pills would
+ * be worse than shrinking them.
+ */
 @Composable
 fun SegmentedToggle(
     options: List<String>,
@@ -47,10 +56,11 @@ fun SegmentedToggle(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     trackColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    minPillWidth: Dp = MinPillWidth,
 ) {
     val scroll = rememberScrollState()
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val pillWidth = pillWidth(maxWidth, options.size)
+        val pillWidth = pillWidth(maxWidth, options.size, minPillWidth)
         val pillPx = with(LocalDensity.current) { pillWidth.toPx() }
         val padPx = with(LocalDensity.current) { TrackPadding.toPx() }
         val viewportPx = with(LocalDensity.current) { maxWidth.toPx() }
@@ -90,8 +100,8 @@ fun SegmentedToggle(
     }
 }
 
-private fun pillWidth(available: Dp, count: Int): Dp =
-    maxOf((available - TrackPadding * 2) / count.coerceAtLeast(1), MinPillWidth)
+private fun pillWidth(available: Dp, count: Int, floor: Dp): Dp =
+    maxOf((available - TrackPadding * 2) / count.coerceAtLeast(1), floor)
 
 /**
  * The offset that brings pill [index] into view, or null when it already is — the minimum move,

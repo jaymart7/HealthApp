@@ -1,6 +1,15 @@
 package ph.mart.healthapp.feature.progress.ui.progress.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +43,7 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
 import ph.mart.healthapp.core.designsystem.component.AppCard
+import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.core.designsystem.component.formatWeekday
 import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -70,27 +80,67 @@ fun RecapCard(
     modifier: Modifier = Modifier,
 ) {
     AppCard(modifier = modifier) {
-        Text(
-            text = recap.period.label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatCell(label = "Days logged", value = "${recap.daysLogged}/${recap.period.days}")
-            StatCell(
-                label = "Avg calories",
-                value = recap.targets?.let { "${recap.averages.calories} / ${it.calories}" }
-                    ?: "${recap.averages.calories}",
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = recap.period.label,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
-            WeightCell(trend = recap.weightTrend, goal = goal, unit = unit)
-            StatCell(label = "Mood", value = moodValue(recap.moodAverages))
+            // The caption that stops this card reading as the first subject's content — it spans
+            // nutrition, weight and consistency at once, which is why it sits above the groups.
+            Text(
+                text = "Across everything",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        // Two by two rather than four across: a four-cell row could not hold "1651 / 2261" and a
+        // trend word under an arrow without wrapping every label. Cells omit themselves when their
+        // own datum is missing, so a sparse week reports two honest figures rather than four with
+        // zeros in them — and the grid closes up around them.
+        val cells: List<@Composable () -> Unit> = listOfNotNull(
+            { GridCell(label = "Days logged", value = "${recap.daysLogged}", secondary = " / ${recap.period.days}") },
+            if (recap.averages.daysLogged > 0) {
+                {
+                    GridCell(
+                        label = "Avg calories",
+                        value = "${recap.averages.calories}",
+                        secondary = recap.targets?.let { " / ${it.calories}" },
+                    )
+                }
+            } else {
+                null
+            },
+            { WeightCell(trend = recap.weightTrend, goal = goal, unit = unit) },
+            recap.moodAverages?.let { averages ->
+                {
+                    GridCell(
+                        label = "Mood",
+                        value = averages.mood?.let { "%.1f".format(it) } ?: "—",
+                        secondary = " / ${MOOD_SCALE.last}",
+                    )
+                }
+            },
+        )
+        cells.chunked(2).forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                row.forEach { cell -> Box(modifier = Modifier.weight(1f)) { cell() } }
+                // Keeps a lone cell in the left column rather than letting it stretch across.
+                if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+            }
         }
         if (recap.period != RecapPeriod.Week) {
             // Three cells, not four: "12,450 kg" is a wider value than anything in the row above,
             // and volume reads as a note rather than a headline anyway.
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 StatCell(label = "Workouts", value = "${recap.workouts}")
@@ -98,6 +148,7 @@ fun RecapCard(
                 StatCell(label = "Avg steps", value = recap.steps.averageSteps?.let(::formatSteps) ?: "—")
             }
         }
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.padding(top = 12.dp),
@@ -110,7 +161,7 @@ fun RecapCard(
                 Note("Calories averaged over $days ${if (days == 1) "day" else "days"} with food logged.")
             }
             if (recap.weightTrend?.hasPrior != true) {
-                Note("No weight change to compare yet.")
+                Note("Log two more days for a weekly trend.")
             }
             if (recap.period != RecapPeriod.Week) {
                 recap.topLift?.let { Note(topLiftLine(it, unit)) }
@@ -130,6 +181,60 @@ fun RecapCard(
     }
 }
 
+/**
+ * One cell of the 2×2 grid. [secondary] is the half of a value that is not the figure itself —
+ * the "/ 2261" behind an average, the "/ 5" behind a mood — set smaller and in
+ * [MaterialTheme.colorScheme.onSurfaceVariant] so the number stays the thing being read.
+ * [note] is the word under a coloured value, because colour never carries a verdict alone.
+ */
+@Composable
+private fun GridCell(
+    label: String,
+    value: String,
+    secondary: String? = null,
+    valueColor: Color? = null,
+    leading: ImageVector? = null,
+    note: String? = null,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (leading != null) {
+                Icon(
+                    imageVector = leading,
+                    contentDescription = null,
+                    tint = valueColor ?: MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(12.dp).padding(end = 0.dp),
+                )
+                Spacer(modifier = Modifier.size(4.dp))
+            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleLarge.tabularNums,
+                color = valueColor ?: MaterialTheme.colorScheme.onSurface,
+            )
+            if (secondary != null) {
+                Text(
+                    text = secondary,
+                    style = MaterialTheme.typography.bodyMedium.tabularNums,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (note != null) {
+            Text(
+                text = note,
+                style = MaterialTheme.typography.labelSmall,
+                color = valueColor ?: MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 /** A bodyweight best has no load to name, so it is reported in reps — the reading
  * [ph.mart.healthapp.core.data.exercise.loadLabel] gives a zero `weightKg` everywhere else. */
 private fun topLiftLine(lift: LiftRecord, unit: UnitSystem): String =
@@ -144,35 +249,52 @@ private fun volumeLine(totals: StrengthTotals, unit: UnitSystem): String =
     "Lifted ${volumeLabel(totals.volumeKg, unit)} across ${totals.sets} " +
         if (totals.sets == 1) "set." else "sets."
 
-/** Mood only — the recap row is already four cells wide, and energy has its own cell on the
- * Mood tab. An em dash when the window has weight and food but no reflection. */
-private fun moodValue(averages: MoodAverages?): String =
-    averages?.mood?.let { "%.1f/${MOOD_SCALE.last}".format(it) } ?: "—"
-
 @Composable
 private fun WeightCell(trend: WeightTrendDisplay?, goal: Goal?, unit: UnitSystem) {
+    val neutral = MaterialTheme.colorScheme.onSurfaceVariant
     if (trend == null || !trend.hasPrior) {
-        StatCell(label = "Weight", value = "—")
+        // An em dash rather than the mock's "0.0 kg": every stat cell in this app reports a
+        // missing figure that way, and a zero delta is a thing that can actually happen.
+        GridCell(
+            label = "Weight",
+            value = "—",
+            valueColor = neutral,
+            leading = AppIcons.TrendFlat,
+            note = "Too few readings",
+        )
         return
     }
     val delta = trend.deltaKg
-    val neutral = MaterialTheme.colorScheme.onSurfaceVariant
-    StatCell(
+    val steady = abs(delta) < TREND_ARROW_DEADBAND_KG
+    val direction = goalRelativeTrend(goal, delta)
+    GridCell(
         label = "Weight",
-        value = "${if (delta > 0) "+" else ""}${formatKg(delta.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
-        valueColor = if (abs(delta) < TREND_ARROW_DEADBAND_KG) {
+        value = "${formatKg(abs(delta).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+        valueColor = if (steady) {
             neutral
         } else {
-            when (goalRelativeTrend(goal, delta)) {
+            when (direction) {
                 TrendDirection.OnTrack -> MaterialTheme.colorScheme.primary
                 TrendDirection.OffTrack -> MaterialTheme.colorScheme.error
                 TrendDirection.Neutral -> neutral
             }
         },
+        leading = when {
+            steady -> AppIcons.TrendFlat
+            delta < 0 -> AppIcons.TrendDown
+            else -> AppIcons.TrendUp
+        },
+        // The arrow says which way, this says whether that is good — neither is a colour.
+        note = when {
+            steady -> "Steady"
+            direction == TrendDirection.OnTrack -> "On track"
+            direction == TrendDirection.OffTrack -> "Off track"
+            else -> "Recorded"
+        },
     )
 }
 
-/** Shared with [GoalProjectionCard] — same screen, same feature, so it stays here rather than
+/** Shared with the detail pages' own notes — same screen, same feature, so it stays here rather than
  * being promoted to `:core:designsystem` (that rule is about components used across screens). */
 @Composable
 internal fun Note(text: String) {

@@ -1,65 +1,39 @@
 package ph.mart.healthapp.feature.progress.ui.progress
 
 import androidx.compose.foundation.ScrollState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DayNutrition
-import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.EnergyCheckIn
 import ph.mart.healthapp.core.data.profile.Goal
-import ph.mart.healthapp.core.data.profile.energyCheckIn
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.energyCheckIn
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.data.todayEpochDay
-import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
-import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.progress.ui.achievement.components.AchievementsTabContent
-import ph.mart.healthapp.feature.progress.ui.activity.components.ActivityTabContent
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
-import ph.mart.healthapp.feature.progress.ui.fasting.components.FastingTabContent
-import ph.mart.healthapp.feature.progress.ui.heart.components.HeartTabContent
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
-import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsTabContent
-import ph.mart.healthapp.feature.progress.ui.mood.components.MoodTabContent
-import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionTabContent
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.photo.components.TimelapseScreen
-import ph.mart.healthapp.feature.progress.ui.photo.components.PhotosTabContent
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
-import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureTabContent
-import ph.mart.healthapp.feature.progress.ui.progress.components.ScrollingTab
-import ph.mart.healthapp.feature.progress.ui.progress.components.RecapCard
+import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.progress.components.RecapScreen
-import ph.mart.healthapp.feature.progress.ui.sleep.components.SleepTabContent
-import ph.mart.healthapp.feature.progress.ui.strength.components.StrengthTabContent
-import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsTabContent
-import ph.mart.healthapp.feature.progress.ui.weight.components.WeightTabContent
+import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 
 @Composable
 fun ProgressScreen(scrollState: ScrollState = rememberScrollState(), viewModel: ProgressViewModel = koinViewModel()) {
@@ -86,6 +60,18 @@ fun ProgressScreen(scrollState: ScrollState = rememberScrollState(), viewModel: 
     )
 }
 
+/**
+ * Overview or one subject's page — [ProgressScreenState.selectedSubject] is the whole navigator.
+ *
+ * A subject page is a swap-in rather than a Nav3 route for the reason every read-only surface on
+ * this tab is: a route earns its own `ViewModelStoreOwner`, and with it a second copy of
+ * [ProgressViewModel]'s twelve repositories, to draw something that writes nothing. The overview's
+ * scroll position survives the round trip because [scrollState] is hoisted all the way up in
+ * `AppScaffold`, and a detail page holds its own.
+ *
+ * The four overlays and two sheets sit outside the swap, so a comparison, a timelapse, the recap or
+ * the energy check-in can be opened from either surface and drawn over both.
+ */
 @Composable
 private fun ProgressContent(
     uiState: ProgressUiState,
@@ -95,11 +81,11 @@ private fun ProgressContent(
     addExerciseToBudget: Boolean = true,
     onApplyTarget: (Int) -> Unit = {},
 ) {
-    // Above the sub-tab toggle, not inside a tab: the recap spans nutrition, weight and
-    // consistency at once. Null (nothing logged this week) omits the card entirely rather than
-    // rendering an all-zero one on day one — and takes the recap door with it, since there is
-    // then nothing to report. Always the week here; the longer periods are the recap screen's,
-    // which folds its own. Hoisted out of the Column because that screen is its sibling.
+    val today = todayEpochDay()
+    // Above everything and inside nothing: the recap spans nutrition, weight and consistency at
+    // once. Null (nothing logged this week) omits the card entirely rather than rendering an
+    // all-zero one on day one — and takes the share door with it, since there is then nothing to
+    // report. Always the week here; the longer periods are the recap screen's, which folds its own.
     val weekRecap = recap(
         period = DEFAULT_RECAP_PERIOD,
         dailyNutrition = uiState.dailyNutrition,
@@ -107,76 +93,34 @@ private fun ProgressContent(
         weightEntries = uiState.weightEntries,
         moodDays = uiState.moodDays,
         targets = uiState.targets,
-        todayEpochDay = todayEpochDay(),
+        todayEpochDay = today,
     )
-    // ponytail: the Weight tab fits this again for its own card — a fold over at most a month of
-    // entries, twice, rather than a third signature to thread it through every tab body. Hoist it
-    // if the series ever grows.
     val projection = goalProjection(
         weightEntries = uiState.weightEntries,
         goalWeightKg = uiState.goalWeightKg,
         goal = uiState.goal,
-        todayEpochDay = todayEpochDay(),
+        todayEpochDay = today,
     )
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Progress",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    // Outside the card, not in it: the icon would otherwise be drawn into the
-                    // image the capture takes.
-                    if (weekRecap != null) {
-                        IconButton(onClick = state::openRecap) {
-                            Icon(
-                                imageVector = AppIcons.Share,
-                                contentDescription = "Recap",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-                if (weekRecap != null) {
-                    RecapCard(
-                        recap = weekRecap,
-                        goal = uiState.goal,
-                        unit = uiState.preferredUnit,
-                        projection = projection,
-                        modifier = Modifier.padding(bottom = 12.dp),
-                    )
-                }
-                SegmentedToggle(
-                    options = ProgressTab.entries.map { it.label },
-                    selectedIndex = ProgressTab.entries.indexOf(state.tab),
-                    onSelect = { index -> state.tab = ProgressTab.entries[index] },
+            val subject = state.selectedSubject
+            if (subject == null) {
+                ProgressOverview(
+                    uiState = uiState,
+                    state = state,
+                    weekRecap = weekRecap,
+                    projection = projection,
+                    scrollState = scrollState,
                 )
-                // Photos and Blood pressure scroll themselves (a LazyVerticalGrid and a
-                // LazyColumn) — nesting either in the verticalScroll Column measures it with
-                // infinite height and throws. The rest are plain Columns and need the shared scroll.
-                when (state.tab) {
-                    ProgressTab.Photos -> PhotosTabContent(uiState, state)
-                    ProgressTab.BloodPressure -> BloodPressureTabContent(uiState, state)
-                    ProgressTab.Weight -> ScrollingTab(scrollState) {
-                        WeightTabContent(uiState, state, checkIn)
-                    }
-                    ProgressTab.Nutrition -> ScrollingTab(scrollState) { NutritionTabContent(uiState, state) }
-                    ProgressTab.Activity -> ScrollingTab(scrollState) { ActivityTabContent(uiState, state) }
-                    ProgressTab.Strength -> ScrollingTab(scrollState) { StrengthTabContent(uiState, state) }
-                    ProgressTab.Measurements -> ScrollingTab(scrollState) { MeasurementsTabContent(uiState, state) }
-                    ProgressTab.Mood -> ScrollingTab(scrollState) { MoodTabContent(uiState, state) }
-                    ProgressTab.Sleep -> ScrollingTab(scrollState) { SleepTabContent(uiState, state) }
-                    ProgressTab.Heart -> ScrollingTab(scrollState) { HeartTabContent(uiState, state) }
-                    ProgressTab.Fasting -> ScrollingTab(scrollState) { FastingTabContent(uiState, state) }
-                    ProgressTab.Supplements -> ScrollingTab(scrollState) { SupplementsTabContent(uiState, state) }
-                    ProgressTab.Badges -> ScrollingTab(scrollState) { AchievementsTabContent(uiState) }
-                }
+            } else {
+                SubjectDetail(
+                    subject = subject,
+                    uiState = uiState,
+                    state = state,
+                    checkIn = checkIn,
+                    projection = projection,
+                    canShare = weekRecap != null,
+                )
             }
 
             val selectedPhotos = uiState.photos.filter { it.id in state.selectedPhotoIds }
@@ -239,35 +183,42 @@ private fun ProgressContent(
     }
 }
 
+private fun previewState(): ProgressUiState {
+    val today = todayEpochDay()
+    return ProgressUiState(
+        weightEntries = (0..8).map {
+            WeightEntry(dateEpochDay = today - (8 - it) * 3, weightKg = 84.8 - it * 0.26)
+        },
+        goalWeightKg = 82.0,
+        goal = Goal.Lose,
+        preferredUnit = UnitSystem.Metric,
+        dailyNutrition = listOf(1850, 2100, 0, 1720, 2340, 1610, 1490).mapIndexed { index, calories ->
+            DayNutrition(today - 6 + index, calories, calories / 16, calories / 10, calories / 30)
+        },
+        activeDays = (today - 6..today).toSet(),
+        moodDays = listOf(4 to 3, 5 to 4, 3 to 2, 4 to 4).mapIndexed { index, (mood, energy) ->
+            MoodDay(today - 4 + index, mood, energy)
+        },
+        targets = DailyTargets(calories = 2261, proteinG = 170, carbsG = 226, fatG = 75, floor = 1500),
+    )
+}
+
 @PreviewLightDark
 @Composable
 private fun ProgressScreenPreview() {
-    val today = todayEpochDay()
-    val entries = listOf(
-        WeightEntry(dateEpochDay = today - 9, weightKg = 78.0),
-        WeightEntry(dateEpochDay = today - 4, weightKg = 77.5),
-        WeightEntry(dateEpochDay = today, weightKg = 76.9),
-    )
+    AppTheme {
+        ProgressContent(uiState = previewState(), state = ProgressScreenState())
+    }
+}
+
+/** One subject open — the same screen, one field different. */
+@PreviewLightDark
+@Composable
+private fun ProgressDetailPreview() {
     AppTheme {
         ProgressContent(
-            uiState = ProgressUiState(
-                weightEntries = entries,
-                goalWeightKg = 72.0,
-                goal = Goal.Lose,
-                preferredUnit = UnitSystem.Metric,
-                dailyNutrition = listOf(1850, 2100, 0, 1720, 2340).mapIndexed { index, calories ->
-                    DayNutrition(todayEpochDay() - 4 + index, calories, calories / 16, calories / 10, calories / 30)
-                },
-                activeDays = (todayEpochDay() - 4..todayEpochDay()).toSet(),
-                moodDays = listOf(4 to 3, 5 to 4, 3 to 2, 4 to 4).mapIndexed { index, (mood, energy) ->
-                    MoodDay(todayEpochDay() - 4 + index, mood, energy)
-                },
-                sleepNights = listOf(432, 401, 512, 388).mapIndexed { index, minutes ->
-                    SleepNight(todayEpochDay() - 4 + index, minutes)
-                },
-                targets = DailyTargets(calories = 1941, proteinG = 146, carbsG = 194, fatG = 65, floor = 1500),
-            ),
-            state = ProgressScreenState(),
+            uiState = previewState(),
+            state = ProgressScreenState(selectedSubject = Subject.Weight),
         )
     }
 }

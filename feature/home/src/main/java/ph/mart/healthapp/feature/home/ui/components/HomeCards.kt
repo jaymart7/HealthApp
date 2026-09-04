@@ -42,7 +42,7 @@ import ph.mart.healthapp.feature.home.ui.greetingFor
 import ph.mart.healthapp.core.data.insight.insightFor
 import ph.mart.healthapp.feature.home.ui.HomeScreenState
 import ph.mart.healthapp.feature.home.ui.HomeUiState
-import ph.mart.healthapp.feature.home.ui.components.AIInsightCard
+import ph.mart.healthapp.core.designsystem.component.AIInsightCard
 import ph.mart.healthapp.feature.home.ui.components.BloodPressureCard
 import ph.mart.healthapp.feature.home.ui.components.CalorieRingCard
 import ph.mart.healthapp.feature.home.ui.components.FastingCard

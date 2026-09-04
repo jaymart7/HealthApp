@@ -321,6 +321,67 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `Recap.weightArcKg` is the window's own start-to-latest answer, and the screen labels both so
   neither can be read as the other. A single weigh-in in the window reports **no** arc rather
   than a zero delta — one end is not two.
+- **Progress is an overview plus one detail page per subject, and a detail page is a swap-in, not a
+  route.** Thirteen peer pills in a scrolling `SegmentedToggle` meant nothing past the fifth was
+  reachable without a swipe nobody knew to make, and no pill said whether there was anything behind
+  it. `ProgressScreenState.selectedSubject` is the whole navigator: null draws `ProgressOverview`,
+  anything else draws `SubjectDetail`. A route would have earned its own `ViewModelStoreOwner` and
+  with it a second copy of `ProgressViewModel`'s twelve repositories, to render a page that writes
+  nothing — `RecapScreen`'s argument, one level up. Two things follow. The page wires its own
+  `NavigationBackHandler`, or back would leave the tab; and the bottom bar and the FAB stay up,
+  because `AppScaffold`'s `isTopLevel` rule never sees a new route — so the page draws its own
+  `DetailHeader` rather than borrowing `AppTopBar`. The overview's scroll survives the round trip
+  for free (`AppScaffold` hoists it), and each detail holds its own so a sibling hop opens at the
+  top.
+- **`Subject` replaced `ProgressTab`, and `group == null` is Badges.** Twelve metric subjects in
+  four groups (Body · Nutrition · Training · Wellbeing) plus Badges, which is drawn as a summary row
+  under the grids because it is an achievement list, not a trend — a metric card promising a preview
+  line would lie about what is behind it. It still has a detail page, so all thirteen stay
+  reachable. `Subject.accent` is an explicit column rather than a fold over `group`, because
+  Activity breaks the pattern: it sits in Training with the lifting, but its steps come off a watch
+  like Sleep's and Heart's, and every imported series draws in `secondary`.
+- **`summarize()` is the one fold behind every card, and every branch calls the derivation that
+  subject's own page already calls.** `sleepAverages()`, `stepAverages()`, `personalRecords()`,
+  `byDay().averages()` — so a card and the page behind it cannot quote different numbers at the
+  default range. The detail's own figures are **range-scoped** and the card's are not: the card is a
+  standing summary of everything, the page is the window you picked, and the toggle saying so is
+  right there. That is also why the bodies take no `SubjectSummary` — they derive their own hero.
+- **There is no sparse-account flag.** Every difference the sparse overview shows falls out of the
+  data: the mascot note appears when any group has nothing tracked, the recap's cells omit
+  themselves, the insight card is already null-hidden, and a group collapses to one expandable row
+  when none of its subjects has data. A threshold ("fewer than N tracked") would be a number to
+  maintain and a second thing that could disagree with the grid.
+- **An empty subject keeps its slot, dashed.** A card that vanished when it had no data is a
+  subject nobody would ever find, so an untracked one draws a 1dp **dashed** `outlineVariant`
+  outline over nothing, says "Nothing yet", and still opens its page. The dash is what carries the
+  difference without colour. Its affordance line is a door to that page, which carries the
+  explanation — except Blood pressure's "Log a reading", the one subject whose sheet already lives
+  on this screen. Tracked cards sort before empty ones inside a group.
+- **The range toggle lives inside the chart card it controls, and the range is per subject.**
+  `ProgressScreenState.ranges` is a `Map<Subject, ChartRange>` for the session, because one shared
+  range would have a tap on the Sleep chart silently re-slice the Weight one now that they are
+  different pages. `ChartCard` takes a null range for the second chart on a page that already has a
+  toggle (Activity's burn chart) — two identical toggles would be two controls for one value.
+- **`AIInsightCard` moved to `:core:designsystem`, and the Weight page's is the app's only one fed
+  by two sources.** Home and Progress both draw it now, the `AppCard`/`BadgeDot` path; its
+  `subline` and `headlineStyle` default to Home's shape so that call site is unchanged by the move.
+  On the Weight page the projection takes the headline when there is one, and **the energy check-in
+  takes it when there isn't** — a measured maintenance stands on its own, and it is the reason the
+  card doesn't vanish for anyone who never set a goal weight. That fold is what retired
+  `GoalProjectionCard` and `EnergyCheckInCard`: both said one line each, on a page that now has one
+  place for a line. `tertiaryContainer` is still one card per screen.
+- **The recap card's cells omit themselves rather than reporting zeros.** The 2×2 grid closes up
+  around a missing average or a missing mood, and the weight cell degrades to an em dash with a flat
+  glyph and the words "Too few readings" — a figure this app never invents, the rule every "—" on
+  the screen already follows. `RecapCard` is one component, so the recap overlay and the shared PNG
+  get the same card and cannot drift. The header still reads "Last 7 days", never "This week": the
+  window is rolling, and the handoff's calendar wording would contradict a decision made above it.
+- **`WeightProgressChart` still folds the goal into its axis range.** A target far from the data
+  flattens the trend rather than dropping the dashed line off the chart, and that is the deliberate
+  call: a goal line you cannot see is a goal you stop steering by. The axis labels are drawn
+  **inside** the same `Canvas` as the gridlines they name, off the same `yFor` mapping — a label
+  gutter laid out beside the plot would distribute four labels evenly and be a pixel or two out at
+  every font scale.
 - **The recap screen is an overlay inside the Progress tab, not a route.** A route earns its own
   `ViewModelStoreOwner`, and with it a second copy of `ProgressViewModel`'s twelve repositories,
   to render a page that writes nothing — so it reads `ProgressUiState` verbatim and folds its own
@@ -328,7 +389,8 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   it wires its own `NavigationBackHandler`, or back would leave the tab). The Progress header's
   icon opens it; the week share it used to open lives inside it now, on whichever period is
   showing. Its movement row and its lift notes are drawn for Month and Year only, which is what
-  leaves the shipped weekly card untouched.
+  leaves the weekly card on the overview untouched. The header icon is hidden when there is no
+  recap, the card's own rule.
 - **The share image is one card, never the page.** `captureToPicture` records what was *drawn*,
   so capturing the recap's scrolling column would hand the chooser a screenshot clipped at the
   fold. `ShareRecapSheet` therefore still renders exactly one `RecapCard` plus the brand footer —
@@ -354,13 +416,13 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   days with their gaps intact, while a weight chart re-centres on the data it has. The Mood tab
   therefore hands its chart the *window bounds*, not just the list — the series is sparse, and
   the x-position of a bar is its date.
-- **`SegmentedToggle` splits its width evenly until a pill would fall below 64dp, then scrolls.**
-  64dp is what five pills already left on a 360dp screen, so every caller with five or fewer
-  options (the unit toggles, the four `ChartRange` pills) renders exactly as it did before the
-  floor existed — the branch only ever fires for the eight Progress tabs, and on very narrow
-  screens, where scrolling replaces clipping. The Progress labels stay trimmed ("Nutrition" reads
-  "Food", "Measurements" reads "Body"); another tab costs nothing but scroll distance now, so
-  never shorten a label further to avoid one.
+- **`SegmentedToggle` splits its width evenly until a pill would fall below `minPillWidth`, then
+  scrolls.** The default floor is 64dp — what five pills already left on a 360dp screen — so every
+  caller renders exactly as it did before the floor existed, and the branch only fires on very
+  narrow screens, where scrolling replaces clipping. The parameter exists for one caller:
+  Progress's range toggle now sits *inside* a chart card beside its title, where four pills do not
+  fit at 64dp, and "1M" clears 40dp with room to spare. Lower it only where every option is that
+  short; the default is about a `labelLarge` word, not about a number.
 - **The recap's weight cell goes blank when the last weigh-in predates the window.**
   `trendVsSevenDaysAgo()` anchors to the latest *entry*, not to today, so without that guard a
   card headed "Last 7 days" would report a delta between two entries from two months ago.
@@ -964,8 +1026,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   full-screen overlays inside the Progress tab, not routes, so each wires its own
   `NavigationBackHandler` — without one, back out of a comparison left the Progress tab entirely
   rather than clearing the selection.
-- **The Blood pressure tab scrolls itself**, joining Photos outside `ScrollingTab` — its list is
-  per-reading rather than per-day, so a 3M window can hold a couple of hundred rows. Its delete
+- **The Blood pressure page scrolls itself**, joining Photos in `SubjectDetail`'s `SelfScrolling`
+  set — its list is per-reading rather than per-day, so a 3M window can hold a couple of hundred
+  rows, and a `LazyColumn` nested in a scrolling column is measured with infinite height. Its delete
   asks first rather than raising an undo snackbar: the diary's swipe-and-undo needs a snackbar host
   Progress doesn't have. `BloodPressureViewModel` carries both the save and the delete because the
   tab and its sheet sit under one `ViewModelStoreOwner`, which leaves `ProgressViewModel` the
@@ -1174,11 +1237,13 @@ because of that, not because it was the nicest design available.
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
-  `recipe`, `search`, `ideas`, `shared`), `:feature:progress` (`progress`, `weight`,
-  `measurement`, `photo`, `nutrition`, `activity`, `strength`, `mood`, `sleep`, `heart`, `fasting`,
-  `supplement`, `pressure`, plus a `shared/` holding `RangeBarChart`, `DayBarChart` and
-  `SharePng` (the capture-and-share pair two flows draw), the first two of which
-  between them draw every tab's bars except Mood's, Nutrition's and Supplements'),
+  `recipe`, `search`, `ideas`, `shared`), `:feature:progress` (`progress` — the overview, the
+  detail chrome and the recap — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
+  `strength`, `mood`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
+  `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts, and a
+  `shared/` holding `RangeBarChart`, `DayBarChart` and `SharePng` (the capture-and-share pair two
+  flows draw), the first two of which between them draw every subject's bars except Mood's,
+  Nutrition's and Supplements'),
   `:feature:profile` (`profile`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
   `shared/` holding `LibraryRow` and `RenameSheet`, which the food library and the routine library
   both draw) and `:feature:onboarding`
