@@ -15,10 +15,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import ph.mart.healthapp.core.data.BuildConfig
 
 /**
- * The bits [BarcodeLookupRepositoryImpl] and [FoodSearchRepositoryImpl] share: one GET against
- * USDA FoodData Central and one food-object → [ScannedProduct] mapping. FDC has no barcode
- * endpoint, so both a scan and a text search go through `foods/search` and come back in the same
- * shape — they parse it the same way.
+ * What [BarcodeLookupRepositoryImpl] needs: one GET against USDA FoodData Central and one
+ * food-object → [ScannedProduct] mapping. FDC has no barcode endpoint, so a scan goes through
+ * `foods/search` too. Free-text search used to share this file and no longer does — it reads the
+ * shipped [COMMON_FOODS] list instead, which is why nothing here has an offline path: a scan
+ * without network is a scan that fails.
  */
 
 private const val BASE_URL = "https://api.nal.usda.gov/fdc/v1/"
@@ -29,7 +30,8 @@ private const val TIMEOUT_MS = 10_000
 
 private const val KJ_PER_KCAL = 4.184
 
-/** FDC reports every search nutrient per 100 g, whatever the package's own serving size says. */
+/** FDC reports every search nutrient per 100 g, whatever the package's own serving size says —
+ * the convention [COMMON_FOODS] follows too, so a scan and a picked food seed the same form. */
 internal const val PORTION_G = 100.0
 
 /** FDC identifies nutrients by number, not by name. */
@@ -53,7 +55,7 @@ internal sealed interface FdcResponse {
 
     /** Network problem, a 403 from a bad key, or a 429 over the hourly budget — all of them mean
      * "try again", so they are one case. A *miss* is not here: FDC answers an unmatched query with
-     * HTTP 200 and an empty `foods` array, which the parsers handle. */
+     * HTTP 200 and an empty `foods` array, which [parseFdcProduct] handles. */
     data object Failed : FdcResponse
 }
 
@@ -63,8 +65,8 @@ internal sealed interface FdcResponse {
  * introducing one.
  *
  * ponytail: the key is one signed key shared by every install, so the 3600 requests/hour budget is
- * app-wide rather than per-user. The caller's debounce keeps ordinary typing well inside it; a
- * proxy that holds the key is the upgrade path if installs ever make it bite.
+ * app-wide rather than per-user. Only a barcode scan spends it now, which is a deliberate act
+ * rather than a keystroke; a proxy that holds the key is the upgrade path if installs make it bite.
  *
  * ponytail: a cancelled request abandons the socket until the 10s timeout rather than interrupting
  * it; the result is discarded either way. Switch to `runInterruptible` if that ever shows up.

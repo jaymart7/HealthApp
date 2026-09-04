@@ -183,19 +183,31 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   redundant check on a result the server already filtered. The leading-zero stripping is not
   cosmetic either: FDC stores `gtinUpc` at whatever width its source used (`028400642255` for one
   product, `0099447210127` for the next) and matches query tokens exactly, so the lookup asks for
-  every zero-padding at once in one unquoted query, which FDC ORs. Search, by contrast, sets no
-  `dataType` — whole foods and branded packages both belong in the results.
+  every zero-padding at once in one unquoted query, which FDC ORs. The barcode scan is the *only*
+  thing left in the app that calls FDC — free-text search is local, below — so `fdcGet` and
+  `toScannedProduct` exist for that one caller.
+- **Food search is a list shipped in the APK, not an API call.** `COMMON_FOODS` in
+  `:core:data/food/CommonFoods.kt` is ~120 hand-written staples, per 100 g like every FDC row, and
+  `searchCommonFoods()` is a case-insensitive substring over it — pure data, no table, no
+  repository, no query, the `localMealIdeas()` shape. It replaced a `foods/search` call for three
+  reasons that are the whole design: it answers with no debounce, it answers offline, and it spends
+  nothing from the key budget. What it gives up is branded packages, which is what the scanner is
+  for, and anything neither knows is still typed in by hand. A blank field is **every** food rather
+  than an idle hint, paged at `FOOD_PAGE_SIZE` — a lazy list is not allowed inside `AppBottomSheet`
+  (it hands its children unbounded height), so paging is also what fits where the panel is drawn.
+  `FoodSearchViewModel` therefore takes no dependencies at all and exists for the page, which
+  survives a rotation where a composable's `remember` would not.
 - **The FDC key is a gradle property, and its budget is app-wide.** `fdcApiKey` lives in
   `~/.gradle/gradle.properties` and reaches the code as `BuildConfig.FDC_API_KEY` in `:core:data`,
   the same untracked-and-degrade-gracefully rule the release signing config follows — absent it the
-  build still compiles and search reports `Failed`. It is one signed key shared by every install,
-  so the 3600 requests/hour ceiling is the *app's*, not each user's; that is what the search
-  debounce is protecting, and `pageSize` is capped at 10 because FDC ignores `nutrients=` on this
-  endpoint and ships ~21 KB per food.
+  build still compiles and a *scan* reports `Failed` (search is unaffected; it needs no key). It is
+  one signed key shared by every install, so the 3600 requests/hour ceiling is the *app's*, not each
+  user's; only a deliberate scan spends it now, and `pageSize` is capped at 25 because FDC ignores
+  `nutrients=` on this endpoint and ships ~21 KB per food.
 - **The today-only repository overloads are deliberate** — Home and the streak
   genuinely mean today, so don't collapse them into the dated ones.
 - **The diary's top field is a local filter over logged entries**, not a
-  database search. Database search is `FoodSearchRepository`/`FoodSearchPanel`.
+  food search. Food search is `searchCommonFoods()`/`FoodSearchPanel`.
 - **A nameless entry is a quick add, not an invalid one.** `AddEntryForm.isValid()` accepts a bare
   calorie figure, and `toFoodEntry()` fills the blank with `QUICK_ADD_NAME` and collapses the
   portion to one serving — the form's default 100 g is a number the user never supplied. The guard

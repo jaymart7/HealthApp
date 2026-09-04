@@ -13,9 +13,10 @@ import kotlinx.serialization.json.jsonPrimitive
 private const val PAGE_SIZE = 25
 
 /**
- * FDC has no barcode endpoint, so a scan is a `foods/search` restricted to branded foods; the
- * transport and the product mapping are shared with [FoodSearchRepositoryImpl] in
- * `FoodDataCentral.kt`.
+ * FDC has no barcode endpoint, so a scan is a `foods/search` restricted to branded foods. It is
+ * the only thing left in the app that talks to FDC — free-text search reads the shipped
+ * [COMMON_FOODS] list — so the transport and the product mapping in `FoodDataCentral.kt` exist
+ * for this one caller.
  */
 internal class BarcodeLookupRepositoryImpl : BarcodeLookupRepository {
 

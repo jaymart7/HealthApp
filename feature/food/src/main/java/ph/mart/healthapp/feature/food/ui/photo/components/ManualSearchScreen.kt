@@ -32,8 +32,9 @@ import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
  * is a different shape than FullScreenState's centered icon/heading/body/actions column, so
  * forcing it into that shape would mean fighting the component rather than reusing it.
  *
- * Every path that gives up on the photo lands here — including the offline one, where the search
- * can't reach the network — so hand entry has to be reachable from this screen too.
+ * Every path that gives up on the photo lands here — including the offline one, which the search
+ * itself no longer minds: it reads the shipped food list. Hand entry still has to be reachable
+ * from this screen, for anything that list doesn't carry.
  */
 @Composable
 internal fun ManualSearchScreen(

@@ -188,14 +188,13 @@ saved meals, recipes and routines are out — convenience data, not history. No 
   creating a rival — the primary key already enforces it, and the UI should say so rather than
   letting the write silently win.
 - **Custom foods are searchable; recents and favorites are not.** The diary's top field is a
-  local filter over logged entries, `FoodSearchRepository` is the database search, and this is
-  the first thing the user owns that belongs in the second. `FoodSearchResult.Hits` carries
+  local filter over logged entries, `searchCommonFoods()` is the food search, and this is
+  the first thing the user owns that belongs in the second. That search returns
   `ScannedProduct`s, so a custom food maps to one on the way out — a text search and a barcode
   scan already resolve to the same type, and a third would fork the confirmation screen.
-- **Local hits lead, and they are drawn with no AI accent and no network.** They are the user's
-  own foods, so they answer instantly and answer offline — which also makes the search panel
-  useful with no network at all, where today it reports `Failed`. FDC hits follow, deduped
-  against the local ones by the same case-insensitive name key.
+- **The user's own foods lead, and they are drawn with no AI accent.** `COMMON_FOODS` follows,
+  deduped against them by the same case-insensitive name key — a custom "Chicken breast" replaces
+  the built-in one rather than sitting beside it. Neither half touches the network.
 - **Profile → Saved meals & recipes gains the third list; it cannot log.** The division the food
   library already draws: logging needs a meal slot and a day, and Profile has neither. Delete
   asks first — a custom food is user-authored, the saved-meal rule, not the diary's
@@ -208,8 +207,8 @@ saved meals, recipes and routines are out — convenience data, not history. No 
 never graded. No barcode attached to a custom food (barcode memory is declined, below). No
 export, no sync, no sharing a food between installs.
 
-**Check.** One JVM test that a custom-food hit and an FDC hit with the same name collapse to one
-result, the local one winning.
+**Check.** One JVM test that a custom food and a `COMMON_FOODS` entry with the same name collapse
+to one result, the custom one winning.
 
 ---
 

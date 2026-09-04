@@ -8,8 +8,6 @@ import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepositoryImpl
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.FoodRepositoryImpl
-import ph.mart.healthapp.core.data.food.FoodSearchRepository
-import ph.mart.healthapp.core.data.food.FoodSearchRepositoryImpl
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRepositoryImpl
 import ph.mart.healthapp.core.data.food.MealParseRepository
@@ -22,7 +20,6 @@ val foodDataModule = module {
     single<FoodRepository> { FoodRepositoryImpl(get(), get(), get()) }
     single<FoodRecognitionRepository> { FoodRecognitionRepositoryImpl() }
     single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl() }
-    single<FoodSearchRepository> { FoodSearchRepositoryImpl() }
     single<MealIdeaRepository> { MealIdeaRepositoryImpl() }
     single<MealParseRepository> { MealParseRepositoryImpl() }
 }

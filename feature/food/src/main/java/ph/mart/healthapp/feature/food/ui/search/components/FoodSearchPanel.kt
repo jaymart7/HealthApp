@@ -4,10 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,23 +27,24 @@ import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
+import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.ui.search.FOOD_PAGE_SIZE
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchEvent
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchUiState
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchViewModel
-import ph.mart.healthapp.feature.food.ui.search.SearchStatus
+import ph.mart.healthapp.feature.food.ui.search.pageCount
+import ph.mart.healthapp.feature.food.ui.search.pageItems
 
 /**
- * ponytail: shows the first few hits and no inner scroller — the panel sits inside a bottom sheet
- * and a full result list would push the form off-screen. Narrowing the query beats scrolling a
- * crowd-sourced database. Add a bounded LazyColumn if that's ever reported as too few.
- */
-private const val MAX_VISIBLE_HITS = 5
-
-/**
- * Free-text food search, shared by the diary's add-entry sheet and the photo flow's manual-search
- * state. Picking a hit hands a [ScannedProduct] to the host, which seeds its own form from it —
- * the panel never logs anything itself.
+ * Food search over the built-in [COMMON_FOODS][ph.mart.healthapp.core.data.food.COMMON_FOODS]
+ * list, shared by the diary's add-entry sheet, the photo flow's manual-search state and the recipe
+ * ingredient editor. Picking a hit hands a [ScannedProduct] to the host, which seeds its own form
+ * from it — the panel never logs anything itself.
+ *
+ * An empty field is not an empty panel: it lists every food, a page at a time. That is the whole
+ * reason for the pager — the list is a couple of hundred rows and this is drawn inside a bottom
+ * sheet with a form underneath it.
  */
 @Composable
 internal fun FoodSearchPanel(
@@ -51,17 +52,17 @@ internal fun FoodSearchPanel(
     modifier: Modifier = Modifier,
     viewModel: FoodSearchViewModel = koinViewModel(),
 ) {
-    // koinViewModel() has no graph to resolve against under @Preview — render the idle panel so
+    // koinViewModel() has no graph to resolve against under @Preview — render the first page so
     // every caller's @PreviewLightDark still shows this screen, same trick as AppBottomSheet.
     if (LocalInspectionMode.current) {
-        FoodSearchPanelContent(FoodSearchUiState(), onQueryChange = {}, onSelect = onSelect, modifier = modifier)
+        FoodSearchPanelContent(FoodSearchUiState(), onEvent = {}, onSelect = onSelect, modifier = modifier)
         return
     }
 
     val uiState by viewModel.collectAsState()
     FoodSearchPanelContent(
         uiState = uiState,
-        onQueryChange = { viewModel.handleEvent(FoodSearchEvent.OnQueryChange(it)) },
+        onEvent = viewModel::handleEvent,
         onSelect = onSelect,
         modifier = modifier,
     )
@@ -70,47 +71,62 @@ internal fun FoodSearchPanel(
 @Composable
 private fun FoodSearchPanelContent(
     uiState: FoodSearchUiState,
-    onQueryChange: (String) -> Unit,
+    onEvent: (FoodSearchEvent) -> Unit,
     onSelect: (ScannedProduct) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         AppTextField(
             value = uiState.query,
-            onValueChange = onQueryChange,
+            onValueChange = { onEvent(FoodSearchEvent.OnQueryChange(it)) },
             placeholder = "Search foods…",
         )
-        // The panel's whole answer — searching, hits, nothing, offline — arrives without any
+        // The panel's whole answer — the page, the count, nothing matched — arrives without any
         // visible change of focus, so a screen reader needs telling. Polite: it waits for the
         // keystroke to finish being announced.
-        Column(modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) {
-            when (val status = uiState.status) {
-                SearchStatus.Idle -> Hint("Search the food database, or fill in the details yourself.")
-
-                SearchStatus.Searching -> Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(vertical = 4.dp),
-                ) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    Hint("Searching…")
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        ) {
+            val page = uiState.pageItems
+            if (page.isEmpty()) {
+                Hint("No matches — enter it by hand instead.")
+            } else {
+                page.forEach { product ->
+                    SearchHitRow(product = product, onClick = { onSelect(product) })
                 }
-
-                is SearchStatus.Results -> Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    status.products.take(MAX_VISIBLE_HITS).forEach { product ->
-                        SearchHitRow(product = product, onClick = { onSelect(product) })
-                    }
-                }
-
-                SearchStatus.Empty -> Hint("No matches — enter it by hand instead.")
-
-                SearchStatus.Failed ->
-                    Hint("Couldn't search just now — check your connection, or enter it by hand.")
+                Pager(uiState = uiState, onEvent = onEvent)
             }
+        }
+    }
+}
+
+/**
+ * Each button is *hidden* at its end of the list rather than disabled — the rule the meal-ideas
+ * button and the supplements card follow. The count is what tells the user there is more.
+ */
+@Composable
+private fun Pager(uiState: FoodSearchUiState, onEvent: (FoodSearchEvent) -> Unit) {
+    val pages = uiState.pageCount
+    if (pages <= 1) return
+
+    val first = uiState.page * FOOD_PAGE_SIZE + 1
+    val last = first + uiState.pageItems.size - 1
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (uiState.page > 0) {
+            TextButton(label = "Previous", onClick = { onEvent(FoodSearchEvent.OnPrevPage) })
+        } else {
+            Spacer(modifier = Modifier.size(1.dp))
+        }
+        Hint("$first–$last of ${uiState.results.size}")
+        if (uiState.page < pages - 1) {
+            TextButton(label = "Next", onClick = { onEvent(FoodSearchEvent.OnNextPage) })
+        } else {
+            Spacer(modifier = Modifier.size(1.dp))
         }
     }
 }
@@ -147,20 +163,33 @@ private fun Hint(text: String) {
 
 @PreviewLightDark
 @Composable
+private fun FoodSearchPanelBrowsingPreview() {
+    AppTheme {
+        Surface {
+            FoodSearchPanelContent(
+                uiState = FoodSearchUiState(page = 1),
+                onEvent = {},
+                onSelect = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
 private fun FoodSearchPanelResultsPreview() {
     AppTheme {
         Surface {
             FoodSearchPanelContent(
                 uiState = FoodSearchUiState(
                     query = "yogurt",
-                    status = SearchStatus.Results(
-                        listOf(
-                            ScannedProduct("Greek yogurt", 100.0, "g", 97, 9, 4, 5),
-                            ScannedProduct("Greek yogurt, plain", 100.0, "g", 59, 10, 4, 0),
-                        ),
+                    results = listOf(
+                        ScannedProduct("Greek yogurt, plain nonfat", 100.0, "g", 59, 10, 4, 0),
+                        ScannedProduct("Yogurt, plain whole milk", 100.0, "g", 61, 4, 5, 3),
                     ),
                 ),
-                onQueryChange = {},
+                onEvent = {},
                 onSelect = {},
                 modifier = Modifier.padding(16.dp),
             )
@@ -174,8 +203,8 @@ private fun FoodSearchPanelEmptyPreview() {
     AppTheme {
         Surface {
             FoodSearchPanelContent(
-                uiState = FoodSearchUiState(query = "zzzz", status = SearchStatus.Empty),
-                onQueryChange = {},
+                uiState = FoodSearchUiState(query = "zzzz", results = emptyList()),
+                onEvent = {},
                 onSelect = {},
                 modifier = Modifier.padding(16.dp),
             )

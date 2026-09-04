@@ -66,7 +66,8 @@ Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
 - Favorites.
 - Saved meals — snapshot a diary section, re-log as separate rows.
 - Recipes — a saved meal with servings; logs as one priced row.
-- Food search (USDA FoodData Central).
+- Food search — a built-in list of ~120 common foods, offline and instant; the empty
+  field lists all of them, eight at a time.
 - Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at
   once, every parsed row editable and repriceable before anything is written. Speech is the
   system's own dialog; typing is the same path.
