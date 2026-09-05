@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.progress.ui.progress
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.cycle.CycleDay
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
@@ -55,6 +56,13 @@ data class ProgressUiState(
     /** The profile's current target — the chart's goal line. Each bar carries its own snapshot,
      * so this only ever moves the line, never a bar. */
     val fastingGoalHours: Int = DEFAULT_FAST_GOAL_HOURS,
+    /** Sparse — logged days only, like [moodDays], and anchored to today for the same reason.
+     * Collected whether or not [cycleTrackingOn] is set: the switch decides what is *drawn*, and
+     * splitting the combine per flag would be a large conditional-flow change for nothing. */
+    val cycleDays: List<CycleDay> = emptyList(),
+    /** `Profile.cycleTrackingOn`, resolved in the ViewModel: null means never asked, which is off.
+     * The one flag that removes a subject from the overview rather than dashing it. */
+    val cycleTrackingOn: Boolean = false,
     /** Sparse, one row per supplement per day it was due — a day with no rows is a gap, not a
      * miss. Each row carries the target it was scored against, so a later edit can't rewrite a
      * bar already drawn. */

@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.GLASS_ML
 import ph.mart.healthapp.core.data.water.WaterRepository
+import ph.mart.healthapp.core.data.cycle.CycleRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.health.local.HealthLinkDao
 import ph.mart.healthapp.core.data.health.local.HealthLinkEntity
@@ -30,6 +31,7 @@ private const val SLEEP_TABLE = "sleep_day"
 private const val FOOD_TABLE = "food_entry"
 private const val WATER_TABLE = "water_day"
 private const val BLOOD_PRESSURE_TABLE = "blood_pressure_reading"
+private const val CYCLE_TABLE = "cycle_day"
 
 /**
  * ponytail: a page cap instead of a real budget. 25 sessions per page × 20 pages is over a year of
@@ -53,6 +55,7 @@ internal class HealthSyncRepositoryImpl(
     private val foodRepository: FoodRepository,
     private val waterRepository: WaterRepository,
     private val bloodPressureRepository: BloodPressureRepository,
+    private val cycleRepository: CycleRepository,
     private val networkMonitor: NetworkMonitor,
     private val connect: HealthConnectSource,
 ) : HealthSyncRepository {
@@ -78,6 +81,15 @@ internal class HealthSyncRepositoryImpl(
     override suspend fun connectState(): HealthConnectState = connect.state()
 
     override fun connectPermissionContract() = connect.permissionContract()
+
+    override suspend fun connectPermissions(): Set<String> {
+        val tracking = profileRepository.observeProfile().first()?.cycleTrackingOn == true
+        return if (tracking) {
+            CONNECT_PERMISSIONS
+        } else {
+            CONNECT_PERMISSIONS - HealthMetric.Menstruation.permission
+        }
+    }
 
     override suspend fun completeConsent(data: Intent?): Boolean {
         cachedToken = auth.tokenFromConsentResult(data)
@@ -218,6 +230,7 @@ internal class HealthSyncRepositoryImpl(
         HealthMetric.Steps -> HealthDataType.Steps.id
         HealthMetric.Heart -> HealthDataType.Heart.id
         HealthMetric.BloodPressure -> null
+        HealthMetric.Menstruation -> null
     }
 
     /**
@@ -243,6 +256,12 @@ internal class HealthSyncRepositoryImpl(
             BLOOD_PRESSURE_TABLE,
             bloodPressureWriter(),
         )
+        // A period whose days were all typed by hand writes nothing and records no link, so it is
+        // not counted as imported — `bloodPressureWriter`'s rule. One record is one link, which is
+        // what puts this type on `health_link`'s ordinary cursor rather than steps' and heart's.
+        written += store(records.menstruation, HealthMetric.Menstruation.connectDataType, CYCLE_TABLE) { remote ->
+            if (cycleRepository.importDays(remote.toCycleDays()) > 0) 1L else SKIPPED
+        }
         // The two aggregating types keep their own bookkeeping and record no link — see importSteps.
         if (records.steps.isNotEmpty()) written += writeSteps(stepTotals(records.steps), weightKg)
         if (records.heart.isNotEmpty()) written += writeHeart(records.heart)

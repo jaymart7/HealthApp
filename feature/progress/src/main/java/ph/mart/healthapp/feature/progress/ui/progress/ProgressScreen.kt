@@ -39,6 +39,7 @@ import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.photo.components.TimelapseScreen
+import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.progress.components.RecapScreen
@@ -231,6 +232,12 @@ private fun ProgressContent(
 
             if (state.activeBloodPressureSheet) {
                 LogBloodPressureSheet(onDismiss = state::closeBloodPressureSheet)
+            }
+
+            // Handed the days it seeds from — the sheet reads the same combined state the page
+            // does, so opening a day twice shows what it says rather than a blank form.
+            if (state.activeCycleSheet) {
+                LogCycleSheet(days = uiState.cycleDays, onDismiss = state::closeCycleSheet)
             }
 
             if (state.activeMeasurementSheet) {

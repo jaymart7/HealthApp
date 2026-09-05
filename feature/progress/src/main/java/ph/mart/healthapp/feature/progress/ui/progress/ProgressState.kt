@@ -28,6 +28,7 @@ internal class ProgressScreenState(
     activeMeasurementSheet: Boolean = false,
     measurementSheetPart: MeasurementPart? = null,
     activeBloodPressureSheet: Boolean = false,
+    activeCycleSheet: Boolean = false,
     activeRecap: Boolean = false,
     recapPeriod: RecapPeriod = DEFAULT_RECAP_PERIOD,
     activeTimelapse: Boolean = false,
@@ -49,6 +50,7 @@ internal class ProgressScreenState(
     var activeMeasurementSheet: Boolean by mutableStateOf(activeMeasurementSheet)
     var measurementSheetPart: MeasurementPart? by mutableStateOf(measurementSheetPart)
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
+    var activeCycleSheet: Boolean by mutableStateOf(activeCycleSheet)
     var activeRecap: Boolean by mutableStateOf(activeRecap)
     var recapPeriod: RecapPeriod by mutableStateOf(recapPeriod)
     var activeTimelapse: Boolean by mutableStateOf(activeTimelapse)
@@ -100,6 +102,14 @@ internal class ProgressScreenState(
         activeBloodPressureSheet = false
     }
 
+    fun openCycleSheet() {
+        activeCycleSheet = true
+    }
+
+    fun closeCycleSheet() {
+        activeCycleSheet = false
+    }
+
     fun openRecap() {
         activeRecap = true
     }
@@ -137,7 +147,7 @@ internal class ProgressScreenState(
                     it.selectedPhotoIds,
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
                     it.activeBloodPressureSheet, it.activeRecap, it.recapPeriod.name, it.activeTimelapse,
-                    it.activeEnergyCheckIn, it.pendingDeleteReadingId,
+                    it.activeEnergyCheckIn, it.pendingDeleteReadingId, it.activeCycleSheet,
                 )
             },
             restore = { saved ->
@@ -159,6 +169,7 @@ internal class ProgressScreenState(
                     activeTimelapse = saved[9] as Boolean,
                     activeEnergyCheckIn = saved[10] as Boolean,
                     pendingDeleteReadingId = saved[11] as Long?,
+                    activeCycleSheet = saved[12] as Boolean,
                 )
             },
         )

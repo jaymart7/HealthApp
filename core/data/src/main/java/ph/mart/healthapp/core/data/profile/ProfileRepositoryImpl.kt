@@ -43,6 +43,7 @@ private fun ProfileEntity.toProfile() = Profile(
     mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
     homeLayout = homeLayout,
+    cycleTrackingOn = cycleTrackingOn,
     recapReminderOn = recapReminderOn,
 )
 
@@ -75,5 +76,6 @@ private fun Profile.toEntity() = ProfileEntity(
     mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
     homeLayout = homeLayout,
+    cycleTrackingOn = cycleTrackingOn,
     recapReminderOn = recapReminderOn,
 )

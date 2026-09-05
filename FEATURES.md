@@ -51,10 +51,10 @@ every width.
 
 ## Home
 
-Fourteen cards, all reorderable/hideable except the pinned greeting and AI insight:
+Fifteen cards, all reorderable/hideable except the pinned greeting and AI insight:
 
 Calories (ring) · Streak · Water · Fasting · Today's workout · Sleep · Steps · Heart rate ·
-Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
+Blood pressure · Mood · Cycle · Supplements · Weight · Macros · Progress photo.
 
 - Mascot greeting card — the app's one door to the coach.
 - AI insight card (dismissible, with a rules-based offline fallback).
@@ -112,10 +112,10 @@ Blood pressure · Mood · Supplements · Weight · Macros · Progress photo.
 
 ## Progress
 
-An **overview** with a per-subject **detail page** behind every card. Thirteen subjects in four
+An **overview** with a per-subject **detail page** behind every card. Fourteen subjects in four
 groups: Body (Weight · Photos · Measurements) · Nutrition (Food · Fasting · Supplements) ·
-Training (Activity · Strength) · Wellbeing (Sleep · Mood · Heart · Blood pressure), plus Badges as
-a summary row under the grids.
+Training (Activity · Strength) · Wellbeing (Sleep · Mood · Cycle · Heart · Blood pressure), plus
+Badges as a summary row under the grids. Cycle is the one subject a setting can remove entirely.
 
 - Overview: week recap ("Across everything"), one insight card carrying the goal projection, four
   grouped grids of subject cards — value, a 26dp preview (sparkline, day bars or a photo strip) and
@@ -132,6 +132,11 @@ a summary row under the grids.
 - Photos: grid, before/after comparison slider, timelapse player, share as a PNG strip.
 - Body: five measurement sites (chest, waist, hips, arms, thighs), chart + history.
 - Mood + energy: two series, separate denominators.
+- Cycle: **off by default**, behind Profile → Cycle. Flow chart, average cycle and period lengths,
+  a next-period estimate once two periods are on record, and the period list. Days are logged from
+  a Home card (today's flow, one tap) or the tab's backdatable sheet (flow + ten symptom tags).
+  Health Connect fills in period days where it is granted; that permission is requested only while
+  the switch is on. No fertile window and no ovulation date — see `CLAUDE.md`.
 - Sleep / Heart: watch-imported, charted anchored to today.
 - Fasting: session hours vs. goal line.
 - Supplements: percent-taken per day.
@@ -142,7 +147,7 @@ a summary row under the grids.
 - Energy check-in: maintenance calories measured from 28 days of logged intake against the real
   weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
   opening a full overlay that shows its working).
-- Logging sheets: weigh-in (backdatable), measurements, progress photo, blood pressure.
+- Logging sheets: weigh-in (backdatable), measurements, progress photo, blood pressure, cycle day.
 
 ## AI (Firebase AI Logic / Gemini)
 
@@ -224,8 +229,11 @@ each one is argued in `CLAUDE.md`.
 - **Accounts, sign-in, server sync.** No auth system exists. Nothing may assume one.
 - **Monetization.** No pricing, subscription or paywall has been decided.
 - **A streak celebration toast.** The badge lighting up is the reward.
-- **Mood, sleep, fasting, supplements and steps are not streak domains.** The streak is food,
-  water, weigh-in, exercise — adding a fifth rewrites what past runs meant.
+- **Mood, sleep, fasting, supplements, steps and cycle are not streak domains.** The streak is
+  food, water, weigh-in, exercise — adding a fifth rewrites what past runs meant.
+- **A fertile window or ovulation date.** FitPulse names things and reports numbers; a fertile
+  window derived from a mean cycle length is a contraception claim it cannot stand behind.
+- **Cycle data in any AI payload, the widget, the watch or the recap.** It stays on the phone.
 - **Badges in the recap.** No badge records when it was earned.
 - **Sleep, heart, blood pressure, fasting, supplements in the recap.** Not enough scroll earned.
 - **Blood pressure's Google Health scope.** Deliberately not requested. Health Connect reads it

@@ -4,6 +4,7 @@ import androidx.room3.immediateTransaction
 import androidx.room3.useWriterConnection
 import ph.mart.healthapp.core.data.AppDatabase
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
+import ph.mart.healthapp.core.data.cycle.CycleRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
@@ -30,6 +31,7 @@ internal class DataTransferRepositoryImpl(
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
     private val moodRepository: MoodRepository,
+    private val cycleRepository: CycleRepository,
     private val fastingRepository: FastingRepository,
     private val supplementRepository: SupplementRepository,
     private val bloodPressureRepository: BloodPressureRepository,
@@ -55,6 +57,9 @@ internal class DataTransferRepositoryImpl(
 
                 moodRepository.clearAllDays()
                 data.moodDays.forEach { moodRepository.upsertDay(it) }
+
+                cycleRepository.clearAllDays()
+                data.cycleDays.forEach { cycleRepository.upsertDay(it) }
 
                 // Clears a running fast too, which is the honest reading of replace-in-full: the
                 // timer belongs to the history being replaced, not to the device.

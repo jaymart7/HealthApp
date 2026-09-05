@@ -2,6 +2,9 @@ package ph.mart.healthapp.feature.progress.ui.progress
 
 import ph.mart.healthapp.core.data.bloodpressure.averages
 import ph.mart.healthapp.core.data.bloodpressure.byDay
+import ph.mart.healthapp.core.data.cycle.cycleAverages
+import ph.mart.healthapp.core.data.cycle.cycleDayNumber
+import ph.mart.healthapp.core.data.cycle.periods
 import ph.mart.healthapp.core.data.exercise.strengthTotals
 import ph.mart.healthapp.core.data.exercise.volumeByDay
 import ph.mart.healthapp.core.data.exercise.volumeLabel
@@ -264,6 +267,29 @@ fun summarize(
                 unit = "/ ${MOOD_SCALE.last}",
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.mood }),
                 footnote = "${averages.daysLogged} ${if (averages.daysLogged == 1) "day" else "days"} logged",
+            )
+        }
+
+        // Every figure the page shows at its default range, folded by the same calls: the card
+        // says where you are, the page says the rest.
+        Subject.Cycle -> {
+            val days = uiState.cycleDays
+            val periods = days.periods()
+            val cycleDay = periods.cycleDayNumber(todayEpochDay) ?: return SubjectSummary(subject)
+            val averages = days.cycleAverages(todayEpochDay)
+            SubjectSummary(
+                subject = subject,
+                value = "$cycleDay",
+                unit = "day of cycle",
+                // The last week's flow, gaps drawn as stubs — a week is what the strip can hold.
+                preview = SubjectPreview.Bars(
+                    (todayEpochDay - PREVIEW_POINTS + 1..todayEpochDay).map { day ->
+                        days.firstOrNull { it.dateEpochDay == day }?.flow ?: 0
+                    },
+                ),
+                footnote = averages.cycleDays
+                    ?.let { "Average cycle ${it.roundToInt()} days" }
+                    ?: "${averages.daysLogged} ${if (averages.daysLogged == 1) "day" else "days"} logged",
             )
         }
 

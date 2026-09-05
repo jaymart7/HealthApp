@@ -34,6 +34,9 @@ import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HomeCard
 import ph.mart.healthapp.core.designsystem.component.homeCardLayout
+import ph.mart.healthapp.core.data.cycle.cycleDayNumber
+import ph.mart.healthapp.core.data.cycle.cyclePrediction
+import ph.mart.healthapp.core.data.cycle.periods
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.ui.HomeEvent
@@ -57,6 +60,7 @@ import ph.mart.healthapp.feature.home.ui.components.StreakCard
 import ph.mart.healthapp.feature.home.ui.components.SupplementsCard
 import ph.mart.healthapp.feature.home.ui.components.TrainingPlanCard
 import ph.mart.healthapp.feature.home.ui.components.WaterCard
+import ph.mart.healthapp.feature.home.ui.components.CycleCard
 import ph.mart.healthapp.feature.home.ui.components.WeightMetricCard
 
 /**
@@ -232,6 +236,25 @@ internal fun HomeCards(
                         onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
                         modifier = appearance,
                     )
+
+                    // Gated on the Profile switch, not on whether anything is logged: with
+                    // tracking on and nothing logged the card is what asks for the first tap.
+                    // The gate stays inside this branch, like every other one here — the layout
+                    // editor can only ever remove a card, never force one.
+                    HomeCard.Cycle -> if (uiState.profile?.cycleTrackingOn == true) {
+                        val today = todayEpochDay()
+                        // Folded here off the days the state already holds, beside `targets` and
+                        // `projection` — nothing derived is stored on HomeUiState.
+                        val periods = uiState.cycleDays.periods()
+                        CycleCard(
+                            cycleDay = periods.cycleDayNumber(today),
+                            prediction = periods.cyclePrediction(),
+                            todayEpochDay = today,
+                            flow = uiState.cycleDays.firstOrNull { it.dateEpochDay == today }?.flow ?: 0,
+                            onSetFlow = { flow -> onEvent(HomeEvent.OnSetCycleFlow(flow)) },
+                            modifier = appearance,
+                        )
+                    }
 
                     // Hidden when the list is empty, like the three watch cards above — but for a
                     // different reason: there is nothing to import, there is nothing the user has

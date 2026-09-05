@@ -32,6 +32,7 @@ enum class HomeCard(val label: String, val note: String? = null) {
     Heart("Heart rate", WATCH_NOTE),
     BloodPressure("Blood pressure", "Shows once you log a reading"),
     Mood("Mood"),
+    Cycle("Cycle", "Shows once cycle tracking is on in Profile"),
     Supplements("Supplements", "Shows once your list has something in it"),
     Weight("Weight"),
     Macros("Macros"),

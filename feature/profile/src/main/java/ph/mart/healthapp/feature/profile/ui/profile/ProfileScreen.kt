@@ -51,6 +51,7 @@ import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAboutSecti
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAppearanceSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileConnectionsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileDataSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileCycleSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileExerciseSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileFastingSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileGoalsSection
@@ -187,6 +188,7 @@ fun ProfileScreen(
         onSetFastingGoal = viewModel::setFastingGoal,
         onSetStepGoal = viewModel::setStepGoal,
         onSetExerciseBudget = viewModel::setExerciseBudget,
+        onSetCycleTracking = viewModel::setCycleTracking,
         onToggleReminder = { kind, enabled ->
             if (!enabled || canPostNotifications) {
                 viewModel.setReminder(kind, enabled)
@@ -232,6 +234,7 @@ private fun ProfileContent(
     onSetFastingGoal: (Int) -> Unit,
     onSetStepGoal: (Int) -> Unit,
     onSetExerciseBudget: (Boolean) -> Unit,
+    onSetCycleTracking: (Boolean) -> Unit,
     onToggleReminder: (ReminderKind, Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
@@ -295,6 +298,10 @@ private fun ProfileContent(
                 addToBudget = profile.addExerciseToBudget,
                 onSetAddToBudget = onSetExerciseBudget,
             )
+            ProfileCycleSection(
+                enabled = profile.cycleTrackingOn == true,
+                onSetEnabled = onSetCycleTracking,
+            )
             ProfileRemindersSection(
                 enabled = profile::reminderEnabled,
                 onToggle = onToggleReminder,
@@ -345,6 +352,7 @@ private fun ProfileScreenPreview() {
             onSetFastingGoal = {},
             onSetStepGoal = {},
             onSetExerciseBudget = {},
+            onSetCycleTracking = {},
             onToggleReminder = { _, _ -> },
             onExport = {},
             onImport = {},

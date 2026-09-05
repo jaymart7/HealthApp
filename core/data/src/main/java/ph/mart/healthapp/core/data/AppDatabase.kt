@@ -4,6 +4,8 @@ import androidx.room3.Database
 import androidx.room3.RoomDatabase
 import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingDao
 import ph.mart.healthapp.core.data.bloodpressure.local.BloodPressureReadingEntity
+import ph.mart.healthapp.core.data.cycle.local.CycleDayDao
+import ph.mart.healthapp.core.data.cycle.local.CycleDayEntity
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryDao
 import ph.mart.healthapp.core.data.exercise.local.ExerciseEntryEntity
 import ph.mart.healthapp.core.data.exercise.local.RoutineDao
@@ -61,6 +63,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         RoutineEntity::class,
         RoutineLiftEntity::class,
         MoodDayEntity::class,
+        CycleDayEntity::class,
         HealthLinkEntity::class,
         SleepDayEntity::class,
         StepDayEntity::class,
@@ -71,7 +74,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         BloodPressureReadingEntity::class,
         ChatMessageEntity::class,
     ],
-    version = 27,
+    version = 28,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -86,6 +89,7 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun exerciseEntryDao(): ExerciseEntryDao
     abstract fun routineDao(): RoutineDao
     abstract fun moodDayDao(): MoodDayDao
+    abstract fun cycleDayDao(): CycleDayDao
     abstract fun healthLinkDao(): HealthLinkDao
     abstract fun sleepDayDao(): SleepDayDao
     abstract fun stepDayDao(): StepDayDao

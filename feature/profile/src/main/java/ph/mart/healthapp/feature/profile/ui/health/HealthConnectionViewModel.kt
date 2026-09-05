@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import androidx.activity.result.contract.ActivityResultContract
-import ph.mart.healthapp.core.data.health.CONNECT_PERMISSIONS
 import ph.mart.healthapp.core.data.health.HealthConnectState
 import ph.mart.healthapp.core.data.health.HealthConnection
 import ph.mart.healthapp.core.data.health.HealthSyncRepository
@@ -57,10 +56,12 @@ class HealthConnectionViewModel(
     fun refresh() = intent {
         val connection = repository.connection()
         val connect = repository.connectState()
+        val requests = repository.connectPermissions()
         reduce {
             state.copy(
                 connection = connection,
                 connect = connect,
+                connectRequests = requests,
                 busy = false,
                 // Unavailable is only worth saying when Health Connect isn't covering things
                 // anyway: a phone with no Play services still syncs locally, and reporting that
@@ -81,11 +82,14 @@ class HealthConnectionViewModel(
      * every time, including ones already granted. Health Connect shows the user what they have and
      * lets them take one away, which is the screen a "Change what FitPulse reads" button should
      * open.
+     *
+     * The set comes off the repository rather than the constant: menstruation is dropped while
+     * cycle tracking is off, and that decision belongs where the profile already is.
      */
     fun requestConnectPermissions() = intent {
         when (state.connect) {
             is HealthConnectState.Available ->
-                postSideEffect(HealthConnectionSideEffect.RequestConnectPermissions(CONNECT_PERMISSIONS))
+                postSideEffect(HealthConnectionSideEffect.RequestConnectPermissions(state.connectRequests))
 
             HealthConnectState.UpdateRequired ->
                 postSideEffect(HealthConnectionSideEffect.OpenHealthConnectListing)

@@ -50,11 +50,20 @@ enum class Subject(
     Strength("Strength", SubjectGroup.Training, SubjectAccent.Primary, "How strength works"),
     Sleep("Sleep", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "How sleep works"),
     Mood("Mood", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "How mood works"),
+    Cycle("Cycle", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "Log a day"),
     Heart("Heart", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "How heart rate works"),
     BloodPressure("Blood pressure", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "Log a reading"),
     Badges("Badges", group = null, accent = SubjectAccent.Primary, emptyHint = ""),
 }
 
-/** The subjects in [group], in declaration order — the order the grid draws them in before
- * tracked-before-empty sorting moves the ones with nothing to say to the end. */
-fun subjectsIn(group: SubjectGroup): List<Subject> = Subject.entries.filter { it.group == group }
+/**
+ * The subjects in [group], in declaration order — the order the grid draws them in before
+ * tracked-before-empty sorting moves the ones with nothing to say to the end.
+ *
+ * [cycleTracking] is the one thing that can take a subject out of the grid entirely, and it is
+ * `Profile.cycleTrackingOn`. Every other empty subject keeps its slot dashed because it is empty
+ * for want of data; Cycle may be permanently irrelevant to whoever is holding the phone, and a
+ * card that can never say anything is worse than no card.
+ */
+fun subjectsIn(group: SubjectGroup, cycleTracking: Boolean = true): List<Subject> =
+    Subject.entries.filter { it.group == group && (cycleTracking || it != Subject.Cycle) }

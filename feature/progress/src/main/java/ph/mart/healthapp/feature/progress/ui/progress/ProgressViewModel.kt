@@ -6,6 +6,8 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
+import ph.mart.healthapp.core.data.cycle.CycleDay
+import ph.mart.healthapp.core.data.cycle.CycleRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
@@ -41,6 +43,7 @@ class ProgressViewModel(
     waterRepository: WaterRepository,
     exerciseRepository: ExerciseRepository,
     moodRepository: MoodRepository,
+    cycleRepository: CycleRepository,
     sleepRepository: SleepRepository,
     heartRepository: HeartRepository,
     fastingRepository: FastingRepository,
@@ -52,8 +55,8 @@ class ProgressViewModel(
     override val container = orbitContainer<ProgressUiState, Nothing>(ProgressUiState()) {
         observeProgress(
             progressRepository, profileRepository, foodRepository, waterRepository, exerciseRepository,
-            moodRepository, sleepRepository, heartRepository, fastingRepository, supplementRepository,
-            bloodPressureRepository, stepsRepository,
+            moodRepository, cycleRepository, sleepRepository, heartRepository, fastingRepository,
+            supplementRepository, bloodPressureRepository, stepsRepository,
         )
     }
 
@@ -64,6 +67,7 @@ class ProgressViewModel(
         waterRepository: WaterRepository,
         exerciseRepository: ExerciseRepository,
         moodRepository: MoodRepository,
+        cycleRepository: CycleRepository,
         sleepRepository: SleepRepository,
         heartRepository: HeartRepository,
         fastingRepository: FastingRepository,
@@ -90,6 +94,8 @@ class ProgressViewModel(
                 targets = profile?.dailyTargets(),
                 fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
                 stepGoal = profile?.stepGoal ?: DEFAULT_STEP_GOAL,
+                // null means never asked, which is off — the reading `Profile.cycleTrackingOn` gives.
+                cycleTrackingOn = profile?.cycleTrackingOn == true,
                 // The same call HomeViewModel makes, from the one lambda that already holds both
                 // halves — no extra flow, and the outer combine's arity is untouched.
                 weightProgressKg = profile?.let {
@@ -119,6 +125,7 @@ class ProgressViewModel(
             heartRepository.observeDays(),
             supplementRepository.observeDays(),
             bloodPressureRepository.observeReadings(),
+            cycleRepository.observeDays(),
             ::SparseSeries,
         )
 
@@ -146,6 +153,7 @@ class ProgressViewModel(
                 fastSessions = activitySeries.fasts,
                 supplementDays = sparse.supplementDays,
                 bloodPressure = sparse.bloodPressure,
+                cycleDays = sparse.cycleDays,
                 stepDays = activitySeries.stepDays,
                 exerciseEntries = activitySeries.exercise,
             )
@@ -168,4 +176,5 @@ private data class SparseSeries(
     val heartDays: List<HeartDay>,
     val supplementDays: List<SupplementDay>,
     val bloodPressure: List<BloodPressureReading>,
+    val cycleDays: List<CycleDay>,
 )

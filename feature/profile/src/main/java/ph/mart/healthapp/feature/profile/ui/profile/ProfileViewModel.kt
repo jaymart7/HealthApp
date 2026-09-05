@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.cycle.CycleRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.health.STEP_GOAL_STEPS
@@ -30,6 +31,7 @@ class ProfileViewModel(
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
     private val moodRepository: MoodRepository,
+    private val cycleRepository: CycleRepository,
     private val fastingRepository: FastingRepository,
     private val supplementRepository: SupplementRepository,
     private val bloodPressureRepository: BloodPressureRepository,
@@ -116,6 +118,11 @@ class ProfileViewModel(
         profileRepository.saveProfile(profile.copy(addExerciseToBudget = enabled))
     }
 
+    fun setCycleTracking(enabled: Boolean) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(cycleTrackingOn = enabled))
+    }
+
     fun setDarkTheme(enabled: Boolean) = intent {
         val profile = state.profile ?: return@intent
         profileRepository.saveProfile(profile.copy(darkThemeOn = enabled))
@@ -144,6 +151,7 @@ class ProfileViewModel(
             supplements = supplementRepository.allSupplements(),
             supplementDays = supplementRepository.allDays(),
             bloodPressure = bloodPressureRepository.allReadings(),
+            cycleDays = cycleRepository.allDays(),
         )
         postSideEffect(ProfileSideEffect.ExportReady(json))
     }

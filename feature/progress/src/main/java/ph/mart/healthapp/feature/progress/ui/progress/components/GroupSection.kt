@@ -50,13 +50,16 @@ private val RowMinHeight = 56.dp
 internal fun GroupSection(
     group: SubjectGroup,
     summaries: Map<Subject, SubjectSummary>,
+    /** `Profile.cycleTrackingOn` — off drops the Cycle subject from this group entirely, which is
+     * the only thing that can take a card out of a grid rather than dashing it. */
+    cycleTracking: Boolean,
     expanded: Boolean,
     onToggle: () -> Unit,
     onOpen: (Subject) -> Unit,
     onHint: (Subject) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val subjects = subjectsIn(group)
+    val subjects = subjectsIn(group, cycleTracking)
     val cards = subjects.sortedByDescending { summaries[it]?.tracked == true }
     val trackedCount = subjects.count { summaries[it]?.tracked == true }
 
@@ -158,6 +161,7 @@ private fun GroupSectionPreview() {
             Column(modifier = Modifier.padding(16.dp)) {
                 GroupSection(
                     group = SubjectGroup.Body,
+                    cycleTracking = false,
                     summaries = mapOf(
                         Subject.Weight to SubjectSummary(
                             subject = Subject.Weight,
@@ -199,6 +203,7 @@ private fun GroupSectionCollapsedPreview() {
                 GroupSection(
                     group = SubjectGroup.Wellbeing,
                     summaries = subjectsIn(SubjectGroup.Wellbeing).associateWith { SubjectSummary(it) },
+                    cycleTracking = true,
                     expanded = false,
                     onToggle = {},
                     onOpen = {},

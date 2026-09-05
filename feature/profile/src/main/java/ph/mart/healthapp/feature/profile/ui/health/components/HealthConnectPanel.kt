@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.health.CONNECT_PERMISSIONS
 import ph.mart.healthapp.core.data.health.HealthConnectState
 import ph.mart.healthapp.core.data.health.HealthMetric
 import ph.mart.healthapp.core.designsystem.component.AppCard
@@ -30,6 +31,8 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 @Composable
 internal fun HealthConnectPanel(
     state: HealthConnectState,
+    /** What FitPulse would ask for now — see `HealthConnectionUiState.connectRequests`. */
+    requests: Set<String>,
     busy: Boolean,
     onAllow: () -> Unit,
     onOpenPlayStore: () -> Unit,
@@ -46,7 +49,8 @@ internal fun HealthConnectPanel(
             text = "FitPulse reads your workouts, weight, sleep, steps, heart rate and blood " +
                 "pressure from Health Connect, on your phone — no account and no internet " +
                 "connection. It is used to raise your calorie budget, track your weight trend and " +
-                "show your sleep, heart rate and readings. FitPulse writes nothing back.",
+                "show your sleep, heart rate and readings. Period days are read only while cycle " +
+                "tracking is on in Profile. FitPulse writes nothing back.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -75,11 +79,15 @@ internal fun HealthConnectPanel(
                                 .copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface,
                         )
-                        // Every metric, ticked or not — a partial grant is ordinary here, and the
-                        // list is the only place the user can see which five of six they allowed.
-                        HealthMetric.entries.forEach { metric ->
-                            MetricRow(metric = metric, granted = metric in state.granted)
-                        }
+                        // Every metric we ask for, ticked or not — a partial grant is ordinary
+                        // here, and the list is the only place the user can see which of them they
+                        // allowed. One already granted is listed whether or not we still ask for
+                        // it, so turning cycle tracking off never hides a permission still held.
+                        HealthMetric.entries
+                            .filter { it.permission in requests || it in state.granted }
+                            .forEach { metric ->
+                                MetricRow(metric = metric, granted = metric in state.granted)
+                            }
                     }
                 }
                 PrimaryButton(
@@ -131,6 +139,7 @@ private val HealthMetric.label: String
         HealthMetric.Steps -> "Steps"
         HealthMetric.Heart -> "Heart rate"
         HealthMetric.BloodPressure -> "Blood pressure"
+        HealthMetric.Menstruation -> "Period days"
     }
 
 @PreviewLightDark
@@ -139,6 +148,7 @@ private fun HealthConnectPanelNotAllowedPreview() {
     AppTheme {
         HealthConnectPanel(
             state = HealthConnectState.Available(granted = emptySet()),
+            requests = CONNECT_PERMISSIONS,
             busy = false,
             onAllow = {},
             onOpenPlayStore = {},
@@ -155,6 +165,8 @@ private fun HealthConnectPanelPartialPreview() {
             state = HealthConnectState.Available(
                 granted = setOf(HealthMetric.Steps, HealthMetric.Sleep, HealthMetric.Exercise),
             ),
+            // Cycle tracking off: the period row is absent, and would be listed if it were granted.
+            requests = CONNECT_PERMISSIONS - HealthMetric.Menstruation.permission,
             busy = false,
             onAllow = {},
             onOpenPlayStore = {},
@@ -168,6 +180,7 @@ private fun HealthConnectPanelUpdateRequiredPreview() {
     AppTheme {
         HealthConnectPanel(
             state = HealthConnectState.UpdateRequired,
+            requests = CONNECT_PERMISSIONS,
             busy = false,
             onAllow = {},
             onOpenPlayStore = {},

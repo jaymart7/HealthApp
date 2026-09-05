@@ -9,6 +9,7 @@ import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.records.BloodPressureRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.MenstruationPeriodRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -19,6 +20,7 @@ import java.time.Instant
 import kotlin.math.roundToInt
 import kotlin.reflect.KClass
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 
 /**
@@ -105,6 +107,7 @@ internal class HealthConnectSourceImpl(private val context: Context) : HealthCon
             steps = windows.on(HealthMetric.Steps) { readSteps(client, it) },
             heart = windows.on(HealthMetric.Heart) { readHeart(client, it) },
             bloodPressure = windows.on(HealthMetric.BloodPressure) { readBloodPressure(client, it) },
+            menstruation = windows.on(HealthMetric.Menstruation) { readMenstruation(client, it) },
         )
     }
 
@@ -205,6 +208,27 @@ internal class HealthConnectSourceImpl(private val context: Context) : HealthCon
             diastolic = record.diastolic.inMillimetersOfMercury.roundToInt(),
         )
     }
+
+    /**
+     * A period is a span, so both ends go through [epochDayOf] here rather than being carried as
+     * instants: `cycle_day` is keyed by local midnight, and a record that ended at 01:00 belongs to
+     * the day the phone calls 01:00 — the conversion every other day-keyed table in this app makes.
+     * [RemotePoint.timeMillis] stays the start instant, because that is what `health_link`'s cursor
+     * compares.
+     */
+    @RequiresApi(Build.VERSION_CODES.P)
+    private suspend fun readMenstruation(
+        client: HealthConnectClient,
+        sinceMillis: Long,
+    ): List<RemoteMenstruation> =
+        page(client, MenstruationPeriodRecord::class, sinceMillis).map { record ->
+            RemoteMenstruation(
+                remoteName = connectName(record.metadata.id),
+                timeMillis = record.startTime.toEpochMilli(),
+                startEpochDay = epochDayOf(record.startTime.toEpochMilli()),
+                endEpochDay = epochDayOf(record.endTime.toEpochMilli()),
+            )
+        }
 
     /**
      * Pages to the end, capped for `MAX_PAGES`' reason in `HealthSyncRepositoryImpl`: a provider

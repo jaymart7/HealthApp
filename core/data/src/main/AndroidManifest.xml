@@ -20,5 +20,9 @@
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
     <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE" />
+    <!-- Declared, not always requested: HealthSyncRepository.connectPermissions() drops this one
+         while Profile.cycleTrackingOn is off, so it never reaches a permission sheet for someone
+         who has no use for it. -->
+    <uses-permission android:name="android.permission.health.READ_MENSTRUATION" />
 
 </manifest>

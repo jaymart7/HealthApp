@@ -80,6 +80,16 @@ data class Profile(
      * what "Reset to default" writes back.
      */
     val homeLayout: String? = null,
+    /**
+     * Whether the cycle surfaces exist at all — the Home card and the Progress subject.
+     *
+     * Nullable like [darkThemeOn] and read the *opposite* way: there is no device setting to
+     * follow, so null means "never asked", which resolves to off. It is the one thing in the app
+     * that can take a subject out of the Progress grid, and deliberately so — every other empty
+     * subject is empty for want of data, while this one may be permanently irrelevant to whoever
+     * is holding the phone.
+     */
+    val cycleTrackingOn: Boolean? = null,
 )
 
 interface ProfileRepository {

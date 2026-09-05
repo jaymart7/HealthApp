@@ -77,7 +77,7 @@ internal fun ProgressOverview(
     // Thirteen folds over up to a year of data — cheap, but not free on every scroll frame.
     val summaries = remember(uiState, today) { summarizeAll(uiState, today) }
     val untouchedGroups = SubjectGroup.entries.count { group ->
-        subjectsIn(group).none { summaries[it]?.tracked == true }
+        subjectsIn(group, uiState.cycleTrackingOn).none { summaries[it]?.tracked == true }
     }
 
     Column(
@@ -146,13 +146,20 @@ internal fun ProgressOverview(
             GroupSection(
                 group = group,
                 summaries = summaries,
+                cycleTracking = uiState.cycleTrackingOn,
                 expanded = group in state.expandedGroups,
                 onToggle = { state.toggleGroup(group) },
                 onOpen = state::open,
                 onHint = { subject ->
                     // The one hint that isn't a door to the detail page: Blood pressure's sheet is
                     // already on this screen, so "Log a reading" means it.
-                    if (subject == Subject.BloodPressure) state.openBloodPressureSheet() else state.open(subject)
+                    when (subject) {
+                        // The two hints that aren't doors to a detail page: both sheets are
+                        // already on this screen, so "Log a reading"/"Log a day" mean them.
+                        Subject.BloodPressure -> state.openBloodPressureSheet()
+                        Subject.Cycle -> state.openCycleSheet()
+                        else -> state.open(subject)
+                    }
                 },
             )
         }

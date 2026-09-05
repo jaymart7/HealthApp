@@ -29,6 +29,7 @@ val healthDataModule = module {
     single<HealthSyncRepository> {
         HealthSyncRepositoryImpl(
             get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(),
         )
     }
 }

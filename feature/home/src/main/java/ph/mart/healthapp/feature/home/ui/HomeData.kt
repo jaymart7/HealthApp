@@ -5,6 +5,7 @@ import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.exercise.PlanDay
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.cycle.CycleDay
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
@@ -83,6 +84,16 @@ data class HomeUiState(
     /** The model's line, once it answers. Null until then and null forever offline or on a failed
      * call — `HomeCards` falls back to [insightFor], so the card never waits on the network. */
     val aiInsight: String? = null,
+    /**
+     * Every logged cycle day, oldest first — the card folds its own day number and prediction out
+     * of this, the treatment `targets` and `projection` already get. Collected whether or not the
+     * Profile switch is on, the rule every hidden Home card's flows follow; the card is gated on
+     * the switch rather than on the list, since an empty list with tracking on is a card asking
+     * for the first tap.
+     *
+     * Not part of [isDayOne], for mood's reason — this is not one of the streak's four domains.
+     */
+    val cycleDays: List<CycleDay> = emptyList(),
 )
 
 /** All Home writes: today's glass count, today's mood/energy, the fasting timer and today's
@@ -93,6 +104,9 @@ sealed interface HomeEvent {
     data class OnSetSupplementTaken(val id: Long, val taken: Int) : HomeEvent
     data class OnSetWaterGlasses(val glasses: Int) : HomeEvent
     data class OnSetMood(val level: Int) : HomeEvent
+
+    /** A [ph.mart.healthapp.core.data.cycle.FlowLevel] value for today, or 0 to clear it. */
+    data class OnSetCycleFlow(val flow: Int) : HomeEvent
     data class OnSetEnergy(val level: Int) : HomeEvent
     data object OnStartFast : HomeEvent
     data object OnEndFast : HomeEvent

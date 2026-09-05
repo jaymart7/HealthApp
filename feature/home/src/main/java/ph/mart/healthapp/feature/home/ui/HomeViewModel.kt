@@ -9,6 +9,8 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.cycle.CycleDay
+import ph.mart.healthapp.core.data.cycle.CycleRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineRepository
@@ -61,6 +63,7 @@ class HomeViewModel(
     exerciseRepository: ExerciseRepository,
     routineRepository: RoutineRepository,
     private val moodRepository: MoodRepository,
+    private val cycleRepository: CycleRepository,
     private val fastingRepository: FastingRepository,
     sleepRepository: SleepRepository,
     stepsRepository: StepsRepository,
@@ -83,6 +86,7 @@ class HomeViewModel(
                 exerciseRepository,
                 routineRepository,
                 moodRepository,
+                cycleRepository,
                 fastingRepository,
                 sleepRepository,
                 stepsRepository,
@@ -98,6 +102,7 @@ class HomeViewModel(
             is HomeEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
             is HomeEvent.OnSetMood -> onSetMood(event.level)
             is HomeEvent.OnSetEnergy -> onSetEnergy(event.level)
+            is HomeEvent.OnSetCycleFlow -> onSetCycleFlow(event.flow)
             is HomeEvent.OnSetSupplementTaken -> onSetSupplementTaken(event.id, event.taken)
             HomeEvent.OnStartFast -> onStartFast()
             HomeEvent.OnEndFast -> intent { fastingRepository.stop() }
@@ -123,6 +128,12 @@ class HomeViewModel(
         moodRepository.setTodayEnergy(level)
     }
 
+    /** The card sends 0 when the level tapped is the one already set — clearing a flow is an
+     * update, not a delete, the same as clearing a mood. */
+    private fun onSetCycleFlow(flow: Int) = intent {
+        cycleRepository.setTodayFlow(flow)
+    }
+
     /** The card computes the next count; the repository clamps it against the supplement's own
      * target, so a stale emission can't write a dose that no longer exists. */
     private fun onSetSupplementTaken(id: Long, taken: Int) = intent {
@@ -136,6 +147,7 @@ class HomeViewModel(
         exerciseRepository: ExerciseRepository,
         routineRepository: RoutineRepository,
         moodRepository: MoodRepository,
+        cycleRepository: CycleRepository,
         fastingRepository: FastingRepository,
         sleepRepository: SleepRepository,
         stepsRepository: StepsRepository,
@@ -190,6 +202,7 @@ class HomeViewModel(
             fastingRepository.observeActive(),
             supplementRepository.observeToday(),
             bloodPressureRepository.observeLatest(),
+            cycleRepository.observeDays(),
             ::UserLogged,
         )
 
@@ -226,6 +239,7 @@ class HomeViewModel(
                 activeFast = logged.activeFast,
                 supplements = logged.supplements,
                 latestBloodPressure = logged.bloodPressure,
+                cycleDays = logged.cycleDays,
                 addExerciseToBudget = state.profile?.addExerciseToBudget != false,
                 // Read on every emission, not once at flow-construction time, so the streak
                 // doesn't freeze at whatever day the app happened to be opened.
@@ -273,11 +287,12 @@ private data class Training(
     val recent: List<ExerciseEntry>,
 )
 
-/** The four things the user logs by hand, grouped so the outer combine stays inside the typed
+/** The five things the user logs by hand, grouped so the outer combine stays inside the typed
  * overloads' five-flow arity. Private and structural — it never leaves this file. */
 private data class UserLogged(
     val mood: MoodDay,
     val activeFast: FastSession?,
     val supplements: List<SupplementToday>,
     val bloodPressure: BloodPressureReading?,
+    val cycleDays: List<CycleDay>,
 )

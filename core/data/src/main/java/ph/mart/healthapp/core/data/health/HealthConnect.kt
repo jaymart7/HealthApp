@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.health
 
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.cycle.CycleDay
+import ph.mart.healthapp.core.data.cycle.FlowLevel
 import ph.mart.healthapp.core.data.health.local.HealthLinkEntity
 
 /**
@@ -41,6 +43,14 @@ enum class HealthMetric(val permission: String, val connectDataType: String) {
     Steps("android.permission.health.READ_STEPS", "hc/steps"),
     Heart("android.permission.health.READ_HEART_RATE", "hc/heart-rate"),
     BloodPressure("android.permission.health.READ_BLOOD_PRESSURE", "hc/blood-pressure"),
+
+    /**
+     * The one metric that is not requested unconditionally — see
+     * [HealthSyncRepository.connectPermissions]. Cycle tracking is off by default and may be
+     * permanently irrelevant to whoever is holding the phone, and a permission sheet nobody has a
+     * use for is worse than one type fewer.
+     */
+    Menstruation("android.permission.health.READ_MENSTRUATION", "hc/menstruation"),
 }
 
 /** Every permission FitPulse would ask Health Connect for, in [HealthMetric] order. */
@@ -122,6 +132,7 @@ internal data class ConnectRecords(
     val steps: List<RemoteSteps> = emptyList(),
     val heart: List<RemoteHeart> = emptyList(),
     val bloodPressure: List<RemoteBloodPressure> = emptyList(),
+    val menstruation: List<RemoteMenstruation> = emptyList(),
 )
 
 /**
@@ -145,6 +156,31 @@ internal fun RemoteBloodPressure.toBloodPressureReading() = BloodPressureReading
     systolic = systolic,
     diastolic = diastolic,
 )
+
+/**
+ * One period, as Health Connect records it: a span of days with **no intensity on it**. The seventh
+ * type, and the second with no cloud twin — the Google Health API has no menstruation scope, and
+ * nothing here would justify one on the verification form.
+ *
+ * It carries the span rather than the days because that is what `MenstruationPeriodRecord` is, and
+ * because the record's own id is what [health_link] keys on — one record, one link, the cursor
+ * every other linked type already uses.
+ */
+internal data class RemoteMenstruation(
+    override val remoteName: String,
+    override val timeMillis: Long,
+    val startEpochDay: Long,
+    val endEpochDay: Long,
+) : RemotePoint
+
+/**
+ * Expanded to one row per day, every one [FlowLevel.Unstated]: the record reports *that* the period
+ * ran, never how heavy it was, and writing "Medium" for one would invent a figure the source never
+ * reported — the refusal an imported reading's `pulseBpm = 0` already makes. The card and the sheet
+ * both draw that level as its own answer and invite a tap to replace it.
+ */
+internal fun RemoteMenstruation.toCycleDays(): List<CycleDay> =
+    (startEpochDay..endEpochDay).map { CycleDay(dateEpochDay = it, flow = FlowLevel.Unstated.value) }
 
 /**
  * True when [reading] is one the user already has — a cuff reading typed by hand *and* written to

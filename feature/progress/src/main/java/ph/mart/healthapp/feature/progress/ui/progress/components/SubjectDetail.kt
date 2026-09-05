@@ -30,6 +30,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.ui.achievement.components.AchievementsDetailBody
 import ph.mart.healthapp.feature.progress.ui.activity.components.ActivityDetailBody
+import ph.mart.healthapp.feature.progress.ui.cycle.components.CycleDetailBody
 import ph.mart.healthapp.feature.progress.ui.fasting.components.FastingDetailBody
 import ph.mart.healthapp.feature.progress.ui.heart.components.HeartDetailBody
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsDetailBody
@@ -108,7 +109,12 @@ internal fun SubjectDetail(
                 onShare = if (canShare) state::openRecap else null,
             )
             when {
-                !summary.tracked -> EmptyDetail(subject = subject, state = state, summaries = summaries)
+                !summary.tracked -> EmptyDetail(
+                    subject = subject,
+                    state = state,
+                    summaries = summaries,
+                    cycleTracking = uiState.cycleTrackingOn,
+                )
 
                 subject in SelfScrolling -> Column(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -125,7 +131,12 @@ internal fun SubjectDetail(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Body(subject, uiState, state, checkIn, projection)
-                    Switcher(subject = subject, summaries = summaries, state = state)
+                    Switcher(
+                        subject = subject,
+                        summaries = summaries,
+                        state = state,
+                        cycleTracking = uiState.cycleTrackingOn,
+                    )
                 }
             }
         }
@@ -154,6 +165,7 @@ private fun ColumnScope.Body(
         Subject.Strength -> StrengthDetailBody(uiState, state)
         Subject.Sleep -> SleepDetailBody(uiState, state)
         Subject.Mood -> MoodDetailBody(uiState, state)
+        Subject.Cycle -> CycleDetailBody(uiState, state)
         Subject.Heart -> HeartDetailBody(uiState, state)
         Subject.BloodPressure -> BloodPressureDetailBody(uiState, state)
         Subject.Badges -> AchievementsDetailBody(uiState)
@@ -165,6 +177,7 @@ private fun EmptyDetail(
     subject: Subject,
     state: ProgressScreenState,
     summaries: Map<Subject, SubjectSummary>,
+    cycleTracking: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val copy = emptyCopy(subject)
@@ -174,23 +187,40 @@ private fun EmptyDetail(
                 icon = { MascotAvatar(state = copy.mascot, size = 64.dp) },
                 heading = copy.heading,
                 body = copy.body,
-                // Blood pressure alone: the sheet is already on this screen, so pointing at it
+                // The two subjects whose sheets are already on this screen, so pointing at one
                 // adds no entry point. Every other subject is filled from somewhere else in the
                 // app, and a button that only navigated would be a button explaining a screen.
-                actions = if (subject == Subject.BloodPressure) {
-                    {
-                        PrimaryButton(
-                            label = "Log a reading",
-                            onClick = state::openBloodPressureSheet,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                actions = when (subject) {
+                    Subject.BloodPressure -> {
+                        {
+                            PrimaryButton(
+                                label = "Log a reading",
+                                onClick = state::openBloodPressureSheet,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
-                } else {
-                    null
+
+                    Subject.Cycle -> {
+                        {
+                            PrimaryButton(
+                                label = "Log a day",
+                                onClick = state::openCycleSheet,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+
+                    else -> null
                 },
             )
         }
-        Switcher(subject = subject, summaries = summaries, state = state)
+        Switcher(
+            subject = subject,
+            summaries = summaries,
+            state = state,
+            cycleTracking = cycleTracking,
+        )
         Box(modifier = Modifier.padding(bottom = DockedFabContentPadding))
     }
 }
@@ -200,9 +230,12 @@ private fun Switcher(
     subject: Subject,
     summaries: Map<Subject, SubjectSummary>,
     state: ProgressScreenState,
+    /** `Profile.cycleTrackingOn` — off drops Cycle from the sibling row, or a page would offer a
+     * door to the one subject the overview has taken away. */
+    cycleTracking: Boolean,
 ) {
     val group = subject.group ?: return
-    val siblings = subjectsIn(group)
+    val siblings = subjectsIn(group, cycleTracking)
         .filter { it != subject }
         .map { sibling ->
             val summary = summaries[sibling]
@@ -266,6 +299,12 @@ private fun emptyCopy(subject: Subject): EmptyCopy = when (subject) {
         "No mood logged yet",
         "Tap how you're feeling on the Home screen and it shows up here.",
         MascotState.Sleepy,
+    )
+    Subject.Cycle -> EmptyCopy(
+        "Nothing logged yet",
+        "Log a period day and this page charts your flow, your period lengths and when the next " +
+            "one is due.",
+        MascotState.Idle,
     )
     Subject.Heart -> EmptyCopy(
         "No heart data yet",

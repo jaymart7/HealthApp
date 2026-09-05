@@ -4,6 +4,7 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.cycle.CycleDay
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
@@ -32,6 +33,7 @@ data class ImportData(
     val supplements: List<Supplement>,
     val supplementDays: List<SupplementDay>,
     val bloodPressure: List<BloodPressureReading>,
+    val cycleDays: List<CycleDay>,
 )
 
 /**

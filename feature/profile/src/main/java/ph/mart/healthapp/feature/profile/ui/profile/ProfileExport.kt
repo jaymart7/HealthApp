@@ -4,6 +4,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.cycle.CycleDay
+import ph.mart.healthapp.core.data.cycle.cycleSymptoms
+import ph.mart.healthapp.core.data.cycle.encodeCycleSymptoms
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.StrengthSet
@@ -50,6 +53,7 @@ internal data class FitPulseExport(
     val supplements: List<ExportSupplement> = emptyList(),
     val supplementDays: List<ExportSupplementDay> = emptyList(),
     val bloodPressure: List<ExportBloodPressureReading> = emptyList(),
+    val cycleDays: List<ExportCycleDay> = emptyList(),
 )
 
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
@@ -62,10 +66,11 @@ internal data class FitPulseExport(
  * [ExportProfile.mascotPaletteName]; 13 added [ExportExercise.steps]; 14 added
  * [ExportExercise.sets]; 15 added [ExportProfile.homeLayout]; 16 added
  * [ExportProfile.recapReminderOn] — and [ExportProfile.workoutRemindersOn], which landed on
- * `Profile` after v15 and was simply missed here, so a restored backup silently lost it.
+ * `Profile` after v15 and was simply missed here, so a restored backup silently lost it;
+ * 17 added [FitPulseExport.cycleDays] and [ExportProfile.cycleTrackingOn].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 16
+internal const val EXPORT_SCHEMA_VERSION = 17
 
 @Serializable
 internal data class ExportProfile(
@@ -98,6 +103,7 @@ internal data class ExportProfile(
     val mascotPaletteName: String? = null,
     val stepGoal: Int = DEFAULT_STEP_GOAL,
     val homeLayout: String? = null,
+    val cycleTrackingOn: Boolean? = null,
 )
 
 @Serializable
@@ -155,6 +161,15 @@ internal data class ExportMoodDay(val dateEpochDay: Long, val mood: Int, val ene
 /** Completed fasts only — `endMillis` is non-null here because a running fast is a timer, not
  * history, and restoring one on another device would resume a clock nobody started there. The row
  * id is dropped: it is an autoGenerate key with no meaning outside the database it came from. */
+/**
+ * A cycle day is history like a mood day, not convenience data like a saved meal, so it rides the
+ * backup. The symptoms travel as the comma-joined string Room stores, so [cycleSymptoms] and
+ * [encodeCycleSymptoms] do both directions and the file invents no second format — which is also
+ * what makes a tag this build doesn't know degrade on import rather than throw.
+ */
+@Serializable
+internal data class ExportCycleDay(val dateEpochDay: Long, val flow: Int, val symptoms: String = "")
+
 @Serializable
 internal data class ExportFastSession(val startMillis: Long, val endMillis: Long, val goalHours: Int)
 
@@ -216,6 +231,7 @@ internal fun buildExportJson(
     supplements: List<Supplement>,
     supplementDays: List<SupplementDay>,
     bloodPressure: List<BloodPressureReading>,
+    cycleDays: List<CycleDay>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
@@ -241,6 +257,9 @@ internal fun buildExportJson(
         },
         bloodPressure = bloodPressure.map {
             ExportBloodPressureReading(it.takenAtMillis, it.systolic, it.diastolic, it.pulseBpm)
+        },
+        cycleDays = cycleDays.map {
+            ExportCycleDay(it.dateEpochDay, it.flow, encodeCycleSymptoms(it.symptoms))
         },
     ),
 )
@@ -296,6 +315,9 @@ internal fun parseExport(text: String): Result<ImportData> = runCatching {
                 pulseBpm = it.pulseBpm,
             )
         },
+        cycleDays = export.cycleDays.map {
+            CycleDay(it.dateEpochDay, it.flow, cycleSymptoms(it.symptoms))
+        },
     )
 }
 
@@ -332,6 +354,7 @@ private fun Profile.toExport() = ExportProfile(
     mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
     homeLayout = homeLayout,
+    cycleTrackingOn = cycleTrackingOn,
 )
 
 private fun ExportProfile.toProfile() = Profile(
@@ -364,6 +387,7 @@ private fun ExportProfile.toProfile() = Profile(
     mascotPaletteName = mascotPaletteName,
     stepGoal = stepGoal,
     homeLayout = homeLayout,
+    cycleTrackingOn = cycleTrackingOn,
 )
 
 private fun FoodEntry.toExport() = ExportFoodEntry(

@@ -126,6 +126,7 @@ private fun HealthConnectionContent(
             // has always had.
             HealthConnectPanel(
                 state = uiState.connect,
+                requests = uiState.connectRequests,
                 busy = uiState.busy,
                 onAllow = onAllowConnect,
                 onOpenPlayStore = onAllowConnect,

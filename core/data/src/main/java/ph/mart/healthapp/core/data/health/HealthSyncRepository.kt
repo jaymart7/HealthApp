@@ -61,6 +61,18 @@ interface HealthSyncRepository {
      */
     fun connectPermissionContract(): ActivityResultContract<Set<String>, Set<String>>
 
+    /**
+     * What to ask Health Connect for — [CONNECT_PERMISSIONS] minus menstruation while
+     * `Profile.cycleTrackingOn` is off.
+     *
+     * It lives here rather than on the screen because this is where the profile already is:
+     * `:feature:profile` reaching for a second repository to shape a permission set would put the
+     * decision in two places. Suspending for the same reason [connection] and [connectState] are —
+     * it is read at the moment the button is tapped, never cached, so turning the switch on and
+     * tapping Allow asks for the type in the same session.
+     */
+    suspend fun connectPermissions(): Set<String>
+
     /** Hands back the result of the consent Activity. True when a token came back. */
     suspend fun completeConsent(data: Intent?): Boolean
 

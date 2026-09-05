@@ -159,8 +159,8 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
   reached from features via `koinViewModel()`. Feature ViewModels take the
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
-  `exercise` (logged activity *and* the routines that seed one), `mood`, `health`, `fasting`,
-  `supplement`, `bloodpressure`, `coach`. Two
+  `exercise` (logged activity *and* the routines that seed one), `mood`, `cycle`, `health`,
+  `fasting`, `supplement`, `bloodpressure`, `coach`. Two
   non-domains sit beside them: `network/` (a `NetworkMonitor`
   recheck, not a listener) and `streak/`, which is pure derivation — no table,
   no repository, no schema.
@@ -1114,6 +1114,70 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   that vanished on the six days between readings would be a card nobody ever saw. It is hidden only
   until the first reading exists, like `SupplementsCard`. It is read-only and does not navigate:
   logging needs the sheet, and the sheet lives in `:feature:progress`.
+- **Cycle tracking is off until it is switched on, and off means *gone*.** `Profile.cycleTrackingOn`
+  is nullable like `darkThemeOn` and read the opposite way — there is no device setting to follow,
+  so null means "never asked", which resolves to off. It is the **one thing in the app that can take
+  a subject out of the Progress grid** rather than dashing it: every other empty subject is empty
+  for want of data, while this one may be permanently irrelevant to whoever is holding the phone,
+  and a card that can never say anything is worse than no card. So `subjectsIn(group, cycleTracking)`
+  takes the flag, and both the grid *and* the detail page's sibling switcher read it — a page
+  offering a door to a subject the overview has removed is the failure that pairing prevents. The
+  Home card is gated the same way, inside its own `when` branch like every other data gate there.
+- **No fertile window, no ovulation date, ever.** This app names things and reports numbers; it does
+  not advise — and a fertile window derived from a mean cycle length is a contraception claim it
+  cannot stand behind. `cyclePrediction()` reports one thing: the next start, the average it was
+  fitted over, and how many cycles that was. It is **null until there are two period starts**, the
+  refusal `Recap.weightArcKg` makes for a window holding one weigh-in, and a date that has passed is
+  reported as *late* rather than hidden — a late period is the thing someone opens this card to
+  check. `PREDICTION_WINDOW_CYCLES` is 6: enough to absorb one odd month without averaging in a
+  year-old cycle the body has moved on from.
+- **A period is a run of flow days, and a cycle is the gap between two runs — both derived, no
+  table.** `cycle_day` is `mood_day`'s shape one domain over (`goalProjection()`'s and `streak/`'s
+  rule), and `flow == 0` means "not logged", never a flow of zero — which is what keeps the column
+  non-null, makes a symptom-only day a first-class row, and makes clearing a tap an update rather
+  than a delete. `periods()` bridges `PERIOD_GAP_DAYS` (1) missed days, because real logging skips a
+  day and a period split in two corrupts every cycle length after it — one bad tap would move the
+  prediction by a fortnight. A **symptom without flow is not a period day**: a cramp three days
+  early is not bleeding, and counting it would move the start every cycle length is anchored on.
+  `cycleAverages()` leaves a **still-running** period out of the period-length mean (it is measured
+  short by however many days are left in it) and keeps a separate denominator per series, `MoodDay`'s
+  rule. `List<CycleDay>.inRange` anchors to **today**, like mood's and unlike weight's.
+- **`FlowLevel.Unstated` is the importer's alone, and never a tap.** Health Connect's
+  `MenstruationPeriodRecord` is a span of days with no intensity on it, so an imported day carries
+  a level that fills nothing and says so — writing "Medium" would invent a figure the source never
+  reported, the refusal `pulseBpm = 0` already makes. It appears in the sheet's pill row *only* when
+  that day already says it, so nothing can set it by hand. `TAPPABLE_FLOW` is the three levels the
+  UI offers, and the Home row is a **meter** (fill up to the level) rather than mood's picker,
+  because light/medium/heavy is one scale; tapping the level already set clears it.
+- **Menstruation is the one Health Connect permission that is not always requested.**
+  `HealthSyncRepository.connectPermissions()` drops it while the switch is off — it lives on the
+  repository because that is where the profile already is, and suspends rather than caching so
+  turning the switch on and tapping Allow asks for the type in the same session. The panel lists the
+  rows it would request *plus anything already granted*, so it never shows a row nobody can tick and
+  never hides a permission still held. `cloudDataTypeOf` returns null for it (blood pressure's
+  answer): there is no Google Health menstruation scope, and nothing here would justify one on the
+  verification form. One record is one `health_link` row, so it rides the ordinary
+  `MAX(remoteTimeMillis)` cursor rather than steps' and heart's `MAX(date)`; `importDays()` **skips
+  a day that already carries a flow** — the typed value wins, exactly as an imported weigh-in skips
+  a day already weighed by hand — and a period whose days were all typed by hand records no link and
+  is not counted as imported.
+- **Cycle is not a streak domain, and reaches nothing off the phone.** The streak's four domains are
+  things the user *did*; a body noticing itself is not one, and folding a fifth in now would rewrite
+  what every past run meant — so `CycleRepository` has no `observeLoggedDays()` and Home's
+  `isDayOne` ignores it. It is in **no AI payload** (not `InsightRequest`, not `MealIdeaRequest`, not
+  the coach), on no widget, on no watch surface and in no recap, and the Profile switch's sublabel
+  says so, because that is the first question this feature raises. It *is* **exported** (schema
+  v17, with the switch): a cycle day is history like a mood day, not convenience data like a saved
+  meal. Its symptoms travel as the comma-joined string Room stores, so a tag a later build retires
+  degrades on import rather than throwing — `homeCardLayout()`'s rule.
+- **The Progress sheet asks for a date; the Home card does not.** A period is remembered in the
+  evening as often as it is logged in the morning, and back-filling three days is the workflow —
+  the reason the weigh-in sheet has a calendar and the blood-pressure sheet doesn't. The calendar
+  marks **flow days only**: a marked symptom-only day would say the period ran longer than it did,
+  which is the figure every cycle length rests on. Saving a blank day *clears* it (a zero row, never
+  a delete), and the sheet says so under the chips. Home stays today-only and read-only beyond the
+  one tap — the history and the symptoms belong where a date picker can live.
+
 - **A timelapse is a way of looking at the grid, not a thing to store.** `TimelapseScreen` plays
   `uiState.photos` (already ascending by date, already combined) in place — no schema, no
   repository, no ViewModel, the `badgeGroups()` and `goalProjection()` shape — which is also why it
@@ -1398,7 +1462,9 @@ Connect.
 
 - Health Connect reads health data, which needs the Play Console data-types declaration form —
   a separate obligation from the Google Health API's OAuth verification and CASA assessment
-  below, and cheaper: no CASA, and no per-scope justification.
+  below, and cheaper: no CASA, and no per-scope justification. `READ_MENSTRUATION` is on that form
+  too and is the one entry in a sensitive category, so declare it even though it is requested only
+  while cycle tracking is on.
 - FoodData Central runs on one signed key shipped in the APK (extractable, and its 3600 req/hour
   budget is shared by every install). A proxy holding the key is the upgrade path if either the
   ceiling or the exposure starts to matter.
@@ -1438,7 +1504,7 @@ Connect.
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
   `recipe`, `search`, `ideas`, `shared`), `:feature:progress` (`progress` — the overview, the
   detail chrome and the recap — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
-  `strength`, `mood`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
+  `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts, and a
   `shared/` holding `RangeBarChart`, `DayBarChart` and `SharePng` (the capture-and-share pair two
   flows draw), the first two of which between them draw every subject's bars except Mood's,
