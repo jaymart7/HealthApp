@@ -10,6 +10,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
+import ph.mart.healthapp.R
 
 const val REMINDER_CHANNEL_ID = "reminders"
 
@@ -82,7 +83,7 @@ class ReminderScheduler(context: Context) {
                 NotificationChannelCompat.Builder(
                     REMINDER_CHANNEL_ID,
                     NotificationManagerCompat.IMPORTANCE_DEFAULT,
-                ).setName("Reminders").build(),
+                ).setName(context.getString(R.string.app_notification_channel)).build(),
             )
         }
     }

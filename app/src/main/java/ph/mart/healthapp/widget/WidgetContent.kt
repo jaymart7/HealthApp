@@ -30,6 +30,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import ph.mart.healthapp.MainActivity
+import ph.mart.healthapp.R
 import ph.mart.healthapp.core.data.fasting.formatClockTime
 import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
@@ -79,7 +80,7 @@ private fun OnboardingContent() {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "Set up FitPulse to see today's numbers.",
+            text = LocalContext.current.getString(R.string.widget_onboarding),
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
         )
     }
@@ -92,13 +93,13 @@ private fun CaloriesContent(state: TodaySnapshot) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Today",
+            text = LocalContext.current.getString(R.string.widget_today),
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
             modifier = GlanceModifier.defaultWeight(),
         )
         if (state.streakDays > 0) {
             Text(
-                text = "${state.streakDays}-day streak",
+                text = LocalContext.current.getString(R.string.widget_streak, state.streakDays),
                 style = TextStyle(
                     color = GlanceTheme.colors.primary,
                     fontSize = 12.sp,
@@ -123,7 +124,7 @@ private fun CaloriesContent(state: TodaySnapshot) {
             ),
         )
         Text(
-            text = " / ${state.budgetKcal} kcal",
+            text = LocalContext.current.getString(R.string.widget_budget, state.budgetKcal),
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
         )
     }
@@ -140,14 +141,17 @@ private fun CaloriesContent(state: TodaySnapshot) {
         Text(
             // Over budget is stated, not hidden — but as a fact, not a scolding, and in
             // onSurfaceVariant rather than error: a day over target is not a failure state.
-            text = if (remaining >= 0) "$remaining kcal left" else "${-remaining} kcal over",
+            text = LocalContext.current.getString(
+                if (remaining >= 0) R.string.widget_kcal_left else R.string.widget_kcal_over,
+                if (remaining >= 0) remaining else -remaining,
+            ),
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
             modifier = GlanceModifier.defaultWeight(),
         )
         // Omitted rather than zeroed when Google Health isn't connected, same as Home's card.
         if (state.steps > 0) {
             Text(
-                text = "${formatSteps(state.steps)} steps",
+                text = LocalContext.current.getString(R.string.widget_steps, formatSteps(state.steps)),
                 style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
             )
         }
@@ -161,13 +165,18 @@ private fun WaterRow(state: TodaySnapshot) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "Water ${state.glasses} / ${state.goalGlasses} · " + state.waterLabel,
+            text = LocalContext.current.getString(
+                R.string.widget_water,
+                state.glasses,
+                state.goalGlasses,
+                state.waterLabel,
+            ),
             style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp),
             modifier = GlanceModifier.defaultWeight(),
         )
         if (state.waterGoalReached) {
             Text(
-                text = "Goal hit",
+                text = LocalContext.current.getString(R.string.widget_water_goal_hit),
                 style = TextStyle(
                     color = GlanceTheme.colors.primary,
                     fontSize = 13.sp,
@@ -176,7 +185,7 @@ private fun WaterRow(state: TodaySnapshot) {
             )
         } else {
             FilledButton(
-                text = "+1 glass",
+                text = LocalContext.current.getString(R.string.widget_add_glass),
                 onClick = actionRunCallback<AddGlassAction>(),
                 maxLines = 1,
             )
@@ -191,7 +200,11 @@ private fun FastingRow(state: TodaySnapshot) {
     val until = state.fastingUntilMillis ?: return
     Spacer(GlanceModifier.height(4.dp))
     Text(
-        text = if (state.fastingGoalReached) "Fast complete" else "Fasting until ${formatClockTime(until)}",
+        text = if (state.fastingGoalReached) {
+            LocalContext.current.getString(R.string.widget_fast_complete)
+        } else {
+            LocalContext.current.getString(R.string.widget_fasting_until, formatClockTime(until))
+        },
         style = TextStyle(
             color = if (state.fastingGoalReached) {
                 GlanceTheme.colors.primary

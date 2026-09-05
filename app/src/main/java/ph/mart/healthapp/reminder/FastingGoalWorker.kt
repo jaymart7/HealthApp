@@ -7,6 +7,7 @@ import androidx.work.WorkerParameters
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import ph.mart.healthapp.R
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.fasting.formatElapsed
 import ph.mart.healthapp.core.data.fasting.goalReachedMillis
@@ -47,8 +48,11 @@ class FastingGoalWorker(
         notify(
             context = context,
             id = FASTING_GOAL_NOTIFICATION_ID,
-            title = "${fast.goalHours}-hour fast complete",
-            body = "You've been fasting ${formatElapsed(now - fast.startMillis)}. End it when you're ready.",
+            title = context.getString(R.string.app_fasting_goal_title, fast.goalHours),
+            body = context.getString(
+                R.string.app_fasting_goal_body,
+                formatElapsed(now - fast.startMillis),
+            ),
             tab = TopLevelDestination.Home,
         )
         return Result.success()

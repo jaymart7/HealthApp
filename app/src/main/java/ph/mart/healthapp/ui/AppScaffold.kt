@@ -23,12 +23,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.window.core.layout.WindowSizeClass
 import kotlinx.coroutines.launch
+import ph.mart.healthapp.R
 import ph.mart.healthapp.ShortcutAction
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavBar
@@ -52,10 +54,10 @@ import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
+import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.HomeLayoutRoute
 import ph.mart.healthapp.feature.profile.ui.RoutinesRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
-import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
@@ -64,16 +66,19 @@ import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
 /** What the toolbar says on each route a level above a tab. It lives here rather than on the route
  * types because `:core:navigation` is a leaf module and this is already the one place that sees
  * every feature's routes at once. */
+@Composable
 private fun NavKey?.title(): String = when (this) {
-    CoachRoute -> "Coach"
-    RecipeBuilderRoute -> "New recipe"
-    is StrengthWorkoutRoute -> if (this.editingId > 0) "Edit workout" else "Strength workout"
-    is VoiceLogRoute -> "Say what you ate"
-    HealthConnectionRoute -> "Google Health"
-    FoodLibraryRoute -> "Food library"
-    RoutinesRoute -> "Workout routines"
-    SupplementsRoute -> "Supplements"
-    HomeLayoutRoute -> "Home layout"
+    CoachRoute -> stringResource(R.string.app_title_coach)
+    RecipeBuilderRoute -> stringResource(R.string.app_title_new_recipe)
+    is StrengthWorkoutRoute -> stringResource(
+        if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
+    )
+    is VoiceLogRoute -> stringResource(R.string.app_title_voice_log)
+    HealthConnectionRoute -> stringResource(R.string.app_title_google_health)
+    FoodLibraryRoute -> stringResource(R.string.app_title_food_library)
+    RoutinesRoute -> stringResource(R.string.app_title_routines)
+    SupplementsRoute -> stringResource(R.string.app_title_supplements)
+    HomeLayoutRoute -> stringResource(R.string.app_title_home_layout)
     else -> ""
 }
 

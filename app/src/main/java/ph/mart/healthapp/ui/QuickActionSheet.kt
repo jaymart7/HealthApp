@@ -9,8 +9,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.R
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -29,11 +31,11 @@ fun QuickActionSheet(
     onAddPhoto: () -> Unit,
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
-        QuickActionRow(label = "Say what you ate", onClick = onSpeakFood)
-        QuickActionRow(label = "Log food", onClick = onLogFood)
-        QuickActionRow(label = "Log exercise", onClick = onLogExercise)
-        QuickActionRow(label = "Log weight", onClick = onLogWeight)
-        QuickActionRow(label = "Add photo", onClick = onAddPhoto)
+        QuickActionRow(label = stringResource(R.string.app_quick_speak_food), onClick = onSpeakFood)
+        QuickActionRow(label = stringResource(R.string.app_quick_log_food), onClick = onLogFood)
+        QuickActionRow(label = stringResource(R.string.app_quick_log_exercise), onClick = onLogExercise)
+        QuickActionRow(label = stringResource(R.string.app_quick_log_weight), onClick = onLogWeight)
+        QuickActionRow(label = stringResource(R.string.app_quick_add_photo), onClick = onAddPhoto)
     }
 }
 

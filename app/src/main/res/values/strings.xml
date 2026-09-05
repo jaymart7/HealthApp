@@ -12,4 +12,43 @@
     <string name="shortcut_add_water_long">Log a glass of water</string>
     <string name="shortcut_log_weight_short">Weigh in</string>
     <string name="shortcut_log_weight_long">Log today\'s weight</string>
+
+    <!-- Quick-action sheet (the FAB) -->
+    <string name="app_quick_speak_food">Say what you ate</string>
+    <string name="app_quick_log_food">Log food</string>
+    <string name="app_quick_log_exercise">Log exercise</string>
+    <string name="app_quick_log_weight">Log weight</string>
+    <string name="app_quick_add_photo">Add photo</string>
+
+    <!-- Toolbar titles for the routes a level above a tab -->
+    <string name="app_title_coach">Coach</string>
+    <string name="app_title_new_recipe">New recipe</string>
+    <string name="app_title_edit_workout">Edit workout</string>
+    <string name="app_title_strength_workout">Strength workout</string>
+    <string name="app_title_voice_log">Say what you ate</string>
+    <string name="app_title_google_health">Google Health</string>
+    <string name="app_title_food_library">Food library</string>
+    <string name="app_title_routines">Workout routines</string>
+    <string name="app_title_supplements">Supplements</string>
+    <string name="app_title_home_layout">Home layout</string>
+
+    <!-- Notifications. The Reminder enum's own titles and bodies stay in Kotlin - see Reminders.kt. -->
+    <string name="app_notification_channel">Reminders</string>
+    <string name="app_notification_add_glass">+1 glass</string>
+    <string name="app_fasting_goal_title">%1$d-hour fast complete</string>
+    <string name="app_fasting_goal_body">You\'ve been fasting %1$s. End it when you\'re ready.</string>
+
+    <!-- Home-screen widget -->
+    <string name="widget_onboarding">Set up FitPulse to see today\'s numbers.</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_streak">%1$d-day streak</string>
+    <string name="widget_budget">" / %1$d kcal"</string>
+    <string name="widget_kcal_left">%1$d kcal left</string>
+    <string name="widget_kcal_over">%1$d kcal over</string>
+    <string name="widget_steps">%1$s steps</string>
+    <string name="widget_water">Water %1$d / %2$d · %3$s</string>
+    <string name="widget_water_goal_hit">Goal hit</string>
+    <string name="widget_add_glass">+1 glass</string>
+    <string name="widget_fast_complete">Fast complete</string>
+    <string name="widget_fasting_until">Fasting until %1$s</string>
 </resources>

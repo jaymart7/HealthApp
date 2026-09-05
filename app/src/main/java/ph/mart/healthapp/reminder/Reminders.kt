@@ -32,6 +32,11 @@ const val KEY_REMINDER = "reminder"
  * Profile switches already promise in their sublabels (`ReminderKind` in `:feature:profile`):
  * meals 3x daily, weigh-in Monday 8:00, photos every 2 weeks.
  *
+ * [title] and [body] stay in Kotlin, deliberately: they are fields on an enum that the
+ * scheduler reads without a composition, and the localization pass left them where they are
+ * rather than growing a resolver for a table this small. Move them together with the enum, or
+ * not at all.
+ *
  * [mealType] is set only on the three meal reminders, [checksWater] only on the two water ones,
  * [checksSupplements] only on the supplement one, [checksPlan] only on the training one and
  * [checksRecap] only on the weekly recap; all five are what let the worker stay quiet about
@@ -188,7 +193,11 @@ internal fun notify(
         )
         // The icon is required by the signature and ignored by every phone launcher since API 24;
         // reusing the small icon beats a second drawable nothing renders.
-        builder.addAction(R.drawable.ic_notification, "+1 glass", actionPendingIntent)
+        builder.addAction(
+            R.drawable.ic_notification,
+            context.getString(R.string.app_notification_add_glass),
+            actionPendingIntent,
+        )
     }
     val notification = builder.build()
     // The caller's areNotificationsEnabled() check already covers the permission; this catch is
