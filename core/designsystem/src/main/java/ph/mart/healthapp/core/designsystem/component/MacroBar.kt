@@ -26,12 +26,16 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 
+/** What separates the three segments. On the scale, and constant across [MacroBar]'s heights so
+ * the diary's full and collapsed bars read as the same object at two sizes. */
+private val SegmentGap = 4.dp
+
 /** Grams of each macro. The shape [MacroBar] needs to fill a goal split against what was eaten. */
 data class Macros(val proteinG: Int, val carbsG: Int, val fatG: Int)
 
 /**
- * Hard-edged 3-segment macro split bar — protein = `primary`, carbs = `tertiary`, fat =
- * `secondary` (fixed mapping, identical in every macro visualization in the app). Segment widths
+ * 3-segment macro split bar — protein = `primary`, carbs = `tertiary`, fat = `secondary` (fixed
+ * mapping, identical in every macro visualization in the app). Segment widths
  * are proportional to each macro's calorie contribution (protein/carbs at 4 kcal/g, fat at
  * 9 kcal/g), not raw grams.
  *
@@ -45,10 +49,16 @@ data class Macros(val proteinG: Int, val carbsG: Int, val fatG: Int)
  * reports the overage: when a figure and its visualisation disagree, the figure is the one telling
  * the truth.
  *
+ * The three segments are **separated and individually rounded** rather than butted together into
+ * one continuous strip. Flush segments read as a single bar with colour changes along it, which is
+ * a stacked progress bar — one quantity in parts. This is three quantities, each with its own goal
+ * and its own fill, and a macro at 40% sitting hard against one at 90% invited exactly the reading
+ * that they add up. The gap says they are three.
+ *
  * [height] is the one thing a caller may vary, and the corner radius follows it rather than being
  * fixed: the diary's collapsed summary draws the same bar at 4dp, and a 4dp bar clipped at a 4dp
  * radius is a lozenge rather than a bar. Extended rather than forked, per the ≥2-callers rule —
- * six screens draw this and all of them mean the same thing by it.
+ * six screens draw this and all of them mean the same thing by it, gaps included.
  */
 @Composable
 fun MacroBar(
@@ -65,25 +75,28 @@ fun MacroBar(
     val total = (proteinKcal + carbsKcal + fatKcal).coerceAtLeast(1f)
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .clip(RoundedCornerShape(height / 2)),
+        modifier = modifier.fillMaxWidth().height(height),
+        // spacedBy, not padding on each segment: a macro whose goal is zero draws nothing at all,
+        // and this leaves no gap where it would have been.
+        horizontalArrangement = Arrangement.spacedBy(SegmentGap),
     ) {
         MacroSegment(
             weight = proteinKcal / total,
             color = MaterialTheme.colorScheme.primary,
             fill = consumed?.let { fillFraction(it.proteinG, proteinG) },
+            height = height,
         )
         MacroSegment(
             weight = carbsKcal / total,
             color = MaterialTheme.colorScheme.tertiary,
             fill = consumed?.let { fillFraction(it.carbsG, carbsG) },
+            height = height,
         )
         MacroSegment(
             weight = fatKcal / total,
             color = MaterialTheme.colorScheme.secondary,
             fill = consumed?.let { fillFraction(it.fatG, fatG) },
+            height = height,
         )
     }
 }
@@ -102,10 +115,13 @@ internal fun fillFraction(consumedG: Int, goalG: Int): Float =
  * animations** collapses it to a cut.
  */
 @Composable
-private fun RowScope.MacroSegment(weight: Float, color: Color, fill: Float?) {
+private fun RowScope.MacroSegment(weight: Float, color: Color, fill: Float?, height: Dp) {
     if (weight <= 0f) return
+    // Each segment carries its own clip now that they are separated — one clip on the Row would
+    // round the bar's two outer ends and leave the four inner ones square.
+    val shape = RoundedCornerShape(height / 2)
     if (fill == null) {
-        Surface(color = color, modifier = Modifier.weight(weight).fillMaxHeight()) {}
+        Surface(color = color, shape = shape, modifier = Modifier.weight(weight).fillMaxHeight()) {}
         return
     }
     val animated by animateFloatAsState(
@@ -117,6 +133,7 @@ private fun RowScope.MacroSegment(weight: Float, color: Color, fill: Float?) {
         modifier = Modifier
             .weight(weight)
             .fillMaxHeight()
+            .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(animated).background(color))
