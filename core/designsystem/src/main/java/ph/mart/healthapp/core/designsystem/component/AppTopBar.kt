@@ -10,7 +10,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -36,7 +38,7 @@ fun AppTopBar(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) 
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = AppIcons.Back,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.ds_back),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }

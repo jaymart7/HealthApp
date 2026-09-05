@@ -25,9 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -73,24 +75,26 @@ fun MicronutrientInputGroup(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "More nutrients",
+                text = stringResource(R.string.ds_nutrients_more),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             Icon(
                 imageVector = AppIcons.ChevronDown,
-                contentDescription = if (expanded) "Hide more nutrients" else "Show more nutrients",
+                contentDescription = stringResource(
+                    if (expanded) R.string.ds_nutrients_hide else R.string.ds_nutrients_show,
+                ),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.rotate(rotation),
             )
         }
         if (expanded) {
-            NutrientRow("Fiber", fiberG, "g", step = 1, onChange = onFiberChange)
-            NutrientRow("Sugar", sugarG, "g", step = 1, onChange = onSugarChange)
+            NutrientRow(stringResource(R.string.ds_nutrient_fiber), fiberG, "g", step = 1, onChange = onFiberChange)
+            NutrientRow(stringResource(R.string.ds_nutrient_sugar), sugarG, "g", step = 1, onChange = onSugarChange)
             // A 50mg step: sodium is the one figure here counted in the hundreds, and nudging it
             // by 1 would be the tap-count problem StepperValueField exists to solve.
-            NutrientRow("Sodium", sodiumMg, "mg", step = 50, onChange = onSodiumChange)
+            NutrientRow(stringResource(R.string.ds_nutrient_sodium), sodiumMg, "mg", step = 50, onChange = onSodiumChange)
         }
     }
 }
@@ -121,7 +125,10 @@ private fun NutrientRow(
         StepperValueField(
             value = value.toString(),
             onValueChange = { onChange(it.toIntOrNull() ?: 0) },
-            contentDescription = "$nutrient in ${if (unit == "mg") "milligrams" else "grams"}",
+            contentDescription = stringResource(
+                if (unit == "mg") R.string.ds_nutrient_in_milligrams else R.string.ds_nutrient_in_grams,
+                nutrient,
+            ),
             // Four digits wide, not three: sodium routinely runs past 1000mg.
             textAlign = TextAlign.End,
             modifier = Modifier.width(64.dp),
@@ -131,8 +138,16 @@ private fun NutrientRow(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        StepperButton(symbol = "−", label = "Decrease $nutrient", onClick = { onChange((value - step).coerceAtLeast(0)) })
-        StepperButton(symbol = "+", label = "Increase $nutrient", onClick = { onChange(value + step) })
+        StepperButton(
+            symbol = "−",
+            label = stringResource(R.string.ds_decrease, nutrient),
+            onClick = { onChange((value - step).coerceAtLeast(0)) },
+        )
+        StepperButton(
+            symbol = "+",
+            label = stringResource(R.string.ds_increase, nutrient),
+            onClick = { onChange(value + step) },
+        )
     }
 }
 

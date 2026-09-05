@@ -74,6 +74,7 @@ internal enum class MascotAccent { None, Blush, Antenna, Ears, Sprout }
  * exactly as before.
  */
 enum class MascotCharacter(
+    /** Stays in Kotlin: these are proper names, not copy — and [name] is what `Profile` stores. */
     val label: String,
     internal val body: MascotBody,
     internal val eyes: EyeStyle,

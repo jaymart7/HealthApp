@@ -7,10 +7,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -32,12 +34,10 @@ fun MicronutrientLegend(
     modifier: Modifier = Modifier,
 ) {
     if (fiberG <= 0 && sugarG <= 0 && sodiumMg <= 0) return
-    val text = "Fiber ${fiberG}g · Sugar ${sugarG}g · Sodium ${sodiumMg.grouped()}mg"
+    val text = stringResource(R.string.ds_nutrient_legend, fiberG, sugarG, sodiumMg.grouped())
+    val spoken = stringResource(R.string.ds_nutrient_legend_spoken, fiberG, sugarG, sodiumMg)
     Row(
-        modifier = modifier.clearAndSetSemantics {
-            contentDescription =
-                "Fiber $fiberG grams, sugar $sugarG grams, sodium $sodiumMg milligrams"
-        },
+        modifier = modifier.clearAndSetSemantics { contentDescription = spoken },
     ) {
         Text(
             text = text,

@@ -17,10 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
@@ -58,6 +60,7 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
         repeat(goal) { index ->
             val filled = index < glasses
             val fill = stepFillProgress(active = filled, index = index, count = goal, filling = filling)
+            val description = stringResource(R.string.ds_water_set, glassesAfterTap(glasses, index), goal)
             IconButton(
                 onClick = { onSetGlasses(glassesAfterTap(glasses, index)) },
                 modifier = Modifier
@@ -71,7 +74,7 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
                     // Each glass announces the count it would set, not "glass 4 of 8" — that's
                     // what the tap actually does.
                     .clearAndSetSemantics {
-                        contentDescription = "Set ${glassesAfterTap(glasses, index)} of $goal glasses"
+                        contentDescription = description
                     },
             ) {
                 Icon(

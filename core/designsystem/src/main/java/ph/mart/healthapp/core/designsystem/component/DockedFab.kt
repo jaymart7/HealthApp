@@ -17,9 +17,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -41,7 +43,7 @@ val DockedFabContentPadding = 72.dp
  * [expanded] `false` collapses it to an icon-only circle; drive it from [rememberFabExpanded].
  */
 @Composable
-fun DockedFab(onClick: () -> Unit, modifier: Modifier = Modifier, label: String = "Log", expanded: Boolean = true) {
+fun DockedFab(onClick: () -> Unit, modifier: Modifier = Modifier, label: String = stringResource(R.string.ds_fab_log), expanded: Boolean = true) {
     ExtendedFloatingActionButton(
         onClick = onClick,
         expanded = expanded,

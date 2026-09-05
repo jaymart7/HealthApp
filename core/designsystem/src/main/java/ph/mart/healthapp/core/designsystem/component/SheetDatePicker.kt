@@ -18,11 +18,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
@@ -58,7 +60,7 @@ fun SheetDatePicker(
             }
         },
         modifier = modifier,
-        label = "SheetDatePicker",
+        label = "sheetDatePicker",
     ) { isCalendar ->
         if (isCalendar) {
             CalendarPanel(
@@ -91,7 +93,7 @@ private fun DateRow(selectedDate: Long, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Date",
+                text = stringResource(R.string.ds_date),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

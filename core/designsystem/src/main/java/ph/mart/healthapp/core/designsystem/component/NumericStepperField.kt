@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -95,8 +97,8 @@ fun NumericStepperField(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            StepperButton(symbol = "−", label = "Decrease $label", onClick = onDecrement)
-            StepperButton(symbol = "+", label = "Increase $label", onClick = onIncrement)
+            StepperButton(symbol = "−", label = stringResource(R.string.ds_decrease, label), onClick = onDecrement)
+            StepperButton(symbol = "+", label = stringResource(R.string.ds_increase, label), onClick = onIncrement)
         }
         if (error != null) {
             Text(

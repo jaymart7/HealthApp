@@ -17,6 +17,9 @@ package ph.mart.healthapp.core.designsystem.component
  *
  * [goalWeightLabel] is already unit-converted and suffixed — "72 kg", "159 lb".
  */
+// Stays in Kotlin: a pure function with a JVM test over its exact wording, the same reading
+// `insightFor()` in `:core:data` got. Moving it means returning a case type for a composable to
+// resolve, which is its own decision.
 fun goalProjectionLine(
     goalWeightLabel: String,
     targetEpochDay: Long?,

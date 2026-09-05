@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -49,6 +51,8 @@ fun FoodItemRow(
     onPortionAmountChange: (Double) -> Unit = {},
     onPortionUnitChange: (String) -> Unit = {},
     onCaloriesChange: (Int) -> Unit = {},
+    // Stays in Kotlin: these values are compared, not just shown — `portionStep` switches on
+    // them, and a translated "cup" would silently take the 10-per-tap branch meant for grams.
     portionUnitOptions: List<String> = listOf("g", "oz", "cup"),
 ) {
     when (variant) {
@@ -91,7 +95,7 @@ private fun DisplayRow(
             )
         }
         Text(
-            text = "$calories kcal",
+            text = stringResource(R.string.ds_food_calories_value, calories),
             style = MaterialTheme.typography.titleMedium.tabularNums,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -112,10 +116,10 @@ private fun EditableRow(
     modifier: Modifier,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        AppTextField(label = "Food", value = name, onValueChange = onNameChange)
+        AppTextField(label = stringResource(R.string.ds_food_name), value = name, onValueChange = onNameChange)
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(text = "Portion", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(text = stringResource(R.string.ds_food_portion), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -128,7 +132,7 @@ private fun EditableRow(
                 StepperValueField(
                     value = portionAmount.formatPortion(),
                     onValueChange = { onPortionAmountChange(it.toDoubleOrNull() ?: 0.0) },
-                    contentDescription = "Portion amount in $portionUnit",
+                    contentDescription = stringResource(R.string.ds_food_portion_amount, portionUnit),
                     decimal = true,
                     modifier = Modifier.weight(1f),
                 )
@@ -139,14 +143,14 @@ private fun EditableRow(
                 )
                 StepperButton(
                     symbol = "−",
-                    label = "Decrease portion",
+                    label = stringResource(R.string.ds_food_portion_decrease),
                     onClick = {
                         onPortionAmountChange((portionAmount - portionStep(portionUnit)).coerceAtLeast(0.0))
                     },
                 )
                 StepperButton(
                     symbol = "+",
-                    label = "Increase portion",
+                    label = stringResource(R.string.ds_food_portion_increase),
                     onClick = { onPortionAmountChange(portionAmount + portionStep(portionUnit)) },
                 )
             }
@@ -167,7 +171,7 @@ private fun EditableRow(
         }
 
         NumericStepperField(
-            label = "Calories",
+            label = stringResource(R.string.ds_food_calories),
             value = calories.toString(),
             unitSuffix = "kcal",
             onIncrement = { onCaloriesChange(calories + 10) },

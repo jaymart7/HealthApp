@@ -1,7 +1,10 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import androidx.annotation.StringRes
+import ph.mart.healthapp.core.designsystem.R
+
 /** What the three Google Health cards say under their switch: on, but nothing to draw yet. */
-private const val WATCH_NOTE = "Shows once Google Health has synced"
+private val WATCH_NOTE = R.string.ds_card_note_watch
 
 /**
  * Every card on Home the user can move or hide, in the order an untouched install renders them.
@@ -21,27 +24,29 @@ private const val WATCH_NOTE = "Shows once Google Health has synced"
  * [note] is what the editor row prints under a card whose visibility is *also* gated on data
  * arriving. A switch that is on and still shows nothing has to say why.
  */
-enum class HomeCard(val label: String, val note: String? = null) {
-    Calories("Calories"),
-    Streak("Streak"),
-    Water("Water"),
-    Fasting("Fasting"),
-    Workout("Today's workout", "Shows once a routine has days set"),
-    Sleep("Sleep", WATCH_NOTE),
-    Steps("Steps", WATCH_NOTE),
-    Heart("Heart rate", WATCH_NOTE),
-    BloodPressure("Blood pressure", "Shows once you log a reading"),
-    Mood("Mood"),
-    Cycle("Cycle", "Shows once cycle tracking is on in Profile"),
-    Supplements("Supplements", "Shows once your list has something in it"),
-    Weight("Weight"),
-    Macros("Macros"),
-    ProgressPhoto("Progress photo"),
+enum class HomeCard(@StringRes val label: Int, @StringRes val note: Int? = null) {
+    Calories(R.string.ds_card_calories),
+    Streak(R.string.ds_card_streak),
+    Water(R.string.ds_card_water),
+    Fasting(R.string.ds_card_fasting),
+    Workout(R.string.ds_card_workout, R.string.ds_card_note_workout),
+    Sleep(R.string.ds_card_sleep, WATCH_NOTE),
+    Steps(R.string.ds_card_steps, WATCH_NOTE),
+    Heart(R.string.ds_card_heart, WATCH_NOTE),
+    BloodPressure(R.string.ds_card_blood_pressure, R.string.ds_card_note_blood_pressure),
+    Mood(R.string.ds_card_mood),
+    Cycle(R.string.ds_card_cycle, R.string.ds_card_note_cycle),
+    Supplements(R.string.ds_card_supplements, R.string.ds_card_note_supplements),
+    Weight(R.string.ds_card_weight),
+    Macros(R.string.ds_card_macros),
+    ProgressPhoto(R.string.ds_card_progress_photo),
 }
 
 /** One card's place in the layout: where it sits, and whether Home draws it at all. */
 data class HomeCardSetting(val card: HomeCard, val visible: Boolean = true)
 
+// Stays in Kotlin, with [HomeCard.name]: this is the stored format on `Profile.homeLayout`, and
+// a translated token would rewrite a user's Home the first time they changed language.
 private const val HIDDEN_PREFIX = "-"
 
 /**

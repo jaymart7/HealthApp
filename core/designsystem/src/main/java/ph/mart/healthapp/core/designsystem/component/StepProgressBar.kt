@@ -15,8 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /** 5-segment (or N-segment) progress bar with a "Step N of totalSteps" label. */
@@ -38,7 +40,7 @@ fun StepProgressBar(currentStep: Int, totalSteps: Int, modifier: Modifier = Modi
             }
         }
         Text(
-            text = "Step $currentStep of $totalSteps",
+            text = stringResource(R.string.ds_step_of, currentStep, totalSteps),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

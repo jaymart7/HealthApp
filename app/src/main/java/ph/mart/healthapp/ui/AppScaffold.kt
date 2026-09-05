@@ -1,6 +1,7 @@
 package ph.mart.healthapp.ui
 
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -66,6 +67,15 @@ import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
 /** What the toolbar says on each route a level above a tab. It lives here rather than on the route
  * types because `:core:navigation` is a leaf module and this is already the one place that sees
  * every feature's routes at once. */
+/** The tab's name. It lives here rather than on the enum for the reason its icon does. */
+@StringRes
+private fun TopLevelDestination.label(): Int = when (this) {
+    TopLevelDestination.Home -> R.string.app_tab_home
+    TopLevelDestination.Food -> R.string.app_tab_food
+    TopLevelDestination.Progress -> R.string.app_tab_progress
+    TopLevelDestination.Profile -> R.string.app_tab_profile
+}
+
 @Composable
 private fun NavKey?.title(): String = when (this) {
     CoachRoute -> stringResource(R.string.app_title_coach)
@@ -257,7 +267,7 @@ fun AppScaffold(
             scope.launch { currentScroll.animateScrollTo(0) }
         }
     }
-    val tabItems = TopLevelDestination.entries.map { BottomNavItem(it.icon(), it.label) }
+    val tabItems = TopLevelDestination.entries.map { BottomNavItem(it.icon(), stringResource(it.label())) }
     val selectedTab = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey }
 
     Box(modifier = modifier.fillMaxSize()) {

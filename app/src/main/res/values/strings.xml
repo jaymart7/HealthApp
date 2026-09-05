@@ -20,6 +20,12 @@
     <string name="app_quick_log_weight">Log weight</string>
     <string name="app_quick_add_photo">Add photo</string>
 
+    <!-- Bottom nav / rail tabs -->
+    <string name="app_tab_home">Home</string>
+    <string name="app_tab_food">Food</string>
+    <string name="app_tab_progress">Progress</string>
+    <string name="app_tab_profile">Profile</string>
+
     <!-- Toolbar titles for the routes a level above a tab -->
     <string name="app_title_coach">Coach</string>
     <string name="app_title_new_recipe">New recipe</string>

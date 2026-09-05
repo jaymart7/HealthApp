@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,9 +11,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
@@ -26,26 +29,13 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * bullet per requested scope, in the same order `HEALTH_SCOPES` requests them, so a reviewer can
  * put the two side by side.
  */
-private data class Disclosure(val title: String, val body: String)
+private data class Disclosure(@StringRes val title: Int, @StringRes val body: Int)
 
 private val DISCLOSURES = listOf(
-    Disclosure(
-        "Workouts and activity",
-        "Imported so your workouts and daily steps raise your calorie budget.",
-    ),
-    Disclosure(
-        "Weight, body measurements and heart rate",
-        "Imported so your weight trend and goal date use your real weigh-ins, and to show your " +
-            "daily heart rate.",
-    ),
-    Disclosure(
-        "Sleep",
-        "Imported to show last night's sleep on your home screen.",
-    ),
-    Disclosure(
-        "Nutrition and hydration",
-        "The meals and water you log in FitPulse are sent to Google Health.",
-    ),
+    Disclosure(R.string.ds_health_scope_activity, R.string.ds_health_scope_activity_body),
+    Disclosure(R.string.ds_health_scope_body, R.string.ds_health_scope_body_body),
+    Disclosure(R.string.ds_health_scope_sleep, R.string.ds_health_scope_sleep_body),
+    Disclosure(R.string.ds_health_scope_nutrition, R.string.ds_health_scope_nutrition_body),
 )
 
 @Composable
@@ -60,15 +50,12 @@ fun HealthDisclosurePanel(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "FitPulse and Google Health",
+            text = stringResource(R.string.ds_health_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "FitPulse collects health and fitness data from Google Health to show your " +
-                "workouts and steps and the calories they burned, track your weight trend, and " +
-                "show your heart rate and how you slept. It also sends the meals and water you " +
-                "log to Google Health, so your nutrition stays in one place.",
+            text = stringResource(R.string.ds_health_intro),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -83,12 +70,12 @@ fun HealthDisclosurePanel(
                         )
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
-                                text = disclosure.title,
+                                text = stringResource(disclosure.title),
                                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
-                                text = disclosure.body,
+                                text = stringResource(disclosure.body),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -98,9 +85,7 @@ fun HealthDisclosurePanel(
             }
         }
         Text(
-            text = "Your health data is stored on this device. FitPulse never sells or shares it, " +
-                "and doesn't upload it anywhere except Google Health. You can disconnect and " +
-                "delete it at any time from Profile.",
+            text = stringResource(R.string.ds_health_storage),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -116,7 +101,7 @@ fun HealthDisclosurePanel(
             )
         }
         PrimaryButton(
-            label = "Connect Google Health",
+            label = stringResource(R.string.ds_health_connect),
             onClick = onConnect,
             enabled = connectEnabled,
             modifier = Modifier.fillMaxWidth(),

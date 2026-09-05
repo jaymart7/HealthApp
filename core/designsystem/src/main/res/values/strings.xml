@@ -1,0 +1,93 @@
+<resources>
+    <!-- Shared chrome -->
+    <string name="ds_back">Back</string>
+    <string name="ds_fab_log">Log</string>
+    <string name="ds_discard">Discard</string>
+    <string name="ds_keep_editing">Keep editing</string>
+    <string name="ds_step_of">Step %1$d of %2$d</string>
+    <string name="ds_decrease">Decrease %1$s</string>
+    <string name="ds_increase">Increase %1$s</string>
+
+    <!-- AI insight card -->
+    <string name="ds_insight">Insight</string>
+    <string name="ds_insight_dismiss">Dismiss insight</string>
+
+    <!-- Badge dot -->
+    <string name="ds_badge_earned">%1$s, earned</string>
+    <string name="ds_badge_not_earned">%1$s, not yet earned</string>
+
+    <!-- Water -->
+    <string name="ds_water_set">Set %1$d of %2$d glasses</string>
+
+    <!-- Date picker and calendar -->
+    <string name="ds_date">Date</string>
+    <string name="ds_select_date">Select date</string>
+    <string name="ds_previous_month">Previous month</string>
+    <string name="ds_next_month">Next month</string>
+    <string name="ds_weekday_initials">S,M,T,W,T,F,S</string>
+
+    <!-- Macros -->
+    <string name="ds_macro_protein">Protein</string>
+    <string name="ds_macro_carbs">Carbs</string>
+    <string name="ds_macro_fat">Fat</string>
+    <string name="ds_macro_percent">%1$s · %2$d%%</string>
+    <string name="ds_macro_grams">%1$s in grams</string>
+
+    <!-- Micronutrients -->
+    <string name="ds_nutrients_more">More nutrients</string>
+    <string name="ds_nutrients_show">Show more nutrients</string>
+    <string name="ds_nutrients_hide">Hide more nutrients</string>
+    <string name="ds_nutrient_fiber">Fiber</string>
+    <string name="ds_nutrient_sugar">Sugar</string>
+    <string name="ds_nutrient_sodium">Sodium</string>
+    <string name="ds_nutrient_in_grams">%1$s in grams</string>
+    <string name="ds_nutrient_in_milligrams">%1$s in milligrams</string>
+    <string name="ds_nutrient_legend">Fiber %1$dg · Sugar %2$dg · Sodium %3$smg</string>
+    <string name="ds_nutrient_legend_spoken">Fiber %1$d grams, sugar %2$d grams, sodium %3$d milligrams</string>
+
+    <!-- Food item row -->
+    <string name="ds_food_calories_value">%1$d kcal</string>
+    <string name="ds_food_name">Food</string>
+    <string name="ds_food_portion">Portion</string>
+    <string name="ds_food_portion_amount">Portion amount in %1$s</string>
+    <string name="ds_food_portion_decrease">Decrease portion</string>
+    <string name="ds_food_portion_increase">Increase portion</string>
+    <string name="ds_food_calories">Calories</string>
+
+    <!-- Home card editor. The enum's own names are what the profile stores - see HomeCardLayout.kt. -->
+    <string name="ds_card_calories">Calories</string>
+    <string name="ds_card_streak">Streak</string>
+    <string name="ds_card_water">Water</string>
+    <string name="ds_card_fasting">Fasting</string>
+    <string name="ds_card_workout">Today\'s workout</string>
+    <string name="ds_card_sleep">Sleep</string>
+    <string name="ds_card_steps">Steps</string>
+    <string name="ds_card_heart">Heart rate</string>
+    <string name="ds_card_blood_pressure">Blood pressure</string>
+    <string name="ds_card_mood">Mood</string>
+    <string name="ds_card_cycle">Cycle</string>
+    <string name="ds_card_supplements">Supplements</string>
+    <string name="ds_card_weight">Weight</string>
+    <string name="ds_card_macros">Macros</string>
+    <string name="ds_card_progress_photo">Progress photo</string>
+    <string name="ds_card_note_watch">Shows once Google Health has synced</string>
+    <string name="ds_card_note_workout">Shows once a routine has days set</string>
+    <string name="ds_card_note_blood_pressure">Shows once you log a reading</string>
+    <string name="ds_card_note_cycle">Shows once cycle tracking is on in Profile</string>
+    <string name="ds_card_note_supplements">Shows once your list has something in it</string>
+
+    <!-- Google Health disclosure. The wording is a Restricted-scope requirement: one bullet per
+         requested scope, in the order HEALTH_SCOPES asks for them. -->
+    <string name="ds_health_title">FitPulse and Google Health</string>
+    <string name="ds_health_intro">FitPulse collects health and fitness data from Google Health to show your workouts and steps and the calories they burned, track your weight trend, and show your heart rate and how you slept. It also sends the meals and water you log to Google Health, so your nutrition stays in one place.</string>
+    <string name="ds_health_scope_activity">Workouts and activity</string>
+    <string name="ds_health_scope_activity_body">Imported so your workouts and daily steps raise your calorie budget.</string>
+    <string name="ds_health_scope_body">Weight, body measurements and heart rate</string>
+    <string name="ds_health_scope_body_body">Imported so your weight trend and goal date use your real weigh-ins, and to show your daily heart rate.</string>
+    <string name="ds_health_scope_sleep">Sleep</string>
+    <string name="ds_health_scope_sleep_body">Imported to show last night\'s sleep on your home screen.</string>
+    <string name="ds_health_scope_nutrition">Nutrition and hydration</string>
+    <string name="ds_health_scope_nutrition_body">The meals and water you log in FitPulse are sent to Google Health.</string>
+    <string name="ds_health_storage">Your health data is stored on this device. FitPulse never sells or shares it, and doesn\'t upload it anywhere except Google Health. You can disconnect and delete it at any time from Profile.</string>
+    <string name="ds_health_connect">Connect Google Health</string>
+</resources>

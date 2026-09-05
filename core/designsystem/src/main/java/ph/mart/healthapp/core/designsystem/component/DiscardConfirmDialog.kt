@@ -9,8 +9,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
@@ -26,8 +28,8 @@ fun DiscardConfirmDialog(
     body: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    confirmLabel: String = "Discard",
-    dismissLabel: String = "Keep editing",
+    confirmLabel: String = stringResource(R.string.ds_discard),
+    dismissLabel: String = stringResource(R.string.ds_keep_editing),
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,

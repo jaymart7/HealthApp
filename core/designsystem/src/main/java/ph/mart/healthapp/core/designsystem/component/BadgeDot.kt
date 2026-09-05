@@ -18,10 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -45,6 +47,11 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
  */
 @Composable
 fun BadgeDot(label: String, earned: Boolean, description: String, modifier: Modifier = Modifier) {
+    // Resolved here rather than in the semantics lambda, which cannot read a resource.
+    val spoken = stringResource(
+        if (earned) R.string.ds_badge_earned else R.string.ds_badge_not_earned,
+        description,
+    )
     val spec = tween<Color>(durationMillis = Motion.State, easing = Motion.Standard)
     val container by animateColorAsState(
         targetValue = if (earned) {
@@ -71,7 +78,7 @@ fun BadgeDot(label: String, earned: Boolean, description: String, modifier: Modi
             .clip(CircleShape)
             .background(container)
             .clearAndSetSemantics {
-                contentDescription = "$description, ${if (earned) "earned" else "not yet earned"}"
+                contentDescription = spoken
             },
     ) {
         Text(

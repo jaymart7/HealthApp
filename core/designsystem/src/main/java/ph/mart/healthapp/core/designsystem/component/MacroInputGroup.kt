@@ -19,9 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -49,13 +51,17 @@ fun MacroInputGroup(
     val carbsKcal = carbsG * 4
     val fatKcal = fatG * 9
     val totalKcal = (proteinKcal + carbsKcal + fatKcal).coerceAtLeast(1)
+    val percentFormat = stringResource(R.string.ds_macro_percent)
     fun label(base: String, kcal: Int) =
-        if (showPercentages) "$base · ${kcal * 100 / totalKcal}%" else base
+        if (showPercentages) percentFormat.format(base, kcal * 100 / totalKcal) else base
 
+    val protein = stringResource(R.string.ds_macro_protein)
+    val carbs = stringResource(R.string.ds_macro_carbs)
+    val fat = stringResource(R.string.ds_macro_fat)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        MacroRow("Protein", label("Protein", proteinKcal), proteinG, MaterialTheme.colorScheme.primary, step, onProteinChange)
-        MacroRow("Carbs", label("Carbs", carbsKcal), carbsG, MaterialTheme.colorScheme.tertiary, step, onCarbsChange)
-        MacroRow("Fat", label("Fat", fatKcal), fatG, MaterialTheme.colorScheme.secondary, step, onFatChange)
+        MacroRow(protein, label(protein, proteinKcal), proteinG, MaterialTheme.colorScheme.primary, step, onProteinChange)
+        MacroRow(carbs, label(carbs, carbsKcal), carbsG, MaterialTheme.colorScheme.tertiary, step, onCarbsChange)
+        MacroRow(fat, label(fat, fatKcal), fatG, MaterialTheme.colorScheme.secondary, step, onFatChange)
     }
 }
 
@@ -96,7 +102,7 @@ private fun MacroRow(
         StepperValueField(
             value = grams.toString(),
             onValueChange = { onChange(it.toIntOrNull() ?: 0) },
-            contentDescription = "$macro in grams",
+            contentDescription = stringResource(R.string.ds_macro_grams, macro),
             // Wide enough for three digits without giving the row's whole width to a number that
             // is almost always two; right-aligned so it sits against its "g" the way it always did.
             textAlign = TextAlign.End,
@@ -107,8 +113,16 @@ private fun MacroRow(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        StepperButton(symbol = "−", label = "Decrease $macro", onClick = { onChange((grams - step).coerceAtLeast(0)) })
-        StepperButton(symbol = "+", label = "Increase $macro", onClick = { onChange(grams + step) })
+        StepperButton(
+            symbol = "−",
+            label = stringResource(R.string.ds_decrease, macro),
+            onClick = { onChange((grams - step).coerceAtLeast(0)) },
+        )
+        StepperButton(
+            symbol = "+",
+            label = stringResource(R.string.ds_increase, macro),
+            onClick = { onChange(grams + step) },
+        )
     }
 }
 

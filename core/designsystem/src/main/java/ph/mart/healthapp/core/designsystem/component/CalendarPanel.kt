@@ -19,19 +19,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -55,10 +57,10 @@ fun CalendarPanel(
     Column {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             IconButton(onClick = onBack) {
-                Icon(AppIcons.Back, contentDescription = "Back")
+                Icon(AppIcons.Back, contentDescription = stringResource(R.string.ds_back))
             }
             Text(
-                text = "Select date",
+                text = stringResource(R.string.ds_select_date),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(start = 4.dp),
@@ -70,7 +72,7 @@ fun CalendarPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { visibleMonth = (visibleMonth.clone() as Calendar).apply { add(Calendar.MONTH, -1) } }) {
-                Icon(AppIcons.ChevronLeft, contentDescription = "Previous month")
+                Icon(AppIcons.ChevronLeft, contentDescription = stringResource(R.string.ds_previous_month))
             }
             Text(
                 text = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(visibleMonth.time),
@@ -81,11 +83,11 @@ fun CalendarPanel(
                 onClick = { visibleMonth = (visibleMonth.clone() as Calendar).apply { add(Calendar.MONTH, 1) } },
                 enabled = !atMaxMonth,
             ) {
-                Icon(AppIcons.ChevronRight, contentDescription = "Next month")
+                Icon(AppIcons.ChevronRight, contentDescription = stringResource(R.string.ds_next_month))
             }
         }
         Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-            listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
+            stringResource(R.string.ds_weekday_initials).split(',').forEach { day ->
                 Text(
                     text = day,
                     style = MaterialTheme.typography.labelSmall,
