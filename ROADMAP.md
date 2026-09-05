@@ -30,7 +30,7 @@ library has landed too, and its own literals join that list.)
 |---|---------|-------|--------|
 | 1 | Automatic local backup | a package move, then `:app` | — |
 | 2 | UI test pass + CI gate | infrastructure | — |
-| 3 | Localization scaffolding | every module | — |
+| 3 | Localization scaffolding | every module — 7 of 10 done | — |
 
 ---
 
@@ -131,6 +131,29 @@ is a separate decision and not on this roadmap.
 
 ## 3. Localization scaffolding
 
+**Partly landed.** Seven modules are done — `:core:data` (its six display-label enums and the
+calorie floor warning), `:core:navigation`, `:core:designsystem`, `:app`, `:wear`,
+`:feature:coach`, `:feature:onboarding` and `:feature:home`. **Left: `:feature:profile` (149),
+`:feature:food` (222), `:feature:progress` (291)** — same conventions, one commit each, each
+adding itself to `localizedModules` in the root `build.gradle.kts`.
+
+Two corrections the landed work made to this spec, both deliberate:
+
+- **The check below does not work and was replaced.** `HardcodedText` scans XML layout resources,
+  and this repo has none — it passes clean on a module with three hundred Kotlin literals. The
+  gate is `./gradlew checkUiLiterals`, a task in the root build that greps the modules already
+  converted and skips `*Preview()` bodies.
+- **`:core:data` is in scope**, though the module list below omits it: `ChartRange`, `MoodLevel`,
+  `ExerciseType`, `BloodPressureCategory`, `FlowLevel` and `CycleSymptom` all carry labels a
+  feature renders.
+
+Still in Kotlin, each with a comment saying so at its definition: `Reminder.title`/`body`,
+`insightFor()`, `goalProjectionLine()`, and `:feature:home`'s `greetingFor`/`captionFor`/
+`weightLineFor` — every one a pure function or enum field with a JVM test over its wording,
+whose conversion means returning a case type for a composable to resolve. That is one decision,
+not six, and it is not this item's. Also outstanding: `WEEKDAY_NAMES`/`dayLabel()` in
+`:core:data`, which `:feature:profile` shares and so moves with that module.
+
 **What.** Move every user-facing string out of Kotlin and into per-module `strings.xml`. No
 translation is added; this is the work that makes one possible.
 
@@ -168,8 +191,9 @@ an over-count including keys and SQL, so expect 800–1000 genuinely user-facing
 pluralised in Kotlin today. RTL layout work — `supportsRtl` is already true and untested, and it
 is the adaptive work's neighbour rather than this item's. In-app locale switching.
 
-**Check.** `lint` with `HardcodedText` promoted to error for the modules already converted, which
-is also what stops the next feature adding literals back.
+**Check.** `./gradlew checkUiLiterals` — see the correction above. It is what stops the next
+feature adding literals back, and it was verified to fail on a literal put back into a converted
+module.
 
 ---
 
