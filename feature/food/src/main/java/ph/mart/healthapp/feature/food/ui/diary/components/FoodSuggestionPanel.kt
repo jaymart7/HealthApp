@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.FoodSuggestion
@@ -22,6 +23,7 @@ import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
 
 /**
@@ -42,7 +44,7 @@ internal fun FoodSuggestionPanel(
     if (suggestions.isEmpty()) return
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            text = "Recent & favorites",
+            text = stringResource(R.string.food_recents),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -88,9 +90,9 @@ private fun SuggestionRow(
                 Icon(
                     imageVector = if (suggestion.isFavorite) AppIcons.Favorite.filled else AppIcons.Favorite.outlined,
                     contentDescription = if (suggestion.isFavorite) {
-                        "Remove ${suggestion.name} from favorites"
+                        stringResource(R.string.food_favorite_remove, suggestion.name)
                     } else {
-                        "Add ${suggestion.name} to favorites"
+                        stringResource(R.string.food_favorite_add, suggestion.name)
                     },
                     tint = if (suggestion.isFavorite) {
                         MaterialTheme.colorScheme.primary
@@ -102,7 +104,7 @@ private fun SuggestionRow(
             IconButton(onClick = onLogAgain, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = AppIcons.Add,
-                    contentDescription = "Log ${suggestion.name} again",
+                    contentDescription = stringResource(R.string.food_log_again, suggestion.name),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }

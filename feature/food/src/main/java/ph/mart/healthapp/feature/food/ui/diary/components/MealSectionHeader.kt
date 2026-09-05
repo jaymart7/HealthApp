@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.food.R
 
 /**
  * Screen-specific to the food diary — collapsible row: chevron, meal label, subtotal, an optional
@@ -52,6 +54,8 @@ internal fun MealSectionHeader(
     burned: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val expandedLabel = stringResource(R.string.food_section_expanded)
+    val collapsedLabel = stringResource(R.string.food_section_collapsed)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -61,7 +65,7 @@ internal fun MealSectionHeader(
             // no word about it being a section or which way activating it goes.
             .semantics {
                 role = Role.Button
-                stateDescription = if (expanded) "Expanded" else "Collapsed"
+                stateDescription = if (expanded) expandedLabel else collapsedLabel
             }
             .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -81,7 +85,10 @@ internal fun MealSectionHeader(
         )
         if (subtotalKcal != 0) {
             Text(
-                text = if (burned) "$subtotalKcal kcal burned" else "$subtotalKcal kcal",
+                text = stringResource(
+                    if (burned) R.string.food_section_burned else R.string.food_section_kcal,
+                    subtotalKcal,
+                ),
                 style = MaterialTheme.typography.bodySmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -89,13 +96,13 @@ internal fun MealSectionHeader(
         if (onSave != null) {
             HeaderAction(
                 icon = AppIcons.Bookmark,
-                contentDescription = "Save $label as a meal",
+                contentDescription = stringResource(R.string.food_section_save_meal, label),
                 onClick = onSave,
             )
         }
         HeaderAction(
             icon = AppIcons.Add,
-            contentDescription = "Add to $label",
+            contentDescription = stringResource(R.string.food_section_add_to, label),
             onClick = onAdd,
         )
     }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -17,6 +18,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.food.MealParseResult
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.ThinkingState
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.voice.components.NoFoodHeardScreen
@@ -95,7 +97,7 @@ fun VoiceLogScreen(
                     onEstimate = { startParse(viewModel, state) },
                 )
 
-                VoiceFlow.Parsing -> ThinkingState(line = "Working out what that adds up to…")
+                VoiceFlow.Parsing -> ThinkingState(line = stringResource(R.string.food_voice_parsing))
 
                 VoiceFlow.Review -> VoiceReviewScreen(
                     items = state.items,
@@ -137,8 +139,8 @@ fun VoiceLogScreen(
 
             state.pendingDiscard?.let { discard ->
                 DiscardConfirmDialog(
-                    title = "Discard this meal?",
-                    body = "You've made edits that haven't been logged yet.",
+                    title = stringResource(R.string.food_discard_meal_title),
+                    body = stringResource(R.string.food_unsaved_edits),
                     onConfirm = {
                         state.pendingDiscard = null
                         discard()

@@ -22,6 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -47,6 +49,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseFormFields
 import ph.mart.healthapp.feature.food.ui.exercise.components.NameChipRow
 import ph.mart.healthapp.feature.food.ui.exercise.components.SaveRoutineSheet
@@ -175,7 +178,7 @@ private fun StrengthWorkoutContent(
                 val last = uiState.lastWorkout
                 if (last != null && form.sets.isEmpty()) {
                     SecondaryButton(
-                        label = "Repeat last workout",
+                        label = stringResource(R.string.food_strength_repeat),
                         onClick = { state.form = form.copy(sets = last.sets) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -186,7 +189,7 @@ private fun StrengthWorkoutContent(
                 if (uiState.routines.isNotEmpty() && form.sets.isEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Start a routine",
+                            text = stringResource(R.string.food_strength_start_routine),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -237,7 +240,8 @@ private fun StrengthWorkoutContent(
 
                 if (form.sets.isNotEmpty()) {
                     SecondaryButton(
-                        label = savedRoutineName?.let { "Saved as \"$it\"" } ?: "Save as routine",
+                        label = savedRoutineName?.let { stringResource(R.string.food_strength_saved_routine, it) }
+                            ?: stringResource(R.string.food_strength_save_routine),
                         onClick = {
                             routineName = form.name.trim()
                             routineSheetOpen = true
@@ -249,12 +253,12 @@ private fun StrengthWorkoutContent(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                     SecondaryButton(
-                        label = "Cancel",
+                        label = stringResource(R.string.food_cancel),
                         onClick = { if (isDirty) discardOpen = true else onExit() },
                         modifier = Modifier.weight(1f),
                     )
                     PrimaryButton(
-                        label = "Save workout",
+                        label = stringResource(R.string.food_strength_save_workout),
                         onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
                         // The same guard the sheet uses: a workout is still a duration. A session
                         // with no sets saves as the plain strength entry it always was.
@@ -282,8 +286,14 @@ private fun StrengthWorkoutContent(
 
             if (discardOpen) {
                 DiscardConfirmDialog(
-                    title = if (editingId == null) "Discard this workout?" else "Discard these changes?",
-                    body = "It hasn't been saved yet.",
+                    title = stringResource(
+                        if (editingId == null) {
+                            R.string.food_strength_discard_new
+                        } else {
+                            R.string.food_strength_discard_edit
+                        },
+                    ),
+                    body = stringResource(R.string.food_recipe_not_saved),
                     onConfirm = {
                         discardOpen = false
                         onExit()
@@ -311,8 +321,11 @@ private fun VolumeSummary(sets: List<StrengthSet>, unit: UnitSystem) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "${sets.size} ${if (sets.size == 1) "set" else "sets"} · " +
-                    "${sets.distinctBy { it.exerciseName }.size} lifted",
+                text = stringResource(
+                    R.string.food_strength_summary,
+                    pluralStringResource(R.plurals.food_strength_sets, sets.size, sets.size),
+                    sets.distinctBy { it.exerciseName }.size,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

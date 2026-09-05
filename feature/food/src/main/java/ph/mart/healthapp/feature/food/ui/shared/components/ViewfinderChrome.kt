@@ -17,10 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /**
  * The two escape hatches every viewfinder in this feature carries — pick an image the flow can read
@@ -49,9 +51,9 @@ internal fun ViewfinderActions(
             onClick = onPickPhoto,
             modifier = Modifier.size(48.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape),
         ) {
-            Icon(imageVector = AppIcons.Gallery, contentDescription = "Upload a photo", tint = Color.White)
+            Icon(imageVector = AppIcons.Gallery, contentDescription = stringResource(R.string.food_viewfinder_gallery), tint = Color.White)
         }
-        ViewfinderPill(label = "Enter manually", onClick = onEnterManually)
+        ViewfinderPill(label = stringResource(R.string.food_viewfinder_manual), onClick = onEnterManually)
     }
 }
 

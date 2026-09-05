@@ -22,12 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /**
  * The status line is one honest sentence rather than a rotating set of three.
@@ -62,7 +64,7 @@ internal fun AnalyzingScreen(photo: Bitmap, onCancel: () -> Unit, modifier: Modi
             MascotAvatar(state = MascotState.Thinking, size = 88.dp)
             LinearProgressIndicator(modifier = Modifier.size(width = 200.dp, height = 4.dp))
             Text(
-                text = "Looking at your photo…",
+                text = stringResource(R.string.food_photo_analyzing),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White,
                 textAlign = TextAlign.Center,
@@ -77,7 +79,7 @@ internal fun AnalyzingScreen(photo: Bitmap, onCancel: () -> Unit, modifier: Modi
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)),
             ) {
                 Text(
-                    text = "Cancel",
+                    text = stringResource(R.string.food_cancel),
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
                 )

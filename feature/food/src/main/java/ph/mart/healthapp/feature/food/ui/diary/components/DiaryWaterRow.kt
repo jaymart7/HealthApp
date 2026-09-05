@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.data.water.waterVolumeLabel
 import ph.mart.healthapp.core.designsystem.component.WaterGlassRow
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.food.R
 
 /** The diary's own view of today's water — same count and the same shared row Home shows, so
  * logging a glass in either place lands in the other immediately. Deliberately card-less: it sits
@@ -37,12 +39,12 @@ internal fun DiaryWaterRow(
             modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
         ) {
             Text(
-                text = "Water",
+                text = stringResource(R.string.food_water),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "$glasses / $goalGlasses · ${waterVolumeLabel(glasses, unit)}",
+                text = stringResource(R.string.food_water_count, glasses, goalGlasses, waterVolumeLabel(glasses, unit)),
                 style = MaterialTheme.typography.labelMedium.tabularNums,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
@@ -29,9 +30,10 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
 
-private const val EXAMPLE = "e.g. \"two scrambled eggs, a slice of toast and a black coffee\""
+private val EXAMPLE = R.string.food_voice_example
 
 /**
  * The sentence, the slot, and the button that turns one into rows.
@@ -55,6 +57,8 @@ internal fun VoiceInputScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    // The same words the screen's own heading uses, so the dialog reads as part of it.
+    val prompt = stringResource(R.string.food_voice_prompt)
     val speechAvailable = remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
     val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         result.data
@@ -70,12 +74,12 @@ internal fun VoiceInputScreen(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "What did you eat?",
+                    text = stringResource(R.string.food_voice_prompt),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = EXAMPLE,
+                    text = stringResource(EXAMPLE),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -88,17 +92,17 @@ internal fun VoiceInputScreen(
                 AppTextField(
                     value = text,
                     onValueChange = onTextChange,
-                    placeholder = "Say or type your meal…",
+                    placeholder = stringResource(R.string.food_voice_placeholder),
                     modifier = Modifier.weight(1f),
                 )
                 if (speechAvailable) {
                     IconButton(
-                        onClick = { speech.launch(speechIntent()) },
+                        onClick = { speech.launch(speechIntent(prompt)) },
                         modifier = Modifier.size(48.dp),
                     ) {
                         Icon(
                             imageVector = AppIcons.Mic,
-                            contentDescription = "Speak your meal",
+                            contentDescription = stringResource(R.string.food_voice_speak),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -108,7 +112,7 @@ internal fun VoiceInputScreen(
             MealTypeChipRow(selected = mealType, onSelect = onMealTypeSelect)
 
             PrimaryButton(
-                label = "Estimate",
+                label = stringResource(R.string.food_voice_estimate),
                 onClick = onEstimate,
                 enabled = text.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
@@ -117,9 +121,10 @@ internal fun VoiceInputScreen(
     }
 }
 
-private fun speechIntent(): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+/** The prompt is the system dialog's, so it is passed in — this is not a composition. */
+private fun speechIntent(prompt: String): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    putExtra(RecognizerIntent.EXTRA_PROMPT, "What did you eat?")
+    putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
 }
 
 @PreviewLightDark

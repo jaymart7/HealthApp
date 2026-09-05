@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.food.ui.photo.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -11,6 +12,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /**
  * Camera access was refused. [settingsOnly] is the dead-end case: once the system prompt is spent,
@@ -28,19 +30,19 @@ internal fun CameraPermissionScreen(
 ) {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-        heading = "Camera access needed",
+        heading = stringResource(R.string.food_camera_needed),
         body = if (settingsOnly) {
-            "Camera access is off for FitPulse. Turn it on in Settings to log meals from a photo, or go back and log manually."
+            stringResource(R.string.food_photo_permission_settings)
         } else {
-            "Grant camera access to log meals from a photo, or go back and log manually."
+            stringResource(R.string.food_photo_permission_grant)
         },
         actions = {
             PrimaryButton(
-                label = if (settingsOnly) "Open settings" else "Grant access",
+                label = stringResource(if (settingsOnly) R.string.food_open_settings else R.string.food_grant_access),
                 onClick = if (settingsOnly) onOpenSettings else onGrant,
                 modifier = Modifier.fillMaxWidth(),
             )
-            SecondaryButton(label = "Back", onClick = onBack, modifier = Modifier.fillMaxWidth())
+            SecondaryButton(label = stringResource(R.string.food_back), onClick = onBack, modifier = Modifier.fillMaxWidth())
         },
     )
 }

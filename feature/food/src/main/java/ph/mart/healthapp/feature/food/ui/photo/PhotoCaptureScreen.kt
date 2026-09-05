@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -33,6 +34,7 @@ import ph.mart.healthapp.core.camera.decodeRotatedBitmap
 import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.food.RecognitionResult
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.photo.components.AnalyzingScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.CameraPermissionScreen
@@ -47,7 +49,7 @@ import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 private const val SEARCH_SUBTITLE =
-    "From the food database — adjust the portion to match what you ate."
+    R.string.food_photo_db_subtitle
 
 /**
  * Hosts the whole 6(+1)-state flow from `PhotoLogging.dc.html`, same shape as
@@ -207,7 +209,7 @@ fun PhotoCaptureScreen(
                 // flow's plain confirmation — no photo, no AI chip.
                 CaptureFlow.SearchConfirmation -> ScanConfirmationScreen(
                     form = state.form,
-                    subtitle = SEARCH_SUBTITLE,
+                    subtitle = stringResource(SEARCH_SUBTITLE),
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
                     onLogEntry = {
@@ -241,8 +243,8 @@ fun PhotoCaptureScreen(
 
             state.pendingDiscard?.let { discard ->
                 DiscardConfirmDialog(
-                    title = "Discard this meal?",
-                    body = "You've made edits that haven't been logged yet.",
+                    title = stringResource(R.string.food_discard_meal_title),
+                    body = stringResource(R.string.food_unsaved_edits),
                     onConfirm = {
                         state.pendingDiscard = null
                         discard()

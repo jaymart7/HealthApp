@@ -20,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -32,6 +33,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.FoodEvent
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.FoodUiState
@@ -85,7 +87,7 @@ internal fun DiaryBody(
                 onValueChange = { state.searchQuery = it },
                 // No visible label: the placeholder already says it, and AppTextField
                 // hands the placeholder to the screen reader when there is no label.
-                placeholder = "Filter this day's foods…",
+                placeholder = stringResource(R.string.food_filter_placeholder),
                 modifier = Modifier.weight(1f),
             )
             // The three fast paths that belong to the day being shown, so all three carry it: a
@@ -94,21 +96,21 @@ internal fun DiaryBody(
             IconButton(onClick = { onSpeakFood(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = AppIcons.Mic,
-                    contentDescription = "Say what you ate",
+                    contentDescription = stringResource(R.string.food_say_what_you_ate),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             IconButton(onClick = { onScanBarcode(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = AppIcons.Barcode,
-                    contentDescription = "Scan barcode",
+                    contentDescription = stringResource(R.string.food_scan_barcode),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             IconButton(onClick = { onCapturePhoto(uiState.selectedDate) }, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = AppIcons.Camera,
-                    contentDescription = "Log food with a photo",
+                    contentDescription = stringResource(R.string.food_photo_log),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -173,8 +175,8 @@ internal fun DiaryBody(
                         onEvent(FoodEvent.OnDeleteEntry(entry.id))
                         scope.launch {
                             val undone = snackbarHostState.showSnackbar(
-                                message = "Deleted ${entry.name}",
-                                actionLabel = "Undo",
+                                message = context.getString(R.string.food_deleted, entry.name),
+                                actionLabel = context.getString(R.string.food_undo),
                                 duration = SnackbarDuration.Short,
                             ) == SnackbarResult.ActionPerformed
                             if (undone) onEvent(FoodEvent.OnRestoreEntry(entry))
@@ -202,8 +204,8 @@ internal fun DiaryBody(
                     onEvent(FoodEvent.OnDeleteExercise(entry.id))
                     scope.launch {
                         val undone = snackbarHostState.showSnackbar(
-                            message = "Deleted ${context.getString(entry.type.label)}",
-                            actionLabel = "Undo",
+                            message = context.getString(R.string.food_deleted, context.getString(entry.type.label)),
+                            actionLabel = context.getString(R.string.food_undo),
                             duration = SnackbarDuration.Short,
                         ) == SnackbarResult.ActionPerformed
                         if (undone) onEvent(FoodEvent.OnRestoreExercise(entry))

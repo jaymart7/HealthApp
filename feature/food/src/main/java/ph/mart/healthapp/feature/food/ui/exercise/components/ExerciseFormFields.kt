@@ -13,6 +13,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.exercise.KCAL_STEP
 import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseForm
 import ph.mart.healthapp.feature.food.ui.exercise.MINUTES_STEP
@@ -46,14 +47,14 @@ internal fun ExerciseFormFields(
             )
         }
         AppTextField(
-            label = "Note (optional)",
+            label = stringResource(R.string.food_exercise_note),
             value = form.name,
             onValueChange = { onFormChange(form.copy(name = it)) },
         )
         NumericStepperField(
-            label = "Duration",
+            label = stringResource(R.string.food_exercise_duration),
             value = "${form.minutes}",
-            unitSuffix = "min",
+            unitSuffix = stringResource(R.string.food_exercise_minutes),
             onValueChange = { update(form.copy(minutes = it.toIntOrNull() ?: 0)) },
             onIncrement = { update(form.copy(minutes = form.minutes + MINUTES_STEP)) },
             onDecrement = {
@@ -65,12 +66,15 @@ internal fun ExerciseFormFields(
             // stop saying "estimated" at the same moment — otherwise it describes a
             // calculation that is no longer running.
             label = if (form.burnedEdited) {
-                "Burned · your figure"
+                stringResource(R.string.food_exercise_burned_manual)
             } else {
-                "Burned · estimated from ${stringResource(form.type.label).lowercase()} at your latest weight"
+                stringResource(
+                    R.string.food_exercise_burned_estimated,
+                    stringResource(form.type.label).lowercase(),
+                )
             },
             value = "${form.burnedKcal}",
-            unitSuffix = "kcal",
+            unitSuffix = stringResource(R.string.food_exercise_kcal),
             onValueChange = { onFormChange(form.copy(burnedKcal = it.toIntOrNull() ?: 0, burnedEdited = true)) },
             onIncrement = { onFormChange(form.copy(burnedKcal = form.burnedKcal + KCAL_STEP, burnedEdited = true)) },
             onDecrement = {

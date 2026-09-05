@@ -9,6 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
@@ -16,6 +18,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /**
  * Names the workout on screen as a routine — [SaveMealSheet]'s twin, one domain over: a routine is
@@ -35,24 +38,26 @@ internal fun SaveRoutineSheet(
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Save as a routine",
+            text = stringResource(R.string.food_routine_sheet_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 4.dp),
         )
         Text(
-            text = "$liftCount ${if (liftCount == 1) "lift" else "lifts"} · " +
-                "$setCount ${if (setCount == 1) "set" else "sets"} — start it again in one tap, " +
-                "at whatever you're lifting then.",
+            text = stringResource(
+                R.string.food_routine_sheet_body,
+                pluralStringResource(R.plurals.food_routine_lifts, liftCount, liftCount),
+                pluralStringResource(R.plurals.food_strength_sets, setCount, setCount),
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AppTextField(value = name, onValueChange = onNameChange, placeholder = "Push day")
+            AppTextField(value = name, onValueChange = onNameChange, placeholder = stringResource(R.string.food_routine_placeholder))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(label = "Save", onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.food_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
+                PrimaryButton(label = stringResource(R.string.food_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
             }
         }
     }

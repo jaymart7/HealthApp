@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.food.ui.voice.components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -10,6 +11,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /** The sentence named nothing edible. A real answer with its own screen, not a failure — so it
  * offers the sentence back rather than a retry of the same words. */
@@ -17,10 +19,10 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 internal fun NoFoodHeardScreen(onEdit: () -> Unit) {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Thinking, size = 64.dp) },
-        heading = "No food in that one",
-        body = "Try naming what you ate and roughly how much — \"two eggs and a slice of toast\".",
+        heading = stringResource(R.string.food_voice_none_heading),
+        body = stringResource(R.string.food_voice_none_body),
         actions = {
-            PrimaryButton(label = "Edit what you said", onClick = onEdit, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.food_voice_edit), onClick = onEdit, modifier = Modifier.fillMaxWidth())
         },
     )
 }
@@ -30,10 +32,10 @@ internal fun NoFoodHeardScreen(onEdit: () -> Unit) {
 internal fun VoiceFailedScreen(onRetry: () -> Unit) {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-        heading = "That didn't work",
-        body = "Couldn't work out what that adds up to. Your words are still there — try again.",
+        heading = stringResource(R.string.food_voice_failed_heading),
+        body = stringResource(R.string.food_voice_failed_body),
         actions = {
-            PrimaryButton(label = "Try again", onClick = onRetry, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.food_try_again), onClick = onRetry, modifier = Modifier.fillMaxWidth())
         },
     )
 }
@@ -50,16 +52,14 @@ internal fun VoiceFailedScreen(onRetry: () -> Unit) {
 internal fun VoiceOfflineScreen(retried: Boolean, onRetry: () -> Unit) {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-        heading = "No connection",
+        heading = stringResource(R.string.food_no_connection),
         body = if (retried) {
-            "Still nothing. Reading a meal out of a sentence needs a connection — the diary's own " +
-                "add button works offline."
+            stringResource(R.string.food_voice_offline_retry)
         } else {
-            "Reading a meal out of a sentence needs a connection. The diary's own add button works " +
-                "offline, as does everything else."
+            stringResource(R.string.food_voice_offline)
         },
         actions = {
-            PrimaryButton(label = "Try again", onClick = onRetry, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.food_try_again), onClick = onRetry, modifier = Modifier.fillMaxWidth())
         },
     )
 }

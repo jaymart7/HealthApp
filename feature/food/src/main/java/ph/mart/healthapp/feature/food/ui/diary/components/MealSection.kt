@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.FoodEntry
@@ -18,10 +19,10 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.ui.shared.components.EMPTY_SECTION_LABEL
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.EntryIndent
-import ph.mart.healthapp.feature.food.ui.shared.components.FILTERED_SECTION_LABEL
 import ph.mart.healthapp.feature.food.ui.shared.components.SwipeToDeleteRow
+import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * One meal's slice of the diary: its header, then its entries.
@@ -46,7 +47,7 @@ internal fun MealSection(
 ) {
     Column {
         MealSectionHeader(
-            label = mealType.name,
+            label = stringResource(mealType.labelRes()),
             subtotalKcal = subtotalKcal,
             expanded = expanded,
             onToggle = onToggle,
@@ -54,9 +55,12 @@ internal fun MealSection(
             onSave = onSave,
         )
         if (expanded) {
+            val editEntry = stringResource(R.string.food_edit_entry)
             if (entries.isEmpty()) {
                 Text(
-                    text = if (filteredOut) FILTERED_SECTION_LABEL else EMPTY_SECTION_LABEL,
+                    text = stringResource(
+                        if (filteredOut) R.string.food_section_filtered else R.string.food_section_empty,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = EntryIndent, end = 16.dp, bottom = 12.dp),
@@ -70,7 +74,7 @@ internal fun MealSection(
                                 .background(MaterialTheme.colorScheme.surface)
                                 // After the background so the ripple lands on top of it, before the
                                 // padding so the whole row is the target rather than just the text.
-                                .clickable(onClickLabel = "Edit entry") { onEditEntry(entry) }
+                                .clickable(onClickLabel = editEntry) { onEditEntry(entry) }
                                 .padding(start = EntryIndent, end = 16.dp, top = 8.dp, bottom = 8.dp),
                         ) {
                             FoodItemRow(

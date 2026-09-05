@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -21,6 +22,7 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseFormFields
 
 /** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; the FAB's
@@ -74,7 +76,7 @@ private fun LogExerciseContent(
 
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = if (editingId == null) "Log exercise" else "Edit exercise",
+            text = stringResource(if (editingId == null) R.string.food_exercise_log else R.string.food_exercise_edit),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -89,15 +91,15 @@ private fun LogExerciseContent(
             // recipe builder already made. So the sheet hands off rather than growing a sub-view.
             if (form.type == ExerciseType.Strength) {
                 SecondaryButton(
-                    label = "Log sets instead →",
+                    label = stringResource(R.string.food_exercise_log_sets),
                     onClick = onOpenStrength,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.food_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
-                    label = "Save",
+                    label = stringResource(R.string.food_save),
                     onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
                     enabled = form.isValid(),
                     modifier = Modifier.weight(1f),

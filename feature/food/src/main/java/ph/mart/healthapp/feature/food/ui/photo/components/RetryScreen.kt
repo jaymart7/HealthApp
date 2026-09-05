@@ -11,12 +11,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /**
  * The model looked and couldn't tell. The photo it failed on is shown faded behind the message —
@@ -30,12 +32,12 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 internal fun RetryScreen(photo: Bitmap?, onRetry: () -> Unit, onLogManually: () -> Unit) {
     FullScreenState(
         icon = { RetryPhotoIcon(photo) },
-        heading = "We couldn't analyze that photo",
-        body = "Try taking the photo again with better lighting, or log the meal manually.",
+        heading = stringResource(R.string.food_photo_retry_heading),
+        body = stringResource(R.string.food_photo_retry_body),
         actions = {
-            PrimaryButton(label = "Retry", onClick = onRetry, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.food_photo_retry), onClick = onRetry, modifier = Modifier.fillMaxWidth())
             SecondaryButton(
-                label = "Log manually instead",
+                label = stringResource(R.string.food_photo_log_manually_instead),
                 onClick = onLogManually,
                 modifier = Modifier.fillMaxWidth(),
             )

@@ -13,7 +13,9 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.feature.food.R
 
 /**
  * How far a diary section's contents sit in from the screen edge: 16dp of screen padding, the
@@ -24,14 +26,14 @@ import androidx.compose.ui.unit.dp
 internal val EntryIndent = 16.dp + 16.dp + 8.dp
 
 /** A section with nothing in it. */
-internal const val EMPTY_SECTION_LABEL = "Nothing here yet."
+
 
 /**
  * A section that *does* have entries, all of them hidden by the diary's filter. Saying "nothing
  * here yet" in this case contradicts the subtotal still showing in the header directly above it,
  * and tells the user a section is empty when their own filter is what emptied it.
  */
-internal const val FILTERED_SECTION_LABEL = "No matches here."
+
 
 /**
  * Swipe an entry away to delete it. One implementation for both the meal sections and the exercise
@@ -61,7 +63,7 @@ internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> U
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Delete",
+                    text = stringResource(R.string.food_delete),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onError,
                     modifier = Modifier.padding(end = 24.dp),

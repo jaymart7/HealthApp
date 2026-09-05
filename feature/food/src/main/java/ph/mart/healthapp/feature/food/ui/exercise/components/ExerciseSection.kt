@@ -25,8 +25,8 @@ import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.components.MealSectionHeader
-import ph.mart.healthapp.feature.food.ui.shared.components.EMPTY_SECTION_LABEL
 import ph.mart.healthapp.feature.food.ui.shared.components.EntryIndent
 import ph.mart.healthapp.feature.food.ui.shared.components.SwipeToDeleteRow
 
@@ -47,7 +47,7 @@ internal fun ExerciseSection(
 ) {
     Column {
         MealSectionHeader(
-            label = "Exercise",
+            label = stringResource(R.string.food_exercise),
             subtotalKcal = entries.totalBurnedKcal(),
             expanded = expanded,
             onToggle = onToggle,
@@ -59,7 +59,7 @@ internal fun ExerciseSection(
         if (expanded) {
             if (entries.isEmpty()) {
                 Text(
-                    text = EMPTY_SECTION_LABEL,
+                    text = stringResource(R.string.food_section_empty),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = EntryIndent, end = 16.dp, bottom = 12.dp),
@@ -86,13 +86,14 @@ private fun SwipeableExerciseRow(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
 ) {
+    val editActivity = stringResource(R.string.food_edit_activity)
     SwipeToDeleteRow(onDelete = onDelete) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surface)
                 // Same order as the meal rows': ripple over the background, target the whole row.
-                .clickable(onClickLabel = "Edit activity", onClick = onEdit)
+                .clickable(onClickLabel = editActivity, onClick = onEdit)
                 .padding(start = EntryIndent, end = 16.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -103,7 +104,10 @@ private fun SwipeableExerciseRow(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = listOfNotNull("${entry.minutes} min", entry.name.takeIf { it.isNotBlank() })
+                    text = listOfNotNull(
+                        stringResource(R.string.food_exercise_row, entry.minutes),
+                        entry.name.takeIf { it.isNotBlank() },
+                    )
                         .joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -119,7 +123,7 @@ private fun SwipeableExerciseRow(
                 }
             }
             Text(
-                text = "${entry.burnedKcal} kcal",
+                text = stringResource(R.string.food_exercise_row_kcal, entry.burnedKcal),
                 style = MaterialTheme.typography.bodyMedium.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )

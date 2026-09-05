@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -30,6 +31,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.ViewfinderActions
 
 /**
@@ -68,7 +70,7 @@ internal fun CaptureScreen(
                     .size(48.dp)
                     .background(Color.Black.copy(alpha = 0.45f), CircleShape),
             ) {
-                Icon(imageVector = AppIcons.Close, contentDescription = "Close", tint = Color.White)
+                Icon(imageVector = AppIcons.Close, contentDescription = stringResource(R.string.food_photo_close), tint = Color.White)
             }
 
             Surface(
@@ -78,7 +80,7 @@ internal fun CaptureScreen(
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 88.dp),
             ) {
                 Text(
-                    text = "Center one food item",
+                    text = stringResource(R.string.food_photo_center),
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
@@ -99,7 +101,8 @@ internal fun CaptureScreen(
                 ViewfinderActions(onPickPhoto = onPickPhoto, onEnterManually = onEnterManually)
 
                 // An empty Surface is invisible to a screen reader, and this one is the whole
-                // point of the screen.
+                // point of the screen. Resolved above the lambda, which cannot read a resource.
+                val takePhoto = stringResource(R.string.food_photo_take)
                 Surface(
                     onClick = onCapture,
                     shape = CircleShape,
@@ -108,7 +111,7 @@ internal fun CaptureScreen(
                     modifier = Modifier
                         .size(72.dp)
                         .semantics {
-                            contentDescription = "Take photo"
+                            contentDescription = takePhoto
                             role = Role.Button
                         },
                 ) {}

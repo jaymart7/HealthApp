@@ -15,6 +15,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.SavedMeal
@@ -22,6 +24,7 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.totalKcal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /**
  * Saved meals, above the recents in the add-entry sheet. Tapping a row logs every item at once
@@ -40,7 +43,7 @@ internal fun SavedMealPanel(
     if (savedMeals.isEmpty()) return
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            text = "Saved meals",
+            text = stringResource(R.string.food_saved_meals),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -68,7 +71,11 @@ private fun SavedMealRow(meal: SavedMeal, onClick: () -> Unit, onDelete: () -> U
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "${meal.items.size} ${if (meal.items.size == 1) "item" else "items"} · ${meal.totalKcal()} kcal",
+                    text = stringResource(
+                        R.string.food_meal_summary,
+                        pluralStringResource(R.plurals.food_items, meal.items.size, meal.items.size),
+                        meal.totalKcal(),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -76,14 +83,14 @@ private fun SavedMealRow(meal: SavedMeal, onClick: () -> Unit, onDelete: () -> U
             IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = AppIcons.Delete,
-                    contentDescription = "Delete saved meal ${meal.name}",
+                    contentDescription = stringResource(R.string.food_delete_saved_meal, meal.name),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = AppIcons.Add,
-                    contentDescription = "Log ${meal.name}",
+                    contentDescription = stringResource(R.string.food_log_meal, meal.name),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }

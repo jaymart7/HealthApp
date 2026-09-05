@@ -9,6 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
@@ -17,6 +19,8 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
+import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /** Names the snapshot of [mealType]'s entries. Seeded with the meal's own name, so the fast path
  * is Save without typing; [itemCount] is there so the user can see what they're about to keep. */
@@ -33,22 +37,25 @@ internal fun SaveMealSheet(
         Text(
             // Word-for-word the header button's own accessible name, so the sheet confirms the
             // thing that was tapped. "Save this Snacks" also read as a grammatical slip.
-            text = "Save ${mealType.name} as a meal",
+            text = stringResource(R.string.food_save_meal_title, stringResource(mealType.labelRes())),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 4.dp),
         )
         Text(
-            text = "$itemCount ${if (itemCount == 1) "item" else "items"} — log them all again in one tap.",
+            text = stringResource(
+                R.string.food_save_meal_body,
+                pluralStringResource(R.plurals.food_items, itemCount, itemCount),
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AppTextField(value = name, onValueChange = onNameChange, placeholder = "Name this meal")
+            AppTextField(value = name, onValueChange = onNameChange, placeholder = stringResource(R.string.food_save_meal_placeholder))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(label = "Save", onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.food_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
+                PrimaryButton(label = stringResource(R.string.food_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
             }
         }
     }

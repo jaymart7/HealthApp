@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.SavedMealItem
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
 import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
@@ -36,7 +38,7 @@ internal fun RecipeIngredientEditor(
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "Add an ingredient",
+            text = stringResource(R.string.food_recipe_add_ingredient_title),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -89,7 +91,7 @@ internal fun RecipeIngredientEditor(
             onSodiumChange = { onDraftChange(draft.copy(sodiumMg = it)) },
         )
         SecondaryButton(
-            label = "Add ingredient",
+            label = stringResource(R.string.food_recipe_add_ingredient),
             onClick = onAdd,
             enabled = canAdd,
             modifier = Modifier.fillMaxWidth(),

@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -45,6 +46,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.barcode.components.ScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
@@ -53,8 +55,8 @@ import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
 import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
-private const val FOUND_SUBTITLE = "Values are per 100 g — adjust the portion to match what you ate."
-private const val MANUAL_SUBTITLE = "We didn't have that product, so this one's on you."
+private val FOUND_SUBTITLE = R.string.food_scan_found_subtitle
+private val MANUAL_SUBTITLE = R.string.food_scan_manual_subtitle
 
 /**
  * The barcode flow, built to the same shape as [PhotoCaptureScreen]: one always-mounted
@@ -177,11 +179,11 @@ fun BarcodeScanScreen(
 
                 ScanFlow.LookingUp -> FullScreenState(
                     icon = { CircularProgressIndicator(color = MaterialTheme.colorScheme.primary) },
-                    heading = "Looking that up…",
-                    body = "Checking the product database for this barcode.",
+                    heading = stringResource(R.string.food_scan_looking_up),
+                    body = stringResource(R.string.food_scan_looking_up_body),
                     actions = {
                         SecondaryButton(
-                            label = "Cancel",
+                            label = stringResource(R.string.food_cancel),
                             onClick = {
                                 viewModel.handleEvent(BarcodeScanEvent.OnCancelLookup)
                                 state.rescan()
@@ -193,7 +195,9 @@ fun BarcodeScanScreen(
 
                 ScanFlow.Confirmation -> ScanConfirmationScreen(
                     form = state.form,
-                    subtitle = if (state.originalForm.name.isBlank()) MANUAL_SUBTITLE else FOUND_SUBTITLE,
+                    subtitle = stringResource(
+                        if (state.originalForm.name.isBlank()) MANUAL_SUBTITLE else FOUND_SUBTITLE,
+                    ),
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
                     // The diary's day, not today — a scan while reviewing Tuesday belongs to Tuesday.
@@ -204,16 +208,16 @@ fun BarcodeScanScreen(
 
                 ScanFlow.NotFound -> FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                    heading = "We don't have that product",
-                    body = "It isn't in the product database yet — you can still add it by hand, or scan a different item.",
+                    heading = stringResource(R.string.food_scan_not_found),
+                    body = stringResource(R.string.food_scan_not_found_body),
                     actions = {
                         PrimaryButton(
-                            label = "Add it manually",
+                            label = stringResource(R.string.food_scan_add_manually),
                             onClick = state::startManualEntry,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         SecondaryButton(
-                            label = "Scan again",
+                            label = stringResource(R.string.food_scan_again),
                             onClick = state::rescan,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -222,16 +226,16 @@ fun BarcodeScanScreen(
 
                 ScanFlow.NoBarcode -> FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                    heading = "No barcode in that photo",
-                    body = "I couldn't read a product barcode there — try a clearer shot of the pack, scan it live, or add the item by hand.",
+                    heading = stringResource(R.string.food_scan_no_barcode),
+                    body = stringResource(R.string.food_scan_no_barcode_body),
                     actions = {
                         PrimaryButton(
-                            label = "Add it manually",
+                            label = stringResource(R.string.food_scan_add_manually),
                             onClick = state::startManualEntry,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         SecondaryButton(
-                            label = "Scan again",
+                            label = stringResource(R.string.food_scan_again),
                             onClick = state::rescan,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -240,20 +244,20 @@ fun BarcodeScanScreen(
 
                 ScanFlow.Offline -> FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                    heading = "No connection",
+                    heading = stringResource(R.string.food_no_connection),
                     body = if (retriedWhileOffline) {
-                        "Still nothing. A barcode lookup needs a connection — you can add the item by hand in the meantime."
+                        stringResource(R.string.food_scan_offline_retry)
                     } else {
-                        "Looking up a barcode needs a connection. You can still log manually — everything else works offline."
+                        stringResource(R.string.food_scan_offline)
                     },
                     actions = {
                         PrimaryButton(
-                            label = "Log manually",
+                            label = stringResource(R.string.food_photo_log_manually),
                             onClick = state::startManualEntry,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         SecondaryButton(
-                            label = "Try again",
+                            label = stringResource(R.string.food_try_again),
                             onClick = {
                                 if (!viewModel.isOnline()) {
                                     retriedWhileOffline = true
@@ -277,15 +281,15 @@ fun BarcodeScanScreen(
                     val settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA)
                     FullScreenState(
                         icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                        heading = "Camera access needed",
+                        heading = stringResource(R.string.food_camera_needed),
                         body = if (settingsOnly) {
-                            "Camera access is off for FitPulse. Turn it on in Settings to scan a barcode, or go back and log manually."
+                            stringResource(R.string.food_scan_permission_settings)
                         } else {
-                            "Grant camera access to scan a barcode, or go back and log manually."
+                            stringResource(R.string.food_scan_permission_grant)
                         },
                         actions = {
                             PrimaryButton(
-                                label = if (settingsOnly) "Open settings" else "Grant access",
+                                label = stringResource(if (settingsOnly) R.string.food_open_settings else R.string.food_grant_access),
                                 onClick = {
                                     if (settingsOnly) {
                                         context.openAppSettings()
@@ -295,7 +299,7 @@ fun BarcodeScanScreen(
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                             )
-                            SecondaryButton(label = "Back", onClick = onExit, modifier = Modifier.fillMaxWidth())
+                            SecondaryButton(label = stringResource(R.string.food_back), onClick = onExit, modifier = Modifier.fillMaxWidth())
                         },
                     )
                 }
@@ -318,10 +322,10 @@ fun BarcodeScanScreen(
 private fun DiscardScanDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Discard this item?") },
-        text = { Text("You've made edits that haven't been logged yet.") },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Discard") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Keep editing") } },
+        title = { Text(stringResource(R.string.food_scan_discard_title)) },
+        text = { Text(stringResource(R.string.food_unsaved_edits)) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.food_discard)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.food_keep_editing)) } },
     )
 }
 

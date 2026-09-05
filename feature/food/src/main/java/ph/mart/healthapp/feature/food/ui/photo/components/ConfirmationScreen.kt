@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.WindowInsetsRulers
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
@@ -37,9 +38,10 @@ import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.ui.shared.isValid
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
+import ph.mart.healthapp.feature.food.ui.shared.isValid
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 @Composable
@@ -71,8 +73,8 @@ internal fun ConfirmationScreen(
                     modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)),
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    AIChip(label = "AI detected", variant = AIChipVariant.Default)
-                    Text(text = "Review your meal", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+                    AIChip(label = stringResource(R.string.food_photo_chip), variant = AIChipVariant.Default)
+                    Text(text = stringResource(R.string.food_photo_review), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
 
@@ -98,7 +100,7 @@ internal fun ConfirmationScreen(
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(text = "Macros", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = stringResource(R.string.food_macros), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 MacroInputGroup(
                     proteinG = form.proteinG,
                     carbsG = form.carbsG,
@@ -117,8 +119,8 @@ internal fun ConfirmationScreen(
                 )
             }
 
-            PrimaryButton(label = "Log meal", onClick = onLogMeal, enabled = form.isValid(), modifier = Modifier.fillMaxWidth())
-            TextButton(label = "Discard", onClick = onDiscard, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.food_photo_log_meal), onClick = onLogMeal, enabled = form.isValid(), modifier = Modifier.fillMaxWidth())
+            TextButton(label = stringResource(R.string.food_discard), onClick = onDiscard, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -134,11 +136,11 @@ private fun LowConfidenceNotice(onSearchInstead: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text(
-            text = "Not fully sure about this one — double-check the portion.",
+            text = stringResource(R.string.food_photo_low_confidence),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
         )
-        TextButton(label = "Search instead", onClick = onSearchInstead)
+        TextButton(label = stringResource(R.string.food_photo_search_instead), onClick = onSearchInstead)
     }
 }
 

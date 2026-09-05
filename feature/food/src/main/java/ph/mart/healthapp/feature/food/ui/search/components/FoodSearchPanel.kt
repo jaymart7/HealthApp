@@ -15,10 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -29,6 +30,7 @@ import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.search.FOOD_PAGE_SIZE
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchEvent
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchUiState
@@ -79,7 +81,7 @@ private fun FoodSearchPanelContent(
         AppTextField(
             value = uiState.query,
             onValueChange = { onEvent(FoodSearchEvent.OnQueryChange(it)) },
-            placeholder = "Search foods…",
+            placeholder = stringResource(R.string.food_search_placeholder),
         )
         // The panel's whole answer — the page, the count, nothing matched — arrives without any
         // visible change of focus, so a screen reader needs telling. Polite: it waits for the
@@ -90,7 +92,7 @@ private fun FoodSearchPanelContent(
         ) {
             val page = uiState.pageItems
             if (page.isEmpty()) {
-                Hint("No matches — enter it by hand instead.")
+                Hint(stringResource(R.string.food_search_no_matches))
             } else {
                 page.forEach { product ->
                     SearchHitRow(product = product, onClick = { onSelect(product) })
@@ -118,13 +120,13 @@ private fun Pager(uiState: FoodSearchUiState, onEvent: (FoodSearchEvent) -> Unit
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (uiState.page > 0) {
-            TextButton(label = "Previous", onClick = { onEvent(FoodSearchEvent.OnPrevPage) })
+            TextButton(label = stringResource(R.string.food_search_previous), onClick = { onEvent(FoodSearchEvent.OnPrevPage) })
         } else {
             Spacer(modifier = Modifier.size(1.dp))
         }
-        Hint("$first–$last of ${uiState.results.size}")
+        Hint(stringResource(R.string.food_search_page, first, last, uiState.results.size))
         if (uiState.page < pages - 1) {
-            TextButton(label = "Next", onClick = { onEvent(FoodSearchEvent.OnNextPage) })
+            TextButton(label = stringResource(R.string.food_search_next), onClick = { onEvent(FoodSearchEvent.OnNextPage) })
         } else {
             Spacer(modifier = Modifier.size(1.dp))
         }

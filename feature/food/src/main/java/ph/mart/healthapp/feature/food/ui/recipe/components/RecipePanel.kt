@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.Recipe
@@ -22,6 +23,7 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.components.SavedMealPanel
 
 /**
@@ -40,7 +42,7 @@ internal fun RecipePanel(
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
-            text = "Recipes",
+            text = stringResource(R.string.food_recipes),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -69,7 +71,7 @@ private fun RecipeRow(recipe: Recipe, onClick: () -> Unit, onDelete: () -> Unit)
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "${recipe.perServing().calories} kcal per serving · makes ${recipe.servings}",
+                    text = stringResource(R.string.food_recipe_summary, recipe.perServing().calories, recipe.servings),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -77,14 +79,14 @@ private fun RecipeRow(recipe: Recipe, onClick: () -> Unit, onDelete: () -> Unit)
             IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = AppIcons.Delete,
-                    contentDescription = "Delete recipe ${recipe.name}",
+                    contentDescription = stringResource(R.string.food_recipe_delete, recipe.name),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             IconButton(onClick = onClick, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = AppIcons.Add,
-                    contentDescription = "Use ${recipe.name}",
+                    contentDescription = stringResource(R.string.food_recipe_use, recipe.name),
                     tint = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -110,7 +112,7 @@ private fun NewRecipeRow(onClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = "New recipe",
+                text = stringResource(R.string.food_new_recipe),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.primary,
             )

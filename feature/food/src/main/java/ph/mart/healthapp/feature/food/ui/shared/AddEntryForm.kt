@@ -100,6 +100,8 @@ fun AddEntryForm.isSaveableFood(): Boolean = name.isNotBlank() && calories > 0
 
 /** Added to the add-entry sheet's portion-unit pills, so a seeded recipe shows its unit selected
  * instead of no pill at all — and so a leftovers-by-hand entry can say "serving" too. */
+// Stays in Kotlin: a compared value, not copy. `portionStep` switches on it and a recipe row
+// is priced in it — a translated unit would take the grams branch.
 const val SERVING_UNIT = "serving"
 
 /**

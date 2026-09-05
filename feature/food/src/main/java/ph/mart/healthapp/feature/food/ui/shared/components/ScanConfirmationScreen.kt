@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.WindowInsetsRulers
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
@@ -24,8 +25,9 @@ import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.ui.shared.isValid
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.isValid
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /**
@@ -57,7 +59,7 @@ internal fun ScanConfirmationScreen(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Review this item",
+                    text = stringResource(R.string.food_scan_review),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -87,7 +89,7 @@ internal fun ScanConfirmationScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Macros",
+                    text = stringResource(R.string.food_macros),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -110,12 +112,12 @@ internal fun ScanConfirmationScreen(
             }
 
             PrimaryButton(
-                label = "Log item",
+                label = stringResource(R.string.food_scan_log_item),
                 onClick = onLogEntry,
                 enabled = form.isValid(),
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(label = "Discard", onClick = onDiscard, modifier = Modifier.fillMaxWidth())
+            TextButton(label = stringResource(R.string.food_discard), onClick = onDiscard, modifier = Modifier.fillMaxWidth())
         }
     }
 }

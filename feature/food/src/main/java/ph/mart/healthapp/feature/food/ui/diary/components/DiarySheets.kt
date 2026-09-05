@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
@@ -15,6 +16,7 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.CalendarPanel
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.FoodEvent
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.FoodUiState
@@ -185,10 +187,10 @@ internal fun DiarySheets(
     // recovery beats a confirmation when the gesture is deliberate and the loss is one row.
     pendingDeleteSavedMeal?.let { meal ->
         DiscardConfirmDialog(
-            title = "Delete \"${meal.name}\"?",
-            body = "The meals you already logged from it stay in your diary.",
-            confirmLabel = "Delete",
-            dismissLabel = "Keep",
+            title = stringResource(R.string.food_delete_meal_title, meal.name),
+            body = stringResource(R.string.food_delete_meal_body),
+            confirmLabel = stringResource(R.string.food_delete),
+            dismissLabel = stringResource(R.string.food_keep),
             onConfirm = {
                 onEvent(FoodEvent.OnDeleteSavedMeal(meal.id))
                 pendingDeleteSavedMeal = null
@@ -199,10 +201,10 @@ internal fun DiarySheets(
 
     pendingDeleteRecipe?.let { recipe ->
         DiscardConfirmDialog(
-            title = "Delete \"${recipe.name}\"?",
-            body = "The entries you already logged from it stay in your diary.",
-            confirmLabel = "Delete",
-            dismissLabel = "Keep",
+            title = stringResource(R.string.food_delete_meal_title, recipe.name),
+            body = stringResource(R.string.food_delete_recipe_body),
+            confirmLabel = stringResource(R.string.food_delete),
+            dismissLabel = stringResource(R.string.food_keep),
             onConfirm = {
                 onEvent(FoodEvent.OnDeleteRecipe(recipe.id))
                 pendingDeleteRecipe = null

@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.LiftPerformance
@@ -24,6 +25,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /** The plate a lifter actually adds — 2.5 kg a side is one increment, and 5 lb is its imperial
  * twin. Stepping by 1 would make a 20 kg jump twenty taps, which is what the typable field and
@@ -59,9 +61,9 @@ internal fun StrengthSetEditor(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier) {
         AppTextField(
-            label = "Exercise",
+            label = stringResource(R.string.food_exercise),
             value = draft.exerciseName,
-            placeholder = "Bench press",
+            placeholder = stringResource(R.string.food_strength_exercise_placeholder),
             onValueChange = { onDraftChange(draft.copy(exerciseName = it)) },
         )
         if (lastPerformance != null) {
@@ -80,7 +82,7 @@ internal fun StrengthSetEditor(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             NumericStepperField(
-                label = "Reps",
+                label = stringResource(R.string.food_strength_reps),
                 value = "${draft.reps}",
                 unitSuffix = "",
                 onValueChange = { onDraftChange(draft.copy(reps = it.toIntOrNull() ?: 0)) },
@@ -91,7 +93,9 @@ internal fun StrengthSetEditor(
             NumericStepperField(
                 // Zero is bodyweight, not an unfilled field, so the label says so rather than
                 // leaving a lifter wondering whether the set will count.
-                label = if (draft.weightKg <= 0.0) "Load · bodyweight" else "Load",
+                label = stringResource(
+                    if (draft.weightKg <= 0.0) R.string.food_strength_load_bodyweight else R.string.food_strength_load,
+                ),
                 value = formatLoad(displayLoad),
                 unitSuffix = unit.weightUnitLabel(),
                 onValueChange = {
@@ -109,7 +113,7 @@ internal fun StrengthSetEditor(
         // The caller keeps the draft after a commit, so pressing this again logs the same set —
         // which is the commonest gesture in a strength log and needs no button of its own.
         PrimaryButton(
-            label = "Add set",
+            label = stringResource(R.string.food_strength_add_set),
             onClick = onAdd,
             enabled = draft.canAdd(),
             modifier = Modifier.fillMaxWidth(),

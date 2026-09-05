@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.WindowInsetsRulers
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.ScannedProduct
@@ -23,6 +24,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
 
 /**
@@ -53,7 +55,7 @@ internal fun ManualSearchScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 MascotAvatar(state = MascotState.Sleepy, size = 56.dp)
                 Text(
-                    text = "I couldn't spot a food item in that photo — let's search instead.",
+                    text = stringResource(R.string.food_photo_no_item),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -64,12 +66,12 @@ internal fun ManualSearchScreen(
             )
             Spacer(modifier = Modifier.weight(1f))
             SecondaryButton(
-                label = "Enter it manually",
+                label = stringResource(R.string.food_photo_enter_manually),
                 onClick = onEnterManually,
                 modifier = Modifier.fillMaxWidth(),
             )
             TextButton(
-                label = "Cancel",
+                label = stringResource(R.string.food_cancel),
                 onClick = onCancel,
                 modifier = Modifier.padding(top = 8.dp).align(Alignment.CenterHorizontally),
             )

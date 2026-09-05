@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.StrengthSet
@@ -24,6 +25,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.food.R
 
 /**
  * The sets logged so far, grouped under the lift they belong to.
@@ -44,7 +46,7 @@ internal fun StrengthSetList(
 ) {
     if (sets.isEmpty()) {
         Text(
-            text = "No sets yet. Add the first one below.",
+            text = stringResource(R.string.food_strength_no_sets),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier,
@@ -62,7 +64,7 @@ internal fun StrengthSetList(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = name.ifBlank { "Unnamed lift" },
+                        text = name.ifBlank { stringResource(R.string.food_strength_unnamed) },
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -94,7 +96,7 @@ internal fun StrengthSetList(
                         IconButton(onClick = { onRemove(index) }, modifier = Modifier.size(44.dp)) {
                             Icon(
                                 imageVector = AppIcons.Delete,
-                                contentDescription = "Remove set ${position + 1} of $name",
+                                contentDescription = stringResource(R.string.food_strength_remove_set, position + 1, name),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }

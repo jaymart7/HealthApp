@@ -13,12 +13,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 
 /** "Today" / "Yesterday" / "Aug 27, 2026" — pure, so the two relative cases are testable. */
 internal fun diaryDateLabel(epochDay: Long, today: Long): String = when (epochDay) {
@@ -45,7 +47,7 @@ internal fun DiaryDateHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         IconButton(onClick = { onSelectDate(selectedDate - 1) }) {
-            Icon(AppIcons.ChevronLeft, contentDescription = "Previous day")
+            Icon(AppIcons.ChevronLeft, contentDescription = stringResource(R.string.food_previous_day))
         }
         Surface(
             color = MaterialTheme.colorScheme.surface,
@@ -65,7 +67,7 @@ internal fun DiaryDateHeader(
             onClick = { onSelectDate(selectedDate + 1) },
             enabled = selectedDate < today,
         ) {
-            Icon(AppIcons.ChevronRight, contentDescription = "Next day")
+            Icon(AppIcons.ChevronRight, contentDescription = stringResource(R.string.food_next_day))
         }
     }
 }

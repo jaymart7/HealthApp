@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -37,8 +38,10 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.ideas.components.MealIdeaCard
 import ph.mart.healthapp.feature.food.ui.shared.components.ThinkingState
+import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * The one screen in FitPulse that answers "what should I eat?" rather than "what did I eat?".
@@ -102,7 +105,7 @@ private fun MealIdeasContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Meal ideas",
+                text = stringResource(R.string.food_ideas_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -115,11 +118,11 @@ private fun MealIdeasContent(
             Box(modifier = Modifier.weight(1f)) {
                 when (uiState) {
                     MealIdeasUiState.Idle, MealIdeasUiState.Loading ->
-                        ThinkingState(line = "Thinking of something that fits…")
+                        ThinkingState(line = stringResource(R.string.food_ideas_thinking))
                     is MealIdeasUiState.Ideas -> IdeaList(
                         ideas = uiState.ideas,
-                        note = "Tap one to adjust the portion and log it.",
-                        chip = { AIChip(label = "AI suggested", variant = AIChipVariant.Default) },
+                        note = stringResource(R.string.food_ideas_note),
+                        chip = { AIChip(label = stringResource(R.string.food_ideas_chip), variant = AIChipVariant.Default) },
                         onSelect = onSelect,
                     )
                     is MealIdeasUiState.Failed -> {
@@ -135,9 +138,9 @@ private fun MealIdeasContent(
                                 // they logged, and the AI accent would be a lie about where they
                                 // came from.
                                 note = if (uiState.offline) {
-                                    "You're offline, so these are your own foods that still fit."
+                                    stringResource(R.string.food_ideas_offline)
                                 } else {
-                                    "Couldn't reach the coach, so these are your own foods that still fit."
+                                    stringResource(R.string.food_ideas_failed)
                                 },
                                 chip = null,
                                 onSelect = onSelect,
@@ -150,12 +153,12 @@ private fun MealIdeasContent(
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (uiState is MealIdeasUiState.Failed) {
                     SecondaryButton(
-                        label = "Try again",
+                        label = stringResource(R.string.food_try_again),
                         onClick = { onEvent(MealIdeasEvent.OnRequest(request)) },
                         modifier = Modifier.weight(1f),
                     )
                 }
-                SecondaryButton(label = "Close", onClick = onClose, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.food_close), onClick = onClose, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -188,21 +191,21 @@ private fun IdeaList(
 private fun NothingToSuggest(offline: Boolean) {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Sleepy, size = 88.dp) },
-        heading = if (offline) "No ideas offline yet" else "No ideas right now",
-        body = "Once you've logged a few meals, FitPulse can suggest the ones that fit what's " +
-            "left of your day.",
+        heading = stringResource(if (offline) R.string.food_ideas_empty_offline else R.string.food_ideas_empty),
+        body = stringResource(R.string.food_ideas_empty_body),
     )
 }
 
 /** The gap, in the order the user reads it: calories decide whether they eat, protein decides
  * what. The macro half is dropped once protein is met — a "0g protein left" that is a *good* day
  * would read as a warning. */
+@Composable
 private fun MealIdeaRequest.remainingLine(): String {
-    val meal = mealType.name.lowercase()
+    val meal = stringResource(mealType.labelRes()).lowercase()
     return if (remainingProteinG > 0) {
-        "$remainingKcal kcal and ${remainingProteinG}g protein left for $meal."
+        stringResource(R.string.food_ideas_budget_protein, remainingKcal, remainingProteinG, meal)
     } else {
-        "$remainingKcal kcal left for $meal."
+        stringResource(R.string.food_ideas_budget, remainingKcal, meal)
     }
 }
 

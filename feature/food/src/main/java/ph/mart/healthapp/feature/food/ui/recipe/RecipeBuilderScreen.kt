@@ -18,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -37,6 +39,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.recipe.components.RecipeIngredientEditor
 
 /**
@@ -109,13 +112,13 @@ private fun RecipeBuilderContent(
                 AppTextField(
                     value = state.name,
                     onValueChange = { state.name = it },
-                    label = "Recipe",
-                    placeholder = "Name this dish",
+                    label = stringResource(R.string.food_recipe_label),
+                    placeholder = stringResource(R.string.food_recipe_placeholder),
                 )
                 NumericStepperField(
-                    label = "Makes",
+                    label = stringResource(R.string.food_recipe_makes),
                     value = state.servings.toString(),
-                    unitSuffix = if (state.servings == 1) "serving" else "servings",
+                    unitSuffix = pluralStringResource(R.plurals.food_recipe_servings, state.servings),
                     onIncrement = { state.servings += 1 },
                     onDecrement = { state.servings = (state.servings - 1).coerceAtLeast(1) },
                 )
@@ -137,12 +140,12 @@ private fun RecipeBuilderContent(
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                     SecondaryButton(
-                        label = "Cancel",
+                        label = stringResource(R.string.food_cancel),
                         onClick = { if (state.isDirty) state.discardOpen = true else onExit() },
                         modifier = Modifier.weight(1f),
                     )
                     PrimaryButton(
-                        label = "Save recipe",
+                        label = stringResource(R.string.food_recipe_save),
                         onClick = onSave,
                         enabled = state.canSave,
                         modifier = Modifier.weight(1f),
@@ -152,8 +155,8 @@ private fun RecipeBuilderContent(
 
             if (state.discardOpen) {
                 DiscardConfirmDialog(
-                    title = "Discard this recipe?",
-                    body = "It hasn't been saved yet.",
+                    title = stringResource(R.string.food_recipe_discard_title),
+                    body = stringResource(R.string.food_recipe_not_saved),
                     onConfirm = {
                         state.discardOpen = false
                         onExit()
@@ -176,12 +179,12 @@ private fun PerServingSummary(calories: Int, proteinG: Int, carbsG: Int, fatG: I
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = "$calories kcal per serving",
+                text = stringResource(R.string.food_recipe_per_serving, calories),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "P ${proteinG}g · C ${carbsG}g · F ${fatG}g",
+                text = stringResource(R.string.food_recipe_macro_line, proteinG, carbsG, fatG),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -193,7 +196,7 @@ private fun PerServingSummary(calories: Int, proteinG: Int, carbsG: Int, fatG: I
 private fun IngredientList(ingredients: List<SavedMealItem>, onRemove: (Int) -> Unit) {
     if (ingredients.isEmpty()) {
         Text(
-            text = "No ingredients yet.",
+            text = stringResource(R.string.food_recipe_no_ingredients),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -216,7 +219,7 @@ private fun IngredientList(ingredients: List<SavedMealItem>, onRemove: (Int) -> 
                 IconButton(onClick = { onRemove(index) }, modifier = Modifier.size(44.dp)) {
                     Icon(
                         imageVector = AppIcons.Delete,
-                        contentDescription = "Remove ${ingredient.name}",
+                        contentDescription = stringResource(R.string.food_remove, ingredient.name),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

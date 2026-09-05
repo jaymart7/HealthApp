@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +28,7 @@ import ph.mart.healthapp.core.designsystem.component.Macros
 import ph.mart.healthapp.core.designsystem.component.MicronutrientLegend
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.food.R
 
 /**
  * The day, at the top of the diary and pinned above the scroll.
@@ -58,11 +60,13 @@ fun DiarySummaryBar(
             verticalAlignment = Alignment.Bottom,
         ) {
             // Read as one phrase — "1584 left" — instead of a number and a stray word after it.
+            // Resolved above the semantics lambda, which cannot read a resource.
+            val announcement = remainingAnnouncement(remaining)
             Row(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.clearAndSetSemantics {
-                    contentDescription = remainingAnnouncement(remaining)
+                    contentDescription = announcement
                 },
             ) {
                 Text(
@@ -75,14 +79,14 @@ fun DiarySummaryBar(
                 Text(
                     // Never `error`, and never `primary` for being under: a day is not a grade, and
                     // the Earned Red Rule keeps red for genuine failure rather than a direction.
-                    text = if (remaining < 0) "over" else "left",
+                    text = stringResource(if (remaining < 0) R.string.food_summary_over else R.string.food_summary_left),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
             }
             Text(
-                text = "${consumed.calories} / $goalKcal kcal",
+                text = stringResource(R.string.food_summary_of_goal, consumed.calories, goalKcal),
                 style = MaterialTheme.typography.bodySmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 4.dp),
@@ -97,9 +101,9 @@ fun DiarySummaryBar(
         )
 
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            MacroLegend("Protein", consumed.proteinG, proteinGoalG, MaterialTheme.colorScheme.primary)
-            MacroLegend("Carbs", consumed.carbsG, carbsGoalG, MaterialTheme.colorScheme.tertiary)
-            MacroLegend("Fat", consumed.fatG, fatGoalG, MaterialTheme.colorScheme.secondary)
+            MacroLegend(stringResource(R.string.food_macro_protein), consumed.proteinG, proteinGoalG, MaterialTheme.colorScheme.primary)
+            MacroLegend(stringResource(R.string.food_macro_carbs), consumed.carbsG, carbsGoalG, MaterialTheme.colorScheme.tertiary)
+            MacroLegend(stringResource(R.string.food_macro_fat), consumed.fatG, fatGoalG, MaterialTheme.colorScheme.secondary)
         }
 
         // Silent on a day nothing was logged for, and on one logged entirely by quick add — which
@@ -115,16 +119,17 @@ fun DiarySummaryBar(
 /** Same shape as Home's macro legend, so the two screens report a macro the same way. */
 @Composable
 private fun MacroLegend(label: String, consumedG: Int, goalG: Int, color: Color) {
+    val spoken = stringResource(R.string.food_macro_spoken, label, consumedG, goalG)
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.clearAndSetSemantics {
-            contentDescription = "$label $consumedG of $goalG grams"
+            contentDescription = spoken
         },
     ) {
         Box(modifier = Modifier.size(8.dp).background(color, RoundedCornerShape(2.dp)))
         Text(
-            text = "$label $consumedG/${goalG}g",
+            text = stringResource(R.string.food_macro_legend, label, consumedG, goalG),
             style = MaterialTheme.typography.labelSmall.tabularNums,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Medium,
@@ -132,8 +137,13 @@ private fun MacroLegend(label: String, consumedG: Int, goalG: Int, color: Color)
     }
 }
 
+@Composable
 internal fun remainingAnnouncement(remaining: Int): String =
-    if (remaining < 0) "${-remaining} kilocalories over" else "$remaining kilocalories left"
+    if (remaining < 0) {
+        stringResource(R.string.food_kcal_over_spoken, -remaining)
+    } else {
+        stringResource(R.string.food_kcal_left_spoken, remaining)
+    }
 
 @PreviewLightDark
 @Composable

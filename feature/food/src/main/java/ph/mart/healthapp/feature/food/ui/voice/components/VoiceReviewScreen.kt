@@ -21,6 +21,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
@@ -35,6 +37,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
@@ -75,14 +78,14 @@ internal fun VoiceReviewScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                AIChip(label = "AI estimated", variant = AIChipVariant.Default)
+                AIChip(label = stringResource(R.string.food_voice_chip), variant = AIChipVariant.Default)
                 Text(
-                    text = "Review what you ate",
+                    text = stringResource(R.string.food_voice_review),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Tap a row to adjust it, or remove anything you didn't eat.",
+                    text = stringResource(R.string.food_voice_review_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -105,12 +108,12 @@ internal fun VoiceReviewScreen(
             }
 
             PrimaryButton(
-                label = if (items.size == 1) "Log 1 item" else "Log ${items.size} items",
+                label = pluralStringResource(R.plurals.food_voice_log_items, items.size, items.size),
                 onClick = onLog,
                 enabled = items.isNotEmpty(),
                 modifier = Modifier.fillMaxWidth(),
             )
-            TextButton(label = "Discard", onClick = onDiscard, modifier = Modifier.fillMaxWidth())
+            TextButton(label = stringResource(R.string.food_discard), onClick = onDiscard, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -145,7 +148,7 @@ private fun ReviewItemCard(
             IconButton(onClick = onRemove, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = AppIcons.Close,
-                    contentDescription = "Remove ${item.name}",
+                    contentDescription = stringResource(R.string.food_remove, item.name),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -196,7 +199,7 @@ private fun ReviewItemCard(
 @Composable
 private fun LowConfidenceNotice() {
     Text(
-        text = "Not fully sure about some of these — double-check the portions.",
+        text = stringResource(R.string.food_voice_low_confidence),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onTertiaryContainer,
         modifier = Modifier

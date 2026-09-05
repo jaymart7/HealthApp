@@ -1,0 +1,254 @@
+<resources>
+    <!-- Shared -->
+    <string name="food_cancel">Cancel</string>
+    <string name="food_save">Save</string>
+    <string name="food_delete">Delete</string>
+    <string name="food_keep">Keep</string>
+    <string name="food_discard">Discard</string>
+    <string name="food_keep_editing">Keep editing</string>
+    <string name="food_try_again">Try again</string>
+    <string name="food_close">Close</string>
+    <string name="food_back">Back</string>
+    <string name="food_undo">Undo</string>
+    <string name="food_macros">Macros</string>
+    <string name="food_no_connection">No connection</string>
+    <string name="food_camera_needed">Camera access needed</string>
+    <string name="food_open_settings">Open settings</string>
+    <string name="food_grant_access">Grant access</string>
+    <string name="food_discard_meal_title">Discard this meal?</string>
+    <string name="food_unsaved_edits">You\'ve made edits that haven\'t been logged yet.</string>
+    <string name="food_deleted">Deleted %1$s</string>
+    <string name="food_remove">Remove %1$s</string>
+
+    <!-- Meal slots. MealType is a :core:data enum with no copy on it; these are the only place
+         its four values are named on screen. -->
+    <string name="food_meal_breakfast">Breakfast</string>
+    <string name="food_meal_lunch">Lunch</string>
+    <string name="food_meal_dinner">Dinner</string>
+    <string name="food_meal_snacks">Snacks</string>
+
+    <!-- Diary summary bar -->
+    <string name="food_summary_over">over</string>
+    <string name="food_summary_left">left</string>
+    <string name="food_summary_of_goal">%1$d / %2$d kcal</string>
+    <string name="food_macro_protein">Protein</string>
+    <string name="food_macro_carbs">Carbs</string>
+    <string name="food_macro_fat">Fat</string>
+    <string name="food_macro_legend">%1$s %2$d/%3$dg</string>
+    <string name="food_macro_spoken">%1$s %2$d of %3$d grams</string>
+    <string name="food_kcal_over_spoken">%1$d kilocalories over</string>
+    <string name="food_kcal_left_spoken">%1$d kilocalories left</string>
+
+    <!-- Diary -->
+    <string name="food_filter_placeholder">Filter this day\'s foods…</string>
+    <string name="food_say_what_you_ate">Say what you ate</string>
+    <string name="food_scan_barcode">Scan barcode</string>
+    <string name="food_photo_log">Log food with a photo</string>
+    <string name="food_edit_entry">Edit entry</string>
+    <string name="food_edit_activity">Edit activity</string>
+    <string name="food_previous_day">Previous day</string>
+    <string name="food_next_day">Next day</string>
+    <string name="food_today">Today</string>
+    <string name="food_yesterday">Yesterday</string>
+    <string name="food_water">Water</string>
+    <string name="food_water_count">%1$d / %2$d · %3$s</string>
+    <string name="food_section_empty">Nothing here yet.</string>
+    <string name="food_section_filtered">No matches here.</string>
+    <string name="food_empty_today">Nothing logged yet today.</string>
+    <string name="food_empty_past">Nothing was logged on this day.</string>
+    <string name="food_empty_start">%1$s is a good place to start.</string>
+    <string name="food_empty_add">You can still add to it.</string>
+    <string name="food_section_expanded">Expanded</string>
+    <string name="food_section_collapsed">Collapsed</string>
+    <string name="food_section_burned">%1$d kcal burned</string>
+    <string name="food_section_kcal">%1$d kcal</string>
+    <string name="food_section_save_meal">Save %1$s as a meal</string>
+    <string name="food_section_add_to">Add to %1$s</string>
+
+    <!-- Panels -->
+    <string name="food_saved_meals">Saved meals</string>
+    <string name="food_recipes">Recipes</string>
+    <string name="food_new_recipe">New recipe</string>
+    <string name="food_recents">Recent &amp; favorites</string>
+    <plurals name="food_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
+    <string name="food_meal_summary">%1$s · %2$d kcal</string>
+    <string name="food_delete_saved_meal">Delete saved meal %1$s</string>
+    <string name="food_log_meal">Log %1$s</string>
+    <string name="food_log_again">Log %1$s again</string>
+    <string name="food_favorite_add">Add %1$s to favorites</string>
+    <string name="food_favorite_remove">Remove %1$s from favorites</string>
+    <string name="food_delete_meal_title">Delete \"%1$s\"?</string>
+    <string name="food_delete_meal_body">The meals you already logged from it stay in your diary.</string>
+    <string name="food_delete_recipe_body">The entries you already logged from it stay in your diary.</string>
+
+    <!-- Add-entry sheet -->
+    <string name="food_add_to">Add to %1$s</string>
+    <string name="food_edit_meal_entry">Edit %1$s entry</string>
+    <string name="food_get_ideas">Get meal ideas</string>
+    <string name="food_add_yourself">Or add it yourself</string>
+    <string name="food_blank_name_hint">Leave the name blank to log calories only.</string>
+    <string name="food_save_as_my_food">Save as my food</string>
+    <string name="food_quick_add">Quick add</string>
+    <string name="food_add">Add</string>
+
+    <!-- Save-meal sheet -->
+    <string name="food_save_meal_title">Save %1$s as a meal</string>
+    <string name="food_save_meal_body">%1$s — log them all again in one tap.</string>
+    <string name="food_save_meal_placeholder">Name this meal</string>
+
+    <!-- Search panel -->
+    <string name="food_search_placeholder">Search foods…</string>
+    <string name="food_search_no_matches">No matches — enter it by hand instead.</string>
+    <string name="food_search_previous">Previous</string>
+    <string name="food_search_next">Next</string>
+    <string name="food_search_page">%1$d–%2$d of %3$d</string>
+
+    <!-- Meal ideas -->
+    <string name="food_ideas_title">Meal ideas</string>
+    <string name="food_ideas_thinking">Thinking of something that fits…</string>
+    <string name="food_ideas_note">Tap one to adjust the portion and log it.</string>
+    <string name="food_ideas_chip">AI suggested</string>
+    <string name="food_ideas_offline">You\'re offline, so these are your own foods that still fit.</string>
+    <string name="food_ideas_failed">Couldn\'t reach the coach, so these are your own foods that still fit.</string>
+    <string name="food_ideas_empty_offline">No ideas offline yet</string>
+    <string name="food_ideas_empty">No ideas right now</string>
+    <string name="food_ideas_empty_body">Once you\'ve logged a few meals, FitPulse can suggest the ones that fit what\'s left of your day.</string>
+    <string name="food_ideas_budget_protein">%1$d kcal and %2$dg protein left for %3$s.</string>
+    <string name="food_ideas_budget">%1$d kcal left for %2$s.</string>
+
+    <!-- Photo flow -->
+    <string name="food_photo_close">Close</string>
+    <string name="food_photo_center">Center one food item</string>
+    <string name="food_photo_take">Take photo</string>
+    <string name="food_photo_analyzing">Looking at your photo…</string>
+    <string name="food_photo_retry_heading">We couldn\'t analyze that photo</string>
+    <string name="food_photo_retry_body">Try taking the photo again with better lighting, or log the meal manually.</string>
+    <string name="food_photo_retry">Retry</string>
+    <string name="food_photo_log_manually_instead">Log manually instead</string>
+    <string name="food_photo_permission_settings">Camera access is off for FitPulse. Turn it on in Settings to log meals from a photo, or go back and log manually.</string>
+    <string name="food_photo_permission_grant">Grant camera access to log meals from a photo, or go back and log manually.</string>
+    <string name="food_photo_offline_retry">Still nothing. Photo logging needs a connection — you can log manually in the meantime.</string>
+    <string name="food_photo_offline">Photo logging needs a connection. You can still log manually — everything else works offline.</string>
+    <string name="food_photo_log_manually">Log manually</string>
+    <string name="food_photo_no_item">I couldn\'t spot a food item in that photo — let\'s search instead.</string>
+    <string name="food_photo_enter_manually">Enter it manually</string>
+    <string name="food_photo_chip">AI detected</string>
+    <string name="food_photo_review">Review your meal</string>
+    <string name="food_photo_log_meal">Log meal</string>
+    <string name="food_photo_low_confidence">Not fully sure about this one — double-check the portion.</string>
+    <string name="food_photo_search_instead">Search instead</string>
+    <string name="food_photo_db_subtitle">From the food database — adjust the portion to match what you ate.</string>
+
+    <!-- Viewfinder chrome, shared by both camera flows -->
+    <string name="food_viewfinder_gallery">Upload a photo</string>
+    <string name="food_viewfinder_manual">Enter manually</string>
+
+    <!-- Barcode flow -->
+    <string name="food_scan_line_up">Line up the barcode</string>
+    <string name="food_scan_found_subtitle">Values are per 100 g — adjust the portion to match what you ate.</string>
+    <string name="food_scan_manual_subtitle">We didn\'t have that product, so this one\'s on you.</string>
+    <string name="food_scan_looking_up">Looking that up…</string>
+    <string name="food_scan_looking_up_body">Checking the product database for this barcode.</string>
+    <string name="food_scan_not_found">We don\'t have that product</string>
+    <string name="food_scan_not_found_body">It isn\'t in the product database yet — you can still add it by hand, or scan a different item.</string>
+    <string name="food_scan_no_barcode">No barcode in that photo</string>
+    <string name="food_scan_no_barcode_body">I couldn\'t read a product barcode there — try a clearer shot of the pack, scan it live, or add the item by hand.</string>
+    <string name="food_scan_add_manually">Add it manually</string>
+    <string name="food_scan_again">Scan again</string>
+    <string name="food_scan_offline_retry">Still nothing. A barcode lookup needs a connection — you can add the item by hand in the meantime.</string>
+    <string name="food_scan_offline">Looking up a barcode needs a connection. You can still log manually — everything else works offline.</string>
+    <string name="food_scan_permission_settings">Camera access is off for FitPulse. Turn it on in Settings to scan a barcode, or go back and log manually.</string>
+    <string name="food_scan_permission_grant">Grant camera access to scan a barcode, or go back and log manually.</string>
+    <string name="food_scan_discard_title">Discard this item?</string>
+    <string name="food_scan_review">Review this item</string>
+    <string name="food_scan_log_item">Log item</string>
+
+    <!-- Voice flow -->
+    <string name="food_voice_parsing">Working out what that adds up to…</string>
+    <string name="food_voice_prompt">What did you eat?</string>
+    <string name="food_voice_example">e.g. \"two scrambled eggs, a slice of toast and a black coffee\"</string>
+    <string name="food_voice_placeholder">Say or type your meal…</string>
+    <string name="food_voice_speak">Speak your meal</string>
+    <string name="food_voice_estimate">Estimate</string>
+    <string name="food_voice_none_heading">No food in that one</string>
+    <string name="food_voice_none_body">Try naming what you ate and roughly how much — \"two eggs and a slice of toast\".</string>
+    <string name="food_voice_edit">Edit what you said</string>
+    <string name="food_voice_failed_heading">That didn\'t work</string>
+    <string name="food_voice_failed_body">Couldn\'t work out what that adds up to. Your words are still there — try again.</string>
+    <string name="food_voice_offline_retry">Still nothing. Reading a meal out of a sentence needs a connection — the diary\'s own add button works offline.</string>
+    <string name="food_voice_offline">Reading a meal out of a sentence needs a connection. The diary\'s own add button works offline, as does everything else.</string>
+    <string name="food_voice_chip">AI estimated</string>
+    <string name="food_voice_review">Review what you ate</string>
+    <string name="food_voice_review_body">Tap a row to adjust it, or remove anything you didn\'t eat.</string>
+    <plurals name="food_voice_log_items">
+        <item quantity="one">Log %1$d item</item>
+        <item quantity="other">Log %1$d items</item>
+    </plurals>
+    <string name="food_voice_low_confidence">Not fully sure about some of these — double-check the portions.</string>
+
+    <!-- Recipe builder -->
+    <string name="food_recipe_label">Recipe</string>
+    <string name="food_recipe_placeholder">Name this dish</string>
+    <string name="food_recipe_makes">Makes</string>
+    <plurals name="food_recipe_servings">
+        <item quantity="one">serving</item>
+        <item quantity="other">servings</item>
+    </plurals>
+    <string name="food_recipe_save">Save recipe</string>
+    <string name="food_recipe_discard_title">Discard this recipe?</string>
+    <string name="food_recipe_not_saved">It hasn\'t been saved yet.</string>
+    <string name="food_recipe_per_serving">%1$d kcal per serving</string>
+    <string name="food_recipe_macro_line">P %1$dg · C %2$dg · F %3$dg</string>
+    <string name="food_recipe_no_ingredients">No ingredients yet.</string>
+    <string name="food_recipe_add_ingredient_title">Add an ingredient</string>
+    <string name="food_recipe_add_ingredient">Add ingredient</string>
+    <string name="food_recipe_summary">%1$d kcal per serving · makes %2$d</string>
+    <string name="food_recipe_delete">Delete recipe %1$s</string>
+    <string name="food_recipe_use">Use %1$s</string>
+
+    <!-- Exercise -->
+    <string name="food_exercise">Exercise</string>
+    <string name="food_exercise_log">Log exercise</string>
+    <string name="food_exercise_edit">Edit exercise</string>
+    <string name="food_exercise_log_sets">Log sets instead →</string>
+    <string name="food_exercise_note">Note (optional)</string>
+    <string name="food_exercise_duration">Duration</string>
+    <string name="food_exercise_minutes">min</string>
+    <string name="food_exercise_kcal">kcal</string>
+    <string name="food_exercise_burned_manual">Burned · your figure</string>
+    <string name="food_exercise_burned_estimated">Burned · estimated from %1$s at your latest weight</string>
+    <string name="food_exercise_row">%1$d min</string>
+    <string name="food_exercise_row_kcal">%1$d kcal</string>
+
+    <!-- Strength -->
+    <string name="food_strength_repeat">Repeat last workout</string>
+    <string name="food_strength_start_routine">Start a routine</string>
+    <string name="food_strength_save_routine">Save as routine</string>
+    <string name="food_strength_saved_routine">Saved as \"%1$s\"</string>
+    <string name="food_strength_save_workout">Save workout</string>
+    <string name="food_strength_discard_new">Discard this workout?</string>
+    <string name="food_strength_discard_edit">Discard these changes?</string>
+    <plurals name="food_strength_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="food_strength_summary">%1$s · %2$d lifted</string>
+    <string name="food_strength_no_sets">No sets yet. Add the first one below.</string>
+    <string name="food_strength_unnamed">Unnamed lift</string>
+    <string name="food_strength_remove_set">Remove set %1$d of %2$s</string>
+    <string name="food_strength_exercise_placeholder">Bench press</string>
+    <string name="food_strength_reps">Reps</string>
+    <string name="food_strength_load">Load</string>
+    <string name="food_strength_load_bodyweight">Load · bodyweight</string>
+    <string name="food_strength_add_set">Add set</string>
+    <string name="food_routine_sheet_title">Save as a routine</string>
+    <plurals name="food_routine_lifts">
+        <item quantity="one">%1$d lift</item>
+        <item quantity="other">%1$d lifts</item>
+    </plurals>
+    <string name="food_routine_sheet_body">%1$s · %2$s — start it again in one tap, at whatever you\'re lifting then.</string>
+    <string name="food_routine_placeholder">Push day</string>
+</resources>

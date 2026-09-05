@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.FoodSuggestion
@@ -25,12 +26,14 @@ import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.recipe.components.RecipePanel
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
 import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.isValid
+import ph.mart.healthapp.feature.food.ui.shared.labelRes
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /**
@@ -69,7 +72,10 @@ internal fun AddEntrySheet(
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = if (editing) "Edit ${mealType.name} entry" else "Add to ${mealType.name}",
+            text = stringResource(
+                if (editing) R.string.food_edit_meal_entry else R.string.food_add_to,
+                stringResource(mealType.labelRes()),
+            ),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -78,7 +84,7 @@ internal fun AddEntrySheet(
             if (!editing) {
                 // Above the panels, because it answers a different question: they are faster
                 // ways to log something already decided on, this is what to decide.
-                onGetIdeas?.let { SecondaryButton(label = "Get meal ideas", onClick = it) }
+                onGetIdeas?.let { SecondaryButton(label = stringResource(R.string.food_get_ideas), onClick = it) }
                 // Both panels seed the fields below; they stay editable either way, so this is a
                 // shortcut past typing rather than a separate entry mode. Already-logged foods come
                 // first — they cost no network round-trip and are the likelier match.
@@ -105,12 +111,12 @@ internal fun AddEntrySheet(
                 // that friction shows up.
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = "Or add it yourself",
+                        text = stringResource(R.string.food_add_yourself),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = "Leave the name blank to log calories only.",
+                        text = stringResource(R.string.food_blank_name_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -129,6 +135,8 @@ internal fun AddEntrySheet(
                 onPortionAmountChange = { onFormChange(form.withPortionAmount(it)) },
                 onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
                 onCaloriesChange = { onFormChange(form.copy(calories = it)) },
+                // Stays in Kotlin: these are compared, not shown — `portionStep` switches on
+                // them, and SERVING_UNIT is the value a recipe row is priced in.
                 portionUnitOptions = listOf("g", "oz", "cup", SERVING_UNIT),
             )
             MacroInputGroup(
@@ -154,20 +162,20 @@ internal fun AddEntrySheet(
             // reason. Saving the same name twice edits it, which is how a food is corrected later.
             if (!editing && form.isSaveableFood()) {
                 SecondaryButton(
-                    label = "Save as my food",
+                    label = stringResource(R.string.food_save_as_my_food),
                     onClick = onSaveMyFood,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.food_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
                     // The label is the only thing telling the user a nameless entry will be
                     // accepted; the button itself is enabled the moment there are calories.
                     label = when {
-                        editing -> "Save"
-                        form.name.isBlank() -> "Quick add"
-                        else -> "Add"
+                        editing -> stringResource(R.string.food_save)
+                        form.name.isBlank() -> stringResource(R.string.food_quick_add)
+                        else -> stringResource(R.string.food_add)
                     },
                     onClick = onAdd,
                     enabled = form.isValid(),
