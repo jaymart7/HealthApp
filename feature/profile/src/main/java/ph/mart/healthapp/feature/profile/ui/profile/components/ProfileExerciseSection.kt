@@ -6,6 +6,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.health.STEP_GOAL_NUDGE
@@ -14,6 +15,7 @@ import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The step goal and the one switch that changes what a number on Home means.
@@ -35,19 +37,18 @@ internal fun ProfileExerciseSection(
     onSetAddToBudget: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SettingsSection(label = "Exercise", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_exercise), modifier = modifier) {
         AppCard {
             NumericStepperField(
-                label = "Daily step goal",
+                label = stringResource(R.string.profile_step_goal),
                 value = formatSteps(stepGoal),
-                unitSuffix = "steps",
+                unitSuffix = stringResource(R.string.profile_step_unit),
                 onIncrement = { onSetStepGoal((stepGoal + STEP_GOAL_NUDGE).coerceAtMost(STEP_GOAL_STEPS.last)) },
                 onDecrement = { onSetStepGoal((stepGoal - STEP_GOAL_NUDGE).coerceAtLeast(STEP_GOAL_STEPS.first)) },
             )
             SettingsRow(
-                label = "Add exercise calories",
-                sublabel = "Logged workouts raise the day's budget. Turn off if your activity " +
-                    "level already covers them.",
+                label = stringResource(R.string.profile_add_exercise),
+                sublabel = stringResource(R.string.profile_add_exercise_sub),
                 trailing = { Switch(checked = addToBudget, onCheckedChange = onSetAddToBudget) },
             )
         }

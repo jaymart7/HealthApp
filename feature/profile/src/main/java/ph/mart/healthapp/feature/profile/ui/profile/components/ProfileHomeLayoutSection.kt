@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The way into the Home card editor. A nav row with no summary of what's hidden, for the same
@@ -19,11 +21,11 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  */
 @Composable
 internal fun ProfileHomeLayoutSection(onOpenHomeLayout: () -> Unit, modifier: Modifier = Modifier) {
-    SettingsSection(label = "Home layout", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_home_layout), modifier = modifier) {
         AppCard(onClick = onOpenHomeLayout) {
             SettingsRow(
-                label = "Cards on Home",
-                sublabel = "Choose which ones show, and in what order",
+                label = stringResource(R.string.profile_layout_row),
+                sublabel = stringResource(R.string.profile_layout_row_sub),
             )
         }
     }

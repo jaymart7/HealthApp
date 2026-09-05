@@ -17,7 +17,7 @@ data class HealthConnectionUiState(
     val connectRequests: Set<String> = CONNECT_PERMISSIONS,
     /** A network call or a Play services round trip is in flight; the buttons are disabled. */
     val busy: Boolean = false,
-    val message: String? = null,
+    val message: HealthMessage? = null,
     val messageIsError: Boolean = false,
     /** The disconnect confirmation sheet is showing. */
     val confirmingDisconnect: Boolean = false,

@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
@@ -21,6 +22,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 @Composable
 internal fun DisconnectSheet(onDismiss: () -> Unit, onConfirm: (Boolean, Boolean) -> Unit) {
@@ -30,32 +32,31 @@ internal fun DisconnectSheet(onDismiss: () -> Unit, onConfirm: (Boolean, Boolean
     AppBottomSheet(onDismiss = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
-                text = "Disconnect Google Health?",
+                text = stringResource(R.string.profile_health_disconnect_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "FitPulse will stop reading your health data and will no longer send your " +
-                    "meals and water to Google Health.",
+                text = stringResource(R.string.profile_health_disconnect_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             DeleteChoice(
-                label = "Delete the workouts, weigh-ins and sleep imported from Google Health",
+                label = stringResource(R.string.profile_health_delete_imported),
                 checked = deleteImported,
                 onToggle = { deleteImported = it },
             )
             DeleteChoice(
-                label = "Delete the meals and water FitPulse sent to Google Health",
+                label = stringResource(R.string.profile_health_delete_sent),
                 checked = deleteSent,
                 onToggle = { deleteSent = it },
             )
             PrimaryButton(
-                label = "Disconnect",
+                label = stringResource(R.string.profile_health_disconnect),
                 onClick = { onConfirm(deleteImported, deleteSent) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+            SecondaryButton(label = stringResource(R.string.profile_cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
     }
 }

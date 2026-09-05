@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -30,6 +31,7 @@ import ph.mart.healthapp.core.data.health.HealthConnection
 import ph.mart.healthapp.core.data.health.HealthMetric
 import ph.mart.healthapp.core.designsystem.component.HealthDisclosurePanel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.health.components.ConnectedPanel
 import ph.mart.healthapp.feature.profile.ui.health.components.DisconnectSheet
 import ph.mart.healthapp.feature.profile.ui.health.components.HealthConnectPanel
@@ -46,6 +48,25 @@ import ph.mart.healthapp.feature.profile.ui.health.components.HealthConnectPanel
  * This screen is also the target of Health Connect's "why does this app want my data?" intent, on
  * both the Android 13 and the Android 14+ path — see the manifest and `ShortcutAction.HealthSync`.
  */
+/** [HealthMessage] in words. Concatenated for the disconnect case because what was deleted is
+ * two independent sentences, either of which may be absent. */
+@Composable
+private fun HealthMessage.resolve(): String = when (this) {
+    is HealthMessage.Text -> stringResource(id)
+    is HealthMessage.Imported ->
+        if (items == 0) {
+            stringResource(R.string.profile_health_up_to_date)
+        } else {
+            stringResource(R.string.profile_health_imported, items)
+        }
+
+    is HealthMessage.Disconnected -> buildString {
+        append(stringResource(R.string.profile_health_disconnected))
+        if (deletedImported) append(stringResource(R.string.profile_health_deleted_imported))
+        if (deletedSent) append(stringResource(R.string.profile_health_deleted_sent))
+    }
+}
+
 @Composable
 fun HealthConnectionScreen(
     onBack: () -> Unit,
@@ -132,11 +153,14 @@ private fun HealthConnectionContent(
                 onOpenPlayStore = onAllowConnect,
             )
 
+            // Resolved once, here: the ViewModel names which message applies, this turns it
+            // into words — see [HealthMessage].
+            val message = uiState.message?.resolve()
             when (val connection = uiState.connection) {
                 is HealthConnection.Connected -> ConnectedPanel(
                     importedItems = connection.importedItems,
                     busy = uiState.busy,
-                    message = uiState.message,
+                    message = message,
                     messageIsError = uiState.messageIsError,
                     onSync = onSync,
                     onDisconnect = { onConfirmDisconnect(true) },
@@ -150,9 +174,9 @@ private fun HealthConnectionContent(
                 -> HealthDisclosurePanel(
                     onConnect = onConnect,
                     onDismiss = onBack,
-                    dismissLabel = "Not now",
+                    dismissLabel = stringResource(R.string.profile_health_not_now),
                     connectEnabled = !uiState.busy && connection is HealthConnection.Disconnected,
-                    message = uiState.message,
+                    message = message,
                     messageIsError = uiState.messageIsError,
                 )
             }
@@ -213,7 +237,7 @@ private fun HealthConnectionConnectedPreview() {
         HealthConnectionContent(
             uiState = HealthConnectionUiState(
                 connection = HealthConnection.Connected(importedItems = 12),
-                message = "Imported 3 workouts.",
+                message = HealthMessage.Imported(3),
             ),
             onConnect = {},
             onAllowConnect = {},

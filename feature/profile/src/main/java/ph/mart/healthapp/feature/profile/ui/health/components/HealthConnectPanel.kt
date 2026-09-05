@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.profile.ui.health.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -17,6 +19,7 @@ import ph.mart.healthapp.core.data.health.HealthMetric
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * Health Connect, drawn *above* the Google Health panel because it is the provider that wins —
@@ -41,16 +44,12 @@ internal fun HealthConnectPanel(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Health Connect",
+            text = stringResource(R.string.profile_connect_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
-            text = "FitPulse reads your workouts, weight, sleep, steps, heart rate and blood " +
-                "pressure from Health Connect, on your phone — no account and no internet " +
-                "connection. It is used to raise your calorie budget, track your weight trend and " +
-                "show your sleep, heart rate and readings. Period days are read only while cycle " +
-                "tracking is on in Profile. FitPulse writes nothing back.",
+            text = stringResource(R.string.profile_connect_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -58,12 +57,12 @@ internal fun HealthConnectPanel(
         when (state) {
             HealthConnectState.UpdateRequired -> {
                 Text(
-                    text = "Health Connect needs updating before FitPulse can read from it.",
+                    text = stringResource(R.string.profile_connect_needs_update),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 PrimaryButton(
-                    label = "Update Health Connect",
+                    label = stringResource(R.string.profile_connect_update),
                     onClick = onOpenPlayStore,
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth(),
@@ -74,7 +73,13 @@ internal fun HealthConnectPanel(
                 AppCard {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = if (state.granted.isEmpty()) "Not allowed yet" else "Allowed",
+                            text = stringResource(
+                                if (state.granted.isEmpty()) {
+                                    R.string.profile_connect_not_allowed
+                                } else {
+                                    R.string.profile_connect_allowed
+                                },
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                                 .copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface,
@@ -91,7 +96,9 @@ internal fun HealthConnectPanel(
                     }
                 }
                 PrimaryButton(
-                    label = if (state.granted.isEmpty()) "Allow" else "Change what FitPulse reads",
+                    label = stringResource(
+                        if (state.granted.isEmpty()) R.string.profile_connect_allow else R.string.profile_connect_change,
+                    ),
                     onClick = onAllow,
                     enabled = !busy,
                     modifier = Modifier.fillMaxWidth(),
@@ -119,7 +126,7 @@ private fun MetricRow(metric: HealthMetric, granted: Boolean) {
             },
         )
         Text(
-            text = metric.label,
+            text = stringResource(metric.label),
             style = MaterialTheme.typography.bodySmall,
             color = if (granted) {
                 MaterialTheme.colorScheme.onSurface
@@ -131,15 +138,16 @@ private fun MetricRow(metric: HealthMetric, granted: Boolean) {
 }
 
 /** What each metric is called on screen. The enum is `:core:data`'s and carries no copy. */
-private val HealthMetric.label: String
+@get:StringRes
+private val HealthMetric.label: Int
     get() = when (this) {
-        HealthMetric.Exercise -> "Workouts"
-        HealthMetric.Weight -> "Weight"
-        HealthMetric.Sleep -> "Sleep"
-        HealthMetric.Steps -> "Steps"
-        HealthMetric.Heart -> "Heart rate"
-        HealthMetric.BloodPressure -> "Blood pressure"
-        HealthMetric.Menstruation -> "Period days"
+        HealthMetric.Exercise -> R.string.profile_metric_exercise
+        HealthMetric.Weight -> R.string.profile_metric_weight
+        HealthMetric.Sleep -> R.string.profile_metric_sleep
+        HealthMetric.Steps -> R.string.profile_metric_steps
+        HealthMetric.Heart -> R.string.profile_metric_heart
+        HealthMetric.BloodPressure -> R.string.profile_metric_blood_pressure
+        HealthMetric.Menstruation -> R.string.profile_metric_menstruation
     }
 
 @PreviewLightDark

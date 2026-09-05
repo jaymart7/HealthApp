@@ -14,11 +14,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * One saved meal, recipe or workout routine, as its library lists it: rename and delete, and **no
@@ -77,14 +79,14 @@ internal fun LibraryRow(
                 IconButton(onClick = onRename, modifier = Modifier.size(44.dp)) {
                     Icon(
                         imageVector = AppIcons.Edit,
-                        contentDescription = "Rename $name",
+                        contentDescription = stringResource(R.string.profile_rename_item, name),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
                     Icon(
                         imageVector = AppIcons.Delete,
-                        contentDescription = "Delete $name",
+                        contentDescription = stringResource(R.string.profile_delete_item, name),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

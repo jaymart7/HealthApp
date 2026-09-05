@@ -14,6 +14,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_DOSE_MAX
@@ -26,6 +28,7 @@ import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * Adds a supplement or edits one, seeded from [supplement] — `id == 0` is the add. One sheet for
@@ -52,7 +55,9 @@ internal fun SupplementEditSheet(
 
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = if (supplement.id == 0L) "Add supplement" else "Edit supplement",
+            text = stringResource(
+                if (supplement.id == 0L) R.string.profile_supplements_add else R.string.profile_supplements_edit,
+            ),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -61,19 +66,19 @@ internal fun SupplementEditSheet(
             AppTextField(
                 value = name,
                 onValueChange = { if (it.length <= SUPPLEMENT_NAME_MAX) name = it },
-                placeholder = "Name",
+                placeholder = stringResource(R.string.profile_name),
             )
             // Free text, never parsed: "2000 IU", "5 g", "one scoop" are all the same kind of
             // answer, and there is no target on the profile to price any of them against.
             AppTextField(
                 value = dose,
                 onValueChange = { if (it.length <= SUPPLEMENT_DOSE_MAX) dose = it },
-                placeholder = "Dose (optional)",
+                placeholder = stringResource(R.string.profile_supplements_dose),
             )
             NumericStepperField(
-                label = "How often",
+                label = stringResource(R.string.profile_supplements_how_often),
                 value = "$timesPerDay",
-                unitSuffix = if (timesPerDay == 1) "time a day" else "times a day",
+                unitSuffix = pluralStringResource(R.plurals.profile_supplements_times_a_day, timesPerDay),
                 onIncrement = {
                     timesPerDay = (timesPerDay + 1).coerceAtMost(SUPPLEMENT_TIMES_PER_DAY.last)
                 },
@@ -82,9 +87,9 @@ internal fun SupplementEditSheet(
                 },
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.profile_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
-                    label = "Save",
+                    label = stringResource(R.string.profile_save),
                     onClick = {
                         onSave(supplement.copy(name = name, dose = dose, timesPerDay = timesPerDay))
                     },

@@ -8,10 +8,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.profile.ReminderKind
 
 /** The switches persist to the profile row; `:app`'s `ph.mart.healthapp.reminder` package watches
@@ -25,7 +27,7 @@ internal fun ProfileRemindersSection(
     message: String? = null,
     messageIsError: Boolean = false,
 ) {
-    SettingsSection(label = "Reminders", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_reminders), modifier = modifier) {
         AppCard {
             ReminderKind.entries.forEachIndexed { index, kind ->
                 if (index > 0) {
@@ -35,8 +37,8 @@ internal fun ProfileRemindersSection(
                     )
                 }
                 SettingsRow(
-                    label = kind.label,
-                    sublabel = kind.sublabel,
+                    label = stringResource(kind.label),
+                    sublabel = stringResource(kind.sublabel),
                     trailing = {
                         Switch(
                             checked = enabled(kind),

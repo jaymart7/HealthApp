@@ -1,5 +1,7 @@
 package ph.mart.healthapp.core.data.exercise
 
+import java.text.DateFormatSymbols
+import java.util.Calendar
 import ph.mart.healthapp.core.data.weekdayIndex
 
 /*
@@ -22,13 +24,20 @@ import ph.mart.healthapp.core.data.weekdayIndex
 const val DAYS_IN_WEEK = 7
 
 /** What the picker prints in its seven cells, Monday first. */
-val WEEKDAY_INITIALS = listOf("M", "T", "W", "T", "F", "S", "S")
+fun weekdayInitials(): List<String> = weekdayShort().map { it.take(1) }
 
 /** What the card prints, Monday first — one vocabulary, so the picker and the card can never
  * disagree about which cell is which day. */
-val WEEKDAY_SHORT = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+fun weekdayShort(): List<String> = mondayFirst(DateFormatSymbols.getInstance().shortWeekdays)
 
-val WEEKDAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+fun weekdayNames(): List<String> = mondayFirst(DateFormatSymbols.getInstance().weekdays)
+
+/** [DateFormatSymbols] indexes by [Calendar.SUNDAY]..[Calendar.SATURDAY] with a blank at 0; this
+ * app counts from Monday, which is what every weekday bitmask in [Routine.days] means. */
+private fun mondayFirst(names: Array<String>): List<String> = listOf(
+    Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY,
+    Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY,
+).map { names[it] }
 
 /** The mask with [index]'s bit flipped — the picker's whole write. */
 fun Int.toggleWeekday(index: Int): Int = this xor (1 shl index)
@@ -40,7 +49,7 @@ fun Routine.isPlannedOn(epochDay: Long): Boolean = days.hasWeekday(weekdayIndex(
 /** "Mon · Wed · Fri", and empty for an unscheduled routine — the row and the card both say so in
  * their own words rather than printing this blank. */
 fun Routine.dayLabel(): String =
-    WEEKDAY_SHORT.filterIndexed { index, _ -> days.hasWeekday(index) }.joinToString(" · ")
+    weekdayShort().filterIndexed { index, _ -> days.hasWeekday(index) }.joinToString(" · ")
 
 fun List<Routine>.plannedOn(epochDay: Long): List<Routine> = filter { it.isPlannedOn(epochDay) }
 

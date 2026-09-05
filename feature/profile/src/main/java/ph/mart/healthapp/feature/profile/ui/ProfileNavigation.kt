@@ -4,6 +4,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
@@ -12,6 +13,7 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.navigation.route.ProfileRoute
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
 import ph.mart.healthapp.feature.profile.ui.layout.HomeLayoutScreen
 import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryScreen
@@ -57,8 +59,8 @@ data object HomeLayoutRoute : NavKey
 private fun ProfileDetailPlaceholder() {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-        heading = "Pick a section",
-        body = "Your food library, routines, supplements, your Home layout and Google Health open here.",
+        heading = stringResource(R.string.profile_pick_heading),
+        body = stringResource(R.string.profile_pick_body),
     )
 }
 

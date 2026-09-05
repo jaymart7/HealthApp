@@ -1,11 +1,15 @@
 package ph.mart.healthapp.feature.profile.ui.library
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.food.totalKcal
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * Every saved meal and every recipe — not the newest-N windows the add-entry sheet's panels read.
@@ -27,23 +31,34 @@ data class FoodLibraryUiState(
 
 /** "165 kcal · 100 g" — a food is priced for a stated amount everywhere else in the app, so the
  * row says which amount rather than a bare figure. */
-fun ScannedProduct.summary(): String = "$calories kcal · ${portionLabel()} $portionUnit"
+@Composable
+fun ScannedProduct.summary(): String =
+    stringResource(R.string.profile_library_food_summary, calories, portionLabel(), portionUnit)
 
 /** The macros, for the row's third line — the same job the item names do for a saved meal: a row
  * that only quotes calories is a row you delete blind, and they are already loaded. */
-fun ScannedProduct.macroLine(): String = "P ${proteinG}g · C ${carbsG}g · F ${fatG}g"
+@Composable
+fun ScannedProduct.macroLine(): String =
+    stringResource(R.string.profile_library_macro_line, proteinG, carbsG, fatG)
 
 /** 100 g, not 100.0 g. */
-private fun ScannedProduct.portionLabel(): String =
+internal fun ScannedProduct.portionLabel(): String =
     if (portionAmount % 1.0 == 0.0) portionAmount.toInt().toString() else portionAmount.toString()
 
 /** "3 items · 540 kcal" — what the row says a saved meal is. */
+@Composable
 fun SavedMeal.summary(): String =
-    "${items.size} ${if (items.size == 1) "item" else "items"} · ${totalKcal()} kcal"
+    stringResource(
+        R.string.profile_library_meal_summary,
+        pluralStringResource(R.plurals.profile_library_items, items.size, items.size),
+        totalKcal(),
+    )
 
 /** A recipe is priced per serving everywhere it is logged, so it is priced per serving here too —
  * the total would be a number the user never eats in one sitting. */
-fun Recipe.summary(): String = "${perServing().calories} kcal per serving · makes $servings"
+@Composable
+fun Recipe.summary(): String =
+    stringResource(R.string.profile_library_recipe_summary, perServing().calories, servings)
 
 /** The item names, for the row's third line. A row that only counts its items is a row you delete
  * blind; the items are already loaded, so naming them costs nothing. Empty when there are none,

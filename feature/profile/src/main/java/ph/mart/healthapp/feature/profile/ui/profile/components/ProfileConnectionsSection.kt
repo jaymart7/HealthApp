@@ -4,10 +4,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The way into the Google Health connection. Deliberately just a nav row: connection state is
@@ -16,11 +18,11 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  */
 @Composable
 internal fun ProfileConnectionsSection(onOpenHealth: () -> Unit, modifier: Modifier = Modifier) {
-    SettingsSection(label = "Connections", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_connections), modifier = modifier) {
         AppCard(onClick = onOpenHealth) {
             SettingsRow(
-                label = "Google Health",
-                sublabel = "Import workouts, weigh-ins and sleep; send your food and water",
+                label = stringResource(R.string.profile_connections_health),
+                sublabel = stringResource(R.string.profile_connections_health_sub),
             )
         }
     }

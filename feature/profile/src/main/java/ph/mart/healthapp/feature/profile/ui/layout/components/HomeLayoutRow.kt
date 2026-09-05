@@ -28,6 +28,7 @@ import ph.mart.healthapp.core.designsystem.component.HomeCard
 import ph.mart.healthapp.core.designsystem.component.HomeCardSetting
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The fixed height every row in this list wears. Uniform rows are what let the drag work off one
@@ -58,6 +59,10 @@ internal fun HomeLayoutRow(
     modifier: Modifier = Modifier,
 ) {
     val card = setting.card
+    // A drag nobody using TalkBack can perform is not a control, so the row carries these two.
+    // Resolved here, not in the semantics lambda, which cannot read a resource.
+    val moveUp = stringResource(R.string.profile_layout_move_up)
+    val moveDown = stringResource(R.string.profile_layout_move_down)
     Surface(
         color = if (dragging) {
             MaterialTheme.colorScheme.surfaceContainerHigh
@@ -75,8 +80,8 @@ internal fun HomeLayoutRow(
             .graphicsLayer { translationY = offsetY }
             .semantics {
                 customActions = listOf(
-                    CustomAccessibilityAction("Move up") { onMove(-1) },
-                    CustomAccessibilityAction("Move down") { onMove(1) },
+                    CustomAccessibilityAction(moveUp) { onMove(-1) },
+                    CustomAccessibilityAction(moveDown) { onMove(1) },
                 )
             },
     ) {

@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.profile.ui.profile.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -25,15 +26,17 @@ import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /** How far one tap moves the calorie target. Same 50 the Confirm step nudges by. */
 private const val CALORIE_STEP = 50
 
-private fun ActivityLevel.label(): String = when (this) {
-    ActivityLevel.Sedentary -> "Sedentary"
-    ActivityLevel.Light -> "Light"
-    ActivityLevel.Moderate -> "Moderate"
-    ActivityLevel.Very -> "Very active"
+@StringRes
+private fun ActivityLevel.label(): Int = when (this) {
+    ActivityLevel.Sedentary -> R.string.profile_activity_sedentary
+    ActivityLevel.Light -> R.string.profile_activity_light
+    ActivityLevel.Moderate -> R.string.profile_activity_moderate
+    ActivityLevel.Very -> R.string.profile_activity_very
 }
 
 /**
@@ -58,13 +61,13 @@ internal fun ProfileGoalsSection(
     val overridden = with(profile) {
         calorieOverrideKcal != null || proteinOverrideG != null || carbsOverrideG != null || fatOverrideG != null
     }
-    SettingsSection(label = "Goals", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_goals), modifier = modifier) {
         AppCard {
             // Stepper-only on purpose, unlike the macro fields below: the write is clamped to
             // CALORIE_TARGET_KCAL, and a clamped value re-seeds the typable field's text, so a
             // half-typed "1" would snap to "800" mid-keystroke. Don't pass onValueChange.
             NumericStepperField(
-                label = "Calorie target",
+                label = stringResource(R.string.profile_calorie_target),
                 value = targets.calories.toString(),
                 unitSuffix = "kcal",
                 onIncrement = { onSetCalorieTarget((targets.calories + CALORIE_STEP).coerceAtMost(CALORIE_TARGET_KCAL.last)) },
@@ -77,7 +80,7 @@ internal fun ProfileGoalsSection(
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Macro split",
+                    text = stringResource(R.string.profile_macro_split),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -98,10 +101,10 @@ internal fun ProfileGoalsSection(
                 modifier = Modifier.padding(vertical = 12.dp),
             )
             SettingsRow(
-                label = "Activity level",
+                label = stringResource(R.string.profile_activity_level),
                 trailing = {
                     Text(
-                        text = profile.activityLevel.label(),
+                        text = stringResource(profile.activityLevel.label()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -111,8 +114,8 @@ internal fun ProfileGoalsSection(
         if (overridden) {
             AppCard(onClick = onResetTargets) {
                 SettingsRow(
-                    label = "Reset to calculated",
-                    sublabel = "Goes back to the targets worked out from your height, weight, age and goal",
+                    label = stringResource(R.string.profile_reset_targets),
+                    sublabel = stringResource(R.string.profile_reset_targets_sub),
                 )
             }
         }

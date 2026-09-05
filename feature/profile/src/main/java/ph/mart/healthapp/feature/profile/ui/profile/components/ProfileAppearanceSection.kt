@@ -3,9 +3,9 @@ package ph.mart.healthapp.feature.profile.ui.profile.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -34,6 +35,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.mascotSwatchColor
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 private val AvatarSize = 48.dp
 
@@ -57,12 +59,12 @@ internal fun ProfileAppearanceSection(
     onSelectMascotPalette: (MascotPalette) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SettingsSection(label = "Appearance", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_appearance), modifier = modifier) {
         AppCard {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 SettingsRow(
-                    label = "Dark mode",
-                    sublabel = "Use the dark colour scheme instead of following your device.",
+                    label = stringResource(R.string.profile_dark_mode),
+                    sublabel = stringResource(R.string.profile_dark_mode_sub),
                     trailing = { Switch(checked = darkTheme, onCheckedChange = onSetDarkTheme) },
                 )
                 MascotPickerRow(selected = mascot, onSelect = onSelectMascot)
@@ -83,8 +85,8 @@ private fun MascotPickerRow(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SettingsRow(
-            label = "Buddy",
-            sublabel = "Who greets you on Home and turns up across the app.",
+            label = stringResource(R.string.profile_buddy),
+            sublabel = stringResource(R.string.profile_buddy_sub),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MascotCharacter.entries.forEach { character ->
@@ -120,15 +122,18 @@ private fun MascotColourRow(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SettingsRow(
-            label = "Colour",
-            sublabel = "Every buddy wears the one you pick.",
+            label = stringResource(R.string.profile_colour),
+            sublabel = stringResource(R.string.profile_colour_sub),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MascotPalette.entries.forEach { palette ->
+                // The swatch carries no visible label — the scheme flips in dark mode, so a hue
+                // name would be wrong half the time — so the name rides the description instead.
+                val spoken = stringResource(R.string.profile_colour_cell, palette.name)
                 PickerCell(
                     selected = palette == selected,
                     onClick = { onSelect(palette) },
-                    modifier = Modifier.semantics { contentDescription = "${palette.name} colour" },
+                    modifier = Modifier.semantics { contentDescription = spoken },
                 ) {
                     Box(
                         modifier = Modifier

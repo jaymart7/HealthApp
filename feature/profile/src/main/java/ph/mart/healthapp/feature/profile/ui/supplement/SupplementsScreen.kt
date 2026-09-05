@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -26,6 +27,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.supplement.components.SupplementEditSheet
 import ph.mart.healthapp.feature.profile.ui.supplement.components.SupplementListRow
 
@@ -67,7 +69,7 @@ private fun SupplementsContent(
             if (uiState.loaded && uiState.supplements.isEmpty()) {
                 MascotAvatar(state = MascotState.Sleepy, size = 64.dp)
                 Text(
-                    text = "Nothing here yet. Add what you take and it shows up on Home each day.",
+                    text = stringResource(R.string.profile_supplements_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -81,7 +83,7 @@ private fun SupplementsContent(
                 )
             }
             PrimaryButton(
-                label = "Add supplement",
+                label = stringResource(R.string.profile_supplements_add),
                 // A blank row with id 0 — the sheet reads that as the add, so there is one sheet
                 // and one save path rather than two of each.
                 onClick = { editing = Supplement(name = "") },
@@ -96,10 +98,10 @@ private fun SupplementsContent(
     // it, so it asks first — the same call the library makes, rather than the diary's swipe-and-undo.
     pendingDelete?.let { supplement ->
         DiscardConfirmDialog(
-            title = "Delete ${supplement.name}?",
-            body = "It leaves your daily list. Days you already ticked keep their record.",
-            confirmLabel = "Delete",
-            dismissLabel = "Keep",
+            title = stringResource(R.string.profile_delete_title, supplement.name),
+            body = stringResource(R.string.profile_supplements_delete_body),
+            confirmLabel = stringResource(R.string.profile_delete),
+            dismissLabel = stringResource(R.string.profile_keep),
             onConfirm = {
                 onEvent(SupplementsEvent.OnDelete(supplement.id))
                 pendingDelete = null

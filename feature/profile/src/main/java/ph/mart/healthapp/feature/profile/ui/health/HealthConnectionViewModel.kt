@@ -1,31 +1,44 @@
 package ph.mart.healthapp.feature.profile.ui.health
 
 import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
-import androidx.activity.result.contract.ActivityResultContract
 import ph.mart.healthapp.core.data.health.HealthConnectState
 import ph.mart.healthapp.core.data.health.HealthConnection
 import ph.mart.healthapp.core.data.health.HealthSyncRepository
 import ph.mart.healthapp.core.data.health.HealthSyncResult
+import ph.mart.healthapp.feature.profile.R
 
-private const val UNAVAILABLE =
-    "Google Health needs Google Play services and a Google account on this device."
+/**
+ * What the panel says after an action. A type rather than a resolved String because this
+ * ViewModel has no Context to resolve one with, and two of the three carry values the screen
+ * cannot work out for itself — the screen turns it into words, which is where every other
+ * `message` field in this app now ends up.
+ */
+sealed interface HealthMessage {
+    data class Text(@StringRes val id: Int) : HealthMessage
+    data class Imported(val items: Int) : HealthMessage
+    data class Disconnected(val deletedImported: Boolean, val deletedSent: Boolean) : HealthMessage
+}
 
-private const val CONSENT_DECLINED = "Not connected — nothing was shared."
+private val UNAVAILABLE = HealthMessage.Text(R.string.profile_health_unavailable)
 
-private const val SYNC_FAILED = "Couldn't reach Google Health. Try again."
+private val CONSENT_DECLINED = HealthMessage.Text(R.string.profile_health_consent_declined)
 
-private const val OFFLINE = "You're offline. Connect and try again."
+private val SYNC_FAILED = HealthMessage.Text(R.string.profile_health_sync_failed)
 
-private const val CONNECT_DECLINED = "Health Connect isn't sharing anything yet."
+private val OFFLINE = HealthMessage.Text(R.string.profile_health_offline)
+
+private val CONNECT_DECLINED = HealthMessage.Text(R.string.profile_health_connect_declined)
 
 /** What one sync produced, already turned into something the screen can render. */
 private data class SyncOutcome(
     val connection: HealthConnection,
     val connect: HealthConnectState,
-    val message: String,
+    val message: HealthMessage,
     val isError: Boolean,
 )
 
@@ -184,11 +197,7 @@ class HealthConnectionViewModel(
             state.copy(
                 connection = connection,
                 busy = false,
-                message = buildString {
-                    append("Disconnected.")
-                    if (deleteImported) append(" Imported data was deleted from this device.")
-                    if (deleteSent) append(" What FitPulse sent was deleted from Google Health.")
-                },
+                message = HealthMessage.Disconnected(deleteImported, deleteSent),
                 messageIsError = false,
             )
         }
@@ -201,8 +210,7 @@ class HealthConnectionViewModel(
             connection = repository.connection(),
             connect = repository.connectState(),
             message = when (result) {
-                is HealthSyncResult.Imported ->
-                    if (result.items == 0) "Up to date." else "Imported ${result.items} items."
+                is HealthSyncResult.Imported -> HealthMessage.Imported(result.items)
 
                 HealthSyncResult.Offline -> OFFLINE
                 is HealthSyncResult.NeedsConsent -> CONSENT_DECLINED

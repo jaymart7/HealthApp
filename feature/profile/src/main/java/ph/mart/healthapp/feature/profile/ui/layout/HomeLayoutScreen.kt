@@ -24,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -32,11 +33,11 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.designsystem.component.HomeCardSetting
 import ph.mart.healthapp.core.designsystem.component.homeCardLayout
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.layout.components.HomeLayoutRow
 import ph.mart.healthapp.feature.profile.ui.layout.components.HomeLayoutRowHeight
 
-private const val INTRO =
-    "Drag to reorder, or turn a card off to hide it. Your greeting and Bibo's daily note stay at the top."
+
 
 /** How close to an edge the dragged row has to get before the list starts following it. */
 private val AutoScrollEdge = 48.dp
@@ -111,7 +112,7 @@ private fun HomeLayoutContent(
         ) {
             item {
                 Text(
-                    text = INTRO,
+                    text = stringResource(R.string.profile_layout_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp),
@@ -164,7 +165,7 @@ private fun HomeLayoutContent(
                         onReset()
                     },
                 ) {
-                    Text("Reset to default")
+                    Text(stringResource(R.string.profile_layout_reset))
                 }
             }
         }

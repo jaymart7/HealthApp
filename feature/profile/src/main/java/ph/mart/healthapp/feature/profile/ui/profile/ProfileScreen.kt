@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
@@ -47,11 +48,12 @@ import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
 import ph.mart.healthapp.core.designsystem.component.mascotPaletteOf
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAboutSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAppearanceSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileConnectionsSection
-import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileDataSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileCycleSection
+import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileDataSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileExerciseSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileFastingSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileGoalsSection
@@ -62,15 +64,17 @@ import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileSupplement
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileUnitsSection
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileWaterSection
 
+// Stays in Kotlin, with the "application/json" MIME types below: a filename and a wire type,
+// not copy.
 private const val EXPORT_FILE_NAME = "fitpulse-export.json"
 
 private const val NOTIFICATIONS_DENIED =
-    "Allow notifications for FitPulse in your system settings to use reminders."
+    R.string.profile_notifications_blocked
 
 /** Onboarding leaves meal and weigh-in reminders on by default, so a switch can be on without the
  * permission ever having been asked for. Say so rather than staying silently broken. */
 private const val NOTIFICATIONS_BLOCKED =
-    "Reminders are on, but notifications are blocked. Turn a reminder off and on again to allow them."
+    R.string.profile_notifications_blocked_on
 
 @Composable
 fun ProfileScreen(
@@ -92,7 +96,8 @@ fun ProfileScreen(
     var messageIsError by remember { mutableStateOf(false) }
 
     // Kept apart from [message] so the refusal renders under the Reminders card rather than Data.
-    var reminderMessage by remember { mutableStateOf<String?>(null) }
+    // The id, not the words: this is set from a permission callback, outside composition.
+    var reminderMessage by remember { mutableStateOf<Int?>(null) }
     var pendingReminder by remember { mutableStateOf<ReminderKind?>(null) }
 
     // Held in state and refreshed on resume, not read during composition. The permission can be
@@ -134,11 +139,11 @@ fun ProfileScreen(
         scope.launch {
             withContext(Dispatchers.IO) { context.writeText(uri, json) }
                 .onSuccess {
-                    message = "Export saved."
+                    message = context.getString(R.string.profile_export_saved)
                     messageIsError = false
                 }
                 .onFailure {
-                    message = "Couldn't write that file."
+                    message = context.getString(R.string.profile_export_failed)
                     messageIsError = true
                 }
         }
@@ -152,7 +157,7 @@ fun ProfileScreen(
             withContext(Dispatchers.IO) { context.readText(uri) }
                 .onSuccess { viewModel.import(it) }
                 .onFailure {
-                    message = "Couldn't read that file."
+                    message = context.getString(R.string.profile_import_failed)
                     messageIsError = true
                 }
         }
@@ -165,7 +170,7 @@ fun ProfileScreen(
                 exportLauncher.launch(EXPORT_FILE_NAME)
             }
             is ProfileSideEffect.ImportFinished -> {
-                message = effect.error ?: "Import complete."
+                message = effect.error ?: context.getString(R.string.profile_import_done)
                 messageIsError = effect.error != null
             }
         }
@@ -208,10 +213,12 @@ fun ProfileScreen(
         onOpenRoutines = onOpenRoutines,
         onOpenSupplements = onOpenSupplements,
         onOpenHomeLayout = onOpenHomeLayout,
-        reminderMessage = reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
-            uiState.profile?.let { profile -> ReminderKind.entries.any(profile::reminderEnabled) } == true &&
-                !canPostNotifications
-        },
+        reminderMessage = (
+            reminderMessage ?: NOTIFICATIONS_BLOCKED.takeIf {
+                uiState.profile?.let { profile -> ReminderKind.entries.any(profile::reminderEnabled) } == true &&
+                    !canPostNotifications
+            }
+            )?.let { stringResource(it) },
         scrollState = scrollState,
     )
 }
@@ -259,7 +266,7 @@ private fun ProfileContent(
                 .padding(bottom = DockedFabContentPadding),
         ) {
             Text(
-                text = "Profile",
+                text = stringResource(R.string.profile_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )

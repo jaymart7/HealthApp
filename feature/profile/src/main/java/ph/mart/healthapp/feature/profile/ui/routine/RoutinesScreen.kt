@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -25,6 +26,7 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.routine.components.WeekdayPicker
 import ph.mart.healthapp.feature.profile.ui.shared.components.LibraryRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
@@ -58,8 +60,8 @@ private fun RoutinesContent(
         if (!uiState.loaded) {
             FullScreenState(
                 icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                heading = "No routines yet",
-                body = "Log a strength workout, tap \"Save as routine\", and it shows up here.",
+                heading = stringResource(R.string.profile_routines_empty_heading),
+                body = stringResource(R.string.profile_routines_empty_body),
             )
             return@Surface
         }
@@ -94,10 +96,10 @@ private fun RoutinesContent(
     // first, rather than deleting with an undo the way a swiped diary row does.
     pendingDelete?.let { routine ->
         DiscardConfirmDialog(
-            title = "Delete ${routine.name}?",
-            body = "This routine is removed for good. Workouts you logged from it stay in your diary.",
-            confirmLabel = "Delete",
-            dismissLabel = "Keep",
+            title = stringResource(R.string.profile_delete_title, routine.name),
+            body = stringResource(R.string.profile_routine_delete_body),
+            confirmLabel = stringResource(R.string.profile_delete),
+            dismissLabel = stringResource(R.string.profile_keep),
             onConfirm = {
                 onEvent(RoutinesEvent.OnDelete(routine.id))
                 pendingDelete = null

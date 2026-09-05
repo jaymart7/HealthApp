@@ -1,6 +1,8 @@
 package ph.mart.healthapp.feature.profile.ui.profile
 
+import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.profile.Profile
+import ph.mart.healthapp.feature.profile.R
 
 /** Everything on this screen derives from the one Room-backed profile — targets included, via
  * [ph.mart.healthapp.core.data.profile.dailyTargets]. No second copy of any value lives here. */
@@ -11,15 +13,15 @@ data class ProfileUiState(val profile: Profile? = null)
  * is derived from that row by `ph.mart.healthapp.reminder` in `:app`, which is why nothing here
  * calls a scheduler. [FastingGoal] is the one one-shot in the set — it is derived off the running
  * fast rather than off a repeating clock, but the switch behind it is the same plain Room write. */
-enum class ReminderKind(val label: String, val sublabel: String) {
-    Meals("Meal logging", "Reminds you 3x daily"),
-    WeighIn("Weigh-in day", "Every Monday, 8:00 AM"),
-    Photo("Photo cadence", "Every 2 weeks"),
-    Water("Water", "Twice a day, 11:00 AM & 4:00 PM"),
-    FastingGoal("Fasting goal", "Once, when a fast reaches its target"),
-    Supplements("Supplements", "Once a day, 9:00 AM"),
-    Workout("Training day", "5:00 PM, on days your plan asks for"),
-    WeeklyRecap("Weekly recap", "Sundays, 7:00 PM"),
+enum class ReminderKind(@StringRes val label: Int, @StringRes val sublabel: Int) {
+    Meals(R.string.profile_reminder_meals, R.string.profile_reminder_meals_sub),
+    WeighIn(R.string.profile_reminder_weigh_in, R.string.profile_reminder_weigh_in_sub),
+    Photo(R.string.profile_reminder_photo, R.string.profile_reminder_photo_sub),
+    Water(R.string.profile_reminder_water, R.string.profile_reminder_water_sub),
+    FastingGoal(R.string.profile_reminder_fasting, R.string.profile_reminder_fasting_sub),
+    Supplements(R.string.profile_reminder_supplements, R.string.profile_reminder_supplements_sub),
+    Workout(R.string.profile_reminder_workout, R.string.profile_reminder_workout_sub),
+    WeeklyRecap(R.string.profile_reminder_recap, R.string.profile_reminder_recap_sub),
 }
 
 internal fun Profile.reminderEnabled(kind: ReminderKind): Boolean = when (kind) {

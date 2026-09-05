@@ -6,19 +6,21 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 private const val VERSION_NAME = "1.0.0 (prototype)"
 
 @Composable
 internal fun ProfileAboutSection(modifier: Modifier = Modifier) {
-    SettingsSection(label = "About", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_about), modifier = modifier) {
         AppCard {
             SettingsRow(
-                label = "Version",
+                label = stringResource(R.string.profile_version),
                 trailing = {
                     Text(
                         text = VERSION_NAME,
@@ -28,7 +30,7 @@ internal fun ProfileAboutSection(modifier: Modifier = Modifier) {
                 },
             )
             Text(
-                text = "Estimates based on your inputs, not medical advice.",
+                text = stringResource(R.string.profile_disclaimer),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp),

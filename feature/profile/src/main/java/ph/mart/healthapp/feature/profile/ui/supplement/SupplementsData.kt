@@ -1,6 +1,9 @@
 package ph.mart.healthapp.feature.profile.ui.supplement
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The user's supplement list, in full. Soft-deleted rows never reach here — they stay in Room only
@@ -15,12 +18,13 @@ data class SupplementsUiState(
 )
 
 /** "2000 IU · twice daily", or just one half when the other has nothing to say. */
+@Composable
 fun Supplement.summary(): String = listOfNotNull(
     dose.takeIf { it.isNotBlank() },
     when (timesPerDay) {
-        1 -> "once daily"
-        2 -> "twice daily"
-        else -> "${timesPerDay}x daily"
+        1 -> stringResource(R.string.profile_supplements_once_daily)
+        2 -> stringResource(R.string.profile_supplements_twice_daily)
+        else -> stringResource(R.string.profile_supplements_times_daily, timesPerDay)
     },
 ).joinToString(" · ")
 

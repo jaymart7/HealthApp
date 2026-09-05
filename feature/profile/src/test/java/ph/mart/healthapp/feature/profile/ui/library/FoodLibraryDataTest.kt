@@ -8,7 +8,14 @@ import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
+import ph.mart.healthapp.core.data.food.perServing
+import ph.mart.healthapp.core.data.food.totalKcal
 
+/**
+ * The row summaries are `stringResource` calls now, so what a JVM test can still reach is the
+ * arithmetic they are handed — which is the half that was ever worth asserting. The wording is
+ * `strings.xml`'s.
+ */
 class FoodLibraryDataTest {
 
     private fun item(name: String, calories: Int) =
@@ -19,12 +26,9 @@ class FoodLibraryDataTest {
 
     @Test
     fun `a saved meal counts its items and totals their calories`() {
-        assertEquals("2 items · 380 kcal", meal(item("Oats", 230), item("Yogurt", 150)).summary())
-    }
-
-    @Test
-    fun `one item is not "1 items"`() {
-        assertEquals("1 item · 230 kcal", meal(item("Oats", 230)).summary())
+        val breakfast = meal(item("Oats", 230), item("Yogurt", 150))
+        assertEquals(2, breakfast.items.size)
+        assertEquals(380, breakfast.totalKcal())
     }
 
     @Test
@@ -37,7 +41,7 @@ class FoodLibraryDataTest {
         )
 
         // 1480 across four portions — the total is a number nobody eats in one sitting.
-        assertEquals("370 kcal per serving · makes 4", chili.summary())
+        assertEquals(370, chili.perServing().calories)
     }
 
     @Test
@@ -51,27 +55,10 @@ class FoodLibraryDataTest {
     }
 
     @Test
-    fun `a food says what amount its calories are for, without a trailing zero`() {
-        assertEquals(
-            "165 kcal · 100 g",
-            ScannedProduct("Chicken breast", 100.0, "g", 165, 31, 0, 4).summary(),
-        )
-        assertEquals(
-            "420 kcal · 1 serving",
-            ScannedProduct("Adobo", 1.0, "serving", 420, 28, 12, 28).summary(),
-        )
-        assertEquals(
-            "60 kcal · 0.5 cup",
-            ScannedProduct("Rice", 0.5, "cup", 60, 1, 14, 0).summary(),
-        )
-    }
-
-    @Test
-    fun `a food's third line is its macros`() {
-        assertEquals(
-            "P 31g · C 0g · F 4g",
-            ScannedProduct("Chicken breast", 100.0, "g", 165, 31, 0, 4).macroLine(),
-        )
+    fun `a food's portion drops a trailing zero but keeps a real fraction`() {
+        assertEquals("100", ScannedProduct("Chicken breast", 100.0, "g", 165, 31, 0, 4).portionLabel())
+        assertEquals("1", ScannedProduct("Adobo", 1.0, "serving", 420, 28, 12, 28).portionLabel())
+        assertEquals("0.5", ScannedProduct("Rice", 0.5, "cup", 60, 1, 14, 0).portionLabel())
     }
 
     /** The empty state must not flash before the first Room emission lands. */

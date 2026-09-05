@@ -5,12 +5,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.fasting.FAST_GOAL_HOURS
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The fasting target, the second editable goal on this screen for the same reason the water one is
@@ -26,12 +28,12 @@ internal fun ProfileFastingSection(
     onSetGoal: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SettingsSection(label = "Fasting", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_fasting), modifier = modifier) {
         AppCard {
             NumericStepperField(
-                label = "Fasting goal · ${24 - goalHours}h eating window",
+                label = stringResource(R.string.profile_fasting_goal, 24 - goalHours),
                 value = "$goalHours",
-                unitSuffix = "hours",
+                unitSuffix = stringResource(R.string.profile_fasting_unit),
                 onIncrement = { onSetGoal((goalHours + 1).coerceAtMost(FAST_GOAL_HOURS.last)) },
                 onDecrement = { onSetGoal((goalHours - 1).coerceAtLeast(FAST_GOAL_HOURS.first)) },
             )

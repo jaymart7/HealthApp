@@ -15,6 +15,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -28,6 +29,7 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.LibraryRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 
@@ -74,8 +76,8 @@ private fun FoodLibraryContent(
         if (!uiState.loaded) {
             FullScreenState(
                 icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                heading = "Nothing saved yet",
-                body = "Save a food or a meal from the diary, or build a recipe, and it shows up here.",
+                heading = stringResource(R.string.profile_library_empty_heading),
+                body = stringResource(R.string.profile_library_empty_body),
             )
             return@Surface
         }
@@ -89,7 +91,7 @@ private fun FoodLibraryContent(
             if (uiState.myFoods.isNotEmpty()) {
                 // First: it is the list the user authored deliberately, and the one the food
                 // search leads with.
-                LibrarySection(label = "My foods") {
+                LibrarySection(label = stringResource(R.string.profile_library_my_foods)) {
                     uiState.myFoods.forEach { food ->
                         LibraryRow(
                             name = food.name,
@@ -102,7 +104,7 @@ private fun FoodLibraryContent(
                 }
             }
             if (uiState.savedMeals.isNotEmpty()) {
-                LibrarySection(label = "Saved meals") {
+                LibrarySection(label = stringResource(R.string.profile_library_saved_meals)) {
                     uiState.savedMeals.forEach { meal ->
                         LibraryRow(
                             name = meal.name,
@@ -115,7 +117,7 @@ private fun FoodLibraryContent(
                 }
             }
             if (uiState.recipes.isNotEmpty()) {
-                LibrarySection(label = "Recipes") {
+                LibrarySection(label = stringResource(R.string.profile_library_recipes)) {
                     uiState.recipes.forEach { recipe ->
                         LibraryRow(
                             name = recipe.name,
@@ -134,15 +136,15 @@ private fun FoodLibraryContent(
     // first, rather than deleting with an undo the way a swiped diary row does.
     pendingDelete?.let { target ->
         val noun = when (target) {
-            is Target.Food -> "food"
-            is Target.Meal -> "saved meal"
-            is Target.Dish -> "recipe"
+            is Target.Food -> stringResource(R.string.profile_library_noun_food)
+            is Target.Meal -> stringResource(R.string.profile_library_noun_meal)
+            is Target.Dish -> stringResource(R.string.profile_library_noun_recipe)
         }
         DiscardConfirmDialog(
-            title = "Delete ${target.name}?",
-            body = "This $noun is removed for good. Anything already logged from it stays in your diary.",
-            confirmLabel = "Delete",
-            dismissLabel = "Keep",
+            title = stringResource(R.string.profile_delete_title, target.name),
+            body = stringResource(R.string.profile_library_delete_body, noun),
+            confirmLabel = stringResource(R.string.profile_delete),
+            dismissLabel = stringResource(R.string.profile_keep),
             onConfirm = {
                 onEvent(
                     when (target) {

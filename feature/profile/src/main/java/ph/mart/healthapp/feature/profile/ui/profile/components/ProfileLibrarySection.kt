@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The way into everything the user has saved: meals and recipes on one screen, workout routines on
@@ -27,18 +29,18 @@ internal fun ProfileLibrarySection(
     onOpenRoutines: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SettingsSection(label = "Library", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_library), modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppCard(onClick = onOpenLibrary) {
                 SettingsRow(
-                    label = "Food library",
-                    sublabel = "Your foods, saved meals and recipes",
+                    label = stringResource(R.string.profile_library_food),
+                    sublabel = stringResource(R.string.profile_library_food_sub),
                 )
             }
             AppCard(onClick = onOpenRoutines) {
                 SettingsRow(
-                    label = "Workout routines",
-                    sublabel = "Set which days you train, rename or delete",
+                    label = stringResource(R.string.profile_library_routines),
+                    sublabel = stringResource(R.string.profile_library_routines_sub),
                 )
             }
         }

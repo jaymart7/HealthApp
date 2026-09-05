@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
@@ -20,6 +21,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * Renames one saved meal, recipe or workout routine. Same shape as the sheet that named it in the
@@ -37,17 +39,17 @@ internal fun RenameSheet(
     var name by remember(currentName) { mutableStateOf(currentName) }
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Rename",
+            text = stringResource(R.string.profile_rename),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AppTextField(value = name, onValueChange = { name = it }, placeholder = "Name")
+            AppTextField(value = name, onValueChange = { name = it }, placeholder = stringResource(R.string.profile_name))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.profile_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
-                    label = "Save",
+                    label = stringResource(R.string.profile_save),
                     onClick = { onRename(name) },
                     // Same guard as SaveMealSheet: a nameless saved meal is unidentifiable, and
                     // unlike a diary entry it has no calorie figure to stand in for one.

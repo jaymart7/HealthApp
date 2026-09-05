@@ -24,12 +24,12 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.PlanDay
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
-import ph.mart.healthapp.core.data.exercise.WEEKDAY_INITIALS
-import ph.mart.healthapp.core.data.exercise.WEEKDAY_NAMES
 import ph.mart.healthapp.core.data.exercise.dayLabel
 import ph.mart.healthapp.core.data.exercise.plannedSoFar
 import ph.mart.healthapp.core.data.exercise.totalSets
 import ph.mart.healthapp.core.data.exercise.trainedSoFar
+import ph.mart.healthapp.core.data.exercise.weekdayInitials
+import ph.mart.healthapp.core.data.exercise.weekdayNames
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -141,19 +141,19 @@ private fun PlannedRoutineRow(routine: Routine, trained: Boolean, onStart: () ->
  */
 @Composable
 private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
-    // ponytail: WEEKDAY_NAMES is still an English list in :core:data, shared with :feature:profile
-    // — it moves when that module goes through the pass.
+    val names = weekdayNames()
     val spoken = week.mapIndexedNotNull { index, day ->
         if (!day.planned) {
             null
         } else {
             stringResource(
                 if (day.trained) R.string.home_plan_day_done else R.string.home_plan_day_planned,
-                WEEKDAY_NAMES[index],
+                names[index],
             )
         }
     }.joinToString(", ")
     val nothingPlanned = stringResource(R.string.home_plan_nothing)
+    val initials = weekdayInitials()
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = modifier
@@ -180,7 +180,7 @@ private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(if (day.isToday) 18.dp else 14.dp),
                 )
                 Text(
-                    text = WEEKDAY_INITIALS[index],
+                    text = initials[index],
                     style = MaterialTheme.typography.labelSmall,
                     textAlign = TextAlign.Center,
                     color = if (day.isToday) {

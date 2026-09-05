@@ -6,10 +6,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /** Export and import are the only destructive-ish controls on this screen, so each says exactly
  * what it does in its sublabel. [message] carries an import failure, or a confirmation. */
@@ -21,14 +23,17 @@ internal fun ProfileDataSection(
     message: String? = null,
     messageIsError: Boolean = false,
 ) {
-    SettingsSection(label = "Data", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_data), modifier = modifier) {
         AppCard(onClick = onExport) {
-            SettingsRow(label = "Export data (JSON)", sublabel = "Photos are not included in exports")
+            SettingsRow(
+                label = stringResource(R.string.profile_export),
+                sublabel = stringResource(R.string.profile_export_sub),
+            )
         }
         AppCard(onClick = onImport) {
             SettingsRow(
-                label = "Import data (JSON)",
-                sublabel = "Replaces your current profile and food entries",
+                label = stringResource(R.string.profile_import),
+                sublabel = stringResource(R.string.profile_import_sub),
             )
         }
         if (message != null) {

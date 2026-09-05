@@ -6,10 +6,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /**
  * The one switch that decides whether the cycle surfaces exist at all.
@@ -28,12 +30,11 @@ internal fun ProfileCycleSection(
     onSetEnabled: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SettingsSection(label = "Cycle", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_cycle), modifier = modifier) {
         AppCard {
             SettingsRow(
-                label = "Track your cycle",
-                sublabel = "Adds a Home card and a Progress page for period logging. Stays on " +
-                    "this phone — it is never sent to the coach or used for an insight.",
+                label = stringResource(R.string.profile_cycle_track),
+                sublabel = stringResource(R.string.profile_cycle_track_sub),
                 trailing = { Switch(checked = enabled, onCheckedChange = onSetEnabled) },
             )
         }

@@ -269,6 +269,8 @@ internal fun buildExportJson(
 internal fun parseExport(text: String): Result<ImportData> = runCatching {
     val export = json.decodeFromString<FitPulseExport>(text)
     require(export.schemaVersion <= EXPORT_SCHEMA_VERSION) {
+        // Stays in Kotlin with the @SerialNames above it: this is an exception message, surfaced
+        // verbatim by the import path, and a translated `error()` string is still an exception.
         "This file was written by a newer version of FitPulse."
     }
     ImportData(

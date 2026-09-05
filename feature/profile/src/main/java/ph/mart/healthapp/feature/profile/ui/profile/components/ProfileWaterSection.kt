@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -13,6 +14,7 @@ import ph.mart.healthapp.core.data.water.waterVolumeLabel
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.profile.R
 
 /** The daily water goal — the one editable target on this screen, because unlike calories and
  * macros it isn't derived from anything: Mifflin–St Jeor has nothing to say about hydration.
@@ -24,12 +26,12 @@ internal fun ProfileWaterSection(
     onSetGoal: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    SettingsSection(label = "Water", modifier = modifier) {
+    SettingsSection(label = stringResource(R.string.profile_section_water), modifier = modifier) {
         AppCard {
             NumericStepperField(
-                label = "Daily goal · ${waterVolumeLabel(goalGlasses, unit)}",
+                label = stringResource(R.string.profile_water_goal, waterVolumeLabel(goalGlasses, unit)),
                 value = "$goalGlasses",
-                unitSuffix = "glasses",
+                unitSuffix = stringResource(R.string.profile_water_unit),
                 onIncrement = { onSetGoal((goalGlasses + 1).coerceAtMost(WATER_GOAL_GLASSES.last)) },
                 onDecrement = { onSetGoal((goalGlasses - 1).coerceAtLeast(WATER_GOAL_GLASSES.first)) },
             )
