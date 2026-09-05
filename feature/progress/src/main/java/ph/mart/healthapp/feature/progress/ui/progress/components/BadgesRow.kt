@@ -54,6 +54,8 @@ internal fun BadgesRow(
     modifier: Modifier = Modifier,
 ) {
     val filled = if (total == 0) 0 else (earned * PROGRESS_DOTS + total / 2) / total
+    // Resolved here because a semantics lambda cannot read a resource.
+    val dotsDescription = stringResource(R.string.progress_badges_earned_description, earned, total)
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),
@@ -71,7 +73,7 @@ internal fun BadgesRow(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "$earned of $total earned · $families families",
+                    text = stringResource(R.string.progress_badges_summary, earned, total, families),
                     style = MaterialTheme.typography.bodySmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -82,7 +84,7 @@ internal fun BadgesRow(
                     .padding(horizontal = 12.dp)
                     // One description for the strip: five dots read out one at a time is noise
                     // over a figure the line above already states.
-                    .clearAndSetSemantics { contentDescription = "$earned of $total badges earned" },
+                    .clearAndSetSemantics { contentDescription = dotsDescription },
             ) {
                 repeat(PROGRESS_DOTS) { index ->
                     Box(

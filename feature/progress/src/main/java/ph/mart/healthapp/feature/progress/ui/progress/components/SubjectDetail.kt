@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.progress.ui.progress.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -187,8 +188,8 @@ private fun EmptyDetail(
         Box(modifier = Modifier.weight(1f)) {
             FullScreenState(
                 icon = { MascotAvatar(state = copy.mascot, size = 64.dp) },
-                heading = copy.heading,
-                body = copy.body,
+                heading = stringResource(copy.heading),
+                body = stringResource(copy.body),
                 // The two subjects whose sheets are already on this screen, so pointing at one
                 // adds no entry point. Every other subject is filled from somewhere else in the
                 // app, and a button that only navigated would be a button explaining a screen.
@@ -247,80 +248,79 @@ private fun Switcher(
 }
 
 /** What a subject with nothing in it says. The copy each tab already carried, moved here so the
- * empty page and the empty card can be read against each other in one place. */
-private data class EmptyCopy(val heading: String, val body: String, val mascot: MascotState)
+ * empty page and the empty card can be read against each other in one place. Resource ids, not
+ * words — the screen resolves them, the way [Subject.label] is already carried. */
+private data class EmptyCopy(@StringRes val heading: Int, @StringRes val body: Int, val mascot: MascotState)
 
 private fun emptyCopy(subject: Subject): EmptyCopy = when (subject) {
     Subject.Weight -> EmptyCopy(
-        "No weight logged yet",
-        "Log your weight from the button on any tab and your trend shows up here.",
+        R.string.progress_empty_weight_heading,
+        R.string.progress_empty_weight_body,
         MascotState.Sleepy,
     )
     Subject.Photos -> EmptyCopy(
-        "No progress photos yet",
-        "Add your first photo from the button on any tab to start tracking changes over time.",
+        R.string.progress_empty_photos_heading,
+        R.string.progress_empty_photos_body,
         MascotState.Sleepy,
     )
     Subject.Measurements -> EmptyCopy(
-        "No measurements yet",
-        "Add a chest, waist, hips, arm or thigh reading and it charts here.",
+        R.string.progress_empty_measurements_heading,
+        R.string.progress_empty_measurements_body,
         MascotState.Idle,
     )
     Subject.Nutrition -> EmptyCopy(
-        "Nothing logged yet",
-        "Log a few meals in the diary and your calorie trend shows up here.",
+        R.string.progress_empty_nutrition_heading,
+        R.string.progress_empty_nutrition_body,
         MascotState.Sleepy,
     )
     Subject.Fasting -> EmptyCopy(
-        "No fasts yet",
-        "Start one from the Home screen and it lands here when you end it.",
+        R.string.progress_empty_fasting_heading,
+        R.string.progress_empty_fasting_body,
         MascotState.Sleepy,
     )
     Subject.Supplements -> EmptyCopy(
-        "No supplements ticked yet",
-        "Add what you take in Profile, then tick it off on Home and it shows up here.",
+        R.string.progress_empty_supplements_heading,
+        R.string.progress_empty_supplements_body,
         MascotState.Sleepy,
     )
     Subject.Activity -> EmptyCopy(
-        "No activity yet",
-        "Connect Google Health for steps, or log a workout from the diary.",
+        R.string.progress_empty_activity_heading,
+        R.string.progress_empty_activity_body,
         MascotState.Idle,
     )
     Subject.Strength -> EmptyCopy(
-        "Nothing lifted yet",
-        "Log a strength workout from the diary and its sets show up here.",
+        R.string.progress_empty_strength_heading,
+        R.string.progress_empty_strength_body,
         MascotState.Idle,
     )
     Subject.Sleep -> EmptyCopy(
-        "No sleep data yet",
-        "Sleep arrives from your paired watch. Connect Google Health in Profile and your nights " +
-            "show up here.",
+        R.string.progress_empty_sleep_heading,
+        R.string.progress_empty_sleep_body,
         MascotState.Sleepy,
     )
     Subject.Mood -> EmptyCopy(
-        "No mood logged yet",
-        "Tap how you're feeling on the Home screen and it shows up here.",
+        R.string.progress_empty_mood_heading,
+        R.string.progress_empty_mood_body,
         MascotState.Sleepy,
     )
     Subject.Cycle -> EmptyCopy(
-        "Nothing logged yet",
-        "Log a period day and this page charts your flow, your period lengths and when the next " +
-            "one is due.",
+        R.string.progress_empty_cycle_heading,
+        R.string.progress_empty_cycle_body,
         MascotState.Idle,
     )
     Subject.Heart -> EmptyCopy(
-        "No heart data yet",
-        "Connect Google Health in Profile and your readings show up here.",
+        R.string.progress_empty_heart_heading,
+        R.string.progress_empty_heart_body,
         MascotState.Idle,
     )
     Subject.BloodPressure -> EmptyCopy(
-        "No readings yet",
-        "Log the two numbers off your cuff and they'll chart here.",
+        R.string.progress_empty_pressure_heading,
+        R.string.progress_empty_pressure_body,
         MascotState.Idle,
     )
     Subject.Badges -> EmptyCopy(
-        "No badges yet",
-        "Log anything — a meal, a glass of water, a workout — and the first one lights up.",
+        R.string.progress_empty_badges_heading,
+        R.string.progress_empty_badges_body,
         MascotState.Idle,
     )
 }

@@ -34,31 +34,77 @@ val uiArguments = listOf(
 )
 
 /**
+ * Files whose English is a decision recorded at its own definition — a pure function with a JVM
+ * test over its exact wording, an exception message, or a proper name. Each carries the comment
+ * saying so; this list is only what keeps [checkUiLiterals] from arguing with it.
+ */
+val literalExceptions = listOf(
+    "SubjectSummary.kt",
+    "AchievementsDetail.kt",
+    "StreakCard.kt",
+    "HomeData.kt",
+    "DiaryDateHeader.kt",
+    "GoalProjectionLine.kt",
+    "MascotAvatar.kt",
+    "ProfileExport.kt",
+)
+
+/**
  * Fails on a user-facing string literal left in Kotlin in an already-localized module.
  *
  * Stock lint is no help here: `HardcodedText` scans XML layout resources, and this app has none —
  * it would pass clean on a module with three hundred Kotlin literals. Preview fixtures are
  * skipped; they are debug-only sample data and no translator reads them.
  *
- * ponytail: a line-based grep, not a parser — a literal split across lines, or passed positionally
- * rather than by name, slips through. A Compose lint rule is the upgrade path if that starts
- * happening.
+ * Two rules. The named one runs over every localized module and catches `text = "Add reading"`.
+ * The positional three run only where copy lives — a `ui/` tree, or a shared component — because
+ * `StatRow("Systolic", …)` reads the same as a Room query, a prompt or a `@SerialName` everywhere
+ * else. That split is not cosmetic: the whole of `:feature:progress` passed this task while
+ * thirteen empty-state pages were still English, because every one of those literals was
+ * positional.
+ *
+ * ponytail: a line-based grep, not a parser — a literal split across lines, or one starting with a
+ * template (`"$n tracked"`), still slips through. A Compose lint rule is the upgrade path if that
+ * starts happening.
  */
 tasks.register("checkUiLiterals") {
     group = "verification"
     description = "Fails if a localized module still passes a string literal to a UI argument."
     val roots = localizedModules.map { file("$it/src/main") }
-    val literal = Regex("""\b(${uiArguments.joinToString("|")})\s*=\s*"[A-Z]""")
-    val previewStart = Regex("""fun \w*Preview\(""")
+    val named = Regex("""\b(${uiArguments.joinToString("|")})\s*=\s*"[A-Z]""")
+    val positional = listOf(
+        Regex("""[(,]\s*"[A-Z][a-z]"""),  // a literal opening an argument
+        Regex("""^\s*"[A-Z][a-z]"""),     // a literal alone on its own line
+        Regex("""->\s*"[A-Z][a-z]"""),    // a `when` branch returning copy
+    )
+    val previewStart = Regex("""fun \w*Preview\(|^(private )?val (PREVIEW|preview)""")
+    // Copied into a local: `doLast` cannot capture a script property and stay configuration-cacheable.
+    val exceptions = literalExceptions
     doLast {
         val hits = roots.flatMap { root ->
             root.walkTopDown().filter { it.extension == "kt" }.flatMap { source ->
+                val path = source.path.replace(File.separatorChar, '/')
+                val drawsCopy = ("/ui/" in path || "/designsystem/component/" in path) &&
+                    source.name !in exceptions
                 var inPreview = false
                 source.readLines().mapIndexedNotNull { index, line ->
+                    // A preview fixture runs until the next line that starts in column one, so a
+                    // `fun …Preview()`, a `val PREVIEW_ITEMS = listOf(` and a two-line `val` all
+                    // end where the next top-level declaration begins.
+                    if (inPreview) {
+                        if (line.isBlank() || line.first().isWhitespace()) return@mapIndexedNotNull null
+                        inPreview = false
+                    }
+                    val trimmed = line.trim()
                     when {
                         previewStart.containsMatchIn(line) -> { inPreview = true; null }
-                        inPreview -> { if (line == "}") inPreview = false; null }
-                        literal.containsMatchIn(line) -> "${source.path}:${index + 1}: ${line.trim()}"
+                        // An `error()` or `require()` message is an exception, not copy, and an
+                        // annotation argument is never read by anyone.
+                        trimmed.startsWith("//") || trimmed.startsWith("*") ||
+                            trimmed.startsWith("@") || "error(" in line || "require(" in line -> null
+                        named.containsMatchIn(line) ||
+                            (drawsCopy && positional.any { it.containsMatchIn(line) }) ->
+                            "${source.path}:${index + 1}: $trimmed"
                         else -> null
                     }
                 }

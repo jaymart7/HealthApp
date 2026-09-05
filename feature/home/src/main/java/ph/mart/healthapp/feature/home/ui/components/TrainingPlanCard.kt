@@ -205,7 +205,7 @@ private fun previewWeek(todayIndex: Int, planned: Set<Int>, trainedDays: Set<Int
         )
     }
 
-private val pushDay = Routine(
+private val previewPushDay = Routine(
     id = 1,
     name = "Push day",
     lifts = listOf(RoutineLift("Bench press", 3, 8), RoutineLift("Overhead press", 3, 8)),
@@ -217,7 +217,7 @@ private val pushDay = Routine(
 private fun TrainingPlanCardPreview() {
     AppTheme {
         TrainingPlanCard(
-            todayRoutines = listOf(pushDay),
+            todayRoutines = listOf(previewPushDay),
             week = previewWeek(todayIndex = 2, planned = setOf(0, 2, 4), trainedDays = setOf(0)),
             trained = false,
             onStart = {},
@@ -232,7 +232,7 @@ private fun TrainingPlanCardPreview() {
 private fun TrainingPlanCardDonePreview() {
     AppTheme {
         TrainingPlanCard(
-            todayRoutines = listOf(pushDay),
+            todayRoutines = listOf(previewPushDay),
             week = previewWeek(todayIndex = 2, planned = setOf(0, 2, 4), trainedDays = setOf(0, 2)),
             trained = true,
             onStart = {},

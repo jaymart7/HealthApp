@@ -178,6 +178,11 @@ const val RECENT_STRENGTH_WORKOUTS = 10
 // Here rather than in a feature, for the reason `formatSteps` sits in `health/`: the diary row, the
 // strength screen and the Progress tab all print these, and `:feature:*` modules never import each
 // other. Unit conversion lives one package over, in `profile/Units.kt`.
+//
+// The English below stays in Kotlin: each is a pure function with a JVM test over its exact wording
+// (`StrengthTest`), the reading `StreakCard`'s `dayCountLabel` and `insightFor()` already got.
+// Moving it means handing every one of them a `Context` — none of these is a composable — for a
+// noun and a plural, and that is its own decision.
 
 /** Trims the pointless ".0" — 60 kg is "60", 62.5 kg is "62.5". */
 fun formatLoad(value: Double): String =

@@ -83,7 +83,7 @@ private fun BloodPressureDetailContent(
         item {
             HeroValue(
                 value = averages.systolic?.let { "$it/${averages.diastolic}" } ?: "—",
-                caption = "mmHg average",
+                caption = stringResource(R.string.progress_bp_hero),
             )
         }
         item {
@@ -95,7 +95,7 @@ private fun BloodPressureDetailContent(
                 range = range,
                 onRangeChange = { state.setRange(Subject.BloodPressure, it) },
                 legend = listOf(
-                    LegendEntry("Diastolic to systolic, per day", MaterialTheme.colorScheme.secondary),
+                    LegendEntry(stringResource(R.string.progress_bp_legend), MaterialTheme.colorScheme.secondary),
                 ),
             ) {
                 // Each day as one bar spanning its mean diastolic up to its mean systolic.
@@ -110,18 +110,18 @@ private fun BloodPressureDetailContent(
         item {
             StatRowsCard(
                 rows = listOfNotNull(
-                    StatRow("Systolic", statLabel(averages.systolic)),
-                    StatRow("Diastolic", statLabel(averages.diastolic)),
+                    StatRow(stringResource(R.string.progress_bp_systolic), statLabel(averages.systolic)),
+                    StatRow(stringResource(R.string.progress_bp_diastolic), statLabel(averages.diastolic)),
                     // Dropped rather than "—" when no reading in the window carried one: the pulse
                     // keeps its own denominator, so an absent one is absent, not zero.
-                    averages.pulseBpm?.let { StatRow("Pulse", statLabel(it)) },
-                    StatRow("Readings", "${averages.readings}"),
+                    averages.pulseBpm?.let { StatRow(stringResource(R.string.progress_bp_pulse_stat), statLabel(it)) },
+                    StatRow(stringResource(R.string.progress_bp_readings_stat), "${averages.readings}"),
                 ),
             )
         }
         item {
             PrimaryButton(
-                label = "+ Add reading",
+                label = stringResource(R.string.progress_bp_add),
                 onClick = { state.openBloodPressureSheet() },
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
             )

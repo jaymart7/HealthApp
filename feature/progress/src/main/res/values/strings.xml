@@ -347,4 +347,56 @@
     <string name="progress_weight_replacing">Replacing your entry for this date.</string>
     <string name="progress_weight_label">Weight</string>
     <string name="progress_weight_note">Note (optional)</string>
+    <!-- Empty subject pages -->
+    <string name="progress_empty_weight_heading">No weight logged yet</string>
+    <string name="progress_empty_weight_body">Log your weight from the button on any tab and your trend shows up here.</string>
+    <string name="progress_empty_photos_heading">No progress photos yet</string>
+    <string name="progress_empty_photos_body">Add your first photo from the button on any tab to start tracking changes over time.</string>
+    <string name="progress_empty_measurements_heading">No measurements yet</string>
+    <string name="progress_empty_measurements_body">Add a chest, waist, hips, arm or thigh reading and it charts here.</string>
+    <string name="progress_empty_nutrition_heading">Nothing logged yet</string>
+    <string name="progress_empty_nutrition_body">Log a few meals in the diary and your calorie trend shows up here.</string>
+    <string name="progress_empty_fasting_heading">No fasts yet</string>
+    <string name="progress_empty_fasting_body">Start one from the Home screen and it lands here when you end it.</string>
+    <string name="progress_empty_supplements_heading">No supplements ticked yet</string>
+    <string name="progress_empty_supplements_body">Add what you take in Profile, then tick it off on Home and it shows up here.</string>
+    <string name="progress_empty_activity_heading">No activity yet</string>
+    <string name="progress_empty_activity_body">Connect Google Health for steps, or log a workout from the diary.</string>
+    <string name="progress_empty_strength_heading">Nothing lifted yet</string>
+    <string name="progress_empty_strength_body">Log a strength workout from the diary and its sets show up here.</string>
+    <string name="progress_empty_sleep_heading">No sleep data yet</string>
+    <string name="progress_empty_sleep_body">Sleep arrives from your paired watch. Connect Google Health in Profile and your nights show up here.</string>
+    <string name="progress_empty_mood_heading">No mood logged yet</string>
+    <string name="progress_empty_mood_body">Tap how you\'re feeling on the Home screen and it shows up here.</string>
+    <string name="progress_empty_cycle_heading">Nothing logged yet</string>
+    <string name="progress_empty_cycle_body">Log a period day and this page charts your flow, your period lengths and when the next one is due.</string>
+    <string name="progress_empty_heart_heading">No heart data yet</string>
+    <string name="progress_empty_heart_body">Connect Google Health in Profile and your readings show up here.</string>
+    <string name="progress_empty_pressure_heading">No readings yet</string>
+    <string name="progress_empty_pressure_body">Log the two numbers off your cuff and they\'ll chart here.</string>
+    <string name="progress_empty_badges_heading">No badges yet</string>
+    <string name="progress_empty_badges_body">Log anything — a meal, a glass of water, a workout — and the first one lights up.</string>
+    <!-- Badge families -->
+    <string name="progress_badge_family_streak">Streak</string>
+    <string name="progress_badge_family_days_logged">Days logged</string>
+    <string name="progress_badge_family_weight_moved">Toward your goal</string>
+    <string name="progress_badge_family_workouts">Workouts</string>
+    <string name="progress_badge_family_fasts">Fasts completed</string>
+    <string name="progress_badge_family_longest_fast">Longest fast</string>
+    <string name="progress_badge_family_photos">Progress photos</string>
+    <string name="progress_badges_summary">%1$d of %2$d earned · %3$d families</string>
+    <string name="progress_badges_earned_description">%1$d of %2$d badges earned</string>
+    <!-- Group headers -->
+    <string name="progress_group_tracked">%1$d tracked</string>
+    <string name="progress_group_tracked_of">%1$d of %2$d tracked</string>
+    <!-- Blood pressure -->
+    <string name="progress_bp_hero">mmHg average</string>
+    <string name="progress_bp_legend">Diastolic to systolic, per day</string>
+    <string name="progress_bp_pulse_stat">Pulse</string>
+    <string name="progress_bp_readings_stat">Readings</string>
+    <string name="progress_bp_add">+ Add reading</string>
+    <!-- Supplements stats -->
+    <string name="progress_supplements_average">Average taken</string>
+    <string name="progress_supplements_full_days">Full days</string>
+    <string name="progress_supplements_days_logged">Days logged</string>
 </resources>

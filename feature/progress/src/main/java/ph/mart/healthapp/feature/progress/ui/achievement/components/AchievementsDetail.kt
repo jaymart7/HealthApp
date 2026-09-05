@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.progress.ui.achievement.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,7 +64,7 @@ private fun BadgeGroupCard(group: BadgeGroup, unit: UnitSystem) {
                 .padding(bottom = 12.dp),
         ) {
             Text(
-                text = titleFor(group.family),
+                text = stringResource(titleFor(group.family)),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -93,14 +94,15 @@ private fun BadgeGroupCard(group: BadgeGroup, unit: UnitSystem) {
     }
 }
 
-internal fun titleFor(family: BadgeFamily): String = when (family) {
-    BadgeFamily.Streak -> "Streak"
-    BadgeFamily.DaysLogged -> "Days logged"
-    BadgeFamily.WeightMoved -> "Toward your goal"
-    BadgeFamily.Workouts -> "Workouts"
-    BadgeFamily.Fasts -> "Fasts completed"
-    BadgeFamily.LongestFast -> "Longest fast"
-    BadgeFamily.Photos -> "Progress photos"
+@StringRes
+internal fun titleFor(family: BadgeFamily): Int = when (family) {
+    BadgeFamily.Streak -> R.string.progress_badge_family_streak
+    BadgeFamily.DaysLogged -> R.string.progress_badge_family_days_logged
+    BadgeFamily.WeightMoved -> R.string.progress_badge_family_weight_moved
+    BadgeFamily.Workouts -> R.string.progress_badge_family_workouts
+    BadgeFamily.Fasts -> R.string.progress_badge_family_fasts
+    BadgeFamily.LongestFast -> R.string.progress_badge_family_longest_fast
+    BadgeFamily.Photos -> R.string.progress_badge_family_photos
 }
 
 /** The weight tiers are kg-native (see [ph.mart.healthapp.core.data.streak.WeightBadge]), so

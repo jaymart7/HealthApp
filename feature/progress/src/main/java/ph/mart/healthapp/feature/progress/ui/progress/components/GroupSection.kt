@@ -83,9 +83,9 @@ internal fun GroupSection(
             )
             Text(
                 text = if (trackedCount == subjects.size) {
-                    "$trackedCount tracked"
+                    stringResource(R.string.progress_group_tracked, trackedCount)
                 } else {
-                    "$trackedCount of ${subjects.size} tracked"
+                    stringResource(R.string.progress_group_tracked_of, trackedCount, subjects.size)
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

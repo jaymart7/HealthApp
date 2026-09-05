@@ -1499,10 +1499,21 @@ what stop the next pass undoing it.
   layout resources; this app has none, so it would pass clean on a module with three hundred
   Kotlin literals. The task in the root build greps every module in `localizedModules` for a
   capitalized literal in a copy-carrying argument (`text =`, `label =`, `contentDescription =`,
-  and the rest) and skips `fun *Preview()` bodies — preview fixtures are debug-only sample data
-  and no translator reads them. A module joins the list in its own commit. *ponytail: a line-based
-  grep, not a parser — a literal split across lines or passed positionally slips through, and a
-  Compose lint rule is the upgrade path.*
+  and the rest) and skips preview fixtures — a `fun *Preview()` body or a `val PREVIEW_*` block,
+  debug-only sample data no translator reads. A module joins the list in its own commit.
+- **A positional literal is copy too, and three more patterns say so.** `StatRow("Systolic", …)`
+  carries a name and is not a named argument, which is how thirteen empty-state pages stayed
+  English through the pass that was supposed to have converted them — the named rule ran clean over
+  every one. So the gate also flags a literal opening an argument (`("Cap`), a literal alone on its
+  own line (the multi-line-constructor shape), and a `when` branch returning one (`-> "Cap"`).
+  Those three run **only** where copy lives — a `ui/` tree or `:core:designsystem`'s `component/` —
+  because `("Branded"` reads identically in a Room query, an AI prompt or a request header, and
+  scoping the rule was cheaper than allowlisting every file that holds one. `error()` and
+  `require()` lines are skipped: an exception message is not copy. `literalExceptions` in the root
+  build is the eight files whose English is a decision recorded at its own definition, one name per
+  line, and it is the only place the gate can be argued with. *ponytail: still a line-based grep,
+  not a parser — a literal split across lines, or one starting with a template (`"$n tracked"`),
+  slips through, and a Compose lint rule is the upgrade path.*
 - **Keys are `<module>_<screen>_<thing>`,** flat, lowercase. Enough to grep, not a taxonomy.
 - **A resource id is never a `const val`.** A library module's R fields are runtime values, and
   `const` inlines the placeholder `0` — which is a `Resources$NotFoundException: String resource
@@ -1540,10 +1551,16 @@ what stop the next pass undoing it.
   reason — a resource would freeze the import-time language into a row that outlives it.
   **Pure functions with a JVM test over their wording:** `insightFor()`, `goalProjectionLine()`,
   `:feature:home`'s `greetingFor`/`captionFor`/`weightLineFor`, `:feature:progress`'s
-  `summarize()` and `captionFor()`. Converting those means returning a case type per branch for a
-  composable to resolve; that is one decision, not six, and it has not been taken. Also staying:
-  AI prompts (the model reads them in English), `Reminder.title`/`body`, `MascotCharacter`'s five
-  proper names, and unit symbols — kg, lb, cm, in, kcal, g, mg are not copy.
+  `summarize()` and `captionFor()`, `:feature:food`'s `diaryDateLabel` ("Today"/"Yesterday"), and
+  `:core:data/exercise/Strength.kt`'s three label functions (`loadLabel`, `summaryLabel`,
+  `LiftPerformance.label` — "Bodyweight × 20", "3 sets", "Last: 60 kg × 8"). Converting those means
+  returning a case type per branch for a composable to resolve, or handing a non-composable a
+  `Context` for a noun and a plural; that is one decision, not eight, and it has not been taken —
+  the test is what earns each of them the exemption, so a label without one gets a test rather than
+  a comment. Also staying: AI prompts (the model reads them in English), `Reminder.title`/`body`,
+  `MascotCharacter`'s five proper names, `parseExport`'s `require()` message and the import
+  fallback beside it (an exception's text is an exception's text), and unit symbols — kg, lb, cm,
+  in, kcal, g, mg are not copy.
 - **A test that asserted wording now asserts the rule.** `FoodLibraryDataTest` checks the totals,
   the per-serving division and the portion's dropped trailing zero rather than the sentence the
   resource now owns. Nothing it covered was lost.

@@ -167,6 +167,8 @@ class ProfileViewModel(
                 postSideEffect(ProfileSideEffect.ImportFinished(error = null))
             },
             onFailure = {
+                // The fallback stays in Kotlin beside the `require()` message it stands in for —
+                // see `parseExport`: what surfaces here is an exception's own text either way.
                 postSideEffect(ProfileSideEffect.ImportFinished(it.message ?: "That file couldn't be read."))
             },
         )

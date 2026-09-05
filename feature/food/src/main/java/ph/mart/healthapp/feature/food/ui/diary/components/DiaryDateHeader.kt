@@ -34,7 +34,9 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.food.R
 
-/** "Today" / "Yesterday" / "Aug 27, 2026" — pure, so the two relative cases are testable. */
+/** "Today" / "Yesterday" / "Aug 27, 2026" — pure, so the two relative cases are testable, and
+ * `DiaryDateHeaderTest` asserts both words. That test is what keeps the two of them in Kotlin,
+ * the reading `StreakCard`'s `dayCountLabel` and `goalProjectionLine()` got. */
 internal fun diaryDateLabel(epochDay: Long, today: Long): String = when (epochDay) {
     today -> "Today"
     today - 1 -> "Yesterday"

@@ -59,9 +59,9 @@ internal fun ColumnScope.SupplementsDetailBody(uiState: ProgressUiState, state: 
     }
     StatRowsCard(
         rows = listOf(
-            StatRow("Average taken", average?.let { "${(it * 100).roundToInt()}%" } ?: "—"),
-            StatRow("Full days", "${byDay.count { it.second >= 1f }}"),
-            StatRow("Days logged", "${byDay.size}"),
+            StatRow(stringResource(R.string.progress_supplements_average), average?.let { "${(it * 100).roundToInt()}%" } ?: "—"),
+            StatRow(stringResource(R.string.progress_supplements_full_days), "${byDay.count { it.second >= 1f }}"),
+            StatRow(stringResource(R.string.progress_supplements_days_logged), "${byDay.size}"),
         ),
     )
 }

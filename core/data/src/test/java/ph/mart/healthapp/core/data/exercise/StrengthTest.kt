@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.exercise
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ChartRange
 
 private const val TODAY = 20_000L
@@ -170,5 +171,34 @@ class StrengthTest {
     fun `a cardio row contributes no last time`() {
         val cardio = ExerciseEntry(id = 1, dateEpochDay = TODAY, type = ExerciseType.Run, minutes = 30, burnedKcal = 300)
         assertEquals(emptyMap<String, LiftPerformance>(), listOf(cardio).lastPerformances())
+    }
+
+    // The four below are what earns those labels their place in Kotlin: the wording is asserted
+    // here, so it cannot drift without a red test. See the comment above `loadLabel`.
+    @Test
+    fun `a loaded set names its weight and a bodyweight set names itself`() {
+        assertEquals("60 kg × 8", StrengthSet("Squat", 8, 60.0).loadLabel(UnitSystem.Metric))
+        assertEquals("62.5 kg × 5", StrengthSet("Squat", 5, 62.5).loadLabel(UnitSystem.Metric))
+        assertEquals("Bodyweight × 20", StrengthSet("Push-up", 20, 0.0).loadLabel(UnitSystem.Metric))
+    }
+
+    @Test
+    fun `a summary counts lifts and sets, and singulars stay singular`() {
+        val sets = listOf(StrengthSet("Squat", 8, 60.0), StrengthSet("Squat", 8, 60.0), StrengthSet("Row", 8, 40.0))
+        assertEquals("2 exercises · 3 sets · 1,280 kg", sets.summaryLabel(UnitSystem.Metric))
+        assertEquals("1 exercise · 1 set · 480 kg", listOf(sets.first()).summaryLabel(UnitSystem.Metric))
+    }
+
+    @Test
+    fun `a workout with no volume drops the volume, and no sets says nothing`() {
+        assertEquals("1 exercise · 1 set", listOf(StrengthSet("Push-up", 20, 0.0)).summaryLabel(UnitSystem.Metric))
+        assertEquals("", emptyList<StrengthSet>().summaryLabel(UnitSystem.Metric))
+    }
+
+    @Test
+    fun `last time names the top set and how many sets it took`() {
+        val performance = LiftPerformance("Squat", TODAY, StrengthSet("Squat", 8, 60.0), sets = 3)
+        assertEquals("Last: 60 kg × 8 · 3 sets", performance.label(UnitSystem.Metric))
+        assertEquals("Last: 60 kg × 8 · 1 set", performance.copy(sets = 1).label(UnitSystem.Metric))
     }
 }
