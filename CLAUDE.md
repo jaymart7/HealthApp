@@ -1489,6 +1489,65 @@ Connect.
   `value` — and the scope heart rate rides is itself a guess. Pinning both against a live response
   is what lets `sync()` treat a heart 403 like every other type's.
 
+### Localization
+
+Every module owns a `res/values/strings.xml` and every user-facing string reads from it. No
+translation ships — this is the scaffolding that makes one possible, and the decisions below are
+what stop the next pass undoing it.
+
+- **`./gradlew checkUiLiterals` is the gate, and stock lint is not.** `HardcodedText` scans XML
+  layout resources; this app has none, so it would pass clean on a module with three hundred
+  Kotlin literals. The task in the root build greps every module in `localizedModules` for a
+  capitalized literal in a copy-carrying argument (`text =`, `label =`, `contentDescription =`,
+  and the rest) and skips `fun *Preview()` bodies — preview fixtures are debug-only sample data
+  and no translator reads them. A module joins the list in its own commit. *ponytail: a line-based
+  grep, not a parser — a literal split across lines or passed positionally slips through, and a
+  Compose lint rule is the upgrade path.*
+- **Keys are `<module>_<screen>_<thing>`,** flat, lowercase. Enough to grep, not a taxonomy.
+- **A resource id is never a `const val`.** A library module's R fields are runtime values, and
+  `const` inlines the placeholder `0` — which is a `Resources$NotFoundException: String resource
+  ID #0x0` at the call site, not a compile error. Three of these shipped into a crash on Profile
+  before the device run caught them. `@StringRes val`, always.
+- **Composables resolve; ViewModels name.** A `message` field that crosses a ViewModel boundary
+  carries an `@StringRes Int` (onboarding's health step, the coach's `CoachFailure.reason`) — or,
+  where the message has arguments the screen cannot work out for itself, a small type the screen
+  turns into words (`HealthMessage`). No Context reaches a ViewModel. A string built in a
+  coroutine or a permission callback is the exception, and reads through `LocalContext`.
+- **A semantics lambda cannot read a resource**, so every `contentDescription` inside
+  `clearAndSetSemantics {}` is resolved one line above it. That is a dozen call sites and the
+  pattern is uniform on purpose.
+- **Weekday names come from `DateFormatSymbols`, not a resource array.** The stdlib already has
+  them per locale, so `weekdayNames()`/`weekdayShort()`/`weekdayInitials()` in
+  `:core:data/exercise/TrainingPlan.kt` replaced three English lists and there is nothing to
+  translate. They index from Sunday and this app counts from Monday — `WeekdayNamesTest` is the
+  guard, because getting it wrong rotates every routine's plan by a day.
+- **`:core:data` has a `strings.xml`, and that is not a layering breach.** Six enums there
+  (`ChartRange`, `MoodLevel`, `ExerciseType`, `BloodPressureCategory`, `FlowLevel`,
+  `CycleSymptom`) carry labels a feature renders, and `:core:designsystem` has no dependency on
+  that module — so the alternative was the same six lists copied into every feature that draws a
+  chip. `CALORIE_FLOOR_WARNING` lives there for the reason it always did: one safety warning, three
+  screens.
+- **Display names live where the enum's `name` is not the display name.** `MealType.labelRes()`
+  sits in `:feature:food/ui/shared/`, `ActivityLevel.label()` in `:feature:profile`, the four tab
+  names in `:app` — because each enum's `name` is a stored token (a diary row, an export field, a
+  profile column) and six screens were printing it at the user. `:core:navigation` lost
+  `TopLevelDestination.label` outright: a leaf module with no resources has nowhere to put one.
+- **What stays in Kotlin, each commented at its definition.** Two rules, and only two.
+  **Persisted or compared:** `QUICK_ADD_NAME`, the `COMMON_FOODS` names (`searchFoods()` dedupes
+  on them), portion units (`portionStep` switches on `"g"`/`"oz"`/`"cup"`/`SERVING_UNIT`), every
+  enum `name`, `HomeCard`'s stored layout format, Room queries, Data Layer paths, `@SerialName`s,
+  intent extras. An imported workout's fallback name takes `ExerciseType.name` for the same
+  reason — a resource would freeze the import-time language into a row that outlives it.
+  **Pure functions with a JVM test over their wording:** `insightFor()`, `goalProjectionLine()`,
+  `:feature:home`'s `greetingFor`/`captionFor`/`weightLineFor`, `:feature:progress`'s
+  `summarize()` and `captionFor()`. Converting those means returning a case type per branch for a
+  composable to resolve; that is one decision, not six, and it has not been taken. Also staying:
+  AI prompts (the model reads them in English), `Reminder.title`/`body`, `MascotCharacter`'s five
+  proper names, and unit symbols — kg, lb, cm, in, kcal, g, mg are not copy.
+- **A test that asserted wording now asserts the rule.** `FoodLibraryDataTest` checks the totals,
+  the per-serving division and the portion's dropped trailing zero rather than the sentence the
+  resource now owns. Nothing it covered was lost.
+
 ## Composable structure & previews
 
 - **File breakdown:** a screen's composable is `ScreenName.kt`; its

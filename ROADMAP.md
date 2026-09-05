@@ -20,17 +20,15 @@ or a decision in its decision log; where a spec changes one, it says so explicit
 
 ## Order
 
-Cheap and self-contained first; the test/CI gate before the two large mechanical items.
-(The adaptive work was item 5 and has landed; localization was meant to precede it so the new
-layout code would be written against `stringResource` — it wasn't, so the rail, the two pane
-placeholders and the detail header carry literals for that pass to pick up. The custom food
-library has landed too, and its own literals join that list.)
+Cheap and self-contained first; the test/CI gate before the large mechanical item.
+(The adaptive work has landed, and so has the localization pass that was meant to precede it —
+every module now reads its copy from `strings.xml`, so anything written from here on has a
+`checkUiLiterals` gate to satisfy.)
 
 | # | Feature | Scope | Schema |
 |---|---------|-------|--------|
 | 1 | Automatic local backup | a package move, then `:app` | — |
 | 2 | UI test pass + CI gate | infrastructure | — |
-| 3 | Localization scaffolding | every module — 7 of 10 done | — |
 
 ---
 
@@ -126,74 +124,6 @@ instrumented tests. Compose stability CI — the `enforcing-stability-in-ci` ski
 is a separate decision and not on this roadmap.
 
 **Check.** The workflow itself — it must pass on a clean checkout with no `fdcApiKey`.
-
----
-
-## 3. Localization scaffolding
-
-**Partly landed.** Seven modules are done — `:core:data` (its six display-label enums and the
-calorie floor warning), `:core:navigation`, `:core:designsystem`, `:app`, `:wear`,
-`:feature:coach`, `:feature:onboarding` and `:feature:home`. **Left: `:feature:profile` (149),
-`:feature:food` (222), `:feature:progress` (291)** — same conventions, one commit each, each
-adding itself to `localizedModules` in the root `build.gradle.kts`.
-
-Two corrections the landed work made to this spec, both deliberate:
-
-- **The check below does not work and was replaced.** `HardcodedText` scans XML layout resources,
-  and this repo has none — it passes clean on a module with three hundred Kotlin literals. The
-  gate is `./gradlew checkUiLiterals`, a task in the root build that greps the modules already
-  converted and skips `*Preview()` bodies.
-- **`:core:data` is in scope**, though the module list below omits it: `ChartRange`, `MoodLevel`,
-  `ExerciseType`, `BloodPressureCategory`, `FlowLevel` and `CycleSymptom` all carry labels a
-  feature renders.
-
-Still in Kotlin, each with a comment saying so at its definition: `Reminder.title`/`body`,
-`insightFor()`, `goalProjectionLine()`, and `:feature:home`'s `greetingFor`/`captionFor`/
-`weightLineFor` — every one a pure function or enum field with a JVM test over its wording,
-whose conversion means returning a case type for a composable to resolve. That is one decision,
-not six, and it is not this item's. Also outstanding: `WEEKDAY_NAMES`/`dayLabel()` in
-`:core:data`, which `:feature:profile` shares and so moves with that module.
-
-**What.** Move every user-facing string out of Kotlin and into per-module `strings.xml`. No
-translation is added; this is the work that makes one possible.
-
-**Where.** Every module. `app/src/main/res/values/strings.xml` is 3 lines today; the feature
-modules and `:core:designsystem` have no `strings.xml` at all. Rough literal counts —
-`:feature:food` 432, `:feature:progress` 374, `:feature:profile` 237, `:core:designsystem` 184,
-`:feature:home` 131, `:app` 62, `:feature:onboarding` 61, `:wear` 36, `:feature:coach` 27 — are
-an over-count including keys and SQL, so expect 800–1000 genuinely user-facing across 419 files.
-
-**Schema / export.** None. Nothing persisted may become a resource — see below.
-
-### Decisions
-
-- **Each module owns its own `strings.xml`.** The module map is the boundary; a central string
-  file would be one file every feature edits, and the one place merges collide.
-- **Keys are `<module>_<screen>_<thing>`**, flat, no nesting. Enough to grep, not a taxonomy.
-- **Composables take `stringResource`, not a `Context`.** Previews resolve resources, so
-  `@PreviewLightDark` keeps working with no wrapper change — which makes the previews the
-  migration's own smoke test, file by file.
-- **What must NOT move: anything persisted or compared.** `QUICK_ADD_NAME` is written into the
-  diary and excluded from the recents query by that exact string; `MascotCharacter`,
-  `MascotPalette` and `HomeCard` names are stored on `Profile` as strings and parsed back;
-  `Reminder.title`/`body` are enum fields on a system surface; Room queries, Data Layer message
-  paths and the export DTOs' `@SerialName`s are wire formats. A translated key would rewrite a
-  user's Home layout the first time they changed language. **Each of these gets a comment saying
-  why it stayed** — otherwise the next pass "finishes the job" and breaks it.
-- **The mascot's five state names and the AI prompts stay in Kotlin too.** The prompts are sent
-  to a model in English; translating them would change what comes back, not who reads it.
-- **`:wear` gets the same treatment**, and its `strings.xml` stays its own — the two APKs update
-  independently.
-- **One module per commit.** This is the change most likely to be reviewed by skimming, and a
-  419-file single diff is unreviewable.
-
-**Deliberately excluded.** Any actual translation. Plurals beyond where a string is already
-pluralised in Kotlin today. RTL layout work — `supportsRtl` is already true and untested, and it
-is the adaptive work's neighbour rather than this item's. In-app locale switching.
-
-**Check.** `./gradlew checkUiLiterals` — see the correction above. It is what stops the next
-feature adding literals back, and it was verified to fail on a literal put back into a converted
-module.
 
 ---
 

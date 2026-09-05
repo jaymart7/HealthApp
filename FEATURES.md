@@ -219,6 +219,12 @@ WaterGlassRow.
 Charts live in `:feature:progress/ui/shared/`: `DayBarChart` (zero-based) and `RangeBarChart`
 (floating bars), plus the capture-and-share pair.
 
+## Localization scaffolding
+
+Every module owns a `res/values/strings.xml` and every user-facing string reads from it —
+about 1,100 across eleven modules. **No translation ships**; this is what makes one possible.
+`./gradlew checkUiLiterals` is the gate that keeps it that way.
+
 ---
 
 ## Deliberately absent
