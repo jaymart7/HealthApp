@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
@@ -17,6 +18,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotSpeechBubble
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.coach.R
 import ph.mart.healthapp.feature.coach.ui.STARTERS
 
 /**
@@ -32,14 +34,17 @@ internal fun CoachEmptyState(onStarter: (String) -> Unit, modifier: Modifier = M
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         MascotAvatar(state = MascotState.Idle, size = 64.dp)
-        MascotSpeechBubble(text = "Ask me about today — what you've eaten, your macros, or how the week's going.")
+        MascotSpeechBubble(text = stringResource(R.string.coach_empty_greeting))
         Text(
-            text = "I only see today's totals, not your meals or your weight.",
+            text = stringResource(R.string.coach_empty_limits),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         STARTERS.forEach { starter ->
-            SecondaryButton(label = starter, onClick = { onStarter(starter) })
+            // Resolved here, and it is the resolved text that gets sent — the question the user
+            // pressed is the question the coach is asked.
+            val text = stringResource(starter)
+            SecondaryButton(label = text, onClick = { onStarter(text) })
         }
     }
 }

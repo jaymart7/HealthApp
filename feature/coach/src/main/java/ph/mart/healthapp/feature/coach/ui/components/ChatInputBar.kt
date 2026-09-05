@@ -13,11 +13,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.coach.R
 
 /**
  * The question field and its send button. The button is disabled on a blank draft and while a
@@ -41,7 +43,7 @@ internal fun ChatInputBar(
             AppTextField(
                 value = draft,
                 onValueChange = onDraftChange,
-                placeholder = "Ask your coach",
+                placeholder = stringResource(R.string.coach_input_placeholder),
                 modifier = Modifier.weight(1f),
             )
             if (sending) {
@@ -50,7 +52,7 @@ internal fun ChatInputBar(
                 IconButton(onClick = onSend, enabled = draft.isNotBlank()) {
                     Icon(
                         imageVector = AppIcons.Send,
-                        contentDescription = "Send",
+                        contentDescription = stringResource(R.string.coach_input_send),
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }

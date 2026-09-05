@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.coach.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,12 +14,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotSpeechBubble
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.coach.R
 
 /**
  * One turn. The coach's side is the mascot's own [MascotSpeechBubble] — a rounded bubble with a
@@ -65,7 +68,7 @@ internal fun ChatBubble(text: String, fromUser: Boolean, modifier: Modifier = Mo
  * something true about today instead of only apologising.
  */
 @Composable
-internal fun FailureBubble(reason: String, insight: String?, modifier: Modifier = Modifier) {
+internal fun FailureBubble(@StringRes reason: Int, insight: String?, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -74,7 +77,7 @@ internal fun FailureBubble(reason: String, insight: String?, modifier: Modifier 
         MascotAvatar(state = MascotState.Sleepy, size = 32.dp)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = reason,
+                text = stringResource(reason),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -99,7 +102,7 @@ private fun ChatBubblePreview() {
                     fromUser = false,
                 )
                 FailureBubble(
-                    reason = "You're offline — the coach needs a connection.",
+                    reason = R.string.coach_failure_offline,
                     insight = "You're 88g short on protein today.",
                 )
             }

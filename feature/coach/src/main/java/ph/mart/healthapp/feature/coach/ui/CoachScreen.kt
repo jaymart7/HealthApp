@@ -2,11 +2,11 @@ package ph.mart.healthapp.feature.coach.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -27,6 +28,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.coach.R
 import ph.mart.healthapp.feature.coach.ui.components.ChatBubble
 import ph.mart.healthapp.feature.coach.ui.components.ChatInputBar
 import ph.mart.healthapp.feature.coach.ui.components.CoachEmptyState
@@ -91,7 +93,7 @@ private fun CoachContent(
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             FailureBubble(reason = failure.reason, insight = failure.insight)
-                            TextButton(label = "Try again", onClick = { onEvent(CoachEvent.OnRetry) })
+                            TextButton(label = stringResource(R.string.coach_retry), onClick = { onEvent(CoachEvent.OnRetry) })
                         }
                     }
                 }
@@ -102,7 +104,7 @@ private fun CoachContent(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(label = "Clear chat", onClick = { state.confirmingClear = true })
+                    TextButton(label = stringResource(R.string.coach_clear), onClick = { state.confirmingClear = true })
                 }
             }
 
@@ -122,10 +124,10 @@ private fun CoachContent(
     // meals and recipes follow, rather than the diary's swipe-and-undo.
     if (state.confirmingClear) {
         DiscardConfirmDialog(
-            title = "Clear this chat?",
-            body = "The whole conversation goes. Your logged food and weight aren't affected.",
-            confirmLabel = "Clear",
-            dismissLabel = "Keep it",
+            title = stringResource(R.string.coach_clear_title),
+            body = stringResource(R.string.coach_clear_body),
+            confirmLabel = stringResource(R.string.coach_clear_confirm),
+            dismissLabel = stringResource(R.string.coach_clear_dismiss),
             onConfirm = {
                 onEvent(CoachEvent.OnClear)
                 state.confirmingClear = false

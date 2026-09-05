@@ -1,7 +1,9 @@
 package ph.mart.healthapp.feature.coach.ui
 
+import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.insight.InsightRequest
+import ph.mart.healthapp.feature.coach.R
 
 /**
  * Read model. [messages] is the persisted conversation; [request] is the day the model will be
@@ -26,10 +28,13 @@ data class CoachUiState(
  * the rule-based line for the same day — the identical fallback Home's insight card uses, so
  * offline the coach still says something true about today rather than only apologising.
  */
-data class CoachFailure(val reason: String, val insight: String?, val question: String)
+data class CoachFailure(@StringRes val reason: Int, val insight: String?, val question: String)
 
-const val OFFLINE_REASON = "You're offline — the coach needs a connection."
-const val FAILED_REASON = "The coach couldn't answer that just now."
+// Resources rather than `const val`s: a library module's R fields aren't compile-time
+// constants, and the screen is where a reason gets read anyway.
+@StringRes val OFFLINE_REASON = R.string.coach_failure_offline
+
+@StringRes val FAILED_REASON = R.string.coach_failure_failed
 
 /** All the screen's writes. [OnRetry] resends the question the failure is holding, so a dropped
  * connection doesn't cost the user their typing. */
@@ -45,7 +50,7 @@ sealed interface CoachEvent {
  * also what teaches the coach's limits without a paragraph explaining them.
  */
 val STARTERS = listOf(
-    "How am I doing today?",
-    "What should I eat tonight?",
-    "Am I getting enough protein?",
+    R.string.coach_starter_today,
+    R.string.coach_starter_dinner,
+    R.string.coach_starter_protein,
 )

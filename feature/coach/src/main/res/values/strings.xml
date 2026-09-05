@@ -1,0 +1,20 @@
+<resources>
+    <string name="coach_failure_offline">You\'re offline — the coach needs a connection.</string>
+    <string name="coach_failure_failed">The coach couldn\'t answer that just now.</string>
+    <string name="coach_retry">Try again</string>
+    <string name="coach_clear">Clear chat</string>
+    <string name="coach_clear_title">Clear this chat?</string>
+    <string name="coach_clear_body">The whole conversation goes. Your logged food and weight aren\'t affected.</string>
+    <string name="coach_clear_confirm">Clear</string>
+    <string name="coach_clear_dismiss">Keep it</string>
+    <string name="coach_input_placeholder">Ask your coach</string>
+    <string name="coach_input_send">Send</string>
+    <string name="coach_empty_greeting">Ask me about today — what you\'ve eaten, your macros, or how the week\'s going.</string>
+    <string name="coach_empty_limits">I only see today\'s totals, not your meals or your weight.</string>
+
+    <!-- Openers for an empty conversation. Translated, unlike the prompts in :core:data: these are
+         the user's own words, and what gets sent is whatever the button said. -->
+    <string name="coach_starter_today">How am I doing today?</string>
+    <string name="coach_starter_dinner">What should I eat tonight?</string>
+    <string name="coach_starter_protein">Am I getting enough protein?</string>
+</resources>
