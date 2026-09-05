@@ -2,8 +2,9 @@ package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -28,11 +29,8 @@ import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
 import ph.mart.healthapp.core.designsystem.theme.stepFillProgress
 
-/** The tap target, not the glyph. 48dp is the platform minimum and a mistap here sets the wrong
- * water count; the drink icon inside stays the size it always was. The row already wraps, so a
- * bigger target costs a second line on a high goal rather than a clipped one. */
-private val GLASS_TARGET = 48.dp
-private val GLASS_ICON = 32.dp
+/** The glyph inside the cell. The cell itself is [goal]-many equal shares of the row's width. */
+private val GLASS_ICON = 24.dp
 
 /**
  * One tappable glass per [goal]; the first [glasses] of them are filled. Tapping glass *n* sets
@@ -42,20 +40,25 @@ private val GLASS_ICON = 32.dp
  * Stateless and unit-free: the caller owns the count and formats the volume label. Shared because
  * both Home and the food diary show it, per CLAUDE.md's ≥2-screens rule.
  *
+ * The glasses **divide the row's width** rather than wrapping onto a second line. A day's water is
+ * one meter, and a meter that breaks in half at the eighth glass reads as two — which is what the
+ * previous `FlowRow` did on any phone, since eight 48dp targets need 426dp and a 360dp screen
+ * offers 328dp. So the cell is `weight(1f)` and the *row* keeps the 48dp height; only the width of
+ * each target shrinks.
+ *
  * The row fills left-to-right and clears right-to-left, staggered by ~25ms a glass, because the
  * direction *is* the gesture. Tint and scale run off the one `stepFillProgress` value so the whole
  * row reads as a single idea rather than two effects layered on each other.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier: Modifier = Modifier) {
     val emptyTint = MaterialTheme.colorScheme.outlineVariant
     val filledTint = MaterialTheme.colorScheme.primary
     val filling = rememberFillDirection(glasses)
 
-    FlowRow(
+    Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
     ) {
         repeat(goal) { index ->
             val filled = index < glasses
@@ -63,8 +66,13 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
             val description = stringResource(R.string.ds_water_set, glassesAfterTap(glasses, index), goal)
             IconButton(
                 onClick = { onSetGlasses(glassesAfterTap(glasses, index)) },
+                // ponytail: at goal 8 on a 360dp screen each cell is ~37dp wide, under the 48dp
+                // touch floor the row used to hold by wrapping. The height stays 48dp, so the
+                // target is short of the minimum in one axis only. A horizontally scrolling row at
+                // a fixed 48dp is the upgrade path if mistaps show up.
                 modifier = Modifier
-                    .size(GLASS_TARGET)
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
                     // Scale is read inside the layer lambda, so it settles in the Draw phase and
                     // never recomposes anything.
                     .graphicsLayer {
@@ -81,6 +89,9 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
                     // The glyph swaps off the plain boolean rather than the animated value: timing
                     // it to the tint would recompose this icon every frame for a difference nobody
                     // can see. The tint read below recomposes only this leaf.
+                    //
+                    // This swap *is* the "FILL axis" a Material Symbols font would give — these are
+                    // static vectors, so the filled and outlined glyphs are the two ends of it.
                     imageVector = if (filled) Icons.Filled.LocalDrink else Icons.Outlined.LocalDrink,
                     contentDescription = null,
                     tint = lerp(emptyTint, filledTint, fill.value),
@@ -96,6 +107,8 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
 internal fun glassesAfterTap(current: Int, tappedIndex: Int): Int =
     (if (tappedIndex == current - 1) tappedIndex else tappedIndex + 1).coerceAtLeast(0)
 
+/** Goal 14 is the case the row has to survive without wrapping — it is where the cell is narrowest
+ * and where a glyph that didn't shrink with it would collide with its neighbour. */
 @PreviewLightDark
 @Composable
 private fun WaterGlassRowPreview() {

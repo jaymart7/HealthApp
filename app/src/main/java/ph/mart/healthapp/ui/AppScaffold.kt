@@ -368,6 +368,10 @@ fun AppScaffold(
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(VoiceLogRoute(0))
                 },
+                onScanBarcode = {
+                    activeSheet = ActiveSheet.None
+                    topLevelBackStack.add(BarcodeScanRoute(0))
+                },
                 onLogFood = {
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(FoodCaptureRoute(0))

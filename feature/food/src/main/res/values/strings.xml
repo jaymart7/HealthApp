@@ -31,6 +31,7 @@
     <string name="food_summary_over">over</string>
     <string name="food_summary_left">left</string>
     <string name="food_summary_of_goal">%1$d / %2$d kcal</string>
+    <string name="food_summary_exercise_credit">%1$d kcal from exercise added to today</string>
     <string name="food_macro_protein">Protein</string>
     <string name="food_macro_carbs">Carbs</string>
     <string name="food_macro_fat">Fat</string>
@@ -41,7 +42,12 @@
 
     <!-- Diary -->
     <string name="food_filter_placeholder">Filter this day\'s foods…</string>
+    <string name="food_filter_open">Filter this day\'s foods</string>
+    <string name="food_filter_close">Close filter</string>
     <string name="food_say_what_you_ate">Say what you ate</string>
+    <string name="food_chip_say">Say it</string>
+    <string name="food_chip_scan">Scan</string>
+    <string name="food_chip_photo">Photo</string>
     <string name="food_scan_barcode">Scan barcode</string>
     <string name="food_photo_log">Log food with a photo</string>
     <string name="food_edit_entry">Edit entry</string>
@@ -60,7 +66,7 @@
     <string name="food_empty_add">You can still add to it.</string>
     <string name="food_section_expanded">Expanded</string>
     <string name="food_section_collapsed">Collapsed</string>
-    <string name="food_section_burned">%1$d kcal burned</string>
+    <string name="food_section_spoken">%1$s, %2$d kilocalories</string>
     <string name="food_section_kcal">%1$d kcal</string>
     <string name="food_section_save_meal">Save %1$s as a meal</string>
     <string name="food_section_add_to">Add to %1$s</string>
@@ -222,6 +228,9 @@
     <string name="food_exercise_burned_estimated">Burned · estimated from %1$s at your latest weight</string>
     <string name="food_exercise_row">%1$d min</string>
     <string name="food_exercise_row_kcal">%1$d kcal</string>
+    <string name="food_exercise_adds_today">Adds to today</string>
+    <string name="food_exercise_subtotal">+%1$d kcal</string>
+    <string name="food_exercise_spoken">Exercise, %1$d kilocalories burned, added to today\'s budget</string>
 
     <!-- Strength -->
     <string name="food_strength_repeat">Repeat last workout</string>

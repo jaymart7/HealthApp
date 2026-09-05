@@ -25,6 +25,7 @@ internal class FoodScreenState(
     activeMealSheet: MealType? = null,
     addForm: AddEntryForm = AddEntryForm(),
     searchQuery: String = "",
+    filterExpanded: Boolean = false,
     expandedMeals: Map<MealType, Boolean> = MealType.entries.associateWith { true },
     exerciseSheetOpen: Boolean = false,
     exerciseExpanded: Boolean = true,
@@ -38,6 +39,11 @@ internal class FoodScreenState(
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
     var searchQuery: String by mutableStateOf(searchQuery)
+
+    /** Whether the date header is showing the filter field instead of the date controls.
+     * Closing it clears [searchQuery] through [closeFilter] — a filter you can no longer see is
+     * one you will not remember is hiding rows. */
+    var filterExpanded: Boolean by mutableStateOf(filterExpanded)
     var expandedMeals: Map<MealType, Boolean> by mutableStateOf(expandedMeals)
     var exerciseSheetOpen: Boolean by mutableStateOf(exerciseSheetOpen)
     var exerciseExpanded: Boolean by mutableStateOf(exerciseExpanded)
@@ -122,6 +128,11 @@ internal class FoodScreenState(
         saveMealFor = null
     }
 
+    fun closeFilter() {
+        filterExpanded = false
+        searchQuery = ""
+    }
+
     fun toggleExpanded(mealType: MealType) {
         expandedMeals = expandedMeals + (mealType to (expandedMeals[mealType] != true))
     }
@@ -139,6 +150,9 @@ internal class FoodScreenState(
                         it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen,
                         it.saveMealFor?.name, it.savedMealName,
                         it.editingEntryId, it.editingExerciseId, it.ideasFor?.name,
+                        // Appended, never inserted: every index below is positional, so a new
+                        // field in the middle would silently re-point all of them.
+                        it.filterExpanded,
                     )
             },
             restore = { saved ->
@@ -164,6 +178,7 @@ internal class FoodScreenState(
                     editingEntryId = saved[15 + MealType.entries.size] as Long?,
                     editingExerciseId = saved[16 + MealType.entries.size] as Long?,
                     ideasFor = (saved[17 + MealType.entries.size] as String?)?.let(MealType::valueOf),
+                    filterExpanded = saved[18 + MealType.entries.size] as Boolean,
                 )
             },
         )

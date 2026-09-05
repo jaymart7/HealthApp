@@ -1,5 +1,7 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,12 +16,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.Motion
 
 /** Grams of each macro. The shape [MacroBar] needs to fill a goal split against what was eaten. */
 data class Macros(val proteinG: Int, val carbsG: Int, val fatG: Int)
@@ -39,6 +44,11 @@ data class Macros(val proteinG: Int, val carbsG: Int, val fatG: Int)
  * A macro past its goal fills its segment and stops there. The legend beside the bar is what
  * reports the overage: when a figure and its visualisation disagree, the figure is the one telling
  * the truth.
+ *
+ * [height] is the one thing a caller may vary, and the corner radius follows it rather than being
+ * fixed: the diary's collapsed summary draws the same bar at 4dp, and a 4dp bar clipped at a 4dp
+ * radius is a lozenge rather than a bar. Extended rather than forked, per the ≥2-callers rule —
+ * six screens draw this and all of them mean the same thing by it.
  */
 @Composable
 fun MacroBar(
@@ -47,6 +57,7 @@ fun MacroBar(
     fatG: Int,
     modifier: Modifier = Modifier,
     consumed: Macros? = null,
+    height: Dp = 8.dp,
 ) {
     val proteinKcal = (proteinG * 4).coerceAtLeast(0).toFloat()
     val carbsKcal = (carbsG * 4).coerceAtLeast(0).toFloat()
@@ -56,8 +67,8 @@ fun MacroBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(8.dp)
-            .clip(RoundedCornerShape(4.dp)),
+            .height(height)
+            .clip(RoundedCornerShape(height / 2)),
     ) {
         MacroSegment(
             weight = proteinKcal / total,
@@ -81,7 +92,15 @@ fun MacroBar(
 internal fun fillFraction(consumedG: Int, goalG: Int): Float =
     if (goalG <= 0) 0f else (consumedG.toFloat() / goalG).coerceIn(0f, 1f)
 
-/** [fill] null draws the solid goal-split segment this bar has always drawn. */
+/**
+ * [fill] null draws the solid goal-split segment this bar has always drawn — so the three callers
+ * that pass no [Macros] (onboarding's Confirm step, Profile's Goals card) animate nothing.
+ *
+ * A filled segment grows to its width rather than snapping there: logging a meal moves this bar,
+ * and the movement is what says the entry landed. `Motion.Enter` because it is the same "something
+ * arriving" the ladder already names, and it is spent through an animation API so **Remove
+ * animations** collapses it to a cut.
+ */
 @Composable
 private fun RowScope.MacroSegment(weight: Float, color: Color, fill: Float?) {
     if (weight <= 0f) return
@@ -89,13 +108,18 @@ private fun RowScope.MacroSegment(weight: Float, color: Color, fill: Float?) {
         Surface(color = color, modifier = Modifier.weight(weight).fillMaxHeight()) {}
         return
     }
+    val animated by animateFloatAsState(
+        targetValue = fill,
+        animationSpec = tween(durationMillis = Motion.Enter, easing = Motion.Standard),
+        label = "macroFill",
+    )
     Box(
         modifier = Modifier
             .weight(weight)
             .fillMaxHeight()
             .background(MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
-        Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(fill).background(color))
+        Box(modifier = Modifier.fillMaxHeight().fillMaxWidth(animated).background(color))
     }
 }
 
@@ -110,7 +134,8 @@ private fun MacroBarPreview() {
 }
 
 /** The three states the filled bar has to read in: a day barely started, a day mid-way, and one
- * where a single macro has run past its goal while the others have not. */
+ * where a single macro has run past its goal while the others have not. The last pair is the
+ * diary's two heights side by side — 4dp has to read as the same bar, not a hairline. */
 @PreviewLightDark
 @Composable
 private fun MacroBarConsumedPreview() {
@@ -123,6 +148,7 @@ private fun MacroBarConsumedPreview() {
                 MacroBar(146, 194, 65, consumed = Macros(8, 12, 3))
                 MacroBar(146, 194, 65, consumed = Macros(62, 88, 31))
                 MacroBar(146, 194, 65, consumed = Macros(151, 90, 64))
+                MacroBar(146, 194, 65, consumed = Macros(62, 88, 31), height = 4.dp)
             }
         }
     }

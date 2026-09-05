@@ -34,21 +34,27 @@ import ph.mart.healthapp.feature.food.ui.shared.labelRes
  * day there is no meal to suggest — you are looking at Tuesday, and "start with dinner" would be
  * advice about a day that has already gone.
  *
- * The meal headers still render above and below this, so the "+" on each is reachable and nothing
- * here stands between the user and logging.
+ * The meal cards still render above and below this — it sits between Lunch and Dinner rather than
+ * above all four, so the day still reads as a day with a note in the middle of it rather than a
+ * banner with four empty cards under it. Every "+" stays reachable and nothing here stands
+ * between the user and logging.
+ *
+ * Sleepy, not Idle: the day has not started. It is also the only mascot state on this screen, so
+ * the per-section "Nothing here yet." lines are suppressed while it is showing — see
+ * [MealSection]'s `dayIsEmpty`, which is what finally made this block's own KDoc true.
  */
 @Composable
 internal fun EmptyDiaryDay(isToday: Boolean, modifier: Modifier = Modifier) {
     Row(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MascotAvatar(state = MascotState.Idle, size = 48.dp)
+        MascotAvatar(state = MascotState.Sleepy, size = 48.dp)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = stringResource(if (isToday) R.string.food_empty_today else R.string.food_empty_past),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(

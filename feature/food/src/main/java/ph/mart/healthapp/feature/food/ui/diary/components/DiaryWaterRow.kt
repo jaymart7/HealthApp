@@ -40,12 +40,12 @@ internal fun DiaryWaterRow(
         ) {
             Text(
                 text = stringResource(R.string.food_water),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(R.string.food_water_count, glasses, goalGlasses, waterVolumeLabel(glasses, unit)),
-                style = MaterialTheme.typography.labelMedium.tabularNums,
+                style = MaterialTheme.typography.bodySmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

@@ -15,6 +15,7 @@
 
     <!-- Quick-action sheet (the FAB) -->
     <string name="app_quick_speak_food">Say what you ate</string>
+    <string name="app_quick_scan_barcode">Scan a barcode</string>
     <string name="app_quick_log_food">Log food</string>
     <string name="app_quick_log_exercise">Log exercise</string>
     <string name="app_quick_log_weight">Log weight</string>

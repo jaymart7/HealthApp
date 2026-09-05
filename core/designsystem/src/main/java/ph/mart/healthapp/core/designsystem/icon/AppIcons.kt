@@ -12,7 +12,9 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -61,11 +63,14 @@ object AppIcons {
     val Delete: ImageVector = Icons.Outlined.Delete
     val DragHandle: ImageVector = Icons.Filled.DragHandle
     val Edit: ImageVector = Icons.Outlined.Edit
+    val Filter: ImageVector = Icons.Filled.FilterList
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
     val Mic: ImageVector = Icons.Filled.Mic
     val Pause: ImageVector = Icons.Filled.Pause
     val Play: ImageVector = Icons.Filled.PlayArrow
+    /** Exercise, wherever it has to read as its own kind of thing rather than a fifth meal. */
+    val Run: ImageVector = Icons.Filled.DirectionsRun
     val Send: ImageVector = Icons.AutoMirrored.Filled.Send
     val Share: ImageVector = Icons.Filled.Share
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment

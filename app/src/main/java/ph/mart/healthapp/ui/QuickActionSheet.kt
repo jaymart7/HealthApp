@@ -16,15 +16,22 @@ import ph.mart.healthapp.R
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** The FAB's quick-action sheet: Say what you ate / Log food / Log exercise / Log weight / Add
- * photo, each routing to a real destination.
+/** The FAB's quick-action sheet: Say what you ate / Scan a barcode / Log food / Log exercise /
+ * Log weight / Add photo, each routing to a real destination.
  *
  * The sentence sits above the camera because it is the path that works with the plate already
- * cleared, and because it is the only one of the two that can log a whole meal at once. */
+ * cleared, and because it is the only one of the two that can log a whole meal at once.
+ *
+ * The first three mirror the diary's chip row, in its order, because that row scrolls: once the
+ * chips are off screen this sheet is where those three flows still live, and a user who learned
+ * them as "say, scan, photo" should not have to relearn the order here. Scan was the one of the
+ * three this sheet was missing. Nothing about `ShortcutAction` changes — a launcher shortcut for
+ * a scan is its own decision, not a consequence of this row existing. */
 @Composable
 fun QuickActionSheet(
     onDismiss: () -> Unit,
     onSpeakFood: () -> Unit,
+    onScanBarcode: () -> Unit,
     onLogFood: () -> Unit,
     onLogExercise: () -> Unit,
     onLogWeight: () -> Unit,
@@ -32,6 +39,7 @@ fun QuickActionSheet(
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         QuickActionRow(label = stringResource(R.string.app_quick_speak_food), onClick = onSpeakFood)
+        QuickActionRow(label = stringResource(R.string.app_quick_scan_barcode), onClick = onScanBarcode)
         QuickActionRow(label = stringResource(R.string.app_quick_log_food), onClick = onLogFood)
         QuickActionRow(label = stringResource(R.string.app_quick_log_exercise), onClick = onLogExercise)
         QuickActionRow(label = stringResource(R.string.app_quick_log_weight), onClick = onLogWeight)
@@ -59,6 +67,7 @@ private fun QuickActionSheetPreview() {
         QuickActionSheet(
             onDismiss = {},
             onSpeakFood = {},
+            onScanBarcode = {},
             onLogFood = {},
             onLogExercise = {},
             onLogWeight = {},

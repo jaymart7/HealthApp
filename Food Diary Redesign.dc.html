@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #EDEFEA; }
+  a { color: #37693D; }
+  a:hover { color: #1E5027; }
+</style>
+</helmet>
+
+<section style="display:flex;flex-direction:column;gap:32px;padding:48px;background:#EDEFEA;font-family:'Inter',sans-serif;min-width:max-content;">
+
+  <div style="display:flex;flex-direction:column;gap:16px;max-width:760px;">
+    <span style="align-self:flex-start;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#424940;border:1px solid #C1C9BE;border-radius:999px;padding:4px 10px;">Turn 1</span>
+    <h1 style="margin:0;font-family:'Poppins',sans-serif;font-size:32px;font-weight:600;color:#181D18;letter-spacing:-0.4px;">Food diary — one refined direction</h1>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#424940;text-wrap:pretty;">Three pinned blocks become two. The date row absorbs the filter as a 48dp icon button, so the field only exists while it is being used. The summary stays pinned but has two sizes: full at the top of the day, and a slim always-visible bar (remaining figure + 4dp macro bar) once the list scrolls. The three logging flows leave the text field and become a labelled chip row at the start of the scroll — icon plus word, outlined rather than filled, so they read as entry points and never compete with the filled FAB.</p>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#424940;text-wrap:pretty;">Each meal becomes a <strong>surfaceContainerLow</strong> card, so five sections read as five objects instead of five grey rules, and the rows inside gain a shared edge to scan down. Exercise leaves the meal run entirely: a small "Adds to today" label with a rule sits above it, its container is outlined on <strong>surface</strong> rather than filled, its header carries a run icon, and its subtotal is signed — <strong>+645 kcal</strong>. The same number is restated in the summary as "645 kcal from exercise added to today", which is where the budget arithmetic actually happens, and the consumed line counts against goal + burned.</p>
+    <p style="margin:0;font-size:15px;line-height:1.6;color:#424940;text-wrap:pretty;">Screens are live: expand and collapse the sections, tap the filter icon and type, tap water glasses, and drag a food row left past ~96dp to delete it with an Undo snackbar. Referenced ids: <a href="#1a">1a</a> <a href="#1b">1b</a> <a href="#1c">1c</a> <a href="#1d">1d</a> <a href="#1e">1e</a> <a href="#1i">1i</a> <a href="#1j">1j</a> <a href="#1k">1k</a> light, <a href="#1f">1f</a> <a href="#1g">1g</a> <a href="#1h">1h</a> <a href="#1l">1l</a> dark. <a href="#1j">1j</a> and <a href="#1l">1l</a> open at the foot of the day so the exercise block is in frame without scrolling.</p>
+  </div>
+
+  <div style="display:flex;gap:32px;align-items:flex-start;">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1a</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">Full day — light</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1b</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">Mid-scroll — slim summary</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" start-scrolled="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1c" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1c</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">Empty day — light</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" empty="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1d" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1d</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">All sections collapsed — light</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" collapsed-all="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1e" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1e</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">Over budget — light</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" over="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1i" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1i</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">Filter open — light</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" start-filter-open="{{ true }}" start-filter-text="chicken" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1j" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1j</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">Foot of the day — exercise block, light</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" start-at-exercise="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1k" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#FFFFFF;background:#37693D;border-radius:6px;padding:3px 7px;">1k</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#181D18;">Post-delete snackbar — light</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#1F211E;box-shadow:0 18px 40px rgba(24,29,24,0.18);">
+        <div style="border-radius:36px;overflow:hidden;--surf:#F7FBF2;--on:#181D18;--onv:#424940;--sclowest:#FFFFFF;--sclow:#F1F5EC;--sc:#EBEFE6;--schigh:#E5E9E1;--ov:#C1C9BE;--p:#37693D;--op:#FFFFFF;--pc:#B8F1B9;--opc:#1E5027;--sec:#516350;--secc:#D4E8D0;--osecc:#3A4B3A;--ter:#39656C;--terc:#BDEAF3;--oterc:#1F4D54;--err:#BA1A1A;--errc:#FFDAD6;--oerrc:#93000A;--inv:#2D322C;--oninv:#EEF2E9;--invp:#9DD49E;">
+          <dc-import name="FoodDiary" start-at-exercise="{{ true }}" show-snack="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:380px;display:flex;flex-direction:column;gap:16px;padding-top:44px;">
+      <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:#181D18;">What moved, and why</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.55;color:#424940;">
+        <p style="margin:0;"><strong style="color:#181D18;">Filter → icon.</strong> It filters the day's logged entries, which is a thing you do occasionally, on a long day. It cost 64dp permanently. As a 48dp icon in the date row it costs nothing and expands in place; typing keeps the header height identical.</p>
+        <p style="margin:0;"><strong style="color:#181D18;">Summary → two sizes.</strong> The full block (remaining, consumed/budget, macro bar, legend, micros, exercise credit) is what you see when you open the tab. Past 24dp of scroll it becomes a 44dp bar carrying the two things that matter mid-scroll: the remaining figure and macro fill. Nothing is hidden without a replacement.</p>
+        <p style="margin:0;"><strong style="color:#181D18;">Quick actions → labelled chips.</strong> Three bare icons next to a field read as field affordances. As outlined chips with words under the summary they read as three ways in. They scroll away; the FAB sheet carries the same three, so they stay one tap from anywhere in the diary.</p>
+        <p style="margin:0;"><strong style="color:#181D18;">Meals → cards.</strong> 12dp gaps, 16dp radius, surfaceContainerLow. Rows indent to 40dp to clear the chevron, and the card edge gives the calorie column a rail to line up against.</p>
+        <p style="margin:0;"><strong style="color:#181D18;">Exercise → separate block.</strong> Outlined instead of filled, preceded by an "Adds to today" label and rule, run icon in the header, signed subtotal. Three signals, no new colour.</p>
+        <p style="margin:0;"><strong style="color:#181D18;">Over budget is not an error.</strong> Same type, same colours; only the word changes, "left" → "over", and the macro fills cap at 100%. No error role, no red, no message.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:32px;align-items:flex-start;padding:16px 32px 32px;border-radius:32px;background:#101510;">
+
+    <div id="1f" style="display:flex;flex-direction:column;gap:12px;padding-top:16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#023913;background:#9DD49E;border-radius:6px;padding:3px 7px;">1f</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#E0E4DB;">Full day — dark</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#313630;">
+        <div style="border-radius:36px;overflow:hidden;--surf:#101510;--on:#E0E4DB;--onv:#C1C9BE;--sclowest:#0B0F0B;--sclow:#181D18;--sc:#1C211C;--schigh:#272B26;--ov:#424940;--p:#9DD49E;--op:#023913;--pc:#1E5027;--opc:#B8F1B9;--sec:#B8CCB5;--secc:#3A4B3A;--osecc:#D4E8D0;--ter:#A1CED6;--terc:#1F4D54;--oterc:#BDEAF3;--err:#FFB4AB;--errc:#93000A;--oerrc:#FFDAD6;--inv:#E0E4DB;--oninv:#2D322C;--invp:#37693D;">
+          <dc-import name="FoodDiary" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1g" style="display:flex;flex-direction:column;gap:12px;padding-top:16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#023913;background:#9DD49E;border-radius:6px;padding:3px 7px;">1g</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#E0E4DB;">Empty day — dark</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#313630;">
+        <div style="border-radius:36px;overflow:hidden;--surf:#101510;--on:#E0E4DB;--onv:#C1C9BE;--sclowest:#0B0F0B;--sclow:#181D18;--sc:#1C211C;--schigh:#272B26;--ov:#424940;--p:#9DD49E;--op:#023913;--pc:#1E5027;--opc:#B8F1B9;--sec:#B8CCB5;--secc:#3A4B3A;--osecc:#D4E8D0;--ter:#A1CED6;--terc:#1F4D54;--oterc:#BDEAF3;--err:#FFB4AB;--errc:#93000A;--oerrc:#FFDAD6;--inv:#E0E4DB;--oninv:#2D322C;--invp:#37693D;">
+          <dc-import name="FoodDiary" empty="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1h" style="display:flex;flex-direction:column;gap:12px;padding-top:16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#023913;background:#9DD49E;border-radius:6px;padding:3px 7px;">1h</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#E0E4DB;">Collapsed + over budget — dark</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#313630;">
+        <div style="border-radius:36px;overflow:hidden;--surf:#101510;--on:#E0E4DB;--onv:#C1C9BE;--sclowest:#0B0F0B;--sclow:#181D18;--sc:#1C211C;--schigh:#272B26;--ov:#424940;--p:#9DD49E;--op:#023913;--pc:#1E5027;--opc:#B8F1B9;--sec:#B8CCB5;--secc:#3A4B3A;--osecc:#D4E8D0;--ter:#A1CED6;--terc:#1F4D54;--oterc:#BDEAF3;--err:#FFB4AB;--errc:#93000A;--oerrc:#FFDAD6;--inv:#E0E4DB;--oninv:#2D322C;--invp:#37693D;">
+          <dc-import name="FoodDiary" over="{{ true }}" collapsed-all="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div id="1l" style="display:flex;flex-direction:column;gap:12px;padding-top:16px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;color:#023913;background:#9DD49E;border-radius:6px;padding:3px 7px;">1l</span>
+        <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:500;color:#E0E4DB;">Foot of the day — exercise block, dark</span>
+      </div>
+      <div style="border-radius:46px;padding:10px;background:#313630;">
+        <div style="border-radius:36px;overflow:hidden;--surf:#101510;--on:#E0E4DB;--onv:#C1C9BE;--sclowest:#0B0F0B;--sclow:#181D18;--sc:#1C211C;--schigh:#272B26;--ov:#424940;--p:#9DD49E;--op:#023913;--pc:#1E5027;--opc:#B8F1B9;--sec:#B8CCB5;--secc:#3A4B3A;--osecc:#D4E8D0;--ter:#A1CED6;--terc:#1F4D54;--oterc:#BDEAF3;--err:#FFB4AB;--errc:#93000A;--oerrc:#FFDAD6;--inv:#E0E4DB;--oninv:#2D322C;--invp:#37693D;">
+          <dc-import name="FoodDiary" start-at-exercise="{{ true }}" hint-size="390px,844px"></dc-import>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:380px;display:flex;flex-direction:column;gap:12px;padding-top:56px;">
+      <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:#E0E4DB;">Dark notes</h2>
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.55;color:#C1C9BE;">
+        <p style="margin:0;">Meal cards are <strong style="color:#E0E4DB;">surfaceContainerLow</strong> (#181D18) against <strong style="color:#E0E4DB;">surface</strong> (#101510) — a 1-step lift, which is enough in dark and needs no border.</p>
+        <p style="margin:0;">The exercise block's outline is <strong style="color:#E0E4DB;">outlineVariant</strong>, which in dark (#424940) is lighter than the meal cards' fill, so the inversion of the light-mode relationship still reads as "different kind of thing".</p>
+        <p style="margin:0;">Macro bar tracks are <strong style="color:#E0E4DB;">surfaceContainerHigh</strong> in both modes, so the fill/track contrast never depends on the surface behind the summary.</p>
+        <p style="margin:0;">The mascot is the existing <strong style="color:#E0E4DB;">MascotAvatar</strong> in its Sleepy state at 48dp — the state Home already uses for an empty diary. Unchanged.</p>
+        <p style="margin:0;">Empty water glasses use <strong style="color:#E0E4DB;">outlineVariant</strong>; filled use <strong style="color:#E0E4DB;">primary</strong> with the icon's FILL axis at 1, so the state is shape as well as colour.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:nowrap;">
+    <div style="width:520px;display:flex;flex-direction:column;gap:16px;padding:24px;border-radius:24px;background:#F7FBF2;border:1px solid #C1C9BE;">
+      <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:#181D18;">Redlines — spacing, type, colour role</h2>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.5;color:#424940;">
+        <div><strong style="color:#181D18;">Screen</strong><br />Horizontal padding 16dp everywhere. Vertical gap between cards 12dp. Scroll bottom padding 148dp (nav 104 + FAB overhang + 24). Surface: <code>surface</code>.</div>
+        <div><strong style="color:#181D18;">Date row (pinned)</strong><br />48dp tall. Chevrons 48×48dp, icon 24dp, <code>onSurface</code>; forward chevron <code>outlineVariant</code>, inert, <code>enabled = false</code> for TalkBack. Centre label Poppins titleMedium 17/500 <code>onSurface</code> + 18dp <code>expand_more</code> in <code>onSurfaceVariant</code>; whole label is one 48dp button, "Today, change date". Filter icon 48×48dp, <code>onSurfaceVariant</code>.</div>
+        <div><strong style="color:#181D18;">Filter open</strong><br />Same 48dp row. Field 44dp tall, radius 12dp, fill <code>surfaceContainerHigh</code>, leading icon 20dp <code>onSurfaceVariant</code>, text Inter bodyLarge <code>onSurface</code>, placeholder <code>onSurfaceVariant</code>. Close button 48×48dp. Clearing or closing restores the date row.</div>
+        <div><strong style="color:#181D18;">Summary — full (pinned)</strong><br />12dp internal gaps, 8dp bottom padding, 1dp <code>outlineVariant</code> rule beneath. Remaining figure Poppins headlineSmall 32/600 tabular <code>onSurface</code>; word Inter bodyLarge <code>onSurfaceVariant</code>. Consumed line Inter bodySmall 13 tabular <code>onSurfaceVariant</code>, right aligned. Macro bar 8dp tall, three equal segments, 4dp gaps, radius 4dp; track <code>surfaceContainerHigh</code>, fills <code>primary</code> / <code>tertiary</code> / <code>secondary</code>. Legend: 8dp square dot in the same roles + bodySmall <code>onSurfaceVariant</code>. Micro line bodySmall <code>onSurfaceVariant</code>, omitted when all three are zero. Exercise credit line: 16dp <code>directions_run</code> + bodySmall, both <code>onSurfaceVariant</code>, omitted when burned = 0.</div>
+        <div><strong style="color:#181D18;">Summary — slim (pinned)</strong><br />Appears past 24dp scroll. Figure Poppins titleLarge 20/600, word bodySmall, consumed line bodySmall. Macro bar 4dp tall, same roles, no legend. Total block ≈44dp.</div>
+        <div><strong style="color:#181D18;">Quick-action chips</strong><br />Row of three, 8dp gap, each flex-equal, 48dp tall, radius 12dp, 1dp <code>outlineVariant</code> border, transparent fill. Icon 20dp <code>onSurfaceVariant</code>, label Inter labelLarge 13/500 <code>onSurface</code>. Never filled — the FAB owns the filled treatment.</div>
+        <div><strong style="color:#181D18;">Water row</strong><br />Card-less, 8dp internal gap. "Water" Poppins titleSmall 14/500 <code>onSurface</code>; count bodySmall tabular <code>onSurfaceVariant</code>. Eight glasses in one flex row, 6dp gap, each 48dp tall target, icon 26dp; filled <code>primary</code> (FILL 1), empty <code>outlineVariant</code> (FILL 0). Tapping glass n sets the count to n, or n−1 if it was already n.</div>
+        <div><strong style="color:#181D18;">Meal section card</strong><br />Fill <code>surfaceContainerLow</code>, radius 16dp, no border, no elevation. Header 48dp: chevron 22dp <code>onSurfaceVariant</code> rotating 0°/−90°, name Poppins titleMedium 16/500 <code>onSurface</code>, subtotal bodySmall 13 tabular <code>onSurfaceVariant</code> (printed only when non-zero, and always the section's real total). Bookmark and + buttons 48×48dp, icons 20/22dp; bookmark <code>onSurfaceVariant</code> and hidden when the section is empty, + <code>onSurface</code>.</div>
+        <div><strong style="color:#181D18;">Food row</strong><br />Padding 10dp vertical, 16dp right, 40dp left (clears the chevron). Name Inter bodyLarge 15 <code>onSurface</code>; secondary line bodySmall 12 <code>onSurfaceVariant</code>, 2dp gap. Calories Inter titleMedium 15/500 tabular <code>onSurface</code>, right aligned, never wraps. Whole row is one target ≥48dp at default scale.</div>
+        <div><strong style="color:#181D18;">Exercise block</strong><br />24dp above the label row. Label Inter labelSmall 11/600, 0.08em tracking, uppercase, <code>onSurfaceVariant</code>, then a 1dp <code>outlineVariant</code> rule filling the remaining width. Container: transparent on <code>surface</code>, 1dp <code>outlineVariant</code>, radius 16dp. Header adds a 20dp <code>directions_run</code> before the name; subtotal is signed "+N kcal". No bookmark button. Rows take a third line for lifts, bodySmall <code>onSurfaceVariant</code>.</div>
+        <div><strong style="color:#181D18;">Empty day</strong><br />Existing <code>MascotAvatar</code>, Sleepy state, 48dp — <code>primaryContainer</code> body, <code>onPrimaryContainer</code> features (10×3dp bar eyes, 10dp apart, 10×3dp mouth, centred column, 4dp gap). Same state Home uses for an empty diary; not redrawn. 16dp gap to the text. Line 1 Poppins titleMedium <code>onSurface</code>, line 2 bodySmall <code>onSurfaceVariant</code>, meal suggestion time-of-day aware. Sits between the Lunch and Dinner cards; all five headers still render, subtotals absent.</div>
+        <div><strong style="color:#181D18;">Snackbar</strong><br />48dp tall, 16dp side margins, bottom offset 184dp — clears both the nav bar (104dp) and the FAB. Fill <code>inverseSurface</code>, label <code>inverseOnSurface</code>, "Undo" <code>inversePrimary</code> labelLarge/600.</div>
+        <div><strong style="color:#181D18;">Type roles</strong><br />Poppins 500/600: headlineSmall (remaining), titleLarge (slim remaining), titleMedium (meal names, calorie figures, empty-state line 1). Inter 400/500/600: bodyLarge (food names, filter text), bodySmall (secondary lines, subtotals, legend), labelLarge (chips, Undo), labelSmall (the "Adds to today" label). Every number tabular.</div>
+      </div>
+    </div>
+
+    <div style="width:440px;display:flex;flex-direction:column;gap:16px;padding:24px;border-radius:24px;background:#F7FBF2;border:1px solid #C1C9BE;">
+      <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:#181D18;">Micro-interactions</h2>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.5;color:#424940;">
+        <div><strong style="color:#181D18;">Expand / collapse</strong><br />Chevron rotates 0° ⇄ −90° over 200ms, emphasized-decelerate. The card's content height animates over the same 200ms; rows do not fade individually. Collapsing does not scroll — the list settles under the finger. State per section survives day changes within a session.</div>
+        <div><strong style="color:#181D18;">Summary collapse</strong><br />Crossfade + height, 200ms, driven by scroll offset crossing 24dp with an 8dp hysteresis band so a jittery finger does not flicker it. Expands again only at scrollTop 0, not on scroll-up, so it never pushes the list mid-read.</div>
+        <div><strong style="color:#181D18;">Logging a row</strong><br />New row fades and slides in 12dp over 200ms; the section subtotal and the remaining figure count up over 320ms; macro fills animate width over the same 320ms, emphasized. The remaining figure animates the digits, not a colour flash — including when it crosses into "over".</div>
+        <div><strong style="color:#181D18;">Swipe to delete</strong><br />Row translates with the finger, revealing an <code>errorContainer</code> field with a <code>delete</code> icon in <code>onErrorContainer</code> — the one place <code>error</code> appears in the diary, because deletion is destructive. Past 96dp on release the row collapses out and the snackbar appears; short of it, the row springs back over 220ms. This is the only use of the error role on the screen.</div>
+        <div><strong style="color:#181D18;">Undo</strong><br />Snackbar 4s at 184dp from the bottom. Undo restores the row in place with the reverse of its entry animation, and the summary counts back down.</div>
+        <div><strong style="color:#181D18;">Filter</strong><br />Icon → field is a 150ms crossfade inside the same 48dp row; the field takes focus and the keyboard opens. Rows that fall out of the filter fade over 120ms without reflowing the card's subtotal.</div>
+      </div>
+      <h2 style="margin:16px 0 0;font-family:'Poppins',sans-serif;font-size:20px;font-weight:500;color:#181D18;">Accessibility</h2>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;line-height:1.5;color:#424940;">
+        <div>Section header reads "Breakfast, 325 kilocalories, expanded, button". Exercise reads "Exercise, 645 kilocalories burned, added to today's budget".</div>
+        <div>Forward chevron is <code>enabled = false</code>, not hidden, so its presence and unavailability are both announced.</div>
+        <div>Water glasses are eight separate toggle buttons ("Water glass 4, filled"), not one composite.</div>
+        <div>Swipe-to-delete is mirrored as a long-press context action, since a swipe is not reachable by switch access or TalkBack gestures.</div>
+        <div>At 200% font scale the summary's remaining figure and consumed line stack instead of sitting on one row; legend dots wrap to two lines of two; chip labels drop to icon + tooltip only past 175%.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</x-dc>
+</body>
+</html>

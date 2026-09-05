@@ -10,10 +10,16 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.navigationevent.NavigationEventInfo
@@ -31,6 +37,9 @@ import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.ui.diary.components.DiaryBody
 import ph.mart.healthapp.feature.food.ui.diary.components.DiarySheets
+
+/** Roughly one diary row. Past this the summary is no longer the thing being looked at. */
+private val SUMMARY_COLLAPSE_THRESHOLD = 24.dp
 
 @Composable
 fun FoodScreen(
@@ -81,6 +90,29 @@ private fun FoodContent(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // The summary bar's scrolled state. Derived here rather than inside the bar because the scroll
+    // it watches is hoisted all the way to AppScaffold — the same ScrollState the FAB's
+    // expand/collapse and the tap-the-active-tab-to-scroll-to-top gesture already read.
+    //
+    // Asymmetric on purpose: it collapses once the day's first row is genuinely being read past,
+    // and comes back **only at the very top**. A threshold that restored on any upward scroll would
+    // have the summary reappear and push the list down every time someone corrected an overshoot
+    // mid-diary, which is the one thing a pinned block must never do. Not reset on a day change,
+    // because the scroll position is not either.
+    val threshold = with(LocalDensity.current) { SUMMARY_COLLAPSE_THRESHOLD.roundToPx() }
+    var summaryCollapsed by remember { mutableStateOf(false) }
+    LaunchedEffect(scrollState, threshold) {
+        // snapshotFlow rather than a read in composition: scrollState.value changes every frame
+        // and this boolean flips twice a screen.
+        snapshotFlow { scrollState.value }.collect { offset ->
+            summaryCollapsed = when {
+                offset == 0 -> false
+                offset > threshold -> true
+                else -> summaryCollapsed
+            }
+        }
+    }
+
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             DiaryBody(
@@ -93,6 +125,7 @@ private fun FoodContent(
                 onOpenStrength = onOpenStrength,
                 snackbarHostState = snackbarHostState,
                 scrollState = scrollState,
+                summaryCollapsed = summaryCollapsed,
             )
 
             DiarySheets(
