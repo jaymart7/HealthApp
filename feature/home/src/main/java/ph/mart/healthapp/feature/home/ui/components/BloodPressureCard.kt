@@ -7,22 +7,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.category
 import ph.mart.healthapp.core.data.bloodpressure.formatBloodPressure
 import ph.mart.healthapp.core.data.epochDayOf
-import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.home.R
 
 /**
@@ -33,49 +28,36 @@ import ph.mart.healthapp.feature.home.R
  * Nobody takes their blood pressure daily, and a card that vanished on the six days between
  * readings would be a card nobody ever saw.
  *
+ * The category is **named, never graded** — no status dot, no band chart, no five-colour scale.
+ * `error` appears on the one severe category and nowhere else, the trend-arrow rule applied once.
+ *
  * Read-only, and it does not navigate. Logging needs the sheet, the sheet lives in
  * `:feature:progress`, and features never import each other — [WeightMetricCard] is the same shape.
  * The caller hides it entirely until the first reading exists, like [SupplementsCard] and for that
  * card's reason: nothing to import, nothing authored yet.
  */
 @Composable
-fun BloodPressureCard(reading: BloodPressureReading, todayEpochDay: Long, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(R.string.home_bp_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = formatBloodPressure(reading.systolic, reading.diastolic),
-                    style = MaterialTheme.typography.headlineSmall.tabularNums,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(reading.category.label),
-                    style = MaterialTheme.typography.bodySmall,
-                    // The trend-arrow rule: `error` for genuinely off-track, never as one step of
-                    // a five-colour scale.
-                    color = if (reading.category.severe) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
-            }
-            Text(
-                text = takenLabel(todayEpochDay - reading.dateEpochDay),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.End,
-            )
-        }
+fun BloodPressureCard(
+    reading: BloodPressureReading,
+    todayEpochDay: Long,
+    wide: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    MetricCard(
+        label = stringResource(R.string.home_bp_title),
+        value = formatBloodPressure(reading.systolic, reading.diastolic),
+        wide = wide,
+        modifier = modifier,
+    ) {
+        MetaText(
+            text = stringResource(reading.category.label),
+            sub = takenLabel(todayEpochDay - reading.dateEpochDay),
+            color = if (reading.category.severe) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+        )
     }
 }
 
@@ -94,12 +76,22 @@ private fun BloodPressureCardPreview() {
     AppTheme {
         Surface {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(16.dp)) {
-                BloodPressureCard(reading = taken, todayEpochDay = epochDayOf(0))
-                // A reading from last week, and a crisis: the two cases the card has to get right.
-                BloodPressureCard(
-                    reading = taken.copy(systolic = 185, diastolic = 70, pulseBpm = 0),
-                    todayEpochDay = epochDayOf(0) + 6,
-                )
+                BloodPressureCard(reading = taken, todayEpochDay = epochDayOf(0), wide = true)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    BloodPressureCard(
+                        reading = taken,
+                        todayEpochDay = epochDayOf(0),
+                        wide = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                    // A reading from last week, and a crisis: the two cases the card has to get right.
+                    BloodPressureCard(
+                        reading = taken.copy(systolic = 185, diastolic = 70, pulseBpm = 0),
+                        todayEpochDay = epochDayOf(0) + 6,
+                        wide = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }

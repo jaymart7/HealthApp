@@ -30,15 +30,21 @@ import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.home.R
 
-private val RING_SIZE = 96.dp
-private val RING_STROKE = 10.dp
+private val RING_SIZE = 120.dp
+private val RING_STROKE = 24.dp
 
 /**
- * Ring shows the share of the day's calorie goal already consumed; the centre reads the kcal
- * still left. [goalKcal] comes from `Profile.dailyTargets()`, never a stored copy — and already
- * has [burnedKcal] folded in by `budgetKcal()`, so the ring can't disagree with the diary's
- * summary bar. [burnedKcal] is passed separately only to name the difference on the card; pass 0
- * when the user has turned the exercise credit off.
+ * The day's calories, and the one card on Home with promoted visual weight.
+ *
+ * Ring shows the share of the day's calorie goal already consumed; the centre reads the kcal still
+ * left. [goalKcal] comes from `Profile.dailyTargets()`, never a stored copy — and already has
+ * [burnedKcal] folded in by `budgetKcal()`, so the ring can't disagree with the diary's summary
+ * bar. [burnedKcal] is passed separately only to name the difference on the card; pass 0 when the
+ * user has turned the exercise credit off.
+ *
+ * It is the hero because it is the figure the whole app is arranged around, and because a screen
+ * where every card carries the same weight is the flat scroll this redesign was fixing. It is also
+ * the reason nothing else got promoted: two heroes is no hero.
  *
  * The arc is the app's one authored entrance: it sweeps to its share over [Motion.Settle] while
  * the numbers stay instant and true, so the ring reads as settling onto a fact rather than the
@@ -68,12 +74,23 @@ fun CalorieRingCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CalorieRing(progress = progress, remainingKcal = goalKcal - consumedKcal)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(R.string.home_calories_consumed),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_calories_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    // Inside the budget the profile set. Over it is neutral, not `error`: the
+                    // budget is a target the user chose, and a day is not a verdict.
+                    StatusDot(if (consumedKcal <= goalKcal) StatusMark.OnTrack else StatusMark.None)
+                }
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         text = "$consumedKcal",
@@ -84,15 +101,22 @@ fun CalorieRingCard(
                         text = stringResource(R.string.home_calories_of_goal, goalKcal),
                         style = MaterialTheme.typography.bodyMedium.tabularNums,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 4.dp),
+                        modifier = Modifier.padding(bottom = 2.dp),
                     )
                 }
-                if (burnedKcal > 0) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = stringResource(R.string.home_calories_from_exercise, burnedKcal),
-                        style = MaterialTheme.typography.labelMedium.tabularNums,
+                        text = stringResource(R.string.home_calories_consumed),
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (burnedKcal > 0) {
+                        Text(
+                            text = stringResource(R.string.home_calories_from_exercise, burnedKcal),
+                            style = MaterialTheme.typography.labelSmall.tabularNums,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
@@ -136,7 +160,7 @@ private fun CalorieRing(progress: State<Float>, remainingKcal: Int) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "$remainingKcal",
-                style = MaterialTheme.typography.titleMedium.tabularNums,
+                style = MaterialTheme.typography.headlineMedium.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
@@ -153,12 +177,11 @@ private fun CalorieRing(progress: State<Float>, remainingKcal: Int) {
 private fun CalorieRingCardPreview() {
     AppTheme {
         Surface {
-            CalorieRingCard(
-                consumedKcal = 940,
-                goalKcal = 2261,
-                burnedKcal = 320,
-                modifier = Modifier.padding(16.dp),
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(16.dp)) {
+                CalorieRingCard(consumedKcal = 1560, goalKcal = 2692, burnedKcal = 431)
+                // Over budget, and with the exercise credit switched off: no dot, no red.
+                CalorieRingCard(consumedKcal = 2810, goalKcal = 2261)
+            }
         }
     }
 }

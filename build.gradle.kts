@@ -41,7 +41,6 @@ val uiArguments = listOf(
 val literalExceptions = listOf(
     "SubjectSummary.kt",
     "AchievementsDetail.kt",
-    "StreakCard.kt",
     "HomeData.kt",
     "DiaryDateHeader.kt",
     "GoalProjectionLine.kt",

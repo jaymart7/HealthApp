@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Circle
@@ -29,6 +31,9 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.home.R
+
+/** Tighter than the card's own 20dp: a row inside a card, not a card inside a card. */
+private val ROW_RADIUS = 12.dp
 
 /**
  * Today's supplements, as a checklist. Renders nothing when the list is empty — the same choice
@@ -62,7 +67,7 @@ fun SupplementsCard(
             Text(
                 text = stringResource(R.string.home_supplements_count, supplements.completedCount, supplements.size),
                 style = MaterialTheme.typography.titleSmall.tabularNums,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         supplements.forEach { item ->
@@ -89,16 +94,18 @@ private fun SupplementRow(item: SupplementToday, onTap: () -> Unit) {
     // tappable where the eye already is.
     Surface(
         onClick = onTap,
+        shape = RoundedCornerShape(ROW_RADIUS),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = TapTargetMin)
             .clearAndSetSemantics {
                 contentDescription = description
             },
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
         ) {
             Icon(
                 imageVector = if (item.isComplete) Icons.Filled.CheckCircle else Icons.Outlined.Circle,

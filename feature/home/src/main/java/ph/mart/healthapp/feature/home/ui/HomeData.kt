@@ -26,8 +26,8 @@ import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
  * `ExerciseRepository` and `StepsRepository` together, [lastNight], [steps] and [heart] from
  * `SleepRepository`/`StepsRepository`/`HeartRepository`. Targets are never stored here — they're derived
  * from [profile] at read time via `dailyTargets()`, so they can't drift from the inputs that
- * produce them. [streak] and [weightProgressKg] are derived the same way, from all three
- * repositories at once — nothing about consistency is stored.
+ * produce them. [streak] is derived the same way, from all three repositories at once — nothing
+ * about consistency is stored.
  */
 data class HomeUiState(
     /** False until the repositories' first combined emission. The all-zero default below is
@@ -79,8 +79,6 @@ data class HomeUiState(
      * only place adherence is defined. */
     val trainingWeek: List<PlanDay> = emptyList(),
     val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),
-    /** Null when the goal is Maintain (no direction to move) or nothing has been weighed yet. */
-    val weightProgressKg: Double? = null,
     /** The model's line, once it answers. Null until then and null forever offline or on a failed
      * call — `HomeCards` falls back to [insightFor], so the card never waits on the network. */
     val aiInsight: String? = null,
@@ -165,17 +163,23 @@ internal fun HomeUiState.toInsightRequest(): InsightRequest? = profile?.let {
     )
 }
 
-/** Greeting copy is the prototype's verbatim, keyed off the local hour. */
-fun greetingFor(hour: Int): String {
-    val part = when {
-        hour < 12 -> "morning"
-        hour < 18 -> "afternoon"
-        else -> "evening"
-    }
-    val line = when {
-        hour < 12 -> "Ready for breakfast?"
-        hour < 18 -> "How's the day going?"
-        else -> "Almost there for today."
-    }
-    return "Good $part! $line"
+/**
+ * Greeting copy, keyed off the local hour, in two halves.
+ *
+ * The split is what lets the header block's mascot row shrink to 56dp: the greeting is the row's
+ * title beside the avatar, and the sentence sits under it as a sub-line rather than inside a speech
+ * bubble the row has to make room for. Both stay in Kotlin under the pure-function-with-a-JVM-test
+ * exemption — the test over their exact wording is what earns it.
+ */
+fun greetingFor(hour: Int): String = when {
+    hour < 12 -> "Good morning"
+    hour < 18 -> "Good afternoon"
+    else -> "Good evening"
+}
+
+/** The second half of [greetingFor] — see its KDoc for why they are two functions. */
+fun greetingSubFor(hour: Int): String = when {
+    hour < 12 -> "Ready for breakfast?"
+    hour < 18 -> "How's the day going?"
+    else -> "Almost there for today."
 }

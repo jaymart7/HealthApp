@@ -1,6 +1,5 @@
 package ph.mart.healthapp.feature.home.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,6 +40,9 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.home.R
+
+private val CELL_RADIUS = 8.dp
+private val DOT_SIZE = 6.dp
 
 /**
  * What the week's plan asks for today, and how the week is going.
@@ -133,11 +141,15 @@ private fun PlannedRoutineRow(routine: Routine, trained: Boolean, onStart: () ->
 }
 
 /**
- * Monday to Sunday: a filled dot for a day that was trained, a ringed one for a day that was
- * planned and wasn't, and a faint one for a day the plan never asked for.
+ * Monday to Sunday, one cell a day.
  *
- * The whole strip carries one description rather than seven — the dots are a summary, and the
- * figure beside the heading already says it in words.
+ * Three states, and the dot carries all three so the cell is free to say only where today is:
+ * `primary` for a day that was trained, `outline` for one the plan asked for and did not get, and
+ * transparent for a day nothing was planned on. Transparent rather than absent, so every label sits
+ * on the same baseline whatever shape the week is.
+ *
+ * The whole strip carries one description rather than seven — it is a summary, and the figure
+ * beside the heading already says it in words.
  */
 @Composable
 private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
@@ -155,7 +167,7 @@ private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
     val nothingPlanned = stringResource(R.string.home_plan_nothing)
     val initials = weekdayInitials()
     Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
             .fillMaxWidth()
             .clearAndSetSemantics {
@@ -163,33 +175,47 @@ private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
             },
     ) {
         week.forEachIndexed { index, day ->
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Surface(
-                    shape = CircleShape,
-                    color = when {
-                        day.trained -> MaterialTheme.colorScheme.primary
-                        day.planned -> MaterialTheme.colorScheme.surfaceContainerHighest
-                        else -> MaterialTheme.colorScheme.surface
-                    },
-                    border = if (day.planned && !day.trained) {
-                        BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-                    } else {
-                        null
-                    },
-                    content = {},
-                    modifier = Modifier.size(if (day.isToday) 18.dp else 14.dp),
-                )
-                Text(
-                    text = initials[index],
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center,
-                    color = if (day.isToday) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.padding(top = 4.dp),
-                )
+            // Today wears the same `secondaryContainer` pill the selected nav tab does — one
+            // "you are here" treatment across the app, not a second one invented for a strip.
+            val onCell = if (day.isToday) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+            Surface(
+                shape = RoundedCornerShape(CELL_RADIUS),
+                color = if (day.isToday) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+                modifier = Modifier.weight(1f).heightIn(min = TapTargetMin),
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    Text(
+                        text = initials[index],
+                        style = MaterialTheme.typography.labelMedium,
+                        textAlign = TextAlign.Center,
+                        color = onCell,
+                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .size(DOT_SIZE)
+                            .background(
+                                color = when {
+                                    day.trained -> MaterialTheme.colorScheme.primary
+                                    day.planned -> MaterialTheme.colorScheme.outline
+                                    else -> Color.Transparent
+                                },
+                                shape = CircleShape,
+                            ),
+                    )
+                }
             }
         }
     }

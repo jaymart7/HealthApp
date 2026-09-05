@@ -5,23 +5,30 @@
     <string name="home_empty_heading">Let\'s log your first meal</string>
     <string name="home_empty_body">Tap Log below to add food by photo or search.</string>
     <string name="home_ask_coach">Ask your coach</string>
+    <!-- The chip beside the greeting; the full sentence above is its contentDescription. -->
+    <string name="home_ask_short">Ask</string>
 
     <!-- Streak. The caption and the weight line stay in Kotlin - see StreakCard.kt. -->
     <string name="home_streak_title">Streak</string>
     <string name="home_streak_badge_desc">%1$d-day badge</string>
+    <plurals name="home_streak_days">
+        <item quantity="one">" day"</item>
+        <item quantity="other">" days"</item>
+    </plurals>
 
     <!-- Calories -->
-    <string name="home_calories_consumed">Consumed</string>
+    <string name="home_calories_title">Calories</string>
+    <string name="home_calories_consumed">Eaten today</string>
     <string name="home_calories_of_goal">" / %1$d kcal"</string>
     <string name="home_calories_from_exercise">+%1$d kcal from exercise</string>
-    <string name="home_calories_left">left</string>
+    <string name="home_calories_left">kcal left</string>
 
     <!-- Macros -->
     <string name="home_macros_title">Macros</string>
     <string name="home_macro_protein">Protein</string>
     <string name="home_macro_carbs">Carbs</string>
     <string name="home_macro_fat">Fat</string>
-    <string name="home_macro_legend">%1$s %2$d/%3$dg</string>
+    <string name="home_macro_figure">%1$d / %2$d g</string>
 
     <!-- Water -->
     <string name="home_water_title">Water</string>
@@ -44,11 +51,14 @@
     <string name="home_steps_title">Steps today</string>
     <string name="home_steps_of_goal">of %1$s</string>
     <string name="home_steps_credit">+%1$d kcal on your budget</string>
+    <string name="home_steps_goal_credit">of %1$s · %2$d kcal</string>
 
     <!-- Sleep and heart -->
     <string name="home_sleep_title">Last night</string>
     <string name="home_heart_title">Heart rate today</string>
     <string name="home_heart_lowest">Lowest %1$s</string>
+    <string name="home_heart_bpm">bpm</string>
+    <string name="home_heart_average">Day average</string>
 
     <!-- Blood pressure -->
     <string name="home_bp_title">Blood pressure</string>
@@ -114,10 +124,26 @@
     <!-- Progress photo -->
     <string name="home_photo_title">Progress photo</string>
     <string name="home_photo_none">No photos yet</string>
-    <string name="home_photo_today">Last photo today</string>
+    <string name="home_photo_none_value">None yet</string>
+    <string name="home_photo_today">Today</string>
+    <plurals name="home_photo_days_unit">
+        <item quantity="one">" day ago"</item>
+        <item quantity="other">" days ago"</item>
+    </plurals>
     <plurals name="home_photo_days_ago">
         <item quantity="one">Last photo %1$d day ago</item>
         <item quantity="other">Last photo %1$d days ago</item>
     </plurals>
     <string name="home_photo_cta">Take one</string>
+
+    <!-- The one door from Home to Profile - Home layout; the block is undiscoverable otherwise. -->
+    <string name="home_rearrange">Rearrange your Home</string>
+
+    <!-- Today strip. Each cell restates a card below it, so the labels are lowercase fragments. -->
+    <string name="home_strip_calories">kcal left</string>
+    <string name="home_strip_water">water</string>
+    <string name="home_strip_steps">steps</string>
+    <string name="home_strip_streak">day streak</string>
+    <string name="home_strip_weight">weight</string>
+    <string name="home_strip_water_value">%1$d/%2$d</string>
 </resources>

@@ -51,15 +51,21 @@ every width.
 
 ## Home
 
-Fifteen cards, all reorderable/hideable except the pinned greeting and AI insight:
+A pinned header block, then fifteen reorderable/hideable cards laid out in paired rows:
 
-Calories (ring) · Streak · Water · Fasting · Today's workout · Sleep · Steps · Heart rate ·
-Blood pressure · Mood · Cycle · Supplements · Weight · Macros · Progress photo.
+Calories (hero ring) · Water · Macros · Streak · Weight · Steps · Sleep · Heart rate ·
+Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · Progress photo.
 
-- Mascot greeting card — the app's one door to the coach.
-- AI insight card (dismissible, with a rules-based offline fallback).
+- Pinned header block — mascot greeting + the app's one door to the coach, a two-or-three-cell
+  Today strip mirroring visible cards, and the AI insight as a dismissible inset band (with a
+  rules-based offline fallback).
+- Half-width cards pair with an adjacent half; an unpaired half falls back to full width. Gated
+  cards are removed before pairing, so survivors close up rather than leaving holes.
+- An 8dp status dot on the four cards where on-track is a fact the app measures (calories, streak,
+  fasting goal, weight direction) and nowhere else.
 - Card order and visibility edited in Profile → Home layout (drag handle + move up/down a11y
-  actions); "Reset to default" restores declaration order.
+  actions), reachable from a "Rearrange your Home" link at the foot of Home; "Reset to default"
+  restores declaration order.
 - Mascot picker: five characters (Bibo, Pip, Zed, Momo, Sprig) × five palettes; blink + breathe
   animation that rests when system animations are off.
 

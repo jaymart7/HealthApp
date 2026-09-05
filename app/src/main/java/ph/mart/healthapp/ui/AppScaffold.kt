@@ -323,6 +323,8 @@ fun AppScaffold(
                             onStartRoutine = { routineId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
                             },
+                            // The same entry Profile's own row opens — Home just makes it findable.
+                            onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },
                         )
                         coachEntries()
                         foodEntries(

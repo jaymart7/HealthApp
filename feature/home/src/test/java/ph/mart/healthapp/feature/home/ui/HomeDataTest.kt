@@ -63,8 +63,19 @@ class HomeDataTest {
 
     @Test
     fun `greeting matches the prototype copy for each part of the day`() {
-        assertEquals("Good morning! Ready for breakfast?", greetingFor(8))
-        assertEquals("Good afternoon! How's the day going?", greetingFor(12))
-        assertEquals("Good evening! Almost there for today.", greetingFor(18))
+        assertEquals("Good morning", greetingFor(8))
+        assertEquals("Good afternoon", greetingFor(12))
+        assertEquals("Good evening", greetingFor(18))
+    }
+
+    @Test
+    fun `the sub-line splits on the same hours the greeting does`() {
+        assertEquals("Ready for breakfast?", greetingSubFor(8))
+        assertEquals("How's the day going?", greetingSubFor(12))
+        assertEquals("Almost there for today.", greetingSubFor(18))
+        // The boundaries themselves, since two functions now have to agree on them.
+        assertEquals(greetingFor(11), greetingFor(0))
+        assertEquals(greetingSubFor(17), greetingSubFor(12))
+        assertEquals(greetingSubFor(23), greetingSubFor(18))
     }
 }

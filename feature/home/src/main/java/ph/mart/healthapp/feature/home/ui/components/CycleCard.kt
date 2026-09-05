@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.outlined.WaterDrop
@@ -35,12 +37,13 @@ import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
 import ph.mart.healthapp.core.designsystem.theme.stepFillProgress
 import ph.mart.healthapp.feature.home.R
 
-private val STEP_SIZE = 32.dp
+/** Matches [MoodCard]'s, so the two meters on Home line up their steps. */
+private val NAME_WIDTH = 52.dp
 
 /**
  * Where you are in the cycle, and today's flow in one tap.
  *
- * The row is a **meter**, like [MoodCard]'s energy row and unlike its mood row: light, medium and
+ * The row is a **meter**, like [MoodCard]'s two rows and [WaterCard]'s glasses: light, medium and
  * heavy are one scale, so filling up to the level is the honest read. Tapping the level you are
  * already on clears it, so a mis-tap is corrected by the gesture that made it.
  *
@@ -118,9 +121,9 @@ private fun FlowRow(flow: Int, onSetFlow: (Int) -> Unit) {
             text = stringResource(R.string.home_cycle_flow),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(end = 12.dp),
+            modifier = Modifier.width(NAME_WIDTH),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
             TAPPABLE_FLOW.forEachIndexed { index, level ->
                 val fill = stepFillProgress(
                     active = level.value <= flow,
@@ -134,7 +137,8 @@ private fun FlowRow(flow: Int, onSetFlow: (Int) -> Unit) {
                 IconButton(
                     onClick = { onSetFlow(if (level.value == flow) 0 else level.value) },
                     modifier = Modifier
-                        .size(STEP_SIZE)
+                        .weight(1f)
+                        .heightIn(min = TapTargetMin)
                         // Read inside the layer lambda: the pop settles in the Draw phase.
                         .graphicsLayer {
                             scaleX = 1f + (Motion.ActiveStepScale - 1f) * fill.value

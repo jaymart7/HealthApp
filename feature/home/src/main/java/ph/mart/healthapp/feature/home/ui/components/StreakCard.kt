@@ -1,130 +1,63 @@
 package ph.mart.healthapp.feature.home.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.data.profile.UnitSystem
-import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
-import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.streak.StreakBadge
 import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.streak.earnedBadges
-import ph.mart.healthapp.core.data.streak.earnedWeightBadge
-import ph.mart.healthapp.core.data.streak.nextBadge
-import ph.mart.healthapp.core.designsystem.component.AppCard
+import ph.mart.healthapp.core.designsystem.component.BADGE_DOT_SIZE
 import ph.mart.healthapp.core.designsystem.component.BadgeDot
-import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.home.R
 
+/** Five badges have to fit inside a paired card's 126dp of content on a 360dp screen. */
+private val PairedBadgeSize = 22.dp
+
 /**
- * Consistency, not today's numbers. Every value is derived in `:core:data/streak` — this card
- * only formats. [weightProgressKg] is null for a Maintain goal (no direction to move) and is
- * hidden when it's not positive, so a bad week never gets its own line.
+ * Consistency, not today's numbers. Every value is derived in `:core:data/streak` — this card only
+ * formats.
+ *
+ * The badges are the whole of the card's second line now. The two sentences it used to carry —
+ * "10 days to your 100-day badge." and the weight-badge line — are gone: the unlit badge already
+ * says what is next, and the weight line said what the Weight card says one row over. The dot
+ * lighting up is still the entire reward, which is why there is no celebration here and never was.
+ *
+ * The status mark is [StatusMark.OnTrack] only while a streak is actually running; a broken one is
+ * neutral rather than [StatusMark.OffTrack], because a day you have not logged *yet* is not a
+ * failure the app should be marking in `error` at breakfast.
  */
 @Composable
-fun StreakCard(
-    streak: StreakStats,
-    weightProgressKg: Double?,
-    unit: UnitSystem,
-    modifier: Modifier = Modifier,
-) {
+fun StreakCard(streak: StreakStats, wide: Boolean, modifier: Modifier = Modifier) {
     val earned = streak.earnedBadges()
-    AppCard(modifier = modifier) {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.home_streak_title),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = AppIcons.Streak,
-                    contentDescription = null,
-                    tint = if (streak.current > 0) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(16.dp),
-                )
-                Text(
-                    text = dayCountLabel(streak.current),
-                    style = MaterialTheme.typography.titleSmall.tabularNums,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    MetricCard(
+        label = stringResource(R.string.home_streak_title),
+        value = "${streak.current}",
+        unit = pluralStringResource(R.plurals.home_streak_days, streak.current),
+        wide = wide,
+        status = if (streak.current > 0) StatusMark.OnTrack else StatusMark.None,
+        modifier = modifier,
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             StreakBadge.entries.forEach { badge ->
                 BadgeDot(
                     label = badge.days.toString(),
                     earned = badge in earned,
                     description = stringResource(R.string.home_streak_badge_desc, badge.days),
+                    size = if (wide) BADGE_DOT_SIZE else PairedBadgeSize,
                 )
             }
         }
-
-        Text(
-            text = captionFor(streak),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 12.dp),
-        )
-
-        if (weightProgressKg != null && weightProgressKg > 0) {
-            Text(
-                text = weightLineFor(weightProgressKg, unit),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
     }
-}
-
-// The three below stay in Kotlin: each is a pure function with a JVM test over its exact
-// wording, the same reading `insightFor()` and `goalProjectionLine()` got. Moving them means
-// returning a case type for a composable to resolve, which is its own decision.
-internal fun dayCountLabel(days: Int): String = if (days == 1) "1 day" else "$days days"
-
-/** First matching rule wins, same shape as Home's `insightFor`. */
-internal fun captionFor(streak: StreakStats): String {
-    if (streak.current == 0) return "Log anything today to start a streak."
-    val next = streak.nextBadge() ?: return "Best: ${dayCountLabel(streak.best)}."
-    val remaining = next.days - streak.current
-    return "${dayCountLabel(remaining)} to your ${next.days}-day badge."
-}
-
-internal fun weightLineFor(progressKg: Double, unit: UnitSystem): String {
-    val moved = "%.1f %s".format(progressKg.kgToDisplayUnit(unit), unit.weightUnitLabel())
-    val badge = earnedWeightBadge(progressKg)
-        ?: return "$moved toward your goal."
-    val threshold = "%.1f %s".format(badge.kg.kgToDisplayUnit(unit), unit.weightUnitLabel())
-    return "$moved toward your goal · $threshold badge earned."
 }
 
 @PreviewLightDark
@@ -132,27 +65,21 @@ internal fun weightLineFor(progressKg: Double, unit: UnitSystem): String {
 private fun StreakCardPreview() {
     AppTheme {
         Surface {
-            StreakCard(
-                streak = StreakStats(current = 12, best = 31, totalDaysLogged = 74),
-                weightProgressKg = 5.2,
-                unit = UnitSystem.Metric,
-                modifier = Modifier.padding(16.dp),
-            )
-        }
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun StreakCardNoStreakPreview() {
-    AppTheme {
-        Surface {
-            StreakCard(
-                streak = StreakStats(current = 0, best = 4, totalDaysLogged = 9),
-                weightProgressKg = null,
-                unit = UnitSystem.Metric,
-                modifier = Modifier.padding(16.dp),
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(16.dp)) {
+                StreakCard(StreakStats(current = 12, best = 31, totalDaysLogged = 74), wide = true)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    StreakCard(
+                        StreakStats(current = 90, best = 90, totalDaysLogged = 140),
+                        wide = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                    StreakCard(
+                        StreakStats(current = 0, best = 4, totalDaysLogged = 9),
+                        wide = false,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
     }
 }

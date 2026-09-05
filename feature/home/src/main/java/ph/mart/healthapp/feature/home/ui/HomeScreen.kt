@@ -27,6 +27,10 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.health.HeartDay
+import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementToday
@@ -44,6 +48,7 @@ fun HomeScreen(
     onAddPhoto: () -> Unit,
     onOpenCoach: () -> Unit,
     onStartRoutine: (Long) -> Unit,
+    onOpenHomeLayout: () -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -56,6 +61,7 @@ fun HomeScreen(
         onAddPhoto = onAddPhoto,
         onOpenCoach = onOpenCoach,
         onStartRoutine = onStartRoutine,
+        onOpenHomeLayout = onOpenHomeLayout,
         onEvent = viewModel::handleEvent,
     )
 }
@@ -67,6 +73,7 @@ private fun HomeContent(
     onAddPhoto: () -> Unit,
     onOpenCoach: () -> Unit,
     onStartRoutine: (Long) -> Unit,
+    onOpenHomeLayout: () -> Unit,
     onEvent: (HomeEvent) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -96,6 +103,7 @@ private fun HomeContent(
                     onAddPhoto = onAddPhoto,
                     onOpenCoach = onOpenCoach,
                     onStartRoutine = onStartRoutine,
+                    onOpenHomeLayout = onOpenHomeLayout,
                     onEvent = onEvent,
                 )
             }
@@ -139,12 +147,54 @@ private fun HomeScreenPreview() {
                     SupplementToday(Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2), taken = 1),
                 ),
                 streak = StreakStats(current = 12, best = 31, totalDaysLogged = 74),
-                weightProgressKg = 5.2,
+                lastNight = SleepNight(dateEpochDay = today, minutesAsleep = 432),
+                steps = StepDay(dateEpochDay = today, steps = 8432, burnedKcal = 302),
+                stepsCreditKcal = 302,
+                heart = HeartDay(dateEpochDay = today, averageBpm = 68, minBpm = 52),
+                latestBloodPressure = BloodPressureReading(
+                    takenAtMillis = System.currentTimeMillis(),
+                    systolic = 129,
+                    diastolic = 85,
+                    pulseBpm = 71,
+                ),
             ),
             state = HomeScreenState(),
             onAddPhoto = {},
             onOpenCoach = {},
             onStartRoutine = {},
+            onOpenHomeLayout = {},
+            onEvent = {},
+        )
+    }
+}
+
+/**
+ * The gated-cards-absent case, and the one this redesign has to get right.
+ *
+ * No profile (no Calories, no Macros), no watch (no Sleep, Steps or Heart), cycle tracking off, no
+ * routine scheduled, no blood pressure ever logged, no insight and no running fast. Every one of
+ * those cards is *absent*, never zeroed — and the half-width survivors re-pair around the holes
+ * rather than leaving them, which is what `homeRows()` running after the gate buys.
+ */
+@PreviewLightDark
+@Composable
+private fun HomeScreenGatedPreview() {
+    val today = todayEpochDay()
+    AppTheme {
+        HomeContent(
+            uiState = HomeUiState(
+                loaded = true,
+                foodEntryCount = 2,
+                weightEntries = listOf(WeightEntry(dateEpochDay = today, weightKg = 82.7)),
+                waterGlasses = 2,
+                streak = StreakStats(current = 90, best = 90, totalDaysLogged = 140),
+                lastPhotoEpochDay = today - 3,
+            ),
+            state = HomeScreenState(),
+            onAddPhoto = {},
+            onOpenCoach = {},
+            onStartRoutine = {},
+            onOpenHomeLayout = {},
             onEvent = {},
         )
     }
@@ -160,6 +210,7 @@ private fun HomeScreenDayOnePreview() {
             onAddPhoto = {},
             onOpenCoach = {},
             onStartRoutine = {},
+            onOpenHomeLayout = {},
             onEvent = {},
         )
     }

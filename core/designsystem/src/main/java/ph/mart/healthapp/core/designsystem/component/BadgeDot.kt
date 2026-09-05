@@ -22,11 +22,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+
+/** The dot every caller but Home's paired streak card draws. */
+val BADGE_DOT_SIZE = 32.dp
 
 /**
  * One earned-or-not threshold marker. Filled means earned — every caller scores it off a *best*
@@ -44,9 +48,20 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
  *
  * [description] names the badge ("7-day badge", "25 photos badge"); the earned state is appended
  * here so no caller can describe a dot without saying whether it's lit.
+ *
+ * [size] defaults to the 32dp every caller drew before Home's streak card became a half-width one,
+ * where five 32dp dots do not fit inside 126dp of content on a 360dp screen. The label style steps
+ * down with it rather than being a second parameter — a three-digit badge is what has to survive
+ * the shrink, and there is one threshold, not a scale.
  */
 @Composable
-fun BadgeDot(label: String, earned: Boolean, description: String, modifier: Modifier = Modifier) {
+fun BadgeDot(
+    label: String,
+    earned: Boolean,
+    description: String,
+    modifier: Modifier = Modifier,
+    size: Dp = BADGE_DOT_SIZE,
+) {
     // Resolved here rather than in the semantics lambda, which cannot read a resource.
     val spoken = stringResource(
         if (earned) R.string.ds_badge_earned else R.string.ds_badge_not_earned,
@@ -74,7 +89,7 @@ fun BadgeDot(label: String, earned: Boolean, description: String, modifier: Modi
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(32.dp)
+            .size(size)
             .clip(CircleShape)
             .background(container)
             .clearAndSetSemantics {
@@ -83,7 +98,11 @@ fun BadgeDot(label: String, earned: Boolean, description: String, modifier: Modi
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.tabularNums,
+            style = if (size < BADGE_DOT_SIZE) {
+                MaterialTheme.typography.labelSmall.tabularNums
+            } else {
+                MaterialTheme.typography.labelMedium.tabularNums
+            },
             color = content,
         )
     }

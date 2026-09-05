@@ -5,92 +5,64 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.health.formatSteps
-import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.home.R
 
 /**
  * Today's steps, from Google Health. Same rule as [SleepCard]: one source, so the caller hides the
  * card entirely rather than rendering a zero for a user who never connected.
  *
- * [goal] is the profile's current target, shown under the count so the number the user set has a
- * place it is actually read. It is not snapshotted per day — see `Profile.stepGoal`.
+ * [goal] is the profile's current target — not snapshotted per day, see `Profile.stepGoal` — and it
+ * is the bar's denominator, which is what gives the number the user set somewhere it is actually
+ * read. There is no status mark: a step goal is a target, but a day is not over at the moment you
+ * look at it, and marking a morning `error` for not having walked yet would be the app grading a
+ * day in progress.
  *
  * [creditKcal] is what these steps added to the day's calorie budget, already net of any workout
- * that claimed them and already zero when the user has switched the exercise credit off. It is
- * shown because the calorie ring's goal moves when it changes, and a number that moves for no
- * visible reason reads as a bug.
+ * that claimed them and already zero when the user has switched the exercise credit off. It rides
+ * the bar's caption because the calorie ring's goal moves when it changes, and a number that moves
+ * for no visible reason reads as a bug.
  */
 @Composable
-fun StepsCard(steps: StepDay, goal: Int, creditKcal: Int, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(R.string.home_steps_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = steps.formatSteps(),
-                    style = MaterialTheme.typography.headlineSmall.tabularNums,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(R.string.home_steps_of_goal, formatSteps(goal)),
-                    style = MaterialTheme.typography.bodySmall.tabularNums,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (creditKcal > 0) {
-                    Text(
-                        text = stringResource(R.string.home_steps_credit, creditKcal),
-                        style = MaterialTheme.typography.bodySmall.tabularNums,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Text(
-                text = stringResource(R.string.home_from_google_health),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+fun StepsCard(steps: StepDay, goal: Int, creditKcal: Int, wide: Boolean, modifier: Modifier = Modifier) {
+    MetricCard(
+        label = stringResource(R.string.home_steps_title),
+        value = steps.formatSteps(),
+        wide = wide,
+        modifier = modifier,
+    ) {
+        MetaBar(
+            progress = { if (goal > 0) steps.steps.toFloat() / goal else 0f },
+            caption = if (creditKcal > 0) {
+                stringResource(R.string.home_steps_goal_credit, formatSteps(goal), creditKcal)
+            } else {
+                stringResource(R.string.home_steps_of_goal, formatSteps(goal))
+            },
+        )
     }
 }
 
 @PreviewLightDark
 @Composable
 private fun StepsCardPreview() {
+    val day = StepDay(dateEpochDay = 20_000, steps = 8432, burnedKcal = 302)
     AppTheme {
         Surface {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(16.dp)) {
-                StepsCard(
-                    steps = StepDay(dateEpochDay = 20_000, steps = 8432, burnedKcal = 302),
-                    goal = 10_000,
-                    creditKcal = 302,
-                )
-                // The same day with the exercise credit switched off.
-                StepsCard(
-                    steps = StepDay(dateEpochDay = 20_000, steps = 8432, burnedKcal = 302),
-                    goal = 10_000,
-                    creditKcal = 0,
-                )
+                StepsCard(steps = day, goal = 10_000, creditKcal = 302, wide = true)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                    StepsCard(day, goal = 10_000, creditKcal = 302, wide = false, modifier = Modifier.weight(1f))
+                    // The same day with the exercise credit switched off.
+                    StepsCard(day, goal = 10_000, creditKcal = 0, wide = false, modifier = Modifier.weight(1f))
+                }
             }
         }
     }

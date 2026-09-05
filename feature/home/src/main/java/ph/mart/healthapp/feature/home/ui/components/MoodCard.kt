@@ -4,8 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.SentimentDissatisfied
@@ -38,7 +40,8 @@ import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
 import ph.mart.healthapp.core.designsystem.theme.stepFillProgress
 import ph.mart.healthapp.feature.home.R
 
-private val STEP_SIZE = 32.dp
+private val STEP_ICON = 24.dp
+private val NAME_WIDTH = 52.dp
 
 private val MoodFaces = listOf(
     Icons.Filled.SentimentVeryDissatisfied,
@@ -53,13 +56,13 @@ private val MoodFaces = listOf(
  * 0 means untouched, so logging one without the other is a first-class state rather than a
  * half-filled form.
  *
- * The two rows read differently on purpose. Mood is a **single choice** — only the face you
- * picked is tinted, because lighting up sad *and* neutral *and* happy to reach "good" says the
- * wrong thing. Energy is a **meter** that fills up to the level, the same read as
- * [ph.mart.healthapp.core.designsystem.component.WaterGlassRow].
- *
- * That difference carries into the motion too: energy staggers as it fills, mood doesn't, because
- * a single choice has no direction to travel in.
+ * **Both rows are meters** — they fill up to the level, the same read as
+ * [ph.mart.healthapp.core.designsystem.component.WaterGlassRow], energy, water, cycle flow and
+ * supplements. Mood used to be a single choice on the argument that lighting up sad *and* neutral
+ * *and* happy to reach "good" says the wrong thing; the redesign reversed that deliberately. Every
+ * other tappable row on Home is a meter, and one row that looked identical and answered a tap
+ * differently was the odd one out — the glyphs already carry the difference between a 2 and a 5,
+ * so the fill does not have to.
  *
  * Feature-local rather than `:core:designsystem`: Home is the only screen that logs mood.
  */
@@ -87,7 +90,6 @@ fun MoodCard(
             label = stringResource(R.string.home_mood_mood),
             level = mood,
             icon = { index -> MoodFaces[index] },
-            active = { index -> index + 1 == mood },
             describe = { level -> moodDescriptions[level - 1] },
             onSelect = onSetMood,
         )
@@ -95,19 +97,20 @@ fun MoodCard(
             label = stringResource(R.string.home_mood_energy),
             level = energy,
             icon = { index -> if (index < energy) Icons.Filled.Bolt else Icons.Outlined.Bolt },
-            active = { index -> index < energy },
             describe = { level -> energyDescriptions[level - 1] },
             onSelect = onSetEnergy,
             modifier = Modifier.padding(top = 4.dp),
-            stagger = true,
         )
     }
 }
 
 /**
- * [active] decides which steps are tinted, [icon] which glyph each draws — the only two things
- * that differ between the mood and energy rows. [stagger] adds the third: a meter fills in
- * sequence, a single choice lands all at once.
+ * One meter: steps `1..level` are tinted, [icon] decides which glyph each draws, and that glyph is
+ * the only thing that differs between the mood and energy rows.
+ *
+ * The steps **divide the row's width** rather than sitting at a fixed size, exactly as
+ * [ph.mart.healthapp.core.designsystem.component.WaterGlassRow]'s glasses do — that is what holds
+ * the [TapTargetMin] floor on a narrow screen without wrapping the row onto a second line.
  *
  * Tapping the level you are already on clears it back to 0, so a mis-tap is corrected by the
  * same gesture that made it and the card needs no separate undo.
@@ -117,11 +120,9 @@ private fun ScaleRow(
     label: String,
     level: Int,
     icon: (Int) -> ImageVector,
-    active: (Int) -> Boolean,
     describe: (Int) -> String,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    stagger: Boolean = false,
 ) {
     val inactiveTint = MaterialTheme.colorScheme.outlineVariant
     val activeTint = MaterialTheme.colorScheme.primary
@@ -133,21 +134,22 @@ private fun ScaleRow(
             text = label,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(end = 12.dp),
+            modifier = Modifier.width(NAME_WIDTH),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
             MoodLevel.entries.forEachIndexed { index, entry ->
                 val fill = stepFillProgress(
-                    active = active(index),
+                    active = index < level,
                     index = index,
                     count = count,
                     filling = filling,
-                    stagger = stagger,
+                    stagger = true,
                 )
                 IconButton(
                     onClick = { onSelect(if (entry.value == level) 0 else entry.value) },
                     modifier = Modifier
-                        .size(STEP_SIZE)
+                        .weight(1f)
+                        .heightIn(min = TapTargetMin)
                         // Read inside the layer lambda: the pop settles in the Draw phase.
                         .graphicsLayer {
                             scaleX = 1f + (Motion.ActiveStepScale - 1f) * fill.value
@@ -161,6 +163,7 @@ private fun ScaleRow(
                         imageVector = icon(index),
                         contentDescription = null,
                         tint = lerp(inactiveTint, activeTint, fill.value),
+                        modifier = Modifier.size(STEP_ICON),
                     )
                 }
             }

@@ -333,18 +333,85 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   this build doesn't know is **dropped** (a card retired later can't leave a hole), a card the
   string never mentions is **appended visible** (a card added later must not be silently hidden from
   exactly the users who customised their Home). `HomeCardLayoutTest` guards both.
-- **The greeting and the AI insight are pinned; the other thirteen cards move.** The greeting is the
-  app's one door to the coach, so hiding it would strand a whole feature, and the insight owns an
-  expand/collapse whose *exit* is what stops the cards below it jumping — neither survives being
-  dropped into an arbitrary slot. Everything else on Home is one `forEachIndexed` over the resolved
-  layout, each slot `key`ed on its card so the entrance stagger follows a card across a reorder
-  rather than staying with the slot it left.
-- **A visibility switch can only ever remove a card, never force one.** Every data gate that was in
-  `HomeCards` stays inside its `when` branch: Sleep left *on* with no watch synced is as absent as
-  it was before the editor existed, and the editor row says so under the switch (`HomeCard.note`) —
-  a control that looks broken is worse than one that explains itself. A hidden card's flows are
-  still collected: Home combines everything in one chain, and splitting it per card would be a
-  large conditional-flow change for an unmeasured gain.
+- **The greeting, the day-at-a-glance strip and the AI insight are one pinned block, above the
+  fifteen cards that move.** `HomeHeaderBlock` replaced two separate cards that were answering the
+  same question from two blocks. It wears a 24dp radius against the reorderable cards' 20dp, so the
+  pinned block reads as chrome rather than as the first card of an editable list. The greeting is
+  the app's one door to the coach, so hiding it would strand a whole feature — the `AIChip` is the
+  tap target now, not the whole card, because the strip and the band sit in the same card and a card
+  that navigated away when you touched a number would be the wrong answer to either. The insight is
+  an **inset band inside** that block, which is what preserves the reason it was pinned: dismissing
+  it collapses within the block, so the cards below shift by the band's height and no further. It is
+  still the screen's one `tertiaryContainer` background; the chip beside the greeting is a chip, not
+  a card background. `AIInsightCard` in `:core:designsystem` is untouched — Progress still draws it,
+  Home simply stopped being a caller.
+- **The Today strip carries no new data, and its priority list is a guess that says so.**
+  Each cell restates a card that is *currently visible*, chosen by `todayStripCards()` from
+  `[Calories, Water, Steps, Streak, Weight]` — so hiding a card takes its cell with it and the strip
+  can never report a figure the user switched off. Fewer than two survivors hides the strip
+  entirely: one cell is not a summary. *ponytail: the app records no per-card tap counts, so there
+  is no signal to rank by; drive it off real counts if one ever exists rather than inventing a
+  ranking to justify a different list.*
+- **Cards have a width class, and `homeRows()` pairs them.** Seven single-number cards are half
+  width (Streak, Weight, Steps, Sleep, Heart, Blood pressure, Progress photo) and pair with an
+  adjacent half; everything else takes its own row. Fifteen equal full-width cards was a flat scroll
+  where last week's blood pressure sat in the same register as today's budget. `isHalf()` lives in
+  `:feature:home`, deliberately **not** as a property on the `HomeCard` enum: `:core:designsystem`
+  knows nothing about a running fast, and Fasting is the one card whose width moves — a running fast
+  owns a timer, a goal bar and two buttons, an idle one is a label and a Start button, so it borrows
+  `MetricCard` rather than drawing a zeroed timer nobody started. An unpaired half falls back to
+  full width rather than leaving a hole beside it, which is why **no card may depend on its position
+  or its neighbour**: `MetricCard(wide)` is one composable with two arrangements and the same
+  content in both. `HomeRowsTest` is the guard.
+- **Gating runs *before* pairing, not inside each `when` branch.** That is the one thing the
+  redesign moved rather than kept: every data gate is now `HomeCard.hasData(uiState)`, applied to
+  the layout before `homeRows()`, because a card hidden for want of data would otherwise still claim
+  a slot and split a pair that should have closed up. Each gate keeps the reasoning it was written
+  with, and the rule is unchanged — **a visibility switch can only ever remove a card, never force
+  one.** Sleep left *on* with no watch synced is as absent as it was before the editor existed, and
+  the editor row says so under the switch (`HomeCard.note`): a control that looks broken is worse
+  than one that explains itself. A hidden card's flows are still collected: Home combines everything
+  in one chain, and splitting it per card would be a large conditional-flow change for an unmeasured
+  gain. `HomeScreenGatedPreview` is the artboard-C case — no profile, no watch, cycle off — and it
+  is what proves the survivors re-pair.
+- **The status mark is sparse, and the absence is the design.** An 8dp dot appears on four cards
+  only — calories inside the budget, a streak that is running, a fast past its goal, a weight moving
+  the way the goal asks. Everything else carries none, because on-track/off-track is not a question
+  the app can answer about water, macros, steps, sleep, heart, blood pressure, mood, cycle,
+  supplements, workouts or photos, and a dot on every card would be the screen grading the user.
+  `error` is reserved for genuinely off track (only Weight can reach it) — over budget and a broken
+  streak are **neutral**, since a day in progress is not a verdict. The mark carries no content
+  description: it restates the figure beside it.
+- **Calories is the only hero, and that is why nothing else got promoted.** A 120dp ring with a 24dp
+  stroke against every other card's flat treatment. Two heroes is no hero.
+- **Both mood rows are meters now.** Mood used to be a single choice on the argument that lighting
+  up sad *and* neutral *and* happy to reach "good" says the wrong thing; the redesign reversed that
+  deliberately. Every other tappable row on Home — energy, water, cycle flow, supplements — fills up
+  to its value, and one row that looked identical and answered a tap differently was the odd one
+  out. The glyphs already carry the difference between a 2 and a 5, so the fill does not have to.
+  Tapping the level you are on still clears it, on every row.
+- **Sleep has no stage bar, and never will without a schema change.** `SleepNight` carries
+  `minutesAsleep` and nothing else; neither health leg imports Deep/REM/Light/Awake. The redesign
+  asked for a four-segment bar and it was dropped rather than faked — which also closed the colour
+  conflict it would have created, since four stage colours would collide with the frozen
+  Protein/Carbs/Fat semantics.
+- **Macros is three tracks, one per macro, each against its own target.** The single stacked
+  `MacroBar` shows the *goal* split — segment widths are the targets, not the intake — so it could
+  say what the day was supposed to look like and never how close any one macro was to its own
+  number. `MacroBar` itself is untouched: the diary's summary and Profile's Goals card both still
+  draw it, and the goal split is exactly what those two mean.
+- **The streak card's two sentences are gone.** The unlit badge already says what is next, and the
+  weight-badge line said what the Weight card says one row over — which also retired `captionFor()`,
+  `weightLineFor()`, their tests, `StreakCard.kt`'s `literalExceptions` entry and
+  `HomeUiState.weightProgressKg` (Progress keeps its own). `BadgeDot` gained a `size` parameter for
+  this one caller: five 32dp dots do not fit inside a paired card's 126dp of content on a 360dp
+  screen.
+- **"Rearrange your Home" is a link, not a second editor.** It navigates to the same
+  `HomeLayoutRoute` Profile's own row opens, via an `onOpenHomeLayout` callback of the shape
+  `onOpenCoach` already has (`:feature:home` cannot import `:feature:profile`). It adds no drag
+  handles to Home and no reorder capability there — the editor is a screen with a ViewModel of its
+  own, and duplicating it into a tab would be a second way to write one column. Its whole job is to
+  say the block is the user's to edit, which is otherwise undiscoverable.
 - **Profile → Home layout authors; Home renders.** The same division the supplement list draws
   against Home's card, and it is why the editor is a route above Profile (`SupplementsRoute`'s
   argument — a thirteen-row list outgrows a sheet) with its own `HomeLayoutViewModel`: a second

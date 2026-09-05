@@ -35,7 +35,6 @@ import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.streak.streakStats
-import ph.mart.healthapp.core.data.streak.weightProgressKg
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -248,9 +247,6 @@ class HomeViewModel(
                 // Read here rather than at flow-construction time, for the streak's reason: an app
                 // left open past midnight must not keep scoring yesterday's week.
                 trainingWeek = trainingWeek(training.routines, training.recent, todayEpochDay()),
-                weightProgressKg = state.profile?.let {
-                    weightProgressKg(state.weightEntries, it.goal, it.weightKg)
-                },
             )
         }.collect { newState ->
             // [newState] is rebuilt from the repositories on every emission, so a plain
