@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -34,6 +35,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 private const val TICK_MILLIS = 1_000L
 private val BAR_HEIGHT = 8.dp
@@ -66,12 +68,12 @@ fun FastingCard(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "Fasting",
+                text = stringResource(R.string.home_fasting_title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${activeFast?.goalHours ?: goalHours}h goal",
+                text = stringResource(R.string.home_fasting_goal, activeFast?.goalHours ?: goalHours),
                 style = MaterialTheme.typography.labelMedium.tabularNums,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -92,17 +94,17 @@ fun FastingCard(
 @Composable
 private fun IdleContent(onStart: () -> Unit) {
     Text(
-        text = "Not fasting",
+        text = stringResource(R.string.home_fasting_none),
         style = MaterialTheme.typography.headlineSmall,
         color = MaterialTheme.colorScheme.onSurface,
     )
     Text(
-        text = "Start the clock when you finish eating.",
+        text = stringResource(R.string.home_fasting_hint),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 4.dp),
     )
-    PrimaryButton(label = "Start fast", onClick = onStart, modifier = Modifier.padding(top = 12.dp))
+    PrimaryButton(label = stringResource(R.string.home_fasting_start), onClick = onStart, modifier = Modifier.padding(top = 12.dp))
 }
 
 @Composable
@@ -130,9 +132,13 @@ private fun ActiveContent(
     )
     Text(
         text = if (reached) {
-            "Goal reached — started ${formatClockTime(fast.startMillis)}"
+            stringResource(R.string.home_fasting_reached, formatClockTime(fast.startMillis))
         } else {
-            "Started ${formatClockTime(fast.startMillis)} · goal at ${formatClockTime(fast.goalReachedMillis)}"
+            stringResource(
+                R.string.home_fasting_running,
+                formatClockTime(fast.startMillis),
+                formatClockTime(fast.goalReachedMillis),
+            )
         },
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -154,15 +160,15 @@ private fun ActiveContent(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PrimaryButton(label = "End fast", onClick = onEnd)
-        TextButton(label = "Discard", onClick = { confirmDiscard = true })
+        PrimaryButton(label = stringResource(R.string.home_fasting_end), onClick = onEnd)
+        TextButton(label = stringResource(R.string.home_fasting_discard), onClick = { confirmDiscard = true })
     }
     if (confirmDiscard) {
         DiscardConfirmDialog(
-            title = "Discard this fast?",
-            body = "It won't be saved to your history. Ending it instead keeps the time you've done.",
-            confirmLabel = "Discard",
-            dismissLabel = "Keep fasting",
+            title = stringResource(R.string.home_fasting_discard_title),
+            body = stringResource(R.string.home_fasting_discard_body),
+            confirmLabel = stringResource(R.string.home_fasting_discard),
+            dismissLabel = stringResource(R.string.home_fasting_discard_keep),
             onConfirm = {
                 confirmDiscard = false
                 onDiscard()

@@ -36,6 +36,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
 import ph.mart.healthapp.core.designsystem.theme.stepFillProgress
+import ph.mart.healthapp.feature.home.R
 
 private val STEP_SIZE = 32.dp
 
@@ -73,27 +74,29 @@ fun MoodCard(
     // Resolved here rather than in the `describe` lambdas: those are plain lambdas, and an
     // @StringRes Int interpolated into a string template renders as its number.
     val levelLabels = MoodLevel.entries.map { stringResource(it.label) }
+    val moodDescriptions = levelLabels.map { stringResource(R.string.home_mood_set_mood, it) }
+    val energyDescriptions = levelLabels.map { stringResource(R.string.home_mood_set_energy, it) }
     AppCard(modifier = modifier) {
         Text(
-            text = "How are you feeling?",
+            text = stringResource(R.string.home_mood_title),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         ScaleRow(
-            label = "Mood",
+            label = stringResource(R.string.home_mood_mood),
             level = mood,
             icon = { index -> MoodFaces[index] },
             active = { index -> index + 1 == mood },
-            describe = { level -> "Set mood to ${levelLabels[level - 1]}" },
+            describe = { level -> moodDescriptions[level - 1] },
             onSelect = onSetMood,
         )
         ScaleRow(
-            label = "Energy",
+            label = stringResource(R.string.home_mood_energy),
             level = energy,
             icon = { index -> if (index < energy) Icons.Filled.Bolt else Icons.Outlined.Bolt },
             active = { index -> index < energy },
-            describe = { level -> "Set energy to ${levelLabels[level - 1]}" },
+            describe = { level -> energyDescriptions[level - 1] },
             onSelect = onSetEnergy,
             modifier = Modifier.padding(top = 4.dp),
             stagger = true,

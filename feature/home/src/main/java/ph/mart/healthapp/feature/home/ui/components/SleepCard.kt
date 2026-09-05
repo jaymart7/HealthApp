@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.health.SleepNight
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Last night, from Google Health. FitPulse cannot measure sleep, so this card has exactly one
@@ -34,7 +36,7 @@ fun SleepCard(night: SleepNight, modifier: Modifier = Modifier) {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Last night",
+                    text = stringResource(R.string.home_sleep_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -45,7 +47,7 @@ fun SleepCard(night: SleepNight, modifier: Modifier = Modifier) {
                 )
             }
             Text(
-                text = "From Google Health",
+                text = stringResource(R.string.home_from_google_health),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

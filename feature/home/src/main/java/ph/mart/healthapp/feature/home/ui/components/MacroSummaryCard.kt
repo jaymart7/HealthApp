@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.DiaryTotals
@@ -22,6 +23,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * The bar shows the **goal** macro split (same [MacroBar] usage as Food's diary summary and
@@ -32,7 +34,7 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
 fun MacroSummaryCard(consumed: DiaryTotals, targets: DailyTargets, modifier: Modifier = Modifier) {
     AppCard(modifier = modifier) {
         Text(
-            text = "Macros",
+            text = stringResource(R.string.home_macros_title),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -43,9 +45,9 @@ fun MacroSummaryCard(consumed: DiaryTotals, targets: DailyTargets, modifier: Mod
             modifier = Modifier.padding(vertical = 8.dp),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            MacroLegend("Protein", consumed.proteinG, targets.proteinG, MaterialTheme.colorScheme.primary)
-            MacroLegend("Carbs", consumed.carbsG, targets.carbsG, MaterialTheme.colorScheme.tertiary)
-            MacroLegend("Fat", consumed.fatG, targets.fatG, MaterialTheme.colorScheme.secondary)
+            MacroLegend(stringResource(R.string.home_macro_protein), consumed.proteinG, targets.proteinG, MaterialTheme.colorScheme.primary)
+            MacroLegend(stringResource(R.string.home_macro_carbs), consumed.carbsG, targets.carbsG, MaterialTheme.colorScheme.tertiary)
+            MacroLegend(stringResource(R.string.home_macro_fat), consumed.fatG, targets.fatG, MaterialTheme.colorScheme.secondary)
         }
     }
 }
@@ -55,7 +57,7 @@ private fun MacroLegend(label: String, consumedG: Int, goalG: Int, color: Color)
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(8.dp).background(color, RoundedCornerShape(2.dp)))
         Text(
-            text = "$label $consumedG/${goalG}g",
+            text = stringResource(R.string.home_macro_legend, label, consumedG, goalG),
             style = MaterialTheme.typography.labelMedium.tabularNums,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

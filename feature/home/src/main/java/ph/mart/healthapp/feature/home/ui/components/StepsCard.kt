@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.health.StepDay
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Today's steps, from Google Health. Same rule as [SleepCard]: one source, so the caller hides the
@@ -41,7 +43,7 @@ fun StepsCard(steps: StepDay, goal: Int, creditKcal: Int, modifier: Modifier = M
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Steps today",
+                    text = stringResource(R.string.home_steps_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -51,20 +53,20 @@ fun StepsCard(steps: StepDay, goal: Int, creditKcal: Int, modifier: Modifier = M
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "of ${formatSteps(goal)}",
+                    text = stringResource(R.string.home_steps_of_goal, formatSteps(goal)),
                     style = MaterialTheme.typography.bodySmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (creditKcal > 0) {
                     Text(
-                        text = "+$creditKcal kcal on your budget",
+                        text = stringResource(R.string.home_steps_credit, creditKcal),
                         style = MaterialTheme.typography.bodySmall.tabularNums,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             Text(
-                text = "From Google Health",
+                text = stringResource(R.string.home_from_google_health),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

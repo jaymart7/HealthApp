@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.health.HeartDay
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.data.health.formatBpm
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Today's heart rate, from Google Health. Same rule as [SleepCard] and [StepsCard]: one source, so
@@ -37,7 +39,7 @@ fun HeartCard(heart: HeartDay, modifier: Modifier = Modifier) {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Heart rate today",
+                    text = stringResource(R.string.home_heart_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -48,14 +50,14 @@ fun HeartCard(heart: HeartDay, modifier: Modifier = Modifier) {
                 )
                 if (heart.minBpm > 0) {
                     Text(
-                        text = "Lowest ${formatBpm(heart.minBpm)}",
+                        text = stringResource(R.string.home_heart_lowest, formatBpm(heart.minBpm)),
                         style = MaterialTheme.typography.bodySmall.tabularNums,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             Text(
-                text = "From Google Health",
+                text = stringResource(R.string.home_from_google_health),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

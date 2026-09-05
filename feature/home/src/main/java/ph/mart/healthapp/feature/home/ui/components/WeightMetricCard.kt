@@ -13,12 +13,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.profile.Goal
-import ph.mart.healthapp.core.data.profile.TrendDirection
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
+import ph.mart.healthapp.core.data.profile.TrendDirection
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.profile.goalRelativeTrend
@@ -31,6 +32,7 @@ import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Current weight + the change against 7 days ago. The trend **colour** comes from the shared
@@ -61,12 +63,16 @@ fun WeightMetricCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Weight",
+                    text = stringResource(R.string.home_weight_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "${formatWeight(trend.currentKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                    text = stringResource(
+                        R.string.home_weight_value,
+                        formatWeight(trend.currentKg.kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                    ),
                     style = MaterialTheme.typography.headlineSmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -90,9 +96,13 @@ fun WeightMetricCard(
                 }
                 Text(
                     text = if (trend.hasPrior) {
-                        "${formatWeight(abs(trend.deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} vs 7d ago"
+                        stringResource(
+                            R.string.home_weight_delta,
+                            formatWeight(abs(trend.deltaKg).kgToDisplayUnit(unit)),
+                            unit.weightUnitLabel(),
+                        )
                     } else {
-                        "No prior data"
+                        stringResource(R.string.home_weight_no_prior)
                     },
                     style = MaterialTheme.typography.bodyMedium.tabularNums,
                     color = color,
@@ -102,7 +112,11 @@ fun WeightMetricCard(
         projection?.let {
             Text(
                 text = goalProjectionLine(
-                    goalWeightLabel = "${formatWeight(it.goalWeightKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                    goalWeightLabel = stringResource(
+                        R.string.home_weight_value,
+                        formatWeight(it.goalWeightKg.kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                    ),
                     targetEpochDay = it.targetEpochDay,
                     reached = it.reached,
                     windowDays = PROJECTION_WINDOW_DAYS,

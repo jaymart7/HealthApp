@@ -1,0 +1,123 @@
+<resources>
+    <!-- Shared across the three watch-fed cards -->
+    <string name="home_from_google_health">From Google Health</string>
+
+    <string name="home_empty_heading">Let\'s log your first meal</string>
+    <string name="home_empty_body">Tap Log below to add food by photo or search.</string>
+    <string name="home_ask_coach">Ask your coach</string>
+
+    <!-- Streak. The caption and the weight line stay in Kotlin - see StreakCard.kt. -->
+    <string name="home_streak_title">Streak</string>
+    <string name="home_streak_badge_desc">%1$d-day badge</string>
+
+    <!-- Calories -->
+    <string name="home_calories_consumed">Consumed</string>
+    <string name="home_calories_of_goal">" / %1$d kcal"</string>
+    <string name="home_calories_from_exercise">+%1$d kcal from exercise</string>
+    <string name="home_calories_left">left</string>
+
+    <!-- Macros -->
+    <string name="home_macros_title">Macros</string>
+    <string name="home_macro_protein">Protein</string>
+    <string name="home_macro_carbs">Carbs</string>
+    <string name="home_macro_fat">Fat</string>
+    <string name="home_macro_legend">%1$s %2$d/%3$dg</string>
+
+    <!-- Water -->
+    <string name="home_water_title">Water</string>
+    <string name="home_water_count">%1$d / %2$d · %3$s</string>
+
+    <!-- Weight -->
+    <string name="home_weight_title">Weight</string>
+    <string name="home_weight_value">%1$s %2$s</string>
+    <string name="home_weight_delta">%1$s %2$s vs 7d ago</string>
+    <string name="home_weight_no_prior">No prior data</string>
+
+    <!-- Mood -->
+    <string name="home_mood_title">How are you feeling?</string>
+    <string name="home_mood_mood">Mood</string>
+    <string name="home_mood_energy">Energy</string>
+    <string name="home_mood_set_mood">Set mood to %1$s</string>
+    <string name="home_mood_set_energy">Set energy to %1$s</string>
+
+    <!-- Steps -->
+    <string name="home_steps_title">Steps today</string>
+    <string name="home_steps_of_goal">of %1$s</string>
+    <string name="home_steps_credit">+%1$d kcal on your budget</string>
+
+    <!-- Sleep and heart -->
+    <string name="home_sleep_title">Last night</string>
+    <string name="home_heart_title">Heart rate today</string>
+    <string name="home_heart_lowest">Lowest %1$s</string>
+
+    <!-- Blood pressure -->
+    <string name="home_bp_title">Blood pressure</string>
+    <string name="home_taken_today">Today</string>
+    <string name="home_taken_yesterday">Yesterday</string>
+    <plurals name="home_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+
+    <!-- Cycle -->
+    <string name="home_cycle_title">Cycle</string>
+    <string name="home_cycle_day">Day %1$d</string>
+    <string name="home_cycle_none">No period logged yet</string>
+    <string name="home_cycle_imported">Imported as a period day — tap to say how heavy it was.</string>
+    <string name="home_cycle_flow">Flow</string>
+    <string name="home_cycle_set_flow">Set flow to %1$s</string>
+    <string name="home_cycle_no_prediction">Log two periods and this shows when the next one is due.</string>
+    <string name="home_cycle_due_today">Next period expected today</string>
+    <string name="home_cycle_due_tomorrow">Next period expected tomorrow</string>
+    <string name="home_cycle_due_in">Next period expected in %1$d days</string>
+    <string name="home_cycle_late_yesterday">Expected yesterday</string>
+    <string name="home_cycle_late_days">Expected %1$d days ago</string>
+
+    <!-- Supplements -->
+    <string name="home_supplements_title">Supplements</string>
+    <string name="home_supplements_count">%1$d of %2$d</string>
+    <string name="home_supplements_taken_of">%1$d / %2$d</string>
+    <string name="home_supplements_desc_partial">%1$s, %2$d of %3$d taken. Tap to log a dose.</string>
+    <string name="home_supplements_desc_done">%1$s, taken. Tap to clear.</string>
+    <string name="home_supplements_desc_todo">%1$s, not taken. Tap to log it.</string>
+
+    <!-- Fasting -->
+    <string name="home_fasting_title">Fasting</string>
+    <string name="home_fasting_goal">%1$dh goal</string>
+    <string name="home_fasting_none">Not fasting</string>
+    <string name="home_fasting_hint">Start the clock when you finish eating.</string>
+    <string name="home_fasting_start">Start fast</string>
+    <string name="home_fasting_reached">Goal reached — started %1$s</string>
+    <string name="home_fasting_running">Started %1$s · goal at %2$s</string>
+    <string name="home_fasting_end">End fast</string>
+    <string name="home_fasting_discard">Discard</string>
+    <string name="home_fasting_discard_title">Discard this fast?</string>
+    <string name="home_fasting_discard_body">It won\'t be saved to your history. Ending it instead keeps the time you\'ve done.</string>
+    <string name="home_fasting_discard_keep">Keep fasting</string>
+
+    <!-- Training plan -->
+    <string name="home_plan_title">Today\'s workout</string>
+    <string name="home_plan_ratio">%1$d of %2$d this week</string>
+    <string name="home_plan_rest">Rest day.</string>
+    <string name="home_plan_rest_trained">Rest day — and you trained anyway.</string>
+    <plurals name="home_plan_lifts">
+        <item quantity="one">%1$d lift</item>
+        <item quantity="other">%1$d lifts</item>
+    </plurals>
+    <string name="home_plan_summary">%1$s · %2$d sets · %3$s</string>
+    <string name="home_plan_logged">Logged</string>
+    <string name="home_plan_start">Start</string>
+    <string name="home_plan_day_done">%1$s done</string>
+    <string name="home_plan_day_planned">%1$s planned</string>
+    <string name="home_plan_nothing">Nothing planned this week</string>
+
+    <!-- Progress photo -->
+    <string name="home_photo_title">Progress photo</string>
+    <string name="home_photo_none">No photos yet</string>
+    <string name="home_photo_today">Last photo today</string>
+    <plurals name="home_photo_days_ago">
+        <item quantity="one">Last photo %1$d day ago</item>
+        <item quantity="other">Last photo %1$d days ago</item>
+    </plurals>
+    <string name="home_photo_cta">Take one</string>
+</resources>

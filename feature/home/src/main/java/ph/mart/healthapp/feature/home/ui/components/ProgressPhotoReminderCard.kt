@@ -14,10 +14,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.home.R
 
 /** [daysSinceLastPhoto] null means no photo has ever been taken — the card prompts for a first
  * one rather than printing a nonsense day count. "Take one" opens the same Add photo sheet the
@@ -36,16 +39,19 @@ fun ProgressPhotoReminderCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Progress photo",
+                    text = stringResource(R.string.home_photo_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = when (daysSinceLastPhoto) {
-                        null -> "No photos yet"
-                        0L -> "Last photo today"
-                        1L -> "Last photo 1 day ago"
-                        else -> "Last photo $daysSinceLastPhoto days ago"
+                        null -> stringResource(R.string.home_photo_none)
+                        0L -> stringResource(R.string.home_photo_today)
+                        else -> pluralStringResource(
+                            R.plurals.home_photo_days_ago,
+                            daysSinceLastPhoto.toInt(),
+                            daysSinceLastPhoto,
+                        )
                     },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -59,7 +65,7 @@ fun ProgressPhotoReminderCard(
                 ),
                 contentPadding = PaddingValues(horizontal = 16.dp),
             ) {
-                Text(text = "Take one", style = MaterialTheme.typography.labelLarge)
+                Text(text = stringResource(R.string.home_photo_cta), style = MaterialTheme.typography.labelLarge)
             }
         }
     }

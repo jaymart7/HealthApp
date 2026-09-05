@@ -33,6 +33,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
 import ph.mart.healthapp.core.designsystem.theme.stepFillProgress
+import ph.mart.healthapp.feature.home.R
 
 private val STEP_SIZE = 32.dp
 
@@ -60,12 +61,13 @@ fun CycleCard(
 ) {
     AppCard(modifier = modifier) {
         Text(
-            text = "Cycle",
+            text = stringResource(R.string.home_cycle_title),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = cycleDay?.let { "Day $it" } ?: "No period logged yet",
+            text = cycleDay?.let { stringResource(R.string.home_cycle_day, it) }
+                ?: stringResource(R.string.home_cycle_none),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -78,7 +80,7 @@ fun CycleCard(
         FlowRow(flow = flow, onSetFlow = onSetFlow)
         if (flow == FlowLevel.Unstated.value) {
             Text(
-                text = "Imported as a period day — tap to say how heavy it was.",
+                text = stringResource(R.string.home_cycle_imported),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
@@ -93,14 +95,15 @@ fun CycleCard(
  * what would make one, because a card that goes quiet without saying why gives nobody a reason to
  * keep logging.
  */
+@Composable
 internal fun cycleSubline(prediction: CyclePrediction?, todayEpochDay: Long): String {
-    if (prediction == null) return "Log two periods and this shows when the next one is due."
+    if (prediction == null) return stringResource(R.string.home_cycle_no_prediction)
     return when (val away = prediction.daysAway(todayEpochDay)) {
-        0 -> "Next period expected today"
-        1 -> "Next period expected tomorrow"
-        in 2..Int.MAX_VALUE -> "Next period expected in $away days"
-        -1 -> "Expected yesterday"
-        else -> "Expected ${abs(away)} days ago"
+        0 -> stringResource(R.string.home_cycle_due_today)
+        1 -> stringResource(R.string.home_cycle_due_tomorrow)
+        in 2..Int.MAX_VALUE -> stringResource(R.string.home_cycle_due_in, away)
+        -1 -> stringResource(R.string.home_cycle_late_yesterday)
+        else -> stringResource(R.string.home_cycle_late_days, abs(away))
     }
 }
 
@@ -112,7 +115,7 @@ private fun FlowRow(flow: Int, onSetFlow: (Int) -> Unit) {
 
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = "Flow",
+            text = stringResource(R.string.home_cycle_flow),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(end = 12.dp),
@@ -127,7 +130,7 @@ private fun FlowRow(flow: Int, onSetFlow: (Int) -> Unit) {
                     stagger = true,
                 )
                 // Resolved outside the semantics lambda, which cannot read a resource.
-                val description = stringResource(level.label)
+                val description = stringResource(R.string.home_cycle_set_flow, stringResource(level.label))
                 IconButton(
                     onClick = { onSetFlow(if (level.value == flow) 0 else level.value) },
                     modifier = Modifier
@@ -138,7 +141,7 @@ private fun FlowRow(flow: Int, onSetFlow: (Int) -> Unit) {
                             scaleY = scaleX
                         }
                         // The level the tap would set, not "drop 2 of 3" — WaterGlassRow's rule.
-                        .clearAndSetSemantics { contentDescription = "Set flow to $description" },
+                        .clearAndSetSemantics { contentDescription = description },
                 ) {
                     Icon(
                         imageVector = if (level.value <= flow) {

@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -27,6 +28,7 @@ import ph.mart.healthapp.core.data.supplement.nextTaken
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Today's supplements, as a checklist. Renders nothing when the list is empty — the same choice
@@ -53,12 +55,12 @@ fun SupplementsCard(
                 .padding(bottom = 4.dp),
         ) {
             Text(
-                text = "Supplements",
+                text = stringResource(R.string.home_supplements_title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${supplements.completedCount} of ${supplements.size}",
+                text = stringResource(R.string.home_supplements_count, supplements.completedCount, supplements.size),
                 style = MaterialTheme.typography.titleSmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -81,6 +83,8 @@ private fun SupplementRow(item: SupplementToday, onTap: () -> Unit) {
     } else {
         MaterialTheme.colorScheme.outlineVariant
     }
+    // Resolved outside the semantics lambda, which is not a composable scope.
+    val description = describe(item)
     // The whole row is the target, not just the icon: a checklist read left-to-right should be
     // tappable where the eye already is.
     Surface(
@@ -89,7 +93,7 @@ private fun SupplementRow(item: SupplementToday, onTap: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clearAndSetSemantics {
-                contentDescription = describe(item)
+                contentDescription = description
             },
     ) {
         Row(
@@ -120,7 +124,7 @@ private fun SupplementRow(item: SupplementToday, onTap: () -> Unit) {
             // says nothing the tick hasn't already said.
             if (item.supplement.timesPerDay > 1) {
                 Text(
-                    text = "${item.taken} / ${item.supplement.timesPerDay}",
+                    text = stringResource(R.string.home_supplements_taken_of, item.taken, item.supplement.timesPerDay),
                     style = MaterialTheme.typography.labelLarge.tabularNums,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -129,14 +133,17 @@ private fun SupplementRow(item: SupplementToday, onTap: () -> Unit) {
     }
 }
 
+@Composable
 private fun describe(item: SupplementToday): String = with(item.supplement) {
-    val dose = if (dose.isBlank()) "" else ", $dose"
+    // The name and its dose are the user's own text, so they are interpolated into the sentence
+    // rather than being three separate slots a translator would have to reassemble.
+    val named = if (dose.isBlank()) name else "$name, $dose"
     if (timesPerDay > 1) {
-        "$name$dose, ${item.taken} of $timesPerDay taken. Tap to log a dose."
+        stringResource(R.string.home_supplements_desc_partial, named, item.taken, timesPerDay)
     } else if (item.isComplete) {
-        "$name$dose, taken. Tap to clear."
+        stringResource(R.string.home_supplements_desc_done, named)
     } else {
-        "$name$dose, not taken. Tap to log it."
+        stringResource(R.string.home_supplements_desc_todo, named)
     }
 }
 

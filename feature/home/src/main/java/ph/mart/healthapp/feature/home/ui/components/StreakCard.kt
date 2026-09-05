@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -27,6 +28,7 @@ import ph.mart.healthapp.core.designsystem.component.BadgeDot
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Consistency, not today's numbers. Every value is derived in `:core:data/streak` — this card
@@ -50,7 +52,7 @@ fun StreakCard(
                 .padding(bottom = 12.dp),
         ) {
             Text(
-                text = "Streak",
+                text = stringResource(R.string.home_streak_title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -81,7 +83,7 @@ fun StreakCard(
                 BadgeDot(
                     label = badge.days.toString(),
                     earned = badge in earned,
-                    description = "${badge.days}-day badge",
+                    description = stringResource(R.string.home_streak_badge_desc, badge.days),
                 )
             }
         }
@@ -104,6 +106,9 @@ fun StreakCard(
     }
 }
 
+// The three below stay in Kotlin: each is a pure function with a JVM test over its exact
+// wording, the same reading `insightFor()` and `goalProjectionLine()` got. Moving them means
+// returning a case type for a composable to resolve, which is its own decision.
 internal fun dayCountLabel(days: Int): String = if (days == 1) "1 day" else "$days days"
 
 /** First matching rule wins, same shape as Home's `insightFor`. */

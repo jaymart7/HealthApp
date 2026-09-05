@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -22,6 +23,7 @@ import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * The **latest** reading, whenever it was taken — not today's.
@@ -46,7 +48,7 @@ fun BloodPressureCard(reading: BloodPressureReading, todayEpochDay: Long, modifi
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Blood pressure",
+                    text = stringResource(R.string.home_bp_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -78,10 +80,11 @@ fun BloodPressureCard(reading: BloodPressureReading, todayEpochDay: Long, modifi
 }
 
 /** Same phrasing the photo reminder uses, so the two cards don't count days differently. */
+@Composable
 private fun takenLabel(daysAgo: Long): String = when {
-    daysAgo <= 0L -> "Today"
-    daysAgo == 1L -> "Yesterday"
-    else -> "$daysAgo days ago"
+    daysAgo <= 0L -> stringResource(R.string.home_taken_today)
+    daysAgo == 1L -> stringResource(R.string.home_taken_yesterday)
+    else -> pluralStringResource(R.plurals.home_days_ago, daysAgo.toInt(), daysAgo)
 }
 
 @PreviewLightDark

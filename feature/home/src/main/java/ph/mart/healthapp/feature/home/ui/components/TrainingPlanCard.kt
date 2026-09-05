@@ -14,6 +14,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -32,6 +34,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /**
  * What the week's plan asks for today, and how the week is going.
@@ -63,7 +66,7 @@ fun TrainingPlanCard(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
         ) {
             Text(
-                text = "Today's workout",
+                text = stringResource(R.string.home_plan_title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -71,7 +74,7 @@ fun TrainingPlanCard(
             // there is no ratio to print — "0 of 0" reads as a broken counter, not as a rest.
             if (week.plannedSoFar() > 0) {
                 Text(
-                    text = "${week.trainedSoFar()} of ${week.plannedSoFar()} this week",
+                    text = stringResource(R.string.home_plan_ratio, week.trainedSoFar(), week.plannedSoFar()),
                     style = MaterialTheme.typography.titleSmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -80,7 +83,7 @@ fun TrainingPlanCard(
 
         when {
             todayRoutines.isEmpty() -> Text(
-                text = if (trained) "Rest day — and you trained anyway." else "Rest day.",
+                text = stringResource(if (trained) R.string.home_plan_rest_trained else R.string.home_plan_rest),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -107,20 +110,24 @@ private fun PlannedRoutineRow(routine: Routine, trained: Boolean, onStart: () ->
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "${routine.lifts.size} ${if (routine.lifts.size == 1) "lift" else "lifts"} · " +
-                    "${routine.totalSets()} sets · ${routine.dayLabel()}",
+                text = stringResource(
+                    R.string.home_plan_summary,
+                    pluralStringResource(R.plurals.home_plan_lifts, routine.lifts.size, routine.lifts.size),
+                    routine.totalSets(),
+                    routine.dayLabel(),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (trained) {
             Text(
-                text = "Logged",
+                text = stringResource(R.string.home_plan_logged),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
         } else {
-            PrimaryButton(label = "Start", onClick = onStart)
+            PrimaryButton(label = stringResource(R.string.home_plan_start), onClick = onStart)
         }
     }
 }
@@ -134,15 +141,25 @@ private fun PlannedRoutineRow(routine: Routine, trained: Boolean, onStart: () ->
  */
 @Composable
 private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
+    // ponytail: WEEKDAY_NAMES is still an English list in :core:data, shared with :feature:profile
+    // — it moves when that module goes through the pass.
     val spoken = week.mapIndexedNotNull { index, day ->
-        if (!day.planned) null else "${WEEKDAY_NAMES[index]} ${if (day.trained) "done" else "planned"}"
+        if (!day.planned) {
+            null
+        } else {
+            stringResource(
+                if (day.trained) R.string.home_plan_day_done else R.string.home_plan_day_planned,
+                WEEKDAY_NAMES[index],
+            )
+        }
     }.joinToString(", ")
+    val nothingPlanned = stringResource(R.string.home_plan_nothing)
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = modifier
             .fillMaxWidth()
             .clearAndSetSemantics {
-                contentDescription = if (spoken.isEmpty()) "Nothing planned this week" else spoken
+                contentDescription = nothingPlanned.takeIf { spoken.isEmpty() } ?: spoken
             },
     ) {
         week.forEachIndexed { index, day ->

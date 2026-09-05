@@ -21,12 +21,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 private val RING_SIZE = 96.dp
 private val RING_STROKE = 10.dp
@@ -68,7 +70,7 @@ fun CalorieRingCard(
             CalorieRing(progress = progress, remainingKcal = goalKcal - consumedKcal)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Consumed",
+                    text = stringResource(R.string.home_calories_consumed),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -79,7 +81,7 @@ fun CalorieRingCard(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = " / $goalKcal kcal",
+                        text = stringResource(R.string.home_calories_of_goal, goalKcal),
                         style = MaterialTheme.typography.bodyMedium.tabularNums,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp),
@@ -87,7 +89,7 @@ fun CalorieRingCard(
                 }
                 if (burnedKcal > 0) {
                     Text(
-                        text = "+$burnedKcal kcal from exercise",
+                        text = stringResource(R.string.home_calories_from_exercise, burnedKcal),
                         style = MaterialTheme.typography.labelMedium.tabularNums,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -138,7 +140,7 @@ private fun CalorieRing(progress: State<Float>, remainingKcal: Int) {
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "left",
+                text = stringResource(R.string.home_calories_left),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

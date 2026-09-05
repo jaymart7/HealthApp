@@ -8,6 +8,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AIChip
@@ -17,6 +18,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotSpeechBubble
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Mascot + speech bubble, and the app's one door to the coach.
@@ -43,7 +45,7 @@ fun MascotGreetingCard(greeting: String, onOpenCoach: () -> Unit, modifier: Modi
                 modifier = Modifier.weight(1f),
             ) {
                 MascotSpeechBubble(text = greeting)
-                AIChip(label = "Ask your coach", variant = AIChipVariant.Default)
+                AIChip(label = stringResource(R.string.home_ask_coach), variant = AIChipVariant.Default)
             }
         }
     }

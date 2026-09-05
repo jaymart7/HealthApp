@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.WaterGlassRow
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.home.R
 
 /** Today's hydration. [goalGlasses] comes from the profile row, same as every other target on
  * this screen — never a constant read here. */
@@ -38,12 +40,12 @@ fun WaterCard(
                 .padding(bottom = 12.dp),
         ) {
             Text(
-                text = "Water",
+                text = stringResource(R.string.home_water_title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "$glasses / $goalGlasses · ${waterVolumeLabel(glasses, unit)}",
+                text = stringResource(R.string.home_water_count, glasses, goalGlasses, waterVolumeLabel(glasses, unit)),
                 style = MaterialTheme.typography.titleSmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )
