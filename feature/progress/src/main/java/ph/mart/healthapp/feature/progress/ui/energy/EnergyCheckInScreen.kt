@@ -33,6 +33,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.components.Note
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
 import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
@@ -68,7 +69,7 @@ internal fun EnergyCheckInScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Energy check-in",
+                text = stringResource(R.string.progress_energy_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -88,12 +89,12 @@ internal fun EnergyCheckInScreen(
                 // what lets this screen keep no "dismissed" state anywhere.
                 if (estimate != null && abs(estimate.deltaKcal) >= MIN_MEANINGFUL_DELTA_KCAL) {
                     PrimaryButton(
-                        label = "Use ${estimate.recommendedKcal} kcal",
+                        label = stringResource(R.string.progress_energy_use, estimate.recommendedKcal),
                         onClick = { onApply(estimate.recommendedKcal) },
                         modifier = Modifier.weight(1f),
                     )
                 }
-                SecondaryButton(label = "Close", onClick = onClose, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_close), onClick = onClose, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -103,15 +104,15 @@ internal fun EnergyCheckInScreen(
 private fun MeasurementCard(checkIn: EnergyCheckIn, estimate: EnergyEstimate, addExerciseToBudget: Boolean) {
     AppCard {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatCell(label = "You burn", value = "${estimate.maintenanceKcal}")
-            StatCell(label = "Target now", value = "${checkIn.currentTargetKcal}")
-            StatCell(label = "Suggested", value = "${estimate.recommendedKcal}")
+            StatCell(label = stringResource(R.string.progress_energy_you_burn), value = "${estimate.maintenanceKcal}")
+            StatCell(label = stringResource(R.string.progress_energy_target_now), value = "${checkIn.currentTargetKcal}")
+            StatCell(label = stringResource(R.string.progress_energy_suggested), value = "${estimate.recommendedKcal}")
         }
         Note(
             if (abs(estimate.deltaKcal) < MIN_MEANINGFUL_DELTA_KCAL) {
-                "Your target is within ${MIN_MEANINGFUL_DELTA_KCAL} kcal of what this measures — close enough to leave alone."
+                stringResource(R.string.progress_energy_close_enough, MIN_MEANINGFUL_DELTA_KCAL)
             } else {
-                "Measured from what you ate and what your weight actually did, not from the formula."
+                stringResource(R.string.progress_energy_measured)
             },
         )
         // Warn, never block — the rule the manual target on Profile → Goals already follows.
@@ -121,8 +122,7 @@ private fun MeasurementCard(checkIn: EnergyCheckIn, estimate: EnergyEstimate, ad
         // the user's, and it lives on a screen this one has no business writing to.
         if (addExerciseToBudget) {
             Note(
-                "This already includes your workouts. \"Add exercise to budget\" in Profile → " +
-                    "Exercise adds them again on top — consider turning it off if you use this target.",
+                stringResource(R.string.progress_energy_includes_workouts),
             )
         }
     }
@@ -133,14 +133,19 @@ private fun MeasurementCard(checkIn: EnergyCheckIn, estimate: EnergyEstimate, ad
 private fun NotYetCard(checkIn: EnergyCheckIn) {
     AppCard {
         Text(
-            text = "Not enough to measure yet",
+            text = stringResource(R.string.progress_energy_not_enough),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Note(
-            "It takes $MIN_CHECKIN_LOGGED_DAYS days of food logged and $MIN_CHECKIN_WEIGH_INS " +
-                "weigh-ins spread over a fortnight in the last ${checkIn.windowDays} days. " +
-                "You have ${checkIn.daysLogged} and ${checkIn.weighIns}.",
+            stringResource(
+                R.string.progress_energy_needs,
+                MIN_CHECKIN_LOGGED_DAYS,
+                MIN_CHECKIN_WEIGH_INS,
+                checkIn.windowDays,
+                checkIn.daysLogged,
+                checkIn.weighIns,
+            ),
         )
     }
 }
@@ -149,26 +154,27 @@ private fun NotYetCard(checkIn: EnergyCheckIn) {
 private fun EvidenceCard(checkIn: EnergyCheckIn, unit: UnitSystem) {
     AppCard {
         Text(
-            text = "The last ${checkIn.windowDays} days",
+            text = stringResource(R.string.progress_energy_window, checkIn.windowDays),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp),
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatCell(label = "Ate daily", value = "${checkIn.avgIntakeKcal}")
-            StatCell(label = "Days logged", value = "${checkIn.daysLogged}")
+            StatCell(label = stringResource(R.string.progress_energy_ate_daily), value = "${checkIn.avgIntakeKcal}")
+            StatCell(label = stringResource(R.string.progress_energy_days_logged), value = "${checkIn.daysLogged}")
             StatCell(
-                label = "Weight",
-                value = checkIn.estimate?.let { trendLabel(it.kgPerWeek, unit) } ?: "—",
+                label = stringResource(R.string.progress_energy_weight),
+                value = checkIn.estimate?.let { trendLabel(it.kgPerWeek, unit) } ?: stringResource(R.string.progress_none),
             )
         }
-        Note("The daily average is over the days with food logged, so a gap doesn't drag it down.")
+        Note(stringResource(R.string.progress_energy_note))
     }
 }
 
+@Composable
 private fun trendLabel(kgPerWeek: Double, unit: UnitSystem): String {
     val value = formatKg(kgPerWeek.kgToDisplayUnit(unit))
-    return "${if (kgPerWeek > 0) "+" else ""}$value ${unit.weightUnitLabel()}/wk"
+    return stringResource(R.string.progress_energy_per_week, if (kgPerWeek > 0) "+" else "", value, unit.weightUnitLabel())
 }
 
 private val readyCheckIn = EnergyCheckIn(

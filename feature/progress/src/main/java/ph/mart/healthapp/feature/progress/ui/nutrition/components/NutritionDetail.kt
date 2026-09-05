@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.DayNutrition
@@ -15,6 +16,7 @@ import ph.mart.healthapp.core.data.food.averages
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -41,28 +43,28 @@ internal fun ColumnScope.NutritionDetailBody(uiState: ProgressUiState, state: Pr
     val averages = days.averages()
     val target = uiState.targets?.calories
 
-    HeroValue(value = "${averages.calories}", caption = "kcal average")
+    HeroValue(value = "${averages.calories}", caption = stringResource(R.string.progress_nutrition_hero))
     FactChipRow(
         chips = listOfNotNull(
             target?.let {
                 FactChip(
                     when {
-                        averages.calories < it -> "${it - averages.calories} kcal under target"
-                        averages.calories > it -> "${averages.calories - it} kcal over target"
-                        else -> "On target"
+                        averages.calories < it -> stringResource(R.string.progress_nutrition_under, it - averages.calories)
+                        averages.calories > it -> stringResource(R.string.progress_nutrition_over, averages.calories - it)
+                        else -> stringResource(R.string.progress_nutrition_on_target)
                     },
                 )
             },
-            FactChip("${averages.daysLogged} days with food logged"),
+            FactChip(stringResource(R.string.progress_nutrition_days, averages.daysLogged)),
         ),
     )
     ChartCard(
-        title = "Calories",
+        title = stringResource(R.string.progress_nutrition_calories),
         range = range,
         onRangeChange = { state.setRange(Subject.Nutrition, it) },
         legend = listOfNotNull(
-            LegendEntry("Daily intake", MaterialTheme.colorScheme.primary),
-            target?.let { LegendEntry("Target $it kcal", MaterialTheme.colorScheme.onSurfaceVariant, dashed = true) },
+            LegendEntry(stringResource(R.string.progress_nutrition_intake), MaterialTheme.colorScheme.primary),
+            target?.let { LegendEntry(stringResource(R.string.progress_nutrition_target, it), MaterialTheme.colorScheme.onSurfaceVariant, dashed = true) },
         ),
     ) {
         NutritionTrendChart(days = days, targetCalories = target)

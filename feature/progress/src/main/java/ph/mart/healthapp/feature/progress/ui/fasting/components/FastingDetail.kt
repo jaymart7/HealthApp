@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.fasting.FastSession
@@ -19,6 +20,7 @@ import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -51,15 +53,15 @@ internal fun ColumnScope.FastingDetailBody(uiState: ProgressUiState, state: Prog
     val sessions = uiState.fastSessions.inRange(range, today)
     val averages = sessions.fastingAverages()
 
-    HeroValue(value = averages.averageMinutes?.let(::formatDuration) ?: "—", caption = "average fast")
-    FactChipRow(chips = listOf(FactChip("Goal ${uiState.fastingGoalHours}h")))
+    HeroValue(value = averages.averageMinutes?.let(::formatDuration) ?: stringResource(R.string.progress_none), caption = stringResource(R.string.progress_fasting_hero))
+    FactChipRow(chips = listOf(FactChip(stringResource(R.string.progress_fasting_goal, uiState.fastingGoalHours))))
     ChartCard(
-        title = "Fasts",
+        title = stringResource(R.string.progress_fasting_title),
         range = range,
         onRangeChange = { state.setRange(Subject.Fasting, it) },
         legend = listOf(
-            LegendEntry("Fast length", MaterialTheme.colorScheme.primary),
-            LegendEntry("Goal ${uiState.fastingGoalHours}h", MaterialTheme.colorScheme.onSurfaceVariant, dashed = true),
+            LegendEntry(stringResource(R.string.progress_fasting_legend), MaterialTheme.colorScheme.primary),
+            LegendEntry(stringResource(R.string.progress_fasting_goal, uiState.fastingGoalHours), MaterialTheme.colorScheme.onSurfaceVariant, dashed = true),
         ),
     ) {
         DayBarChart(
@@ -73,9 +75,9 @@ internal fun ColumnScope.FastingDetailBody(uiState: ProgressUiState, state: Prog
     }
     StatRowsCard(
         rows = listOf(
-            StatRow("Average fast", averages.averageMinutes?.let(::formatDuration) ?: "—"),
-            StatRow("Longest", averages.longestMinutes?.let(::formatDuration) ?: "—"),
-            StatRow("Goals hit", "${averages.goalsHit} of ${averages.count}"),
+            StatRow(stringResource(R.string.progress_fasting_average), averages.averageMinutes?.let(::formatDuration) ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_fasting_longest), averages.longestMinutes?.let(::formatDuration) ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_fasting_goals_hit), stringResource(R.string.progress_of, averages.goalsHit, averages.count)),
         ),
     )
 }

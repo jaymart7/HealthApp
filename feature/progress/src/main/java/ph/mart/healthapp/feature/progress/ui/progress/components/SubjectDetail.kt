@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -28,6 +29,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.achievement.components.AchievementsDetailBody
 import ph.mart.healthapp.feature.progress.ui.activity.components.ActivityDetailBody
 import ph.mart.healthapp.feature.progress.ui.cycle.components.CycleDetailBody
@@ -104,7 +106,7 @@ internal fun SubjectDetail(
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             DetailHeader(
-                title = subject.label,
+                title = stringResource(subject.label),
                 onBack = if (embedded) null else state::closeSubject,
                 onShare = if (canShare) state::openRecap else null,
             )
@@ -194,7 +196,7 @@ private fun EmptyDetail(
                     Subject.BloodPressure -> {
                         {
                             PrimaryButton(
-                                label = "Log a reading",
+                                label = stringResource(R.string.progress_hint_pressure),
                                 onClick = state::openBloodPressureSheet,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -204,7 +206,7 @@ private fun EmptyDetail(
                     Subject.Cycle -> {
                         {
                             PrimaryButton(
-                                label = "Log a day",
+                                label = stringResource(R.string.progress_hint_cycle),
                                 onClick = state::openCycleSheet,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -241,7 +243,7 @@ private fun Switcher(
             val summary = summaries[sibling]
             sibling to summary?.takeIf { it.tracked }?.let { "${it.value} ${it.unit.orEmpty()}".trim() }
         }
-    SiblingSwitcher(groupLabel = group.label, siblings = siblings, onSelect = state::open)
+    SiblingSwitcher(groupLabel = stringResource(group.label), siblings = siblings, onSelect = state::open)
 }
 
 /** What a subject with nothing in it says. The copy each tab already carried, moved here so the

@@ -1,5 +1,8 @@
 package ph.mart.healthapp.feature.progress.ui.progress
 
+import androidx.annotation.StringRes
+import ph.mart.healthapp.feature.progress.R
+
 /**
  * The four families the twelve metric subjects sort into. The grouping is what replaced a
  * thirteen-pill scrolling tab strip: past the fifth pill nothing was reachable without a swipe
@@ -8,11 +11,11 @@ package ph.mart.healthapp.feature.progress.ui.progress
  * Names are the handoff's. The subject *sets* are what matter — "Training" and "Wellbeing" are
  * labels over "the two you do on purpose" and "the four a watch or a two-tap reflection reports".
  */
-enum class SubjectGroup(val label: String) {
-    Body("Body"),
-    Nutrition("Nutrition"),
-    Training("Training"),
-    Wellbeing("Wellbeing"),
+enum class SubjectGroup(@StringRes val label: Int) {
+    Body(R.string.progress_group_body),
+    Nutrition(R.string.progress_group_nutrition),
+    Training(R.string.progress_group_training),
+    Wellbeing(R.string.progress_group_wellbeing),
 }
 
 /** Which theme role a subject's card preview and trend line draw in. */
@@ -35,25 +38,25 @@ enum class SubjectAccent { Primary, Secondary }
  * already on this screen, whose hint opens that sheet instead.
  */
 enum class Subject(
-    val label: String,
+    @StringRes val label: Int,
     val group: SubjectGroup?,
     val accent: SubjectAccent,
-    val emptyHint: String,
+    @StringRes val emptyHint: Int,
 ) {
-    Weight("Weight", SubjectGroup.Body, SubjectAccent.Primary, "How weight tracking works"),
-    Photos("Photos", SubjectGroup.Body, SubjectAccent.Primary, "How progress photos work"),
-    Measurements("Measurements", SubjectGroup.Body, SubjectAccent.Primary, "How measurements work"),
-    Nutrition("Food", SubjectGroup.Nutrition, SubjectAccent.Primary, "How the food diary works"),
-    Fasting("Fasting", SubjectGroup.Nutrition, SubjectAccent.Primary, "How fasting works"),
-    Supplements("Supplements", SubjectGroup.Nutrition, SubjectAccent.Primary, "How supplements work"),
-    Activity("Activity", SubjectGroup.Training, SubjectAccent.Secondary, "How activity works"),
-    Strength("Strength", SubjectGroup.Training, SubjectAccent.Primary, "How strength works"),
-    Sleep("Sleep", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "How sleep works"),
-    Mood("Mood", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "How mood works"),
-    Cycle("Cycle", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "Log a day"),
-    Heart("Heart", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "How heart rate works"),
-    BloodPressure("Blood pressure", SubjectGroup.Wellbeing, SubjectAccent.Secondary, "Log a reading"),
-    Badges("Badges", group = null, accent = SubjectAccent.Primary, emptyHint = ""),
+    Weight(R.string.progress_subject_weight, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_weight),
+    Photos(R.string.progress_subject_photos, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_photos),
+    Measurements(R.string.progress_subject_measurements, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_measurements),
+    Nutrition(R.string.progress_subject_nutrition, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_nutrition),
+    Fasting(R.string.progress_subject_fasting, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_fasting),
+    Supplements(R.string.progress_subject_supplements, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_supplements),
+    Activity(R.string.progress_subject_activity, SubjectGroup.Training, SubjectAccent.Secondary, R.string.progress_hint_activity),
+    Strength(R.string.progress_subject_strength, SubjectGroup.Training, SubjectAccent.Primary, R.string.progress_hint_strength),
+    Sleep(R.string.progress_subject_sleep, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_sleep),
+    Mood(R.string.progress_subject_mood, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_mood),
+    Cycle(R.string.progress_subject_cycle, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_cycle),
+    Heart(R.string.progress_subject_heart, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_heart),
+    BloodPressure(R.string.progress_subject_pressure, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_pressure),
+    Badges(R.string.progress_subject_badges, group = null, accent = SubjectAccent.Primary, emptyHint = R.string.progress_hint_none),
 }
 
 /**

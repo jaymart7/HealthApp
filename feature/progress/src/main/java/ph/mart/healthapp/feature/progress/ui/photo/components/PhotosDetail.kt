@@ -2,21 +2,24 @@ package ph.mart.healthapp.feature.progress.ui.photo.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
-import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
+import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 
 /**
  * Scrolls itself — a `LazyVerticalGrid` cannot be nested in a `verticalScroll` column, which is why
@@ -27,7 +30,7 @@ internal fun PhotosDetailBody(uiState: ProgressUiState, state: ProgressScreenSta
     Column(modifier = Modifier.fillMaxSize()) {
         HeroValue(
             value = "${uiState.photos.size}",
-            caption = if (uiState.photos.size == 1) "shot" else "shots",
+            caption = pluralStringResource(R.plurals.progress_photos_shots, uiState.photos.size),
         )
         Spacer(modifier = Modifier.height(12.dp))
         // Two photos is the least that plays as a sequence, and it is also the point at which
@@ -35,7 +38,7 @@ internal fun PhotosDetailBody(uiState: ProgressUiState, state: ProgressScreenSta
         // would read as a bug.
         if (uiState.photos.size >= 2) {
             SecondaryButton(
-                label = "Play timelapse",
+                label = stringResource(R.string.progress_photos_timelapse),
                 onClick = state::openTimelapse,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )

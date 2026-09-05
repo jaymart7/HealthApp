@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -50,6 +51,7 @@ import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /** The three playback speeds, in frames per second. */
 private val TIMELAPSE_FPS = listOf(2, 4, 8)
@@ -92,7 +94,7 @@ internal fun TimelapseScreen(
     val current = photos[index.coerceIn(photos.indices)]
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(text = "Timelapse", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = stringResource(R.string.progress_timelapse_title), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
 
             TimelapseFrame(photo = current, unit = unit)
 
@@ -114,12 +116,16 @@ internal fun TimelapseScreen(
                 IconButton(onClick = { playing = !playing }) {
                     Icon(
                         imageVector = if (playing) AppIcons.Pause else AppIcons.Play,
-                        contentDescription = if (playing) "Pause" else "Play",
+                        contentDescription = stringResource(if (playing) R.string.progress_timelapse_pause else R.string.progress_timelapse_play),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 SegmentedToggle(
-                    options = listOf("Slow", "Normal", "Fast"),
+                    options = listOf(
+                        stringResource(R.string.progress_timelapse_slow),
+                        stringResource(R.string.progress_timelapse_normal),
+                        stringResource(R.string.progress_timelapse_fast),
+                    ),
                     selectedIndex = speed,
                     onSelect = { speed = it },
                     modifier = Modifier.weight(1f),
@@ -127,8 +133,8 @@ internal fun TimelapseScreen(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SecondaryButton(label = "Share", onClick = { sharing = true }, modifier = Modifier.weight(1f))
-                SecondaryButton(label = "Close", onClick = onClose, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_share), onClick = { sharing = true }, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_close), onClick = onClose, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -150,6 +156,7 @@ private fun TimelapseFrame(photo: ProgressPhoto, unit: UnitSystem, modifier: Mod
     LaunchedEffect(decoded) { decoded?.let { lastFrame = it } }
     val frame = decoded ?: lastFrame
     val date = formatEpochDay(photo.dateEpochDay)
+    val spoken = stringResource(R.string.progress_photo_from, date)
 
     Box(
         modifier = modifier
@@ -157,7 +164,7 @@ private fun TimelapseFrame(photo: ProgressPhoto, unit: UnitSystem, modifier: Mod
             .aspectRatio(0.75f)
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .semantics { contentDescription = "Progress photo from $date" },
+            .semantics { contentDescription = spoken },
     ) {
         frame?.let {
             Image(bitmap = it, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
@@ -165,7 +172,7 @@ private fun TimelapseFrame(photo: ProgressPhoto, unit: UnitSystem, modifier: Mod
         FrameLabel(text = date, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
         photo.weightKg?.let { kg ->
             FrameLabel(
-                text = "${"%.1f".format(kg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                text = stringResource(R.string.progress_weight_value, "%.1f".format(kg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
                 modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp),
                 tabular = true,
             )

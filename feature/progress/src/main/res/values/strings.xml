@@ -1,0 +1,350 @@
+<resources>
+    <!-- Shared -->
+    <string name="progress_cancel">Cancel</string>
+    <string name="progress_save">Save</string>
+    <string name="progress_close">Close</string>
+    <string name="progress_share">Share</string>
+    <string name="progress_none">—</string>
+    <string name="progress_of">%1$d of %2$d</string>
+    <string name="progress_kcal">%1$d kcal</string>
+    <string name="progress_nothing_yet">Nothing yet</string>
+    <string name="progress_from_watch">From your paired watch</string>
+
+    <!-- Overview -->
+    <string name="progress_title">Progress</string>
+    <string name="progress_recap">Recap</string>
+    <string name="progress_back">Back to Progress</string>
+    <string name="progress_pick_heading">Pick a subject</string>
+    <string name="progress_pick_body">Tap a card and its page opens here.</string>
+    <string name="progress_more_in">More in %1$s</string>
+    <string name="progress_show_group">Show %1$s</string>
+    <string name="progress_group_none_tracked">%1$d subjects · none tracked</string>
+    <string name="progress_recap_empty_heading">Nothing logged yet</string>
+    <string name="progress_recap_empty_body">There\'s nothing in the %1$s to recap. Log a meal, a glass of water or a weigh-in and it\'ll show up here.</string>
+    <string name="progress_trend_holding">Holding steady at your target.</string>
+    <string name="progress_trend_flat">No measurable change week to week.</string>
+    <string name="progress_trend_down">Trending %1$s %2$s down per week.</string>
+    <string name="progress_trend_up">Trending %1$s %2$s up per week.</string>
+    <string name="progress_sparse_none">Nothing is tracking yet. Log anything and it shows up here.</string>
+    <string name="progress_sparse_one">One subject is tracking so far. The rest stay tucked away until there\'s something to read.</string>
+    <string name="progress_sparse_many">%1$d subjects are tracking so far. The rest stay tucked away until there\'s something to read.</string>
+
+    <!-- Subject groups and names -->
+    <string name="progress_group_body">Body</string>
+    <string name="progress_group_nutrition">Nutrition</string>
+    <string name="progress_group_training">Training</string>
+    <string name="progress_group_wellbeing">Wellbeing</string>
+    <string name="progress_subject_weight">Weight</string>
+    <string name="progress_subject_photos">Photos</string>
+    <string name="progress_subject_measurements">Measurements</string>
+    <string name="progress_subject_nutrition">Food</string>
+    <string name="progress_subject_fasting">Fasting</string>
+    <string name="progress_subject_supplements">Supplements</string>
+    <string name="progress_subject_activity">Activity</string>
+    <string name="progress_subject_strength">Strength</string>
+    <string name="progress_subject_sleep">Sleep</string>
+    <string name="progress_subject_mood">Mood</string>
+    <string name="progress_subject_cycle">Cycle</string>
+    <string name="progress_subject_heart">Heart</string>
+    <string name="progress_subject_pressure">Blood pressure</string>
+    <string name="progress_subject_badges">Badges</string>
+    <string name="progress_hint_weight">How weight tracking works</string>
+    <string name="progress_hint_photos">How progress photos work</string>
+    <string name="progress_hint_measurements">How measurements work</string>
+    <string name="progress_hint_nutrition">How the food diary works</string>
+    <string name="progress_hint_fasting">How fasting works</string>
+    <string name="progress_hint_supplements">How supplements work</string>
+    <string name="progress_hint_activity">How activity works</string>
+    <string name="progress_hint_strength">How strength works</string>
+    <string name="progress_hint_sleep">How sleep works</string>
+    <string name="progress_hint_mood">How mood works</string>
+    <string name="progress_hint_cycle">Log a day</string>
+    <string name="progress_hint_heart">How heart rate works</string>
+    <string name="progress_hint_pressure">Log a reading</string>
+    <string name="progress_hint_none"></string>
+
+    <!-- Recap -->
+    <string name="progress_period_week">Week</string>
+    <string name="progress_period_month">Month</string>
+    <string name="progress_period_year">Year</string>
+    <string name="progress_period_week_heading">Last 7 days</string>
+    <string name="progress_period_month_heading">Last 30 days</string>
+    <string name="progress_period_year_heading">Last 365 days</string>
+    <string name="progress_recap_across">Across everything</string>
+    <string name="progress_recap_days_logged">Days logged</string>
+    <string name="progress_recap_days_of">" / %1$d"</string>
+    <string name="progress_recap_avg_calories">Avg calories</string>
+    <string name="progress_recap_target_of">" / %1$d"</string>
+    <string name="progress_recap_mood">Mood</string>
+    <string name="progress_recap_mood_of">" / %1$d"</string>
+    <string name="progress_recap_workouts">Workouts</string>
+    <string name="progress_recap_burned">Burned</string>
+    <string name="progress_recap_avg_steps">Avg steps</string>
+    <string name="progress_recap_best_day">Best day — %1$s, %2$d kcal</string>
+    <plurals name="progress_recap_averaged_days">
+        <item quantity="one">Calories averaged over %1$d day with food logged.</item>
+        <item quantity="other">Calories averaged over %1$d days with food logged.</item>
+    </plurals>
+    <string name="progress_recap_need_days">Log two more days for a weekly trend.</string>
+    <string name="progress_recap_top_lift_bodyweight">Top lift — %1$s, %2$d reps bodyweight</string>
+    <string name="progress_recap_top_lift">Top lift — %1$s, %2$s × %3$d</string>
+    <plurals name="progress_recap_volume">
+        <item quantity="one">Lifted %1$s across %2$d set.</item>
+        <item quantity="other">Lifted %1$s across %2$d sets.</item>
+    </plurals>
+    <string name="progress_recap_weight">Weight</string>
+    <string name="progress_recap_too_few">Too few readings</string>
+    <string name="progress_recap_steady">Steady</string>
+    <string name="progress_recap_on_track">On track</string>
+    <string name="progress_recap_off_track">Off track</string>
+    <string name="progress_recap_recorded">Recorded</string>
+    <string name="progress_recap_movement">Movement</string>
+    <string name="progress_recap_best_steps">Best day</string>
+    <string name="progress_recap_step_goal_days">Hit today\'s step goal on %1$d of %2$d days with steps.</string>
+    <string name="progress_recap_lifted">Lifted %1$s across %2$d sets.</string>
+    <string name="progress_recap_photos">Photos</string>
+    <string name="progress_recap_photo_from">Progress photo from %1$s</string>
+    <string name="progress_recap_carbs">Carbs</string>
+    <string name="progress_recap_fat">Fat</string>
+    <string name="progress_recap_grams">%1$d g</string>
+    <plurals name="progress_recap_daily_average">
+        <item quantity="one">Daily average over %1$d day with food logged.</item>
+        <item quantity="other">Daily average over %1$d days with food logged.</item>
+    </plurals>
+
+    <!-- Weight page -->
+    <string name="progress_weight_today">%1$s today</string>
+    <string name="progress_weight_in_span">%1$s %2$s in %3$s · %4$s</string>
+    <string name="progress_weight_to_goal">%1$s %2$s to goal</string>
+    <string name="progress_weight_trend">Trend</string>
+    <string name="progress_weight_daily">Daily</string>
+    <string name="progress_weight_average7">7-day average</string>
+    <string name="progress_weight_goal_legend">Goal %1$s %2$s</string>
+    <string name="progress_weight_this_week">This week</string>
+    <string name="progress_weight_weekly_average">Weekly average</string>
+    <string name="progress_weight_down">%1$s %2$s down</string>
+    <string name="progress_weight_up">%1$s %2$s up</string>
+    <string name="progress_weight_readings">Readings logged</string>
+    <string name="progress_weight_readings_of">%1$d of %2$d days</string>
+    <plurals name="progress_weight_readings_count">
+        <item quantity="one">%1$d reading</item>
+        <item quantity="other">%1$d readings</item>
+    </plurals>
+    <string name="progress_weight_current">Current</string>
+    <string name="progress_weight_change">Change</string>
+    <string name="progress_weight_goal_remaining">Goal remaining</string>
+    <string name="progress_weight_measuring">Measuring what you actually burn</string>
+    <string name="progress_weight_burning">You\'re burning about %1$d kcal a day</string>
+    <string name="progress_weight_combined">%1$s. %2$s</string>
+    <plurals name="progress_weight_checkin_progress">
+        <item quantity="one">%1$d of %2$d days logged · %3$d weigh-in. Keep going.</item>
+        <item quantity="other">%1$d of %2$d days logged · %3$d weigh-ins. Keep going.</item>
+    </plurals>
+    <string name="progress_weight_target_matches">Your calorie target already matches. Tap for the detail.</string>
+    <string name="progress_weight_target_under">Your target is %1$d kcal under what this suggests. Tap to review.</string>
+    <string name="progress_weight_target_over">Your target is %1$d kcal over what this suggests. Tap to review.</string>
+    <string name="progress_span_month">a month</string>
+    <string name="progress_span_3months">3 months</string>
+    <string name="progress_span_6months">6 months</string>
+    <string name="progress_span_year">a year</string>
+    <string name="progress_word_steady">steady</string>
+    <string name="progress_word_on_track">on track</string>
+    <string name="progress_word_off_track">off track</string>
+    <string name="progress_word_recorded">recorded</string>
+
+    <!-- Nutrition page -->
+    <string name="progress_nutrition_hero">kcal average</string>
+    <string name="progress_nutrition_under">%1$d kcal under target</string>
+    <string name="progress_nutrition_over">%1$d kcal over target</string>
+    <string name="progress_nutrition_on_target">On target</string>
+    <string name="progress_nutrition_days">%1$d days with food logged</string>
+    <string name="progress_nutrition_calories">Calories</string>
+    <string name="progress_nutrition_intake">Daily intake</string>
+    <string name="progress_nutrition_target">Target %1$d kcal</string>
+    <string name="progress_nutrition_daily_average">Daily average</string>
+    <string name="progress_nutrition_of_target">%1$d / %2$d kcal</string>
+    <string name="progress_nutrition_plain">%1$d kcal</string>
+    <plurals name="progress_nutrition_averaged">
+        <item quantity="one">Averaged over %1$d logged day</item>
+        <item quantity="other">Averaged over %1$d logged days</item>
+    </plurals>
+    <string name="progress_macro_protein">Protein</string>
+    <string name="progress_macro_carbs">Carbs</string>
+    <string name="progress_macro_fat">Fat</string>
+    <string name="progress_macro_of_goal">%1$s %2$d/%3$dg</string>
+    <string name="progress_macro_plain">%1$s %2$dg</string>
+
+    <!-- Sleep, heart, activity, fasting, mood, strength, cycle pages -->
+    <string name="progress_sleep_hero">average night</string>
+    <string name="progress_sleep_nights">Nights</string>
+    <string name="progress_sleep_asleep">Time asleep</string>
+    <string name="progress_sleep_average">Average night</string>
+    <string name="progress_sleep_longest">Longest</string>
+    <string name="progress_sleep_recorded">Nights recorded</string>
+    <string name="progress_heart_hero">bpm average</string>
+    <string name="progress_heart_range">Daily range</string>
+    <string name="progress_heart_legend">Lowest to average, per day</string>
+    <string name="progress_heart_average">Average</string>
+    <string name="progress_heart_lowest">Lowest</string>
+    <string name="progress_heart_days">Days recorded</string>
+    <string name="progress_heart_bpm">%1$d bpm</string>
+    <string name="progress_activity_hero">steps a day</string>
+    <string name="progress_activity_goal_days">%1$d of %2$d days hit %3$s</string>
+    <string name="progress_activity_steps">Steps</string>
+    <string name="progress_activity_goal">Goal %1$s</string>
+    <string name="progress_activity_burned_title">Calories burned</string>
+    <string name="progress_activity_burned_legend">Steps and workouts, combined</string>
+    <string name="progress_activity_average">Average steps</string>
+    <string name="progress_activity_best">Best day</string>
+    <string name="progress_activity_hit_goal">Hit today\'s goal</string>
+    <string name="progress_activity_burned">Burned</string>
+    <string name="progress_fasting_hero">average fast</string>
+    <string name="progress_fasting_goal">Goal %1$dh</string>
+    <string name="progress_fasting_title">Fasts</string>
+    <string name="progress_fasting_legend">Fast length</string>
+    <string name="progress_fasting_average">Average fast</string>
+    <string name="progress_fasting_longest">Longest</string>
+    <string name="progress_fasting_goals_hit">Goals hit</string>
+    <string name="progress_mood_hero">average mood out of %1$d</string>
+    <string name="progress_mood_days">%1$d days reflected on</string>
+    <string name="progress_mood_title">Mood and energy</string>
+    <string name="progress_mood_average">Average mood</string>
+    <string name="progress_mood_energy_average">Average energy</string>
+    <string name="progress_mood_days_logged">Days logged</string>
+    <string name="progress_mood_legend_mood">Mood</string>
+    <string name="progress_mood_legend_energy">Energy</string>
+    <plurals name="progress_strength_workouts">
+        <item quantity="one">workout</item>
+        <item quantity="other">workouts</item>
+    </plurals>
+    <string name="progress_strength_lifted">Lifted %1$s</string>
+    <string name="progress_strength_volume">Volume</string>
+    <string name="progress_strength_volume_legend">Sets × reps × load, per day</string>
+    <string name="progress_strength_workouts_label">Workouts</string>
+    <string name="progress_strength_sets">Sets</string>
+    <string name="progress_strength_records">Personal records</string>
+    <plurals name="progress_strength_set_count">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <string name="progress_strength_one_rm">~%1$s %2$s 1RM</string>
+    <string name="progress_cycle_hero">day of cycle</string>
+    <string name="progress_cycle_average_chip">%1$d-day average over %2$d</string>
+    <string name="progress_cycle_flow">Flow</string>
+    <string name="progress_cycle_flow_legend">Flow per day</string>
+    <string name="progress_cycle_average">Average cycle</string>
+    <string name="progress_cycle_average_period">Average period</string>
+    <string name="progress_cycle_days">%1$d days</string>
+    <string name="progress_cycle_periods">Periods</string>
+    <string name="progress_cycle_days_logged">Days logged</string>
+    <string name="progress_cycle_log_day">+ Log a day</string>
+    <string name="progress_cycle_due_today">Next period expected today</string>
+    <string name="progress_cycle_due_tomorrow">Next period expected tomorrow</string>
+    <string name="progress_cycle_due_in">Next period in %1$d days</string>
+    <string name="progress_cycle_late_yesterday">Expected yesterday</string>
+    <string name="progress_cycle_late_days">Expected %1$d days ago</string>
+    <string name="progress_cycle_span">%1$s – %2$s</string>
+    <string name="progress_cycle_ongoing">ongoing</string>
+    <string name="progress_cycle_length">%1$d days</string>
+
+    <!-- Measurements and photos -->
+    <string name="progress_measurement_add">+ Add measurement</string>
+    <string name="progress_measurement_none">No readings yet</string>
+    <string name="progress_measurement_value">%1$s %2$s</string>
+    <string name="progress_measurement_delta">%1$s%2$s %3$s</string>
+    <plurals name="progress_photos_shots">
+        <item quantity="one">shot</item>
+        <item quantity="other">shots</item>
+    </plurals>
+    <string name="progress_photos_timelapse">Play timelapse</string>
+    <string name="progress_photo_generic">Progress photo</string>
+    <string name="progress_photo_from">Progress photo from %1$s</string>
+    <string name="progress_timelapse_title">Timelapse</string>
+    <string name="progress_timelapse_play">Play</string>
+    <string name="progress_timelapse_pause">Pause</string>
+    <string name="progress_timelapse_slow">Slow</string>
+    <string name="progress_timelapse_normal">Normal</string>
+    <string name="progress_timelapse_fast">Fast</string>
+    <string name="progress_compare_title">Compare photos</string>
+    <string name="progress_compare_spoken">Before %1$s, after %2$s. Drag to reveal.</string>
+    <string name="progress_weight_value">%1$s %2$s</string>
+    <string name="progress_strip_brand">FitPulse</string>
+    <plurals name="progress_strip_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="progress_strip_span">%1$s · %2$s%3$s %4$s</string>
+
+    <!-- Add photo sheet -->
+    <string name="progress_photo_add">Add photo</string>
+    <string name="progress_photo_take">Take photo</string>
+    <string name="progress_photo_gallery">Choose from gallery</string>
+    <string name="progress_photo_weight">Weight (optional)</string>
+
+    <!-- Achievements -->
+    <string name="progress_badges_earned">%1$d of %2$d</string>
+
+    <!-- Blood pressure sheet -->
+    <string name="progress_bp_title">Log a reading</string>
+    <string name="progress_bp_systolic">Systolic</string>
+    <string name="progress_bp_diastolic">Diastolic</string>
+    <string name="progress_bp_pulse">Pulse (optional)</string>
+    <string name="progress_bp_mmhg">mmHg</string>
+    <string name="progress_bp_bpm">bpm</string>
+    <string name="progress_bp_error">Systolic is the higher of the two numbers.</string>
+
+    <!-- Cycle sheet -->
+    <string name="progress_cycle_sheet_title">Log a cycle day</string>
+    <string name="progress_cycle_not_logged">None</string>
+    <string name="progress_cycle_symptoms">Symptoms</string>
+    <string name="progress_cycle_nothing_picked">Nothing picked — saving clears this day.</string>
+
+    <!-- Measurement sheet -->
+    <string name="progress_measurement_log">Log %1$s</string>
+    <string name="progress_measurement_add_title">Add measurement</string>
+    <string name="progress_measurement_replacing">Replacing your entry for this date.</string>
+    <string name="progress_measurement_value_label">Value</string>
+
+    <!-- Energy check-in -->
+    <string name="progress_energy_title">Energy check-in</string>
+    <string name="progress_energy_use">Use %1$d kcal</string>
+    <string name="progress_energy_you_burn">You burn</string>
+    <string name="progress_energy_target_now">Target now</string>
+    <string name="progress_energy_suggested">Suggested</string>
+    <string name="progress_energy_close_enough">Your target is within %1$d kcal of what this measures — close enough to leave alone.</string>
+    <string name="progress_energy_measured">Measured from what you ate and what your weight actually did, not from the formula.</string>
+    <string name="progress_energy_includes_workouts">This already includes your workouts. \"Add exercise to budget\" in Profile → Exercise adds them again on top — consider turning it off if you use this target.</string>
+    <string name="progress_energy_not_enough">Not enough to measure yet</string>
+    <string name="progress_energy_needs">It takes %1$d days of food logged and %2$d weigh-ins spread over a fortnight in the last %3$d days. You have %4$d and %5$d.</string>
+    <string name="progress_energy_window">The last %1$d days</string>
+    <string name="progress_energy_ate_daily">Ate daily</string>
+    <string name="progress_energy_days_logged">Days logged</string>
+    <string name="progress_energy_weight">Weight</string>
+    <string name="progress_energy_note">The daily average is over the days with food logged, so a gap doesn\'t drag it down.</string>
+    <string name="progress_energy_per_week">%1$s%2$s %3$s/wk</string>
+
+    <!-- Straggler screens the gate caught -->
+    <string name="progress_bp_readings">Readings</string>
+    <string name="progress_bp_readings_chip">%1$d readings in this window</string>
+    <string name="progress_bp_delete_title">Delete this reading?</string>
+    <string name="progress_bp_delete_body">It disappears from the chart and the averages.</string>
+    <string name="progress_bp_delete">Delete reading</string>
+    <string name="progress_delete">Delete</string>
+    <string name="progress_supplements_hero">% taken</string>
+    <string name="progress_supplements_days">%1$d days tracked</string>
+    <string name="progress_supplements_adherence">Adherence</string>
+    <string name="progress_supplements_legend">Share of the day\'s doses taken</string>
+    <string name="progress_badges_title">Badges</string>
+    <string name="progress_recap_title">Recap</string>
+    <string name="progress_recap_body">Body</string>
+    <string name="progress_recap_nutrition">Nutrition</string>
+    <string name="progress_recap_started">Started</string>
+    <string name="progress_recap_latest">Latest</string>
+    <string name="progress_recap_change">Change</string>
+    <string name="progress_recap_one_weigh_in">One weigh-in in this window — there\'s nothing to compare it against yet.</string>
+    <string name="progress_recap_protein">Protein</string>
+    <string name="progress_weight_log">Log weight</string>
+    <string name="progress_weight_replacing">Replacing your entry for this date.</string>
+    <string name="progress_weight_label">Weight</string>
+    <string name="progress_weight_note">Note (optional)</string>
+</resources>

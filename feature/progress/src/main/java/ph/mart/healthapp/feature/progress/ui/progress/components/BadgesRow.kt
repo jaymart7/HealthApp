@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /** Five dots is a progress bar you can count. More would be a chart; fewer would be a switch. */
 private const val PROGRESS_DOTS = 5
@@ -64,7 +66,7 @@ internal fun BadgesRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Badges",
+                    text = stringResource(R.string.progress_badges_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

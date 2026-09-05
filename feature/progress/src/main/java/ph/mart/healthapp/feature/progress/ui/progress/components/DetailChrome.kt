@@ -39,6 +39,7 @@ import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 
 /** Every tap target on a detail page clears this. */
@@ -73,7 +74,7 @@ internal fun DetailHeader(
             IconButton(onClick = onBack, modifier = Modifier.size(TapTarget)) {
                 Icon(
                     imageVector = AppIcons.Back,
-                    contentDescription = "Back to Progress",
+                    contentDescription = stringResource(R.string.progress_back),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -88,7 +89,7 @@ internal fun DetailHeader(
             IconButton(onClick = onShare, modifier = Modifier.size(TapTarget)) {
                 Icon(
                     imageVector = AppIcons.Share,
-                    contentDescription = "Recap",
+                    contentDescription = stringResource(R.string.progress_recap),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -344,7 +345,7 @@ internal fun SiblingSwitcher(
     if (siblings.isEmpty()) return
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "More in $groupLabel",
+            text = stringResource(R.string.progress_more_in, groupLabel),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 12.dp),
@@ -361,7 +362,7 @@ internal fun SiblingSwitcher(
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = subject.label,
+                                text = stringResource(subject.label),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
@@ -386,13 +387,13 @@ internal fun SiblingSwitcher(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                text = subject.label,
+                                text = stringResource(subject.label),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
                             Text(
-                                text = value ?: "Nothing yet",
+                                text = value ?: stringResource(R.string.progress_nothing_yet),
                                 style = MaterialTheme.typography.bodySmall.tabularNums,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

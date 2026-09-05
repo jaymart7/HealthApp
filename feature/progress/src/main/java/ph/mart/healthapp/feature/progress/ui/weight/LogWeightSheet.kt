@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -19,14 +20,15 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
-import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.components.Note
 
 @Composable
@@ -57,7 +59,7 @@ private fun LogWeightContent(
 
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Log weight",
+            text = stringResource(R.string.progress_weight_log),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -78,20 +80,20 @@ private fun LogWeightContent(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
                     if (existingForDate != null) {
                         Text(
-                            text = "Replacing your entry for this date.",
+                            text = stringResource(R.string.progress_weight_replacing),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     NumericStepperField(
-                        label = "Weight",
+                        label = stringResource(R.string.progress_weight_label),
                         value = formatWeight(state.form.weightKg.kgToDisplayUnit(unit)),
                         unitSuffix = unit.weightUnitLabel(),
                         onIncrement = { state.form = state.form.copy(weightKg = state.form.weightKg + step) },
                         onDecrement = { state.form = state.form.copy(weightKg = (state.form.weightKg - step).coerceAtLeast(20.0)) },
                     )
                     AppTextField(
-                        label = "Note (optional)",
+                        label = stringResource(R.string.progress_weight_note),
                         value = state.form.note,
                         onValueChange = { state.form = state.form.copy(note = it) },
                     )
@@ -100,8 +102,12 @@ private fun LogWeightContent(
 
             if (!state.showingCalendar) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
-                    PrimaryButton(label = "Save", onClick = { onEvent(LogWeightEvent.OnSave(state.form)) }, modifier = Modifier.weight(1f))
+                    SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
+                    PrimaryButton(
+                    label = stringResource(R.string.progress_save),
+                    onClick = { onEvent(LogWeightEvent.OnSave(state.form)) },
+                    modifier = Modifier.weight(1f),
+                )
                 }
             }
         }

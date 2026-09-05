@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.progress.ui.progress
 
+import androidx.annotation.StringRes
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.LiftRecord
@@ -22,6 +23,7 @@ import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.feature.progress.R
 
 /**
  * "How did this stretch go" — the one thing neither Home (today) nor the charts (one metric at a
@@ -44,10 +46,10 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
  * `observeDailyNutrition()` is a dense year and the logged-day sets are windowed to
  * [ph.mart.healthapp.core.data.streak.STREAK_WINDOW_DAYS].
  */
-enum class RecapPeriod(val short: String, val label: String, val days: Int) {
-    Week("Week", "Last 7 days", 7),
-    Month("Month", "Last 30 days", 30),
-    Year("Year", "Last 365 days", 365),
+enum class RecapPeriod(@StringRes val short: Int, @StringRes val label: Int, val days: Int) {
+    Week(R.string.progress_period_week, R.string.progress_period_week_heading, 7),
+    Month(R.string.progress_period_month, R.string.progress_period_month_heading, 30),
+    Year(R.string.progress_period_year, R.string.progress_period_year_heading, 365),
 }
 
 /** The window the Progress screen's own card always shows — the recap as it shipped. */

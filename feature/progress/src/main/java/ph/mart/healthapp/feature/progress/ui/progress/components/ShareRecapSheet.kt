@@ -11,12 +11,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import ph.mart.healthapp.core.data.food.NutritionAverages
 import ph.mart.healthapp.core.data.mood.MoodAverages
@@ -30,6 +31,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.BestDay
 import ph.mart.healthapp.feature.progress.ui.progress.Recap
 import ph.mart.healthapp.feature.progress.ui.progress.RecapPeriod
@@ -79,14 +81,14 @@ internal fun ShareRecapSheet(
             ) {
                 MascotAvatar(state = MascotState.Happy, size = 24.dp)
                 Text(
-                    text = "FitPulse",
+                    text = stringResource(R.string.progress_strip_brand),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         PrimaryButton(
-            label = "Share",
+            label = stringResource(R.string.progress_share),
             onClick = {
                 scope.launch {
                     // Zero until the sheet has drawn a frame — a tap that fast would otherwise

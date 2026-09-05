@@ -8,13 +8,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.profile.EnergyCheckIn
 import ph.mart.healthapp.core.data.profile.EnergyEstimate
-import ph.mart.healthapp.core.data.profile.MIN_MEANINGFUL_DELTA_KCAL
 import ph.mart.healthapp.core.data.profile.Goal
+import ph.mart.healthapp.core.data.profile.MIN_MEANINGFUL_DELTA_KCAL
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
 import ph.mart.healthapp.core.data.profile.TrendDirection
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -32,6 +34,7 @@ import ph.mart.healthapp.core.designsystem.component.AIInsightCard
 import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -69,7 +72,7 @@ internal fun ColumnScope.WeightDetailBody(
 
     HeroValue(
         value = formatKg(current.kgToDisplayUnit(unit)),
-        caption = "${unit.weightUnitLabel()} today",
+        caption = stringResource(R.string.progress_weight_today, unit.weightUnitLabel()),
     )
 
     FactChipRow(
@@ -77,8 +80,13 @@ internal fun ColumnScope.WeightDetailBody(
             windowDelta?.takeIf { filtered.size >= 2 }?.let { delta ->
                 val direction = goalRelativeTrend(uiState.goal, delta)
                 FactChip(
-                    text = "${formatKg(abs(delta).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
-                        "in ${range.spanWords()} · ${direction.word(delta)}",
+                    text = stringResource(
+                        R.string.progress_weight_in_span,
+                        formatKg(abs(delta).kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                        range.spanWords(),
+                        direction.word(delta),
+                    ),
                     leading = arrowFor(delta),
                     trend = if (abs(delta) < TREND_ARROW_DEADBAND_KG) TrendDirection.Neutral else direction,
                 )
@@ -87,23 +95,30 @@ internal fun ColumnScope.WeightDetailBody(
             // nullable target weight, so they can never disagree about whether there is a goal.
             uiState.goalWeightKg?.let {
                 FactChip(
-                    text = "${formatKg(abs(current - it).kgToDisplayUnit(unit))} " +
-                        "${unit.weightUnitLabel()} to goal",
+                    text = stringResource(
+                        R.string.progress_weight_to_goal,
+                        formatKg(abs(current - it).kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                    ),
                 )
             },
         ),
     )
 
     ChartCard(
-        title = "Trend",
+        title = stringResource(R.string.progress_weight_trend),
         range = range,
         onRangeChange = { state.setRange(Subject.Weight, it) },
         legend = listOfNotNull(
-            LegendEntry("Daily", MaterialTheme.colorScheme.primary),
-            LegendEntry("7-day average", MaterialTheme.colorScheme.secondary),
+            LegendEntry(stringResource(R.string.progress_weight_daily), MaterialTheme.colorScheme.primary),
+            LegendEntry(stringResource(R.string.progress_weight_average7), MaterialTheme.colorScheme.secondary),
             uiState.goalWeightKg?.let {
                 LegendEntry(
-                    label = "Goal ${formatKg(it.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                    label = stringResource(
+                        R.string.progress_weight_goal_legend,
+                        formatKg(it.kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                    ),
                     color = MaterialTheme.colorScheme.tertiary,
                     dashed = true,
                 )
@@ -123,10 +138,13 @@ internal fun ColumnScope.WeightDetailBody(
     StatRowsCard(
         rows = listOf(
             StatRow(
-                label = "This week",
+                label = stringResource(R.string.progress_weight_this_week),
                 value = if (weekTrend.hasPrior) {
-                    "${formatKg(abs(weekTrend.deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
-                        if (weekTrend.deltaKg < 0) "down" else "up"
+                    stringResource(
+                        if (weekTrend.deltaKg < 0) R.string.progress_weight_down else R.string.progress_weight_up,
+                        formatKg(abs(weekTrend.deltaKg).kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                    )
                 } else {
                     "—"
                 },
@@ -137,15 +155,19 @@ internal fun ColumnScope.WeightDetailBody(
                 },
             ),
             StatRow(
-                label = "Weekly average",
+                label = stringResource(R.string.progress_weight_weekly_average),
                 value = projection?.let {
-                    "${formatKg(abs(it.kgPerWeek).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
-                        if (it.kgPerWeek < 0) "down" else "up"
-                } ?: "—",
+                    stringResource(
+                        if (it.kgPerWeek < 0) R.string.progress_weight_down else R.string.progress_weight_up,
+                        formatKg(abs(it.kgPerWeek).kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                    )
+                } ?: stringResource(R.string.progress_none),
             ),
             StatRow(
-                label = "Readings logged",
-                value = range.days?.let { "${filtered.size} of $it days" } ?: "${filtered.size} readings",
+                label = stringResource(R.string.progress_weight_readings),
+                value = range.days?.let { stringResource(R.string.progress_weight_readings_of, filtered.size, it) }
+                    ?: pluralStringResource(R.plurals.progress_weight_readings_count, filtered.size, filtered.size),
             ),
         ),
     )
@@ -171,7 +193,11 @@ private fun ColumnScope.InsightCard(
     val unit = uiState.preferredUnit
     val projectionLine = projection?.let {
         goalProjectionLine(
-            goalWeightLabel = "${formatKg(it.goalWeightKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+            goalWeightLabel = stringResource(
+                R.string.progress_weight_value,
+                formatKg(it.goalWeightKg.kgToDisplayUnit(unit)),
+                unit.weightUnitLabel(),
+            ),
             targetEpochDay = it.targetEpochDay,
             reached = it.reached,
             windowDays = PROJECTION_WINDOW_DAYS,
@@ -180,8 +206,8 @@ private fun ColumnScope.InsightCard(
     val estimate = checkIn?.estimate
     val checkInHeadline = when {
         checkIn == null -> null
-        estimate == null -> "Measuring what you actually burn"
-        else -> "You're burning about ${estimate.maintenanceKcal} kcal a day"
+        estimate == null -> stringResource(R.string.progress_weight_measuring)
+        else -> stringResource(R.string.progress_weight_burning, estimate.maintenanceKcal)
     }
     val checkInNote = when {
         checkIn == null -> null
@@ -193,7 +219,9 @@ private fun ColumnScope.InsightCard(
     val subline = when {
         // The projection already has the headline, so the check-in becomes the second line and
         // brings its own "tap to review" with it.
-        projectionLine != null -> checkInHeadline?.let { "$it. $checkInNote" }
+        projectionLine != null -> checkInHeadline?.let {
+            stringResource(R.string.progress_weight_combined, it, checkInNote.orEmpty())
+        }
         else -> checkInNote
     }
     AIInsightCard(
@@ -205,30 +233,41 @@ private fun ColumnScope.InsightCard(
 }
 
 /** Both counts every time, so the user can tell which one is holding the measurement up. */
+@Composable
 private fun missingNote(checkIn: EnergyCheckIn) =
-    "${checkIn.daysLogged} of ${checkIn.windowDays} days logged · " +
-        "${checkIn.weighIns} ${if (checkIn.weighIns == 1) "weigh-in" else "weigh-ins"}. Keep going."
+    pluralStringResource(
+        R.plurals.progress_weight_checkin_progress,
+        checkIn.weighIns,
+        checkIn.daysLogged,
+        checkIn.windowDays,
+        checkIn.weighIns,
+    )
 
+@Composable
 private fun deltaNote(estimate: EnergyEstimate): String {
     val delta = estimate.deltaKcal
-    if (abs(delta) < MIN_MEANINGFUL_DELTA_KCAL) return "Your calorie target already matches. Tap for the detail."
-    return "Your target is ${abs(delta)} kcal ${if (delta > 0) "under" else "over"} what this suggests. " +
-        "Tap to review."
+    if (abs(delta) < MIN_MEANINGFUL_DELTA_KCAL) return stringResource(R.string.progress_weight_target_matches)
+    return stringResource(
+        if (delta > 0) R.string.progress_weight_target_under else R.string.progress_weight_target_over,
+        abs(delta),
+    )
 }
 
 /** "in 3 months", not "in 3M" — the chip is a sentence, the toggle above it is a control. */
+@Composable
 private fun ChartRange.spanWords(): String = when (this) {
-    ChartRange.OneMonth -> "a month"
-    ChartRange.ThreeMonths -> "3 months"
-    ChartRange.SixMonths -> "6 months"
-    ChartRange.OneYear -> "a year"
+    ChartRange.OneMonth -> stringResource(R.string.progress_span_month)
+    ChartRange.ThreeMonths -> stringResource(R.string.progress_span_3months)
+    ChartRange.SixMonths -> stringResource(R.string.progress_span_6months)
+    ChartRange.OneYear -> stringResource(R.string.progress_span_year)
 }
 
+@Composable
 private fun TrendDirection.word(deltaKg: Double): String = when {
-    abs(deltaKg) < TREND_ARROW_DEADBAND_KG -> "steady"
-    this == TrendDirection.OnTrack -> "on track"
-    this == TrendDirection.OffTrack -> "off track"
-    else -> "recorded"
+    abs(deltaKg) < TREND_ARROW_DEADBAND_KG -> stringResource(R.string.progress_word_steady)
+    this == TrendDirection.OnTrack -> stringResource(R.string.progress_word_on_track)
+    this == TrendDirection.OffTrack -> stringResource(R.string.progress_word_off_track)
+    else -> stringResource(R.string.progress_word_recorded)
 }
 
 private fun arrowFor(delta: Double) = when {

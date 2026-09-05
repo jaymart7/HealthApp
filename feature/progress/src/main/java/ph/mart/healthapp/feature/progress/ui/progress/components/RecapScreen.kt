@@ -25,6 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -52,6 +54,7 @@ import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.photo.components.GRID_TILE_PX
 import ph.mart.healthapp.feature.progress.ui.photo.components.rememberBitmapFromFile
 import ph.mart.healthapp.feature.progress.ui.photo.components.sampleFrames
@@ -113,13 +116,13 @@ internal fun RecapScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Recap",
+                text = stringResource(R.string.progress_recap_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             // Three pills, so the toggle splits its width evenly rather than scrolling.
             SegmentedToggle(
-                options = RecapPeriod.entries.map { it.short },
+                options = RecapPeriod.entries.map { stringResource(it.short) },
                 selectedIndex = RecapPeriod.entries.indexOf(period),
                 onSelect = { index -> onPeriodChange(RecapPeriod.entries[index]) },
             )
@@ -143,8 +146,8 @@ internal fun RecapScreen(
                 PhotoSection(recap = report)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SecondaryButton(label = "Share", onClick = { sharing = true }, modifier = Modifier.weight(1f))
-                SecondaryButton(label = "Close", onClick = onClose, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_share), onClick = { sharing = true }, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_close), onClick = onClose, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -165,10 +168,15 @@ internal fun RecapScreen(
 private fun EmptyRecap(period: RecapPeriod, onClose: () -> Unit) {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Idle, size = 96.dp) },
-        heading = "Nothing logged yet",
-        body = "There's nothing in the ${period.label.lowercase()} to recap. Log a meal, a glass " +
-            "of water or a weigh-in and it'll show up here.",
-        actions = { SecondaryButton(label = "Close", onClick = onClose, modifier = Modifier.fillMaxWidth()) },
+        heading = stringResource(R.string.progress_recap_empty_heading),
+        body = stringResource(R.string.progress_recap_empty_body, stringResource(period.label).lowercase()),
+        actions = {
+            SecondaryButton(
+                label = stringResource(R.string.progress_close),
+                onClick = onClose,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
     )
 }
 
@@ -183,19 +191,23 @@ private fun BodySection(recap: Recap, unit: UnitSystem) {
     val end = recap.endWeightKg ?: return
     val label = unit.weightUnitLabel()
     AppCard {
-        SectionHeading("Body")
+        SectionHeading(stringResource(R.string.progress_recap_body))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatCell(label = "Started", value = "${formatKg(start.kgToDisplayUnit(unit))} $label")
-            StatCell(label = "Latest", value = "${formatKg(end.kgToDisplayUnit(unit))} $label")
+            StatCell(label = stringResource(R.string.progress_recap_started), value = stringResource(R.string.progress_weight_value, formatKg(start.kgToDisplayUnit(unit)), label))
+            StatCell(label = stringResource(R.string.progress_recap_latest), value = stringResource(R.string.progress_weight_value, formatKg(end.kgToDisplayUnit(unit)), label))
             StatCell(
-                label = "Change",
+                label = stringResource(R.string.progress_recap_change),
                 value = recap.weightArcKg?.let {
-                    "${if (it > 0) "+" else ""}${formatKg(it.kgToDisplayUnit(unit))} $label"
-                } ?: "—",
+                    stringResource(
+                        R.string.progress_weight_value,
+                        "${if (it > 0) "+" else ""}${formatKg(it.kgToDisplayUnit(unit))}",
+                        label,
+                    )
+                } ?: stringResource(R.string.progress_none),
             )
         }
         if (recap.weightArcKg == null) {
-            Note("One weigh-in in this window — there's nothing to compare it against yet.")
+            Note(stringResource(R.string.progress_recap_one_weigh_in))
         }
     }
 }
@@ -205,11 +217,11 @@ private fun NutritionSection(recap: Recap) {
     val averages = recap.averages
     if (averages.daysLogged == 0) return
     AppCard {
-        SectionHeading("Nutrition")
+        SectionHeading(stringResource(R.string.progress_recap_nutrition))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatCell(label = "Protein", value = "${averages.proteinG} g")
-            StatCell(label = "Carbs", value = "${averages.carbsG} g")
-            StatCell(label = "Fat", value = "${averages.fatG} g")
+            StatCell(label = stringResource(R.string.progress_recap_protein), value = stringResource(R.string.progress_recap_grams, averages.proteinG))
+            StatCell(label = stringResource(R.string.progress_recap_carbs), value = stringResource(R.string.progress_recap_grams, averages.carbsG))
+            StatCell(label = stringResource(R.string.progress_recap_fat), value = stringResource(R.string.progress_recap_grams, averages.fatG))
         }
         MacroBar(
             proteinG = averages.proteinG,
@@ -217,7 +229,7 @@ private fun NutritionSection(recap: Recap) {
             fatG = averages.fatG,
             modifier = Modifier.padding(top = 12.dp),
         )
-        Note("Daily average over ${averages.daysLogged} ${if (averages.daysLogged == 1) "day" else "days"} with food logged.")
+        Note(pluralStringResource(R.plurals.progress_recap_daily_average, averages.daysLogged, averages.daysLogged))
     }
 }
 
@@ -225,19 +237,19 @@ private fun NutritionSection(recap: Recap) {
 private fun MovementSection(recap: Recap, unit: UnitSystem) {
     if (recap.workouts == 0 && recap.steps.days == 0) return
     AppCard {
-        SectionHeading("Movement")
+        SectionHeading(stringResource(R.string.progress_recap_movement))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatCell(label = "Workouts", value = "${recap.workouts}")
-            StatCell(label = "Burned", value = "${recap.burnedKcal} kcal")
-            StatCell(label = "Best day", value = recap.steps.bestSteps?.let(::formatSteps) ?: "—")
+            StatCell(label = stringResource(R.string.progress_recap_workouts), value = "${recap.workouts}")
+            StatCell(label = stringResource(R.string.progress_recap_burned), value = stringResource(R.string.progress_kcal, recap.burnedKcal))
+            StatCell(label = stringResource(R.string.progress_recap_best_steps), value = recap.steps.bestSteps?.let(::formatSteps) ?: stringResource(R.string.progress_none))
         }
         if (recap.steps.days > 0) {
             // The goal is the profile's current one and is not snapshotted per day, so the label
             // says which goal it means — `Profile.stepGoal`'s rule.
-            Note("Hit today's step goal on ${recap.steps.daysHitGoal} of ${recap.steps.days} days with steps.")
+            Note(stringResource(R.string.progress_recap_step_goal_days, recap.steps.daysHitGoal, recap.steps.days))
         }
         if (recap.strength.workouts > 0) {
-            Note("Lifted ${volumeLabel(recap.strength.volumeKg, unit)} across ${recap.strength.sets} sets.")
+            Note(stringResource(R.string.progress_recap_lifted, volumeLabel(recap.strength.volumeKg, unit), recap.strength.sets))
         }
     }
 }
@@ -249,7 +261,7 @@ private fun PhotoSection(recap: Recap) {
     if (recap.photos.size < 2) return
     val frames = remember(recap.photos) { sampleFrames(recap.photos) }
     AppCard {
-        SectionHeading("Photos")
+        SectionHeading(stringResource(R.string.progress_recap_photos))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             frames.forEach { photo ->
                 RecapFrame(photo = photo, modifier = Modifier.weight(1f))
@@ -271,7 +283,7 @@ private fun RecapFrame(photo: ProgressPhoto, modifier: Modifier = Modifier) {
             rememberBitmapFromFile(photo.filePath, GRID_TILE_PX)?.let {
                 Image(
                     bitmap = it,
-                    contentDescription = "Progress photo from ${formatEpochDay(photo.dateEpochDay)}",
+                    contentDescription = stringResource(R.string.progress_recap_photo_from, formatEpochDay(photo.dateEpochDay)),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                 )

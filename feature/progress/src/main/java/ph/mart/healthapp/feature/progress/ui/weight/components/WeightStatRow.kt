@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,7 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /** Current / change / goal-remaining — goal-remaining cell omitted with the goal marker, same as
  * [WeightProgressChart]'s dashed line. Change color reuses the shared goal-relative trend logic,
@@ -37,11 +39,18 @@ fun WeightStatRow(
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        StatCell(label = "Current", value = "${formatKg(currentKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}")
+        StatCell(
+            label = stringResource(R.string.progress_weight_current),
+            value = stringResource(R.string.progress_weight_value, formatKg(currentKg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
+        )
         val trend = goalRelativeTrend(goal, changeKg)
         StatCell(
-            label = "Change",
-            value = "${if (changeKg > 0) "+" else ""}${formatKg(changeKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+            label = stringResource(R.string.progress_weight_change),
+            value = stringResource(
+                R.string.progress_weight_value,
+                "${if (changeKg > 0) "+" else ""}${formatKg(changeKg.kgToDisplayUnit(unit))}",
+                unit.weightUnitLabel(),
+            ),
             valueColor = when (trend) {
                 TrendDirection.OnTrack -> MaterialTheme.colorScheme.primary
                 TrendDirection.OffTrack -> MaterialTheme.colorScheme.error
@@ -50,7 +59,10 @@ fun WeightStatRow(
         )
         if (goalWeightKg != null) {
             val remaining = abs(currentKg - goalWeightKg)
-            StatCell(label = "Goal remaining", value = "${formatKg(remaining.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}")
+            StatCell(
+                label = stringResource(R.string.progress_weight_goal_remaining),
+                value = stringResource(R.string.progress_weight_value, formatKg(remaining.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
+            )
         }
     }
 }

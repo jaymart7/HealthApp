@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.health.HeartDay
@@ -16,6 +17,7 @@ import ph.mart.healthapp.core.data.health.inRange
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -43,21 +45,21 @@ internal fun ColumnScope.HeartDetailBody(uiState: ProgressUiState, state: Progre
     val days = uiState.heartDays.inRange(range, today)
     val averages = days.heartAverages()
 
-    HeroValue(value = averages.averageBpm?.toString() ?: "—", caption = "bpm average")
-    FactChipRow(chips = listOf(FactChip("From your paired watch")))
+    HeroValue(value = averages.averageBpm?.toString() ?: stringResource(R.string.progress_none), caption = stringResource(R.string.progress_heart_hero))
+    FactChipRow(chips = listOf(FactChip(stringResource(R.string.progress_from_watch))))
     ChartCard(
-        title = "Daily range",
+        title = stringResource(R.string.progress_heart_range),
         range = range,
         onRangeChange = { state.setRange(Subject.Heart, it) },
-        legend = listOf(LegendEntry("Lowest to average, per day", MaterialTheme.colorScheme.secondary)),
+        legend = listOf(LegendEntry(stringResource(R.string.progress_heart_legend), MaterialTheme.colorScheme.secondary)),
     ) {
         HeartTrendChart(days = days, fromEpochDay = from, toEpochDay = today)
     }
     StatRowsCard(
         rows = listOf(
-            StatRow("Average", averages.averageBpm?.let { "$it bpm" } ?: "—"),
-            StatRow("Lowest", averages.lowestBpm?.let { "$it bpm" } ?: "—"),
-            StatRow("Days recorded", "${averages.days}"),
+            StatRow(stringResource(R.string.progress_heart_average), averages.averageBpm?.let { stringResource(R.string.progress_heart_bpm, it) } ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_heart_lowest), averages.lowestBpm?.let { stringResource(R.string.progress_heart_bpm, it) } ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_heart_days), "${averages.days}"),
         ),
     )
 }

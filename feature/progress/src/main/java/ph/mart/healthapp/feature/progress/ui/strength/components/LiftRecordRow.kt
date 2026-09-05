@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.LiftRecord
@@ -22,6 +24,7 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /**
  * One lift's best set, and the estimated one-rep max that ranked it.
@@ -43,7 +46,7 @@ internal fun LiftRecordRow(record: LiftRecord, unit: UnitSystem, modifier: Modif
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "${record.sets} ${if (record.sets == 1) "set" else "sets"} · " +
+                text = pluralStringResource(R.plurals.progress_strength_set_count, record.sets, record.sets) + " · " +
                     formatEpochDay(record.dateEpochDay),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -57,8 +60,11 @@ internal fun LiftRecordRow(record: LiftRecord, unit: UnitSystem, modifier: Modif
             )
             if (record.bestOneRepMaxKg > 0) {
                 Text(
-                    text = "~${formatLoad(record.bestOneRepMaxKg.kgToDisplayUnit(unit))} " +
-                        "${unit.weightUnitLabel()} 1RM",
+                    text = stringResource(
+                        R.string.progress_strength_one_rm,
+                        formatLoad(record.bestOneRepMaxKg.kgToDisplayUnit(unit)),
+                        unit.weightUnitLabel(),
+                    ),
                     style = MaterialTheme.typography.bodySmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

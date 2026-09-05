@@ -89,6 +89,9 @@ data class SubjectSummary(
  * the range toggle belongs to the chart it sits in.
  */
 @Suppress("CyclomaticComplexMethod", "LongMethod")
+// Stays in Kotlin, with `trendWord` and `daysAgo` below it: a pure fold with a JVM test over its
+// exact wording, the same reading `insightFor()` and `goalProjectionLine()` got. Moving it means
+// returning a case type per branch for the card to resolve, which is its own decision.
 fun summarize(
     subject: Subject,
     uiState: ProgressUiState,

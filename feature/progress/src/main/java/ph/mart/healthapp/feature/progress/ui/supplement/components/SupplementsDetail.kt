@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.data.supplement.averageAdherence
 import ph.mart.healthapp.core.data.supplement.inRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -45,13 +47,13 @@ internal fun ColumnScope.SupplementsDetailBody(uiState: ProgressUiState, state: 
     val byDay = days.adherenceByDay()
     val average = days.averageAdherence()
 
-    HeroValue(value = average?.let { "${(it * 100).roundToInt()}" } ?: "—", caption = "% taken")
-    FactChipRow(chips = listOf(FactChip("${byDay.size} days tracked")))
+    HeroValue(value = average?.let { "${(it * 100).roundToInt()}" } ?: stringResource(R.string.progress_none), caption = stringResource(R.string.progress_supplements_hero))
+    FactChipRow(chips = listOf(FactChip(stringResource(R.string.progress_supplements_days, byDay.size))))
     ChartCard(
-        title = "Adherence",
+        title = stringResource(R.string.progress_supplements_adherence),
         range = range,
         onRangeChange = { state.setRange(Subject.Supplements, it) },
-        legend = listOf(LegendEntry("Share of the day's doses taken", MaterialTheme.colorScheme.primary)),
+        legend = listOf(LegendEntry(stringResource(R.string.progress_supplements_legend), MaterialTheme.colorScheme.primary)),
     ) {
         SupplementAdherenceChart(days = days, fromEpochDay = from, toEpochDay = today)
     }

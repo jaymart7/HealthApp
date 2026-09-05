@@ -4,6 +4,7 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -68,12 +69,14 @@ import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileWaterSecti
 // not copy.
 private const val EXPORT_FILE_NAME = "fitpulse-export.json"
 
-private const val NOTIFICATIONS_DENIED =
+@StringRes
+private val NOTIFICATIONS_DENIED =
     R.string.profile_notifications_blocked
 
 /** Onboarding leaves meal and weigh-in reminders on by default, so a switch can be on without the
  * permission ever having been asked for. Say so rather than staying silently broken. */
-private const val NOTIFICATIONS_BLOCKED =
+@StringRes
+private val NOTIFICATIONS_BLOCKED =
     R.string.profile_notifications_blocked_on
 
 @Composable

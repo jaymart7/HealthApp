@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.NutritionAverages
@@ -23,6 +25,7 @@ import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.MicronutrientLegend
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /**
  * Averages across the selected range, against the profile's targets. The bar shows the **goal**
@@ -38,15 +41,15 @@ fun NutritionAverageCard(
 ) {
     AppCard(modifier = modifier) {
         Text(
-            text = "Daily average",
+            text = stringResource(R.string.progress_nutrition_daily_average),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = if (targets != null) {
-                "${averages.calories} / ${targets.calories} kcal"
+                stringResource(R.string.progress_nutrition_of_target, averages.calories, targets.calories)
             } else {
-                "${averages.calories} kcal"
+                stringResource(R.string.progress_nutrition_plain, averages.calories)
             },
             style = MaterialTheme.typography.headlineSmall.tabularNums,
             color = MaterialTheme.colorScheme.onSurface,
@@ -58,9 +61,9 @@ fun NutritionAverageCard(
             modifier = Modifier.padding(vertical = 8.dp),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            MacroLegend("Protein", averages.proteinG, targets?.proteinG, MaterialTheme.colorScheme.primary)
-            MacroLegend("Carbs", averages.carbsG, targets?.carbsG, MaterialTheme.colorScheme.tertiary)
-            MacroLegend("Fat", averages.fatG, targets?.fatG, MaterialTheme.colorScheme.secondary)
+            MacroLegend(stringResource(R.string.progress_macro_protein), averages.proteinG, targets?.proteinG, MaterialTheme.colorScheme.primary)
+            MacroLegend(stringResource(R.string.progress_macro_carbs), averages.carbsG, targets?.carbsG, MaterialTheme.colorScheme.tertiary)
+            MacroLegend(stringResource(R.string.progress_macro_fat), averages.fatG, targets?.fatG, MaterialTheme.colorScheme.secondary)
         }
         MicronutrientLegend(
             fiberG = averages.fiberG,
@@ -69,8 +72,11 @@ fun NutritionAverageCard(
             modifier = Modifier.padding(top = 8.dp),
         )
         Text(
-            text = "Averaged over ${averages.daysLogged} logged " +
-                if (averages.daysLogged == 1) "day" else "days",
+            text = pluralStringResource(
+                R.plurals.progress_nutrition_averaged,
+                averages.daysLogged,
+                averages.daysLogged,
+            ),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),
@@ -83,7 +89,11 @@ private fun MacroLegend(label: String, averageG: Int, goalG: Int?, color: Color)
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(modifier = Modifier.size(8.dp).background(color, RoundedCornerShape(2.dp)))
         Text(
-            text = if (goalG != null) "$label $averageG/${goalG}g" else "$label ${averageG}g",
+            text = if (goalG != null) {
+                stringResource(R.string.progress_macro_of_goal, label, averageG, goalG)
+            } else {
+                stringResource(R.string.progress_macro_plain, label, averageG)
+            },
             style = MaterialTheme.typography.labelMedium.tabularNums,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

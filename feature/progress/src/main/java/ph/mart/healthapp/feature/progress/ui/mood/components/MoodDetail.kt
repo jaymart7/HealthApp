@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
@@ -16,6 +17,7 @@ import ph.mart.healthapp.core.data.mood.moodAverages
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -43,12 +45,12 @@ internal fun ColumnScope.MoodDetailBody(uiState: ProgressUiState, state: Progres
     val averages = days.moodAverages()
 
     HeroValue(
-        value = averages.mood?.let { "%.1f".format(it) } ?: "—",
-        caption = "average mood out of ${MOOD_SCALE.last}",
+        value = averages.mood?.let { "%.1f".format(it) } ?: stringResource(R.string.progress_none),
+        caption = stringResource(R.string.progress_mood_hero, MOOD_SCALE.last),
     )
-    FactChipRow(chips = listOf(FactChip("${averages.daysLogged} days reflected on")))
+    FactChipRow(chips = listOf(FactChip(stringResource(R.string.progress_mood_days, averages.daysLogged))))
     ChartCard(
-        title = "Mood and energy",
+        title = stringResource(R.string.progress_mood_title),
         range = range,
         onRangeChange = { state.setRange(Subject.Mood, it) },
         legend = emptyList(),
@@ -57,9 +59,9 @@ internal fun ColumnScope.MoodDetailBody(uiState: ProgressUiState, state: Progres
     }
     StatRowsCard(
         rows = listOf(
-            StatRow("Average mood", averages.mood?.let { "%.1f / ${MOOD_SCALE.last}".format(it) } ?: "—"),
-            StatRow("Average energy", averages.energy?.let { "%.1f / ${MOOD_SCALE.last}".format(it) } ?: "—"),
-            StatRow("Days logged", "${averages.daysLogged}"),
+            StatRow(stringResource(R.string.progress_mood_average), averages.mood?.let { "%.1f / ${MOOD_SCALE.last}".format(it) } ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_mood_energy_average), averages.energy?.let { "%.1f / ${MOOD_SCALE.last}".format(it) } ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_mood_days_logged), "${averages.daysLogged}"),
         ),
     )
 }

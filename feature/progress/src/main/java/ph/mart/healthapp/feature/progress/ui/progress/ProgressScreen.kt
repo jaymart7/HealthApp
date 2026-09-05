@@ -8,12 +8,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.VerticalDivider
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
@@ -33,13 +34,14 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
+import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.photo.components.TimelapseScreen
-import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.progress.components.RecapScreen
@@ -172,8 +174,8 @@ private fun ProgressContent(
                     if (subject == null) {
                         FullScreenState(
                             icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = "Pick a subject",
-                            body = "Tap a card and its page opens here.",
+                            heading = stringResource(R.string.progress_pick_heading),
+                            body = stringResource(R.string.progress_pick_body),
                             modifier = Modifier.weight(DetailPaneWeight),
                         )
                     } else {

@@ -26,6 +26,7 @@ import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 
 @Composable
 fun LogBloodPressureSheet(
@@ -59,34 +60,34 @@ private fun LogBloodPressureContent(
     val form = state.form
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Log a reading",
+            text = stringResource(R.string.progress_bp_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NumericStepperField(
-                label = "Systolic",
+                label = stringResource(R.string.progress_bp_systolic),
                 value = form.systolic.toString(),
-                unitSuffix = "mmHg",
+                unitSuffix = stringResource(R.string.progress_bp_mmhg),
                 onIncrement = { state.form = form.copy(systolic = (form.systolic + 1).coerceIn(SYSTOLIC_RANGE)) },
                 onDecrement = { state.form = form.copy(systolic = (form.systolic - 1).coerceIn(SYSTOLIC_RANGE)) },
                 onValueChange = { text -> state.form = form.copy(systolic = text.toIntOrNull() ?: 0) },
-                error = "Systolic is the higher of the two numbers.".takeIf { !form.isValid },
+                error = stringResource(R.string.progress_bp_error).takeIf { !form.isValid },
             )
             NumericStepperField(
-                label = "Diastolic",
+                label = stringResource(R.string.progress_bp_diastolic),
                 value = form.diastolic.toString(),
-                unitSuffix = "mmHg",
+                unitSuffix = stringResource(R.string.progress_bp_mmhg),
                 onIncrement = { state.form = form.copy(diastolic = (form.diastolic + 1).coerceIn(DIASTOLIC_RANGE)) },
                 onDecrement = { state.form = form.copy(diastolic = (form.diastolic - 1).coerceIn(DIASTOLIC_RANGE)) },
                 onValueChange = { text -> state.form = form.copy(diastolic = text.toIntOrNull() ?: 0) },
             )
             // Optional: 0 is "the cuff didn't show one, or I didn't type it", never a pulse of zero.
             NumericStepperField(
-                label = "Pulse (optional)",
+                label = stringResource(R.string.progress_bp_pulse),
                 value = if (form.pulseBpm > 0) form.pulseBpm.toString() else "",
-                unitSuffix = "bpm",
+                unitSuffix = stringResource(R.string.progress_bp_bpm),
                 onIncrement = { state.form = form.copy(pulseBpm = (form.pulseBpm + 1).coerceIn(PULSE_RANGE)) },
                 onDecrement = { state.form = form.copy(pulseBpm = (form.pulseBpm - 1).coerceAtLeast(0)) },
                 onValueChange = { text -> state.form = form.copy(pulseBpm = text.toIntOrNull() ?: 0) },
@@ -101,9 +102,9 @@ private fun LogBloodPressureContent(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                 PrimaryButton(
-                    label = "Save",
+                    label = stringResource(R.string.progress_save),
                     onClick = { onEvent(BloodPressureEvent.OnSave(form)) },
                     enabled = form.isValid,
                     modifier = Modifier.weight(1f),

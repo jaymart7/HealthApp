@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.fasting.FastSession
@@ -22,6 +23,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.BadgeDot
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.achievement.BadgeFamily
 import ph.mart.healthapp.feature.progress.ui.achievement.BadgeGroup
 import ph.mart.healthapp.feature.progress.ui.achievement.badgeGroups
@@ -66,7 +68,7 @@ private fun BadgeGroupCard(group: BadgeGroup, unit: UnitSystem) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${group.earnedCount} of ${group.tiers.size}",
+                text = stringResource(R.string.progress_badges_earned, group.earnedCount, group.tiers.size),
                 style = MaterialTheme.typography.titleSmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -110,6 +112,9 @@ internal fun tierLabel(family: BadgeFamily, tier: Int, unit: UnitSystem): String
 internal fun tierNumber(family: BadgeFamily, tier: Int, unit: UnitSystem): String =
     if (family == BadgeFamily.WeightMoved) "%.0f".format(tier.toDouble().kgToDisplayUnit(unit)) else tier.toString()
 
+// This helper and the three below it stay in Kotlin: `captionFor` has a JVM test over its exact
+// wording and the others feed it, which is `SubjectSummary.summarize()`'s reading for the same
+// reason — moving them means returning a case type per branch for the card to resolve.
 private fun nounFor(family: BadgeFamily, unit: UnitSystem): String = when (family) {
     BadgeFamily.Streak, BadgeFamily.DaysLogged -> "day"
     BadgeFamily.WeightMoved -> unit.weightUnitLabel()

@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -57,6 +58,7 @@ import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /**
  * Before/after slider: [photoA] (the older shot) fills the frame, [photoB] is drawn over it clipped
@@ -73,19 +75,23 @@ fun PhotoComparisonScreen(photoA: ProgressPhoto, photoB: ProgressPhoto, unit: Un
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(text = "Compare photos", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(text = stringResource(R.string.progress_compare_title), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
             ComparisonSlider(photoA = photoA, photoB = photoB)
             val delta = photoB.weightKg?.let { b -> photoA.weightKg?.let { a -> b - a } }
             if (delta != null) {
                 Text(
-                    text = "${if (delta > 0) "+" else ""}${"%.1f".format(delta.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                    text = stringResource(
+                        R.string.progress_weight_value,
+                        "${if (delta > 0) "+" else ""}${"%.1f".format(delta.kgToDisplayUnit(unit))}",
+                        unit.weightUnitLabel(),
+                    ),
                     style = MaterialTheme.typography.titleMedium.tabularNums,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SecondaryButton(label = "Share", onClick = { sharing = true }, modifier = Modifier.weight(1f))
-                SecondaryButton(label = "Close", onClick = onClose, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_share), onClick = { sharing = true }, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_close), onClick = onClose, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -104,6 +110,7 @@ private fun ComparisonSlider(photoA: ProgressPhoto, photoB: ProgressPhoto, modif
     var widthPx by remember { mutableFloatStateOf(0f) }
     val labelA = formatEpochDay(photoA.dateEpochDay)
     val labelB = formatEpochDay(photoB.dateEpochDay)
+    val spoken = stringResource(R.string.progress_compare_spoken, labelA, labelB)
 
     Box(
         modifier = modifier
@@ -120,7 +127,7 @@ private fun ComparisonSlider(photoA: ProgressPhoto, photoB: ProgressPhoto, modif
             }
             // Drag-only would leave this unreachable with a screen reader or a switch device.
             .semantics {
-                contentDescription = "Before $labelA, after $labelB. Drag to reveal."
+                contentDescription = spoken
                 progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
                 setProgress { target -> fraction = target.coerceIn(0f, 1f); true }
             },

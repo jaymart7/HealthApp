@@ -20,11 +20,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 
 /**
  * Mood and energy as paired bars over a fixed date window — one [Canvas], no charting library,
@@ -86,8 +88,8 @@ fun MoodTrendChart(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier.padding(top = 8.dp),
         ) {
-            LegendDot(color = moodColor, label = "Mood")
-            LegendDot(color = energyColor, label = "Energy")
+            LegendDot(color = moodColor, label = stringResource(R.string.progress_mood_legend_mood))
+            LegendDot(color = energyColor, label = stringResource(R.string.progress_mood_legend_energy))
         }
     }
 }

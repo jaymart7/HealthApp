@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -28,6 +29,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 
 @Composable
 fun AddMeasurementSheet(
@@ -70,7 +72,11 @@ private fun AddMeasurementContent(
 
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = if (part != null && part !in untrackedParts) "Log ${part.name}" else "Add measurement",
+            text = if (part != null && part !in untrackedParts) {
+                stringResource(R.string.progress_measurement_log, part.name)
+            } else {
+                stringResource(R.string.progress_measurement_add_title)
+            },
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -107,13 +113,13 @@ private fun AddMeasurementContent(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
                     if (existingForDate != null) {
                         Text(
-                            text = "Replacing your entry for this date.",
+                            text = stringResource(R.string.progress_measurement_replacing),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     NumericStepperField(
-                        label = "Value",
+                        label = stringResource(R.string.progress_measurement_value_label),
                         value = formatValue(state.form.valueCm.cmToDisplayUnit(unit)),
                         unitSuffix = unit.lengthUnitLabel(),
                         onIncrement = { state.form = state.form.copy(valueCm = state.form.valueCm + step) },
@@ -124,9 +130,9 @@ private fun AddMeasurementContent(
 
             if (!state.showingCalendar) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                    SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                     PrimaryButton(
-                        label = "Save",
+                        label = stringResource(R.string.progress_save),
                         onClick = { onEvent(AddMeasurementEvent.OnSave(state.form)) },
                         enabled = state.form.part != null,
                         modifier = Modifier.weight(1f),

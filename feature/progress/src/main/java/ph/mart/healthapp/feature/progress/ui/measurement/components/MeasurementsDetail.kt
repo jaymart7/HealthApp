@@ -5,13 +5,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
-import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 
@@ -35,7 +37,7 @@ internal fun MeasurementsDetailBody(uiState: ProgressUiState, state: ProgressScr
             )
         }
         PrimaryButton(
-            label = "+ Add measurement",
+            label = stringResource(R.string.progress_measurement_add),
             onClick = { state.openMeasurementSheet(null) },
             modifier = Modifier.padding(top = 12.dp),
         )

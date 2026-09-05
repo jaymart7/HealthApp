@@ -19,11 +19,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.TrendDirection
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.SubjectGroup
 import ph.mart.healthapp.feature.progress.ui.progress.SubjectPreview
@@ -75,7 +77,7 @@ internal fun GroupSection(
             verticalAlignment = Alignment.Bottom,
         ) {
             Text(
-                text = group.label,
+                text = stringResource(group.label),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -121,6 +123,7 @@ private fun CollapsedGroupRow(
     onExpand: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val showGroup = stringResource(R.string.progress_show_group, stringResource(group.label))
     Surface(
         onClick = onExpand,
         shape = RoundedCornerShape(16.dp),
@@ -133,19 +136,19 @@ private fun CollapsedGroupRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = group.label,
+                    text = stringResource(group.label),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "$subjectCount subjects · none tracked",
+                    text = stringResource(R.string.progress_group_none_tracked, subjectCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Icon(
                 imageVector = AppIcons.ChevronRight,
-                contentDescription = "Show ${group.label}",
+                contentDescription = showGroup,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp),
             )

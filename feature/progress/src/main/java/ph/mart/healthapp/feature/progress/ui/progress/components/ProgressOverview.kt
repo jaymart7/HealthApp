@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
@@ -42,6 +43,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Recap
@@ -93,7 +95,7 @@ internal fun ProgressOverview(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Progress",
+                text = stringResource(R.string.progress_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -102,7 +104,7 @@ internal fun ProgressOverview(
                 IconButton(onClick = state::openRecap) {
                     Icon(
                         imageVector = AppIcons.Share,
-                        contentDescription = "Recap",
+                        contentDescription = stringResource(R.string.progress_recap),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -130,8 +132,11 @@ internal fun ProgressOverview(
         projection?.let {
             AIInsightCard(
                 text = goalProjectionLine(
-                    goalWeightLabel = "${formatKg(it.goalWeightKg.kgToDisplayUnit(uiState.preferredUnit))} " +
+                    goalWeightLabel = stringResource(
+                        R.string.progress_weight_value,
+                        formatKg(it.goalWeightKg.kgToDisplayUnit(uiState.preferredUnit)),
                         uiState.preferredUnit.weightUnitLabel(),
+                    ),
                     targetEpochDay = it.targetEpochDay,
                     reached = it.reached,
                     windowDays = PROJECTION_WINDOW_DAYS,
@@ -176,13 +181,14 @@ internal fun ProgressOverview(
 
 /** The rate under the projection headline. Always reported, even when there is no date —
  * [GoalProjection.kgPerWeek] is exactly the figure that is useful when the date isn't. */
+@Composable
 private fun rateLine(projection: GoalProjection, unit: UnitSystem): String {
     val perWeek = abs(projection.kgPerWeek).kgToDisplayUnit(unit)
     return when {
-        projection.reached -> "Holding steady at your target."
-        perWeek == 0.0 -> "No measurable change week to week."
-        projection.kgPerWeek < 0 -> "Trending ${formatKg(perWeek)} ${unit.weightUnitLabel()} down per week."
-        else -> "Trending ${formatKg(perWeek)} ${unit.weightUnitLabel()} up per week."
+        projection.reached -> stringResource(R.string.progress_trend_holding)
+        perWeek == 0.0 -> stringResource(R.string.progress_trend_flat)
+        projection.kgPerWeek < 0 -> stringResource(R.string.progress_trend_down, formatKg(perWeek), unit.weightUnitLabel())
+        else -> stringResource(R.string.progress_trend_up, formatKg(perWeek), unit.weightUnitLabel())
     }
 }
 
@@ -196,11 +202,9 @@ private fun MascotNote(trackedCount: Int, modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.size(12.dp))
             Text(
                 text = when (trackedCount) {
-                    0 -> "Nothing is tracking yet. Log anything and it shows up here."
-                    1 -> "One subject is tracking so far. The rest stay tucked away until " +
-                        "there's something to read."
-                    else -> "$trackedCount subjects are tracking so far. The rest stay tucked away " +
-                        "until there's something to read."
+                    0 -> stringResource(R.string.progress_sparse_none)
+                    1 -> stringResource(R.string.progress_sparse_one)
+                    else -> stringResource(R.string.progress_sparse_many, trackedCount)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

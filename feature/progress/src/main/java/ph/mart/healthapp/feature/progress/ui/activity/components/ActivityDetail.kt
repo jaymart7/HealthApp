@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.health.StepDay
@@ -18,6 +19,7 @@ import ph.mart.healthapp.core.data.health.stepAverages
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -53,17 +55,17 @@ internal fun ColumnScope.ActivityDetailBody(uiState: ProgressUiState, state: Pro
     val stepStats = steps.stepAverages(uiState.stepGoal)
     val burn = burnSeries(uiState.stepDays, uiState.exerciseEntries).inRange(range, today)
 
-    HeroValue(value = stepStats.averageSteps?.let(::formatSteps) ?: "—", caption = "steps a day")
+    HeroValue(value = stepStats.averageSteps?.let(::formatSteps) ?: stringResource(R.string.progress_none), caption = stringResource(R.string.progress_activity_hero))
     FactChipRow(
-        chips = listOf(FactChip("${stepStats.daysHitGoal} of ${stepStats.days} days hit ${formatSteps(uiState.stepGoal)}")),
+        chips = listOf(FactChip(stringResource(R.string.progress_activity_goal_days, stepStats.daysHitGoal, stepStats.days, formatSteps(uiState.stepGoal)))),
     )
     ChartCard(
-        title = "Steps",
+        title = stringResource(R.string.progress_activity_steps),
         range = range,
         onRangeChange = { state.setRange(Subject.Activity, it) },
         legend = listOf(
-            LegendEntry("Steps", MaterialTheme.colorScheme.primary),
-            LegendEntry("Goal ${formatSteps(uiState.stepGoal)}", MaterialTheme.colorScheme.onSurfaceVariant, dashed = true),
+            LegendEntry(stringResource(R.string.progress_activity_steps), MaterialTheme.colorScheme.primary),
+            LegendEntry(stringResource(R.string.progress_activity_goal, formatSteps(uiState.stepGoal)), MaterialTheme.colorScheme.onSurfaceVariant, dashed = true),
         ),
     ) {
         DayBarChart(
@@ -75,10 +77,10 @@ internal fun ColumnScope.ActivityDetailBody(uiState: ProgressUiState, state: Pro
         )
     }
     ChartCard(
-        title = "Calories burned",
+        title = stringResource(R.string.progress_activity_burned_title),
         range = null,
         onRangeChange = null,
-        legend = listOf(LegendEntry("Steps and workouts, combined", MaterialTheme.colorScheme.primary)),
+        legend = listOf(LegendEntry(stringResource(R.string.progress_activity_burned_legend), MaterialTheme.colorScheme.primary)),
     ) {
         DayBarChart(
             bars = burn.map { DayBar(it.dateEpochDay, it.burnedKcal) },
@@ -88,10 +90,10 @@ internal fun ColumnScope.ActivityDetailBody(uiState: ProgressUiState, state: Pro
     }
     StatRowsCard(
         rows = listOf(
-            StatRow("Average steps", stepStats.averageSteps?.let(::formatSteps) ?: "—"),
-            StatRow("Best day", stepStats.bestSteps?.let(::formatSteps) ?: "—"),
-            StatRow("Hit today's goal", "${stepStats.daysHitGoal} of ${stepStats.days}"),
-            StatRow("Burned", "${burn.sumOf { it.burnedKcal }} kcal"),
+            StatRow(stringResource(R.string.progress_activity_average), stepStats.averageSteps?.let(::formatSteps) ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_activity_best), stepStats.bestSteps?.let(::formatSteps) ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_activity_hit_goal), stringResource(R.string.progress_of, stepStats.daysHitGoal, stepStats.days)),
+            StatRow(stringResource(R.string.progress_activity_burned), stringResource(R.string.progress_kcal, burn.sumOf { it.burnedKcal })),
         ),
     )
 }

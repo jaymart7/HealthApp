@@ -9,6 +9,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
@@ -23,7 +25,9 @@ import ph.mart.healthapp.core.data.exercise.withSets
 import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
+import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
@@ -32,7 +36,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 
@@ -57,14 +60,14 @@ internal fun ColumnScope.StrengthDetailBody(uiState: ProgressUiState, state: Pro
 
     HeroValue(
         value = "${totals.workouts}",
-        caption = if (totals.workouts == 1) "workout" else "workouts",
+        caption = pluralStringResource(R.plurals.progress_strength_workouts, totals.workouts),
     )
-    FactChipRow(chips = listOf(FactChip("Lifted ${volumeLabel(totals.volumeKg, uiState.preferredUnit)}")))
+    FactChipRow(chips = listOf(FactChip(stringResource(R.string.progress_strength_lifted, volumeLabel(totals.volumeKg, uiState.preferredUnit)))))
     ChartCard(
-        title = "Volume",
+        title = stringResource(R.string.progress_strength_volume),
         range = range,
         onRangeChange = { state.setRange(Subject.Strength, it) },
-        legend = listOf(LegendEntry("Sets × reps × load, per day", MaterialTheme.colorScheme.primary)),
+        legend = listOf(LegendEntry(stringResource(R.string.progress_strength_volume_legend), MaterialTheme.colorScheme.primary)),
     ) {
         DayBarChart(
             // Rounded to whole units: a bar is a few pixels wide, and no one reads a decimal off
@@ -76,16 +79,16 @@ internal fun ColumnScope.StrengthDetailBody(uiState: ProgressUiState, state: Pro
     }
     StatRowsCard(
         rows = listOf(
-            StatRow("Workouts", "${totals.workouts}"),
-            StatRow("Sets", "${totals.sets}"),
-            StatRow("Volume", volumeLabel(totals.volumeKg, uiState.preferredUnit)),
+            StatRow(stringResource(R.string.progress_strength_workouts_label), "${totals.workouts}"),
+            StatRow(stringResource(R.string.progress_strength_sets), "${totals.sets}"),
+            StatRow(stringResource(R.string.progress_strength_volume), volumeLabel(totals.volumeKg, uiState.preferredUnit)),
         ),
     )
 
     val records = lifted.personalRecords()
     if (records.isNotEmpty()) {
         Text(
-            text = "Personal records",
+            text = stringResource(R.string.progress_strength_records),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp),

@@ -11,6 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
@@ -29,6 +30,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -68,18 +70,18 @@ internal fun CycleDetailBody(uiState: ProgressUiState, state: ProgressScreenStat
     val prediction = allPeriods.cyclePrediction()
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        HeroValue(value = cycleDay?.toString() ?: "—", caption = "day of cycle")
+        HeroValue(value = cycleDay?.toString() ?: stringResource(R.string.progress_none), caption = stringResource(R.string.progress_cycle_hero))
         FactChipRow(
             chips = listOfNotNull(
                 prediction?.let { FactChip(nextPeriodChip(it.daysAway(today))) },
-                prediction?.let { FactChip("${it.averageCycleDays}-day average over ${it.basedOnCycles}") },
+                prediction?.let { FactChip(stringResource(R.string.progress_cycle_average_chip, it.averageCycleDays, it.basedOnCycles)) },
             ),
         )
         ChartCard(
-            title = "Flow",
+            title = stringResource(R.string.progress_cycle_flow),
             range = range,
             onRangeChange = { state.setRange(Subject.Cycle, it) },
-            legend = listOf(LegendEntry("Flow per day", MaterialTheme.colorScheme.secondary)),
+            legend = listOf(LegendEntry(stringResource(R.string.progress_cycle_flow_legend), MaterialTheme.colorScheme.secondary)),
         ) {
             DayBarChart(
                 bars = windowed.filter { it.flow > 0 }.map { DayBar(it.dateEpochDay, it.flow) },
@@ -91,14 +93,14 @@ internal fun CycleDetailBody(uiState: ProgressUiState, state: ProgressScreenStat
         }
         StatRowsCard(
             rows = listOfNotNull(
-                averages.cycleDays?.let { StatRow("Average cycle", "${it.roundToInt()} days") },
-                averages.periodDays?.let { StatRow("Average period", "${it.roundToInt()} days") },
-                StatRow("Periods", "${windowPeriods.size}"),
-                StatRow("Days logged", "${averages.daysLogged}"),
+                averages.cycleDays?.let { StatRow(stringResource(R.string.progress_cycle_average), stringResource(R.string.progress_cycle_days, it.roundToInt())) },
+                averages.periodDays?.let { StatRow(stringResource(R.string.progress_cycle_average_period), stringResource(R.string.progress_cycle_days, it.roundToInt())) },
+                StatRow(stringResource(R.string.progress_cycle_periods), "${windowPeriods.size}"),
+                StatRow(stringResource(R.string.progress_cycle_days_logged), "${averages.daysLogged}"),
             ),
         )
         PrimaryButton(
-            label = "+ Log a day",
+            label = stringResource(R.string.progress_cycle_log_day),
             onClick = { state.openCycleSheet() },
             modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
         )
@@ -110,12 +112,13 @@ internal fun CycleDetailBody(uiState: ProgressUiState, state: ProgressScreenStat
 }
 
 /** Never hidden once it exists: a period that is late is exactly what this line is read for. */
+@Composable
 private fun nextPeriodChip(daysAway: Int): String = when {
-    daysAway == 0 -> "Next period expected today"
-    daysAway == 1 -> "Next period expected tomorrow"
-    daysAway > 1 -> "Next period in $daysAway days"
-    daysAway == -1 -> "Expected yesterday"
-    else -> "Expected ${abs(daysAway)} days ago"
+    daysAway == 0 -> stringResource(R.string.progress_cycle_due_today)
+    daysAway == 1 -> stringResource(R.string.progress_cycle_due_tomorrow)
+    daysAway > 1 -> stringResource(R.string.progress_cycle_due_in, daysAway)
+    daysAway == -1 -> stringResource(R.string.progress_cycle_late_yesterday)
+    else -> stringResource(R.string.progress_cycle_late_days, abs(daysAway))
 }
 
 /** A period still running says so rather than reporting a length it hasn't reached. */
@@ -134,13 +137,17 @@ private fun PeriodRow(period: CyclePeriod, today: Long) {
                 text = if (period.lengthDays == 1) {
                     formatEpochDay(period.startEpochDay)
                 } else {
-                    "${formatEpochDay(period.startEpochDay)} – ${formatEpochDay(period.endEpochDay)}"
+                    stringResource(R.string.progress_cycle_span, formatEpochDay(period.startEpochDay), formatEpochDay(period.endEpochDay))
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = if (today in period) "ongoing" else "${period.lengthDays} days",
+                text = if (today in period) {
+                    stringResource(R.string.progress_cycle_ongoing)
+                } else {
+                    stringResource(R.string.progress_cycle_length, period.lengthDays)
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

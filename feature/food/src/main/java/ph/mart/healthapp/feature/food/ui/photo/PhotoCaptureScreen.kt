@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -48,7 +49,8 @@ import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
 import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
-private const val SEARCH_SUBTITLE =
+@StringRes
+private val SEARCH_SUBTITLE =
     R.string.food_photo_db_subtitle
 
 /**

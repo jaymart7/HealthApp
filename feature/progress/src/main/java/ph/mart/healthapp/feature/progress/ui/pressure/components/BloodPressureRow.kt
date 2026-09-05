@@ -27,6 +27,7 @@ import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /**
  * One reading, with its category named beneath it. Only [BloodPressureCategory.severe] is coloured
@@ -85,7 +86,7 @@ internal fun BloodPressureRow(
             IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
                 Icon(
                     imageVector = AppIcons.Delete,
-                    contentDescription = "Delete reading",
+                    contentDescription = stringResource(R.string.progress_bp_delete),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

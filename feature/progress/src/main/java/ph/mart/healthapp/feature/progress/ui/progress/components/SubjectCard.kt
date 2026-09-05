@@ -2,8 +2,8 @@ package ph.mart.healthapp.feature.progress.ui.progress.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -41,6 +42,7 @@ import ph.mart.healthapp.core.data.profile.TrendDirection
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.photo.components.GRID_TILE_PX
 import ph.mart.healthapp.feature.progress.ui.photo.components.rememberBitmapFromFile
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -94,7 +96,7 @@ private fun TrackedCard(summary: SubjectSummary, onClick: () -> Unit, modifier: 
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = summary.subject.label,
+                text = stringResource(summary.subject.label),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -178,14 +180,14 @@ private fun EmptyCard(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = summary.subject.label,
+                text = stringResource(summary.subject.label),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = "Nothing yet",
+                text = stringResource(R.string.progress_nothing_yet),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -196,7 +198,7 @@ private fun EmptyCard(
                     .clickableRow(onHint),
             ) {
                 Text(
-                    text = summary.subject.emptyHint,
+                    text = stringResource(summary.subject.emptyHint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
@@ -319,11 +321,12 @@ internal fun SubjectPreviewGraph(
 @Composable
 private fun PhotoTile(path: String, modifier: Modifier = Modifier) {
     val bitmap = rememberBitmapFromFile(path, GRID_TILE_PX)
+    val photo = stringResource(R.string.progress_photo_generic)
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(5.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .clearAndSetSemantics { contentDescription = "Progress photo" },
+            .clearAndSetSemantics { contentDescription = photo },
     ) {
         bitmap?.let {
             Image(

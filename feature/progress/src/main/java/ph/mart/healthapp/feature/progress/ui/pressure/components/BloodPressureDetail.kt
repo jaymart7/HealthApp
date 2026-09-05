@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -24,6 +25,7 @@ import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureEvent
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureViewModel
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
@@ -85,11 +87,11 @@ private fun BloodPressureDetailContent(
             )
         }
         item {
-            FactChipRow(chips = listOf(FactChip("${averages.readings} readings in this window")))
+            FactChipRow(chips = listOf(FactChip(stringResource(R.string.progress_bp_readings_chip, averages.readings))))
         }
         item {
             ChartCard(
-                title = "Readings",
+                title = stringResource(R.string.progress_bp_readings),
                 range = range,
                 onRangeChange = { state.setRange(Subject.BloodPressure, it) },
                 legend = listOf(
@@ -138,10 +140,10 @@ private fun BloodPressureDetailContent(
         // Asked rather than undone: the diary's swipe-and-undo needs a snackbar host Progress
         // doesn't have, and a reading is a number the user typed, not a row they swiped.
         DiscardConfirmDialog(
-            title = "Delete this reading?",
-            body = "It disappears from the chart and the averages.",
-            confirmLabel = "Delete",
-            dismissLabel = "Cancel",
+            title = stringResource(R.string.progress_bp_delete_title),
+            body = stringResource(R.string.progress_bp_delete_body),
+            confirmLabel = stringResource(R.string.progress_delete),
+            dismissLabel = stringResource(R.string.progress_cancel),
             onConfirm = {
                 onEvent(BloodPressureEvent.OnDelete(pendingId))
                 state.pendingDeleteReadingId = null

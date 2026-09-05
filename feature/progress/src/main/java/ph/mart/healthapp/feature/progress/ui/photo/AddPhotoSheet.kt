@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -54,6 +55,7 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 
 @Composable
 fun AddPhotoSheet(onDismiss: () -> Unit, viewModel: AddPhotoViewModel = koinViewModel()) {
@@ -111,7 +113,7 @@ private fun AddPhotoCaptureScreen(onClose: () -> Unit, onCaptured: (Bitmap) -> U
                 .size(40.dp)
                 .background(Color.Black.copy(alpha = 0.45f), CircleShape),
         ) {
-            Icon(imageVector = AppIcons.Close, contentDescription = "Close", tint = Color.White)
+            Icon(imageVector = AppIcons.Close, contentDescription = stringResource(R.string.progress_close), tint = Color.White)
         }
 
         Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
@@ -136,7 +138,7 @@ private fun AddPhotoContent(
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Add photo",
+            text = stringResource(R.string.progress_photo_add),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -144,8 +146,8 @@ private fun AddPhotoContent(
         val photo = state.photo
         if (state.step == AddPhotoStep.Pick || photo == null) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                PrimaryButton(label = "Take photo", onClick = onTakePhoto, modifier = Modifier.fillMaxWidth())
-                SecondaryButton(label = "Choose from gallery", onClick = onChooseGallery, modifier = Modifier.fillMaxWidth())
+                PrimaryButton(label = stringResource(R.string.progress_photo_take), onClick = onTakePhoto, modifier = Modifier.fillMaxWidth())
+                SecondaryButton(label = stringResource(R.string.progress_photo_gallery), onClick = onChooseGallery, modifier = Modifier.fillMaxWidth())
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -175,9 +177,9 @@ private fun AddPhotoContent(
                 }
                 if (!state.showingCalendar) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                        SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                         PrimaryButton(
-                            label = "Save",
+                            label = stringResource(R.string.progress_save),
                             onClick = { onEvent(AddPhotoEvent.OnSave(photo, state.form)) },
                             modifier = Modifier.weight(1f),
                         )
@@ -192,8 +194,8 @@ private fun AddPhotoContent(
 private fun WeightField(form: AddPhotoForm, unit: UnitSystem, onFormChange: (AddPhotoForm) -> Unit, modifier: Modifier = Modifier) {
     val step = 0.5
     NumericStepperField(
-        label = "Weight (optional)",
-        value = form.weightKg?.let { formatWeight(it.kgToDisplayUnit(unit)) } ?: "—",
+        label = stringResource(R.string.progress_photo_weight),
+        value = form.weightKg?.let { formatWeight(it.kgToDisplayUnit(unit)) } ?: stringResource(R.string.progress_none),
         unitSuffix = unit.weightUnitLabel(),
         onIncrement = { onFormChange(form.copy(weightKg = ((form.weightKg ?: 0.0) + step.displayUnitToKg(unit)))) },
         onDecrement = { onFormChange(form.copy(weightKg = (((form.weightKg ?: step) - step.displayUnitToKg(unit)).coerceAtLeast(20.0)))) },

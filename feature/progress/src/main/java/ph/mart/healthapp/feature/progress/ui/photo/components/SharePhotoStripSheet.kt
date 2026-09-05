@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -39,6 +41,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.shared.captureToPicture
 import ph.mart.healthapp.feature.progress.ui.shared.sharePng
 
@@ -101,14 +104,14 @@ internal fun SharePhotoStripSheet(photos: List<ProgressPhoto>, unit: UnitSystem,
             ) {
                 MascotAvatar(state = MascotState.Happy, size = 24.dp)
                 Text(
-                    text = "FitPulse",
+                    text = stringResource(R.string.progress_strip_brand),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         PrimaryButton(
-            label = "Share",
+            label = stringResource(R.string.progress_share),
             onClick = {
                 scope.launch {
                     // Zero until the sheet has drawn a frame — a tap that fast would otherwise
@@ -125,15 +128,22 @@ internal fun SharePhotoStripSheet(photos: List<ProgressPhoto>, unit: UnitSystem,
 }
 
 /** "92 days · −3.2 kg" — the weight half is dropped when either end was logged without one. */
+@Composable
 private fun stripHeadline(photos: List<ProgressPhoto>, unit: UnitSystem): String {
     val first = photos.first()
     val last = photos.last()
     val days = last.dateEpochDay - first.dateEpochDay
     val delta = last.weightKg?.let { end -> first.weightKg?.let { end - it } }
-    val span = "$days ${if (days == 1L) "day" else "days"}"
+    val span = pluralStringResource(R.plurals.progress_strip_days, days.toInt(), days)
     return delta?.let {
         val display = it.kgToDisplayUnit(unit)
-        "$span · ${if (display > 0) "+" else ""}${"%.1f".format(display)} ${unit.weightUnitLabel()}"
+        stringResource(
+            R.string.progress_strip_span,
+            span,
+            if (display > 0) "+" else "",
+            "%.1f".format(display),
+            unit.weightUnitLabel(),
+        )
     } ?: span
 }
 

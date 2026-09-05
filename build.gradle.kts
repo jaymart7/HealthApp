@@ -13,7 +13,7 @@ plugins {
  * The modules that have been through the localization pass (ROADMAP item 3). A module joins this
  * list in its own commit, and from then on [checkUiLiterals] keeps literals out of it.
  */
-val localizedModules = listOf("core/data", "wear", "feature/coach", "app", "feature/onboarding", "feature/home", "core/designsystem", "core/navigation", "feature/profile", "feature/food")
+val localizedModules = listOf("core/data", "wear", "feature/coach", "app", "feature/onboarding", "feature/home", "core/designsystem", "core/navigation", "feature/profile", "feature/food", "feature/progress")
 
 /** Argument names that carry copy a reader sees. */
 val uiArguments = listOf(

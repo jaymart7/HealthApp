@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -23,6 +24,7 @@ import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
 import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
 
 /** Name, current value, delta (shrink=primary, grow=error, flat/no-prior=onSurfaceVariant), and a
  * small inline sparkline over the part's full history — whole row is tappable. */
@@ -41,14 +43,23 @@ fun MeasurementRow(name: String, historyCm: List<Double>, unit: UnitSystem, onTa
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                 Text(
-                    text = current?.let { "${formatCm(it.cmToDisplayUnit(unit))} ${unit.lengthUnitLabel()}" } ?: "No readings yet",
+                    text = current?.let {
+                        stringResource(R.string.progress_measurement_value, formatCm(it.cmToDisplayUnit(unit)), unit.lengthUnitLabel())
+                    } ?: stringResource(R.string.progress_measurement_none),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Sparkline(values = historyCm, modifier = Modifier.size(width = 56.dp, height = 24.dp))
             Text(
-                text = deltaCm?.let { "${if (it > 0) "+" else ""}${formatCm(it.cmToDisplayUnit(unit))} ${unit.lengthUnitLabel()}" } ?: "—",
+                text = deltaCm?.let {
+                    stringResource(
+                        R.string.progress_measurement_delta,
+                        if (it > 0) "+" else "",
+                        formatCm(it.cmToDisplayUnit(unit)),
+                        unit.lengthUnitLabel(),
+                    )
+                } ?: stringResource(R.string.progress_none),
                 style = MaterialTheme.typography.bodyMedium.tabularNums,
                 color = when {
                     deltaCm == null || deltaCm == 0.0 -> MaterialTheme.colorScheme.onSurfaceVariant

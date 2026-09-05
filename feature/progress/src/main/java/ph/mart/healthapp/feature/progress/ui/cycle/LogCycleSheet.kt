@@ -32,8 +32,9 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.progress.R
 
-private const val NOT_LOGGED = "None"
+private val NOT_LOGGED = R.string.progress_cycle_not_logged
 
 /**
  * Log or correct one cycle day. Unlike the blood-pressure sheet it *does* ask for a date: a period
@@ -74,12 +75,12 @@ private fun LogCycleContent(
         addAll(TAPPABLE_FLOW.map { it.value })
     }
     val labels = levels.map { value ->
-        if (value == 0) NOT_LOGGED else stringResource(FlowLevel.entries.first { it.value == value }.label)
+        if (value == 0) stringResource(NOT_LOGGED) else stringResource(FlowLevel.entries.first { it.value == value }.label)
     }
 
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = "Log a cycle day",
+            text = stringResource(R.string.progress_cycle_sheet_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 12.dp),
@@ -99,13 +100,13 @@ private fun LogCycleContent(
                 },
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
-                    Label("Flow")
+                    Label(stringResource(R.string.progress_cycle_flow))
                     SegmentedToggle(
                         options = labels,
                         selectedIndex = levels.indexOf(form.flow).coerceAtLeast(0),
                         onSelect = { index -> state.form = form.copy(flow = levels[index]) },
                     )
-                    Label("Symptoms")
+                    Label(stringResource(R.string.progress_cycle_symptoms))
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -121,15 +122,15 @@ private fun LogCycleContent(
                     }
                     if (form.flow == 0 && form.symptoms.isEmpty()) {
                         Text(
-                            text = "Nothing picked — saving clears this day.",
+                            text = stringResource(R.string.progress_cycle_nothing_picked),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        SecondaryButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+                        SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
                         PrimaryButton(
-                            label = "Save",
+                            label = stringResource(R.string.progress_save),
                             onClick = { onEvent(CycleEvent.OnSave(form)) },
                             modifier = Modifier.weight(1f),
                         )
