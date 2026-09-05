@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.profile.ui.profile.components
 
+import android.text.format.DateUtils
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -9,17 +10,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.transfer.LocalBackup
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 
 /** Export and import are the only destructive-ish controls on this screen, so each says exactly
- * what it does in its sublabel. [message] carries an import failure, or a confirmation. */
+ * what it does in its sublabel. [message] carries an import failure, or a confirmation.
+ *
+ * [backups] is what the weekly job has on disk. The rows are absent rather than empty when there
+ * is nothing yet — the job has simply not run, which is not a state worth a line of copy — and
+ * they only ever *point* the existing import at a file: restoring is manual, because a job that
+ * restored on its own could wipe a good device from a stale file. */
 @Composable
 internal fun ProfileDataSection(
     onExport: () -> Unit,
     onImport: () -> Unit,
     modifier: Modifier = Modifier,
+    backups: List<LocalBackup> = emptyList(),
+    onRestore: (LocalBackup) -> Unit = {},
     message: String? = null,
     messageIsError: Boolean = false,
 ) {
@@ -35,6 +44,19 @@ internal fun ProfileDataSection(
                 label = stringResource(R.string.profile_import),
                 sublabel = stringResource(R.string.profile_import_sub),
             )
+        }
+        backups.forEach { backup ->
+            AppCard(onClick = { onRestore(backup) }) {
+                SettingsRow(
+                    label = stringResource(R.string.profile_backup_restore),
+                    // The platform's own relative phrasing, so the date needs no format of its own
+                    // and follows the device locale for free.
+                    sublabel = stringResource(
+                        R.string.profile_backup_restore_sub,
+                        DateUtils.getRelativeTimeSpanString(backup.savedAtMillis),
+                    ),
+                )
+            }
         }
         if (message != null) {
             Text(
@@ -58,6 +80,10 @@ private fun ProfileDataSectionPreview() {
             ProfileDataSection(
                 onExport = {},
                 onImport = {},
+                backups = listOf(
+                    LocalBackup("fitpulse-1.json", System.currentTimeMillis() - 2 * 86_400_000L),
+                    LocalBackup("fitpulse-2.json", System.currentTimeMillis() - 9 * 86_400_000L),
+                ),
                 message = "That file couldn't be read.",
                 messageIsError = true,
                 modifier = Modifier.padding(16.dp),

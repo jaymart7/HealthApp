@@ -99,6 +99,11 @@
     <string name="profile_export_failed">Couldn\'t write that file.</string>
     <string name="profile_import_failed">Couldn\'t read that file.</string>
     <string name="profile_import_done">Import complete.</string>
+    <string name="profile_backup_restore">Restore automatic backup</string>
+    <string name="profile_backup_restore_sub">Saved %1$s</string>
+    <string name="profile_backup_title">Restore this backup?</string>
+    <string name="profile_backup_body">Everything on this device is replaced by what was logged when the backup was written. Photos aren\'t touched.</string>
+    <string name="profile_backup_confirm">Restore</string>
 
     <!-- Appearance -->
     <string name="profile_dark_mode">Dark mode</string>

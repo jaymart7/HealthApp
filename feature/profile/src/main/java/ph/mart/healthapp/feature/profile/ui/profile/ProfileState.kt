@@ -2,11 +2,18 @@ package ph.mart.healthapp.feature.profile.ui.profile
 
 import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.profile.Profile
+import ph.mart.healthapp.core.data.transfer.LocalBackup
 import ph.mart.healthapp.feature.profile.R
 
 /** Everything on this screen derives from the one Room-backed profile — targets included, via
- * [ph.mart.healthapp.core.data.profile.dailyTargets]. No second copy of any value lives here. */
-data class ProfileUiState(val profile: Profile? = null)
+ * [ph.mart.healthapp.core.data.profile.dailyTargets]. No second copy of any value lives here.
+ *
+ * [backups] is the exception, and it isn't a copy of anything: the weekly job's files are on disk,
+ * not in Room, so they are re-listed on each profile emission rather than observed. */
+data class ProfileUiState(
+    val profile: Profile? = null,
+    val backups: List<LocalBackup> = emptyList(),
+)
 
 /** The reminder switches, as one addressable thing so the rows and the ViewModel don't each
  * hand-roll a copy of the same when-block. Persisted to the profile row only — the actual schedule

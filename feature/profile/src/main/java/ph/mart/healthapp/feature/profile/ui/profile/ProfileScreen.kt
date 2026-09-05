@@ -48,6 +48,8 @@ import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
 import ph.mart.healthapp.core.designsystem.component.mascotPaletteOf
+import ph.mart.healthapp.core.data.transfer.LocalBackup
+import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.profile.components.ProfileAboutSection
@@ -95,6 +97,10 @@ fun ProfileScreen(
 
     // The screen owns the picker Uri and the file IO; the ViewModel only ever sees a JSON string.
     var pendingExport by remember { mutableStateOf<String?>(null) }
+
+    // A restore replaces everything and is one tap from a settings list, unlike the import, where
+    // picking the file in SAF is itself the confirmation.
+    var pendingRestore by remember { mutableStateOf<LocalBackup?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
     var messageIsError by remember { mutableStateOf(false) }
 
@@ -179,8 +185,24 @@ fun ProfileScreen(
         }
     }
 
+    pendingRestore?.let { backup ->
+        DiscardConfirmDialog(
+            title = stringResource(R.string.profile_backup_title),
+            body = stringResource(R.string.profile_backup_body),
+            confirmLabel = stringResource(R.string.profile_backup_confirm),
+            dismissLabel = stringResource(R.string.profile_cancel),
+            onConfirm = {
+                pendingRestore = null
+                viewModel.restoreBackup(backup.name)
+            },
+            onDismiss = { pendingRestore = null },
+        )
+    }
+
     ProfileContent(
         profile = uiState.profile,
+        backups = uiState.backups,
+        onRestore = { pendingRestore = it },
         message = message,
         messageIsError = messageIsError,
         onSelectUnit = viewModel::setUnit,
@@ -229,6 +251,8 @@ fun ProfileScreen(
 @Composable
 private fun ProfileContent(
     profile: Profile?,
+    backups: List<LocalBackup>,
+    onRestore: (LocalBackup) -> Unit,
     message: String?,
     messageIsError: Boolean,
     onSelectUnit: (UnitSystem) -> Unit,
@@ -324,6 +348,8 @@ private fun ProfileContent(
             ProfileDataSection(
                 onExport = onExport,
                 onImport = onImport,
+                backups = backups,
+                onRestore = onRestore,
                 message = message,
                 messageIsError = messageIsError,
             )
@@ -364,6 +390,8 @@ private fun ProfileScreenPreview() {
             onSetExerciseBudget = {},
             onSetCycleTracking = {},
             onToggleReminder = { _, _ -> },
+            backups = emptyList(),
+            onRestore = {},
             onExport = {},
             onImport = {},
             onOpenHealth = {},

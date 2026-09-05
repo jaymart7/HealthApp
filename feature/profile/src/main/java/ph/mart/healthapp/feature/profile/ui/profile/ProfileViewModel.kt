@@ -1,7 +1,6 @@
 package ph.mart.healthapp.feature.profile.ui.profile
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
@@ -19,6 +18,9 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.transfer.DataTransferRepository
+import ph.mart.healthapp.core.data.transfer.LocalBackups
+import ph.mart.healthapp.core.data.transfer.exportJson
+import ph.mart.healthapp.core.data.transfer.parseExport
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.designsystem.component.MascotCharacter
@@ -36,6 +38,7 @@ class ProfileViewModel(
     private val supplementRepository: SupplementRepository,
     private val bloodPressureRepository: BloodPressureRepository,
     private val dataTransferRepository: DataTransferRepository,
+    private val localBackups: LocalBackups,
 ) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
 
     override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
@@ -44,7 +47,7 @@ class ProfileViewModel(
 
     private fun observeProfile() = intent {
         profileRepository.observeProfile()
-            .map { ProfileUiState(profile = it) }
+            .map { ProfileUiState(profile = it, backups = localBackups.list()) }
             .collect { newState -> reduce { newState } }
     }
 
@@ -138,39 +141,42 @@ class ProfileViewModel(
         profileRepository.saveProfile(profile.copy(mascotPaletteName = palette.name))
     }
 
+    /** The reads live in `:core:data`'s [exportJson] rather than here, because `BackupWorker`
+     * makes exactly the same ones — two copies of that list is two places to edit at the next
+     * schema version. */
     fun buildExport() = intent {
-        val json = buildExportJson(
-            profile = state.profile,
-            foodEntries = foodRepository.allEntries(),
-            weightEntries = progressRepository.observeWeightEntries().first(),
-            measurements = progressRepository.observeMeasurements().first().values.flatten(),
-            waterDays = waterRepository.allDays(),
-            exercises = exerciseRepository.allEntries(),
-            moodDays = moodRepository.allDays(),
-            fastSessions = fastingRepository.allSessions(),
-            supplements = supplementRepository.allSupplements(),
-            supplementDays = supplementRepository.allDays(),
-            bloodPressure = bloodPressureRepository.allReadings(),
-            cycleDays = cycleRepository.allDays(),
-        )
-        postSideEffect(ProfileSideEffect.ExportReady(json))
+        postSideEffect(ProfileSideEffect.ExportReady(collectExport()))
     }
+
+    private suspend fun collectExport(): String = exportJson(
+        profileRepository, foodRepository, progressRepository, waterRepository, exerciseRepository,
+        moodRepository, cycleRepository, fastingRepository, supplementRepository,
+        bloodPressureRepository,
+    )
 
     /** Parse here, write there. The whole replay is one transaction inside `:core:data` — see
      * [DataTransferRepository]; running it from this file a row at a time meant a crash mid-import
      * left the diary wiped and half-restored. Nothing is written at all if the file fails to
      * parse. Photos are never touched. */
     fun import(text: String) = intent {
-        parseExport(text).fold(
-            onSuccess = { data ->
-                dataTransferRepository.replaceAll(data)
-                postSideEffect(ProfileSideEffect.ImportFinished(error = null))
-            },
-            onFailure = {
-                // The fallback stays in Kotlin beside the `require()` message it stands in for —
-                // see `parseExport`: what surfaces here is an exception's own text either way.
-                postSideEffect(ProfileSideEffect.ImportFinished(it.message ?: "That file couldn't be read."))
-            },
-        )
+        postSideEffect(ProfileSideEffect.ImportFinished(applyImport(text)))
     }
+
+    /** The one backup on disk this row names, through the same parse-and-replace path a picked
+     * file takes — the file is app-private, so there is no picker to point at it. */
+    fun restoreBackup(name: String) = intent {
+        val error = runCatching { localBackups.read(name) }
+            .fold(onSuccess = { applyImport(it) }, onFailure = { it.message ?: FALLBACK_IMPORT_ERROR })
+        postSideEffect(ProfileSideEffect.ImportFinished(error))
+    }
+
+    /** null when it worked; the message to show when it didn't. */
+    private suspend fun applyImport(text: String): String? = parseExport(text).fold(
+        onSuccess = { dataTransferRepository.replaceAll(it); null },
+        onFailure = { it.message ?: FALLBACK_IMPORT_ERROR },
+    )
 }
+
+// The fallback stays in Kotlin beside the `require()` message it stands in for — see
+// `parseExport`: what surfaces here is an exception's own text either way.
+private const val FALLBACK_IMPORT_ERROR = "That file couldn't be read."

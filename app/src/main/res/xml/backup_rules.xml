@@ -1,13 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android Auto Backup for API 30 and below. `data_extraction_rules.xml` is the same decision for
+    31+.
+
+    Exclude-only, deliberately: an include list has to name `fitpulse.db` *and* its `-wal` and
+    `-shm` companions, and a forgotten one restores a truncated database. Everything in `filesDir`
+    goes — the Room database and the weekly backup JSON — except the progress photos, which are
+    the one thing that can blow Auto Backup's 25 MB cap, and which the export has never carried
+    either.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <exclude domain="file" path="progress_photos/" />
 </full-backup-content>

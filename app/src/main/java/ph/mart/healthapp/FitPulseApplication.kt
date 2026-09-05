@@ -16,6 +16,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
+import ph.mart.healthapp.backup.enqueueWeeklyBackup
 import ph.mart.healthapp.core.data.di.databaseModule
 import ph.mart.healthapp.core.data.di.networkModule
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
@@ -98,6 +99,7 @@ class FitPulseApplication : Application() {
         seedDebugData(koinApp.koin)
 
         scheduleReminders(koinApp.koin.get())
+        enqueueWeeklyBackup(this)
         scheduleFastingGoal(koinApp.koin.get(), koinApp.koin.get())
         updateGlanceables(
             koinApp.koin.get(),

@@ -53,7 +53,7 @@ duplicate versions here or in a parallel catalog.
 ## Module map
 
 ```
-:app                    Application, MainActivity, nav host, ph.mart.healthapp.reminder
+:app                    Application, MainActivity, nav host, ph.mart.healthapp.reminder + .backup
 :core:designsystem      theme (Color/Theme/Type) + every shared component
 :core:data              Room, repositories, all persistence
 :core:camera            CameraX wrapper
@@ -768,6 +768,41 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.
+- **The export format lives in `:core:data/transfer/`, and moving it there was the backup's first
+  step.** `BackupWorker` is in `:app` because a background job is a system surface, not a screen —
+  the rule reminders and the widget both follow — and `:app` reaching into `:feature:profile`'s
+  `ui` package to serialize a file would breach the module map in the one direction it forbids.
+  So `Export.kt` sits beside `ImportData` and `DataTransferRepository`, which already held the
+  import half; `buildExportJson` and `parseExport` are public because they now cross a module
+  boundary, and every DTO stays `internal`. The move changed no byte of the file format — the
+  version gate, the defaults and the v1-onwards fixtures moved verbatim into `:core:data`'s own
+  `ExportTest`, which is what proves it.
+- **`exportJson()` is the one list of reads, and it is still not the `exportAll` that was ruled
+  out.** Profile's export button and the worker want the identical twelve arguments, and two
+  copies of that list is two places to edit at the next schema version. It adds no repository
+  method and no transaction — reading stays a set of independent `all*()` calls, each on its own
+  domain's repository, which is the property that made a twin unnecessary in the first place.
+- **Backups are written to internal storage, three files deep, and are never restored
+  automatically.** SAF needs a picker, a picker needs a user, and a user is the thing a background
+  job does not have; `filesDir` is also what Android's own backup covers, so one write serves both
+  mechanisms. Rotation sorts on the **name** — `fitpulse-<epochMillis>.json`, fixed-width for two
+  centuries — so ordering and the date on the row come from one source and a device transfer
+  resetting `lastModified()` can't scramble either. `staleBackups()` is a pure function for
+  `sanitizeInsight`'s reason: it is the half a JVM test can reach. And restore stays manual and
+  asks first, because a job that restored on its own could wipe a good device from a stale file,
+  and a one-tap row in a settings list is not the confirmation that picking a file in SAF is.
+- **The backup job is not a `Reminder`.** Every entry in that enum is a nudge whose `ordinal` is a
+  notification id; this posts nothing and has no Profile switch. It is enqueued from
+  `FitPulseApplication` beside the reminder reconciliation with `ExistingPeriodicWorkPolicy.KEEP`,
+  for `reconcile()`'s own reason — `onCreate` runs on every launch, and `UPDATE` would reset the
+  initial delay each time so the first run never lands.
+- **Auto Backup was already on; the rules now say what it covers.** `allowBackup="true"` with two
+  entirely-commented-out rule files meant the Room database was going to the user's Drive
+  undeclared and untested. Both files are **exclude-only**: an include list has to name
+  `fitpulse.db` *and* its `-wal` and `-shm` companions, and a forgotten one restores a truncated
+  database. The one exclusion is `progress_photos/` from the cloud copy — the only thing that can
+  blow the 25 MB cap, and the thing the export has never carried either. `device-transfer` is
+  absent on purpose: it has no cap, so the photos should ride along.
 - **Launcher shortcuts are static resources, never `ShortcutManager` dynamic ones.** A dynamic
   shortcut needs code that runs to publish it and state to keep it in step with what it points at;
   a static one is a resource the launcher reads, and nothing in the four varies per user. A
@@ -1577,7 +1612,7 @@ what stop the next pass undoing it.
   because `("Branded"` reads identically in a Room query, an AI prompt or a request header, and
   scoping the rule was cheaper than allowlisting every file that holds one. `error()` and
   `require()` lines are skipped: an exception message is not copy. `literalExceptions` in the root
-  build is the eight files whose English is a decision recorded at its own definition, one name per
+  build is the six files whose English is a decision recorded at its own definition, one name per
   line, and it is the only place the gate can be argued with. *ponytail: still a line-based grep,
   not a parser — a literal split across lines, or one starting with a template (`"$n tracked"`),
   slips through, and a Compose lint rule is the upgrade path.*

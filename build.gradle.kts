@@ -45,7 +45,6 @@ val literalExceptions = listOf(
     "DiaryDateHeader.kt",
     "GoalProjectionLine.kt",
     "MascotAvatar.kt",
-    "ProfileExport.kt",
 )
 
 /**

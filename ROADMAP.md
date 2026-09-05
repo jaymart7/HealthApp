@@ -20,77 +20,18 @@ or a decision in its decision log; where a spec changes one, it says so explicit
 
 ## Order
 
-Cheap and self-contained first; the test/CI gate before the large mechanical item.
-(The adaptive work has landed, and so has the localization pass that was meant to precede it —
-every module now reads its copy from `strings.xml`, so anything written from here on has a
-`checkUiLiterals` gate to satisfy.)
+One item left. (The adaptive work has landed, and so has the localization pass that was meant to
+precede it — every module now reads its copy from `strings.xml`, so anything written from here on
+has a `checkUiLiterals` gate to satisfy. Automatic local backup has landed too; its decisions are
+in `CLAUDE.md`.)
 
 | # | Feature | Scope | Schema |
 |---|---------|-------|--------|
-| 1 | Automatic local backup | a package move, then `:app` | — |
-| 2 | UI test pass + CI gate | infrastructure | — |
+| 1 | UI test pass + CI gate | infrastructure | — |
 
 ---
 
-## 1. Automatic local backup
-
-**What.** A weekly job writing the existing export JSON to app storage, keeping the last three,
-plus making Android's own backup coverage explicit rather than accidental.
-
-**Where.** **First, a move:** the export DTOs, `EXPORT_SCHEMA_VERSION` and the build/parse pair
-leave `feature/profile/ui/profile/ProfileExport.kt` (389 lines) for `:core:data/transfer/`,
-beside `ImportData` and `DataTransferRepository` which are already there. `ProfileScreen`'s two
-SAF launchers and its ViewModel stay in `:feature:profile`. Then a new
-`app/src/main/java/ph/mart/healthapp/backup/BackupWorker.kt`, and edits to
-`res/xml/backup_rules.xml` and `res/xml/data_extraction_rules.xml`.
-
-**Schema / export.** No schema change. The move must not change the file format or the version
-number — a v15 file written before the move must still import after it.
-
-### Decisions
-
-- **The move is the feature's first step and is not optional.** A WorkManager job lives in `:app`
-  because a background job is a system surface, not a screen — the rule reminders and the widget
-  both follow — and `:app` reaching into `:feature:profile`'s `ui` package to serialize a backup
-  would breach the module map in the one direction it forbids. `transfer/` already exists in
-  `:core:data` and already holds the import half; the export half was only ever in
-  `:feature:profile` because the screen that triggers it is.
-- **`DataTransferRepository` still gets no `exportAll` twin.** That decision holds: reading is a
-  set of independent `all*()` calls that cannot leave anything inconsistent, and each already
-  lives on its own domain's repository. The worker makes those calls itself and hands them to the
-  builder, exactly as `ProfileViewModel` does — the serialization moved, the shape did not.
-- **Backups are written to internal storage, not to a user-chosen folder.** SAF needs a picker, a
-  picker needs a user, and a user is the thing a background job does not have. `filesDir` is also
-  what Android's own backup covers, so one write serves both mechanisms.
-- **Three files, rotated oldest-first.** A year of weekly backups is a year of near-identical
-  JSON in the app's own storage; three is a bad week, a bad fortnight and a bad month. Mark the
-  count with a `ponytail:` comment — a size budget is the upgrade path if the files ever get big
-  enough to matter.
-- **Android Auto Backup is already on and must be made explicit.** `allowBackup="true"` with
-  stock, entirely-commented-out `backup_rules.xml` and `data_extraction_rules.xml` means the Room
-  database is being backed up to the user's Drive *by default* — undeclared, untested, and
-  silently capped at 25 MB. Write the rules out: include the database and the backup directory,
-  exclude the progress-photo images (they are the one thing that can blow the cap, and the export
-  has never carried them either). An offline-first app with no account has exactly one answer to
-  a lost phone, and leaving it to a default nobody wrote down is not it.
-- **The job is not a `Reminder`.** It posts no notification and has no Profile switch: every entry
-  in that enum is a nudge whose `ordinal` is a notification id, and a silent backup is neither.
-  It is enqueued from `FitPulseApplication` beside the reminder reconciliation, with
-  `ExistingPeriodicWorkPolicy.KEEP`.
-- **Restore stays manual.** The existing import is all-or-nothing and destructive by design; a job
-  that restored on its own is a job that could wipe a good device from a stale file. Profile →
-  Data gains a row listing what is on disk and pointing the existing import at it.
-
-**Deliberately excluded.** Cloud backup of our own — no account exists, and nothing may assume
-one. Progress photos in the backup. Automatic restore. Encryption: the file sits in app-private
-storage, and the manual export already writes plaintext JSON wherever the user points it.
-
-**Check.** A JVM round-trip test that build → parse survives the package move unchanged, plus one
-for the rotation keeping exactly the newest three.
-
----
-
-## 2. UI test pass + CI gate
+## 1. UI test pass + CI gate
 
 **What.** Instrumented Compose tests for the flows that would otherwise break silently, and a
 GitHub Actions workflow running build + unit tests on push.

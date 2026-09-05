@@ -14,9 +14,9 @@ import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.water.WaterDay
 
 /**
- * A parsed backup, ready to be written. The mirror of `buildExportJson`'s parameter list — the
- * feature that reads the file owns the on-disk DTOs and the version gate, and hands the validated
- * domain types over here.
+ * A parsed backup, ready to be written. The mirror of [buildExportJson]'s parameter list —
+ * [parseExport] owns the on-disk DTOs and the version gate, and hands the validated domain types
+ * over here.
  *
  * It lives in `:core:data` rather than in `:feature:profile` because the write is a transaction
  * across ten domains, and a `:feature:*` module never touches `AppDatabase`.

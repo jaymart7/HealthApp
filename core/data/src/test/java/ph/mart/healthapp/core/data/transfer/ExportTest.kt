@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.profile
+package ph.mart.healthapp.core.data.transfer
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -31,7 +31,7 @@ import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterDay
 
-class ProfileExportTest {
+class ExportTest {
 
     private val profile = Profile(
         sex = Sex.Female,

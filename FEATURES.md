@@ -177,7 +177,11 @@ Home layout · Supplements · Food library · Workout routines · Data · About.
 - Supplements: name, dose label, times per day; edit and delete.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything).
-- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 15, import is all-or-nothing.
+- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 17, import is all-or-nothing.
+- Automatic local backup — the same JSON, written weekly to app-private storage, newest three
+  kept. Listed under Data with a confirm-first restore that runs the ordinary import. Android
+  Auto Backup covers the database and those files; progress photos are excluded from the cloud
+  copy.
 
 ## Health sync — two providers, one entry point
 

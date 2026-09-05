@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.profile
+package ph.mart.healthapp.core.data.transfer
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -27,7 +27,6 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementDay
-import ph.mart.healthapp.core.data.transfer.ImportData
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
 import ph.mart.healthapp.core.data.water.WaterDay
 
@@ -219,7 +218,7 @@ private val json = Json {
     encodeDefaults = true
 }
 
-internal fun buildExportJson(
+fun buildExportJson(
     profile: Profile?,
     foodEntries: List<FoodEntry>,
     weightEntries: List<WeightEntry>,
@@ -266,7 +265,7 @@ internal fun buildExportJson(
 
 /** Parses and validates in one step — a malformed file, an unknown enum name, or a future schema
  * version all come back as [Result.failure] so the caller can show a message and write nothing. */
-internal fun parseExport(text: String): Result<ImportData> = runCatching {
+fun parseExport(text: String): Result<ImportData> = runCatching {
     val export = json.decodeFromString<FitPulseExport>(text)
     require(export.schemaVersion <= EXPORT_SCHEMA_VERSION) {
         // Stays in Kotlin with the @SerialNames above it: this is an exception message, surfaced
