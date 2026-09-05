@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.exercise
 
+import androidx.annotation.StringRes
 import kotlin.math.roundToInt
+import ph.mart.healthapp.core.data.R
 
 /**
  * One logged activity, and the two pure functions the whole feature turns on. They live beside
@@ -48,15 +50,15 @@ data class StrengthSet(
  * ponytail: a flat table, not a per-intensity matrix. Add intensity variants only if users say
  * the numbers are off; the kcal field is editable precisely so this table can stay coarse.
  */
-enum class ExerciseType(val label: String, val met: Double) {
-    Walk("Walk", 3.5),
-    Run("Run", 9.8),
-    Cycle("Cycle", 7.5),
-    Swim("Swim", 7.0),
-    Strength("Strength", 5.0),
-    Yoga("Yoga", 3.0),
-    Hiit("HIIT", 8.0),
-    Other("Other", 4.0),
+enum class ExerciseType(@StringRes val label: Int, val met: Double) {
+    Walk(R.string.data_exercise_type_walk, 3.5),
+    Run(R.string.data_exercise_type_run, 9.8),
+    Cycle(R.string.data_exercise_type_cycle, 7.5),
+    Swim(R.string.data_exercise_type_swim, 7.0),
+    Strength(R.string.data_exercise_type_strength, 5.0),
+    Yoga(R.string.data_exercise_type_yoga, 3.0),
+    Hiit(R.string.data_exercise_type_hiit, 8.0),
+    Other(R.string.data_exercise_type_other, 4.0),
 }
 
 /** MET × kg × hours — the standard estimate. [weightKg] is the latest weigh-in when there is one,

@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.bloodpressure
 
+import androidx.annotation.StringRes
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.R
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.progress.ChartRange
 
@@ -44,12 +46,12 @@ val PULSE_RANGE = 30..220
  * [severe] is true for [Crisis] alone, and is the only thing that colours a reading. That is the
  * trend-arrow rule applied once: `error` is for genuinely off-track, not for a five-step scale.
  */
-enum class BloodPressureCategory(val label: String, val severe: Boolean = false) {
-    Normal("Normal"),
-    Elevated("Elevated"),
-    Stage1("High (stage 1)"),
-    Stage2("High (stage 2)"),
-    Crisis("Crisis", severe = true),
+enum class BloodPressureCategory(@StringRes val label: Int, val severe: Boolean = false) {
+    Normal(R.string.data_bp_category_normal),
+    Elevated(R.string.data_bp_category_elevated),
+    Stage1(R.string.data_bp_category_stage1),
+    Stage2(R.string.data_bp_category_stage2),
+    Crisis(R.string.data_bp_category_crisis, severe = true),
 }
 
 /**

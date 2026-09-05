@@ -15,6 +15,10 @@ package ph.mart.healthapp.core.data.food
  * 100 ml at the same figure — near enough at this precision, and the alternative is a second unit
  * on a list whose whole point is that it is one shape.
  *
+ * The names stay in Kotlin, and must: [mergeSuggestions] and [searchFoods] treat the trimmed
+ * lowercase name as a food's identity, and a food the user authors *replaces* a built-in row of
+ * the same name. Two names for one food is exactly what that dedup exists to prevent.
+ *
  * Figures are USDA reference values, rounded to the Int fields [ScannedProduct] holds. Fiber,
  * sugar and sodium are filled where they matter and left at 0 elsewhere — `0` already reads as
  * unknown-or-none everywhere else in the app.

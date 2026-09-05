@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.mood
 
+import androidx.annotation.StringRes
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.R
 import ph.mart.healthapp.core.data.progress.ChartRange
 
 /**
@@ -15,12 +17,12 @@ data class MoodDay(val dateEpochDay: Long, val mood: Int, val energy: Int)
 val MOOD_SCALE = 1..5
 
 /** Five steps, worst → best. [label] is what the control announces to TalkBack. */
-enum class MoodLevel(val value: Int, val label: String) {
-    VeryLow(1, "Very low"),
-    Low(2, "Low"),
-    Okay(3, "Okay"),
-    Good(4, "Good"),
-    Great(5, "Great"),
+enum class MoodLevel(val value: Int, @StringRes val label: Int) {
+    VeryLow(1, R.string.data_mood_level_very_low),
+    Low(2, R.string.data_mood_level_low),
+    Okay(3, R.string.data_mood_level_okay),
+    Good(4, R.string.data_mood_level_good),
+    Great(5, R.string.data_mood_level_great),
 }
 
 /** [daysLogged] counts days with *either* value set, so it can exceed both denominators below. */

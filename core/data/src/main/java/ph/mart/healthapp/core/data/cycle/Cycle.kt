@@ -1,7 +1,9 @@
 package ph.mart.healthapp.core.data.cycle
 
+import androidx.annotation.StringRes
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.R
 import ph.mart.healthapp.core.data.progress.ChartRange
 
 /**
@@ -29,11 +31,11 @@ val FLOW_SCALE = 1..4
  * "Medium" for one would invent a figure the source never reported — the rule an imported blood
  * pressure reading's `pulseBpm = 0` already follows.
  */
-enum class FlowLevel(val value: Int, val label: String) {
-    Unstated(1, "Logged"),
-    Light(2, "Light"),
-    Medium(3, "Medium"),
-    Heavy(4, "Heavy"),
+enum class FlowLevel(val value: Int, @StringRes val label: Int) {
+    Unstated(1, R.string.data_flow_level_unstated),
+    Light(2, R.string.data_flow_level_light),
+    Medium(3, R.string.data_flow_level_medium),
+    Heavy(4, R.string.data_flow_level_heavy),
 }
 
 /** The three levels the UI offers. [FlowLevel.Unstated] is rendered, never tapped. */
@@ -43,17 +45,17 @@ fun flowLevelOf(value: Int): FlowLevel? = FlowLevel.entries.firstOrNull { it.val
 
 /** What a day can be tagged with. Reported, never graded — there is no field on the profile a
  * symptom target could be derived from, the rule fiber, sugar and sodium already follow. */
-enum class CycleSymptom(val label: String) {
-    Cramps("Cramps"),
-    Headache("Headache"),
-    Bloating("Bloating"),
-    Fatigue("Fatigue"),
-    MoodSwings("Mood swings"),
-    Tender("Tender breasts"),
-    Acne("Acne"),
-    Nausea("Nausea"),
-    BackPain("Back pain"),
-    Cravings("Cravings"),
+enum class CycleSymptom(@StringRes val label: Int) {
+    Cramps(R.string.data_cycle_symptom_cramps),
+    Headache(R.string.data_cycle_symptom_headache),
+    Bloating(R.string.data_cycle_symptom_bloating),
+    Fatigue(R.string.data_cycle_symptom_fatigue),
+    MoodSwings(R.string.data_cycle_symptom_mood_swings),
+    Tender(R.string.data_cycle_symptom_tender),
+    Acne(R.string.data_cycle_symptom_acne),
+    Nausea(R.string.data_cycle_symptom_nausea),
+    BackPain(R.string.data_cycle_symptom_back_pain),
+    Cravings(R.string.data_cycle_symptom_cravings),
 }
 
 /**

@@ -1,7 +1,9 @@
 package ph.mart.healthapp.core.data.progress
 
 import android.graphics.Bitmap
+import androidx.annotation.StringRes
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.R
 
 enum class MeasurementPart { Chest, Waist, Hips, Arms, Thighs }
 
@@ -16,11 +18,11 @@ data class ProgressPhoto(
     val weightKg: Double? = null,
 )
 
-enum class ChartRange(val label: String, val days: Int?) {
-    OneMonth("1M", 30),
-    ThreeMonths("3M", 90),
-    SixMonths("6M", 180),
-    OneYear("1Y", 365),
+enum class ChartRange(@StringRes val label: Int, val days: Int?) {
+    OneMonth(R.string.data_chart_range_1m, 30),
+    ThreeMonths(R.string.data_chart_range_3m, 90),
+    SixMonths(R.string.data_chart_range_6m, 180),
+    OneYear(R.string.data_chart_range_1y, 365),
 }
 
 data class WeightPoint(val dateEpochDay: Long, val weightKg: Double, val movingAverageKg: Double)

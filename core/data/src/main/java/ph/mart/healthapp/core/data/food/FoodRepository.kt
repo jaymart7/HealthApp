@@ -57,6 +57,8 @@ const val MAX_SUGGESTIONS = 5
 /** What an entry logged without a name is stored as — the diary's escape hatch for a meal the
  * user isn't going to look up. It lives here rather than in `:feature:food` because the recents
  * query has to exclude it; see [FoodEntryDao.observeRecent][ph.mart.healthapp.core.data.food.local.FoodEntryDao]. */
+// Stays in Kotlin, and must: this exact string is written into `food_entry.name` and is what
+// `FoodEntryDao.observeRecent` excludes by. A resource would change what a device already holds.
 const val QUICK_ADD_NAME = "Quick add"
 
 data class DiaryTotals(

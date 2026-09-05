@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
@@ -97,7 +98,7 @@ private fun SwipeableExerciseRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.type.label,
+                    text = stringResource(entry.type.label),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

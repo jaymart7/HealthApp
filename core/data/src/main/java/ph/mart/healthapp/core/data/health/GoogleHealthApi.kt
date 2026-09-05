@@ -380,7 +380,10 @@ internal fun parseExercisePage(body: String): Page<RemoteExercise> {
             remoteName = remoteName,
             timeMillis = start,
             type = type,
-            name = exercise.string("displayName")?.trim().orEmpty().ifEmpty { type.label },
+            // The fallback name is [ExerciseType.name], not its label: this is written into
+            // `exercise_entry.name` and exported, and a resource would freeze whatever language
+            // was active at import into a row that outlives it.
+            name = exercise.string("displayName")?.trim().orEmpty().ifEmpty { type.name },
             minutes = (seconds / 60.0).roundToInt().coerceAtLeast(0),
             burnedKcal = exercise["metricsSummary"]?.jsonObject.number("caloriesKcal")
                 ?.roundToInt()?.coerceAtLeast(0) ?: 0,

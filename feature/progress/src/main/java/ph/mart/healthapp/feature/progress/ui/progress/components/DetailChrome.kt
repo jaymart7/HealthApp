@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.TrendDirection
@@ -210,7 +211,7 @@ internal fun ChartCard(
                 // against one range, and two identical toggles would be two controls for one value.
                 if (range != null && onRangeChange != null) {
                     SegmentedToggle(
-                        options = ChartRange.entries.map { it.label },
+                        options = ChartRange.entries.map { stringResource(it.label) },
                         selectedIndex = ChartRange.entries.indexOf(range),
                         onSelect = { index -> onRangeChange(ChartRange.entries[index]) },
                         trackColor = MaterialTheme.colorScheme.surfaceContainer,

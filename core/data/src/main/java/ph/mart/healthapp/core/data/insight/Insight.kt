@@ -100,6 +100,10 @@ internal fun dayNumbersBlock(request: InsightRequest): String = buildString {
  * Home's insight card and the coach's failed-send bubble — and `:feature:*` modules never import
  * each other. Same reason `goalProjection()` sits in `progress/`: pure derivation over
  * `:core:data` types, no table, no repository.
+ *
+ * The three sentences stay in Kotlin for now — this is a pure function with a JVM test over its
+ * wording, and moving them means returning a case type for a composable to resolve. Deferred by
+ * decision in the localization pass, not overlooked; `goalProjectionLine()` is the twin.
  */
 fun insightFor(totals: DiaryTotals, targets: DailyTargets, trend: WeightTrendDisplay): String? = when {
     totals.calories > targets.calories ->

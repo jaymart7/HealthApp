@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -58,7 +59,7 @@ internal fun BloodPressureRow(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = category.label,
+                    text = stringResource(category.label),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (category.severe) {
                         MaterialTheme.colorScheme.error

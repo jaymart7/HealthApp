@@ -1,0 +1,58 @@
+<resources>
+    <!--
+      Display labels for the enums in this module that a feature renders directly. `:core:data`
+      owns them because `:core:designsystem` has no dependency on this module, so the alternative
+      was the same six lists copied into every feature that shows a chip or a pill.
+
+      Every enum's `name` is untouched — that is what the export, the profile columns and the
+      Room rows carry. Only the label moved.
+    -->
+
+    <!-- ChartRange -->
+    <string name="data_chart_range_1m">1M</string>
+    <string name="data_chart_range_3m">3M</string>
+    <string name="data_chart_range_6m">6M</string>
+    <string name="data_chart_range_1y">1Y</string>
+
+    <!-- MoodLevel — also what the mood and energy controls announce to TalkBack. -->
+    <string name="data_mood_level_very_low">Very low</string>
+    <string name="data_mood_level_low">Low</string>
+    <string name="data_mood_level_okay">Okay</string>
+    <string name="data_mood_level_good">Good</string>
+    <string name="data_mood_level_great">Great</string>
+
+    <!-- ExerciseType -->
+    <string name="data_exercise_type_walk">Walk</string>
+    <string name="data_exercise_type_run">Run</string>
+    <string name="data_exercise_type_cycle">Cycle</string>
+    <string name="data_exercise_type_swim">Swim</string>
+    <string name="data_exercise_type_strength">Strength</string>
+    <string name="data_exercise_type_yoga">Yoga</string>
+    <string name="data_exercise_type_hiit">HIIT</string>
+    <string name="data_exercise_type_other">Other</string>
+
+    <!-- BloodPressureCategory — the AHA bands, named and not graded. -->
+    <string name="data_bp_category_normal">Normal</string>
+    <string name="data_bp_category_elevated">Elevated</string>
+    <string name="data_bp_category_stage1">High (stage 1)</string>
+    <string name="data_bp_category_stage2">High (stage 2)</string>
+    <string name="data_bp_category_crisis">Crisis</string>
+
+    <!-- FlowLevel — Unstated is rendered for imported days, never offered as a tap. -->
+    <string name="data_flow_level_unstated">Logged</string>
+    <string name="data_flow_level_light">Light</string>
+    <string name="data_flow_level_medium">Medium</string>
+    <string name="data_flow_level_heavy">Heavy</string>
+
+    <!-- CycleSymptom -->
+    <string name="data_cycle_symptom_cramps">Cramps</string>
+    <string name="data_cycle_symptom_headache">Headache</string>
+    <string name="data_cycle_symptom_bloating">Bloating</string>
+    <string name="data_cycle_symptom_fatigue">Fatigue</string>
+    <string name="data_cycle_symptom_mood_swings">Mood swings</string>
+    <string name="data_cycle_symptom_tender">Tender breasts</string>
+    <string name="data_cycle_symptom_acne">Acne</string>
+    <string name="data_cycle_symptom_nausea">Nausea</string>
+    <string name="data_cycle_symptom_back_pain">Back pain</string>
+    <string name="data_cycle_symptom_cravings">Cravings</string>
+</resources>

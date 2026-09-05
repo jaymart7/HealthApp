@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -62,6 +63,9 @@ internal fun DiaryBody(
     scrollState: ScrollState = rememberScrollState(),
 ) {
     val scope = rememberCoroutineScope()
+    // The snackbar text is built in a coroutine, outside composition — so the exercise type's
+    // label is resolved through the context rather than with `stringResource`.
+    val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize()) {
         DiaryDateHeader(
@@ -198,7 +202,7 @@ internal fun DiaryBody(
                     onEvent(FoodEvent.OnDeleteExercise(entry.id))
                     scope.launch {
                         val undone = snackbarHostState.showSnackbar(
-                            message = "Deleted ${entry.type.label}",
+                            message = "Deleted ${context.getString(entry.type.label)}",
                             actionLabel = "Undo",
                             duration = SnackbarDuration.Short,
                         ) == SnackbarResult.ActionPerformed

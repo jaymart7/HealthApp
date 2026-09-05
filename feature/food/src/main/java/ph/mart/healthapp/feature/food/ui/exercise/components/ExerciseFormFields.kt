@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -66,7 +67,7 @@ internal fun ExerciseFormFields(
             label = if (form.burnedEdited) {
                 "Burned · your figure"
             } else {
-                "Burned · estimated from ${form.type.label.lowercase()} at your latest weight"
+                "Burned · estimated from ${stringResource(form.type.label).lowercase()} at your latest weight"
             },
             value = "${form.burnedKcal}",
             unitSuffix = "kcal",

@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -73,7 +74,7 @@ private fun LogCycleContent(
         addAll(TAPPABLE_FLOW.map { it.value })
     }
     val labels = levels.map { value ->
-        if (value == 0) NOT_LOGGED else FlowLevel.entries.first { it.value == value }.label
+        if (value == 0) NOT_LOGGED else stringResource(FlowLevel.entries.first { it.value == value }.label)
     }
 
     AppBottomSheet(onDismiss = onDismiss) {
@@ -166,7 +167,7 @@ private fun SymptomChip(symptom: CycleSymptom, selected: Boolean, onClick: () ->
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Text(
-            text = symptom.label,
+            text = stringResource(symptom.label),
             style = MaterialTheme.typography.labelLarge,
             color = if (selected) {
                 MaterialTheme.colorScheme.onSecondaryContainer

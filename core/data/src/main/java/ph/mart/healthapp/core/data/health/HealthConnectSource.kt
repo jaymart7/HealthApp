@@ -133,7 +133,8 @@ internal class HealthConnectSourceImpl(private val context: Context) : HealthCon
             remoteName = connectName(record.metadata.id),
             timeMillis = record.startTime.toEpochMilli(),
             type = type,
-            name = record.title.orEmpty().ifBlank { type.label },
+            // [ExerciseType.name] for the reason `GoogleHealthApi`'s twin gives: a persisted row.
+            name = record.title.orEmpty().ifBlank { type.name },
             minutes = minutes,
             burnedKcal = estimateBurnedKcal(type, minutes, weightKg),
             steps = estimatedSteps(type, minutes),

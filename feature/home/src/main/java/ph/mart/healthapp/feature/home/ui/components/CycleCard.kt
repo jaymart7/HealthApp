@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -125,6 +126,8 @@ private fun FlowRow(flow: Int, onSetFlow: (Int) -> Unit) {
                     filling = filling,
                     stagger = true,
                 )
+                // Resolved outside the semantics lambda, which cannot read a resource.
+                val description = stringResource(level.label)
                 IconButton(
                     onClick = { onSetFlow(if (level.value == flow) 0 else level.value) },
                     modifier = Modifier
@@ -135,7 +138,7 @@ private fun FlowRow(flow: Int, onSetFlow: (Int) -> Unit) {
                             scaleY = scaleX
                         }
                         // The level the tap would set, not "drop 2 of 3" — WaterGlassRow's rule.
-                        .clearAndSetSemantics { contentDescription = "Set flow to ${level.label}" },
+                        .clearAndSetSemantics { contentDescription = "Set flow to $description" },
                 ) {
                     Icon(
                         imageVector = if (level.value <= flow) {

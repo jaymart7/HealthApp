@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -69,6 +70,9 @@ fun MoodCard(
     onSetEnergy: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Resolved here rather than in the `describe` lambdas: those are plain lambdas, and an
+    // @StringRes Int interpolated into a string template renders as its number.
+    val levelLabels = MoodLevel.entries.map { stringResource(it.label) }
     AppCard(modifier = modifier) {
         Text(
             text = "How are you feeling?",
@@ -81,7 +85,7 @@ fun MoodCard(
             level = mood,
             icon = { index -> MoodFaces[index] },
             active = { index -> index + 1 == mood },
-            describe = { level -> "Set mood to ${MoodLevel.entries[level - 1].label}" },
+            describe = { level -> "Set mood to ${levelLabels[level - 1]}" },
             onSelect = onSetMood,
         )
         ScaleRow(
@@ -89,7 +93,7 @@ fun MoodCard(
             level = energy,
             icon = { index -> if (index < energy) Icons.Filled.Bolt else Icons.Outlined.Bolt },
             active = { index -> index < energy },
-            describe = { level -> "Set energy to ${MoodLevel.entries[level - 1].label}" },
+            describe = { level -> "Set energy to ${levelLabels[level - 1]}" },
             onSelect = onSetEnergy,
             modifier = Modifier.padding(top = 4.dp),
             stagger = true,
