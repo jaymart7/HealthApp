@@ -2,20 +2,22 @@ package ph.mart.healthapp.feature.onboarding.ui.health
 
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.health.HealthConnection
 import ph.mart.healthapp.core.data.health.HealthSyncRepository
+import ph.mart.healthapp.feature.onboarding.R
 
-private const val UNAVAILABLE =
-    "Google Health needs Google Play services and a Google account on this device."
+// Resource ids, not text: the screen resolves them, so no Context reaches the ViewModel.
+@StringRes private val UNAVAILABLE = R.string.onboarding_health_unavailable
 
-private const val DECLINED = "Not connected — nothing was shared. You can do this later in Profile."
+@StringRes private val DECLINED = R.string.onboarding_health_declined
 
 data class OnboardingHealthUiState(
     val canConnect: Boolean = false,
-    val message: String? = null,
+    @StringRes val message: Int? = null,
     val messageIsError: Boolean = false,
 )
 

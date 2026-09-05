@@ -14,12 +14,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.StepProgressBar
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 
 /** Back button + [StepProgressBar], shared by every onboarding step except Welcome. Dietary is
  * the only step with a trailing action ("Skip"), hence [trailingAction] rather than a fork. */
@@ -40,7 +42,7 @@ internal fun OnboardingStepHeader(
                 modifier = Modifier.size(48.dp),
             ) {
                 Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                    Icon(imageVector = AppIcons.Back, contentDescription = "Back")
+                    Icon(imageVector = AppIcons.Back, contentDescription = stringResource(R.string.onboarding_back))
                 }
             }
             if (trailingAction != null) trailingAction() else Box(modifier = Modifier.size(48.dp))

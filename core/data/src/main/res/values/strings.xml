@@ -55,4 +55,9 @@
     <string name="data_cycle_symptom_nausea">Nausea</string>
     <string name="data_cycle_symptom_back_pain">Back pain</string>
     <string name="data_cycle_symptom_cravings">Cravings</string>
+
+    <!-- Shown by three screens wherever a manual calorie target drops under the Mifflin-St Jeor
+         floor. One copy, because a safety warning that drifts between them is worse than the
+         layering smell of user-facing copy in :core:data. -->
+    <string name="data_calorie_floor_warning">This is below the generally recommended minimum. Consider talking to a healthcare provider before going lower.</string>
 </resources>

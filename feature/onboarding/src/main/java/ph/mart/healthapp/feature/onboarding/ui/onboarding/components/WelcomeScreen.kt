@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 
 /** Onboarding step 0. No back button — this is the flow's root. "I already have an account" is a
  * no-op per the prototype (no auth system exists yet). */
@@ -35,22 +37,22 @@ internal fun WelcomeScreen(onGetStarted: () -> Unit) {
     ) {
         MascotAvatar(state = MascotState.Celebrating, size = 112.dp)
         Spacer(Modifier.height(24.dp))
-        MascotSpeechBubble(text = "Let's build healthy habits together.")
+        MascotSpeechBubble(text = stringResource(R.string.onboarding_welcome_bubble))
         Spacer(Modifier.height(24.dp))
         Text(
-            text = "FitPulse",
+            text = stringResource(R.string.onboarding_welcome_title),
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Track your body and nutrition, with Bibo by your side.",
+            text = stringResource(R.string.onboarding_welcome_body),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(32.dp))
-        PrimaryButton(label = "Get started", onClick = onGetStarted, modifier = Modifier.fillMaxWidth())
+        PrimaryButton(label = stringResource(R.string.onboarding_welcome_cta), onClick = onGetStarted, modifier = Modifier.fillMaxWidth())
     }
 }
 

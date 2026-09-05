@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.ActivityLevel
@@ -32,6 +33,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingForm
 import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
 
@@ -62,20 +64,20 @@ internal fun ConfirmTargetsScreen(
                 MascotAvatar(state = if (isCelebrating) MascotState.Celebrating else MascotState.Idle, size = 64.dp)
                 MascotSpeechBubble(
                     text = if (isCelebrating) {
-                        "Nice! Let's get started."
+                        stringResource(R.string.onboarding_confirm_bubble_done)
                     } else {
-                        "Here's what I calculated for you — feel free to adjust it."
+                        stringResource(R.string.onboarding_confirm_bubble)
                     },
                 )
             }
             Text(
-                text = "Your daily targets",
+                text = stringResource(R.string.onboarding_confirm_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 NumericStepperField(
-                    label = "Daily calorie goal",
+                    label = stringResource(R.string.onboarding_confirm_calories),
                     value = targets.calories.toString(),
                     unitSuffix = "kcal",
                     onIncrement = { onFormChange(form.copy(calorieOverrideKcal = targets.calories + 50)) },
@@ -83,7 +85,7 @@ internal fun ConfirmTargetsScreen(
                 )
                 if (belowFloor) {
                     Text(
-                        text = CALORIE_FLOOR_WARNING,
+                        text = stringResource(CALORIE_FLOOR_WARNING),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -91,7 +93,7 @@ internal fun ConfirmTargetsScreen(
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Macro split",
+                    text = stringResource(R.string.onboarding_confirm_macro_split),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -108,13 +110,13 @@ internal fun ConfirmTargetsScreen(
                 )
             }
             Text(
-                text = "Estimates based on your inputs, not medical advice.",
+                text = stringResource(R.string.onboarding_confirm_disclaimer),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Column(modifier = Modifier.padding(16.dp)) {
-            PrimaryButton(label = "Let's go", onClick = onFinish, enabled = !isCelebrating, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.onboarding_confirm_cta), onClick = onFinish, enabled = !isCelebrating, modifier = Modifier.fillMaxWidth())
         }
     }
 }

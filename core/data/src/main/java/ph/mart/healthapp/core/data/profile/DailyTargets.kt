@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.profile
 
+import androidx.annotation.StringRes
 import kotlin.math.roundToInt
+import ph.mart.healthapp.core.data.R
 
 private val ACTIVITY_MULTIPLIER = mapOf(
     ActivityLevel.Sedentary to 1.2,
@@ -28,8 +30,7 @@ val CALORIE_TARGET_KCAL = 800..6000
 /** Shown wherever a manual target drops under the Mifflin–St Jeor floor. Warn, never block — and
  * one copy, because a safety warning that drifts between the two screens that show it is worse
  * than the layering smell of user-facing copy in `:core:data`. */
-const val CALORIE_FLOOR_WARNING =
-    "This is below the generally recommended minimum. Consider talking to a healthcare provider before going lower."
+@StringRes val CALORIE_FLOOR_WARNING = R.string.data_calorie_floor_warning
 
 data class DailyTargets(val calories: Int, val proteinG: Int, val carbsG: Int, val fatG: Int, val floor: Int)
 

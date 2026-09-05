@@ -13,12 +13,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SelectableCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.ACTIVITY_OPTIONS
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.ActivityOption
 import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
@@ -42,15 +44,15 @@ internal fun ActivityScreen(
         ) {
             OnboardingStepHeader(currentStep = 3, totalSteps = 6, onBack = onBack)
             Text(
-                text = "How active are you?",
+                text = stringResource(R.string.onboarding_activity_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 options.forEach { option ->
                     SelectableCard(
-                        title = option.title,
-                        subtitle = option.subtitle,
+                        title = stringResource(option.title),
+                        subtitle = stringResource(option.subtitle),
                         selected = selected == option.level,
                         onClick = { onSelect(option.level) },
                     )
@@ -58,7 +60,7 @@ internal fun ActivityScreen(
             }
         }
         Column(modifier = Modifier.padding(16.dp)) {
-            PrimaryButton(label = "Next", onClick = onNext, enabled = selected != null, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.onboarding_next), onClick = onNext, enabled = selected != null, modifier = Modifier.fillMaxWidth())
         }
     }
 }

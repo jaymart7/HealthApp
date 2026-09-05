@@ -14,6 +14,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
@@ -22,12 +23,15 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.KG_PER_LB
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.data.profile.round1
+import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingForm
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.clearOverrides
 import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
@@ -51,45 +55,51 @@ internal fun BasicsScreen(form: OnboardingForm, onFormChange: (OnboardingForm) -
         ) {
             OnboardingStepHeader(currentStep = 2, totalSteps = 6, onBack = onBack)
             Text(
-                text = "Tell us about yourself",
+                text = stringResource(R.string.onboarding_basics_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             SegmentedToggle(
-                options = listOf("Metric (kg, cm)", "Imperial (lb, in)"),
+                options = listOf(
+                    stringResource(R.string.onboarding_basics_metric),
+                    stringResource(R.string.onboarding_basics_imperial),
+                ),
                 selectedIndex = if (metric) 0 else 1,
                 onSelect = { index -> onFormChange(form.copy(units = if (index == 0) UnitSystem.Metric else UnitSystem.Imperial)) },
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Sex",
+                    text = stringResource(R.string.onboarding_basics_sex),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 SegmentedToggle(
-                    options = listOf("Male", "Female"),
+                    options = listOf(
+                        stringResource(R.string.onboarding_basics_male),
+                        stringResource(R.string.onboarding_basics_female),
+                    ),
                     selectedIndex = when (form.sex) { Sex.Male -> 0; Sex.Female -> 1; null -> -1 },
                     onSelect = { index -> onFormChange(form.copy(sex = if (index == 0) Sex.Male else Sex.Female).clearOverrides()) },
                 )
             }
             NumericStepperField(
-                label = "Age",
+                label = stringResource(R.string.onboarding_basics_age),
                 value = form.age?.toString() ?: "—",
-                unitSuffix = "years",
+                unitSuffix = stringResource(R.string.onboarding_basics_age_unit),
                 onIncrement = { onFormChange(form.copy(age = if (form.age == null) 25 else (form.age + 1).coerceAtMost(100)).clearOverrides()) },
                 onDecrement = { onFormChange(form.copy(age = if (form.age == null) 25 else (form.age - 1).coerceAtLeast(13)).clearOverrides()) },
             )
             NumericStepperField(
-                label = "Height",
+                label = stringResource(R.string.onboarding_basics_height),
                 value = displayHeight(form.heightCm, metric).toString(),
-                unitSuffix = if (metric) "cm" else "in",
+                unitSuffix = form.units.lengthUnitLabel(),
                 onIncrement = { onFormChange(form.copy(heightCm = form.heightCm + heightStep).clearOverrides()) },
                 onDecrement = { onFormChange(form.copy(heightCm = (form.heightCm - heightStep).coerceAtLeast(50.0)).clearOverrides()) },
             )
             NumericStepperField(
-                label = "Current weight",
+                label = stringResource(R.string.onboarding_basics_weight),
                 value = formatWeight(displayWeight(form.weightKg, metric)),
-                unitSuffix = if (metric) "kg" else "lb",
+                unitSuffix = form.units.weightUnitLabel(),
                 onIncrement = { onFormChange(form.copy(weightKg = round1(form.weightKg + weightStep)).clearOverrides()) },
                 onDecrement = { onFormChange(form.copy(weightKg = round1((form.weightKg - weightStep).coerceAtLeast(20.0))).clearOverrides()) },
             )
@@ -97,16 +107,19 @@ internal fun BasicsScreen(form: OnboardingForm, onFormChange: (OnboardingForm) -
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(
-                            text = "Target weight (optional)",
+                            text = stringResource(R.string.onboarding_basics_target),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        TextButton(label = "Clear", onClick = { onFormChange(form.copy(targetWeightKg = null)) })
+                        TextButton(
+                            label = stringResource(R.string.onboarding_basics_clear),
+                            onClick = { onFormChange(form.copy(targetWeightKg = null)) },
+                        )
                     }
                     NumericStepperField(
                         label = "",
                         value = form.targetWeightKg?.let { formatWeight(displayWeight(it, metric)) } ?: "—",
-                        unitSuffix = if (metric) "kg" else "lb",
+                        unitSuffix = form.units.weightUnitLabel(),
                         onIncrement = {
                             val base = form.targetWeightKg ?: form.weightKg
                             onFormChange(form.copy(targetWeightKg = round1(base + weightStep)))
@@ -120,7 +133,7 @@ internal fun BasicsScreen(form: OnboardingForm, onFormChange: (OnboardingForm) -
             }
         }
         Column(modifier = Modifier.padding(16.dp)) {
-            PrimaryButton(label = "Next", onClick = onNext, enabled = form.isBasicsValid, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.onboarding_next), onClick = onNext, enabled = form.isBasicsValid, modifier = Modifier.fillMaxWidth())
         }
     }
 }

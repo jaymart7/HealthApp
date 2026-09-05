@@ -13,6 +13,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
@@ -22,9 +23,9 @@ import kotlin.math.abs
 import ph.mart.healthapp.core.data.profile.CALORIE_FLOOR_WARNING
 import ph.mart.healthapp.core.data.profile.EnergyCheckIn
 import ph.mart.healthapp.core.data.profile.EnergyEstimate
-import ph.mart.healthapp.core.data.profile.MIN_MEANINGFUL_DELTA_KCAL
 import ph.mart.healthapp.core.data.profile.MIN_CHECKIN_LOGGED_DAYS
 import ph.mart.healthapp.core.data.profile.MIN_CHECKIN_WEIGH_INS
+import ph.mart.healthapp.core.data.profile.MIN_MEANINGFUL_DELTA_KCAL
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
@@ -114,7 +115,7 @@ private fun MeasurementCard(checkIn: EnergyCheckIn, estimate: EnergyEstimate, ad
             },
         )
         // Warn, never block — the rule the manual target on Profile → Goals already follows.
-        if (estimate.clampedToFloor) Note(CALORIE_FLOOR_WARNING)
+        if (estimate.clampedToFloor) Note(stringResource(CALORIE_FLOOR_WARNING))
         // A measured burn already contains the training that produced it, so crediting a workout
         // on top of this target counts the same session twice. Named, not fixed: the switch is
         // the user's, and it lives on a screen this one has no business writing to.

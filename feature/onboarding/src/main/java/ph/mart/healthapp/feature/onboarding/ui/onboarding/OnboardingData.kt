@@ -1,34 +1,36 @@
 package ph.mart.healthapp.feature.onboarding.ui.onboarding
 
+import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.feature.onboarding.R
 
-data class GoalOption(val goal: Goal, val title: String, val subtitle: String)
-data class ActivityOption(val level: ActivityLevel, val title: String, val subtitle: String)
-data class DietOption(val preference: DietaryPreference, val title: String)
+data class GoalOption(val goal: Goal, @StringRes val title: Int, @StringRes val subtitle: Int)
+data class ActivityOption(val level: ActivityLevel, @StringRes val title: Int, @StringRes val subtitle: Int)
+data class DietOption(val preference: DietaryPreference, @StringRes val title: Int)
 
 val GOAL_OPTIONS = listOf(
-    GoalOption(Goal.Lose, "Lose weight", "Gradual, sustainable calorie deficit"),
-    GoalOption(Goal.Maintain, "Maintain", "Keep your current weight steady"),
-    GoalOption(Goal.Build, "Build muscle", "Calorie surplus with more protein"),
+    GoalOption(Goal.Lose, R.string.onboarding_goal_lose, R.string.onboarding_goal_lose_sub),
+    GoalOption(Goal.Maintain, R.string.onboarding_goal_maintain, R.string.onboarding_goal_maintain_sub),
+    GoalOption(Goal.Build, R.string.onboarding_goal_build, R.string.onboarding_goal_build_sub),
 )
 
 val ACTIVITY_OPTIONS = listOf(
-    ActivityOption(ActivityLevel.Sedentary, "Sedentary", "Desk job, little exercise"),
-    ActivityOption(ActivityLevel.Light, "Light", "Light exercise 1–3 days/week"),
-    ActivityOption(ActivityLevel.Moderate, "Moderate", "Moderate exercise 3–5 days/week"),
-    ActivityOption(ActivityLevel.Very, "Very active", "Hard exercise 6–7 days/week"),
+    ActivityOption(ActivityLevel.Sedentary, R.string.onboarding_activity_sedentary, R.string.onboarding_activity_sedentary_sub),
+    ActivityOption(ActivityLevel.Light, R.string.onboarding_activity_light, R.string.onboarding_activity_light_sub),
+    ActivityOption(ActivityLevel.Moderate, R.string.onboarding_activity_moderate, R.string.onboarding_activity_moderate_sub),
+    ActivityOption(ActivityLevel.Very, R.string.onboarding_activity_very, R.string.onboarding_activity_very_sub),
 )
 
 val DIET_OPTIONS = listOf(
-    DietOption(DietaryPreference.None, "None"),
-    DietOption(DietaryPreference.Vegetarian, "Vegetarian"),
-    DietOption(DietaryPreference.Vegan, "Vegan"),
-    DietOption(DietaryPreference.Other, "Other"),
+    DietOption(DietaryPreference.None, R.string.onboarding_diet_none),
+    DietOption(DietaryPreference.Vegetarian, R.string.onboarding_diet_vegetarian),
+    DietOption(DietaryPreference.Vegan, R.string.onboarding_diet_vegan),
+    DietOption(DietaryPreference.Other, R.string.onboarding_diet_other),
 )
 
 /** What the user is actively editing across all 6 steps — held in [OnboardingState], not the

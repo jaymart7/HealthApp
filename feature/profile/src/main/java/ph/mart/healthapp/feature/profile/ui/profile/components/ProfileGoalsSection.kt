@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.ActivityLevel
@@ -68,7 +69,7 @@ internal fun ProfileGoalsSection(
                 unitSuffix = "kcal",
                 onIncrement = { onSetCalorieTarget((targets.calories + CALORIE_STEP).coerceAtMost(CALORIE_TARGET_KCAL.last)) },
                 onDecrement = { onSetCalorieTarget((targets.calories - CALORIE_STEP).coerceAtLeast(CALORIE_TARGET_KCAL.first)) },
-                error = CALORIE_FLOOR_WARNING.takeIf { targets.belowFloor },
+                error = stringResource(CALORIE_FLOOR_WARNING).takeIf { targets.belowFloor },
             )
             HorizontalDivider(
                 color = MaterialTheme.colorScheme.outlineVariant,

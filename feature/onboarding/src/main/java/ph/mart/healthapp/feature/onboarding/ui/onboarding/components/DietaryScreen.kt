@@ -13,6 +13,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.DietaryPreference
@@ -20,6 +21,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SelectableCard
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.DIET_OPTIONS
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.DietOption
 import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
@@ -46,17 +48,17 @@ internal fun DietaryScreen(
                 currentStep = 4,
                 totalSteps = 6,
                 onBack = onBack,
-                trailingAction = { TextButton(label = "Skip", onClick = onNext) },
+                trailingAction = { TextButton(label = stringResource(R.string.onboarding_diet_skip), onClick = onNext) },
             )
             Text(
-                text = "Any dietary preference?",
+                text = stringResource(R.string.onboarding_diet_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 options.forEach { option ->
                     SelectableCard(
-                        title = option.title,
+                        title = stringResource(option.title),
                         selected = selected == option.preference,
                         onClick = { onSelect(option.preference) },
                     )
@@ -64,7 +66,7 @@ internal fun DietaryScreen(
             }
         }
         Column(modifier = Modifier.padding(16.dp)) {
-            PrimaryButton(label = "Next", onClick = onNext, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.onboarding_next), onClick = onNext, modifier = Modifier.fillMaxWidth())
         }
     }
 }

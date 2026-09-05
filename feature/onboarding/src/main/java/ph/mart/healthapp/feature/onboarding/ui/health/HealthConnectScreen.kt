@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.onboarding.ui.health
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
@@ -22,6 +24,7 @@ import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.designsystem.component.HealthDisclosurePanel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
 
 /**
@@ -66,7 +69,7 @@ internal fun HealthConnectScreen(
 @Composable
 private fun HealthConnectContent(
     canConnect: Boolean,
-    message: String?,
+    @StringRes message: Int?,
     messageIsError: Boolean,
     onConnect: () -> Unit,
     onSkip: () -> Unit,
@@ -84,9 +87,9 @@ private fun HealthConnectContent(
             HealthDisclosurePanel(
                 onConnect = onConnect,
                 onDismiss = onSkip,
-                dismissLabel = "Skip for now",
+                dismissLabel = stringResource(R.string.onboarding_health_skip),
                 connectEnabled = canConnect,
-                message = message,
+                message = message?.let { stringResource(it) },
                 messageIsError = messageIsError,
             )
         }

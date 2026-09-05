@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.profile.Goal
@@ -23,6 +24,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SelectableCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.GOAL_OPTIONS
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.GoalOption
 import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStepHeader
@@ -41,18 +43,18 @@ internal fun GoalScreen(options: List<GoalOption>, selected: Goal?, onSelect: (G
             OnboardingStepHeader(currentStep = 1, totalSteps = 6, onBack = onBack)
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 MascotAvatar(state = MascotState.Idle, size = 64.dp)
-                MascotSpeechBubble(text = "What's your goal?")
+                MascotSpeechBubble(text = stringResource(R.string.onboarding_goal_bubble))
             }
             Text(
-                text = "What brings you here?",
+                text = stringResource(R.string.onboarding_goal_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 options.forEach { option ->
                     SelectableCard(
-                        title = option.title,
-                        subtitle = option.subtitle,
+                        title = stringResource(option.title),
+                        subtitle = stringResource(option.subtitle),
                         selected = selected == option.goal,
                         onClick = { onSelect(option.goal) },
                     )
@@ -60,7 +62,7 @@ internal fun GoalScreen(options: List<GoalOption>, selected: Goal?, onSelect: (G
             }
         }
         Column(modifier = Modifier.padding(16.dp)) {
-            PrimaryButton(label = "Next", onClick = onNext, enabled = selected != null, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.onboarding_next), onClick = onNext, enabled = selected != null, modifier = Modifier.fillMaxWidth())
         }
     }
 }
