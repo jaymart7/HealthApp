@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.CircularProgressIndicator
@@ -15,6 +16,7 @@ import androidx.wear.compose.material3.Text
 import ph.mart.healthapp.core.today.TodaySnapshot
 import ph.mart.healthapp.core.today.progress
 import ph.mart.healthapp.core.today.remainingKcal
+import ph.mart.healthapp.wear.R
 
 private val RING_SIZE = 132.dp
 
@@ -46,7 +48,7 @@ internal fun CaloriesRing(snapshot: TodaySnapshot, modifier: Modifier = Modifier
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                text = if (remaining >= 0) "kcal left" else "kcal over",
+                text = stringResource(if (remaining >= 0) R.string.wear_kcal_left else R.string.wear_kcal_over),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,

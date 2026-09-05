@@ -49,6 +49,7 @@ import ph.mart.healthapp.core.today.TodaySnapshot
 import ph.mart.healthapp.core.today.progress
 import ph.mart.healthapp.core.today.remainingKcal
 import ph.mart.healthapp.wear.MainActivity
+import ph.mart.healthapp.wear.R
 import ph.mart.healthapp.wear.data.latestSnapshot
 
 /** Half an hour, matching the widget's `updatePeriodMillis` — and for the widget's reason. The
@@ -115,7 +116,7 @@ class TodayTileService : Material3TileService(
      */
     private fun MaterialScope.todayLayout(snapshot: TodaySnapshot, openApp: Clickable) =
         primaryLayout(
-            titleSlot = { text("Today".layoutString, typography = Typography.LABEL_SMALL) },
+            titleSlot = { text(getString(R.string.wear_tile_title).layoutString, typography = Typography.LABEL_SMALL) },
             mainSlot = {
                 graphicDataCard(
                     onClick = openApp,
@@ -137,7 +138,9 @@ class TodayTileService : Material3TileService(
                     },
                     content = {
                         text(
-                            (if (snapshot.remainingKcal >= 0) "kcal left" else "kcal over").layoutString,
+                            getString(
+                                if (snapshot.remainingKcal >= 0) R.string.wear_kcal_left else R.string.wear_kcal_over,
+                            ).layoutString,
                             typography = Typography.LABEL_SMALL,
                         )
                     },
@@ -145,7 +148,7 @@ class TodayTileService : Material3TileService(
             },
             bottomSlot = {
                 textEdgeButton(onClick = openApp) {
-                    text("Water ${snapshot.glasses}/${snapshot.goalGlasses}".layoutString)
+                    text(getString(R.string.wear_tile_water, snapshot.glasses, snapshot.goalGlasses).layoutString)
                 }
             },
         )
@@ -156,12 +159,12 @@ class TodayTileService : Material3TileService(
         primaryLayout(
             mainSlot = {
                 text(
-                    "Open FitPulse on your phone".layoutString,
+                    getString(R.string.wear_tile_no_data).layoutString,
                     typography = Typography.BODY_MEDIUM,
                     maxLines = 3,
                 )
             },
-            bottomSlot = { textEdgeButton(onClick = openApp) { text("Open".layoutString) } },
+            bottomSlot = { textEdgeButton(onClick = openApp) { text(getString(R.string.wear_tile_open).layoutString) } },
         )
 }
 

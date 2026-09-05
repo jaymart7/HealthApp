@@ -2,4 +2,27 @@
     <string name="app_name">FitPulse</string>
     <string name="tile_label">Today</string>
     <string name="tile_description">Today\'s calories and water, with one-tap logging.</string>
+
+    <!-- Watch app -->
+    <string name="wear_today_no_snapshot">Open FitPulse on your phone to see today.</string>
+    <string name="wear_today_no_profile">Finish setting up FitPulse on your phone.</string>
+    <string name="wear_today_phone_unreachable">Phone not reachable</string>
+    <string name="wear_today_streak">%1$d-day streak</string>
+    <string name="wear_today_steps">%1$d steps</string>
+    <string name="wear_today_stale">From an earlier day — open FitPulse on your phone</string>
+    <string name="wear_kcal_left">kcal left</string>
+    <string name="wear_kcal_over">kcal over</string>
+    <string name="wear_water_goal_hit">Water goal hit</string>
+    <string name="wear_water_add_glass">+1 glass</string>
+    <string name="wear_fast_start">Start fast</string>
+    <string name="wear_fast_stop">Stop fast</string>
+    <string name="wear_fast_none">Not fasting</string>
+    <string name="wear_fast_goal_reached">Goal reached</string>
+    <string name="wear_fast_until">Until %1$s</string>
+
+    <!-- Tile. Its own title, not \u0040string/tile_label: that one names the tile in the picker. -->
+    <string name="wear_tile_title">Today</string>
+    <string name="wear_tile_water">Water %1$d/%2$d</string>
+    <string name="wear_tile_no_data">Open FitPulse on your phone</string>
+    <string name="wear_tile_open">Open</string>
 </resources>

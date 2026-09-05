@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
 import ph.mart.healthapp.core.today.TodaySnapshot
+import ph.mart.healthapp.wear.R
 
 /**
  * The streak and the day's steps, on one line each and both omitted when they're zero — a streak
@@ -23,14 +25,14 @@ internal fun StreakAndSteps(snapshot: TodaySnapshot, modifier: Modifier = Modifi
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (snapshot.streakDays > 0) {
             Text(
-                text = "${snapshot.streakDays}-day streak",
+                text = stringResource(R.string.wear_today_streak, snapshot.streakDays),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
         }
         if (snapshot.steps > 0) {
             Text(
-                text = "${snapshot.steps} steps",
+                text = stringResource(R.string.wear_today_steps, snapshot.steps),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -64,7 +66,7 @@ internal fun NoDataMessage(message: String, modifier: Modifier = Modifier) {
 @Composable
 internal fun StaleNote(modifier: Modifier = Modifier) {
     Text(
-        text = "From an earlier day — open FitPulse on your phone",
+        text = stringResource(R.string.wear_today_stale),
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,

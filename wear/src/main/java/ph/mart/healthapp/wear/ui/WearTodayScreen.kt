@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
@@ -25,6 +26,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.today.TodaySnapshot
+import ph.mart.healthapp.wear.R
 import ph.mart.healthapp.wear.ui.components.CaloriesRing
 import ph.mart.healthapp.wear.ui.components.FastButton
 import ph.mart.healthapp.wear.ui.components.NoDataMessage
@@ -66,9 +68,9 @@ internal fun WearTodayContent(
                 // saying the phone was missing would be wrong more often than it was right.
                 !uiState.loaded -> Unit
                 snapshot == null ->
-                    NoDataMessage("Open FitPulse on your phone to see today.")
+                    NoDataMessage(stringResource(R.string.wear_today_no_snapshot))
                 snapshot.onboarding ->
-                    NoDataMessage("Finish setting up FitPulse on your phone.")
+                    NoDataMessage(stringResource(R.string.wear_today_no_profile))
                 else -> TodayList(
                     snapshot = snapshot,
                     uiState = uiState,
@@ -85,11 +87,12 @@ internal fun WearTodayContent(
         // unread. It dismisses itself. The style is read out here because the curved slot below
         // is not a composable scope.
         val curvedStyle = ConfirmationDialogDefaults.curvedTextStyle
+        val phoneUnreachable = stringResource(R.string.wear_today_phone_unreachable)
         FailureConfirmationDialog(
             visible = state.failureShown,
             onDismissRequest = { state.failureShown = false },
             curvedText = {
-                confirmationDialogCurvedText("Phone not reachable", curvedStyle)
+                confirmationDialogCurvedText(phoneUnreachable, curvedStyle)
             },
         )
     }

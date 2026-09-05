@@ -2,12 +2,14 @@ package ph.mart.healthapp.wear.ui.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
 import ph.mart.healthapp.core.today.TodaySnapshot
 import ph.mart.healthapp.core.today.waterGoalReached
+import ph.mart.healthapp.wear.R
 import ph.mart.healthapp.wear.ui.formatClockTime
 
 /**
@@ -33,7 +35,7 @@ internal fun WaterButton(
         enabled = enabled && !reached,
         modifier = modifier,
         transformation = transformation,
-        label = { Text(if (reached) "Water goal hit" else "+1 glass") },
+        label = { Text(stringResource(if (reached) R.string.wear_water_goal_hit else R.string.wear_water_add_glass)) },
         secondaryLabel = {
             Text(
                 text = "${snapshot.glasses} / ${snapshot.goalGlasses} · ${snapshot.waterLabel}",
@@ -66,13 +68,13 @@ internal fun FastButton(
         enabled = enabled,
         modifier = modifier,
         transformation = transformation,
-        label = { Text(if (until == null) "Start fast" else "Stop fast") },
+        label = { Text(stringResource(if (until == null) R.string.wear_fast_start else R.string.wear_fast_stop)) },
         secondaryLabel = {
             Text(
                 text = when {
-                    until == null -> "Not fasting"
-                    snapshot.fastingGoalReached -> "Goal reached"
-                    else -> "Until ${formatClockTime(until)}"
+                    until == null -> stringResource(R.string.wear_fast_none)
+                    snapshot.fastingGoalReached -> stringResource(R.string.wear_fast_goal_reached)
+                    else -> stringResource(R.string.wear_fast_until, formatClockTime(until))
                 },
                 style = MaterialTheme.typography.labelSmall,
             )
