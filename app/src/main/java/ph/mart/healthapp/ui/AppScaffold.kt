@@ -54,10 +54,13 @@ import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
 import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
+import ph.mart.healthapp.feature.profile.ui.AboutYouRoute
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.HomeLayoutRoute
+import ph.mart.healthapp.feature.profile.ui.RemindersRoute
 import ph.mart.healthapp.feature.profile.ui.RoutinesRoute
+import ph.mart.healthapp.feature.profile.ui.SettingsRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
@@ -89,11 +92,14 @@ private fun NavKey?.title(): String = when (this) {
     RoutinesRoute -> stringResource(R.string.app_title_routines)
     SupplementsRoute -> stringResource(R.string.app_title_supplements)
     HomeLayoutRoute -> stringResource(R.string.app_title_home_layout)
+    SettingsRoute -> stringResource(R.string.app_title_settings)
+    AboutYouRoute -> stringResource(R.string.app_title_about_you)
+    RemindersRoute -> stringResource(R.string.app_title_reminders)
     else -> ""
 }
 
 /**
- * The five routes that draw *beside* Profile once the window is wide enough, rather than over it.
+ * The eight routes that draw *beside* Profile once the window is wide enough, rather than over it.
  * One list, read by both the pane metadata in `profileEntries` and by [showsTabChrome], so the
  * scene and the chrome can never disagree about which routes are panes.
  */
@@ -103,6 +109,9 @@ internal val ProfileDetailRoutes: Set<NavKey> = setOf(
     RoutinesRoute,
     SupplementsRoute,
     HomeLayoutRoute,
+    SettingsRoute,
+    AboutYouRoute,
+    RemindersRoute,
 )
 
 /**
@@ -346,6 +355,9 @@ fun AppScaffold(
                         )
                         profileEntries(
                             scrollState = profileScroll,
+                            onOpenSettings = { topLevelBackStack.add(SettingsRoute) },
+                            onOpenAboutYou = { topLevelBackStack.add(AboutYouRoute) },
+                            onOpenReminders = { topLevelBackStack.add(RemindersRoute) },
                             onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },
                             onOpenLibrary = { topLevelBackStack.add(FoodLibraryRoute) },
                             onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },

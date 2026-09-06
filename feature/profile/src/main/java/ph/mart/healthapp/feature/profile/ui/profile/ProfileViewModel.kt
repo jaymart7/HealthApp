@@ -1,66 +1,50 @@
 package ph.mart.healthapp.feature.profile.ui.profile
 
 import androidx.lifecycle.ViewModel
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
-import ph.mart.healthapp.core.data.cycle.CycleRepository
-import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.health.STEP_GOAL_STEPS
-import ph.mart.healthapp.core.data.fasting.FastingRepository
-import ph.mart.healthapp.core.data.food.FoodRepository
-import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.CALORIE_TARGET_KCAL
+import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.ProfileRepository
-import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.Sex
+import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.progress.ProgressRepository
-import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
-import ph.mart.healthapp.core.data.supplement.SupplementRepository
-import ph.mart.healthapp.core.data.transfer.DataTransferRepository
-import ph.mart.healthapp.core.data.transfer.LocalBackups
-import ph.mart.healthapp.core.data.transfer.exportJson
-import ph.mart.healthapp.core.data.transfer.parseExport
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
-import ph.mart.healthapp.core.data.water.WaterRepository
-import ph.mart.healthapp.core.designsystem.component.MascotCharacter
-import ph.mart.healthapp.core.designsystem.component.MascotPalette
+
+/** What About you will let a body figure be nudged to. Wide enough to be nobody's problem and
+ * narrow enough that a stuck finger can't write a profile that makes Mifflin–St Jeor meaningless —
+ * the same "clamp at the edges rather than validate after" the goal setters below use. */
+private val AGE_YEARS = 13..120
+private val HEIGHT_CM = 90.0..250.0
+private val WEIGHT_KG = 20.0..400.0
+
+/** Whole years, a centimetre, and a tenth of a kilo: the granularity each figure is actually known
+ * to. Height and weight nudge in *display* units, so the step is applied after conversion. */
+const val HEIGHT_STEP = 1.0
+const val WEIGHT_STEP = 0.1
 
 class ProfileViewModel(
     private val profileRepository: ProfileRepository,
-    private val foodRepository: FoodRepository,
     private val progressRepository: ProgressRepository,
-    private val waterRepository: WaterRepository,
-    private val exerciseRepository: ExerciseRepository,
-    private val moodRepository: MoodRepository,
-    private val cycleRepository: CycleRepository,
-    private val fastingRepository: FastingRepository,
-    private val supplementRepository: SupplementRepository,
-    private val bloodPressureRepository: BloodPressureRepository,
-    private val dataTransferRepository: DataTransferRepository,
-    private val localBackups: LocalBackups,
-) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, ProfileSideEffect> {
+) : ViewModel(), OrbitContainerHost<ProfileUiState, ProfileUiState, Nothing> {
 
-    override val container = orbitContainer<ProfileUiState, ProfileSideEffect>(ProfileUiState()) {
+    override val container = orbitContainer<ProfileUiState, Nothing>(ProfileUiState()) {
         observeProfile()
     }
 
+    /** Combined rather than two collectors: the header prints a weight and a trend beside the goal
+     * they are measured against, and two independent emissions would let it draw one against the
+     * other's profile for a frame. */
     private fun observeProfile() = intent {
-        profileRepository.observeProfile()
-            .map { ProfileUiState(profile = it, backups = localBackups.list()) }
+        combine(
+            profileRepository.observeProfile(),
+            progressRepository.observeWeightEntries(),
+        ) { profile, entries -> ProfileUiState(profile = profile, weightEntries = entries) }
             .collect { newState -> reduce { newState } }
-    }
-
-    /** Units and reminders both write the whole profile back through the same interface — there is
-     * no per-field setter, and no settings store separate from the profile row. */
-    fun setUnit(unit: UnitSystem) = intent {
-        val profile = state.profile ?: return@intent
-        profileRepository.saveProfile(profile.copy(preferredUnit = unit))
-    }
-
-    fun setReminder(kind: ReminderKind, enabled: Boolean) = intent {
-        val profile = state.profile ?: return@intent
-        profileRepository.saveProfile(profile.withReminder(kind, enabled))
     }
 
     /** The four target setters write an override on top of the Mifflin–St Jeor computation; see
@@ -126,57 +110,52 @@ class ProfileViewModel(
         profileRepository.saveProfile(profile.copy(cycleTrackingOn = enabled))
     }
 
-    fun setDarkTheme(enabled: Boolean) = intent {
+    // --- About you -------------------------------------------------------------------------
+    // The six Mifflin–St Jeor inputs, editable for the first time since onboarding. Every one of
+    // them re-prices the calorie target the moment it lands, because nothing caches that figure —
+    // which is exactly why the screen has no save button to press.
+
+    fun setSex(sex: Sex) = intent {
         val profile = state.profile ?: return@intent
-        profileRepository.saveProfile(profile.copy(darkThemeOn = enabled))
+        profileRepository.saveProfile(profile.copy(sex = sex))
     }
 
-    fun setMascot(character: MascotCharacter) = intent {
+    fun setAge(years: Int) = intent {
         val profile = state.profile ?: return@intent
-        profileRepository.saveProfile(profile.copy(mascotName = character.name))
+        profileRepository.saveProfile(profile.copy(age = years.coerceIn(AGE_YEARS)))
     }
 
-    fun setMascotPalette(palette: MascotPalette) = intent {
+    fun setHeightCm(cm: Double) = intent {
         val profile = state.profile ?: return@intent
-        profileRepository.saveProfile(profile.copy(mascotPaletteName = palette.name))
+        profileRepository.saveProfile(profile.copy(heightCm = round1(cm.coerceIn(HEIGHT_CM))))
     }
 
-    /** The reads live in `:core:data`'s [exportJson] rather than here, because `BackupWorker`
-     * makes exactly the same ones — two copies of that list is two places to edit at the next
-     * schema version. */
-    fun buildExport() = intent {
-        postSideEffect(ProfileSideEffect.ExportReady(collectExport()))
+    /**
+     * The *profile's* weight — the onboarding figure Mifflin–St Jeor runs on, not a weigh-in. It
+     * deliberately writes no `WeightEntry`: the header reads the log for what you weigh today and
+     * falls back to this only when the log is empty, so logging a weigh-in through the FAB is
+     * still the one way to put a point on the Progress chart. Editing it here corrects the number
+     * the target is computed from without inventing a measurement that never happened.
+     */
+    fun setCurrentWeightKg(kg: Double) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(weightKg = round1(kg.coerceIn(WEIGHT_KG))))
     }
 
-    private suspend fun collectExport(): String = exportJson(
-        profileRepository, foodRepository, progressRepository, waterRepository, exerciseRepository,
-        moodRepository, cycleRepository, fastingRepository, supplementRepository,
-        bloodPressureRepository,
-    )
-
-    /** Parse here, write there. The whole replay is one transaction inside `:core:data` — see
-     * [DataTransferRepository]; running it from this file a row at a time meant a crash mid-import
-     * left the diary wiped and half-restored. Nothing is written at all if the file fails to
-     * parse. Photos are never touched. */
-    fun import(text: String) = intent {
-        postSideEffect(ProfileSideEffect.ImportFinished(applyImport(text)))
+    /** Null clears it, which is a real state: Progress's goal line, its goal chip and Home's
+     * projection all hide together when there is no target rather than drawing against a guess. */
+    fun setTargetWeightKg(kg: Double?) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(targetWeightKg = kg?.let { round1(it.coerceIn(WEIGHT_KG)) }))
     }
 
-    /** The one backup on disk this row names, through the same parse-and-replace path a picked
-     * file takes — the file is app-private, so there is no picker to point at it. */
-    fun restoreBackup(name: String) = intent {
-        val error = runCatching { localBackups.read(name) }
-            .fold(onSuccess = { applyImport(it) }, onFailure = { it.message ?: FALLBACK_IMPORT_ERROR })
-        postSideEffect(ProfileSideEffect.ImportFinished(error))
+    fun setGoal(goal: Goal) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(goal = goal))
     }
 
-    /** null when it worked; the message to show when it didn't. */
-    private suspend fun applyImport(text: String): String? = parseExport(text).fold(
-        onSuccess = { dataTransferRepository.replaceAll(it); null },
-        onFailure = { it.message ?: FALLBACK_IMPORT_ERROR },
-    )
+    fun setActivityLevel(level: ActivityLevel) = intent {
+        val profile = state.profile ?: return@intent
+        profileRepository.saveProfile(profile.copy(activityLevel = level))
+    }
 }
-
-// The fallback stays in Kotlin beside the `require()` message it stands in for — see
-// `parseExport`: what surfaces here is an exception's own text either way.
-private const val FALLBACK_IMPORT_ERROR = "That file couldn't be read."

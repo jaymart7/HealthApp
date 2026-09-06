@@ -17,8 +17,11 @@ import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.health.HealthConnectionScreen
 import ph.mart.healthapp.feature.profile.ui.layout.HomeLayoutScreen
 import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryScreen
+import ph.mart.healthapp.feature.profile.ui.profile.AboutYouScreen
 import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
 import ph.mart.healthapp.feature.profile.ui.routine.RoutinesScreen
+import ph.mart.healthapp.feature.profile.ui.settings.RemindersScreen
+import ph.mart.healthapp.feature.profile.ui.settings.SettingsScreen
 import ph.mart.healthapp.feature.profile.ui.supplement.SupplementsScreen
 
 /**
@@ -50,6 +53,25 @@ data object SupplementsRoute : NavKey
 data object HomeLayoutRoute : NavKey
 
 /**
+ * Everything configurable, one level above the Profile tab — the gear in the tab's title row opens
+ * it. A route rather than a sheet for the reason every other sub-screen here is one: it is five
+ * sections deep and NavDisplay's back is what returns to Profile.
+ */
+@Serializable
+data object SettingsRoute : NavKey
+
+/** The six Mifflin–St Jeor inputs, reached from the identity header. A route because it is where
+ * back has to land after an edit, and because at two-pane width it draws beside the header that
+ * opened it. */
+@Serializable
+data object AboutYouRoute : NavKey
+
+/** The eight reminder switches, reached from [SettingsRoute] — two levels above the tab, which is
+ * exactly what predictive back has to step through one at a time. */
+@Serializable
+data object RemindersRoute : NavKey
+
+/**
  * What the detail pane shows before a row has been tapped. Only ever drawn on a window wide enough
  * to hold two panes — on a phone the detail simply isn't there yet, which is a state with nothing to
  * render. Deliberately not a call to action: every one of these five is one tap away in the list
@@ -67,6 +89,9 @@ private fun ProfileDetailPlaceholder() {
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 fun EntryProviderScope<NavKey>.profileEntries(
     scrollState: ScrollState,
+    onOpenSettings: () -> Unit,
+    onOpenAboutYou: () -> Unit,
+    onOpenReminders: () -> Unit,
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenRoutines: () -> Unit,
@@ -74,7 +99,7 @@ fun EntryProviderScope<NavKey>.profileEntries(
     onOpenHomeLayout: () -> Unit,
     onExitFlow: () -> Unit,
 ) {
-    // Profile is the list and its five sub-routes are the detail, so at expanded width they draw
+    // Profile is the list and its eight sub-routes are the detail, so at expanded width they draw
     // beside it rather than over it. `AppScaffold` owns the width rule and only hands `NavDisplay`
     // the strategy once there is room; the metadata is inert at every narrower width.
     entry<ProfileRoute>(
@@ -82,11 +107,11 @@ fun EntryProviderScope<NavKey>.profileEntries(
     ) {
         ProfileScreen(
             scrollState = scrollState,
-            onOpenHealth = onOpenHealth,
+            onOpenSettings = onOpenSettings,
+            onOpenAboutYou = onOpenAboutYou,
             onOpenLibrary = onOpenLibrary,
             onOpenRoutines = onOpenRoutines,
             onOpenSupplements = onOpenSupplements,
-            onOpenHomeLayout = onOpenHomeLayout,
         )
     }
     val detail = ListDetailSceneStrategy.detailPane()
@@ -95,4 +120,13 @@ fun EntryProviderScope<NavKey>.profileEntries(
     entry<RoutinesRoute>(metadata = detail) { RoutinesScreen() }
     entry<SupplementsRoute>(metadata = detail) { SupplementsScreen() }
     entry<HomeLayoutRoute>(metadata = detail) { HomeLayoutScreen() }
+    entry<SettingsRoute>(metadata = detail) {
+        SettingsScreen(
+            onOpenHomeLayout = onOpenHomeLayout,
+            onOpenReminders = onOpenReminders,
+            onOpenHealth = onOpenHealth,
+        )
+    }
+    entry<AboutYouRoute>(metadata = detail) { AboutYouScreen() }
+    entry<RemindersRoute>(metadata = detail) { RemindersScreen() }
 }

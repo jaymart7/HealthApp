@@ -8,9 +8,9 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DragHandle
@@ -20,24 +20,36 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.ui.graphics.vector.ImageVector
 
 data class DualStateIcon(val filled: ImageVector, val outlined: ImageVector)
@@ -50,11 +62,15 @@ object AppIcons {
     val Favorite = DualStateIcon(Icons.Filled.Star, Icons.Outlined.StarBorder)
 
     val Add: ImageVector = Icons.Filled.Add
+    val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val Barcode: ImageVector = Icons.Filled.QrCodeScanner
+    /** Notifications, wherever reminders are the subject rather than a single alert. */
+    val Bell: ImageVector = Icons.Outlined.Notifications
+    val Book: ImageVector = Icons.Outlined.MenuBook
     val Bookmark: ImageVector = Icons.Filled.BookmarkAdd
     val Camera: ImageVector = Icons.Filled.PhotoCamera
+    val Check: ImageVector = Icons.Filled.Check
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
-    val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
     val ChevronLeft: ImageVector = Icons.Filled.KeyboardArrowLeft
     val ChevronRight: ImageVector = Icons.Filled.KeyboardArrowRight
@@ -62,13 +78,21 @@ object AppIcons {
     val Compare: ImageVector = Icons.Filled.SwapHoriz
     val Delete: ImageVector = Icons.Outlined.Delete
     val DragHandle: ImageVector = Icons.Filled.DragHandle
+    val Dumbbell: ImageVector = Icons.Outlined.FitnessCenter
     val Edit: ImageVector = Icons.Outlined.Edit
     val Filter: ImageVector = Icons.Filled.FilterList
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
+    val Info: ImageVector = Icons.Outlined.Info
+    /** An outbound connection to another service — Google Health, and whatever follows it. */
+    val Link: ImageVector = Icons.Filled.Link
     val Mic: ImageVector = Icons.Filled.Mic
     val Pause: ImageVector = Icons.Filled.Pause
     val Play: ImageVector = Icons.Filled.PlayArrow
+    val Settings: ImageVector = Icons.Outlined.Settings
+    val Steps: ImageVector = Icons.Outlined.DirectionsWalk
+    val Supplement: ImageVector = Icons.Outlined.Medication
+    val Timer: ImageVector = Icons.Outlined.Timer
     /** Exercise, wherever it has to read as its own kind of thing rather than a fifth meal. */
     val Run: ImageVector = Icons.Filled.DirectionsRun
     val Send: ImageVector = Icons.AutoMirrored.Filled.Send
@@ -79,4 +103,8 @@ object AppIcons {
      * Colour alone never carries the verdict, so a neutral trend needs a glyph of its own. */
     val TrendFlat: ImageVector = Icons.Filled.Remove
     val TrendUp: ImageVector = Icons.Filled.ArrowUpward
+    /** A caution the user may proceed past — the calorie floor. Never paired with an
+     * `errorContainer` surface; see the floor warning's own comment. */
+    val Warning: ImageVector = Icons.Outlined.WarningAmber
+    val Water: ImageVector = Icons.Outlined.WaterDrop
 }

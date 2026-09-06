@@ -13,53 +13,106 @@
 
     <string name="profile_title">Profile</string>
     <string name="profile_pick_heading">Pick a section</string>
-    <string name="profile_pick_body">Your food library, routines, supplements, your Home layout and Google Health open here.</string>
+    <string name="profile_pick_body">About you, your settings, your food library, routines, supplements and reminders all open here.</string>
 
-    <!-- Sections -->
-    <string name="profile_section_goals">Goals</string>
+    <!-- Section headings. Four on Profile, five on Settings, where there were fourteen. -->
+    <string name="profile_targets_title">Targets</string>
+    <string name="profile_body_title">Your body</string>
+    <string name="profile_stuff_title">Your stuff</string>
+    <string name="profile_settings_display">Display</string>
+    <string name="profile_settings_notifications">Notifications</string>
     <string name="profile_section_units">Units</string>
-    <string name="profile_section_water">Water</string>
-    <string name="profile_section_fasting">Fasting</string>
-    <string name="profile_section_exercise">Exercise</string>
-    <string name="profile_section_cycle">Cycle</string>
-    <string name="profile_section_supplements">Supplements</string>
-    <string name="profile_section_library">Library</string>
-    <string name="profile_section_home_layout">Home layout</string>
-    <string name="profile_section_reminders">Reminders</string>
     <string name="profile_section_connections">Connections</string>
     <string name="profile_section_data">Data</string>
-    <string name="profile_section_appearance">Appearance</string>
     <string name="profile_section_about">About</string>
 
-    <!-- Goals -->
-    <string name="profile_calorie_target">Calorie target</string>
+    <!-- Identity header -->
+    <string name="profile_open_settings">Settings</string>
+    <string name="profile_header_goal_lose">Losing weight</string>
+    <string name="profile_header_goal_maintain">Holding steady</string>
+    <string name="profile_header_goal_build">Building muscle</string>
+    <string name="profile_header_summary">%1$s · %2$d · %3$s %4$s · %5$s</string>
+    <string name="profile_header_edit_a11y">Edit your details</string>
+    <string name="profile_header_now">Now</string>
+    <string name="profile_header_target">Target</string>
+    <string name="profile_header_to_go">%1$s %2$s to go</string>
+    <string name="profile_header_trend">%1$s %2$s this week · %3$s</string>
+    <string name="profile_header_on_track">on track</string>
+    <string name="profile_header_off_track">off track</string>
+    <string name="profile_header_changed">changed</string>
+    <string name="profile_header_steady">steady</string>
+    <string name="profile_header_no_prior">No weigh-in a week ago to compare</string>
+
+    <!-- Calories &amp; macros -->
+    <string name="profile_targets_calories_label">Daily calories</string>
+    <string name="profile_targets_calories_down">Lower the calorie target</string>
+    <string name="profile_targets_calories_up">Raise the calorie target</string>
+    <string name="profile_targets_macro_pcts">%1$d%% · %2$d%% · %3$d%%</string>
     <string name="profile_macro_split">Macro split</string>
-    <string name="profile_activity_level">Activity level</string>
+
+    <!-- The three profile enums whose name is a stored token, so the words live here.
+         Wording matches onboarding\'s, which is a deliberate duplicate: a cross-feature
+         type import is what the module boundary forbids. -->
     <string name="profile_activity_sedentary">Sedentary</string>
+    <string name="profile_activity_sedentary_sub">Desk job, little exercise</string>
     <string name="profile_activity_light">Light</string>
+    <string name="profile_activity_light_sub">Light exercise 1–3 days/week</string>
     <string name="profile_activity_moderate">Moderate</string>
+    <string name="profile_activity_moderate_sub">Moderate exercise 3–5 days/week</string>
     <string name="profile_activity_very">Very active</string>
+    <string name="profile_activity_very_sub">Hard exercise 6–7 days/week</string>
+    <string name="profile_goal_lose">Lose weight</string>
+    <string name="profile_goal_lose_sub">−500 kcal</string>
+    <string name="profile_goal_maintain">Maintain</string>
+    <string name="profile_goal_maintain_sub">No change</string>
+    <string name="profile_goal_build">Build muscle</string>
+    <string name="profile_goal_build_sub">+300 kcal</string>
+    <string name="profile_sex_male">Male</string>
+    <string name="profile_sex_female">Female</string>
+
+    <!-- About you -->
+    <string name="profile_about_intro">These are the numbers your calorie target is worked out from. Change one and the target follows — nothing to save.</string>
+    <string name="profile_about_sex">Sex</string>
+    <string name="profile_about_age">Age</string>
+    <string name="profile_about_age_unit">years</string>
+    <string name="profile_about_height">Height</string>
+    <string name="profile_about_weight">Current weight</string>
+    <string name="profile_about_weight_sub">What your target is worked out from. Logging a weigh-in doesn\'t change it.</string>
+    <string name="profile_about_target">Target weight</string>
+    <string name="profile_about_target_sub">Drives the goal line on Progress</string>
+    <string name="profile_about_goal_title">Goal</string>
+    <string name="profile_about_activity_title">Activity level</string>
+    <string name="profile_about_result_label">Worked out from these numbers</string>
+    <string name="profile_about_result_unit">kcal a day</string>
+    <string name="profile_about_result_note">Mifflin–St Jeor, adjusted for your goal. Estimates based on your inputs, not medical advice.</string>
     <string name="profile_reset_targets">Reset to calculated</string>
     <string name="profile_reset_targets_sub">Goes back to the targets worked out from your height, weight, age and goal</string>
 
     <!-- Units, water, fasting, exercise -->
     <string name="profile_units_metric">Metric (kg, cm)</string>
     <string name="profile_units_imperial">Imperial (lb, in)</string>
-    <string name="profile_water_goal">Daily goal · %1$s</string>
+    <string name="profile_settings_units_sub">Changes every number in the app.</string>
+
+    <!-- Day targets -->
+    <string name="profile_daytargets_water">Water</string>
+    <string name="profile_daytargets_water_sub">%1$s a day</string>
     <string name="profile_water_unit">glasses</string>
-    <string name="profile_fasting_goal">Fasting goal · %1$dh eating window</string>
+    <string name="profile_daytargets_fasting">Fasting</string>
+    <string name="profile_daytargets_fasting_sub">%1$dh eating window</string>
     <string name="profile_fasting_unit">hours</string>
-    <string name="profile_step_goal">Daily step goal</string>
+    <string name="profile_daytargets_steps">Steps</string>
+    <string name="profile_daytargets_steps_sub">Counted by your phone or watch</string>
     <string name="profile_step_unit">steps</string>
     <string name="profile_add_exercise">Add exercise calories</string>
     <string name="profile_add_exercise_sub">Logged workouts raise the day\'s budget. Turn off if your activity level already covers them.</string>
 
     <!-- Cycle -->
     <string name="profile_cycle_track">Track your cycle</string>
+    <string name="profile_cycle_reveal">A cycle card is now on Home, and Progress has a Cycle page.</string>
     <string name="profile_cycle_track_sub">Adds a Home card and a Progress page for period logging. Stays on this phone — it is never sent to the coach or used for an insight.</string>
 
     <!-- Supplements, library, layout, connections -->
-    <string name="profile_supplements_row">What you take</string>
+    <string name="profile_stuff_supplements">Supplements</string>
     <string name="profile_supplements_row_sub">Your daily list — it shows up on Home</string>
     <string name="profile_library_food">Food library</string>
     <string name="profile_library_food_sub">Your foods, saved meals and recipes</string>
@@ -67,6 +120,8 @@
     <string name="profile_library_routines_sub">Set which days you train, rename or delete</string>
     <string name="profile_layout_row">Cards on Home</string>
     <string name="profile_layout_row_sub">Choose which ones show, and in what order</string>
+    <string name="profile_settings_reminders_row">Reminders</string>
+    <string name="profile_settings_reminders_row_sub">Meal logging, weigh-ins, water, fasting and the weekly recap</string>
     <string name="profile_connections_health">Google Health</string>
     <string name="profile_connections_health_sub">Import workouts, weigh-ins and sleep; send your food and water</string>
 
@@ -87,8 +142,12 @@
     <string name="profile_reminder_workout_sub">5:00 PM, on days your plan asks for</string>
     <string name="profile_reminder_recap">Weekly recap</string>
     <string name="profile_reminder_recap_sub">Sundays, 7:00 PM</string>
-    <string name="profile_notifications_blocked">Allow notifications for FitPulse in your system settings to use reminders.</string>
-    <string name="profile_notifications_blocked_on">Reminders are on, but notifications are blocked. Turn a reminder off and on again to allow them.</string>
+    <string name="profile_reminders_group_logging">Logging</string>
+    <string name="profile_reminders_group_targets">Targets</string>
+    <string name="profile_reminders_group_summary">Summary</string>
+    <string name="profile_reminders_permission_blocked">Android is blocking FitPulse notifications, so these stay silent. Turn one off and on again to ask for permission.</string>
+    <string name="profile_reminders_open_settings">Open system settings</string>
+    <string name="profile_reminders_footer">Times follow your device clock. Reminders are scheduled on this phone; nothing is sent anywhere.</string>
 
     <!-- Data -->
     <string name="profile_export">Export data (JSON)</string>
@@ -113,6 +172,11 @@
     <string name="profile_colour">Colour</string>
     <string name="profile_colour_sub">Every buddy wears the one you pick.</string>
     <string name="profile_colour_cell">%1$s colour</string>
+    <string name="profile_settings_colour_soft">Soft</string>
+    <string name="profile_settings_colour_bold">Bold</string>
+    <string name="profile_settings_colour_muted">Muted</string>
+    <string name="profile_settings_colour_contrast">Contrast</string>
+    <string name="profile_settings_colour_neutral">Neutral</string>
 
     <!-- About -->
     <string name="profile_version">Version</string>

@@ -31,7 +31,7 @@ on Home.
 
 **Window width** (`AppScaffold`, the app's one reader of it): at ≥600dp the bottom bar becomes a
 `NavRail` with the FAB in it; at ≥840dp the Progress tab draws its overview beside the open
-subject page, and the Profile tab draws its five sub-routes beside Profile as a Nav3 list-detail
+subject page, and the Profile tab draws its eight sub-routes beside Profile as a Nav3 list-detail
 scene. Narrower than 600dp is unchanged. Home, the diary and the camera flows stay one pane at
 every width.
 
@@ -167,12 +167,21 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 
 ## Profile & settings
 
-Sections: Goals · Units · Water · Fasting · Exercise · Reminders · Appearance · Connections ·
-Home layout · Supplements · Food library · Workout routines · Data · About.
+Four screens, not one scroll. **Profile** (the tab) is about the person: an identity header
+(mascot, goal, "Male · 26 · 170 cm · Moderately active", now/target weight with a goal-relative
+trend) · **Targets** (calories & macros, then water/fasting/steps as one Day-targets card) ·
+**Your body** (cycle) · **Your stuff** (supplements, food library, workout routines). A gear in the
+title row opens **Settings**: Display (units, appearance, cards on Home) · Notifications ·
+Connections · Data · About. **About you** (from the header) holds the six Mifflin–St Jeor inputs
+plus target weight and the add-exercise-calories switch. **Reminders** (from Settings) holds the
+eight switches in three groups with the permission banner. All three new routes are Profile detail
+panes at ≥840dp.
 
 - Editable calorie and macro targets with "Reset to calculated" — which also undoes a target
   applied from the energy check-in; a manual calorie target reprices the split.
 - Metric/imperial toggles; water glass size and daily goal; fasting goal hours; step goal.
+- Sex, age, height, current weight, **target weight**, goal and activity level all editable on
+  About you — no save button, and the result card reprices as you nudge.
 - Light / dark / follow-device; mascot character and palette pickers.
 - Supplements: name, dose label, times per day; edit and delete.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and

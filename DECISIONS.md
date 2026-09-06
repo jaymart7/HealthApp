@@ -1225,6 +1225,63 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   two series with a legend, a target line over a dense series, and percentages. A fifth near-copy
   of the same `Canvas` is the thing to avoid, not a fourth parameter on `DayBarChart`.
 
+### Profile & Settings
+
+The tab was fourteen caption-over-card sections in one scroll, and none of them were about the
+person: sex, age, height, weight, activity level and goal were all stored and none was shown or
+editable after onboarding. The split is what fixed both halves of that.
+
+- **Three visual tiers, and that is the whole argument.** `surfaceContainerHigh` at 28dp for the
+  identity header (once per screen, the subject of the page); plain `AppCard` for things you
+  adjust; a row plus a `secondaryContainer` `IconTile` plus a chevron for things that go elsewhere.
+  Fourteen identical sections made a stepper touched once a year read like a switch touched weekly,
+  which is a hierarchy problem, not a copy problem. `SectionHeader` (sentence-case `titleMedium`,
+  four of them) replaced `SettingsSection`'s uppercase caption for the same reason.
+- **A second ViewModel is what earned `ui/settings/`.** `SettingsViewModel` owns units, dark mode,
+  buddy, palette, the eight reminder flags and export/import/restore — and with them the ten
+  repositories only `exportJson` needs, which is why the split *removes* work from
+  `ProfileViewModel` rather than duplicating it. `RemindersScreen` shares that host rather than
+  declaring a third: same eight flags, plus one piece of permission state the screen owns itself.
+- **About you reuses `ProfileViewModel`.** It writes the same profile row the identity header
+  reads, through the same setters. No save button anywhere — every control writes on change and
+  nothing caches the calorie figure, so the result card and the header reprice in the same frame.
+- **The two-pane list pane stays Profile's own scroll.** The handoff proposed an eight-row list
+  (About you · Calories · Day targets · Cycle · …) with a default "You & your targets" detail. That
+  needs Calories, Day targets and Cycle to become *routes*, which buys a second
+  `ViewModelStoreOwner` and a second copy of twelve repositories — the exact trade already rejected
+  for Progress. Only the three real routes joined `ProfileDetailRoutes`; the "Pick a section"
+  placeholder stays.
+- **The new row primitives live in `ui/shared/components/`, not `:core:designsystem`.** Every
+  consumer — Profile, Settings, Reminders, About you — is a flow inside `:feature:profile`, which
+  is exactly the `ui/shared/` middle case. And there is no `SwitchRow`: `AppListRow`'s `trailing`
+  slot already is one, so it is four primitives rather than five.
+- **`StepperRow` is not `NumericStepperField`.** The field is a label stacked over a filled input
+  and is right where a value is *entered* (onboarding, the entry sheets); the row is right where
+  four targets have to line their values and buttons down one edge. Forking one into the other
+  would leave a component that is neither. Both share the 48dp-touch/40dp-visual button split, and
+  `StepperButton` is feature-visible only because the Calories card draws the same pair beside a
+  32sp hero figure.
+- **`error` is text on the Calories card and a surface on the Reminders banner, and the difference
+  is deliberate.** Being under a calorie target is a caution the user may walk past — the warning
+  appears, the stepper keeps decrementing, and it never gets an `errorContainer`. Android blocking
+  notifications is a genuine failure, and it is the one place in the app that surface is right.
+- **The header's trend is two questions, not one.** The arrow is the delta's direction, the colour
+  is `goalRelativeTrend`'s verdict, and the words say which — never colour alone. A movement under
+  `TREND_ARROW_DEADBAND_KG` takes the flat glyph and the neutral tone rather than a confident
+  arrow. It reads the *logged* weight (`trendVsSevenDaysAgo`), falling back to `Profile.weightKg`
+  only when the log is empty, because the onboarding figure stops being true the first time anyone
+  steps on a scale — which is also why About you's "Current weight" row says so rather than
+  claiming to be the latest weigh-in.
+- **Cycle stays on Profile.** It is a fact about the person, it *creates* surfaces (a Home card, a
+  Progress page) rather than restyling existing ones, and a privacy-sensitive switch should not be
+  two levels deep. The line that appears when it goes on is the other half of the privacy
+  sublabel's honesty: a switch that quietly adds two surfaces should name them.
+- **Palette names stay Soft/Bold/Muted/Contrast/Neutral.** The handoff renamed them
+  Sprout/Fern/Sage/Lagoon/Bone; `MascotPalette.name` is a persisted token, and the picker prints
+  the selected name beside the label precisely so the row is not colour-only.
+- **Nav rows still carry no counts.** Unchanged rule, and the reason is unchanged: a number here is
+  one more thing that can go stale, and the screen it opens is where counting is honest.
+
 ### Health Connect
 
 The local provider, and the one that wins. Everything here exists because there are now *two*

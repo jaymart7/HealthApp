@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.profile
+package ph.mart.healthapp.feature.profile.ui.settings
 
 import android.Manifest
 import android.content.Context
@@ -9,7 +9,7 @@ import androidx.core.content.ContextCompat
 
 /**
  * The screen owns the picker Uri and the file IO — the ViewModel only ever sees a JSON string.
- * These three are what that ownership costs, kept out of ProfileScreen.kt so the composable file
+ * These three are what that ownership costs, kept out of SettingsScreen.kt so the composable file
  * holds composables.
  */
 internal fun Context.canPostNotifications(): Boolean =
