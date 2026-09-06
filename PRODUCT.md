@@ -91,8 +91,7 @@ Explicitly undecided:
 
 ## Evidence on Hand
 
-- **The shipped app is the evidence.** All nine build phases are complete; `BUILD_PLAN.md`
-  is kept as history only.
+- **The shipped app is the evidence.** All nine build phases are complete.
 - `claude-design/project/` holds the original Claude Design HTML prototype — the reference
   for layout, copy, and interaction on anything not yet built. Its `COMPONENTS.md` inventory
   is prototype-era; `:core:designsystem` is the truth for what exists.

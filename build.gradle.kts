@@ -10,7 +10,7 @@ plugins {
 }
 
 /**
- * The modules that have been through the localization pass (ROADMAP item 3). A module joins this
+ * The modules that have been through the localization pass. A module joins this
  * list in its own commit, and from then on [checkUiLiterals] keeps literals out of it.
  */
 val localizedModules = listOf(
