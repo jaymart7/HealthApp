@@ -40,15 +40,15 @@ class RecipeTest {
     fun `per serving divides fiber, sugar and sodium too`() {
         val dish = recipe(
             4,
-            ingredient(400).copy(fiberG = 8, sugarG = 12, sodiumMg = 1200),
-            ingredient(400).copy(fiberG = 4, sugarG = 4, sodiumMg = 600),
+            ingredient(400).copy(nutrients = Nutrients(fiberG = 8, sugarG = 12, sodiumMg = 1200)),
+            ingredient(400).copy(nutrients = Nutrients(fiberG = 4, sugarG = 4, sodiumMg = 600)),
         )
 
         val serving = dish.perServing()
 
-        assertEquals(3, serving.fiberG)
-        assertEquals(4, serving.sugarG)
-        assertEquals(450, serving.sodiumMg)
+        assertEquals(3, serving.nutrients.fiberG)
+        assertEquals(4, serving.nutrients.sugarG)
+        assertEquals(450, serving.nutrients.sodiumMg)
     }
 
     @Test

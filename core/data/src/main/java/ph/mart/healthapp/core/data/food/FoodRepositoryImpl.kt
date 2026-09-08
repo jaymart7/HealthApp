@@ -262,9 +262,7 @@ private fun SavedMealItemEntity.toSavedMealItem() = SavedMealItem(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 private fun SavedMealItem.toEntity(mealId: Long) = SavedMealItemEntity(
@@ -276,9 +274,7 @@ private fun SavedMealItem.toEntity(mealId: Long) = SavedMealItemEntity(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
@@ -292,9 +288,7 @@ private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
     photoPath = photoPath,
 )
 
@@ -306,9 +300,7 @@ private fun FoodEntryEntity.toSuggestion() = FoodSuggestion(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
     // A recent only knows it isn't starred; mergeSuggestions drops it if a favorite claims the name.
     isFavorite = false,
 )
@@ -321,9 +313,7 @@ private fun FavoriteFoodEntity.toSuggestion() = FoodSuggestion(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
     isFavorite = true,
 )
 
@@ -338,9 +328,7 @@ private fun FavoriteFoodEntity.toProduct() = ScannedProduct(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 private fun FoodSuggestion.toEntity() = FavoriteFoodEntity(
@@ -351,9 +339,7 @@ private fun FoodSuggestion.toEntity() = FavoriteFoodEntity(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 private fun FoodEntry.toEntity(date: Long, loggedAt: Long) = FoodEntryEntity(
@@ -368,9 +354,7 @@ private fun FoodEntry.toEntity(date: Long, loggedAt: Long) = FoodEntryEntity(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
     // Carried both ways, which is the whole of "an edit keeps its photo": updateEntry rebuilds
     // the entity from the entry the form produced, and the row it supersedes is gone.
     photoPath = photoPath,

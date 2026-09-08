@@ -16,6 +16,7 @@ import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.data.profile.nutrientTargets
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.todayFlow
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
@@ -107,6 +108,7 @@ class FoodViewModel(
                     steps = steps,
                     addExerciseToBudget = profile?.addExerciseToBudget != false,
                     targets = profile?.dailyTargets(),
+                    nutrientTargets = profile?.let { nutrientTargets(it, it.dailyTargets()) },
                     goal = profile?.goal,
                     diet = profile?.dietaryPreference,
                     suggestions = suggestions,

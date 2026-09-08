@@ -182,12 +182,12 @@ private fun ReviewItemCard(
                     onFatChange = { onChange(item.copy(fatG = it)) },
                 )
                 MicronutrientInputGroup(
-                    fiberG = item.fiberG,
-                    sugarG = item.sugarG,
-                    sodiumMg = item.sodiumMg,
-                    onFiberChange = { onChange(item.copy(fiberG = it)) },
-                    onSugarChange = { onChange(item.copy(sugarG = it)) },
-                    onSodiumChange = { onChange(item.copy(sodiumMg = it)) },
+                    fiberG = item.nutrients.fiberG,
+                    sugarG = item.nutrients.sugarG,
+                    sodiumMg = item.nutrients.sodiumMg,
+                    onFiberChange = { onChange(item.copy(nutrients = item.nutrients.copy(fiberG = it))) },
+                    onSugarChange = { onChange(item.copy(nutrients = item.nutrients.copy(sugarG = it))) },
+                    onSodiumChange = { onChange(item.copy(nutrients = item.nutrients.copy(sodiumMg = it))) },
                 )
             }
         }

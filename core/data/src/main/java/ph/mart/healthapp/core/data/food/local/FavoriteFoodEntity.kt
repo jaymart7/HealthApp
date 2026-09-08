@@ -1,7 +1,9 @@
 package ph.mart.healthapp.core.data.food.local
 
+import androidx.room3.Embedded
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import ph.mart.healthapp.core.data.food.Nutrients
 
 /** A food the user starred in the add-entry sheet. Keyed by [name] — the same key the suggestion
  * list dedupes recents against — and carries its own macros so a re-star doesn't depend on the
@@ -18,8 +20,6 @@ internal data class FavoriteFoodEntity(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    @Embedded val nutrients: Nutrients = Nutrients(),
     val isFavorite: Boolean = true,
 )

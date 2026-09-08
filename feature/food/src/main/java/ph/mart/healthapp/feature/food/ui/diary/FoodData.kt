@@ -14,6 +14,7 @@ import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.exercise.budgetKcal
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 import ph.mart.healthapp.core.data.profile.Goal
@@ -36,6 +37,9 @@ data class FoodUiState(
     /** From the profile — whether [exercise]'s burn raises the summary bar's goal. */
     val addExerciseToBudget: Boolean = true,
     val targets: DailyTargets? = null,
+    /** The seven nutrient targets, derived from the same profile [targets] is — null with no
+     * profile, which is what leaves the summary bar's nutrient line ungraded. */
+    val nutrientTargets: Nutrients? = null,
     /** From the profile, and read by the meal-ideas screen alone — the diary itself has no use
      * for either. [diet] is what the user picked in onboarding, and until that screen existed it
      * was stored, migrated and exported without a single reader. */
@@ -63,9 +67,7 @@ fun FoodSuggestion.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 /** Twin of [FoodSuggestion.toAddEntryForm] for a saved meal's item — it skips the form entirely,
@@ -80,9 +82,7 @@ fun SavedMealItem.toFoodEntry(mealType: MealType, dateEpochDay: Long): FoodEntry
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 /** Twin of [FoodSuggestion.toAddEntryForm] again, and for the same reason it isn't a
@@ -99,9 +99,7 @@ fun Recipe.toAddEntryForm(mealType: MealType): AddEntryForm {
         proteinG = serving.proteinG,
         carbsG = serving.carbsG,
         fatG = serving.fatG,
-        fiberG = serving.fiberG,
-        sugarG = serving.sugarG,
-        sodiumMg = serving.sodiumMg,
+        nutrients = serving.nutrients,
     )
 }
 
@@ -115,9 +113,7 @@ fun FoodEntry.toSavedMealItem(): SavedMealItem = SavedMealItem(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 sealed interface FoodEvent {
@@ -198,7 +194,5 @@ fun MealIdea.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryForm(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )

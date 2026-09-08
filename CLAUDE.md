@@ -194,10 +194,11 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
   budget is shared by every install). A proxy holding the key is the upgrade path if either the
   ceiling or the exposure starts to matter — the barcode cache took the rescan traffic off that
   ceiling, so what is left is the exposure and first scans.
-- Google Health's `nutritionLog` sends `DIETARY_FIBER`, `TOTAL_SUGARS` and `SODIUM` on unverified
-  names — the v4 reference publishes no `Nutrient` enum values. Pin the three against a live
-  response and `nutritionLogBody`'s `micronutrients` flag *and* `pushMeals`' retry both go, the
-  same outstanding job as the weight timestamp and the step-bucket field.
+- Google Health's `nutritionLog` sends `DIETARY_FIBER`, `TOTAL_SUGARS`, `SODIUM`, `CALCIUM`,
+  `POTASSIUM`, `VITAMIN_D` and `IRON` on unverified names — the v4 reference publishes no `Nutrient`
+  enum values. Pin all seven against a live response and `nutritionLogBody`'s `micronutrients` flag
+  *and* `pushMeals`' retry both go, the same outstanding job as the weight timestamp and the
+  step-bucket field.
 - Final mascot illustration. The geometric placeholders (Bibo, Pip, Zed, Momo, Sprig) are used
   throughout; a commissioned set replaces the five drawings, not the picker around them.
 - Google Health: verification is *not* done. Needs the Cloud project's consent screen branded

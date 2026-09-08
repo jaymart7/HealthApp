@@ -4,10 +4,12 @@ import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
 import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
+import ph.mart.healthapp.core.data.food.times
 
 /** What the user is actively editing in the add-entry sheet — seeded fresh (not from a loaded
  * record) each time a meal section's "+" is tapped.
@@ -23,9 +25,7 @@ data class AddEntryForm(
     val proteinG: Int = 0,
     val carbsG: Int = 0,
     val fatG: Int = 0,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    val nutrients: Nutrients = Nutrients(),
     /** The plate a logged row was photographed from, carried so an edit gives it back. Only ever
      * non-null on a form seeded from an already-logged entry — the camera flow hands its bitmap to
      * the repository, not to this form. */
@@ -51,9 +51,7 @@ fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
     // An edit rebuilds the whole entry from the form, so a photo that isn't carried here is a
     // photo the correction throws away — see `FoodEntryDao.replace`, which supersedes the row.
     photoPath = photoPath,
@@ -74,9 +72,7 @@ fun FoodEntry.toAddEntryForm(): AddEntryForm = AddEntryForm(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
     photoPath = photoPath,
 )
 
@@ -95,9 +91,7 @@ fun AddEntryForm.toSuggestion(): FoodSuggestion = FoodSuggestion(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
     isFavorite = true,
 )
 
@@ -127,9 +121,7 @@ fun RecognizedFood.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 /**
@@ -147,9 +139,7 @@ fun ScannedProduct.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 /**
@@ -175,9 +165,7 @@ fun AddEntryForm.withPortionAmount(amount: Double): AddEntryForm {
         proteinG = scale(proteinG, factor),
         carbsG = scale(carbsG, factor),
         fatG = scale(fatG, factor),
-        fiberG = scale(fiberG, factor),
-        sugarG = scale(sugarG, factor),
-        sodiumMg = scale(sodiumMg, factor),
+        nutrients = nutrients * factor,
     )
 }
 
@@ -191,9 +179,7 @@ fun SavedMealItem.withPortionAmount(amount: Double): SavedMealItem {
         proteinG = scale(proteinG, factor),
         carbsG = scale(carbsG, factor),
         fatG = scale(fatG, factor),
-        fiberG = scale(fiberG, factor),
-        sugarG = scale(sugarG, factor),
-        sodiumMg = scale(sodiumMg, factor),
+        nutrients = nutrients * factor,
     )
 }
 

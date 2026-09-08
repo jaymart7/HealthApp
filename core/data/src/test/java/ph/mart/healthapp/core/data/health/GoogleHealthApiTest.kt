@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Nutrients
 
 /**
  * Steps arrive as intra-day buckets, so two of these land on one local day and one on the next.
@@ -208,9 +209,7 @@ class GoogleHealthApiTest {
             proteinG = 3,
             carbsG = 18,
             fatG = 8,
-            fiberG = 2,
-            sugarG = 4,
-            sodiumMg = 480,
+            nutrients = Nutrients(fiberG = 2, sugarG = 4, sodiumMg = 480),
         )
         val body = nutritionLogBody(packet, dayStartMillis = 0L)
 
@@ -228,7 +227,7 @@ class GoogleHealthApiTest {
 
         // A quick add measures none of the three, so it already sends the fallback's body —
         // which is what makes the retry a no-op for everything but a scanned packet.
-        val quickAdd = packet.copy(fiberG = 0, sugarG = 0, sodiumMg = 0)
+        val quickAdd = packet.copy(nutrients = Nutrients(fiberG = 0, sugarG = 0, sodiumMg = 0))
         assertEquals(
             nutritionLogBody(quickAdd, 0L, micronutrients = false),
             nutritionLogBody(quickAdd, 0L),

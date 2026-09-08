@@ -260,4 +260,7 @@
     </plurals>
     <string name="food_routine_sheet_body">%1$s · %2$s — start it again in one tap, at whatever you\'re lifting then.</string>
     <string name="food_routine_placeholder">Push day</string>
+    <!-- Under the diary's nutrient rows: what the figures are standing on, since 0 means
+         unknown-or-none and half the built-in foods have no vitamin figures. -->
+    <string name="food_nutrient_coverage">Vitamins and minerals from %1$d of %2$d foods</string>
 </resources>

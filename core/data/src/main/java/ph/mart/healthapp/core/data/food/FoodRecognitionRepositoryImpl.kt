@@ -82,9 +82,16 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
                 fatG = body.getInt("fatG"),
                 // optInt, not getInt: a response that predates these three fields, or omits them
                 // for a food the model has nothing to say about, still parses as an estimate.
-                fiberG = body.optInt("fiberG"),
-                sugarG = body.optInt("sugarG"),
-                sodiumMg = body.optInt("sodiumMg"),
+                //
+                // Three, not seven. The four panel nutrients are deliberately absent from the
+                // schema: a model asked what calcium is in a photographed plate will produce a
+                // number, and a fabricated micronutrient is what the coverage count exists to
+                // expose.
+                nutrients = Nutrients(
+                    fiberG = body.optInt("fiberG"),
+                    sugarG = body.optInt("sugarG"),
+                    sodiumMg = body.optInt("sodiumMg"),
+                ),
                 confidence = confidence,
             ),
         )

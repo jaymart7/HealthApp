@@ -14,6 +14,7 @@ import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.ActivityLevel
@@ -66,10 +67,11 @@ internal data class FitPulseExport(
  * [ExportExercise.sets]; 15 added [ExportProfile.homeLayout]; 16 added
  * [ExportProfile.recapReminderOn] — and [ExportProfile.workoutRemindersOn], which landed on
  * `Profile` after v15 and was simply missed here, so a restored backup silently lost it;
- * 17 added [FitPulseExport.cycleDays] and [ExportProfile.cycleTrackingOn].
+ * 17 added [FitPulseExport.cycleDays] and [ExportProfile.cycleTrackingOn]; 18 added the food
+ * entries' vitamin D, calcium, iron and potassium.
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 17
+internal const val EXPORT_SCHEMA_VERSION = 18
 
 @Serializable
 internal data class ExportProfile(
@@ -105,6 +107,11 @@ internal data class ExportProfile(
     val cycleTrackingOn: Boolean? = null,
 )
 
+/** The nutrients stay **flat here** even though [FoodEntry] now carries them as one embedded
+ * value. This is a wire format, not a domain type: `parseExport` accepts any file at or below
+ * [EXPORT_SCHEMA_VERSION], so nesting them would fail to read every v17 file already on disk —
+ * including the weekly automatic backups. Four defaulted fields cost one mapping line each and
+ * keep every older file readable. */
 @Serializable
 internal data class ExportFoodEntry(
     val dateEpochDay: Long,
@@ -119,6 +126,10 @@ internal data class ExportFoodEntry(
     val fiberG: Int = 0,
     val sugarG: Int = 0,
     val sodiumMg: Int = 0,
+    val vitaminDUg: Int = 0,
+    val calciumMg: Int = 0,
+    val ironUg: Int = 0,
+    val potassiumMg: Int = 0,
 )
 
 @Serializable
@@ -401,9 +412,13 @@ private fun FoodEntry.toExport() = ExportFoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    fiberG = nutrients.fiberG,
+    sugarG = nutrients.sugarG,
+    sodiumMg = nutrients.sodiumMg,
+    vitaminDUg = nutrients.vitaminDUg,
+    calciumMg = nutrients.calciumMg,
+    ironUg = nutrients.ironUg,
+    potassiumMg = nutrients.potassiumMg,
 )
 
 private fun ExportFoodEntry.toFoodEntry() = FoodEntry(
@@ -416,7 +431,13 @@ private fun ExportFoodEntry.toFoodEntry() = FoodEntry(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = Nutrients(
+        fiberG = fiberG,
+        sugarG = sugarG,
+        sodiumMg = sodiumMg,
+        vitaminDUg = vitaminDUg,
+        calciumMg = calciumMg,
+        ironUg = ironUg,
+        potassiumMg = potassiumMg,
+    ),
 )

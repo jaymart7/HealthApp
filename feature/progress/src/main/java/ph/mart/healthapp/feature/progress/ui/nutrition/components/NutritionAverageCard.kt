@@ -18,11 +18,16 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.food.NutrientReading
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.NutritionAverages
+import ph.mart.healthapp.core.data.food.formatNutrient
+import ph.mart.healthapp.core.data.food.readings
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.MacroBar
-import ph.mart.healthapp.core.designsystem.component.MicronutrientLegend
+import ph.mart.healthapp.core.designsystem.component.NutrientPanel
+import ph.mart.healthapp.core.designsystem.component.NutrientRow
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
@@ -38,6 +43,7 @@ fun NutritionAverageCard(
     averages: NutritionAverages,
     targets: DailyTargets?,
     modifier: Modifier = Modifier,
+    nutrientTargets: Nutrients? = null,
 ) {
     AppCard(modifier = modifier) {
         Text(
@@ -65,10 +71,11 @@ fun NutritionAverageCard(
             MacroLegend(stringResource(R.string.progress_macro_carbs), averages.carbsG, targets?.carbsG, MaterialTheme.colorScheme.tertiary)
             MacroLegend(stringResource(R.string.progress_macro_fat), averages.fatG, targets?.fatG, MaterialTheme.colorScheme.secondary)
         }
-        MicronutrientLegend(
-            fiberG = averages.fiberG,
-            sugarG = averages.sugarG,
-            sodiumMg = averages.sodiumMg,
+        // No coverage line here, unlike the diary's: the averaged-over-N-days line right below
+        // already says how thin the window is, and a second denominator on the same card would
+        // only invite the two to be read against each other.
+        NutrientPanel(
+            rows = averages.nutrients.readings(nutrientTargets).toRows(),
             modifier = Modifier.padding(top = 8.dp),
         )
         Text(
@@ -111,9 +118,15 @@ private fun NutritionAverageCardPreview() {
                     proteinG = 131,
                     carbsG = 186,
                     fatG = 71,
-                    fiberG = 24,
-                    sugarG = 63,
-                    sodiumMg = 2180,
+                    nutrients = Nutrients(
+                        fiberG = 24,
+                        sugarG = 63,
+                        sodiumMg = 2180,
+                        vitaminDUg = 7,
+                        calciumMg = 780,
+                        ironUg = 11_400,
+                        potassiumMg = 2410,
+                    ),
                     daysLogged = 24,
                 ),
                 targets = DailyTargets(calories = 1941, proteinG = 146, carbsG = 194, fatG = 65, floor = 1500),
@@ -121,4 +134,18 @@ private fun NutritionAverageCardPreview() {
             )
         }
     }
+}
+
+/** Twin of the diary summary bar's mapper, and duplicated for the same reason `MacroLegend` is:
+ * `:core:designsystem` is a leaf module that cannot see the `Nutrient` enum, and the two features
+ * that draw this cannot import each other. */
+@Composable
+private fun List<NutrientReading>.toRows(): List<NutrientRow> = map { reading ->
+    NutrientRow(
+        label = stringResource(reading.nutrient.labelRes),
+        value = formatNutrient(reading.nutrient, reading.value),
+        target = reading.target?.let { formatNutrient(reading.nutrient, it) },
+        fraction = reading.fraction,
+        overLimit = reading.overLimit,
+    )
 }

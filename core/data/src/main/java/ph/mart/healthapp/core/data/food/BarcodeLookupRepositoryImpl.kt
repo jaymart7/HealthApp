@@ -105,9 +105,7 @@ private fun ScannedProductEntity.toProduct() = ScannedProduct(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 private fun ScannedProduct.toEntity(barcode: String) = ScannedProductEntity(
@@ -119,7 +117,5 @@ private fun ScannedProduct.toEntity(barcode: String) = ScannedProductEntity(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )

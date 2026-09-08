@@ -28,9 +28,7 @@ data class RecipeServing(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    val nutrients: Nutrients = Nutrients(),
 )
 
 fun Recipe.totalKcal(): Int = items.sumOf { it.calories }
@@ -49,8 +47,6 @@ fun Recipe.perServing(): RecipeServing {
         proteinG = (items.sumOf { it.proteinG } / portions).roundToInt(),
         carbsG = (items.sumOf { it.carbsG } / portions).roundToInt(),
         fatG = (items.sumOf { it.fatG } / portions).roundToInt(),
-        fiberG = (items.sumOf { it.fiberG } / portions).roundToInt(),
-        sugarG = (items.sumOf { it.sugarG } / portions).roundToInt(),
-        sodiumMg = (items.sumOf { it.sodiumMg } / portions).roundToInt(),
+        nutrients = items.fold(Nutrients()) { acc, item -> acc + item.nutrients } * (1 / portions),
     )
 }

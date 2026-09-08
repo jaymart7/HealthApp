@@ -156,12 +156,12 @@ internal fun AddEntrySheet(
                 onFatChange = { onFormChange(form.copy(fatG = it)) },
             )
             MicronutrientInputGroup(
-                fiberG = form.fiberG,
-                sugarG = form.sugarG,
-                sodiumMg = form.sodiumMg,
-                onFiberChange = { onFormChange(form.copy(fiberG = it)) },
-                onSugarChange = { onFormChange(form.copy(sugarG = it)) },
-                onSodiumChange = { onFormChange(form.copy(sodiumMg = it)) },
+                fiberG = form.nutrients.fiberG,
+                sugarG = form.nutrients.sugarG,
+                sodiumMg = form.nutrients.sodiumMg,
+                onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it))) },
+                onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it))) },
+                onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it))) },
             )
             // The authoring door, and the whole of it: the form above already holds every field a
             // food has, so keeping one is one more button rather than a second screen. Hidden

@@ -586,30 +586,87 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   against 30 g. The factor applies to the *current* pair rather than a remembered original, so
   there is no seed to carry and a run of stepper taps stays within a unit of the one-shot answer.
   A zero starting portion has no price-per-unit, so the amount moves alone.
-- **Fiber, sugar and sodium are reported, never graded.** They ride every path a macro rides —
-  `FoodEntry`, the favorite, the saved-meal item, the recipe serving, the FDC parse, the AI
-  estimate, the export — but they have no *targets*: Mifflin–St Jeor yields calories and a 30/40/30
-  split, and there is nothing on the profile to derive a fiber goal from, so `DailyTargets` and
-  `ConfirmTargetsScreen` are deliberately untouched. Consequences: `MacroBar` stays three segments
-  (fiber is a subset of carbs — a fourth would double-count the day), the three carry **no semantic
-  colour** because they appear in no bar or chart, `MicronutrientLegend` renders *nothing* when all
-  three are zero rather than a row of zeros against no goal, and `MicronutrientInputGroup` is a
-  sibling of `MacroInputGroup` rather than three more rows inside it — one of that component's
-  callers is onboarding's target screen. `0` means unknown-or-none, the same reading a missing FDC
-  macro already gets. The entry group opens itself only when a value arrives non-zero, so a scanned
-  packet shows its sodium without a tap while a quick add keeps the sheet its current height.
-  They reach Google Health too, as `nutrients` entries beside `PROTEIN` — sodium converted to
-  grams, since that array carries one unit and mg is the app's own.
-- **A meal push that is rejected retries once without the three micronutrients.** Their enum
-  names could not be verified (see the backlog), an unknown one fails the *whole* `nutritionLog`,
+- **~~Fiber, sugar and sodium are reported, never graded.~~ Seven nutrients, all graded.** The old
+  entry's reason was specific and it no longer holds: *"there is nothing on the profile to derive a
+  fiber goal from."* There is. The DRIs are published as a function of **sex and age band**, and the
+  profile has carried both since onboarding — they are two of the six Mifflin–St Jeor inputs — while
+  fiber (14 g/1000 kcal) and free sugars (≤10% of energy) ride the *calorie* target itself, so
+  editing a calorie target moves them exactly as it moves the macro split. `nutrientTargets()` sits
+  beside `calculateDailyTargets()` and is derived, never stored: no new profile column, no new
+  editor, nothing on `ConfirmTargetsScreen`. `DailyTargets` is still untouched — it is the calorie
+  and macro type and a seventh nutrient is not a macro. What survives from the old entry: `MacroBar`
+  stays three segments (fiber is a subset of carbs — a fourth would double-count the day), these
+  nutrients carry **no semantic colour** because they appear in no bar and the three macro colours
+  are spoken for, and `0` still means unknown-or-none. They reach Google Health as `nutrients`
+  entries beside `PROTEIN`, converted to the array's one unit.
+- **The four are the Nutrition Facts panel's four** — vitamin D, calcium, iron, potassium. A closed
+  set chosen because it is the same set three ways: what a package prints, what FDC branded rows
+  carry, and what a user can check against the box in their hand. A twelve-nutrient set was weighed
+  and declined: past the panel four, FDC's coverage falls off and the built-in list would be mostly
+  zeros, so most days would read as a deficiency the app invented.
+- **A nutrient with no figure is absent from the panel, not a zero against its target.** This is the
+  old entry's "renders nothing when all three are zero" rule generalised, and it is now load-bearing
+  rather than tidy: half the built-in foods have no calcium figure, so grading a blank would report
+  a shortfall that is really a gap in the data. `Nutrients.readings()` drops any nutrient at 0, and
+  `NutrientPanel` renders nothing at all when every one of them is.
+- **What is missing is *said*, not inferred — `DiaryTotals.foodCount` and `.foodsWithMicronutrients`.**
+  Dropping empty rows hides the gap; the coverage line names it ("from 3 of 8 foods"), so the graded
+  rows read as a floor rather than a measurement. Fiber, sugar and sodium deliberately do **not**
+  make a food count as covered — the built-in list has filled those for years, and counting them
+  would report a full house for a day with no vitamin figure in it. The line is hidden once every
+  food carried data, because "from 6 of 6" is noise. Progress's card passes no coverage: the
+  averaged-over-N-days line beneath it is already a denominator, and two on one card invite being
+  read against each other.
+- **`Nutrients` is one `@Embedded` value type, and the trio moved into it.** Nine carriers held the
+  same three fields; four more nutrients would have been ~60 repeated lines and a fifth would repeat
+  the cost. `plus`, `div` and `times` on the type are what collapse `dailyTotals()`, `averages()`,
+  `dailySeries()`, `Recipe.perServing()` and both `withPortionAmount()` overloads to a line each.
+  Room's `@Embedded` keeps the **existing column names**, so the three columns did not move and the
+  migration is additive.
+- **Iron and vitamin D are stored in micrograms; calcium, potassium and sodium in milligrams.** The
+  field name carries the unit, as `sodiumMg` always did. Every nutrient figure in this app is an
+  `Int`, and iron at Int milligrams rounds a 0.4 mg food to nothing — over a day's eight entries
+  that compounds into a shortfall the user never had. `formatNutrient` divides for display, and has
+  a test over its wording, which is what earns it the stay-in-Kotlin exemption.
+- **Sugar and sodium grade as limits, everything else as a goal.** `NutrientDirection` is why: only
+  a `StayUnder` nutrient can draw `error`, so passing a calcium goal is never coloured as failure.
+  That is the Earned Red Rule the trend arrows already follow.
+- **`NutrientPanel` takes plain rows, not `Nutrients`.** `:core:designsystem` is a leaf module with
+  no dependency on `:core:data` — the same fact that puts the `Nutrient` labels in `:core:data`'s
+  `strings.xml`. So the arithmetic lives once in `Nutrients.readings()` and each of the two features
+  that draws the panel resolves three strings, the way each already writes its own `MacroLegend`.
+  It expands **in place**, not into a sheet: a disclosure is not a level, so there is no back
+  handler and nothing for predictive back to do.
+- **`MicronutrientInputGroup` was left alone.** The four new nutrients are seeded by a scan or a
+  picked food, repriced with the portion and logged, but there is no stepper for them and no
+  read-only echo in the five sheets that draw that component. Nobody hand-corrects a calcium figure,
+  and the user sees all seven where they are graded. Reopened by: someone actually wanting to edit
+  one.
+- **The AI paths were not widened.** `FoodRecognition`, `MealParse` and `MealIdea` still ask for
+  three nutrients. A model asked what calcium is in a photographed plate will produce a number, and
+  a fabricated micronutrient is the exact thing the coverage count exists to expose.
+- **`ExportFoodEntry` keeps its nutrients flat while `FoodEntry` embeds them.** It is a wire format,
+  not a domain type: `parseExport` accepts any file at or below `EXPORT_SCHEMA_VERSION`, so nesting
+  would have made every v17 file on disk unreadable — including the weekly automatic backups, which
+  is the one path a user reaches for when they have already lost their data. Four defaulted fields,
+  one mapping line each, and `ExportTest` pins a v17 file importing.
+- **A meal push that is rejected retries once without the micronutrients.** All seven enum
+  names are guesses — the four added later are no better pinned than the three that came first —
+  an unknown one fails the *whole* `nutritionLog`,
   and `pushMeals` records no link on failure — so a wrong guess would strand that meal forever,
   re-failing on every later sync. The fallback body is what makes guessing safe, and a value of
   zero is omitted anyway, so a quick add already sends it. Delete the retry when the names are
   pinned, not before.
 - **FDC reports sugar under two ids** — `2000` on branded rows, `1063` on Foundation ones — so
-  `toScannedProduct` tries the branded id first and falls back. Sodium (`1093`) is the one nutrient
-  in the app counted in milligrams, which is why its stepper steps by 50 and its field is a digit
-  wider than the macro fields.
+  `toScannedProduct` tries the branded id first and falls back. Sodium (`1093`) was the app's first
+  milligram figure, which is why its stepper steps by 50 and its field is a digit wider than the
+  macro fields; the panel four join it at `1114` (vitamin D, µg), `1087` (calcium), `1089` (iron,
+  reported in mg and stored in µg) and `1092` (potassium).
+- **The built-in food list was backfilled by hand, and only where the food is a source.** 118 of its
+  123 rows gained at least one figure — oils and sugar gained none, correctly. The `food()` helper
+  takes iron in milligrams and converts, so a reference table's number is typed once as printed
+  rather than multiplied by hand 118 times. Rows with no figure stay at 0, which is what the
+  coverage line is for.
 - **Targets are editable from Profile, and a manual calorie target reprices the split.** The four
   `Profile` overrides used to be reachable only from onboarding's Confirm step, which left a user
   who wanted a different target with no path but a reinstall — Goals is now an editable card, like

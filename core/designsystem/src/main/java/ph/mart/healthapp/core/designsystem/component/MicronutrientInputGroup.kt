@@ -36,11 +36,16 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 /**
  * Fiber, sugar and sodium, behind a "More nutrients" disclosure — the sibling of [MacroInputGroup],
  * deliberately *not* three more rows inside it. One of that component's callers is onboarding's
- * target screen, where a micronutrient has nothing to mean.
+ * target screen, where a nutrient has nothing to mean.
+ *
+ * **These three, and only these three.** An entry also carries vitamin D, calcium, iron and
+ * potassium now, but they are seeded by a scan or a picked food, repriced with the portion and
+ * never typed — nobody hand-corrects a calcium figure — so there is no stepper for them here. All
+ * seven are shown where they are graded, in `NutrientPanel`.
  *
  * These three carry **no colour**. Protein = `primary`, carbs = `tertiary`, fat = `secondary` are
- * fixed everywhere in the app because those three share a bar; fiber, sugar and sodium appear in no
- * bar and no chart, so borrowing a dot would claim a relationship that isn't there.
+ * fixed everywhere in the app because those three share a bar; nothing in this group appears in
+ * that bar, so borrowing a dot would claim a relationship that isn't there.
  *
  * The section opens itself when a value arrives non-zero, so a scanned or AI-estimated food shows
  * its sodium without a tap, while a hand-typed quick add keeps the sheet the height it is today.

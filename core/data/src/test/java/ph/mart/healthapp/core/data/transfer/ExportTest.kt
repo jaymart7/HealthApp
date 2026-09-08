@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.Goal
@@ -68,9 +69,7 @@ class ExportTest {
             proteinG = 11,
             carbsG = 54,
             fatG = 6,
-            fiberG = 8,
-            sugarG = 3,
-            sodiumMg = 210,
+            nutrients = Nutrients(fiberG = 8, sugarG = 3, sodiumMg = 210),
         ),
     )
 
@@ -226,9 +225,51 @@ class ExportTest {
         val entry = parseExport(v6).getOrThrow().foodEntries.single()
 
         assertEquals(310, entry.calories)
-        assertEquals(0, entry.fiberG)
-        assertEquals(0, entry.sugarG)
-        assertEquals(0, entry.sodiumMg)
+        assertEquals(0, entry.nutrients.fiberG)
+        assertEquals(0, entry.nutrients.sugarG)
+        assertEquals(0, entry.nutrients.sodiumMg)
+    }
+
+    /**
+     * The reason `ExportFoodEntry` keeps its nutrients **flat** while `FoodEntry` embeds them: a
+     * v17 file is what every device and every weekly automatic backup already holds, and it writes
+     * the three nutrients as top-level fields. Nesting them in the DTO would have made every one of
+     * those files unreadable, silently, on the one path a user reaches for when they have lost
+     * their data.
+     */
+    @Test
+    fun `a v17 file keeps its three nutrients and defaults the four new ones`() {
+        val v17 = """
+            {
+              "schemaVersion": 17,
+              "foodEntries": [{
+                "dateEpochDay": 20000, "name": "Oatmeal", "mealType": "Breakfast",
+                "portionAmount": 1.5, "portionUnit": "cup",
+                "calories": 310, "proteinG": 11, "carbsG": 54, "fatG": 6,
+                "fiberG": 8, "sugarG": 3, "sodiumMg": 210
+              }]
+            }
+        """.trimIndent()
+
+        val entry = parseExport(v17).getOrThrow().foodEntries.single()
+
+        assertEquals(8, entry.nutrients.fiberG)
+        assertEquals(3, entry.nutrients.sugarG)
+        assertEquals(210, entry.nutrients.sodiumMg)
+        assertEquals(0, entry.nutrients.calciumMg)
+        assertEquals(0, entry.nutrients.ironUg)
+    }
+
+    @Test
+    fun `the four new nutrients survive the round trip`() {
+        val packet = foodEntries.first().copy(
+            nutrients = Nutrients(vitaminDUg = 3, calciumMg = 240, ironUg = 4200, potassiumMg = 610),
+        )
+        val json = buildExportJson(profile, listOf(packet), weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+
+        val entry = parseExport(json).getOrThrow().foodEntries.single()
+
+        assertEquals(Nutrients(vitaminDUg = 3, calciumMg = 240, ironUg = 4200, potassiumMg = 610), entry.nutrients)
     }
 
     /** The one place an id crosses the file boundary: a supplement day names its supplement by id,

@@ -75,6 +75,11 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Day picked by stepping a day at a time or from a calendar — a bottom sheet on a phone, and at
   ≥840dp a permanent pane beside the day, where the date header stops being a door onto it.
 - Add-entry sheet: name, calories, protein/carbs/fat, fiber/sugar/sodium, portion + unit.
+- Seven nutrients per entry — fiber, sugar, sodium plus the Nutrition Facts panel's four (vitamin
+  D, calcium, iron, potassium). The four are filled by a barcode scan or a picked food, never typed;
+  all seven reprice with the portion. The day's summary bar carries them as one quiet line that
+  opens into rows graded against a target, with sodium and sugar as limits rather than goals, and a
+  line naming how many of the day's foods actually carried figures.
 - Quick add — a bare calorie figure with no name.
 - Every numeric field is typable and steppable; changing a portion reprices the whole entry.
 - Edit a logged row (supersedes it: soft-delete + insert, keeps its place in the day) — a row
@@ -140,7 +145,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   remembered per subject for the session. Empty subjects get a mascot page and no call to action.
 - Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, and an insight card carrying the projection and the energy check-in.
-- Food: calories + macros against target over the window, then the meal-photo strip — the newest
+- Food: calories + macros against target over the window, the seven nutrients averaged against
+  their targets, then the meal-photo strip — the newest
   twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.
 - Activity: two charts — daily steps (imported) and daily burn.
 - Strength: volume chart, all-time personal records ranked by estimated 1RM (Epley).
@@ -186,6 +192,9 @@ plus target weight and the add-exercise-calories switch. **Reminders** (from Set
 eight switches in three groups with the permission banner. All three new routes are Profile detail
 panes at ≥840dp.
 
+- Nutrient targets derived from sex, age and the calorie target (DRI/AI values; fiber at
+  14 g/1000 kcal and free sugars at 10% of energy, so both move with an edited calorie target).
+  Nothing to set — there is no nutrient editor.
 - Editable calorie and macro targets with "Reset to calculated" — which also undoes a target
   applied from the energy check-in; a manual calorie target reprices the split.
 - Metric/imperial toggles; water glass size and daily goal; fasting goal hours; step goal.
@@ -195,7 +204,7 @@ panes at ≥840dp.
 - Supplements: name, dose label, times per day; edit and delete.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything).
-- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 17, import is all-or-nothing.
+- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 18, import is all-or-nothing.
 - Automatic local backup — the same JSON, written weekly to app-private storage, newest three
   kept. Listed under Data with a confirm-first restore that runs the ordinary import. Android
   Auto Backup covers the database and those files; progress photos are excluded from the cloud
@@ -240,7 +249,7 @@ with nothing logged in it.
 AIChip · AppBottomSheet · AppCard · AppTextField · AppTopBar · BadgeDot · BottomNavBar · Buttons ·
 CalendarPanel · DateFormat · DiscardConfirmDialog · DockedFab · FoodItemRow · FullScreenState ·
 GoalProjectionLine · HealthDisclosurePanel · HomeCardLayout · MacroBar · MacroInputGroup ·
-MascotAvatar · MascotSpeechBubble · MealThumbnail · MicronutrientInputGroup · MicronutrientLegend ·
+MascotAvatar · MascotSpeechBubble · MealThumbnail · MicronutrientInputGroup · NutrientPanel ·
 PhotoBitmap (`rememberBitmapFromFile`, every stored photo in the app decodes through it) ·
 NumericStepperField · SegmentedToggle · SelectableCard · SheetDatePicker · StepProgressBar ·
 WaterGlassRow.
@@ -266,6 +275,12 @@ each one is argued in `CLAUDE.md`.
 - **A streak celebration toast.** The badge lighting up is the reward.
 - **Mood, sleep, fasting, supplements, steps and cycle are not streak domains.** The streak is
   food, water, weigh-in, exercise — adding a fifth rewrites what past runs meant.
+- **Micronutrients beyond the Nutrition Facts four.** Vitamins A, C, E, K, B12, folate, magnesium
+  and zinc were weighed: FDC carries them inconsistently and the built-in food list would be mostly
+  zeros, so most days would read as a deficiency the app invented.
+- **AI-estimated micronutrients.** The photo, voice and meal-idea schemas ask for three nutrients
+  and will not be widened — a model asked what calcium is in a photographed plate produces a number.
+- **A stepper for vitamin D, calcium, iron or potassium.** They are seeded and repriced, never typed.
 - **A fertile window or ovulation date.** FitPulse names things and reports numbers; a fertile
   window derived from a mean cycle length is a contraception claim it cannot stand behind.
 - **Cycle data in any AI payload, the widget, the watch or the recap.** It stays on the phone.

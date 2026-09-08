@@ -34,9 +34,14 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.food.DiaryTotals
+import ph.mart.healthapp.core.data.food.NutrientReading
+import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.data.food.formatNutrient
+import ph.mart.healthapp.core.data.food.readings
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.Macros
-import ph.mart.healthapp.core.designsystem.component.MicronutrientLegend
+import ph.mart.healthapp.core.designsystem.component.NutrientPanel
+import ph.mart.healthapp.core.designsystem.component.NutrientRow
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
@@ -73,6 +78,7 @@ fun DiarySummaryBar(
     carbsGoalG: Int,
     fatGoalG: Int,
     modifier: Modifier = Modifier,
+    nutrientTargets: Nutrients? = null,
     collapsed: Boolean = false,
     burnedKcal: Int = 0,
     exerciseCredited: Boolean = false,
@@ -96,6 +102,7 @@ fun DiarySummaryBar(
                 proteinGoalG = proteinGoalG,
                 carbsGoalG = carbsGoalG,
                 fatGoalG = fatGoalG,
+                nutrientTargets = nutrientTargets,
                 burnedKcal = burnedKcal,
                 exerciseCredited = exerciseCredited,
             )
@@ -112,6 +119,7 @@ private fun FullSummary(
     proteinGoalG: Int,
     carbsGoalG: Int,
     fatGoalG: Int,
+    nutrientTargets: Nutrients?,
     burnedKcal: Int,
     exerciseCredited: Boolean,
 ) {
@@ -149,10 +157,9 @@ private fun FullSummary(
 
             // Silent on a day nothing was logged for, and on one logged entirely by quick add —
             // which is why it sits outside the legend Row rather than as a fourth item inside it.
-            MicronutrientLegend(
-                fiberG = consumed.fiberG,
-                sugarG = consumed.sugarG,
-                sodiumMg = consumed.sodiumMg,
+            NutrientPanel(
+                rows = consumed.nutrients.readings(nutrientTargets).toRows(),
+                coverage = coverageLine(consumed),
             )
 
             // The consumed line above already reads against goal + burn, which silently grew the
@@ -324,14 +331,31 @@ private fun DiarySummaryBarPreview() {
                     proteinG = 62,
                     carbsG = 88,
                     fatG = 31,
-                    fiberG = 12,
-                    sugarG = 40,
-                    sodiumMg = 1240,
+                    nutrients = Nutrients(
+                        fiberG = 12,
+                        sugarG = 40,
+                        sodiumMg = 1240,
+                        vitaminDUg = 4,
+                        calciumMg = 420,
+                        ironUg = 6200,
+                        potassiumMg = 1480,
+                    ),
+                    foodCount = 5,
+                    foodsWithMicronutrients = 3,
                 ),
                 goalKcal = 1941,
                 proteinGoalG = 146,
                 carbsGoalG = 194,
                 fatGoalG = 65,
+                nutrientTargets = Nutrients(
+                    fiberG = 27,
+                    sugarG = 49,
+                    sodiumMg = 2300,
+                    vitaminDUg = 15,
+                    calciumMg = 1000,
+                    ironUg = 18_000,
+                    potassiumMg = 3400,
+                ),
                 modifier = Modifier.padding(16.dp),
             )
         }
@@ -412,4 +436,36 @@ private fun DiarySummaryBarCollapsedPreview() {
             )
         }
     }
+}
+
+/**
+ * A [NutrientReading] is arithmetic; this is the three strings a row needs. Resolved here rather
+ * than in `:core:designsystem`, which is a leaf module and cannot see the `Nutrient` enum — the
+ * same reason `MacroLegend` is written out in both this file and Progress's average card.
+ */
+@Composable
+private fun List<NutrientReading>.toRows(): List<NutrientRow> = map { reading ->
+    NutrientRow(
+        label = stringResource(reading.nutrient.labelRes),
+        value = formatNutrient(reading.nutrient, reading.value),
+        target = reading.target?.let { formatNutrient(reading.nutrient, it) },
+        fraction = reading.fraction,
+        overLimit = reading.overLimit,
+    )
+}
+
+/**
+ * What the graded rows are standing on. `0` means unknown-or-none in every nutrient field, so a day
+ * showing 240 mg of calcium might be a low-calcium day or four foods the built-in list has no
+ * figure for. Null once every logged food carried figures — there is nothing to explain then, and
+ * a line saying "from 6 of 6" is noise.
+ */
+@Composable
+private fun coverageLine(consumed: DiaryTotals): String? {
+    if (consumed.foodCount == 0 || consumed.foodsWithMicronutrients >= consumed.foodCount) return null
+    return stringResource(
+        R.string.food_nutrient_coverage,
+        consumed.foodsWithMicronutrients,
+        consumed.foodCount,
+    )
 }

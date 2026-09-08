@@ -42,8 +42,9 @@
     <string name="ds_nutrient_sodium">Sodium</string>
     <string name="ds_nutrient_in_grams">%1$s in grams</string>
     <string name="ds_nutrient_in_milligrams">%1$s in milligrams</string>
-    <string name="ds_nutrient_legend">Fiber %1$dg · Sugar %2$dg · Sodium %3$smg</string>
-    <string name="ds_nutrient_legend_spoken">Fiber %1$d grams, sugar %2$d grams, sodium %3$d milligrams</string>
+    <!-- NutrientPanel speaks each row; the visible row uses "/" and needs no words. -->
+    <string name="ds_nutrient_reading">%1$s %2$s</string>
+    <string name="ds_nutrient_reading_of">%1$s %2$s of %3$s</string>
 
     <!-- Food item row -->
     <string name="ds_food_calories_value">%1$d kcal</string>

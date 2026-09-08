@@ -26,6 +26,7 @@ import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.data.profile.nutrientTargets
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.streak.weightProgressKg
@@ -93,6 +94,7 @@ class ProgressViewModel(
                 dailyNutrition = dailyNutrition,
                 // Computed live off the profile, same as every other place targets are shown.
                 targets = profile?.dailyTargets(),
+                nutrientTargets = profile?.let { nutrientTargets(it, it.dailyTargets()) },
                 fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
                 stepGoal = profile?.stepGoal ?: DEFAULT_STEP_GOAL,
                 // null means never asked, which is off — the reading `Profile.cycleTrackingOn` gives.

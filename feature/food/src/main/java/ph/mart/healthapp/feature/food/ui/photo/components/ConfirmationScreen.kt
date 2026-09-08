@@ -110,12 +110,12 @@ internal fun ConfirmationScreen(
                     onFatChange = { onFormChange(form.copy(fatG = it)) },
                 )
                 MicronutrientInputGroup(
-                    fiberG = form.fiberG,
-                    sugarG = form.sugarG,
-                    sodiumMg = form.sodiumMg,
-                    onFiberChange = { onFormChange(form.copy(fiberG = it)) },
-                    onSugarChange = { onFormChange(form.copy(sugarG = it)) },
-                    onSodiumChange = { onFormChange(form.copy(sodiumMg = it)) },
+                    fiberG = form.nutrients.fiberG,
+                    sugarG = form.nutrients.sugarG,
+                    sodiumMg = form.nutrients.sodiumMg,
+                    onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it))) },
+                    onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it))) },
+                    onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it))) },
                 )
             }
 

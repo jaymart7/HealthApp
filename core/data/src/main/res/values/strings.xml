@@ -2,7 +2,7 @@
     <!--
       Display labels for the enums in this module that a feature renders directly. `:core:data`
       owns them because `:core:designsystem` has no dependency on this module, so the alternative
-      was the same six lists copied into every feature that shows a chip or a pill.
+      was the same seven lists copied into every feature that shows a chip or a pill.
 
       Every enum's `name` is untouched — that is what the export, the profile columns and the
       Room rows carry. Only the label moved.
@@ -55,6 +55,16 @@
     <string name="data_cycle_symptom_nausea">Nausea</string>
     <string name="data_cycle_symptom_back_pain">Back pain</string>
     <string name="data_cycle_symptom_cravings">Cravings</string>
+
+    <!-- Nutrient — the seven graded nutrients. Iron and vitamin D are stored in micrograms; the
+         unit symbols beside them are not copy and stay in Kotlin. -->
+    <string name="data_nutrient_fiber">Fiber</string>
+    <string name="data_nutrient_sugar">Sugar</string>
+    <string name="data_nutrient_sodium">Sodium</string>
+    <string name="data_nutrient_vitamin_d">Vitamin D</string>
+    <string name="data_nutrient_calcium">Calcium</string>
+    <string name="data_nutrient_iron">Iron</string>
+    <string name="data_nutrient_potassium">Potassium</string>
 
     <!-- Shown by three screens wherever a manual calorie target drops under the Mifflin-St Jeor
          floor. One copy, because a safety warning that drifts between them is worse than the

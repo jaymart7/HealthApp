@@ -40,6 +40,11 @@ private const val BASE = "https://health.googleapis.com/v4/users/me/dataTypes"
 
 private const val TIMEOUT_MS = 15_000
 
+/** `nutritionLog`'s `nutrients` array carries one unit — grams — so the app's milligram and
+ * microgram figures convert on the way out. */
+private const val MG_PER_G = 1000.0
+private const val UG_PER_G = 1_000_000.0
+
 /** `pageSize` caps at 25 for exercise and sleep, 10000 elsewhere. */
 internal const val SESSION_PAGE_SIZE = 25
 
@@ -165,11 +170,16 @@ internal fun nutritionLogBody(
                     // Zero means unknown-or-none everywhere else in the app, so it is omitted
                     // rather than asserted — and every field left out is one fewer that can be
                     // rejected.
-                    if (entry.fiberG > 0) nutrient("DIETARY_FIBER", entry.fiberG)
-                    if (entry.sugarG > 0) nutrient("TOTAL_SUGARS", entry.sugarG)
-                    // Sodium is the app's one milligram figure; the array's quantity carries
-                    // grams, so it converts rather than inventing a `milligrams` field.
-                    if (entry.sodiumMg > 0) nutrient("SODIUM", entry.sodiumMg / 1000.0)
+                    val n = entry.nutrients
+                    if (n.fiberG > 0) nutrient("DIETARY_FIBER", n.fiberG)
+                    if (n.sugarG > 0) nutrient("TOTAL_SUGARS", n.sugarG)
+                    // The array's quantity carries grams, so every figure the app stores in
+                    // milligrams or micrograms converts rather than inventing a unit field.
+                    if (n.sodiumMg > 0) nutrient("SODIUM", n.sodiumMg / MG_PER_G)
+                    if (n.calciumMg > 0) nutrient("CALCIUM", n.calciumMg / MG_PER_G)
+                    if (n.potassiumMg > 0) nutrient("POTASSIUM", n.potassiumMg / MG_PER_G)
+                    if (n.vitaminDUg > 0) nutrient("VITAMIN_D", n.vitaminDUg / UG_PER_G)
+                    if (n.ironUg > 0) nutrient("IRON", n.ironUg / UG_PER_G)
                 }
             }
             putJsonObject("serving") { put("amount", entry.portionAmount) }

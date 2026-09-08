@@ -18,9 +18,7 @@ data class FoodEntry(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    val nutrients: Nutrients = Nutrients(),
     /** The plate, on disk. Set by [FoodRepository.addEntry] when the camera flow hands it a
      * bitmap, carried through an edit, and never written by any other logging path. */
     val photoPath: String? = null,
@@ -37,9 +35,7 @@ data class FoodSuggestion(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    val nutrients: Nutrients = Nutrients(),
     val isFavorite: Boolean,
 )
 
@@ -65,14 +61,20 @@ const val MAX_SUGGESTIONS = 5
 // `FoodEntryDao.observeRecent` excludes by. A resource would change what a device already holds.
 const val QUICK_ADD_NAME = "Quick add"
 
+/**
+ * [foodCount] and [foodsWithMicronutrients] are what keep the graded nutrient panel honest. `0`
+ * means unknown-or-none in every nutrient field in this app, so a day totalling 2 mg of iron might
+ * be a genuinely iron-poor day or six foods the built-in list has no figure for. The panel says
+ * which by naming how many of the day's foods carried data — see [Nutrients.hasMicronutrients].
+ */
 data class DiaryTotals(
     val calories: Int,
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    val nutrients: Nutrients = Nutrients(),
+    val foodCount: Int = 0,
+    val foodsWithMicronutrients: Int = 0,
 )
 
 /** Diary aggregation is a pure fold over the (small, single-day) entry list — not a stored
@@ -83,9 +85,10 @@ fun List<FoodEntry>.dailyTotals(): DiaryTotals = fold(DiaryTotals(0, 0, 0, 0)) {
         proteinG = acc.proteinG + entry.proteinG,
         carbsG = acc.carbsG + entry.carbsG,
         fatG = acc.fatG + entry.fatG,
-        fiberG = acc.fiberG + entry.fiberG,
-        sugarG = acc.sugarG + entry.sugarG,
-        sodiumMg = acc.sodiumMg + entry.sodiumMg,
+        nutrients = acc.nutrients + entry.nutrients,
+        foodCount = acc.foodCount + 1,
+        foodsWithMicronutrients = acc.foodsWithMicronutrients +
+            if (entry.nutrients.hasMicronutrients) 1 else 0,
     )
 }
 

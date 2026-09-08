@@ -48,9 +48,7 @@ data class MealIdea(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    val nutrients: Nutrients = Nutrients(),
 )
 
 /** No error *type*, for [CoachReply][ph.mart.healthapp.core.data.coach.CoachReply]'s reason:
@@ -131,9 +129,7 @@ private fun FoodSuggestion.toMealIdea() = MealIdea(
     proteinG = proteinG,
     carbsG = carbsG,
     fatG = fatG,
-    fiberG = fiberG,
-    sugarG = sugarG,
-    sodiumMg = sodiumMg,
+    nutrients = nutrients,
 )
 
 /** One serving, priced by the recipe's own [perServing] — the same figure
@@ -149,8 +145,6 @@ private fun Recipe.toMealIdea(): MealIdea {
         proteinG = serving.proteinG,
         carbsG = serving.carbsG,
         fatG = serving.fatG,
-        fiberG = serving.fiberG,
-        sugarG = serving.sugarG,
-        sodiumMg = serving.sodiumMg,
+        nutrients = serving.nutrients,
     )
 }

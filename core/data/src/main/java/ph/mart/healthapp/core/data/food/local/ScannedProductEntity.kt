@@ -1,7 +1,9 @@
 package ph.mart.healthapp.core.data.food.local
 
+import androidx.room3.Embedded
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import ph.mart.healthapp.core.data.food.Nutrients
 
 /**
  * A product FoodData Central has already resolved for a scanned barcode, kept so the second scan of
@@ -27,7 +29,5 @@ internal data class ScannedProductEntity(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    @Embedded val nutrients: Nutrients = Nutrients(),
 )

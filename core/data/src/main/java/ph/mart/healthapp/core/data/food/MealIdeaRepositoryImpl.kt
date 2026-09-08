@@ -78,9 +78,15 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
                 proteinG = body.optInt("proteinG"),
                 carbsG = body.optInt("carbsG"),
                 fatG = body.optInt("fatG"),
-                fiberG = body.optInt("fiberG"),
-                sugarG = body.optInt("sugarG"),
-                sodiumMg = body.optInt("sodiumMg"),
+                // Only the three the model is asked for. Vitamin D, calcium, iron and potassium
+                // are deliberately absent from the schema: a model asked to estimate the calcium
+                // in a photographed plate will produce a number, and a fabricated micronutrient is
+                // exactly what the coverage count exists to expose.
+                nutrients = Nutrients(
+                    fiberG = body.optInt("fiberG"),
+                    sugarG = body.optInt("sugarG"),
+                    sodiumMg = body.optInt("sodiumMg"),
+                ),
             )
         }
     }

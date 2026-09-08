@@ -44,9 +44,9 @@ class BarcodeLookupTest {
 
         val product = (parseFdcProduct(body, "028400642255") as BarcodeLookupResult.Found).product
 
-        assertEquals(5, product.fiberG)
-        assertEquals(4, product.sugarG)
-        assertEquals(1071, product.sodiumMg)
+        assertEquals(5, product.nutrients.fiberG)
+        assertEquals(4, product.nutrients.sugarG)
+        assertEquals(1071, product.nutrients.sodiumMg)
     }
 
     @Test
@@ -58,7 +58,7 @@ class BarcodeLookupTest {
 
         val product = (parseFdcProduct(body, "028400642255") as BarcodeLookupResult.Found).product
 
-        assertEquals(2, product.sugarG)
+        assertEquals(2, product.nutrients.sugarG)
     }
 
     @Test
@@ -71,9 +71,9 @@ class BarcodeLookupTest {
         val product = (parseFdcProduct(body, "028400642255") as BarcodeLookupResult.Found).product
 
         assertEquals(210, product.calories)
-        assertEquals(0, product.fiberG)
-        assertEquals(0, product.sugarG)
-        assertEquals(0, product.sodiumMg)
+        assertEquals(0, product.nutrients.fiberG)
+        assertEquals(0, product.nutrients.sugarG)
+        assertEquals(0, product.nutrients.sodiumMg)
     }
 
     @Test

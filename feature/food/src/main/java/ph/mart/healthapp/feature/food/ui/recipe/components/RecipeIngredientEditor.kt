@@ -53,9 +53,7 @@ internal fun RecipeIngredientEditor(
                         proteinG = product.proteinG,
                         carbsG = product.carbsG,
                         fatG = product.fatG,
-                        fiberG = product.fiberG,
-                        sugarG = product.sugarG,
-                        sodiumMg = product.sodiumMg,
+                        nutrients = product.nutrients,
                     ),
                 )
             },
@@ -83,12 +81,12 @@ internal fun RecipeIngredientEditor(
             onFatChange = { onDraftChange(draft.copy(fatG = it)) },
         )
         MicronutrientInputGroup(
-            fiberG = draft.fiberG,
-            sugarG = draft.sugarG,
-            sodiumMg = draft.sodiumMg,
-            onFiberChange = { onDraftChange(draft.copy(fiberG = it)) },
-            onSugarChange = { onDraftChange(draft.copy(sugarG = it)) },
-            onSodiumChange = { onDraftChange(draft.copy(sodiumMg = it)) },
+            fiberG = draft.nutrients.fiberG,
+            sugarG = draft.nutrients.sugarG,
+            sodiumMg = draft.nutrients.sodiumMg,
+            onFiberChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(fiberG = it))) },
+            onSugarChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(sugarG = it))) },
+            onSodiumChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(sodiumMg = it))) },
         )
         SecondaryButton(
             label = stringResource(R.string.food_recipe_add_ingredient),

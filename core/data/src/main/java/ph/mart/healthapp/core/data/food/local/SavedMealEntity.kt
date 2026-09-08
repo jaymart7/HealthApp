@@ -1,7 +1,9 @@
 package ph.mart.healthapp.core.data.food.local
 
+import androidx.room3.Embedded
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
+import ph.mart.healthapp.core.data.food.Nutrients
 
 /**
  * Parent row of a saved meal *or* a recipe — [servings] is the discriminator: null means a saved
@@ -38,7 +40,5 @@ internal data class SavedMealItemEntity(
     val proteinG: Int,
     val carbsG: Int,
     val fatG: Int,
-    val fiberG: Int = 0,
-    val sugarG: Int = 0,
-    val sodiumMg: Int = 0,
+    @Embedded val nutrients: Nutrients = Nutrients(),
 )

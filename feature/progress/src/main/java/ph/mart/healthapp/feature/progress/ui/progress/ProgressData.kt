@@ -12,6 +12,7 @@ import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -85,4 +86,7 @@ data class ProgressUiState(
      * streak card can't report different journeys. */
     val weightProgressKg: Double? = null,
     val targets: DailyTargets? = null,
+    /** The seven nutrient targets, off the same profile — null with no profile, which leaves the
+     * Nutrition card's nutrient rows ungraded. */
+    val nutrientTargets: Nutrients? = null,
 )

@@ -47,8 +47,18 @@ private const val NUTRIENT_FIBER = 1079
 private const val NUTRIENT_SUGAR = 2000
 private const val NUTRIENT_SUGAR_NLEA = 1063
 
-/** FDC already reports sodium in milligrams — the one nutrient here that isn't grams. */
+/** FDC reports sodium, calcium and potassium in milligrams. */
 private const val NUTRIENT_SODIUM = 1093
+private const val NUTRIENT_CALCIUM = 1087
+private const val NUTRIENT_POTASSIUM = 1092
+
+/** Vitamin D (D2 + D3) is reported in micrograms, which is also how [Nutrients] stores it. */
+private const val NUTRIENT_VITAMIN_D = 1114
+
+/** Iron comes back in milligrams and is stored in micrograms — a branded row routinely reports
+ * a fraction of a milligram, and rounding that to an Int mg would throw it away. */
+private const val NUTRIENT_IRON = 1089
+private const val UG_PER_MG = 1000
 
 internal sealed interface FdcResponse {
     data class Ok(val body: String) : FdcResponse
@@ -105,10 +115,10 @@ internal val fdcJson = Json { ignoreUnknownKeys = true }
 internal fun JsonObject.toScannedProduct(): ScannedProduct? {
     val name = displayName() ?: return null
 
-    val nutrients = this["foodNutrients"] as? JsonArray
+    val reported = this["foodNutrients"] as? JsonArray
     // Most entries carry kcal directly; the ones that only report kJ still have usable macros.
-    val kcal = nutrients.nutrient(NUTRIENT_KCAL)
-        ?: nutrients.nutrient(NUTRIENT_KJ)?.div(KJ_PER_KCAL)
+    val kcal = reported.nutrient(NUTRIENT_KCAL)
+        ?: reported.nutrient(NUTRIENT_KJ)?.div(KJ_PER_KCAL)
         ?: 0.0
 
     return ScannedProduct(
@@ -116,13 +126,19 @@ internal fun JsonObject.toScannedProduct(): ScannedProduct? {
         portionAmount = PORTION_G,
         portionUnit = "g",
         calories = kcal.roundToInt(),
-        proteinG = nutrients.nutrient(NUTRIENT_PROTEIN)?.roundToInt() ?: 0,
-        carbsG = nutrients.nutrient(NUTRIENT_CARBS)?.roundToInt() ?: 0,
-        fatG = nutrients.nutrient(NUTRIENT_FAT)?.roundToInt() ?: 0,
-        fiberG = nutrients.nutrient(NUTRIENT_FIBER)?.roundToInt() ?: 0,
-        sugarG = (nutrients.nutrient(NUTRIENT_SUGAR) ?: nutrients.nutrient(NUTRIENT_SUGAR_NLEA))
-            ?.roundToInt() ?: 0,
-        sodiumMg = nutrients.nutrient(NUTRIENT_SODIUM)?.roundToInt() ?: 0,
+        proteinG = reported.nutrient(NUTRIENT_PROTEIN)?.roundToInt() ?: 0,
+        carbsG = reported.nutrient(NUTRIENT_CARBS)?.roundToInt() ?: 0,
+        fatG = reported.nutrient(NUTRIENT_FAT)?.roundToInt() ?: 0,
+        nutrients = Nutrients(
+            fiberG = reported.nutrient(NUTRIENT_FIBER)?.roundToInt() ?: 0,
+            sugarG = (reported.nutrient(NUTRIENT_SUGAR) ?: reported.nutrient(NUTRIENT_SUGAR_NLEA))
+                ?.roundToInt() ?: 0,
+            sodiumMg = reported.nutrient(NUTRIENT_SODIUM)?.roundToInt() ?: 0,
+            vitaminDUg = reported.nutrient(NUTRIENT_VITAMIN_D)?.roundToInt() ?: 0,
+            calciumMg = reported.nutrient(NUTRIENT_CALCIUM)?.roundToInt() ?: 0,
+            ironUg = reported.nutrient(NUTRIENT_IRON)?.times(UG_PER_MG)?.roundToInt() ?: 0,
+            potassiumMg = reported.nutrient(NUTRIENT_POTASSIUM)?.roundToInt() ?: 0,
+        ),
     )
 }
 
