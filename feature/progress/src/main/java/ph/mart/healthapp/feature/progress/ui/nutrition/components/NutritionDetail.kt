@@ -70,6 +70,9 @@ internal fun ColumnScope.NutritionDetailBody(uiState: ProgressUiState, state: Pr
         NutritionTrendChart(days = days, targetCalories = target)
     }
     NutritionAverageCard(averages = averages, targets = uiState.targets)
+    // Last, and unranged: the plates are the newest ones kept, not a slice of the toggle above —
+    // a photo history that thinned out when someone picked "1M" would be lying about what it has.
+    MealPhotoStrip(photos = uiState.mealPhotos, onOpen = state::openMealGallery)
 }
 
 @PreviewLightDark

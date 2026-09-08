@@ -55,8 +55,8 @@ import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
-import ph.mart.healthapp.feature.progress.ui.photo.components.GRID_TILE_PX
-import ph.mart.healthapp.feature.progress.ui.photo.components.rememberBitmapFromFile
+import ph.mart.healthapp.core.designsystem.component.GRID_TILE_PX
+import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.feature.progress.ui.photo.components.sampleFrames
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Recap

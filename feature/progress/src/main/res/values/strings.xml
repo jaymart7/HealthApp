@@ -259,6 +259,11 @@
     <string name="progress_photos_timelapse">Play timelapse</string>
     <string name="progress_photo_generic">Progress photo</string>
     <string name="progress_photo_from">Progress photo from %1$s</string>
+    <string name="progress_meal_photos">Meal photos</string>
+    <string name="progress_meal_photos_all">See all</string>
+    <string name="progress_meal_photo_kcal">%1$d kcal</string>
+    <string name="progress_meal_photo_spoken">%1$s, %2$d kilocalories</string>
+    <string name="progress_meal_photo_caption">%1$s · %2$d kcal</string>
     <string name="progress_timelapse_title">Timelapse</string>
     <string name="progress_timelapse_play">Play</string>
     <string name="progress_timelapse_pause">Pause</string>

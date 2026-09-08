@@ -353,8 +353,10 @@ what stop the next pass undoing it.
   only `OnboardingScreen` is public, because `AppRoot` renders it directly (onboarding has
   no `*Navigation.kt` — it is not in the Nav3 graph).
 - **Shared vs. screen-specific placement is not optional.** Used in ≥2 screens
-  (`FoodItemRow`, `AIChip`, `MascotAvatar`, `WaterGlassRow`, `CalendarPanel`) →
-  `:core:designsystem`, never duplicated into a feature. One screen only → that
+  (`FoodItemRow`, `AIChip`, `MascotAvatar`, `WaterGlassRow`, `CalendarPanel`, `MealThumbnail`) →
+  `:core:designsystem`, never duplicated into a feature. `rememberBitmapFromFile` is there for the
+  same reason and is the app's **one** decoder for a stored photo file — a second one is a second
+  downsampling rule to keep in step. One screen only → that
   screen's own `components/`. `ui/shared/` is for the middle case: crossing flows
   inside one feature, but not crossing features.
 - **Every screen and component composable gets a `@PreviewLightDark`** (not two

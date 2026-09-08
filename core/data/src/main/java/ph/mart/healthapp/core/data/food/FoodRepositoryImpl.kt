@@ -1,8 +1,15 @@
 package ph.mart.healthapp.core.data.food
 
+import android.content.Context
+import android.graphics.Bitmap
+import java.io.File
+import java.io.FileOutputStream
+import java.util.UUID
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodDao
 import ph.mart.healthapp.core.data.food.local.FavoriteFoodEntity
 import ph.mart.healthapp.core.data.food.local.FoodEntryDao
@@ -21,7 +28,16 @@ private const val RECENT_LIMIT = MAX_SUGGESTIONS * 2
  * both windows go through the same DAO method and can't diverge in filter or order. */
 private const val NO_LIMIT = Int.MAX_VALUE
 
+/** Where a kept plate lives. Beside `progress_photos/`, and excluded from the cloud backup for the
+ * same reason it is — see `backup_rules.xml`. */
+private const val PHOTO_DIR = "meal_photos"
+
+/** JPEG quality for a stored plate. Below the progress photos' 90 because these are thumbnails and
+ * a gallery frame, never a before/after comparison anyone studies. */
+private const val PHOTO_QUALITY = 85
+
 internal class FoodRepositoryImpl(
+    private val context: Context,
     private val dao: FoodEntryDao,
     private val favoriteDao: FavoriteFoodDao,
     private val savedMealDao: SavedMealDao,
@@ -32,11 +48,17 @@ internal class FoodRepositoryImpl(
     override fun observeEntries(dateEpochDay: Long): Flow<List<FoodEntry>> =
         dao.observeForDate(dateEpochDay).map { entities -> entities.map { it.toFoodEntry() } }
 
-    override suspend fun addEntry(entry: FoodEntry) {
+    override suspend fun addEntry(entry: FoodEntry, photo: Bitmap?) {
         // A dated entry arrives from an import, or from the diary pointed at a past day; anything
         // logged without one is "today".
         val date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()
-        dao.insert(entry.toEntity(date = date, loggedAt = System.currentTimeMillis()))
+        val path = photo?.let { writePhoto(it) }
+        dao.insert(
+            entry.copy(photoPath = path ?: entry.photoPath)
+                .toEntity(date = date, loggedAt = System.currentTimeMillis()),
+        )
+        // After the insert, so the row being written is itself the newest one the cap counts.
+        if (path != null) prunePhotos()
     }
 
     override suspend fun addEntries(entries: List<FoodEntry>) {
@@ -147,12 +169,54 @@ internal class FoodRepositoryImpl(
     // module, and the window has to match the query's lower bound exactly for the series to stay
     // dense. It rides forToday so the dense series gains its new day at midnight rather than
     // ending yesterday for as long as the process lives.
+    override fun observeMealPhotos(): Flow<List<FoodEntry>> =
+        dao.observeWithPhoto(MAX_MEAL_PHOTOS).map { entities -> entities.map { it.toFoodEntry() } }
+
+    /**
+     * Scales the plate to [MEAL_PHOTO_EDGE] and writes it, returning the path — or null if the
+     * write failed, which logs the meal without its picture rather than losing the meal.
+     *
+     * The scale is what separates this from [ProgressRepository.addPhoto][ph.mart.healthapp.core.data.progress.ProgressRepository.addPhoto],
+     * which compresses the capture as it stands: a progress photo is taken every fortnight and one
+     * per meal is three a day.
+     */
+    private suspend fun writePhoto(photo: Bitmap): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            val dir = File(context.filesDir, PHOTO_DIR).apply { mkdirs() }
+            val file = File(dir, "${UUID.randomUUID()}.jpg")
+            FileOutputStream(file).use { out ->
+                photo.scaledToEdge(MEAL_PHOTO_EDGE).compress(Bitmap.CompressFormat.JPEG, PHOTO_QUALITY, out)
+            }
+            file.absolutePath
+        }.getOrNull()
+    }
+
+    /** Drops everything past the newest [MAX_MEAL_PHOTOS]: the files go, the column is nulled, and
+     * the meals themselves are untouched. Soft-deleted rows are counted too — their files are on
+     * the same disk. */
+    private suspend fun prunePhotos() {
+        val stale = dao.photoPaths().drop(MAX_MEAL_PHOTOS)
+        if (stale.isEmpty()) return
+        withContext(Dispatchers.IO) { stale.forEach { File(it).delete() } }
+        dao.clearPhotos(stale)
+    }
+
     override fun observeDailyNutrition(): Flow<List<DayNutrition>> = forToday { today ->
         val from = today - TREND_WINDOW_DAYS
         dao.observeSince(from).map { entities ->
             entities.map { it.toFoodEntry() }.dailySeries(fromEpochDay = from, toEpochDay = today)
         }
     }
+}
+
+/** The bitmap at most [edge] on its long side, or itself when it is already smaller — a picked
+ * gallery image can be either. `filter = true` because this is a real downscale, and nearest
+ * neighbour on a 1280 → 768 reduction is visibly ragged. */
+private fun Bitmap.scaledToEdge(edge: Int): Bitmap {
+    val longEdge = maxOf(width, height)
+    if (longEdge <= edge) return this
+    val factor = edge.toDouble() / longEdge
+    return Bitmap.createScaledBitmap(this, (width * factor).toInt(), (height * factor).toInt(), true)
 }
 
 /** Joins the two saved-meal tables in Kotlin — driven by [meals], so items whose parent was
@@ -231,6 +295,7 @@ private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
     fiberG = fiberG,
     sugarG = sugarG,
     sodiumMg = sodiumMg,
+    photoPath = photoPath,
 )
 
 private fun FoodEntryEntity.toSuggestion() = FoodSuggestion(
@@ -306,4 +371,7 @@ private fun FoodEntry.toEntity(date: Long, loggedAt: Long) = FoodEntryEntity(
     fiberG = fiberG,
     sugarG = sugarG,
     sodiumMg = sodiumMg,
+    // Carried both ways, which is the whole of "an edit keeps its photo": updateEntry rebuilds
+    // the entity from the entry the form produced, and the row it supersedes is gone.
+    photoPath = photoPath,
 )

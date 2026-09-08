@@ -34,6 +34,8 @@ internal class ProgressScreenState(
     activeTimelapse: Boolean = false,
     activeEnergyCheckIn: Boolean = false,
     pendingDeleteReadingId: Long? = null,
+    activeMealGallery: Boolean = false,
+    viewedMealPhotoId: Long? = null,
 ) {
     /** Null is the overview. A detail page is a swap-in inside this tab rather than a route, so it
      * keeps the bottom bar and the FAB and costs no second copy of [ProgressViewModel]. */
@@ -58,6 +60,13 @@ internal class ProgressScreenState(
 
     /** The reading whose delete is waiting on its confirmation dialog. */
     var pendingDeleteReadingId: Long? by mutableStateOf(pendingDeleteReadingId)
+
+    /** The meal-photo gallery, a fifth overlay over this tab. */
+    var activeMealGallery: Boolean by mutableStateOf(activeMealGallery)
+
+    /** The one plate opened full-frame inside that gallery. Two levels, so back closes the frame
+     * before the gallery — see the gallery's own handler. */
+    var viewedMealPhotoId: Long? by mutableStateOf(viewedMealPhotoId)
 
     fun rangeFor(subject: Subject): ChartRange = ranges[subject] ?: DEFAULT_CHART_RANGE
 
@@ -126,6 +135,18 @@ internal class ProgressScreenState(
         activeTimelapse = false
     }
 
+    /** The strip's tiles open the gallery *on* the plate they show, so a tap lands where it was
+     * aimed rather than at the top of a grid. */
+    fun openMealGallery(photoId: Long? = null) {
+        viewedMealPhotoId = photoId
+        activeMealGallery = true
+    }
+
+    fun closeMealGallery() {
+        activeMealGallery = false
+        viewedMealPhotoId = null
+    }
+
     fun openEnergyCheckIn() {
         activeEnergyCheckIn = true
     }
@@ -148,6 +169,9 @@ internal class ProgressScreenState(
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
                     it.activeBloodPressureSheet, it.activeRecap, it.recapPeriod.name, it.activeTimelapse,
                     it.activeEnergyCheckIn, it.pendingDeleteReadingId, it.activeCycleSheet,
+                    // Appended, never renumbered: an index that moves restores the wrong field
+                    // into the wrong overlay.
+                    it.activeMealGallery, it.viewedMealPhotoId,
                 )
             },
             restore = { saved ->
@@ -170,6 +194,8 @@ internal class ProgressScreenState(
                     activeEnergyCheckIn = saved[10] as Boolean,
                     pendingDeleteReadingId = saved[11] as Long?,
                     activeCycleSheet = saved[12] as Boolean,
+                    activeMealGallery = saved[13] as Boolean,
+                    viewedMealPhotoId = saved[14] as Long?,
                 )
             },
         )

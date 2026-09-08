@@ -22,5 +22,9 @@ internal data class FoodEntryEntity(
     val fiberG: Int = 0,
     val sugarG: Int = 0,
     val sodiumMg: Int = 0,
+    /** The plate this meal was logged from, on disk — null for every entry that reached the diary
+     * any other way. Only the camera flow writes one, and only [MAX_MEAL_PHOTOS][ph.mart.healthapp.core.data.food.MAX_MEAL_PHOTOS]
+     * of them survive: an aged-out photo nulls this column and leaves the meal itself untouched. */
+    val photoPath: String? = null,
     val isDeleted: Boolean = false,
 )

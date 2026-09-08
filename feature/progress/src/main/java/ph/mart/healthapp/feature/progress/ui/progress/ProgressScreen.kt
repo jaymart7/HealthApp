@@ -40,6 +40,7 @@ import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
+import ph.mart.healthapp.feature.progress.ui.nutrition.components.MealPhotoGallery
 import ph.mart.healthapp.feature.progress.ui.photo.components.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.photo.components.TimelapseScreen
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
@@ -229,6 +230,18 @@ private fun ProgressContent(
                     addExerciseToBudget = addExerciseToBudget,
                     onApply = onApplyTarget,
                     onClose = state::closeEnergyCheckIn,
+                )
+            }
+
+            // The fifth overlay, and the only one opened from inside a detail page rather than
+            // from the overview — outside the swap all the same, so at two-pane width it covers
+            // both panes rather than just the one it was opened from.
+            if (state.activeMealGallery) {
+                MealPhotoGallery(
+                    photos = uiState.mealPhotos,
+                    viewedId = state.viewedMealPhotoId,
+                    onView = { state.viewedMealPhotoId = it },
+                    onClose = state::closeMealGallery,
                 )
             }
 

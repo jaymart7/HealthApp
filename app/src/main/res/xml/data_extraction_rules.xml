@@ -3,11 +3,12 @@
     API 31+. See `backup_rules.xml` for why this is exclude-only.
 
     There is no `device-transfer` block: absent, it transfers everything, which is what a direct
-    transfer should do — it has no size cap, so the progress photos can ride along. Only the cloud
-    copy has 25 MB to fit inside.
+    transfer should do — it has no size cap, so both photo directories can ride along. Only the
+    cloud copy has 25 MB to fit inside.
 -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="progress_photos/" />
+        <exclude domain="file" path="meal_photos/" />
     </cloud-backup>
 </data-extraction-rules>

@@ -1,12 +1,17 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -23,6 +29,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -47,6 +54,10 @@ fun FoodItemRow(
     carbsG: Int,
     fatG: Int,
     modifier: Modifier = Modifier,
+    /** The plate this row was logged from, if the camera flow kept one — a 40dp tile leading the
+     * [FoodItemRowVariant.Display] row, and nothing at all in the editable one, where the photo is
+     * shown once above the whole form instead of beside one field of it. */
+    photoPath: String? = null,
     onNameChange: (String) -> Unit = {},
     onPortionAmountChange: (Double) -> Unit = {},
     onPortionUnitChange: (String) -> Unit = {},
@@ -56,11 +67,40 @@ fun FoodItemRow(
     portionUnitOptions: List<String> = listOf("g", "oz", "cup"),
 ) {
     when (variant) {
-        FoodItemRowVariant.Display -> DisplayRow(name, portionAmount, portionUnit, calories, proteinG, carbsG, fatG, modifier)
+        FoodItemRowVariant.Display -> DisplayRow(name, portionAmount, portionUnit, calories, proteinG, carbsG, fatG, photoPath, modifier)
         FoodItemRowVariant.Editable -> EditableRow(
             name, portionAmount, portionUnit, calories, portionUnitOptions,
             onNameChange, onPortionAmountChange, onPortionUnitChange, onCaloriesChange, modifier,
         )
+    }
+}
+
+/**
+ * A stored plate, square-cropped and rounded. Null while the decode is in flight and forever if the
+ * file is gone — a pruned photo leaves a path-less row, but a file deleted underneath one leaves a
+ * path that decodes to nothing, and either way the placeholder tone is what the row shows.
+ *
+ * [contentDescription] is null on purpose: the row beside it already says the food's name, the
+ * portion and the calories, and "photo of grilled chicken" after all of that is noise to a screen
+ * reader, not information.
+ */
+@Composable
+fun MealThumbnail(path: String, size: Dp, modifier: Modifier = Modifier) {
+    val bitmap = rememberBitmapFromFile(path, THUMB_PX)
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        bitmap?.let {
+            Image(
+                bitmap = it,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
@@ -83,9 +123,17 @@ private fun DisplayRow(
     proteinG: Int,
     carbsG: Int,
     fatG: Int,
+    photoPath: String?,
     modifier: Modifier,
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        // Drawn only when there is one, so a row without a photo is the exact layout it always
+        // was — the diary is mostly typed entries and they must not indent to make room for a
+        // column three rows in four leave empty.
+        photoPath?.let { path ->
+            MealThumbnail(path = path, size = 40.dp)
+            Spacer(modifier = Modifier.size(12.dp))
+        }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(text = name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             Text(
@@ -251,6 +299,30 @@ private fun FoodItemRowEditablePreview() {
                 onPortionAmountChange = {},
                 onPortionUnitChange = {},
                 onCaloriesChange = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** With a kept plate: the row the camera flow leaves behind. The preview's path decodes to
+ * nothing, so what it shows is the placeholder tile — which is also what a row whose file went
+ * missing shows on a device. */
+@PreviewLightDark
+@Composable
+private fun FoodItemRowPhotoPreview() {
+    AppTheme {
+        Surface {
+            FoodItemRow(
+                variant = FoodItemRowVariant.Display,
+                name = "Chicken adobo",
+                portionAmount = 1.0,
+                portionUnit = "serving",
+                calories = 430,
+                proteinG = 28,
+                carbsG = 12,
+                fatG = 29,
+                photoPath = "/preview/none.jpg",
                 modifier = Modifier.padding(16.dp),
             )
         }

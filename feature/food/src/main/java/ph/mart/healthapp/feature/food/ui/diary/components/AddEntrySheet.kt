@@ -22,6 +22,7 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
 import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
+import ph.mart.healthapp.core.designsystem.component.MealThumbnail
 import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
@@ -81,6 +82,13 @@ internal fun AddEntrySheet(
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Only an edit can carry one — the camera flow's own confirmation screen already shows
+            // the plate at full bleed. It is here so a correction shows what it is keeping: the
+            // photo survives the supersede, and a form that never mentioned it looked like it
+            // wouldn't.
+            form.photoPath?.let { path ->
+                MealThumbnail(path = path, size = 64.dp)
+            }
             if (!editing) {
                 // Above the panels, because it answers a different question: they are faster
                 // ways to log something already decided on, this is what to decide.

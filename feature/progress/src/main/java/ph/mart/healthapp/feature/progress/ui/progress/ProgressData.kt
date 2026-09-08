@@ -6,6 +6,7 @@ import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.cycle.CycleDay
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.DayNutrition
+import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
@@ -33,6 +34,11 @@ data class ProgressUiState(
     val preferredUnit: UnitSystem = UnitSystem.Metric,
     /** Dense, one row per day for the last year — the Nutrition tab slices it per selected range. */
     val dailyNutrition: List<DayNutrition> = emptyList(),
+    /** The meals that kept their plate, newest first — the Food page's photo strip and the gallery
+     * behind it. Whole entries rather than paths, because a photo is only worth looking at beside
+     * what it was logged as. Capped in the repository at
+     * [MAX_MEAL_PHOTOS][ph.mart.healthapp.core.data.food.MAX_MEAL_PHOTOS]. */
+    val mealPhotos: List<FoodEntry> = emptyList(),
     /** Sparse and import-only, one row per day the watch reported — the Activity tab's steps
      * series, and half of its burn series. */
     val stepDays: List<StepDay> = emptyList(),

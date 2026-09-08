@@ -26,6 +26,10 @@ data class AddEntryForm(
     val fiberG: Int = 0,
     val sugarG: Int = 0,
     val sodiumMg: Int = 0,
+    /** The plate a logged row was photographed from, carried so an edit gives it back. Only ever
+     * non-null on a form seeded from an already-logged entry — the camera flow hands its bitmap to
+     * the repository, not to this form. */
+    val photoPath: String? = null,
 )
 
 /** A bare calorie figure is enough — that is the quick add. The guard is deliberately shared with
@@ -50,6 +54,9 @@ fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
     fiberG = fiberG,
     sugarG = sugarG,
     sodiumMg = sodiumMg,
+    // An edit rebuilds the whole entry from the form, so a photo that isn't carried here is a
+    // photo the correction throws away — see `FoodEntryDao.replace`, which supersedes the row.
+    photoPath = photoPath,
 )
 
 /**
@@ -70,6 +77,7 @@ fun FoodEntry.toAddEntryForm(): AddEntryForm = AddEntryForm(
     fiberG = fiberG,
     sugarG = sugarG,
     sodiumMg = sodiumMg,
+    photoPath = photoPath,
 )
 
 /**

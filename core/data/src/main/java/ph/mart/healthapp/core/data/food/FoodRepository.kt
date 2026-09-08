@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.food
 
+import android.graphics.Bitmap
 import kotlinx.coroutines.flow.Flow
 
 enum class MealType { Breakfast, Lunch, Dinner, Snacks }
@@ -20,6 +21,9 @@ data class FoodEntry(
     val fiberG: Int = 0,
     val sugarG: Int = 0,
     val sodiumMg: Int = 0,
+    /** The plate, on disk. Set by [FoodRepository.addEntry] when the camera flow hands it a
+     * bitmap, carried through an edit, and never written by any other logging path. */
+    val photoPath: String? = null,
 )
 
 /** A one-tap re-log candidate in the add-entry sheet: either a recently logged food (derived
@@ -85,12 +89,33 @@ fun List<FoodEntry>.dailyTotals(): DiaryTotals = fold(DiaryTotals(0, 0, 0, 0)) {
     )
 }
 
+/**
+ * How many meal photos are kept. The images are the only part of this app that grows without a
+ * ceiling — a row of numbers costs bytes, a plate costs tens of kilobytes — so the newest this many
+ * survive and the rest are dropped on the next write. The *meals* are never pruned: only the
+ * picture ages out.
+ */
+const val MAX_MEAL_PHOTOS = 500
+
+/** What a meal photo is stored at, on its long edge. A capture arrives at 1280 (see
+ * `MAX_CAPTURE_EDGE`), which is the right size for one bitmap on screen and the wrong size for five
+ * hundred on disk; 768 still fills the gallery's full-frame viewer without upscaling. */
+const val MEAL_PHOTO_EDGE = 768
+
 interface FoodRepository {
     fun observeTodayEntries(): Flow<List<FoodEntry>>
 
     /** One day's entries — the diary, which can be pointed at any past day. */
     fun observeEntries(dateEpochDay: Long): Flow<List<FoodEntry>>
-    suspend fun addEntry(entry: FoodEntry)
+
+    /**
+     * Logs one entry, keeping [photo] if there is one.
+     *
+     * The bitmap rather than a path, because writing the file is this layer's job: it is the layer
+     * that knows where meal photos live, what they are scaled to, and how many are kept. Every
+     * caller but the camera flow omits it, which is the whole rule for what gets a picture.
+     */
+    suspend fun addEntry(entry: FoodEntry, photo: Bitmap? = null)
 
     /** Logs several foods as one write, so a saved meal lands in the diary in a single emission
      * instead of appearing item by item. */
@@ -170,6 +195,10 @@ interface FoodRepository {
     suspend fun deleteRecipe(id: Long)
 
     suspend fun renameRecipe(id: Long, name: String)
+
+    /** The meals that still have their photo, newest first, capped at [MAX_MEAL_PHOTOS] — the
+     * meal-photo history on the Progress tab's Food page. */
+    fun observeMealPhotos(): Flow<List<FoodEntry>>
 
     /** Dense daily nutrition for the last [TREND_WINDOW_DAYS], oldest first, ending today — the
      * Progress tab's Nutrition series. */

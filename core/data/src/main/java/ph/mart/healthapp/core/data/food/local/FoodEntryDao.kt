@@ -31,6 +31,25 @@ internal interface FoodEntryDao {
     @Query("SELECT * FROM food_entry WHERE isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
     suspend fun allActive(): List<FoodEntryEntity>
 
+    /** The meals that kept their photo, newest first — the Progress tab's meal-photo history.
+     * Capped for the same reason every other read here is: the whole table is only ever read by
+     * export. */
+    @Query(
+        "SELECT * FROM food_entry WHERE photoPath IS NOT NULL AND isDeleted = 0 " +
+            "ORDER BY date DESC, loggedAt DESC LIMIT :limit",
+    )
+    fun observeWithPhoto(limit: Int): Flow<List<FoodEntryEntity>>
+
+    /** Every path on disk, newest first — **including soft-deleted rows**, whose files are still
+     * there and still have to be reclaimable. What the prune counts down from. */
+    @Query("SELECT photoPath FROM food_entry WHERE photoPath IS NOT NULL ORDER BY date DESC, loggedAt DESC")
+    suspend fun photoPaths(): List<String>
+
+    /** Forgets an aged-out photo. The meal itself is untouched — a row whose picture was pruned is
+     * still every calorie it ever was. */
+    @Query("UPDATE food_entry SET photoPath = NULL WHERE photoPath IN (:paths)")
+    suspend fun clearPhotos(paths: List<String>)
+
     @Insert
     suspend fun insert(entity: FoodEntryEntity)
 
@@ -54,7 +73,10 @@ internal interface FoodEntryDao {
     @Transaction
     suspend fun replace(id: Long, entity: FoodEntryEntity) {
         softDelete(id)
-        insert(entity)
+        // `id = 0` because the old row is still there — soft-deleted, not gone — and the insert
+        // that follows is a *new* row, which is what superseding means. Carrying the caller's id
+        // across would re-insert a primary key the table still holds and abort the transaction.
+        insert(entity.copy(id = 0))
     }
 
     @Query("UPDATE food_entry SET isDeleted = 1")

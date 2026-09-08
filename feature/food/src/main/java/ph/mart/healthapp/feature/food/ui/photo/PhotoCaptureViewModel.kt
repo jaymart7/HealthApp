@@ -30,7 +30,7 @@ class PhotoCaptureViewModel(
         when (event) {
             is PhotoCaptureEvent.OnCapture -> analyze(event.photo)
             PhotoCaptureEvent.OnCancelAnalysis -> analysisJob?.cancel()
-            is PhotoCaptureEvent.OnLogMeal -> logMeal(event.entry)
+            is PhotoCaptureEvent.OnLogMeal -> logMeal(event.entry, event.photo)
         }
     }
 
@@ -41,8 +41,10 @@ class PhotoCaptureViewModel(
         }
     }
 
-    private fun logMeal(entry: FoodEntry) = intent {
-        foodRepository.addEntry(entry)
+    private fun logMeal(entry: FoodEntry, photo: Bitmap?) = intent {
+        // The bitmap goes down to the repository, not a file path up from here: where a kept plate
+        // lives, what it is scaled to and how many are kept are all `:core:data`'s to know.
+        foodRepository.addEntry(entry, photo)
         postSideEffect(PhotoCaptureSideEffect.MealLogged)
     }
 }

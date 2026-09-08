@@ -5,10 +5,11 @@
 
     Exclude-only, deliberately: an include list has to name `fitpulse.db` *and* its `-wal` and
     `-shm` companions, and a forgotten one restores a truncated database. Everything in `filesDir`
-    goes — the Room database and the weekly backup JSON — except the progress photos, which are
-    the one thing that can blow Auto Backup's 25 MB cap, and which the export has never carried
-    either.
+    goes — the Room database and the weekly backup JSON — except the two photo directories, which
+    are the thing that can blow Auto Backup's 25 MB cap, and which the export has never carried
+    either. `meal_photos/` is capped at 500 plates and joins for exactly that reason.
 -->
 <full-backup-content>
     <exclude domain="file" path="progress_photos/" />
+    <exclude domain="file" path="meal_photos/" />
 </full-backup-content>

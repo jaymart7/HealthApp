@@ -102,6 +102,53 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   it is the user's, so `EXPORT_SCHEMA_VERSION` does not move — and `scanned_product` is the one
   table where `fallbackToDestructiveMigration` costs literally nothing: a dropped cache refills
   itself on the next scan.
+- **The analyzed plate is kept, and the rule for which meals get one is "whatever the flow is
+  holding".** The photo used to be thrown away at the moment of logging, which left the app's
+  headline feature — point the camera and it logs — with a text row to show for it. It is now
+  written by `FoodRepositoryImpl.addEntry(entry, photo)`, and *every* exit from the camera flow
+  passes what it has: the recognized plate, the gallery pick, and the meal the analyzer missed that
+  was searched or typed by hand. That last one matters — the numbers being hand-entered does not
+  make the picture less a picture of the meal — and it is one branch (`state.photo`) rather than a
+  policy per state. Nothing outside that flow attaches one: a barcode viewfinder is a picture of a
+  package, a saved meal is a re-log of something already photographed once, and the add-entry sheet
+  gets **no** new camera door. The bitmap goes down to the repository rather than a path coming up
+  from the UI, because where a plate lives, what it is scaled to and how many are kept are all
+  `:core:data`'s to know — the same division `ProgressRepository.addPhoto` already draws.
+- **The photo survives an edit, and that is what `AddEntryForm.photoPath` is for.** Correcting a
+  logged row *supersedes* it — soft delete plus a fresh insert — so the entry is rebuilt from the
+  form every time, and a form that didn't carry the path would silently drop the plate on a
+  one-kilocalorie fix. `AddEntryFormTest` is the guard. The 64dp thumbnail on the edit sheet is
+  there so the round trip is visible rather than merely true.
+- **`FoodEntryDao.replace` inserts with `id = 0`.** Found while wiring the above: the old row is
+  still there (soft-deleted, not gone), so re-inserting the caller's id was a primary-key collision
+  on a table that still held it. Superseding means a *new* row — the interface has always said the
+  id changes — and zero is what tells Room to generate one.
+- **Storage is answered by a cap, not by a promise.** 768px on the long edge at JPEG 85 (~80 KB),
+  and the newest `MAX_MEAL_PHOTOS` = 500 survive; the prune runs after each write, deletes the
+  files and nulls the column. Three consequences, all deliberate: the *meal* is never pruned (a row
+  whose picture aged out is still every calorie it ever was), soft-deleted rows are counted because
+  their files are on the same disk, and a swipe-delete leaves its file for the prune rather than
+  the delete — the diary's Undo would otherwise restore a row pointing at nothing. The scale is the
+  one thing that differs from a progress photo, which is stored as captured: one of those is taken
+  a fortnight, and one of these is taken three times a day.
+- **Meal photos are not exported and not cloud-backed-up.** `ExportFoodEntry` simply has no photo
+  field, so `EXPORT_SCHEMA_VERSION` does not move — a path is meaningless on another device and the
+  export has never carried an image. `meal_photos/` joins `progress_photos/` in the two backup-rule
+  XMLs for the same reason it did: Auto Backup's 25 MB cloud cap. A direct device transfer still
+  takes both, since it has no cap.
+- **The history lives on the Progress tab's Food page, not in a fifteenth subject.** A strip of the
+  newest twelve under the calorie chart, and a full-screen in-tab overlay grid grouped by day
+  behind it — the timelapse's and the recap's shape, so it costs no route and no second copy of
+  `ProgressViewModel`'s thirteen repositories. The strip is **unranged**: it shows the newest kept
+  plates, not a slice of the chart's 1M/3M/6M/1Y toggle, because a photo history that thinned out
+  when someone picked "1M" would be lying about what it has. It draws nothing at all when there are
+  no photos, unlike every other card on a detail page, which has a number even on a bare day — an
+  empty "Meal photos" card is an ad for the camera on a page about what was eaten. The frame's
+  caption says the day and the calories and *not* the meal name: `MealType.labelRes()` is
+  `:feature:food`'s string, and features do not import each other.
+- **`rememberBitmapFromFile` moved to `:core:designsystem`.** Two features draw stored photos now,
+  and a second decoder is a second downsampling rule to keep in step. Nothing about it changed but
+  its package and one more size constant (`THUMB_PX`, for the diary row's 40dp tile).
 - **Food search is a list shipped in the APK, not an API call.** `COMMON_FOODS` in
   `:core:data/food/CommonFoods.kt` is ~120 hand-written staples, per 100 g like every FDC row, and
   `searchCommonFoods()` is a case-insensitive substring over it — pure data, no table, no
@@ -1506,6 +1553,6 @@ ruled out on principle. Each note says what would reopen it.
   `ph.mart` app, local dishes and locally-packaged products largely return nothing, and OFF is
   free, keyless and internationally stocked. Reopened by: the search and scan miss rate on real
   use.
-- **Keeping the analyzed meal photo on the diary entry.** A visual food history. The heaviest of
-  what was weighed here: storage growth, downsampling, and an export question the export has
-  always answered "no" to for images.
+- ~~**Keeping the analyzed meal photo on the diary entry.**~~ **Shipped** — the three objections
+  (storage growth, downsampling, the export question) are each answered in the Food entries above:
+  a 500-photo cap, 768px at JPEG 85, and images stay out of the export exactly as they always have.

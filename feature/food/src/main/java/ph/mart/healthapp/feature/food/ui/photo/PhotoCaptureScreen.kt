@@ -187,7 +187,9 @@ fun PhotoCaptureScreen(
                         // The diary's day, not today — a plate photographed while reviewing
                         // Tuesday belongs to Tuesday.
                         onLogMeal = {
-                            viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay)))
+                            viewModel.handleEvent(
+                                PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay), photo),
+                            )
                         },
                         // Back already asks before throwing away edits; the button that means the
                         // same thing asked nothing at all.
@@ -214,8 +216,12 @@ fun PhotoCaptureScreen(
                     subtitle = stringResource(SEARCH_SUBTITLE),
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
+                    // The numbers were searched or typed, but the plate is still the plate: a meal
+                    // the analyzer missed keeps its photo like any other.
                     onLogEntry = {
-                        viewModel.handleEvent(PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay)))
+                        viewModel.handleEvent(
+                            PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay), state.photo),
+                        )
                     },
                     onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
                 )

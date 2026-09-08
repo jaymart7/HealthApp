@@ -20,7 +20,7 @@ either. `DECISIONS.md` also holds what was weighed and deferred.
 `SupplementsRoute` · `HomeLayoutRoute`.
 
 **In-tab overlays** (no route, no second ViewModelStoreOwner): weekly/monthly/yearly recap ·
-photo timelapse · photo comparison slider · meal ideas.
+photo timelapse · photo comparison slider · meal-photo gallery · meal ideas.
 
 **Off-phone surfaces:** Glance home-screen widget (`:app/widget/`) · Wear OS app (`:wear`) ·
 Wear tile · WorkManager notifications (`:app/reminder/`).
@@ -77,7 +77,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Add-entry sheet: name, calories, protein/carbs/fat, fiber/sugar/sodium, portion + unit.
 - Quick add — a bare calorie figure with no name.
 - Every numeric field is typable and steppable; changing a portion reprices the whole entry.
-- Edit a logged row (supersedes it: soft-delete + insert, keeps its place in the day).
+- Edit a logged row (supersedes it: soft-delete + insert, keeps its place in the day) — a row
+  logged from the camera wears a 40dp thumbnail, shown again on the edit sheet and kept by the edit.
 - Swipe to delete with Undo snackbar.
 - Local text filter over the day's logged entries.
 - Recent-food suggestions with one-tap re-log.
@@ -99,6 +100,9 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 ## Camera & barcode
 
 - AI photo food logging: capture → analyze → confirm, with retry, offline and manual-search paths.
+- The plate is kept. Every exit from the camera flow attaches its photo to the entry — recognized,
+  gallery-picked, or hand-entered after a failed analyze — scaled to 768px, newest 500 retained.
+  No other logging path attaches one.
 - Barcode scanning (ML Kit) → FoodData Central branded lookup, with a `gtinUpc` match check.
 - Barcode memory — a resolved product is remembered by its barcode, so a rescan is instant, works
   offline and spends none of the shared FDC budget. Not exported.
@@ -136,7 +140,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   remembered per subject for the session. Empty subjects get a mascot page and no call to action.
 - Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, and an insight card carrying the projection and the energy check-in.
-- Food: calories + macros against target over the window.
+- Food: calories + macros against target over the window, then the meal-photo strip — the newest
+  twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.
 - Activity: two charts — daily steps (imported) and daily burn.
 - Strength: volume chart, all-time personal records ranked by estimated 1RM (Epley).
 - Photos: grid, before/after comparison slider, timelapse player, share as a PNG strip.
@@ -235,7 +240,8 @@ with nothing logged in it.
 AIChip · AppBottomSheet · AppCard · AppTextField · AppTopBar · BadgeDot · BottomNavBar · Buttons ·
 CalendarPanel · DateFormat · DiscardConfirmDialog · DockedFab · FoodItemRow · FullScreenState ·
 GoalProjectionLine · HealthDisclosurePanel · HomeCardLayout · MacroBar · MacroInputGroup ·
-MascotAvatar · MascotSpeechBubble · MicronutrientInputGroup · MicronutrientLegend ·
+MascotAvatar · MascotSpeechBubble · MealThumbnail · MicronutrientInputGroup · MicronutrientLegend ·
+PhotoBitmap (`rememberBitmapFromFile`, every stored photo in the app decodes through it) ·
 NumericStepperField · SegmentedToggle · SelectableCard · SheetDatePicker · StepProgressBar ·
 WaterGlassRow.
 
@@ -268,7 +274,7 @@ each one is argued in `CLAUDE.md`.
 - **Blood pressure's Google Health scope.** Deliberately not requested. Health Connect reads it
   instead — that permission costs no CASA assessment.
 - **Not exported:** saved meals, recipes, routines, `health_link`, coach history, steps, sleep,
-  heart, running fasts.
+  heart, running fasts, meal photos (images, like progress photos, never travel).
 - **No MP4 photo share.** PNG strips only.
 - **No HTTP client dependency.** `HttpURLConnection` + kotlinx.serialization, on purpose.
 - **No Google Fit.** Health Connect and the Google Health API, nothing else.

@@ -13,6 +13,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.FastingRepository
+import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
@@ -130,11 +131,13 @@ class ProgressViewModel(
         )
 
         // The fasts ride with the Activity tab's two series for the same arity reason, not because
-        // they have anything to do with each other.
+        // they have anything to do with each other — and the meal photos ride here for that reason
+        // alone too. A plate has nothing to do with a step count; the outer combine is simply full.
         val activity = combine(
             fastingRepository.observeSessions(),
             stepsRepository.observeDays(),
             exerciseRepository.observeRecentEntries(),
+            foodRepository.observeMealPhotos(),
             ::ActivitySeries,
         )
 
@@ -156,6 +159,7 @@ class ProgressViewModel(
                 cycleDays = sparse.cycleDays,
                 stepDays = activitySeries.stepDays,
                 exerciseEntries = activitySeries.exercise,
+                mealPhotos = activitySeries.mealPhotos,
             )
         }.collect { newState -> reduce { newState } }
     }
@@ -167,6 +171,7 @@ private data class ActivitySeries(
     val fasts: List<FastSession>,
     val stepDays: List<StepDay>,
     val exercise: List<ExerciseEntry>,
+    val mealPhotos: List<FoodEntry>,
 )
 
 /** The four sparse series, grouped so the outer combine stays inside the typed overloads'

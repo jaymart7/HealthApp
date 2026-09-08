@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.food.ui.shared
 import kotlin.math.abs
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.food.FoodEntry
@@ -11,6 +12,37 @@ import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
 import ph.mart.healthapp.core.data.food.SavedMealItem
 
 class AddEntryFormTest {
+
+    /** An edit rebuilds the entry from the form and supersedes the row it came from. The photo has
+     * to make that round trip, or correcting a calorie count silently throws away the plate. */
+    @Test
+    fun `an edit keeps the meal photo`() {
+        val logged = FoodEntry(
+            id = 7,
+            name = "Chicken adobo",
+            mealType = MealType.Dinner,
+            portionAmount = 1.0,
+            portionUnit = SERVING_UNIT,
+            calories = 430,
+            proteinG = 28,
+            carbsG = 12,
+            fatG = 29,
+            photoPath = "/data/meal_photos/abc.jpg",
+        )
+
+        val corrected = logged.toAddEntryForm().copy(calories = 400).toFoodEntry(logged.dateEpochDay)
+
+        assertEquals("/data/meal_photos/abc.jpg", corrected.photoPath)
+        assertEquals(400, corrected.calories)
+    }
+
+    /** Nothing but the camera flow attaches one, so every other form still produces a photoless
+     * entry — including a quick add, whose blank name takes the other branch of [toFoodEntry]. */
+    @Test
+    fun `a hand-entered meal has no photo`() {
+        assertNull(AddEntryForm(name = "Rice", calories = 200).toFoodEntry().photoPath)
+        assertNull(AddEntryForm(calories = 650).toFoodEntry().photoPath)
+    }
 
     @Test
     fun `changing the portion reprices fiber, sugar and sodium with everything else`() {

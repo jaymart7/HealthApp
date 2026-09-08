@@ -121,6 +121,7 @@ internal fun MealSection(
                                     proteinG = entry.proteinG,
                                     carbsG = entry.carbsG,
                                     fatG = entry.fatG,
+                                    photoPath = entry.photoPath,
                                 )
                             }
                         }
@@ -140,6 +141,9 @@ private fun MealSectionPreview() {
                 mealType = MealType.Breakfast,
                 entries = listOf(
                     FoodEntry(id = 1, name = "Greek yogurt", mealType = MealType.Breakfast, portionAmount = 1.0, portionUnit = "cup", calories = 150, proteinG = 20, carbsG = 8, fatG = 4),
+                    // The second row is one the camera logged — a section mixes the two, which is
+                    // the case the thumbnail's indent has to look right in.
+                    FoodEntry(id = 2, name = "Chicken adobo", mealType = MealType.Breakfast, portionAmount = 1.0, portionUnit = "serving", calories = 430, proteinG = 28, carbsG = 12, fatG = 29, photoPath = "/preview/none.jpg"),
                 ),
                 subtotalKcal = 150,
                 expanded = true,

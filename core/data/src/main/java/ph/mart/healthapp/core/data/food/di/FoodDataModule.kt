@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.food.di
 
+import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import ph.mart.healthapp.core.data.AppDatabase
 import ph.mart.healthapp.core.data.food.BarcodeLookupRepository
@@ -18,7 +19,7 @@ val foodDataModule = module {
     single { get<AppDatabase>().favoriteFoodDao() }
     single { get<AppDatabase>().savedMealDao() }
     single { get<AppDatabase>().scannedProductDao() }
-    single<FoodRepository> { FoodRepositoryImpl(get(), get(), get()) }
+    single<FoodRepository> { FoodRepositoryImpl(androidContext(), get(), get(), get()) }
     single<FoodRecognitionRepository> { FoodRecognitionRepositoryImpl() }
     single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl(get()) }
     single<MealIdeaRepository> { MealIdeaRepositoryImpl() }
