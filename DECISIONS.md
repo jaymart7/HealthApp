@@ -99,6 +99,23 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   genuinely mean today, so don't collapse them into the dated ones.
 - **The diary's top field is a local filter over logged entries**, not a
   food search. Food search is `searchCommonFoods()`/`FoodSearchPanel`.
+- **The diary's calendar is a pane at ≥840dp, and the same calendar either way.** It was declined
+  once — the diary has no list to put beside its day — and reopened on the condition recorded with
+  it: the swap-in `FoodScreenState.calendarOpen` opens is the list, so at expanded width
+  `FoodContent` draws `CalendarPanel` beside the day instead of over it. A `Row`, not a scene:
+  there is no second route and no second `FoodViewModel`, the same reason Progress's subject pages
+  stayed a swap-in. Three details are the whole of the decision. The pane is a **fixed 320dp**
+  where Progress's are weighted, because a month grid is seven fixed 44dp cells and a weighted pane
+  spends its extra width spreading them apart (7 × 44 = 308, plus padding). `onOpenCalendar` on
+  `DiaryDateHeader` became **nullable**, and null takes the chevron and the tap target with it —
+  the label still names the day, but a control that offers to open what is already on screen
+  teaches the wrong thing; the prev/next chevrons are untouched, and are still how you walk a past
+  day forward. And `FoodContent` clears `calendarOpen` when it becomes two-pane, because opening
+  the sheet on a phone and unfolding would otherwise draw the sheet over its own pane — the reset
+  is what keeps `DiarySheets` from having to know the window's width at all. `markedDates` is
+  still `emptySet()` for the reason the sheet gave: dots would cost a query the diary never makes.
+  The add sheet is unchanged and still a sheet — its panels and form are built for a sheet's
+  scroll, and nothing about a wider window changes that.
 - **A nameless entry is a quick add, not an invalid one.** `AddEntryForm.isValid()` accepts a bare
   calorie figure, and `toFoodEntry()` fills the blank with `QUICK_ADD_NAME` and collapses the
   portion to one serving — the form's default 100 g is a number the user never supplied. The guard
@@ -1468,10 +1485,6 @@ ruled out on principle. Each note says what would reopen it.
   dead offline and a rescan re-spends the app-wide 3600 req/hour key budget. Reopened by: either
   the FDC ceiling or the exposure starting to matter — the proxy on `CLAUDE.md`'s backlog is the
   neighbouring fix.
-- **A second pane for the food diary.** The adaptive work shipped without one: the diary is a
-  single scrolling day with no list to put beside it, and its add sheet is an `AppBottomSheet`
-  whose panels and form are built for a sheet's scroll. Reopened by: the calendar swap-in
-  (`FoodScreenState.calendarOpen`) beside the day, which is the pane that would earn itself.
 - **Keeping the analyzed meal photo on the diary entry.** A visual food history. Declined as the
   heaviest of the three: storage growth, downsampling, and an export question the export has
   always answered "no" to for images.

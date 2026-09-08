@@ -52,6 +52,9 @@ import ph.mart.healthapp.feature.food.ui.shared.components.SectionRule
  *
  * [snackbarHostState] arrives from the caller because the host is drawn there, above the docked
  * FAB, while the two Undo messages are raised from the rows in here.
+ *
+ * [twoPane] only reaches the date header: beside its own calendar the label stops being a door.
+ * Everything else about the day is the same at every width — one scrolling column, per `CLAUDE.md`.
  */
 @Composable
 internal fun DiaryBody(
@@ -63,20 +66,22 @@ internal fun DiaryBody(
     onCapturePhoto: (Long) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     snackbarHostState: SnackbarHostState,
+    modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
     summaryCollapsed: Boolean = false,
+    twoPane: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
     // The snackbar text is built in a coroutine, outside composition — so the exercise type's
     // label is resolved through the context rather than with `stringResource`.
     val context = LocalContext.current
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize()) {
         DiaryDateHeader(
             selectedDate = uiState.selectedDate,
             today = uiState.today,
             onSelectDate = { date -> onEvent(FoodEvent.OnSelectDate(date)) },
-            onOpenCalendar = { state.calendarOpen = true },
+            onOpenCalendar = if (twoPane) null else ({ state.calendarOpen = true }),
             filterExpanded = state.filterExpanded,
             onFilterExpandedChange = { open ->
                 if (open) state.filterExpanded = true else state.closeFilter()

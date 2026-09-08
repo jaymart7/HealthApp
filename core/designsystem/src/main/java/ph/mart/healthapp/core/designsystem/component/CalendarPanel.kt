@@ -40,6 +40,11 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 /**
  * The calendar half of [SheetDatePicker], public because the food diary shows the same grid on its
  * own — tapping the date header opens it in a sheet, with [onBack] closing that sheet.
+ *
+ * A null [onBack] is the embedded case: the grid drawn as the diary's own pane at expanded width,
+ * where it is beside the day it picks rather than over it. Same call `SubjectDetail(embedded = …)`
+ * makes, for the same reason — a pane beside its own content is not a level, so there is nothing
+ * for a back arrow to point at. The title stays: it is then the pane's heading.
  */
 @Composable
 fun CalendarPanel(
@@ -47,7 +52,7 @@ fun CalendarPanel(
     markedDates: Set<Long>,
     maxDate: Long,
     onSelectDate: (Long) -> Unit,
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
 ) {
     var visibleMonth by remember { mutableStateOf(epochDayToCalendar(selectedDate)) }
     val maxMonthCal = epochDayToCalendar(maxDate)
@@ -56,14 +61,17 @@ fun CalendarPanel(
 
     Column {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            IconButton(onClick = onBack) {
-                Icon(AppIcons.Back, contentDescription = stringResource(R.string.ds_back))
+            if (onBack != null) {
+                IconButton(onClick = onBack) {
+                    Icon(AppIcons.Back, contentDescription = stringResource(R.string.ds_back))
+                }
             }
             Text(
                 text = stringResource(R.string.ds_select_date),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(start = 4.dp),
+                // Where the arrow was, so the title sits in the same place in both presentations.
+                modifier = Modifier.padding(start = if (onBack != null) 4.dp else 12.dp),
             )
         }
         Row(
@@ -170,6 +178,26 @@ private fun DayCell(
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.primary),
             )
+        }
+    }
+}
+
+/** The embedded variant: no back arrow, because nothing is above it. */
+@PreviewLightDark
+@Composable
+private fun CalendarPanelEmbeddedPreview() {
+    AppTheme {
+        Surface {
+            Column(modifier = Modifier.padding(16.dp)) {
+                val today = todayEpochDay()
+                CalendarPanel(
+                    selectedDate = today,
+                    markedDates = emptySet(),
+                    maxDate = today,
+                    onSelectDate = {},
+                    onBack = null,
+                )
+            }
         }
     }
 }

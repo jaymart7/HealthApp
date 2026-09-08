@@ -338,6 +338,7 @@ fun AppScaffold(
                         coachEntries()
                         foodEntries(
                             scrollState = foodScroll,
+                            twoPane = twoPane,
                             onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },
                             onSpeakFood = { date -> topLevelBackStack.add(VoiceLogRoute(date)) },
                             onCapturePhoto = { date -> topLevelBackStack.add(FoodCaptureRoute(date)) },

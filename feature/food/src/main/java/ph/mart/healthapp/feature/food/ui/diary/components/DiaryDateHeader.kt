@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,7 +47,10 @@ internal fun diaryDateLabel(epochDay: Long, today: Long): String = when (epochDa
 /**
  * Which day the diary is showing, and — folded into the same row — the filter over that day.
  *
- * Stepping is a day at a time; the label opens the calendar for longer jumps. There is no forward
+ * Stepping is a day at a time; the label opens the calendar for longer jumps — unless
+ * [onOpenCalendar] is null, which is the two-pane diary: the calendar is already drawn beside the
+ * day, so the label keeps its name and drops both the chevron and the tap target rather than
+ * offering to open what is already open. There is no forward
  * step past [today]: the app has no notion of a planned meal, so the chevron stays present and
  * disabled rather than disappearing, because a control that vanishes at the edge of its range
  * teaches nothing about where the edge is. It is **still enabled on a past day** — that is how you
@@ -63,7 +67,7 @@ internal fun DiaryDateHeader(
     selectedDate: Long,
     today: Long,
     onSelectDate: (Long) -> Unit,
-    onOpenCalendar: () -> Unit,
+    onOpenCalendar: (() -> Unit)?,
     filterExpanded: Boolean,
     onFilterExpandedChange: (Boolean) -> Unit,
     query: String,
@@ -102,7 +106,7 @@ private fun RowScope.DateControls(
     selectedDate: Long,
     today: Long,
     onSelectDate: (Long) -> Unit,
-    onOpenCalendar: () -> Unit,
+    onOpenCalendar: (() -> Unit)?,
     onOpenFilter: () -> Unit,
 ) {
     IconButton(onClick = { onSelectDate(selectedDate - 1) }, modifier = Modifier.size(48.dp)) {
@@ -114,14 +118,13 @@ private fun RowScope.DateControls(
     }
     // One 48dp button, not a label with a separate affordance beside it: the chevron is part of
     // what says "this opens something", so it has to be inside the target rather than next to it.
-    Surface(
-        onClick = onOpenCalendar,
-        color = Color.Transparent,
-        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-    ) {
+    // With no calendar to open the whole thing is a label — same 48dp of height, so the header
+    // does not change size between the two layouts.
+    val dateLabel = @Composable {
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
                 text = diaryDateLabel(selectedDate, today),
@@ -129,13 +132,31 @@ private fun RowScope.DateControls(
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
-            Icon(
-                imageVector = AppIcons.ChevronDown,
-                // The button's own label already names the day; this glyph only says it opens.
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp),
-            )
+            if (onOpenCalendar != null) {
+                Icon(
+                    imageVector = AppIcons.ChevronDown,
+                    // The button's own label already names the day; this glyph only says it opens.
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+    }
+    if (onOpenCalendar != null) {
+        Surface(
+            onClick = onOpenCalendar,
+            color = Color.Transparent,
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+        ) {
+            dateLabel()
+        }
+    } else {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+        ) {
+            dateLabel()
         }
     }
     IconButton(
@@ -216,6 +237,28 @@ private fun DiaryDateHeaderPastPreview() {
                 today = today,
                 onSelectDate = {},
                 onOpenCalendar = {},
+                filterExpanded = false,
+                onFilterExpandedChange = {},
+                query = "",
+                onQueryChange = {},
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        }
+    }
+}
+
+/** Beside its own calendar: the label names the day and opens nothing. */
+@PreviewLightDark
+@Composable
+private fun DiaryDateHeaderTwoPanePreview() {
+    AppTheme {
+        Surface {
+            val today = 20_000L
+            DiaryDateHeader(
+                selectedDate = today,
+                today = today,
+                onSelectDate = {},
+                onOpenCalendar = null,
                 filterExpanded = false,
                 onFilterExpandedChange = {},
                 query = "",

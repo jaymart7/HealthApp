@@ -116,12 +116,21 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
   `ViewModelStoreOwner` and a second copy of twelve repositories — the exact thing the swap-in was
   chosen to avoid. So the tab draws its own two panes and `SubjectDetail` takes an `embedded` flag:
   no back handler and no back arrow, because a pane beside its own list is not a level.
-- **Home, the diary and the camera flows stay one pane at every width.** A two-pane Home would need
-  a second card order to author and `Profile.homeLayout` stores one; the diary has no list to put
-  beside its day — it is a single scrolling day, and the calendar swap-in
-  (`FoodScreenState.calendarOpen`) is the pane that would earn one; `fullBleed` is unchanged, because a viewfinder
-  beside a list is not a viewfinder. Single columns are **not** width-capped either — that is a
-  visual-design decision and this work is layout only.
+- **The diary's second pane is the calendar, and it is 320dp wide, not weighted.** The swap-in
+  `FoodScreenState.calendarOpen` opens in a sheet was named as the pane that would earn one, and it
+  has: at expanded width `FoodContent` draws `CalendarPanel` beside the day rather than over it.
+  Fixed width is where this departs from Progress's weights, and the reason is what is *in* the
+  pane — a month grid is seven fixed 44dp cells, so every weighted pixel goes into spreading them
+  apart, while Progress's card grid and its charts both use what they are given. The day itself is
+  unchanged at both widths: still one scrolling column, still one `FoodViewModel`, no route, nothing
+  new saved. Two consequences that are not optional — `DiaryDateHeader` takes a **nullable**
+  `onOpenCalendar` and drops the chevron with the tap target when the pane is drawn (a door onto
+  what is already on screen is a lie), and `FoodContent` clears `calendarOpen` on becoming
+  two-pane, or unfolding mid-sheet leaves a sheet over its own calendar.
+- **Home and the camera flows stay one pane at every width.** A two-pane Home would need
+  a second card order to author and `Profile.homeLayout` stores one; `fullBleed` is unchanged,
+  because a viewfinder beside a list is not a viewfinder. Single columns are **not** width-capped
+  either — that is a visual-design decision and this work is layout only.
 
 ## Non-negotiable constraints
 

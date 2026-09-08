@@ -50,8 +50,13 @@ data class StrengthWorkoutRoute(
 @Serializable
 data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
 
+/** [twoPane] comes from `AppScaffold`, the one place in the app that reads the window's width, so
+ * this tab is told rather than asking — which is also why `:feature:food` needs no adaptive
+ * dependency of its own. It reaches the diary and nothing else: the camera flows are full-bleed at
+ * every width, and the recipe and workout screens are forms. */
 fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
+    twoPane: Boolean = false,
     onScanBarcode: (Long) -> Unit,
     onSpeakFood: (Long) -> Unit,
     onCapturePhoto: (Long) -> Unit,
@@ -62,6 +67,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
     entry<FoodRoute> {
         FoodScreen(
             scrollState = scrollState,
+            twoPane = twoPane,
             onScanBarcode = onScanBarcode,
             onSpeakFood = onSpeakFood,
             onCapturePhoto = onCapturePhoto,

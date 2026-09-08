@@ -31,9 +31,9 @@ on Home.
 
 **Window width** (`AppScaffold`, the app's one reader of it): at ≥600dp the bottom bar becomes a
 `NavRail` with the FAB in it; at ≥840dp the Progress tab draws its overview beside the open
-subject page, and the Profile tab draws its eight sub-routes beside Profile as a Nav3 list-detail
-scene. Narrower than 600dp is unchanged. Home, the diary and the camera flows stay one pane at
-every width.
+subject page, the Profile tab draws its eight sub-routes beside Profile as a Nav3 list-detail
+scene, and the Food tab draws the calendar as a fixed 320dp pane beside the day. Narrower than
+600dp is unchanged. Home and the camera flows stay one pane at every width.
 
 **Onboarding** is not in the nav graph — `AppRoot` swaps it out once a profile is written.
 
@@ -72,6 +72,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 ## Food diary
 
 - Diary by meal section (breakfast/lunch/dinner/snack), any past day, never forward past today.
+- Day picked by stepping a day at a time or from a calendar — a bottom sheet on a phone, and at
+  ≥840dp a permanent pane beside the day, where the date header stops being a door onto it.
 - Add-entry sheet: name, calories, protein/carbs/fat, fiber/sugar/sodium, portion + unit.
 - Quick add — a bare calorie figure with no name.
 - Every numeric field is typable and steppable; changing a portion reprices the whole entry.
