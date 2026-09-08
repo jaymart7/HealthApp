@@ -77,6 +77,31 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   every zero-padding at once in one unquoted query, which FDC ORs. The barcode scan is the *only*
   thing left in the app that calls FDC — free-text search is local, below — so `fdcGet` and
   `toScannedProduct` exist for that one caller.
+- **A resolved barcode is remembered, a miss is not.** `scanned_product` is a cache keyed by the
+  normalised barcode, read before the network on every scan, and it is what reopened the
+  "considered and declined" note below: the scanner used to be *dead* offline —
+  `BarcodeScanScreen`'s opening `LaunchedEffect` dropped to `ScanFlow.Offline` before the camera
+  even opened — and every rescan re-spent a 3600 req/hour budget shared by every install. A GTIN's
+  nutrition panel does not change, so the cache is read first rather than as a fallback; the quota
+  is the thing worth saving. **Only a hit is written.** FDC gains products over time, so a stored
+  miss would blind the app to a package that starts existing next month, and the not-found screen
+  leads to manual entry anyway — the rescan a cached miss would save is the rare one. `barcodeKey`
+  is the single normaliser: digits only (the code comes off an image decoder, untrusted on its way
+  into a URL) with leading zeros stripped, so a 12-wide and a 13-wide read of one package share a
+  row instead of caching it twice — the identity `parseFdcProduct` already compares on. It returns
+  null where nothing survives, which also stops an all-zeros read spending a request on the query
+  that returns the whole branded database. It is a pure function because every test in `:core:data`
+  is, and a fake DAO would be a second idiom to keep in step.
+- **The offline gate moved from before the camera to after the lookup.** A scan of a remembered
+  product resolves with no network, so refusing to open the viewfinder would hide the feature.
+  `ScanFlow.Offline` is unchanged and still reached, one step later, from the lookup's own
+  `Failed -> if (isOnline()) NotFound else Offline`. The cost is deliberate: offline with an empty
+  cache is now one extra step (aim, scan, *then* the offline screen) rather than an immediate one,
+  which is the price of the cache being reachable at all.
+- **The cache is not exported and not migrated.** It is derived data with an upstream — nothing in
+  it is the user's, so `EXPORT_SCHEMA_VERSION` does not move — and `scanned_product` is the one
+  table where `fallbackToDestructiveMigration` costs literally nothing: a dropped cache refills
+  itself on the next scan.
 - **Food search is a list shipped in the APK, not an API call.** `COMMON_FOODS` in
   `:core:data/food/CommonFoods.kt` is ~120 hand-written staples, per 100 g like every FDC row, and
   `searchCommonFoods()` is a case-insensitive substring over it — pure data, no table, no
@@ -1481,10 +1506,6 @@ ruled out on principle. Each note says what would reopen it.
   `ph.mart` app, local dishes and locally-packaged products largely return nothing, and OFF is
   free, keyless and internationally stocked. Reopened by: the search and scan miss rate on real
   use.
-- **Barcode memory (a local product cache).** A scan always hits the network, so the scanner is
-  dead offline and a rescan re-spends the app-wide 3600 req/hour key budget. Reopened by: either
-  the FDC ceiling or the exposure starting to matter — the proxy on `CLAUDE.md`'s backlog is the
-  neighbouring fix.
-- **Keeping the analyzed meal photo on the diary entry.** A visual food history. Declined as the
-  heaviest of the three: storage growth, downsampling, and an export question the export has
+- **Keeping the analyzed meal photo on the diary entry.** A visual food history. The heaviest of
+  what was weighed here: storage growth, downsampling, and an export question the export has
   always answered "no" to for images.

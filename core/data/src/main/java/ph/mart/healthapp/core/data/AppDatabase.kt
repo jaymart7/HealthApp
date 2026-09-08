@@ -19,6 +19,8 @@ import ph.mart.healthapp.core.data.food.local.FoodEntryEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealDao
 import ph.mart.healthapp.core.data.food.local.SavedMealEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealItemEntity
+import ph.mart.healthapp.core.data.food.local.ScannedProductDao
+import ph.mart.healthapp.core.data.food.local.ScannedProductEntity
 import ph.mart.healthapp.core.data.fasting.local.FastSessionDao
 import ph.mart.healthapp.core.data.fasting.local.FastSessionEntity
 import ph.mart.healthapp.core.data.health.local.HealthLinkDao
@@ -54,6 +56,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         FavoriteFoodEntity::class,
         SavedMealEntity::class,
         SavedMealItemEntity::class,
+        ScannedProductEntity::class,
         WeightEntryEntity::class,
         MeasurementEntryEntity::class,
         ProgressPhotoEntity::class,
@@ -74,7 +77,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         BloodPressureReadingEntity::class,
         ChatMessageEntity::class,
     ],
-    version = 28,
+    version = 29,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -82,6 +85,7 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun foodEntryDao(): FoodEntryDao
     abstract fun favoriteFoodDao(): FavoriteFoodDao
     abstract fun savedMealDao(): SavedMealDao
+    abstract fun scannedProductDao(): ScannedProductDao
     abstract fun weightEntryDao(): WeightEntryDao
     abstract fun measurementEntryDao(): MeasurementEntryDao
     abstract fun progressPhotoDao(): ProgressPhotoDao

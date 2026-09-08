@@ -87,11 +87,10 @@ fun BarcodeScanScreen(
             state.flow = if (granted) ScanFlow.Scanning else ScanFlow.PermissionDenied
         }
     LaunchedEffect(Unit) {
-        // The lookup is the online part, not the scan — but a scan the app can't resolve is a dead
-        // end, so the offline state is shown up front rather than after the user aims the camera.
-        if (!viewModel.isOnline()) {
-            state.flow = ScanFlow.Offline
-        } else if (!hasCameraPermission) {
+        // No offline gate here any more: a scan of a product already in the barcode cache resolves
+        // with no network, so the camera opens either way. An uncached code with no connection
+        // still lands on ScanFlow.Offline — one step later, off the lookup's own result.
+        if (!hasCameraPermission) {
             permissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }

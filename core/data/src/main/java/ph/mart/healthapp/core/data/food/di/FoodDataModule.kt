@@ -17,9 +17,10 @@ val foodDataModule = module {
     single { get<AppDatabase>().foodEntryDao() }
     single { get<AppDatabase>().favoriteFoodDao() }
     single { get<AppDatabase>().savedMealDao() }
+    single { get<AppDatabase>().scannedProductDao() }
     single<FoodRepository> { FoodRepositoryImpl(get(), get(), get()) }
     single<FoodRecognitionRepository> { FoodRecognitionRepositoryImpl() }
-    single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl() }
+    single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl(get()) }
     single<MealIdeaRepository> { MealIdeaRepositoryImpl() }
     single<MealParseRepository> { MealParseRepositoryImpl() }
 }

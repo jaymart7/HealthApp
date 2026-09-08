@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.data.food
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class BarcodeLookupTest {
@@ -151,5 +152,22 @@ class BarcodeLookupTest {
     @Test
     fun `an unparseable body fails rather than throwing`() {
         assertEquals(BarcodeLookupResult.Failed, parseFdcProduct("<html>502</html>", "028400642255"))
+    }
+
+    @Test
+    fun `the cache key keeps only digits`() {
+        assertEquals("28400642255", barcodeKey("  0284-0064 2255 "))
+    }
+
+    @Test
+    fun `a 12-wide and a 13-wide read of one package share a key`() {
+        assertEquals(barcodeKey("028400642255"), barcodeKey("0028400642255"))
+    }
+
+    @Test
+    fun `a code with no digits left is not a product`() {
+        assertNull(barcodeKey("00000000"))
+        assertNull(barcodeKey(""))
+        assertNull(barcodeKey("no barcode here"))
     }
 }

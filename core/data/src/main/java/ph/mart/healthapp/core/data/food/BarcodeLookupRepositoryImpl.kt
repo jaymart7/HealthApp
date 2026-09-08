@@ -7,6 +7,8 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import ph.mart.healthapp.core.data.food.local.ScannedProductDao
+import ph.mart.healthapp.core.data.food.local.ScannedProductEntity
 
 /** Wide enough that the real match is on the first page even when FDC pads the query out with
  * fuzzy noise — see [parseFdcProduct]. */
@@ -17,14 +19,20 @@ private const val PAGE_SIZE = 25
  * the only thing left in the app that talks to FDC — free-text search reads the shipped
  * [COMMON_FOODS] list — so the transport and the product mapping in `FoodDataCentral.kt` exist
  * for this one caller.
+ *
+ * A resolved product is remembered in `scanned_product`, which is what makes the scanner work
+ * offline and stops a rescan re-spending the app-wide key budget. The cache is read before the
+ * network, always: FDC's answer for a given GTIN doesn't change, and the quota is the thing worth
+ * saving.
  */
-internal class BarcodeLookupRepositoryImpl : BarcodeLookupRepository {
+internal class BarcodeLookupRepositoryImpl(
+    private val dao: ScannedProductDao,
+) : BarcodeLookupRepository {
 
     override suspend fun lookup(barcode: String): BarcodeLookupResult = withContext(Dispatchers.IO) {
-        // The barcode arrives from an image decoder, so it is untrusted input on its way into a
-        // URL — EAN/UPC are digits only, and anything else is not a product code.
-        val code = barcode.filter(Char::isDigit)
-        if (code.isEmpty()) return@withContext BarcodeLookupResult.NotFound
+        val code = barcodeKey(barcode) ?: return@withContext BarcodeLookupResult.NotFound
+
+        dao.find(code)?.let { return@withContext BarcodeLookupResult.Found(it.toProduct()) }
 
         // FDC stores `gtinUpc` at whatever width its source used — 028400642255 for one product,
         // 0099447210127 for the next — and matches the query token exactly, so a 12-digit scan
@@ -34,11 +42,29 @@ internal class BarcodeLookupRepositoryImpl : BarcodeLookupRepository {
             .joinToString("%20")
 
         when (val response = fdcGet("foods/search", "query=$terms&dataType=Branded&pageSize=$PAGE_SIZE")) {
-            is FdcResponse.Ok -> parseFdcProduct(response.body, code)
+            is FdcResponse.Ok -> parseFdcProduct(response.body, code).also { result ->
+                // Only a hit is remembered. FDC gains products over time, so a stored miss would
+                // blind the app to a package that starts existing next month — and the not-found
+                // screen leads to manual entry, so the rescan a cached miss would save is rare.
+                if (result is BarcodeLookupResult.Found) dao.upsert(result.product.toEntity(code))
+            }
+
             FdcResponse.Failed -> BarcodeLookupResult.Failed
         }
     }
 }
+
+/**
+ * The cache key and the FDC query term are the same string: digits only — the code arrives from an
+ * image decoder, so it is untrusted input on its way into a URL, and EAN/UPC are digits — with
+ * leading zeros stripped so a 12-wide and a 13-wide read of one package share a row rather than
+ * caching the product twice. That is the identity [parseFdcProduct] already compares on.
+ *
+ * Null when nothing survives: an all-zeros read is not a product code, and asking FDC for one makes
+ * it fall back to relevance and return the top of the entire branded database.
+ */
+internal fun barcodeKey(raw: String): String? =
+    raw.filter(Char::isDigit).trimStart('0').takeIf { it.isNotEmpty() }
 
 /**
  * Split out of the network call so the response shape is unit-testable without a socket.
@@ -70,3 +96,30 @@ internal fun parseFdcProduct(body: String, barcode: String): BarcodeLookupResult
 }
 
 private fun JsonObject.gtinUpc(): String? = this["gtinUpc"]?.jsonPrimitive?.contentOrNull
+
+private fun ScannedProductEntity.toProduct() = ScannedProduct(
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
+)
+
+private fun ScannedProduct.toEntity(barcode: String) = ScannedProductEntity(
+    barcode = barcode,
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    fiberG = fiberG,
+    sugarG = sugarG,
+    sodiumMg = sodiumMg,
+)

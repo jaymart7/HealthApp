@@ -192,7 +192,8 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
   while cycle tracking is on.
 - FoodData Central runs on one signed key shipped in the APK (extractable, and its 3600 req/hour
   budget is shared by every install). A proxy holding the key is the upgrade path if either the
-  ceiling or the exposure starts to matter.
+  ceiling or the exposure starts to matter — the barcode cache took the rescan traffic off that
+  ceiling, so what is left is the exposure and first scans.
 - Google Health's `nutritionLog` sends `DIETARY_FIBER`, `TOTAL_SUGARS` and `SODIUM` on unverified
   names — the v4 reference publishes no `Nutrient` enum values. Pin the three against a live
   response and `nutritionLogBody`'s `micronutrients` flag *and* `pushMeals`' retry both go, the

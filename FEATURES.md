@@ -100,6 +100,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 
 - AI photo food logging: capture → analyze → confirm, with retry, offline and manual-search paths.
 - Barcode scanning (ML Kit) → FoodData Central branded lookup, with a `gtinUpc` match check.
+- Barcode memory — a resolved product is remembered by its barcode, so a rescan is instant, works
+  offline and spends none of the shared FDC budget. Not exported.
 - The diary's mic, barcode and camera doors all log to the day being reviewed; the FAB and the
   launcher shortcuts log to today.
 - Both viewfinders carry a gallery door and a manual-entry door.
