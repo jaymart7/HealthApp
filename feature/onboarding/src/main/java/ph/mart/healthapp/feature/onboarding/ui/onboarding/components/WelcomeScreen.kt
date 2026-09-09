@@ -35,7 +35,7 @@ internal fun WelcomeScreen(onGetStarted: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        MascotAvatar(state = MascotState.Celebrating, size = 112.dp)
+        MascotAvatar(state = MascotState.Celebrating, size = 112.dp, interactive = true)
         Spacer(Modifier.height(24.dp))
         MascotSpeechBubble(text = stringResource(R.string.onboarding_welcome_bubble))
         Spacer(Modifier.height(24.dp))

@@ -66,8 +66,11 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Card order and visibility edited in Profile → Home layout (drag handle + move up/down a11y
   actions), reachable from a "Rearrange your Home" link at the foot of Home; "Reset to default"
   restores declaration order.
-- Mascot picker: five characters (Bibo, Pip, Zed, Momo, Sprig) × five palettes; blink + breathe
-  animation that rests when system animations are off.
+- Mascot picker: five characters (Bibo, Pip, Zed, Momo, Sprig) × five palettes; blink + breathe,
+  a per-state performance (Celebrating hops and twinkles, Thinking tilts over a three-dot mouth,
+  Sleepy breathes under a drifting "z", Happy sways), a spring on every state change, and a poke
+  on the four screens where the mascot is the subject — all of it resting when system animations
+  are off.
 
 ## Food diary
 

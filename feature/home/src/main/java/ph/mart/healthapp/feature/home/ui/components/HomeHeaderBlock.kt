@@ -107,7 +107,7 @@ private fun GreetingRow(greeting: String, greetingSub: String, onOpenCoach: () -
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        MascotAvatar(state = MascotState.Idle, size = MascotSize)
+        MascotAvatar(state = MascotState.Idle, size = MascotSize, interactive = true)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
             Text(
                 text = greeting,

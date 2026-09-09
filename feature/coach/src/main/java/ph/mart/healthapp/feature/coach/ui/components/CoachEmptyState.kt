@@ -33,7 +33,7 @@ internal fun CoachEmptyState(onStarter: (String) -> Unit, modifier: Modifier = M
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        MascotAvatar(state = MascotState.Idle, size = 64.dp)
+        MascotAvatar(state = MascotState.Idle, size = 64.dp, interactive = true)
         MascotSpeechBubble(text = stringResource(R.string.coach_empty_greeting))
         Text(
             text = stringResource(R.string.coach_empty_limits),

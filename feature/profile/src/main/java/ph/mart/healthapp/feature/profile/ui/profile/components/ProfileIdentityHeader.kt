@@ -94,7 +94,7 @@ internal fun ProfileIdentityHeader(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MascotAvatar(state = MascotState.Idle, size = 64.dp)
+                MascotAvatar(state = MascotState.Idle, size = 64.dp, interactive = true)
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.weight(1f),

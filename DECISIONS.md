@@ -244,6 +244,50 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   adding five more shapes; Sleepy never blinks and still breathes. The start offset is per instance
   so the picker's cells don't blink in lockstep, and frozen under `LocalInspectionMode` so previews
   render the rest pose.
+- **Every state performs, and every channel rests at phase `1f` — `pulse` is why.** The bob is now
+  one branch of `mascotMotion(state, phase)`, a pure function returning a translate, a rotation and
+  two scales: `Celebrating` hops twice a cycle and *stretches in the air* (the ground is where
+  phase `1f` leaves it, so the ground must be the neutral pose — squashing on landing would park a
+  flattened mascot for anyone with animations off), `Thinking` tilts over a three-dot mouth,
+  `Sleepy` breathes in place under a drifting "z", `Happy` sways. `Idle` is deliberately
+  **unchanged**: it is what ~20 call sites draw, and a greeting that started hopping is a change
+  nobody asked for. Because the whole vocabulary is one pure function, `MascotAvatarTest` sweeps
+  `MascotState.entries` at phase `1f` and asserts the identity pose — a state added later cannot
+  quietly skip the rule — plus an envelope sweep, since "full character" has to stay inside a 24dp
+  chat row too (every amplitude is a fraction of the avatar's own size).
+- **Staggered by harmonic, never by phase offset.** Three sparkles and three thinking dots need to
+  be out of step with each other, and the obvious way — offsetting each one's phase — breaks the
+  rest rule, because `sin(2π·(1 + offset)) ≠ 0` leaves each of them somewhere arbitrary when the
+  loop is pinned. So they ride `pulse(phase, k)` for k = 1, 2, 3: visibly out of step frame to
+  frame, exactly `0` at phase `1f` for every k. Both depths are subtractive from the rest value
+  (`1f - depth * abs(pulse(…))`) so full size and full opacity *are* the rest pose, and the sleepy
+  "z" fades on `sin(π·phase)` so at rest there is no "z" at all rather than one stuck halfway up.
+- **The state change springs, and it springs *to* neutral.** An `Animatable` snapped to 0.86 and
+  released on a bouncy spring whenever `state` changes, so the `Idle → Celebrating` flip in
+  `ConfirmTargetsScreen` and the coach's `Thinking → Idle` are moves rather than cuts. It animates
+  *to* the rest pose for the same reason the loop does: an `Animatable` snaps to its target under
+  **Remove animations**, so the target has to be the pose the mascot should be left in. The first
+  composition is skipped via the `remember { arrayOf(state) }` idiom `rememberFillDirection`
+  already uses — three dozen avatars squashing on screen entry is not an entrance.
+- **The poke is opt-in, and it is a `pointerInput` rather than a `clickable`.** `interactive`
+  defaults to **false** because a tap handler consumes the gesture, and most of the ~35 call sites
+  sit inside something already clickable — the buddy picker's cell (a mascot that stopped selecting
+  itself would be the picker's one unforgivable bug), a Progress card, a chat row. Four screens
+  where the mascot is the subject opt in: Home's greeting, onboarding's Welcome, the Profile header
+  and the coach's empty state. `pointerInput` because a ripple over a drawn character is wrong and
+  a decorative avatar must not appear in the accessibility tree as an unlabelled control; the
+  bounce runs on `rememberCoroutineScope()`, whose context carries the recomposer's
+  `MotionDurationScale`, so it collapses to a cut with the rest. No haptic: this app has none
+  anywhere, and a mascot is not where a second feedback idiom starts.
+- **The body is a `Path` so the sheen can be clipped to it.** `drawBody`'s five draw calls became
+  `bodyPath()` returning one path — the same pixels, since a `RoundRect` added to a path is what
+  `drawRoundRect` drew — which lets a single low-alpha circle in `MascotColors.feature` shade the
+  lower right of all five silhouettes instead of needing a per-shape special case. The Celebrating
+  sparkles are drawn four-point stars for the same reason they now twinkle: they were two `Text("✦")`
+  glyphs, and a glyph cannot be scaled per frame off a draw-phase read. Brows are the one piece of
+  face geometry added, and like the mouth they are **shared across every buddy** — arched for
+  Happy/Celebrating, one raised for Thinking, absent for Idle and Sleepy, so no character can come
+  to mean something a state does not.
 - **The Home card order is one nullable String on `Profile`, not a `home_card` table.**
   `homeLayout` holds the card names in display order with a `-` prefix on the hidden ones, and
   `homeCardLayout()`/`encodeHomeCardLayout()` in `:core:designsystem` are the only things that read
