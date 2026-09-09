@@ -41,6 +41,22 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Diary date navigation:** forward stepping stops at today (there are no
   planned meals), and system back from a past day returns to today rather than
   leaving the tab.
+- **The shared day card names an absolute date and no food.** `diaryDateLabel()` says "Today" on
+  a screen the user is looking at now; the PNG outlives the day it was made, so the card formats
+  the date outright — "Today" in a chat thread tomorrow names the wrong day. And it carries meal
+  *subtotals* only: a shared image is read by people the diary was never written for, so how the
+  day went travels and what was eaten does not. `DiarySummaryBar` is rendered verbatim inside it,
+  for the reason `RecapCard` is: two layouts for one set of figures is two places for them to
+  disagree. The link sits at the foot of the scroll rather than in the date header — that row
+  already carries three 48dp buttons and a label it goes out of its way to protect at large font
+  scales — and it is absent on a day with nothing logged.
+- **`ShareImageSheet` lives in `:core:designsystem`, and that move was forced rather than tidy.**
+  The capture-and-share pair was `:feature:progress`'s while the recap and the photo strip were the
+  only pictures the app shared; the diary's day card is the third, `:feature:*` modules never
+  import each other, and duplicating it is what the shared-component rule exists to stop. Taking
+  the sheet chrome with it — the opaque ground, the brand footer, the `picture.width > 0` guard —
+  was the difference between moving two functions and moving two functions plus the same
+  twenty-five lines that were already copied into both callers. Net deletion.
 - **The FAB is today-only; every in-diary door carries the diary's day.**
   `BarcodeScanRoute`, `VoiceLogRoute` and `FoodCaptureRoute` all take a
   `dateEpochDay`, and the diary's three icon doors pass `uiState.selectedDate`, so a

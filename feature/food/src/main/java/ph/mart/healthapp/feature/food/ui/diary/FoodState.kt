@@ -35,6 +35,7 @@ internal class FoodScreenState(
     editingEntryId: Long? = null,
     editingExerciseId: Long? = null,
     ideasFor: MealType? = null,
+    shareOpen: Boolean = false,
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -61,6 +62,10 @@ internal class FoodScreenState(
      */
     var editingEntryId: Long? by mutableStateOf(editingEntryId)
     var editingExerciseId: Long? by mutableStateOf(editingExerciseId)
+
+    /** Whether the day's share sheet is over the diary. UI-only: what it shows is the day the
+     * screen is already holding, so there is nothing to restore but the fact that it was open. */
+    var shareOpen: Boolean by mutableStateOf(shareOpen)
 
     /** Which meal section's entries the "save this meal" sheet is naming, and the name so far. */
     var saveMealFor: MealType? by mutableStateOf(saveMealFor)
@@ -153,6 +158,7 @@ internal class FoodScreenState(
                         // Appended, never inserted: every index below is positional, so a new
                         // field in the middle would silently re-point all of them.
                         it.filterExpanded,
+                        it.shareOpen,
                     )
             },
             restore = { saved ->
@@ -179,6 +185,7 @@ internal class FoodScreenState(
                     editingExerciseId = saved[16 + MealType.entries.size] as Long?,
                     ideasFor = (saved[17 + MealType.entries.size] as String?)?.let(MealType::valueOf),
                     filterExpanded = saved[18 + MealType.entries.size] as Boolean,
+                    shareOpen = saved[19 + MealType.entries.size] as Boolean,
                 )
             },
         )

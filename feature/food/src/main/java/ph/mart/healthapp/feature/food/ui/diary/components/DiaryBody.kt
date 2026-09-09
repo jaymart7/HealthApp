@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,18 +20,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import ph.mart.healthapp.core.data.exercise.budgetKcal
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
+import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.FoodEvent
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.FoodUiState
+import ph.mart.healthapp.feature.food.ui.diary.dayBudgetKcal
 import ph.mart.healthapp.feature.food.ui.diary.rememberFoodScreenState
 import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseSection
 import ph.mart.healthapp.feature.food.ui.shared.components.LabelledActionChip
@@ -94,18 +96,14 @@ internal fun DiaryBody(
             val burned = dayBurnedKcal(uiState.exercise, uiState.steps)
             DiarySummaryBar(
                 consumed = uiState.entries.dailyTotals(),
-                goalKcal = budgetKcal(
-                    targetKcal = targets.calories,
-                    burnedKcal = burned,
-                    addExercise = uiState.addExerciseToBudget,
-                ),
+                goalKcal = uiState.dayBudgetKcal(targets),
                 proteinGoalG = targets.proteinG,
                 carbsGoalG = targets.carbsG,
                 fatGoalG = targets.fatG,
                 nutrientTargets = uiState.nutrientTargets,
                 collapsed = summaryCollapsed,
-                // The same two values budgetKcal() just folded together, so the credit line can
-                // never claim a credit the goal above it did not actually receive.
+                // The same burn dayBudgetKcal() just folded in, so the credit line can never
+                // claim a credit the goal above it did not actually receive.
                 burnedKcal = burned,
                 exerciseCredited = uiState.addExerciseToBudget,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -236,6 +234,19 @@ internal fun DiaryBody(
                     }
                 },
             )
+
+            // The one door to the day's shared image, at the foot of the scroll rather than in the
+            // date header — that row already carries three 48dp buttons and a label it goes out of
+            // its way to protect at large font scales. Home's "Rearrange your Home" link is the
+            // shape. Absent on a day with nothing on it: there is no day to share yet.
+            if (!dayIsEmpty && uiState.targets != null) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    TextButton(
+                        label = stringResource(R.string.food_share_day),
+                        onClick = { state.shareOpen = true },
+                    )
+                }
+            }
         }
     }
 }

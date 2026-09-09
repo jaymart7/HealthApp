@@ -102,6 +102,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   once, every parsed row editable and repriceable before anything is written. Speech is the
   system's own dialog; typing is the same path.
 - Water row in the diary; water goal and glass size configurable.
+- Share the day — a PNG card of the day's summary bar and its per-meal totals, from a link at
+  the foot of the diary. Absolute date, no food names.
 - Meal ideas — AI suggestions sized to the day's remaining calories, with an offline fallback
   built from the user's own recents and recipes; picking one seeds the add sheet, never logs.
 
@@ -254,11 +256,12 @@ CalendarPanel · DateFormat · DiscardConfirmDialog · DockedFab · FoodItemRow 
 GoalProjectionLine · HealthDisclosurePanel · HomeCardLayout · MacroBar · MacroInputGroup ·
 MascotAvatar · MascotSpeechBubble · MealThumbnail · MicronutrientInputGroup · NutrientPanel ·
 PhotoBitmap (`rememberBitmapFromFile`, every stored photo in the app decodes through it) ·
-NumericStepperField · SegmentedToggle · SelectableCard · SheetDatePicker · StepProgressBar ·
+NumericStepperField · SegmentedToggle · SelectableCard · ShareImageSheet (`captureToPicture` +
+`sharePng`, every picture the app hands the chooser) · SheetDatePicker · StepProgressBar ·
 WaterGlassRow.
 
 Charts live in `:feature:progress/ui/shared/`: `DayBarChart` (zero-based) and `RangeBarChart`
-(floating bars), plus the capture-and-share pair.
+(floating bars).
 
 ## Localization scaffolding
 

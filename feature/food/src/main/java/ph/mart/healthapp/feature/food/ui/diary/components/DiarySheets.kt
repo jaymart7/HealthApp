@@ -48,6 +48,13 @@ internal fun DiarySheets(
     var pendingDeleteSavedMeal by remember { mutableStateOf<SavedMeal?>(null) }
     var pendingDeleteRecipe by remember { mutableStateOf<Recipe?>(null) }
 
+    // The day as a picture. Needs the targets the summary bar reads against, so it is silent
+    // without a profile — the same condition the bar itself draws under.
+    val targets = uiState.targets
+    if (state.shareOpen && targets != null) {
+        ShareDaySheet(uiState = uiState, targets = targets, onDismiss = { state.shareOpen = false })
+    }
+
     val activeMealSheet = state.activeMealSheet
     if (activeMealSheet != null) {
         AddEntrySheet(

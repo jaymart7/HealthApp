@@ -68,6 +68,7 @@
     <string name="food_section_collapsed">Collapsed</string>
     <string name="food_section_spoken">%1$s, %2$d kilocalories</string>
     <string name="food_section_kcal">%1$d kcal</string>
+    <string name="food_share_day">Share this day</string>
     <string name="food_section_save_meal">Save %1$s as a meal</string>
     <string name="food_section_add_to">Add to %1$s</string>
 

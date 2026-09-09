@@ -273,7 +273,6 @@
     <string name="progress_compare_title">Compare photos</string>
     <string name="progress_compare_spoken">Before %1$s, after %2$s. Drag to reveal.</string>
     <string name="progress_weight_value">%1$s %2$s</string>
-    <string name="progress_strip_brand">FitPulse</string>
     <plurals name="progress_strip_days">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>

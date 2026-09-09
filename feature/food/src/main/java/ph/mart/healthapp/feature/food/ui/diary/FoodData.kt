@@ -56,6 +56,17 @@ data class FoodUiState(
     val unit: UnitSystem = UnitSystem.Metric,
 )
 
+/**
+ * The calorie goal the summary bar reads against: the target, plus the day's burn when the profile
+ * says to credit it. One function because the diary and the day's shared image must never disagree
+ * about what the budget was.
+ */
+internal fun FoodUiState.dayBudgetKcal(targets: DailyTargets): Int = budgetKcal(
+    targetKcal = targets.calories,
+    burnedKcal = dayBurnedKcal(exercise, steps),
+    addExercise = addExerciseToBudget,
+)
+
 /** Twin of [ScannedProduct.toAddEntryForm][ph.mart.healthapp.core.data.food.ScannedProduct] — a
  * suggestion seeds the sheet's fields exactly like a search hit does, and stays editable after. */
 fun FoodSuggestion.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryForm(

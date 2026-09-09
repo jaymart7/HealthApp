@@ -32,6 +32,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    // FileProvider, for the share-image grant.
+    implementation(libs.androidx.core.ktx)
+
     implementation(libs.androidx.navigationevent)
     implementation(libs.androidx.navigationevent.compose)
 

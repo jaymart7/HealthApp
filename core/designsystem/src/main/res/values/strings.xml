@@ -91,4 +91,8 @@
     <string name="ds_health_scope_nutrition_body">The meals and water you log in FitPulse are sent to Google Health.</string>
     <string name="ds_health_storage">Your health data is stored on this device. FitPulse never sells or shares it, and doesn\'t upload it anywhere except Google Health. You can disconnect and delete it at any time from Profile.</string>
     <string name="ds_health_connect">Connect Google Health</string>
+
+    <!-- Shared image (ShareImageSheet) -->
+    <string name="ds_share">Share</string>
+    <string name="ds_share_brand">FitPulse</string>
 </resources>

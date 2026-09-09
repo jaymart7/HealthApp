@@ -320,9 +320,8 @@ what stop the next pass undoing it.
   detail chrome and the recap — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts, and a
-  `shared/` holding `RangeBarChart`, `DayBarChart` and `SharePng` (the capture-and-share pair two
-  flows draw), the first two of which between them draw every subject's bars except Mood's,
-  Nutrition's and Supplements'),
+  `shared/` holding `RangeBarChart` and `DayBarChart`, which between them draw every subject's
+  bars except Mood's, Nutrition's and Supplements'),
   `:feature:profile` (`profile`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
   `shared/` holding `LibraryRow` and `RenameSheet`, which the food library and the routine library
   both draw) and `:feature:onboarding`
