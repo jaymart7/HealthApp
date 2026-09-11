@@ -204,6 +204,7 @@ class FitPulseApplication : Application() {
     }
 
     private fun signInAnonymously() {
+        Firebase.auth.useAppLanguage()
         if (Firebase.auth.currentUser == null) {
             Firebase.auth.signInAnonymously()
         }

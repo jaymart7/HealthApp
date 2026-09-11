@@ -211,10 +211,10 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
   throughout; a commissioned set replaces the five drawings, not the picker around them.
 - Google Health: verification is *not* done. Needs the Cloud project's consent screen branded
   for FitPulse, an Android OAuth client (package + debug **and** release SHA-1) in that same
-  project, per-scope justifications submitted, and a CASA Letter of Validation. Note that
-  `app/google-services.json` points at a different project (`moviefied-3d48b`) than the OAuth
-  credentials that were supplied — pick one project and confirm which consent screen the first
-  `authorize()` actually raises.
+  project, per-scope justifications submitted, and a CASA Letter of Validation. The project
+  question is settled — `app/google-services.json` points at `fitpulse-8d951`, the same project
+  Firebase AI Logic runs in — but its `oauth_client` array is still empty, so `authorize()` has no
+  Android client to raise a consent screen for.
 - Google Health weight parsing reads the timestamp from `sampleTime.physicalTime` with a flat
   `physicalTime` fallback; pin it once a live response has been captured.
 - `parseStepsPage` reads the bucket count from `count`, then `steps`, then `delta`, for the same

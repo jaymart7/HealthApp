@@ -1161,6 +1161,26 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   state from Room, and a plain `reduce { newState }` would erase the line on the next tap. The
   prompt is sent the gaps (consumed vs target, water, streak, weekly weight delta) and never age,
   sex, height or absolute weight — same data-minimisation rule as the health backfill.
+- **One model name for five call sites, and every swallowed AI exception gets one log line.**
+  `AI_MODEL_NAME` and `logAiFailure()` sit together in `:core:data/Ai.kt`, because they are two
+  halves of the same failure. A Gemini model is a wasting asset — Google publishes shutdown dates
+  and a retired name answers 404, not a deprecation warning — and all five AI repositories had
+  their own `private const val MODEL_NAME`, so the name went stale five times at once. Worse, each
+  one caught `(_: Exception)` and returned its graceful fallback, which is the right behaviour and
+  also means a dead model, an App Check refusal, a disabled Anonymous provider and airplane mode
+  are indistinguishable in logcat: the app just goes quiet. That is how `gemini-1.5-flash` outlived
+  its shutdown here. The fallbacks stay exactly as they were — this adds a bound exception and a
+  `Log.w` above each, nothing else. Remote Config is the upgrade path if the name needs changing
+  without a release; one constant is enough while a release is cheap.
+- **`ensureAuth()` never rethrows, and it calls `useAppLanguage()`.** Firebase AI Logic documents
+  App Check, not Authentication, as what the backend checks; the anonymous sign-in is here because
+  the SDK attaches an Auth token when `firebase-auth` is on the classpath and threw
+  `FirebaseNoSignedInUserException` without one. So a sign-in failure is logged and let through
+  rather than thrown: throwing pre-empts the AI call with an exception of our own making, which the
+  caller swallows identically, making a console misconfiguration look exactly like being offline.
+  The `useAppLanguage()` call buys nothing functional — it silences
+  `Ignoring header X-Firebase-Locale because its value was null`, a benign GMS log that appears on
+  requests that succeed and otherwise sits in logcat looking like the cause of every failure.
 
 - **A strength workout is an `ExerciseEntry` with sets, not a second kind of thing.** One table for
   the workout, one child table for the sets, and `sets.isEmpty()` is what says "cardio" — the

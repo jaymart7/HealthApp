@@ -5,8 +5,9 @@ import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-
-private const val MODEL_NAME = "gemini-1.5-flash"
+import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.ensureAuth
+import ph.mart.healthapp.core.data.logAiFailure
 
 /** One sentence's worth. A cap here is cheaper than trusting the prompt's "under 120 characters",
  * and [sanitizeInsight] rejects whatever gets through anyway. */
@@ -28,7 +29,7 @@ internal class InsightRepositoryImpl : InsightRepository {
         backend = GenerativeBackend.googleAI(),
         useLimitedUseAppCheckTokens = true,
     ).generativeModel(
-        modelName = MODEL_NAME,
+        modelName = AI_MODEL_NAME,
         generationConfig = generationConfig { maxOutputTokens = MAX_OUTPUT_TOKENS },
     )
 
@@ -36,12 +37,13 @@ internal class InsightRepositoryImpl : InsightRepository {
     private var cached: Pair<Long, String>? = null
 
     override suspend fun dailyInsight(request: InsightRequest, todayEpochDay: Long): String? {
-        ph.mart.healthapp.core.data.ensureAuth()
         cached?.let { (day, text) -> if (day == todayEpochDay) return text }
 
         val insight = try {
+            ensureAuth()
             sanitizeInsight(model.generateContent(content { text(promptFor(request)) }).text)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logAiFailure("dailyInsight", e)
             // Offline, throttled, App Check refused — all the same to the caller, which falls
             // back to the rule-based line either way.
             null

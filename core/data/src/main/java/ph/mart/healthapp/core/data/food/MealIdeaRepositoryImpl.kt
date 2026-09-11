@@ -7,9 +7,10 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONArray
+import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.ensureAuth
+import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.profile.DietaryPreference
-
-private const val MODEL_NAME = "gemini-1.5-flash"
 
 /** Three foods with ten fields each. [fitting] rejects whatever gets past it, but capping here is
  * cheaper than paying for a list that will be thrown away. */
@@ -45,7 +46,7 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
         backend = GenerativeBackend.googleAI(),
         useLimitedUseAppCheckTokens = true,
     ).generativeModel(
-        modelName = MODEL_NAME,
+        modelName = AI_MODEL_NAME,
         generationConfig = generationConfig {
             maxOutputTokens = MAX_OUTPUT_TOKENS
             responseMimeType = "application/json"
@@ -54,13 +55,14 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
     )
 
     override suspend fun ideas(request: MealIdeaRequest): MealIdeaResult = try {
-        ph.mart.healthapp.core.data.ensureAuth()
+        ensureAuth()
         val response = model.generateContent(content { text(promptFor(request)) })
         val ideas = parse(response.text).fitting(request.remainingKcal)
         // An empty list is a failure, not an answer: the screen's fallback — the user's own foods —
         // is better than a heading over nothing.
         if (ideas.isEmpty()) MealIdeaResult.Failed else MealIdeaResult.Success(ideas)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        logAiFailure("meal ideas", e)
         // Offline, throttled, App Check refused — all the same to the caller.
         MealIdeaResult.Failed
     }

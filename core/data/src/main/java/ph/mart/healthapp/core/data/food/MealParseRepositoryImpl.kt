@@ -7,8 +7,9 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONArray
-
-private const val MODEL_NAME = "gemini-1.5-flash"
+import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.ensureAuth
+import ph.mart.healthapp.core.data.logAiFailure
 
 /** [MAX_PARSED_FOODS] foods with eleven fields each. [loggable] rejects whatever gets past it, but
  * capping here is cheaper than paying for a list that will be thrown away. */
@@ -45,7 +46,7 @@ internal class MealParseRepositoryImpl : MealParseRepository {
         backend = GenerativeBackend.googleAI(),
         useLimitedUseAppCheckTokens = true,
     ).generativeModel(
-        modelName = MODEL_NAME,
+        modelName = AI_MODEL_NAME,
         generationConfig = generationConfig {
             maxOutputTokens = MAX_OUTPUT_TOKENS
             responseMimeType = "application/json"
@@ -54,14 +55,15 @@ internal class MealParseRepositoryImpl : MealParseRepository {
     )
 
     override suspend fun parse(text: String): MealParseResult = try {
-        ph.mart.healthapp.core.data.ensureAuth()
+        ensureAuth()
         val prompt = promptFor(text.take(MAX_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
         val foods = parseFoods(response.text).loggable()
         // An empty list means the sentence named nothing edible — a real answer with its own
         // screen, not a failure to retry.
         if (foods.isEmpty()) MealParseResult.NoFoodFound else MealParseResult.Success(foods)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        logAiFailure("meal parse", e)
         // Offline, throttled, App Check refused — all the same to the caller.
         MealParseResult.Failed
     }

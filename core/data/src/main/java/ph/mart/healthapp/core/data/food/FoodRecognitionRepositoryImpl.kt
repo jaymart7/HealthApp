@@ -8,8 +8,9 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONObject
-
-private const val MODEL_NAME = "gemini-1.5-flash"
+import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.ensureAuth
+import ph.mart.healthapp.core.data.logAiFailure
 
 private const val PROMPT = """
 You are a nutrition-estimation assistant for a food-logging app. Look at the photo and identify
@@ -47,7 +48,7 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
         backend = GenerativeBackend.googleAI(),
         useLimitedUseAppCheckTokens = true,
     ).generativeModel(
-        modelName = MODEL_NAME,
+        modelName = AI_MODEL_NAME,
         generationConfig = generationConfig {
             responseMimeType = "application/json"
             responseSchema = RESPONSE_SCHEMA
@@ -55,10 +56,11 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     )
 
     override suspend fun recognize(photo: Bitmap): RecognitionResult = try {
-        ph.mart.healthapp.core.data.ensureAuth()
+        ensureAuth()
         val response = model.generateContent(content { image(photo); text(PROMPT) })
         parse(response.text)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        logAiFailure("photo recognize", e)
         RecognitionResult.Failed
     }
 

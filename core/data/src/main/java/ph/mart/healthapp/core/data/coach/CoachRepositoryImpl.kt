@@ -8,12 +8,13 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
+import ph.mart.healthapp.core.data.ensureAuth
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
-
-private const val MODEL_NAME = "gemini-1.5-flash"
+import ph.mart.healthapp.core.data.logAiFailure
 
 /** A few sentences' worth. [sanitizeReply] rejects whatever gets past it, but capping here is
  * cheaper than paying for a paragraph that will be thrown away. */
@@ -36,20 +37,21 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
         dao.observeAll().map { messages -> messages.map { it.toMessage() } }
 
     override suspend fun send(question: String, request: InsightRequest?): CoachReply {
-        ph.mart.healthapp.core.data.ensureAuth()
         val model = Firebase.ai(
             backend = GenerativeBackend.googleAI(),
             useLimitedUseAppCheckTokens = true,
         ).generativeModel(
-            modelName = MODEL_NAME,
+            modelName = AI_MODEL_NAME,
             generationConfig = generationConfig { maxOutputTokens = MAX_OUTPUT_TOKENS },
             systemInstruction = content { text(systemPromptFor(request)) },
         )
 
         val answer = try {
+            ensureAuth()
             val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
             sanitizeReply(chat.sendMessage(question).text)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            logAiFailure("coach send", e)
             null
         } ?: return CoachReply.Failed
 
