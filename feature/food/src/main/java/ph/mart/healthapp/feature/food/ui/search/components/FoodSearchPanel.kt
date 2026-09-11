@@ -39,7 +39,7 @@ import ph.mart.healthapp.feature.food.ui.search.OnlineSearch
 import ph.mart.healthapp.feature.food.ui.search.hasMore
 import ph.mart.healthapp.feature.food.ui.search.visibleItems
 
-/** Four rows and a sliver of the fifth: enough to browse in, short enough to leave a form beside. */
+/** Four rows and a sliver of the fifth — the cap where the host has no height to give. */
 private val RESULTS_MAX_HEIGHT = 280.dp
 
 /**
@@ -58,17 +58,30 @@ private val RESULTS_MAX_HEIGHT = 280.dp
  * the next eight when the results box is scrolled to its bottom. The box is bounded and scrolls
  * itself rather than growing, because two of the three hosts draw their own form directly beneath
  * it — a list that got taller as you read it would walk that form down the screen.
+ *
+ * [fillHeight] is for the host that has height to give: the photo flow's manual search owns its
+ * whole screen, so its box takes `weight(1f)` and ends where the buttons begin instead of stopping
+ * at [RESULTS_MAX_HEIGHT]. It is a parameter rather than something the panel works out for itself
+ * because a weight is worth 0dp inside the `verticalScroll` the other two hosts draw it in, and the
+ * panel cannot see which one it is in. Pass `Modifier.weight(1f)` with it.
  */
 @Composable
 internal fun FoodSearchPanel(
     onSelect: (ScannedProduct) -> Unit,
     modifier: Modifier = Modifier,
+    fillHeight: Boolean = false,
     viewModel: FoodSearchViewModel = koinViewModel(),
 ) {
     // koinViewModel() has no graph to resolve against under @Preview — render the first page so
     // every caller's @PreviewLightDark still shows this screen, same trick as AppBottomSheet.
     if (LocalInspectionMode.current) {
-        FoodSearchPanelContent(FoodSearchUiState(), onEvent = {}, onSelect = onSelect, modifier = modifier)
+        FoodSearchPanelContent(
+            uiState = FoodSearchUiState(),
+            onEvent = {},
+            onSelect = onSelect,
+            fillHeight = fillHeight,
+            modifier = modifier,
+        )
         return
     }
 
@@ -77,6 +90,7 @@ internal fun FoodSearchPanel(
         uiState = uiState,
         onEvent = viewModel::handleEvent,
         onSelect = onSelect,
+        fillHeight = fillHeight,
         modifier = modifier,
     )
 }
@@ -86,6 +100,7 @@ private fun FoodSearchPanelContent(
     uiState: FoodSearchUiState,
     onEvent: (FoodSearchEvent) -> Unit,
     onSelect: (ScannedProduct) -> Unit,
+    fillHeight: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -99,7 +114,9 @@ private fun FoodSearchPanelContent(
         // keystroke to finish being announced.
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            modifier = Modifier
+                .then(if (fillHeight) Modifier.weight(1f) else Modifier)
+                .semantics { liveRegion = LiveRegionMode.Polite },
         ) {
             val items = uiState.visibleItems
             // "No matches" is only true once the online tier has stopped having something to say:
@@ -108,7 +125,12 @@ private fun FoodSearchPanelContent(
             if (items.isEmpty() && uiState.onlineStatus == OnlineSearch.Idle) {
                 Hint(stringResource(R.string.food_search_no_matches))
             } else {
-                ResultsBox(uiState = uiState, onEvent = onEvent, onSelect = onSelect)
+                ResultsBox(
+                    uiState = uiState,
+                    onEvent = onEvent,
+                    onSelect = onSelect,
+                    modifier = if (fillHeight) Modifier.weight(1f) else Modifier.heightIn(max = RESULTS_MAX_HEIGHT),
+                )
                 if (uiState.hasMore) {
                     Hint(stringResource(R.string.food_search_showing, items.size, uiState.results.size))
                 }
@@ -124,8 +146,9 @@ private fun FoodSearchPanelContent(
 
 /**
  * The rows, and only the rows: the hints stay outside so "searching online…" never needs scrolling
- * to. [RESULTS_MAX_HEIGHT] is deliberately not a multiple of the row height — the row cut in half at
- * the bottom edge is what says there is more, the job the Next button used to do.
+ * to. The height comes from the caller — a weight where the host has height to give, else
+ * [RESULTS_MAX_HEIGHT], which is deliberately not a multiple of the row height: the row cut in half
+ * at the bottom edge is what says there is more, the job the Next button used to do.
  *
  * Scrolling to the bottom asks for the next page. `maxValue` grows with each one, so the flag falls
  * back to false and re-arms; at the end of the list the state stops changing and the ask is dropped.
@@ -135,11 +158,12 @@ private fun ResultsBox(
     uiState: FoodSearchUiState,
     onEvent: (FoodSearchEvent) -> Unit,
     onSelect: (ScannedProduct) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val scroll = rememberScrollState()
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.heightIn(max = RESULTS_MAX_HEIGHT).verticalScroll(scroll),
+        modifier = modifier.verticalScroll(scroll),
     ) {
         uiState.visibleItems.forEach { product ->
             SearchHitRow(product = product, onClick = { onSelect(product) })

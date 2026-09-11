@@ -239,7 +239,10 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   bounded, scrolling results box, not in the host's scroll: two of the three hosts draw their form
   directly beneath the panel, and a list that got taller as you read it would walk that form down
   the screen. `RESULTS_MAX_HEIGHT` is not a multiple of the row height on purpose — the row cut in
-  half at the bottom edge is the affordance the Next button used to be. `FoodSearchViewModel` holds
+  half at the bottom edge is the affordance the Next button used to be. The photo flow's manual
+  search is the host that *does* have height to give, so it passes `fillHeight = true` with a
+  `weight(1f)` and its box runs to the buttons. That is a parameter rather than something the panel
+  infers because a weight measures 0dp inside the other two hosts' `verticalScroll`. `FoodSearchViewModel` holds
   that window, which survives a rotation where a composable's `remember` would not.
 - **The FDC key is a gradle property, and its budget is app-wide.** `fdcApiKey` lives in
   `~/.gradle/gradle.properties` and reaches the code as `BuildConfig.FDC_API_KEY` in `:core:data`,

@@ -3,7 +3,6 @@ package ph.mart.healthapp.feature.food.ui.photo.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fitInside
@@ -60,11 +59,13 @@ internal fun ManualSearchScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
+            // The panel takes the space the spacer used to hold: this screen is nothing but the
+            // search, so its results run to the buttons rather than stopping at a fixed height.
             FoodSearchPanel(
                 onSelect = onSelectProduct,
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier.weight(1f).padding(top = 16.dp, bottom = 16.dp),
+                fillHeight = true,
             )
-            Spacer(modifier = Modifier.weight(1f))
             SecondaryButton(
                 label = stringResource(R.string.food_photo_enter_manually),
                 onClick = onEnterManually,
