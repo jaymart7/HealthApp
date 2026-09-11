@@ -25,6 +25,11 @@ photo timelapse · photo comparison slider · meal-photo gallery · meal ideas.
 **Off-phone surfaces:** Glance home-screen widget (`:app/widget/`) · Wear OS app (`:wear`) ·
 Wear tile · WorkManager notifications (`:app/reminder/`).
 
+**FAB quick-action sheet** (`:app/ui/QuickActionSheet.kt`): six rows split by a rule. Above it,
+the diary chip row's three food doors — say what you ate · scan a barcode · log food (the camera)
+— each with a `tertiaryContainer`-badged glyph. Below it, log exercise · add photo (a body
+progress shot) · log weight, bare glyphs. Three rows carry a supporting line.
+
 **Launcher shortcuts** (`@xml/shortcuts`, static): Say what you ate · Log food · Add water ·
 Weigh in. The first three of those are the FAB sheet's own rows; water writes a glass and lands
 on Home.

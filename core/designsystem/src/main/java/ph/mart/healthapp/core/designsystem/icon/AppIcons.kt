@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.outlined.Edit
@@ -41,6 +42,7 @@ import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.MonitorWeight
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
@@ -62,6 +64,9 @@ object AppIcons {
     val Favorite = DualStateIcon(Icons.Filled.Star, Icons.Outlined.StarBorder)
 
     val Add: ImageVector = Icons.Filled.Add
+    /** The progress photo, wherever it has to read as a body shot rather than a plate —
+     * [Camera] is the plate, and the FAB's sheet draws both. */
+    val AddPhoto: ImageVector = Icons.Outlined.AddAPhoto
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val Barcode: ImageVector = Icons.Filled.QrCodeScanner
     /** Notifications, wherever reminders are the subject rather than a single alert. */
@@ -107,4 +112,5 @@ object AppIcons {
      * `errorContainer` surface; see the floor warning's own comment. */
     val Warning: ImageVector = Icons.Outlined.WarningAmber
     val Water: ImageVector = Icons.Outlined.WaterDrop
+    val Weight: ImageVector = Icons.Outlined.MonitorWeight
 }

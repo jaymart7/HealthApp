@@ -969,6 +969,23 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   re-point it the way a second notification does. `shortcutActionOf` takes the extra's **String**
   rather than the `Intent` for the reason `mascotCharacterOf` does — it is the pure half a JVM test
   can reach, and an unknown name (a shortcut pinned by an older build) degrades to null.
+- **The FAB sheet's rule sits at 3|4 because rows 1–3 *are* the diary's chip row.** *Say what you
+  ate*, *Scan a barcode* and *Log food* route to `VoiceLogRoute`, `BarcodeScanRoute` and
+  `FoodCaptureRoute` — the same three destinations `DiaryBody`'s `LabelledActionChip` row sends,
+  in the same order, drawing the same three `AppIcons`. So *Log food* is the **camera**, which the
+  launcher shortcut's long label ("Photograph a meal") has always said, and *Add photo* is a
+  **body progress shot** (`:feature:progress`'s `AddPhotoSheet`) with no AI and no plate in it.
+  A redesign handoff read those two backwards — it had *Log food* as manual search and *Add photo*
+  as plate recognition, which strands the third food door below the split and needs a `tertiary`
+  glyph to mark it back up again. Read correctly the two kinds are contiguous, the rule is a
+  straight line between them, and the exception disappears: three `tertiaryContainer` badges above,
+  three bare `onSurfaceVariant` glyphs below. The leading slot is 40dp in **both** cases — a badge
+  and a bare glyph share one optical column, or the labels stop lining up across the rule.
+- **The quick-action sheet is the one caller passing `AppBottomSheet(horizontalPadding = 0.dp)`.**
+  Every other sheet takes the 16dp default. A list row's pressed state layer that stops 16dp short
+  of each edge reads as a button rather than a row, so these rows take the gutter themselves and
+  the ripple runs the sheet's full width. The rule keeps the 16dp, because a full-bleed divider
+  reads as a seam between two sheets instead of one inside a list.
 - **`EXTRA_ACTION`'s vocabulary is the FAB sheet's rows, and water is its one exception.** A
   shortcut is `QuickActionSheet` with the tap pre-made, so *Say what you ate*, *Log food* and
   *Weigh in* resolve to the same `topLevelBackStack.add(…)` or the same `ActiveSheet` value that

@@ -13,13 +13,18 @@
     <string name="shortcut_log_weight_short">Weigh in</string>
     <string name="shortcut_log_weight_long">Log today\'s weight</string>
 
-    <!-- Quick-action sheet (the FAB) -->
+    <!-- Quick-action sheet (the FAB). Three rows carry a second line and three do not: scan,
+         exercise and weight already say what they do, and a line there is padding that costs the
+         sheet 12dp each. -->
     <string name="app_quick_speak_food">Say what you ate</string>
+    <string name="app_quick_speak_food_detail">One sentence becomes a meal</string>
     <string name="app_quick_scan_barcode">Scan a barcode</string>
     <string name="app_quick_log_food">Log food</string>
+    <string name="app_quick_log_food_detail">We\'ll recognise the plate</string>
     <string name="app_quick_log_exercise">Log exercise</string>
     <string name="app_quick_log_weight">Log weight</string>
     <string name="app_quick_add_photo">Add photo</string>
+    <string name="app_quick_add_photo_detail">A progress shot for your timeline</string>
 
     <!-- Bottom nav / rail tabs -->
     <string name="app_tab_home">Home</string>

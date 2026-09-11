@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
@@ -36,18 +37,24 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * itself) runs past that on a small phone — without this its Add button is simply out of reach.
  * The sheet's own drag still wins while the scroll sits at the top. Nothing inside a sheet may be
  * a lazy list: this hands its children unbounded height.
+ *
+ * [horizontalPadding] is the content column's gutter and is 16dp for every sheet but one. The
+ * quick-action sheet passes `0.dp` and pads each of its rows instead, so a row's pressed state
+ * layer runs the sheet's full width rather than stopping short of it — a list row's ripple that
+ * leaves a 16dp margin either side reads as a button, not a row.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    horizontalPadding: Dp = 16.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // ModalBottomSheet lives in its own dialog window, which @Preview can't host — render a static
     // stand-in so every caller's @PreviewLightDark still shows the sheet.
     if (LocalInspectionMode.current) {
-        PreviewSheet(modifier = modifier, content = content)
+        PreviewSheet(modifier = modifier, horizontalPadding = horizontalPadding, content = content)
         return
     }
 
@@ -60,14 +67,18 @@ fun AppBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                .padding(start = horizontalPadding, end = horizontalPadding, bottom = 24.dp),
             content = content,
         )
     }
 }
 
 @Composable
-private fun PreviewSheet(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+private fun PreviewSheet(
+    modifier: Modifier,
+    horizontalPadding: Dp,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -79,7 +90,8 @@ private fun PreviewSheet(modifier: Modifier, content: @Composable ColumnScope.()
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
                 .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .padding(top = 12.dp, start = 16.dp, end = 16.dp, bottom = 24.dp),
+                .padding(top = 12.dp, bottom = 24.dp)
+                .padding(start = horizontalPadding, end = horizontalPadding),
         ) {
             Box(
                 modifier = Modifier
