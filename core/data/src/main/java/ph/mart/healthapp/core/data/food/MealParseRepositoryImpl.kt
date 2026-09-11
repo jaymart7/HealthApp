@@ -2,15 +2,13 @@ package ph.mart.healthapp.core.data.food
 
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONArray
-import org.json.JSONException
 
-private const val MODEL_NAME = "gemini-2.5-flash"
+private const val MODEL_NAME = "gemini-1.5-flash"
 
 /** [MAX_PARSED_FOODS] foods with eleven fields each. [loggable] rejects whatever gets past it, but
  * capping here is cheaper than paying for a list that will be thrown away. */
@@ -43,7 +41,10 @@ private val PARSED_FOOD_SCHEMA = Schema.obj(
  */
 internal class MealParseRepositoryImpl : MealParseRepository {
 
-    private val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    private val model = Firebase.ai(
+        backend = GenerativeBackend.googleAI(),
+        useLimitedUseAppCheckTokens = true,
+    ).generativeModel(
         modelName = MODEL_NAME,
         generationConfig = generationConfig {
             maxOutputTokens = MAX_OUTPUT_TOKENS
@@ -53,16 +54,15 @@ internal class MealParseRepositoryImpl : MealParseRepository {
     )
 
     override suspend fun parse(text: String): MealParseResult = try {
+        ph.mart.healthapp.core.data.ensureAuth()
         val prompt = promptFor(text.take(MAX_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
         val foods = parseFoods(response.text).loggable()
         // An empty list means the sentence named nothing edible — a real answer with its own
         // screen, not a failure to retry.
         if (foods.isEmpty()) MealParseResult.NoFoodFound else MealParseResult.Success(foods)
-    } catch (_: FirebaseAIException) {
+    } catch (_: Exception) {
         // Offline, throttled, App Check refused — all the same to the caller.
-        MealParseResult.Failed
-    } catch (_: JSONException) {
         MealParseResult.Failed
     }
 

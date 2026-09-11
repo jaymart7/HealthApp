@@ -3,7 +3,6 @@ package ph.mart.healthapp.core.data.coach
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
-import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
@@ -14,7 +13,7 @@ import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
 
-private const val MODEL_NAME = "gemini-2.5-flash"
+private const val MODEL_NAME = "gemini-1.5-flash"
 
 /** A few sentences' worth. [sanitizeReply] rejects whatever gets past it, but capping here is
  * cheaper than paying for a paragraph that will be thrown away. */
@@ -37,7 +36,11 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
         dao.observeAll().map { messages -> messages.map { it.toMessage() } }
 
     override suspend fun send(question: String, request: InsightRequest?): CoachReply {
-        val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+        ph.mart.healthapp.core.data.ensureAuth()
+        val model = Firebase.ai(
+            backend = GenerativeBackend.googleAI(),
+            useLimitedUseAppCheckTokens = true,
+        ).generativeModel(
             modelName = MODEL_NAME,
             generationConfig = generationConfig { maxOutputTokens = MAX_OUTPUT_TOKENS },
             systemInstruction = content { text(systemPromptFor(request)) },
@@ -46,7 +49,7 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
         val answer = try {
             val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
             sanitizeReply(chat.sendMessage(question).text)
-        } catch (_: FirebaseAIException) {
+        } catch (_: Exception) {
             null
         } ?: return CoachReply.Failed
 

@@ -2,12 +2,11 @@ package ph.mart.healthapp.core.data.insight
 
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 
-private const val MODEL_NAME = "gemini-2.5-flash"
+private const val MODEL_NAME = "gemini-1.5-flash"
 
 /** One sentence's worth. A cap here is cheaper than trusting the prompt's "under 120 characters",
  * and [sanitizeInsight] rejects whatever gets through anyway. */
@@ -25,7 +24,10 @@ private const val MAX_OUTPUT_TOKENS = 60
  */
 internal class InsightRepositoryImpl : InsightRepository {
 
-    private val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    private val model = Firebase.ai(
+        backend = GenerativeBackend.googleAI(),
+        useLimitedUseAppCheckTokens = true,
+    ).generativeModel(
         modelName = MODEL_NAME,
         generationConfig = generationConfig { maxOutputTokens = MAX_OUTPUT_TOKENS },
     )
@@ -34,11 +36,12 @@ internal class InsightRepositoryImpl : InsightRepository {
     private var cached: Pair<Long, String>? = null
 
     override suspend fun dailyInsight(request: InsightRequest, todayEpochDay: Long): String? {
+        ph.mart.healthapp.core.data.ensureAuth()
         cached?.let { (day, text) -> if (day == todayEpochDay) return text }
 
         val insight = try {
             sanitizeInsight(model.generateContent(content { text(promptFor(request)) }).text)
-        } catch (_: FirebaseAIException) {
+        } catch (_: Exception) {
             // Offline, throttled, App Check refused — all the same to the caller, which falls
             // back to the rule-based line either way.
             null

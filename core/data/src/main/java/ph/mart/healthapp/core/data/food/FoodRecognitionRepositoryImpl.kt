@@ -3,15 +3,13 @@ package ph.mart.healthapp.core.data.food
 import android.graphics.Bitmap
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-import org.json.JSONException
 import org.json.JSONObject
 
-private const val MODEL_NAME = "gemini-2.5-flash"
+private const val MODEL_NAME = "gemini-1.5-flash"
 
 private const val PROMPT = """
 You are a nutrition-estimation assistant for a food-logging app. Look at the photo and identify
@@ -45,7 +43,10 @@ private val RESPONSE_SCHEMA = Schema.obj(
  * needed for this. */
 internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
 
-    private val model = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    private val model = Firebase.ai(
+        backend = GenerativeBackend.googleAI(),
+        useLimitedUseAppCheckTokens = true,
+    ).generativeModel(
         modelName = MODEL_NAME,
         generationConfig = generationConfig {
             responseMimeType = "application/json"
@@ -54,11 +55,10 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     )
 
     override suspend fun recognize(photo: Bitmap): RecognitionResult = try {
+        ph.mart.healthapp.core.data.ensureAuth()
         val response = model.generateContent(content { image(photo); text(PROMPT) })
         parse(response.text)
-    } catch (_: FirebaseAIException) {
-        RecognitionResult.Failed
-    } catch (_: JSONException) {
+    } catch (_: Exception) {
         RecognitionResult.Failed
     }
 

@@ -8,4 +8,5 @@ fun initAppCheck() {
     firebaseAppCheck.installAppCheckProviderFactory(
         PlayIntegrityAppCheckProviderFactory.getInstance()
     )
+    firebaseAppCheck.setTokenAutoRefreshEnabled(true)
 }

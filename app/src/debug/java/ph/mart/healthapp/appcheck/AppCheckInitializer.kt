@@ -8,4 +8,5 @@ fun initAppCheck() {
     firebaseAppCheck.installAppCheckProviderFactory(
         DebugAppCheckProviderFactory.getInstance()
     )
+    firebaseAppCheck.setTokenAutoRefreshEnabled(true)
 }
