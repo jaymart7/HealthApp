@@ -253,23 +253,23 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   already is — and only the picker passes `character` explicitly. `Profile.mascotName` is a
   nullable **String**, not the enum, because `MascotCharacter` lives in `:core:designsystem` and
   `:core:data` does not depend on it; `mascotCharacterOf()` resolves it, and null (or a name from a
-  newer build) degrades to Bibo, exactly the reading `darkThemeOn`'s null has. Each character varies
+  newer build) degrades to Rui, exactly the reading `darkThemeOn`'s null has. Each character varies
   on **three axes** — silhouette, eyes, one accent — because two characters differing only in
   outline read as the same character badly drawn; any two of them differ on at least two of the
   three, which is what `MascotCharacterTest` asserts now that colour can't help. What stays shared
   is the **mouth geometry and the state vocabulary**: all five states read identically whichever
   buddy is picked, so no character can come to mean something. The whole avatar is one
   `Canvas` rather than a shaped `Box` — that is what lets an antenna or an ear sit *above* the head
-  (`topInset`/`sideInset` carve the room, and Bibo's are zero so it renders exactly as it always
+  (`topInset`/`sideInset` carve the room, and Rui's are zero so it renders exactly as it always
   has) with nothing clipping the Celebrating sparkles.
 - **Colour is the user's second pick, not the character's.** `MascotPalette` rides `AppTheme` beside
   `LocalMascot` off `Profile.mascotPaletteName` — a nullable String resolved by `mascotPaletteOf()`,
   the same shape and the same degrade-to-default reading as `mascotName`, and only the picker passes
   `palette` explicitly. Its five entries are the five pairs that *were* the characters' fills, so
   every one is already proven in light, dark and all three contrast schemes and no new colour was
-  invented: `Soft` (Bibo's, the default, so an untouched install is unchanged), `Bold`, `Muted`,
+  invented: `Soft` (Rui's, the default, so an untouched install is unchanged), `Bold`, `Muted`,
   `Contrast` (the one pair that inverts with the theme) and `Neutral` (the one whose *features*
-  carry the accent — the grey chassis with a lit face that made Zed read as a machine, now available
+  carry the accent — the grey chassis with a lit face that made Mart read as a machine, now available
   to any buddy). The list stops there because of what a fill may not be: never `tertiary` or
   `tertiaryContainer` (the AI accent and the carbs colour), never `error` (off-track only), and
   never `secondaryContainer` — both picker rows fill their selected cell with exactly that, and a

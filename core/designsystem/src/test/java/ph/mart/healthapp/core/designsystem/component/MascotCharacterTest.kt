@@ -14,11 +14,11 @@ class MascotCharacterTest {
 
     @Test
     fun `an absent or unrecognised name is the default`() {
-        assertEquals(MascotCharacter.Bibo, mascotCharacterOf(null))
-        assertEquals(MascotCharacter.Bibo, mascotCharacterOf(""))
+        assertEquals(MascotCharacter.Rui, mascotCharacterOf(null))
+        assertEquals(MascotCharacter.Rui, mascotCharacterOf(""))
         // A pick from a newer build, or a hand-edited export.
-        assertEquals(MascotCharacter.Bibo, mascotCharacterOf("Nonexistent"))
-        assertEquals(MascotCharacter.Bibo, mascotCharacterOf("bibo"))
+        assertEquals(MascotCharacter.Rui, mascotCharacterOf("Nonexistent"))
+        assertEquals(MascotCharacter.Rui, mascotCharacterOf("rui"))
     }
 
     @Test

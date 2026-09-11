@@ -101,7 +101,7 @@
     <string name="profile_daytargets_fasting_sub">%1$dh eating window</string>
     <string name="profile_fasting_unit">hours</string>
     <string name="profile_daytargets_steps">Steps</string>
-    <string name="profile_daytargets_steps_sub">Counted by your phone or watch</string>
+    <string name="profile_daytargets_steps_sub">Pphone or watch</string>
     <string name="profile_step_unit">steps</string>
     <string name="profile_add_exercise">Add exercise calories</string>
     <string name="profile_add_exercise_sub">Logged workouts raise the day\'s budget. Turn off if your activity level already covers them.</string>
@@ -183,7 +183,7 @@
     <string name="profile_disclaimer">Estimates based on your inputs, not medical advice.</string>
 
     <!-- Home layout editor -->
-    <string name="profile_layout_hint">Drag to reorder, or turn a card off to hide it. Your greeting and Bibo\'s daily note stay at the top.</string>
+    <string name="profile_layout_hint">Drag to reorder, or turn a card off to hide it. Your greeting and Rui\'s daily note stay at the top.</string>
     <string name="profile_layout_reset">Reset to default</string>
     <string name="profile_layout_move_up">Move up</string>
     <string name="profile_layout_move_down">Move down</string>

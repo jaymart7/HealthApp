@@ -61,7 +61,7 @@ private fun SettingsAppearanceSectionPreview() {
             SettingsAppearanceSection(
                 darkTheme = true,
                 onSetDarkTheme = {},
-                mascot = MascotCharacter.Sprig,
+                mascot = MascotCharacter.Lala,
                 onSelectMascot = {},
                 palette = MascotPalette.Contrast,
                 onSelectMascotPalette = {},

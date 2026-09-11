@@ -218,7 +218,7 @@ private fun SettingsBuddyPickerPreview() {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.padding(16.dp),
             ) {
-                SettingsBuddyPicker(selected = MascotCharacter.Sprig, onSelect = {})
+                SettingsBuddyPicker(selected = MascotCharacter.Lala, onSelect = {})
                 SettingsColourPicker(selected = MascotPalette.Contrast, onSelect = {})
             }
         }

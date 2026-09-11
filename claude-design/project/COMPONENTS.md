@@ -22,14 +22,14 @@ units and reminders (`preferredUnit` is stored; the four reminder switches
 schedule real WorkManager notifications). The sheet fixed-pixel-height
 workaround is moot — Compose sheets size to their content.
 
-Still open: the final mascot illustration (the geometric placeholder "Bibo"
+Still open: the final mascot illustration (the geometric placeholder "Rui"
 ships today).
 
 ## High priority
 
 | Component | Type | Used in | Props | Description |
 |---|---|---|---|---|
-| MascotAvatar | Reusable | Welcome, Goal/Confirm steps, Home/Diary/Photos empty states, AI analyzing | `state: MascotState, size: Dp` | Geometric mascot ("Bibo") — rounded-square body (`primaryContainer`), dot eyes + mouth curve (`onPrimaryContainer`) only. 5 states: Idle, Happy, Celebrating, Sleepy, Thinking. No other detail is added to the mascot at any size. |
+| MascotAvatar | Reusable | Welcome, Goal/Confirm steps, Home/Diary/Photos empty states, AI analyzing | `state: MascotState, size: Dp` | Geometric mascot ("Rui") — rounded-square body (`primaryContainer`), dot eyes + mouth curve (`onPrimaryContainer`) only. 5 states: Idle, Happy, Celebrating, Sleepy, Thinking. No other detail is added to the mascot at any size. |
 | MascotSpeechBubble | Reusable | Welcome, Goal step, Confirm step, Home greeting | `text: String` | Rounded bubble, `surfaceContainerHigh` fill, tail on the left. |
 | PrimaryButton | Reusable | Every onboarding screen; Home/Food/Progress CTAs | `label, onClick, enabled, modifier` | Pill, 48dp min height, `primary` fill / `onPrimary` text. Disabled = 40% opacity. |
 | SecondaryButton | Reusable | Retry/Offline screens | `label, onClick, modifier` | Pill, `outline` border, transparent fill, `primary` text. |

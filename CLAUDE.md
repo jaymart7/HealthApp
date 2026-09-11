@@ -199,7 +199,7 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
   enum values. Pin all seven against a live response and `nutritionLogBody`'s `micronutrients` flag
   *and* `pushMeals`' retry both go, the same outstanding job as the weight timestamp and the
   step-bucket field.
-- Final mascot illustration. The geometric placeholders (Bibo, Pip, Zed, Momo, Sprig) are used
+- Final mascot illustration. The geometric placeholders (Rui, Gel, Mart, Alo, Lala) are used
   throughout; a commissioned set replaces the five drawings, not the picker around them.
 - Google Health: verification is *not* done. Needs the Cloud project's consent screen branded
   for FitPulse, an Android OAuth client (package + debug **and** release SHA-1) in that same

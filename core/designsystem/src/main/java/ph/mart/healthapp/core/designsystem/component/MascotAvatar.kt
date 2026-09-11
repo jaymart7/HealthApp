@@ -69,14 +69,14 @@ internal enum class MascotAccent { None, Blush, Antenna, Ears, Sprout }
  * same character badly drawn. Two of the three separate any pair of them, which is what
  * `MascotCharacterTest` asserts; colour cannot help, because colour is no longer per character.
  *
- * [Bibo] is the app's original mascot and the default; its silhouette renders exactly as it always
+ * [Rui] is the app's original mascot and the default; its silhouette renders exactly as it always
  * has.
  *
  * Colour is [MascotPalette], a second choice the user makes for *every* buddy at once.
  *
  * [topInset]/[sideInset] are fractions of the avatar box. They carve the headroom an accent needs
- * to sit above the head — or, for [Pip], the room its own taper rises into — and they are what make
- * [Sprig] a tall bean rather than a wide one. Bibo's are zero, so its body still fills the box
+ * to sit above the head — or, for [Gel], the room its own taper rises into — and they are what make
+ * [Lala] a tall bean rather than a wide one. Rui's are zero, so its body still fills the box
  * exactly as before.
  */
 enum class MascotCharacter(
@@ -88,11 +88,11 @@ enum class MascotCharacter(
     internal val topInset: Float = 0f,
     internal val sideInset: Float = 0f,
 ) {
-    Bibo("Bibo", MascotBody.RoundedSquare, EyeStyle.Dot, MascotAccent.None),
-    Pip("Pip", MascotBody.Teardrop, EyeStyle.Ring, MascotAccent.Blush, topInset = 0.06f, sideInset = 0.14f),
-    Zed("Zed", MascotBody.Hexagon, EyeStyle.Visor, MascotAccent.Antenna, topInset = 0.22f, sideInset = 0.02f),
-    Momo("Momo", MascotBody.Dome, EyeStyle.Oval, MascotAccent.Ears, topInset = 0.16f, sideInset = 0.04f),
-    Sprig("Sprig", MascotBody.Capsule, EyeStyle.Dot, MascotAccent.Sprout, topInset = 0.24f, sideInset = 0.17f),
+    Rui("Rui", MascotBody.RoundedSquare, EyeStyle.Dot, MascotAccent.None),
+    Gel("Gel", MascotBody.Teardrop, EyeStyle.Ring, MascotAccent.Blush, topInset = 0.06f, sideInset = 0.14f),
+    Mart("Mart", MascotBody.Hexagon, EyeStyle.Visor, MascotAccent.Antenna, topInset = 0.22f, sideInset = 0.02f),
+    Alo("Alo", MascotBody.Dome, EyeStyle.Oval, MascotAccent.Ears, topInset = 0.16f, sideInset = 0.04f),
+    Lala("Lala", MascotBody.Capsule, EyeStyle.Dot, MascotAccent.Sprout, topInset = 0.24f, sideInset = 0.17f),
 }
 
 internal data class MascotColors(val body: Color, val feature: Color)
@@ -102,7 +102,7 @@ internal data class MascotColors(val body: Color, val feature: Color)
  * pair here was one character's fill before the colour became a choice of its own, so each is
  * already proven against light, dark and all three contrast schemes — none of them is a new colour.
  *
- * [Soft] is the default because [MascotCharacter.Bibo] is, so an untouched install renders exactly
+ * [Soft] is the default because [MascotCharacter.Rui] is, so an untouched install renders exactly
  * as it did.
  *
  * Three roles are deliberately absent and the list stops at five because of them: **tertiary** and
@@ -113,7 +113,7 @@ internal data class MascotColors(val body: Color, val feature: Color)
  * [Contrast] is the one pair that *inverts* with the theme: `inverseSurface` is dark on a light
  * scheme and light on a dark one, so it swaps ground for figure when the theme does. [Neutral] is
  * the one whose *features* carry the accent rather than its fill — a grey chassis with a lit face,
- * which is what made Zed read as a machine before any buddy could wear it.
+ * which is what made Mart read as a machine before any buddy could wear it.
  */
 enum class MascotPalette { Soft, Bold, Muted, Contrast, Neutral }
 
@@ -129,16 +129,16 @@ internal fun mascotColors(palette: MascotPalette): MascotColors {
     }
 }
 
-/** Resolves the name stored on the profile. Anything null or unrecognised is [MascotCharacter.Bibo]
+/** Resolves the name stored on the profile. Anything null or unrecognised is [MascotCharacter.Rui]
  * — a name from a newer build, or from an export written before the picker existed, degrades to the
  * default rather than failing. */
 fun mascotCharacterOf(name: String?): MascotCharacter =
-    MascotCharacter.entries.firstOrNull { it.name == name } ?: MascotCharacter.Bibo
+    MascotCharacter.entries.firstOrNull { it.name == name } ?: MascotCharacter.Rui
 
 /** Provided once by `AppTheme`, off the profile. Every [MascotAvatar] in the app reads it, which is
  * why not one of its ~16 call sites passes a character — only the picker does. `static` because it
  * changes at most once a session. */
-val LocalMascot = staticCompositionLocalOf { MascotCharacter.Bibo }
+val LocalMascot = staticCompositionLocalOf { MascotCharacter.Rui }
 
 /** The palette's fill on its own, for the swatch the Profile picker draws. Public where
  * [mascotColors] is internal because a plain circle needs the body colour and nothing else — the
@@ -173,7 +173,7 @@ private const val BLINK_START = 0.94f
 private const val BLINK_END = 0.98f
 
 /** How far the mascot drifts, as a fraction of its own height: ~1.3dp at the default 64dp. Idle's
- * amplitude is deliberately untouched — Bibo idling is what the app has always drawn. */
+ * amplitude is deliberately untouched — Rui idling is what the app has always drawn. */
 private const val BOB_FRACTION = 0.02f
 
 /** The expressive states, all fractions of the avatar's own height or degrees of rotation, so a
@@ -392,7 +392,7 @@ fun MascotAvatar(
                 center = Offset(body.right, body.bottom),
             )
         }
-        // Square, centred on the body — for Bibo (which has no insets) that is the 62%-of-box
+        // Square, centred on the body — for Rui (which has no insets) that is the 62%-of-box
         // canvas the face has always been drawn into.
         val faceHalf = minOf(body.width, body.height) * 0.62f / 2f
         drawMascotFace(state, colors.feature, character, Rect(body.center, faceHalf), blinking, phase)
@@ -415,7 +415,7 @@ private fun bodyPath(character: MascotCharacter, body: Rect): Path = Path().appl
             addRoundRect(RoundRect(body, CornerRadius(body.width / 3f)))
 
         // A round base tapering to a soft point — the one silhouette that spends its own headroom
-        // instead of an accent, which is why Pip is the only character with nothing above its head.
+        // instead of an accent, which is why Gel is the only character with nothing above its head.
         MascotBody.Teardrop -> {
             val radius = body.width / 2f
             val base = Offset(body.center.x, body.bottom - radius)
@@ -641,7 +641,7 @@ private fun DrawScope.drawMascotFace(
 
 /**
  * Brows, and the same brows on every buddy — the state vocabulary is shared, so a raised brow means
- * the same thing whichever silhouette wears it. They sit above the highest eye style (Zed's visor),
+ * the same thing whichever silhouette wears it. They sit above the highest eye style (Mart's visor),
  * which is what keeps them from landing on it.
  *
  * Idle and Sleepy have none on purpose: a resting face with drawn brows reads as an opinion.
@@ -731,7 +731,7 @@ private fun DrawScope.drawSparkle(center: Offset, radius: Float, color: Color) {
 
 /**
  * One "z" drifting up off the sleeping mascot. Positioned against the *box* rather than the body's
- * headroom, unlike an accent: Bibo and Pip have almost no headroom, and a "z" only Zed and Sprig
+ * headroom, unlike an accent: Rui and Gel have almost no headroom, and a "z" only Mart and Lala
  * could show would not be the shared state vocabulary the rest of the face is.
  *
  * [zAlpha] is what makes it safe — it fades to nothing at both ends of the cycle, so the rest pose

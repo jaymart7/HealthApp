@@ -148,7 +148,7 @@ two-family pairing: **Poppins** carries display, headline, and title with a geom
 value — calories, weight, macros — renders with tabular figures (`TextStyle.tabularNums`) so
 digits don't jitter as they update. Nothing is animated for spectacle; things settle.
 
-Bibo, the default geometric mascot, is where the personality is concentrated: a rounded-square
+Rui, the default geometric mascot, is where the personality is concentrated: a rounded-square
 `primaryContainer` body with dot eyes and a drawn mouth curve, in five states (Idle, Happy,
 Celebrating, Sleepy, Thinking) and no other detail at any size. Four other buddies can be picked
 in their place; they share his states and his mouth, never his silhouette or his fill. The system deliberately spends
@@ -176,7 +176,7 @@ or machine-made, and a paper ground that carries a trace of the same green.
 
 - **Cultivated Green** (`primary`): the growing thing. Filled buttons, the filled portion of
   step progress, the protein segment of every macro bar, on-track trend arrows, the text cursor.
-- **Cultivated Green Container** (`primaryContainer`): Bibo's body, the docked FAB, and the fill
+- **Cultivated Green Container** (`primaryContainer`): Rui's body, the docked FAB, and the fill
   of a selected `SelectableCard`. Where the app is being friendly rather than instructive.
 
 ### Secondary
@@ -229,7 +229,7 @@ from `UiModeManager.getContrast()`, and breaks dark mode outright.
 **Body Font:** Inter (Google Fonts provider, `bodyFontFamily`)
 
 **Character:** Poppins is geometric and open — it gives headings and titles a rounded warmth
-that matches Bibo without becoming cute. Inter is the workhorse underneath it: neutral, tight
+that matches Rui without becoming cute. Inter is the workhorse underneath it: neutral, tight
 in its metrics, and legible at label sizes where a number needs to be read at a glance. The
 pairing is the whole typographic idea; there is no third face and no monospace.
 
@@ -313,7 +313,7 @@ One continuous family of rounded rectangles, scaled by how much the element want
 - **8dp**: the `AIChip`.
 - **4dp / 2dp**: the macro bar and the step progress bar — small enough to read as a seam rather
   than a corner.
-- **Mascot**: Bibo's `width / 3`, so his corner radius scales with him and he reads identically
+- **Mascot**: Rui's `width / 3`, so his corner radius scales with him and he reads identically
   at 32dp and 96dp. The other four buddies are their own silhouettes, drawn as paths.
 
 Borders are 1dp `outline` (fields, secondary buttons) or 2dp `primary` (a selected
@@ -440,17 +440,17 @@ state reads identically whichever buddy is chosen and no character carries a mea
 
 | | Body | Fill / feature | Eyes | Accent |
 |---|---|---|---|---|
-| **Bibo** (default) | rounded square, radius `width / 3` | `primaryContainer` / `onPrimaryContainer` | round dots | — |
-| **Pip** | teardrop — round base tapering to a soft point | `inverseSurface` / `inverseOnSurface` | rings | blush on the cheeks |
-| **Zed** | hexagon, flat top and bottom | `surfaceContainerHighest` / `primary` | one visor slot across both eyes | antenna |
-| **Momo** | dome — round top, softer base | `primary` / `onPrimary` | tall ovals | two ears |
-| **Sprig** | capsule, narrow | `secondary` / `onSecondary` | round dots | stem and leaf |
+| **Rui** (default) | rounded square, radius `width / 3` | `primaryContainer` / `onPrimaryContainer` | round dots | — |
+| **Gel** | teardrop — round base tapering to a soft point | `inverseSurface` / `inverseOnSurface` | rings | blush on the cheeks |
+| **Mart** | hexagon, flat top and bottom | `surfaceContainerHighest` / `primary` | one visor slot across both eyes | antenna |
+| **Alo** | dome — round top, softer base | `primary` / `onPrimary` | tall ovals | two ears |
+| **Lala** | capsule, narrow | `secondary` / `onSecondary` | round dots | stem and leaf |
 
-Pip is the one character that spends its headroom on its own silhouette rather than on an
+Gel is the one character that spends its headroom on its own silhouette rather than on an
 accent — the taper *is* the thing above its head — and the one whose fill inverts with the theme,
 dark on a light scheme and light on a dark one. It deliberately does **not** take
 `secondaryContainer`: the picker fills the selected cell with that, and the chosen buddy must not
-disappear into it. Zed is the one character whose fill is a neutral and whose features carry the accent rather than
+disappear into it. Mart is the one character whose fill is a neutral and whose features carry the accent rather than
 the other way round — a grey chassis with a lit face is what makes it read as a machine. **No
 mascot fill takes a `tertiary` or `error` role:** `tertiaryContainer` is the AI accent and
 `error` means genuinely off-track.
@@ -459,7 +459,7 @@ The pick travels as `LocalMascot`, provided once by `AppTheme`. **`character` is
 explicitly outside the picker** — every other caller writes `MascotAvatar(state = …)` and gets
 the user's buddy for free. The whole avatar is one `Canvas`, never a clipped `Box`: that is what
 lets an antenna or an ear sit *above* the head (`topInset`/`sideInset` carve the headroom, and
-Bibo's are zero so it fills its box exactly as it always did) with nothing slicing the
+Rui's are zero so it fills its box exactly as it always did) with nothing slicing the
 Celebrating sparkles. The picker marks the selected buddy with a `secondaryContainer` cell rather
 than an outline, since there is no per-character `Shape` to trace any more.
 

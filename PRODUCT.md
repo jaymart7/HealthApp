@@ -35,7 +35,7 @@ Four things a neighboring tracker could not truthfully claim at once:
    calories, so food data is always read against actual body change — not in a silo.
 3. **Offline-first, no account wall.** All core data works with no network and no sign-up.
    Room on the device is the source of truth; there is no server holding the user's history.
-4. **Warm and unjudgmental.** Bibo the mascot, streaks with a grace day, badges earned off
+4. **Warm and unjudgmental.** Rui the mascot, streaks with a grace day, badges earned off
    the best run so a broken streak never un-earns one, and a calorie safety floor that warns
    rather than blocks. The app never scolds.
 
@@ -78,10 +78,10 @@ Explicitly undecided:
 ## Brand Commitments
 
 - **Name:** FitPulse. **Package:** `ph.mart.healthapp`.
-- **Mascot:** Bibo, currently a geometric placeholder illustration used throughout. The
-  final illustration is outstanding work; Bibo's presence in the product is not in question.
+- **Mascot:** Rui, currently a geometric placeholder illustration used throughout. The
+  final illustration is outstanding work; Rui's presence in the product is not in question.
 - **Voice:** warm, plain, second-person, encouraging without cheerleading — "Let's build
-  healthy habits together.", "Track your body and nutrition, with Bibo by your side.",
+  healthy habits together.", "Track your body and nutrition, with Rui by your side.",
   "What brings you here?" No jargon, no shame, no exclamation-mark energy.
 - **Visual system is already committed and load-bearing:** Material 3 with a frozen Material
   Theme Builder palette (light/dark, standard/medium/high contrast), dynamic color disabled,
@@ -110,7 +110,7 @@ Explicitly undecided:
 4. **Body and food are read together.** Neither pillar gets a surface that pretends the
    other doesn't exist.
 5. **Consistency is the brand.** A macro is the same color in every chart in the app; a
-   spacing value comes from the scale or doesn't exist. Personality lives in Bibo, copy,
+   spacing value comes from the scale or doesn't exist. Personality lives in Rui, copy,
    and motion — never in one-off visual exceptions.
 
 ## Accessibility & Inclusion

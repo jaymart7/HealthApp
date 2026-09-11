@@ -26,7 +26,7 @@ import ph.mart.healthapp.feature.food.ui.shared.labelRes
  *
  * A fresh diary used to be five identical grey lines — "Nothing logged for Breakfast yet." four
  * times over, then the same again for Exercise — which is the app's core screen at its single most
- * common starting state, and the one screen Bibo never appeared on at all. One mascot and one
+ * common starting state, and the one screen Rui never appeared on at all. One mascot and one
  * sentence replace all five.
  *
  * The suggestion is the app's own [defaultMealTypeForNow] heuristic, the same one that preselects

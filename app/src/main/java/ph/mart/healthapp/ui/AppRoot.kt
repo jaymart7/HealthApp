@@ -45,10 +45,10 @@ class AppRootViewModel(profileRepository: ProfileRepository) : ViewModel() {
     /** Read by [MainActivity] above the theme, for the same reason [darkThemeOn] is, and resolved
      * here rather than at the ~16 [MascotAvatar] call sites — the theme provides it as a
      * CompositionLocal. Its "not loaded yet" value is the default character, so onboarding (which
-     * runs with no profile) shows Bibo. */
+     * runs with no profile) shows Rui. */
     val mascot: StateFlow<MascotCharacter> = profileRepository.observeProfile()
         .map { profile -> mascotCharacterOf(profile?.mascotName) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MascotCharacter.Bibo)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MascotCharacter.Rui)
 
     /** The other half of the mascot's appearance, resolved exactly like [mascot]. Separate because
      * the character and the colour are separate picks: changing one leaves the other alone. */

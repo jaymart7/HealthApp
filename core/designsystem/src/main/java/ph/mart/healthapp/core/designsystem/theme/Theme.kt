@@ -299,7 +299,7 @@ fun systemContrast(): AppContrast {
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     contrast: AppContrast = systemContrast(),
-    mascot: MascotCharacter = MascotCharacter.Bibo,
+    mascot: MascotCharacter = MascotCharacter.Rui,
     mascotPalette: MascotPalette = MascotPalette.Soft,
     content: @Composable() () -> Unit
 ) {

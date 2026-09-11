@@ -5,7 +5,7 @@
     <!-- Step 0 · Welcome -->
     <string name="onboarding_welcome_bubble">Let\'s build healthy habits together.</string>
     <string name="onboarding_welcome_title">FitPulse</string>
-    <string name="onboarding_welcome_body">Track your body and nutrition, with Bibo by your side.</string>
+    <string name="onboarding_welcome_body">Track your body and nutrition, with Rui by your side.</string>
     <string name="onboarding_welcome_cta">Get started</string>
 
     <!-- Step 1 · Goal -->

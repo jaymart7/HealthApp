@@ -52,7 +52,7 @@ private fun MascotSpeechBubblePreview() {
     AppTheme {
         Surface {
             Box(modifier = Modifier.padding(24.dp)) {
-                MascotSpeechBubble(text = "Track your body and nutrition, with Bibo by your side.")
+                MascotSpeechBubble(text = "Track your body and nutrition, with Rui by your side.")
             }
         }
     }
