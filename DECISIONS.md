@@ -451,6 +451,40 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   themselves, the insight card is already null-hidden, and a group collapses to one expandable row
   when none of its subjects has data. A threshold ("fewer than N tracked") would be a number to
   maintain and a second thing that could disagree with the grid.
+- **The Patterns card compares two things the user logs, with a median split and an effect-size
+  floor — not a correlation.** Fourteen subjects and nothing ever related two of them, which is the
+  one question this data can answer and no screen asked. `patterns()` is feature-local for
+  `recap()`'s reason (one screen shows it, every input is a `:core:data` type) and derived for
+  `streakStats`' reason: no table, no repository, no schema, nothing written, nothing sent to a
+  model. Four calls matter. **The split is at the driver's median**, because a fixed cutoff would be
+  this app deciding what "enough sleep" is — the median only says "your better half against your
+  worse half", and ties fall to the low side unless that empties one, which is what lets a yes/no
+  driver (trained, hit the fasting goal) run through the same code path with no special case. **Both
+  day counts are rendered**, because "12 days against 9" is what tells the reader how much to trust
+  the line. **Three floors** — 14 paired days, 5 per side, and a per-spec minimum on both the driver
+  spread and the outcome gap — are what stop noise being reported as a finding, and an empty result
+  is the ordinary answer on a young account: the card is then omitted entirely, the recap card's
+  rule. **The copy never says "because"**, names no cause and gives no advice; it is the same line
+  the cycle tab holds when it refuses to derive a fertile window.
+- **Sleep needs no day offset and fasting does, and both follow from where the series are dated.**
+  `SleepNight.dateEpochDay` is the morning the sleep ended, so the night before day D is already
+  filed under D beside D's food; `FastSession.dateEpochDay` is likewise the end day, so what a fast
+  can show up in is the *next* day's eating — the one `nextDay = true` spec. `PatternsTest` asserts
+  both alignments by shifting the series and watching the sign flip, because getting either wrong
+  produces a plausible sentence that is simply about the wrong day.
+- **Cycle, heart, blood pressure, weight, supplements and water are excluded from Patterns, each
+  for its own reason.** The first three because a line relating them to anything is a clinical claim
+  FitPulse cannot stand behind (and cycle data stays on the phone by rule). Weight on either side
+  because a day-level weight is mostly water, and intake against the real weight trend is already
+  owned — over a proper window, with its own guards — by `goalProjection()` and the energy check-in;
+  a second, weaker answer to the same question would contradict the first. Supplements because a
+  percent-taken split says nothing. Water because the tab holds no per-day water series, only the
+  logged-day set.
+- **There is no "see all" door on the card, and that is a decision, not an omission.** The fold
+  returns at most `MAX_PATTERNS` and the card draws every one of them, so nothing is hidden and a
+  door would open onto what is already on screen — `DiaryDateHeader`'s rule about the calendar
+  pane. An overlay becomes worth its `ProgressScreenState` field and back handler the day the spec
+  list is long enough that the fifth pattern is worth reading.
 - **An empty subject keeps its slot, dashed.** A card that vanished when it had no data is a
   subject nobody would ever find, so an untracked one draws a 1dp **dashed** `outlineVariant`
   outline over nothing, says "Nothing yet", and still opens its page. The dash is what carries the

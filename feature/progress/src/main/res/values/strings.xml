@@ -112,6 +112,25 @@
         <item quantity="other">Daily average over %1$d days with food logged.</item>
     </plurals>
 
+    <!-- Patterns -->
+    <string name="progress_patterns_title">Your patterns</string>
+    <string name="progress_patterns_note">From the last %1$d days, counting only the days where both were logged. A comparison, not a cause.</string>
+    <string name="progress_patterns_score">%1$.1f / 5</string>
+    <string name="progress_pattern_sleep_calories_title">Sleep → calories</string>
+    <string name="progress_pattern_sleep_calories">On your %1$d best-slept days you ate %2$s; on the other %3$d, %4$s.</string>
+    <string name="progress_pattern_sleep_mood_title">Sleep → mood</string>
+    <string name="progress_pattern_sleep_mood">On your %1$d best-slept days your mood averaged %2$s; on the other %3$d, %4$s.</string>
+    <string name="progress_pattern_steps_calories_title">Steps → calories</string>
+    <string name="progress_pattern_steps_calories">On your %1$d most-walked days you ate %2$s; on the other %3$d, %4$s.</string>
+    <string name="progress_pattern_steps_mood_title">Steps → mood</string>
+    <string name="progress_pattern_steps_mood">On your %1$d most-walked days your mood averaged %2$s; on the other %3$d, %4$s.</string>
+    <string name="progress_pattern_training_protein_title">Training days → protein</string>
+    <string name="progress_pattern_training_protein">On the %1$d days you logged a workout you averaged %2$s of protein; on the other %3$d, %4$s.</string>
+    <string name="progress_pattern_protein_energy_title">Protein → energy</string>
+    <string name="progress_pattern_protein_energy">On your %1$d highest-protein days your energy averaged %2$s; on the other %3$d, %4$s.</string>
+    <string name="progress_pattern_fasting_calories_title">Fasting → next day</string>
+    <string name="progress_pattern_fasting_calories">On the %1$d days after you hit your fasting goal you ate %2$s; on the other %3$d, %4$s.</string>
+
     <!-- Weight page -->
     <string name="progress_weight_today">%1$s today</string>
     <string name="progress_weight_in_span">%1$s %2$s in %3$s · %4$s</string>

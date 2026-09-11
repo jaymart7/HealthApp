@@ -47,6 +47,7 @@ import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Recap
+import ph.mart.healthapp.feature.progress.ui.progress.patterns
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.SubjectGroup
 import ph.mart.healthapp.feature.progress.ui.progress.badgeTally
@@ -78,6 +79,19 @@ internal fun ProgressOverview(
     val today = todayEpochDay()
     // Thirteen folds over up to a year of data — cheap, but not free on every scroll frame.
     val summaries = remember(uiState, today) { summarizeAll(uiState, today) }
+    // Seven folds over the same series the cards above are drawn from — remembered beside the
+    // summaries for the same reason, and empty on a young account, which draws no card.
+    val found = remember(uiState, today) {
+        patterns(
+            dailyNutrition = uiState.dailyNutrition,
+            sleepNights = uiState.sleepNights,
+            stepDays = uiState.stepDays,
+            moodDays = uiState.moodDays,
+            exerciseEntries = uiState.exerciseEntries,
+            fastSessions = uiState.fastSessions,
+            todayEpochDay = today,
+        )
+    }
     val untouchedGroups = SubjectGroup.entries.count { group ->
         subjectsIn(group, uiState.cycleTrackingOn).none { summaries[it]?.tracked == true }
     }
@@ -146,6 +160,10 @@ internal fun ProgressOverview(
                 modifier = Modifier.padding(bottom = 12.dp),
             )
         }
+
+        // Below the projection, above the grids: it is a cross-subject fact like the recap, and
+        // the one card on this screen that relates two things the user logs.
+        PatternsCard(patterns = found, modifier = Modifier.padding(bottom = 12.dp))
 
         SubjectGroup.entries.forEach { group ->
             GroupSection(

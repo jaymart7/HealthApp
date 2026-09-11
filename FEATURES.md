@@ -145,8 +145,8 @@ groups: Body (Weight · Photos · Measurements) · Nutrition (Food · Fasting ·
 Training (Activity · Strength) · Wellbeing (Sleep · Mood · Cycle · Heart · Blood pressure), plus
 Badges as a summary row under the grids. Cycle is the one subject a setting can remove entirely.
 
-- Overview: week recap ("Across everything"), one insight card carrying the goal projection, four
-  grouped grids of subject cards — value, a 26dp preview (sparkline, day bars or a photo strip) and
+- Overview: week recap ("Across everything"), one insight card carrying the goal projection, the
+  Patterns card, four grouped grids of subject cards — value, a 26dp preview (sparkline, day bars or a photo strip) and
   a trend line — then the Badges row. A subject with nothing logged draws as a dashed "Nothing yet"
   card that still opens its page; a group with nothing tracked collapses to one expandable row.
 - Detail page: back arrow, hero figure, fact chips, one chart card holding its own 1M/3M/6M/1Y
@@ -173,6 +173,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Blood pressure: floating-bar chart, category label per reading, manual log sheet.
 - Badges: seven derived families — streak, days logged, weight moved, workouts, fasts,
   longest fast, photos.
+- Patterns: up to four comparisons between two things you log — sleep against calories, training
+  days against protein, steps against mood, a fast against the next day — each splitting the last
+  90 days at the driver's median and reporting both averages with the day count behind each.
+  Derived, never stored, never sent to a model, and drawn only once the log can support one.
 - Recap: rolling 7/30/365-day summary, shareable as a single-card PNG.
 - Energy check-in: maintenance calories measured from 28 days of logged intake against the real
   weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
