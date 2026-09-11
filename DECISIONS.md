@@ -1231,6 +1231,25 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   its shutdown here. The fallbacks stay exactly as they were — this adds a bound exception and a
   `Log.w` above each, nothing else. Remote Config is the upgrade path if the name needs changing
   without a release; one constant is enough while a release is cheap.
+- **Thinking is off at all five call sites, and that is a property of the model, not of the coach.**
+  `AI_THINKING` sits beside `AI_MODEL_NAME` in `:core:data/Ai.kt` for the identical reason: it
+  describes the model, so five copies would go stale together. Gemini 2.5 and newer reason before
+  answering unless told not to, and **thinking tokens are spent from `maxOutputTokens`** — a cap
+  every caller here sized for the answer alone (60 for a one-line insight, 300 for the coach's few
+  sentences). A default dynamic budget therefore spends the whole allowance reasoning and the
+  response comes back finished for `MAX_TOKENS` holding nothing, which `APIController.validate()`
+  turns into a `ResponseStoppedException` — it throws on *any* finish reason but `STOP`, so a
+  half-written answer is discarded exactly like an empty one and each call site's `catch` renders
+  the graceful fallback. The coach surfaced it first because its answer is the longest; the insight
+  was nearest to going next, and the photo path has no cap at all and so was riding the model
+  default.
+  The fix is one setting, not five raised ceilings: raising `maxOutputTokens` pays for reasoning
+  this app never asked for on tasks that do not reason — a line of encouragement, a sentence of
+  coaching, a photo flattened into twelve JSON fields. `ThinkingLevel.MINIMAL` rather than
+  `thinkingBudget = 0` because the zero budget is the 2.5-series idiom and the 3.x models take a
+  level instead, where `MINIMAL` is the floor; `ThinkingConfig.Builder` rejects both at once.
+  If a call site ever genuinely needs to reason, it raises the level *and* `maxOutputTokens`
+  together — they are one budget, and that is the whole lesson here.
 - **There is no Firebase Authentication in this app, and adding it back will not fix an AI call.**
   App Check is the only thing the Firebase AI Logic backend gates on. `firebase-ai`'s
   `AppCheckHeaderProvider.generateHeaders()` treats the auth provider as strictly optional and its

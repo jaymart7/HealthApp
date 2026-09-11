@@ -9,6 +9,7 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONObject
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
 
 private const val PROMPT = """
@@ -49,6 +50,7 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     ).generativeModel(
         modelName = AI_MODEL_NAME,
         generationConfig = generationConfig {
+            thinkingConfig = AI_THINKING
             responseMimeType = "application/json"
             responseSchema = RESPONSE_SCHEMA
         },

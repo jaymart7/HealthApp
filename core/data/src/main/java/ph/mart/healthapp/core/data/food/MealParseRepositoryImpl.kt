@@ -8,6 +8,7 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
 
 /** [MAX_PARSED_FOODS] foods with eleven fields each. [loggable] rejects whatever gets past it, but
@@ -47,6 +48,7 @@ internal class MealParseRepositoryImpl : MealParseRepository {
     ).generativeModel(
         modelName = AI_MODEL_NAME,
         generationConfig = generationConfig {
+            thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_OUTPUT_TOKENS
             responseMimeType = "application/json"
             responseSchema = Schema.array(PARSED_FOOD_SCHEMA)

@@ -8,6 +8,7 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 
@@ -47,6 +48,7 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
     ).generativeModel(
         modelName = AI_MODEL_NAME,
         generationConfig = generationConfig {
+            thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_OUTPUT_TOKENS
             responseMimeType = "application/json"
             responseSchema = Schema.array(IDEA_SCHEMA)

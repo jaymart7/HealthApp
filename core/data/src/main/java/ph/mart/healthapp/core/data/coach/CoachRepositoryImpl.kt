@@ -9,6 +9,7 @@ import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
 import ph.mart.healthapp.core.data.insight.InsightRequest
@@ -41,7 +42,10 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
             useLimitedUseAppCheckTokens = true,
         ).generativeModel(
             modelName = AI_MODEL_NAME,
-            generationConfig = generationConfig { maxOutputTokens = MAX_OUTPUT_TOKENS },
+            generationConfig = generationConfig {
+                maxOutputTokens = MAX_OUTPUT_TOKENS
+                thinkingConfig = AI_THINKING
+            },
             systemInstruction = content { text(systemPromptFor(request)) },
         )
 

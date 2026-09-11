@@ -6,6 +6,7 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
 
 /** One sentence's worth. A cap here is cheaper than trusting the prompt's "under 120 characters",
@@ -29,7 +30,10 @@ internal class InsightRepositoryImpl : InsightRepository {
         useLimitedUseAppCheckTokens = true,
     ).generativeModel(
         modelName = AI_MODEL_NAME,
-        generationConfig = generationConfig { maxOutputTokens = MAX_OUTPUT_TOKENS },
+        generationConfig = generationConfig {
+            maxOutputTokens = MAX_OUTPUT_TOKENS
+            thinkingConfig = AI_THINKING
+        },
     )
 
     @Volatile
