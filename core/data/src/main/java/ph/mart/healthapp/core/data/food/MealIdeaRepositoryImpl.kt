@@ -8,7 +8,6 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
-import ph.mart.healthapp.core.data.ensureAuth
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 
@@ -55,7 +54,6 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
     )
 
     override suspend fun ideas(request: MealIdeaRequest): MealIdeaResult = try {
-        ensureAuth()
         val response = model.generateContent(content { text(promptFor(request)) })
         val ideas = parse(response.text).fitting(request.remainingKcal)
         // An empty list is a failure, not an answer: the screen's fallback — the user's own foods —

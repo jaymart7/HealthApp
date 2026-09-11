@@ -9,7 +9,6 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONObject
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
-import ph.mart.healthapp.core.data.ensureAuth
 import ph.mart.healthapp.core.data.logAiFailure
 
 private const val PROMPT = """
@@ -56,7 +55,6 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     )
 
     override suspend fun recognize(photo: Bitmap): RecognitionResult = try {
-        ensureAuth()
         val response = model.generateContent(content { image(photo); text(PROMPT) })
         parse(response.text)
     } catch (e: Exception) {

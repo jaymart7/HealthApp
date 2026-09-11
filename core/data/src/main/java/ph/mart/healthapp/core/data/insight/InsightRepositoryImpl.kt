@@ -6,7 +6,6 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
-import ph.mart.healthapp.core.data.ensureAuth
 import ph.mart.healthapp.core.data.logAiFailure
 
 /** One sentence's worth. A cap here is cheaper than trusting the prompt's "under 120 characters",
@@ -40,7 +39,6 @@ internal class InsightRepositoryImpl : InsightRepository {
         cached?.let { (day, text) -> if (day == todayEpochDay) return text }
 
         val insight = try {
-            ensureAuth()
             sanitizeInsight(model.generateContent(content { text(promptFor(request)) }).text)
         } catch (e: Exception) {
             logAiFailure("dailyInsight", e)

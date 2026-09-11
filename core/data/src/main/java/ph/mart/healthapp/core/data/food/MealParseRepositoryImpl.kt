@@ -8,7 +8,6 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
-import ph.mart.healthapp.core.data.ensureAuth
 import ph.mart.healthapp.core.data.logAiFailure
 
 /** [MAX_PARSED_FOODS] foods with eleven fields each. [loggable] rejects whatever gets past it, but
@@ -55,7 +54,6 @@ internal class MealParseRepositoryImpl : MealParseRepository {
     )
 
     override suspend fun parse(text: String): MealParseResult = try {
-        ensureAuth()
         val prompt = promptFor(text.take(MAX_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
         val foods = parseFoods(response.text).loggable()

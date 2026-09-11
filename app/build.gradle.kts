@@ -77,7 +77,6 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.appcheck.playintegrity)
-    implementation(libs.firebase.auth)
     debugImplementation(libs.firebase.appcheck.debug)
 
     implementation(libs.androidx.navigation3.ui)

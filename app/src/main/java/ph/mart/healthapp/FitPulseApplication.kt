@@ -2,9 +2,7 @@ package ph.mart.healthapp
 
 import android.app.Application
 import androidx.glance.appwidget.updateAll
-import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.auth
 import ph.mart.healthapp.appcheck.initAppCheck
 import ph.mart.healthapp.BuildConfig
 import kotlinx.coroutines.CoroutineScope
@@ -69,7 +67,6 @@ class FitPulseApplication : Application() {
 
         FirebaseApp.initializeApp(this)
         initAppCheck()
-        signInAnonymously()
 
         val koinApp = startKoin {
             androidContext(this@FitPulseApplication)
@@ -200,13 +197,6 @@ class FitPulseApplication : Application() {
                     TodayWidget().updateAll(this@FitPulseApplication)
                     pushTodayToWear(this@FitPulseApplication, snapshot)
                 }
-        }
-    }
-
-    private fun signInAnonymously() {
-        Firebase.auth.useAppLanguage()
-        if (Firebase.auth.currentUser == null) {
-            Firebase.auth.signInAnonymously()
         }
     }
 }

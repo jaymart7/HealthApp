@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
-import ph.mart.healthapp.core.data.ensureAuth
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
 import ph.mart.healthapp.core.data.logAiFailure
@@ -47,7 +46,6 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
         )
 
         val answer = try {
-            ensureAuth()
             val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
             sanitizeReply(chat.sendMessage(question).text)
         } catch (e: Exception) {

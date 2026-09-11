@@ -1231,15 +1231,28 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   its shutdown here. The fallbacks stay exactly as they were — this adds a bound exception and a
   `Log.w` above each, nothing else. Remote Config is the upgrade path if the name needs changing
   without a release; one constant is enough while a release is cheap.
-- **`ensureAuth()` never rethrows, and it calls `useAppLanguage()`.** Firebase AI Logic documents
-  App Check, not Authentication, as what the backend checks; the anonymous sign-in is here because
-  the SDK attaches an Auth token when `firebase-auth` is on the classpath and threw
-  `FirebaseNoSignedInUserException` without one. So a sign-in failure is logged and let through
-  rather than thrown: throwing pre-empts the AI call with an exception of our own making, which the
-  caller swallows identically, making a console misconfiguration look exactly like being offline.
-  The `useAppLanguage()` call buys nothing functional — it silences
-  `Ignoring header X-Firebase-Locale because its value was null`, a benign GMS log that appears on
-  requests that succeed and otherwise sits in logcat looking like the cause of every failure.
+- **There is no Firebase Authentication in this app, and adding it back will not fix an AI call.**
+  App Check is the only thing the Firebase AI Logic backend gates on. `firebase-ai`'s
+  `AppCheckHeaderProvider.generateHeaders()` treats the auth provider as strictly optional and its
+  bytecode says so twice: with no provider registered it logs `Auth not registered, skipping`,
+  omits the `Authorization` header and returns the headers; with one registered but the token
+  fetch failing — which is exactly what `FirebaseNoSignedInUserException` is — the whole block
+  sits under a `catch (Exception)` that logs `Error getting Auth token` and returns the same map.
+  It never rethrows. So an anonymous sign-in bought a network round-trip on every AI call whose
+  failure the SDK already tolerated, and `ensureAuth()`, `signInAnonymously()` and the
+  `firebase-auth` dependency are all gone.
+  Checked against `firebase-ai` **17.17.0** specifically (what BOM 34.19.0 resolves to) — the
+  branch and the catch are that version's bytecode, not a documented guarantee, so re-check on a
+  major SDK bump rather than assuming. The `FirebaseNoSignedInUserException` that 506ae9a named
+  was reachable: it lives in `com.google.firebase.internal.api`, shipped by
+  `firebase-auth-interop`, which `firebase-ai` pulls transitively and always did — so it predates
+  that commit's `firebase-auth` and an older `firebase-ai` plausibly did throw it. 17.17.0 does
+  not, from either branch. What that commit *also* did, and what stays, is
+  `setTokenAutoRefreshEnabled(true)` in both `AppCheckInitializer` variants — a stale App Check
+  token is what the backend actually refuses, so that is the load-bearing half of the diff.
+  The `useAppLanguage()` call went with the rest: the
+  `Ignoring header X-Firebase-Locale because its value was null` log it silenced comes from
+  `firebase-auth`'s own GMS plumbing, which is no longer here to emit it.
 
 - **A strength workout is an `ExerciseEntry` with sets, not a second kind of thing.** One table for
   the workout, one child table for the sets, and `sets.isEmpty()` is what says "cardio" — the
