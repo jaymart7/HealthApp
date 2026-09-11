@@ -56,13 +56,12 @@ class FoodSearchViewModel(
     fun handleEvent(event: FoodSearchEvent) {
         when (event) {
             is FoodSearchEvent.OnQueryChange -> onQueryChange(event.query)
-            FoodSearchEvent.OnNextPage -> movePage(1)
-            FoodSearchEvent.OnPrevPage -> movePage(-1)
+            FoodSearchEvent.OnLoadMore -> loadMore()
         }
     }
 
-    /** The page is deliberately left where it is: a food saved in another tab must not move the
-     * page out from under someone reading it, and the list only ever grows at the front. */
+    /** The window is deliberately left where it is: a food saved in another tab must not collapse
+     * the rows out from under someone reading them, and the list only ever grows at the front. */
     private fun observeMyFoods() = intent {
         foodRepository.observeMyFoods().collect { myFoods ->
             reduce { state.copy(myFoods = myFoods, results = searchFoods(state.query, myFoods, state.online)) }
@@ -70,7 +69,7 @@ class FoodSearchViewModel(
     }
 
     /**
-     * A narrowed query re-pages from the top: page 4 of the old results names nothing in the new.
+     * A narrowed query re-windows from the top: row 40 of the old results names nothing in the new.
      * The online tier is cleared with it — hits for "sky" are not hits for "sky flakes", and leaving
      * them up until the next answer lands would show the wrong ones as if they were the right ones.
      */
@@ -83,7 +82,7 @@ class FoodSearchViewModel(
                     online = emptyList(),
                     onlineStatus = OnlineSearch.Idle,
                     results = searchFoods(query, state.myFoods),
-                    page = 0,
+                    shown = FOOD_PAGE_SIZE,
                 )
             }
         }
@@ -118,7 +117,5 @@ class FoodSearchViewModel(
             )
         }
 
-    private fun movePage(delta: Int) = intent {
-        reduce { state.copy(page = (state.page + delta).coerceIn(0, (state.pageCount - 1).coerceAtLeast(0))) }
-    }
+    private fun loadMore() = intent { reduce { state.withMore() } }
 }

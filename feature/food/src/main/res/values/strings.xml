@@ -109,9 +109,7 @@
     <!-- Search panel -->
     <string name="food_search_placeholder">Search foods…</string>
     <string name="food_search_no_matches">No matches — enter it by hand instead.</string>
-    <string name="food_search_previous">Previous</string>
-    <string name="food_search_next">Next</string>
-    <string name="food_search_page">%1$d–%2$d of %3$d</string>
+    <string name="food_search_showing">%1$d of %2$d</string>
     <string name="food_search_online_searching">Looking for packaged foods…</string>
     <string name="food_search_online_failed">Couldn\'t reach the packaged-food list.</string>
 

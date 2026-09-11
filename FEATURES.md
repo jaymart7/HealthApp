@@ -109,7 +109,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Saved meals — snapshot a diary section, re-log as separate rows.
 - Recipes — a saved meal with servings; logs as one priced row.
 - Food search — the user's own foods first, then a built-in list of ~120 common foods, offline
-  and instant; the empty field lists all of them, eight at a time. Behind both, an Open Food
+  and instant; the empty field lists all of them, eight rows at a time in a box that appends the
+  next eight when it is scrolled to its bottom. Behind both, an Open Food
   Facts tier folds packaged products in at the back — debounced, three characters minimum,
   never blocking or replacing the local answer, and silently absent offline.
 - Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at

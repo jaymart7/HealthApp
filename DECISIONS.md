@@ -231,10 +231,16 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   reasons that are the whole design: it answers with no debounce, it answers offline, and it spends
   nothing from the key budget. What it gives up is branded packages, which is what the scanner is
   for, and anything neither knows is still typed in by hand. A blank field is **every** food rather
-  than an idle hint, paged at `FOOD_PAGE_SIZE` — a lazy list is not allowed inside `AppBottomSheet`
-  (it hands its children unbounded height), so paging is also what fits where the panel is drawn.
-  `FoodSearchViewModel` therefore takes no dependencies at all and exists for the page, which
-  survives a rotation where a composable's `remember` would not.
+  than an idle hint, windowed at `FOOD_PAGE_SIZE` — a lazy list is not allowed inside
+  `AppBottomSheet` (it hands its children unbounded height), so a counter over a list already in
+  memory is also what fits where the panel is drawn. That is equally why this is not Paging3: there
+  is no paged source to write a `PagingSource` over, and nowhere to put a `LazyPagingItems`. The
+  window **grows on scroll** rather than stepping through pages — but inside the panel's own
+  bounded, scrolling results box, not in the host's scroll: two of the three hosts draw their form
+  directly beneath the panel, and a list that got taller as you read it would walk that form down
+  the screen. `RESULTS_MAX_HEIGHT` is not a multiple of the row height on purpose — the row cut in
+  half at the bottom edge is the affordance the Next button used to be. `FoodSearchViewModel` holds
+  that window, which survives a rotation where a composable's `remember` would not.
 - **The FDC key is a gradle property, and its budget is app-wide.** `fdcApiKey` lives in
   `~/.gradle/gradle.properties` and reaches the code as `BuildConfig.FDC_API_KEY` in `:core:data`,
   the same untracked-and-degrade-gracefully rule the release signing config follows — absent it the

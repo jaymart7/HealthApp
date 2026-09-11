@@ -3,17 +3,18 @@ package ph.mart.healthapp.feature.food.ui.search.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
@@ -22,22 +23,24 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.search.FOOD_PAGE_SIZE
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchEvent
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchUiState
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchViewModel
 import ph.mart.healthapp.feature.food.ui.search.OnlineSearch
-import ph.mart.healthapp.feature.food.ui.search.pageCount
-import ph.mart.healthapp.feature.food.ui.search.pageItems
+import ph.mart.healthapp.feature.food.ui.search.hasMore
+import ph.mart.healthapp.feature.food.ui.search.visibleItems
+
+/** Four rows and a sliver of the fifth: enough to browse in, short enough to leave a form beside. */
+private val RESULTS_MAX_HEIGHT = 280.dp
 
 /**
  * Food search over the user's own foods, the built-in
@@ -51,9 +54,10 @@ import ph.mart.healthapp.feature.food.ui.search.pageItems
  * "where this came from" mark is a thing to explain on a surface whose job is to be picked from.
  * Their *order* is the ranking — see [searchFoods][ph.mart.healthapp.core.data.food.searchFoods].
  *
- * An empty field is not an empty panel: it lists every local food, a page at a time. That is the
- * whole reason for the pager — the list is a couple of hundred rows and this is drawn inside a
- * bottom sheet with a form underneath it.
+ * An empty field is not an empty panel: it lists every local food, eight rows at a time, appending
+ * the next eight when the results box is scrolled to its bottom. The box is bounded and scrolls
+ * itself rather than growing, because two of the three hosts draw their own form directly beneath
+ * it — a list that got taller as you read it would walk that form down the screen.
  */
 @Composable
 internal fun FoodSearchPanel(
@@ -90,24 +94,24 @@ private fun FoodSearchPanelContent(
             onValueChange = { onEvent(FoodSearchEvent.OnQueryChange(it)) },
             placeholder = stringResource(R.string.food_search_placeholder),
         )
-        // The panel's whole answer — the page, the count, nothing matched — arrives without any
+        // The panel's whole answer — the rows, the count, nothing matched — arrives without any
         // visible change of focus, so a screen reader needs telling. Polite: it waits for the
         // keystroke to finish being announced.
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         ) {
-            val page = uiState.pageItems
+            val items = uiState.visibleItems
             // "No matches" is only true once the online tier has stopped having something to say:
             // while it is in flight the honest answer is that we are still looking, and when it
             // failed the honest answer is that we could not ask.
-            if (page.isEmpty() && uiState.onlineStatus == OnlineSearch.Idle) {
+            if (items.isEmpty() && uiState.onlineStatus == OnlineSearch.Idle) {
                 Hint(stringResource(R.string.food_search_no_matches))
             } else {
-                page.forEach { product ->
-                    SearchHitRow(product = product, onClick = { onSelect(product) })
+                ResultsBox(uiState = uiState, onEvent = onEvent, onSelect = onSelect)
+                if (uiState.hasMore) {
+                    Hint(stringResource(R.string.food_search_showing, items.size, uiState.results.size))
                 }
-                Pager(uiState = uiState, onEvent = onEvent)
             }
             when (uiState.onlineStatus) {
                 OnlineSearch.Searching -> Hint(stringResource(R.string.food_search_online_searching))
@@ -119,32 +123,32 @@ private fun FoodSearchPanelContent(
 }
 
 /**
- * Each button is *hidden* at its end of the list rather than disabled — the rule the meal-ideas
- * button and the supplements card follow. The count is what tells the user there is more.
+ * The rows, and only the rows: the hints stay outside so "searching online…" never needs scrolling
+ * to. [RESULTS_MAX_HEIGHT] is deliberately not a multiple of the row height — the row cut in half at
+ * the bottom edge is what says there is more, the job the Next button used to do.
+ *
+ * Scrolling to the bottom asks for the next page. `maxValue` grows with each one, so the flag falls
+ * back to false and re-arms; at the end of the list the state stops changing and the ask is dropped.
  */
 @Composable
-private fun Pager(uiState: FoodSearchUiState, onEvent: (FoodSearchEvent) -> Unit) {
-    val pages = uiState.pageCount
-    if (pages <= 1) return
-
-    val first = uiState.page * FOOD_PAGE_SIZE + 1
-    val last = first + uiState.pageItems.size - 1
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+private fun ResultsBox(
+    uiState: FoodSearchUiState,
+    onEvent: (FoodSearchEvent) -> Unit,
+    onSelect: (ScannedProduct) -> Unit,
+) {
+    val scroll = rememberScrollState()
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.heightIn(max = RESULTS_MAX_HEIGHT).verticalScroll(scroll),
     ) {
-        if (uiState.page > 0) {
-            TextButton(label = stringResource(R.string.food_search_previous), onClick = { onEvent(FoodSearchEvent.OnPrevPage) })
-        } else {
-            Spacer(modifier = Modifier.size(1.dp))
+        uiState.visibleItems.forEach { product ->
+            SearchHitRow(product = product, onClick = { onSelect(product) })
         }
-        Hint(stringResource(R.string.food_search_page, first, last, uiState.results.size))
-        if (uiState.page < pages - 1) {
-            TextButton(label = stringResource(R.string.food_search_next), onClick = { onEvent(FoodSearchEvent.OnNextPage) })
-        } else {
-            Spacer(modifier = Modifier.size(1.dp))
-        }
+    }
+    LaunchedEffect(scroll) {
+        snapshotFlow { scroll.value >= scroll.maxValue }
+            .distinctUntilChanged()
+            .collect { atBottom -> if (atBottom) onEvent(FoodSearchEvent.OnLoadMore) }
     }
 }
 
@@ -184,7 +188,7 @@ private fun FoodSearchPanelBrowsingPreview() {
     AppTheme {
         Surface {
             FoodSearchPanelContent(
-                uiState = FoodSearchUiState(page = 1),
+                uiState = FoodSearchUiState(shown = 24),
                 onEvent = {},
                 onSelect = {},
                 modifier = Modifier.padding(16.dp),

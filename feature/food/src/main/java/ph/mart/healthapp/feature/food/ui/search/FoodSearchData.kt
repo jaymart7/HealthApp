@@ -5,8 +5,8 @@ import ph.mart.healthapp.core.data.food.ScannedProduct
 
 /**
  * [results] is the whole match — the user's own foods, then the built-in list, then [online]; see
- * [searchFoods][ph.mart.healthapp.core.data.food.searchFoods] — and [page] the slice the panel is
- * showing.
+ * [searchFoods][ph.mart.healthapp.core.data.food.searchFoods] — and [shown] how many of them the
+ * panel has rendered so far.
  *
  * [myFoods] and [online] are held rather than only folded because the fold has three triggers now:
  * a keystroke, Room emitting after a food is saved or renamed somewhere else in the app, and the
@@ -23,7 +23,7 @@ data class FoodSearchUiState(
     val online: List<ScannedProduct> = emptyList(),
     val onlineStatus: OnlineSearch = OnlineSearch.Idle,
     val results: List<ScannedProduct> = COMMON_FOODS,
-    val page: Int = 0,
+    val shown: Int = FOOD_PAGE_SIZE,
 )
 
 /**
@@ -34,21 +34,31 @@ data class FoodSearchUiState(
 enum class OnlineSearch { Idle, Searching, Failed }
 
 /**
- * ponytail: eight rows is what keeps the add-entry sheet's own form within a scroll of the panel.
- * A lazy list would be the alternative and [AppBottomSheet][ph.mart.healthapp.core.designsystem.component.AppBottomSheet]
- * hands its children unbounded height, so paging is also the shape that fits where this is drawn.
+ * How many more rows reaching the bottom of the panel's results box appends.
+ *
+ * ponytail: a counter over a list already in memory, not Paging3 and not a lazy list —
+ * [AppBottomSheet][ph.mart.healthapp.core.designsystem.component.AppBottomSheet] hands its children
+ * unbounded height, and the whole result set is `COMMON_FOODS` plus one Open Food Facts answer. The
+ * panel's own bounded box is what keeps the add-entry sheet's form within a scroll of the panel.
  */
 const val FOOD_PAGE_SIZE = 8
 
-/** Empty when [page] is past the end, which is why both movers clamp. */
-val FoodSearchUiState.pageItems: List<ScannedProduct>
-    get() = results.drop(page * FOOD_PAGE_SIZE).take(FOOD_PAGE_SIZE)
+val FoodSearchUiState.visibleItems: List<ScannedProduct>
+    get() = results.take(shown)
 
-val FoodSearchUiState.pageCount: Int
-    get() = (results.size + FOOD_PAGE_SIZE - 1) / FOOD_PAGE_SIZE
+val FoodSearchUiState.hasMore: Boolean
+    get() = shown < results.size
+
+/**
+ * The clamp is load-bearing: at the end of the list this returns an equal state, which the state
+ * flow drops, so the panel re-asking every time the box is already scrolled to the bottom cannot
+ * loop. It never falls below one page, or a three-hit local answer would leave the window at three
+ * when the online tier lands twenty more behind it.
+ */
+fun FoodSearchUiState.withMore(): FoodSearchUiState =
+    copy(shown = (shown + FOOD_PAGE_SIZE).coerceAtMost(maxOf(results.size, FOOD_PAGE_SIZE)))
 
 sealed interface FoodSearchEvent {
     data class OnQueryChange(val query: String) : FoodSearchEvent
-    data object OnNextPage : FoodSearchEvent
-    data object OnPrevPage : FoodSearchEvent
+    data object OnLoadMore : FoodSearchEvent
 }
