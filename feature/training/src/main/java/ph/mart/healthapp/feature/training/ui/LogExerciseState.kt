@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.training.ui.exercise
+package ph.mart.healthapp.feature.training.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

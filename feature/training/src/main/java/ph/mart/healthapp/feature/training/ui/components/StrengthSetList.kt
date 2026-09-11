@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.training.ui.exercise.components
+package ph.mart.healthapp.feature.training.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

@@ -92,8 +92,7 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
   `rememberFabExpanded` is a scroll affordance a rail has nothing to say about. The rail's tabs sit
   in a `weight(1f)` column arranged `SpaceEvenly`, because the window that is wide is usually the
   one that is short: a landscape phone is ~410dp tall and a fixed stack put the fourth tab off the
-  bottom edge. *ponytail: five tabs is the M3 maximum and the rail's tightest case — check a
-  landscape phone at 200% font scale before adding anything to either bar.*
+  bottom edge.
 - **`showsTabChrome` is a pure function, and `beneath` is what keeps it honest.** A tab always
   wears the rail/bar and the FAB; so does a Profile detail at two-pane width, because its tab root
   is still on screen beside it. The five routes that qualify are one `ProfileDetailRoutes` set read
@@ -278,7 +277,7 @@ what stop the next pass undoing it.
   chip. `CALORIE_FLOOR_WARNING` lives there for the reason it always did: one safety warning, three
   screens.
 - **Display names live where the enum's `name` is not the display name.** `MealType.labelRes()`
-  sits in `:feature:food/ui/shared/`, `ActivityLevel.label()` in `:feature:profile`, the five tab
+  sits in `:feature:food/ui/shared/`, `ActivityLevel.label()` in `:feature:profile`, the four tab
   names in `:app` — because each enum's `name` is a stored token (a diary row, an export field, a
   profile column) and six screens were printing it at the user. `:core:navigation` lost
   `TopLevelDestination.label` outright: a leaf module with no resources has nowhere to put one.
@@ -316,9 +315,8 @@ what stop the next pass undoing it.
   the `*Data`/`*State`/`*ViewModel`/`*Screen` quartet intact inside each. Anything
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
-  declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `recipe`, `search`, `ideas`,
-  `voice`, `shared`), `:feature:training` (`training`, `exercise`),
-  `:feature:progress` (`progress` — the overview, the
+  declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `exercise`,
+  `recipe`, `search`, `ideas`, `voice`, `shared`), `:feature:progress` (`progress` — the overview, the
   detail chrome and the recap — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts, and a
@@ -328,22 +326,23 @@ what stop the next pass undoing it.
   `shared/` holding `LibraryRow` and `RenameSheet`, which the food library and the routine library
   both draw) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
-  owning screen: `RecipePanel` sits under `recipe/` though `FoodScreen` renders it, and Progress's
-  eleven tab bodies sit with the charts they draw rather than with the shell that dispatches them.
-  Only the `*Navigation.kt` file stays at the `ui/` root, because its route types and
+  owning screen: `ExerciseSection` sits under `exercise/` and `RecipePanel` under
+  `recipe/` though `FoodScreen` renders both, and Progress's eleven tab bodies sit
+  with the charts they draw rather than with the shell that dispatches them. Only
+  the `*Navigation.kt` file stays at the `ui/` root, because its route types and
   `<feature>Entries` are what `:app` reaches for.
 - **`:wear` follows the same rules on a smaller graph**: `ui/` + `ui/components/` + `ui/theme/`,
   one flow, one ViewModel — flat for the reason `:feature:home` is. Its previews are
   `@WearPreviewDevices` / `@WearPreviewFontScales` rather than `@PreviewLightDark`: the watch has
   one scheme but several shapes and font scales, which is where a wrist layout actually breaks.
-- **`:feature:home` and `:feature:coach` are deliberately flat**, and should stay that way.
-  Each holds exactly one flow with one ViewModel, so `ui/` + `ui/components/` is already what
-  the rule above prescribes. Don't "finish the job" by sub-packaging them.
+- **`:feature:home`, `:feature:coach` and `:feature:training` are deliberately flat**, and should
+  stay that way. Each holds exactly one flow with one ViewModel, so `ui/` + `ui/components/` is
+  already what the rule above prescribes. Don't "finish the job" by sub-packaging them.
 - **What earns a flow package is a second ViewModel**, not a second screen. `StrengthWorkoutScreen`
   is the counter-example that proves it: a route with its own back handler and discard dialog, yet
-  it sits in `:feature:training`'s existing `ui/exercise/` because it shares `LogExerciseViewModel`
-  with the sheet — one form, two presentations, and `ExerciseFormFields` is the trio they both draw.
-  The Train tab's own `TrainingViewModel` is what makes `ui/training/` a second package beside it.
+  it sits flat in `:feature:training/ui/` beside the log-exercise sheet, because the two share
+  `LogExerciseViewModel` — one form, two presentations, and `ExerciseFormFields` is the trio they
+  both draw. That whole module is one flow, which is why it has no flow package at all.
   `:feature:onboarding` was flat on the argument that its seven steps are sub-views of
   `OnboardingScreen`'s `when (step)` — true of six of them, but the Google Health step
   owns `OnboardingHealthViewModel`, and everywhere else in this repo that means its own
@@ -355,8 +354,7 @@ what stop the next pass undoing it.
   only `OnboardingScreen` is public, because `AppRoot` renders it directly (onboarding has
   no `*Navigation.kt` — it is not in the Nav3 graph).
 - **Shared vs. screen-specific placement is not optional.** Used in ≥2 screens
-  (`FoodItemRow`, `AIChip`, `MascotAvatar`, `WaterGlassRow`, `CalendarPanel`, `MealThumbnail`,
-  `TrainingPlanCard`) →
+  (`FoodItemRow`, `AIChip`, `MascotAvatar`, `WaterGlassRow`, `CalendarPanel`, `MealThumbnail`) →
   `:core:designsystem`, never duplicated into a feature. `rememberBitmapFromFile` is there for the
   same reason and is the app's **one** decoder for a stored photo file — a second one is a second
   downsampling rule to keep in step. One screen only → that

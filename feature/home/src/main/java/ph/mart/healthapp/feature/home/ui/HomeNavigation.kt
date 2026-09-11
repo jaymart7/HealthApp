@@ -12,7 +12,7 @@ import ph.mart.healthapp.core.navigation.route.HomeRoute
  * [onOpenCoach] is wired the same way, and for a second reason: `CoachRoute` lives in
  * `:feature:coach`, which this module must not import. [onStartRoutine] is a third of the same
  * shape — the training-plan card starts a workout on `StrengthWorkoutRoute`, which lives in
- * `:feature:food`. [onOpenHomeLayout] is a fourth: the "Rearrange your Home" link at the foot of
+ * `:feature:training`. [onOpenHomeLayout] is a fourth: the "Rearrange your Home" link at the foot of
  * the card block opens Profile's `HomeLayoutRoute`, and `:feature:home` cannot import
  * `:feature:profile` either.
  *

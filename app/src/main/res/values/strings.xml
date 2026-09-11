@@ -24,7 +24,6 @@
     <!-- Bottom nav / rail tabs -->
     <string name="app_tab_home">Home</string>
     <string name="app_tab_food">Food</string>
-    <string name="app_tab_train">Train</string>
     <string name="app_tab_progress">Progress</string>
     <string name="app_tab_profile">Profile</string>
 

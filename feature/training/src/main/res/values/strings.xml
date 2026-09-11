@@ -5,22 +5,6 @@
     <string name="training_exercise">Exercise</string>
     <string name="training_not_saved">It hasn\'t been saved yet.</string>
 
-    <!-- Train tab -->
-    <string name="training_today_title">Today</string>
-    <string name="training_today_summary">%1$d kcal · %2$d min</string>
-    <string name="training_today_none">Nothing logged today.</string>
-    <string name="training_log_activity">Log activity</string>
-    <string name="training_lift">Lift</string>
-    <string name="training_recent_title">Recent</string>
-    <string name="training_row_minutes">%1$d min</string>
-    <string name="training_row_kcal">%1$d kcal</string>
-    <!-- The plan card's own summary line. Home says the same sentence from its own resources —
-         the card lives in :core:designsystem, which cannot reach either module's words. -->
-    <string name="training_plan_summary">%1$s · %2$d sets · %3$s</string>
-    <string name="training_empty_title">Nothing trained yet</string>
-    <string name="training_empty_body">Log a walk, a ride or a lifting session and it lands here — and on the day\'s calorie budget.</string>
-    <string name="training_edit_activity">Edit %1$s</string>
-
     <!-- Log exercise sheet -->
     <string name="training_exercise_log">Log exercise</string>
     <string name="training_exercise_edit">Edit exercise</string>

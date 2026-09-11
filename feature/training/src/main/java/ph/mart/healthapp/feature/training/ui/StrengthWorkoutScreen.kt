@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.training.ui.exercise
+package ph.mart.healthapp.feature.training.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,12 +50,12 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.training.R
-import ph.mart.healthapp.feature.training.ui.exercise.components.ExerciseFormFields
-import ph.mart.healthapp.feature.training.ui.exercise.components.NameChipRow
-import ph.mart.healthapp.feature.training.ui.exercise.components.SaveRoutineSheet
-import ph.mart.healthapp.feature.training.ui.exercise.components.StrengthSetEditor
-import ph.mart.healthapp.feature.training.ui.exercise.components.StrengthSetList
-import ph.mart.healthapp.feature.training.ui.exercise.components.canAdd
+import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
+import ph.mart.healthapp.feature.training.ui.components.NameChipRow
+import ph.mart.healthapp.feature.training.ui.components.SaveRoutineSheet
+import ph.mart.healthapp.feature.training.ui.components.StrengthSetEditor
+import ph.mart.healthapp.feature.training.ui.components.StrengthSetList
+import ph.mart.healthapp.feature.training.ui.components.canAdd
 
 /**
  * Authors a strength workout: the duration and burn every activity carries, plus what was actually

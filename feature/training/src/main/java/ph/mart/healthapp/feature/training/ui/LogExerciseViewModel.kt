@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.training.ui.exercise
+package ph.mart.healthapp.feature.training.ui
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.combine

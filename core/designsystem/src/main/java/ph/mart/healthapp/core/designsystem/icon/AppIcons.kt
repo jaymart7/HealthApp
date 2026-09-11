@@ -15,7 +15,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -58,9 +57,6 @@ data class DualStateIcon(val filled: ImageVector, val outlined: ImageVector)
 object AppIcons {
     val Home = DualStateIcon(Icons.Filled.Home, Icons.Outlined.Home)
     val Food = DualStateIcon(Icons.Filled.Restaurant, Icons.Outlined.Restaurant)
-    /** The Train tab. Its outlined half is [Dumbbell], which the rest of the app already
-     * draws as a plain vector wherever training is the subject. */
-    val Train = DualStateIcon(Icons.Filled.FitnessCenter, Icons.Outlined.FitnessCenter)
     val Progress = DualStateIcon(Icons.AutoMirrored.Filled.TrendingUp, Icons.AutoMirrored.Outlined.TrendingUp)
     val Profile = DualStateIcon(Icons.Filled.Person, Icons.Outlined.Person)
     val Favorite = DualStateIcon(Icons.Filled.Star, Icons.Outlined.StarBorder)

@@ -64,8 +64,8 @@ import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
+import ph.mart.healthapp.feature.training.ui.LogExerciseSheet
 import ph.mart.healthapp.feature.training.ui.StrengthWorkoutRoute
-import ph.mart.healthapp.feature.training.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.training.ui.trainingEntries
 
 /** What the toolbar says on each route a level above a tab. It lives here rather than on the route
@@ -76,7 +76,6 @@ import ph.mart.healthapp.feature.training.ui.trainingEntries
 private fun TopLevelDestination.label(): Int = when (this) {
     TopLevelDestination.Home -> R.string.app_tab_home
     TopLevelDestination.Food -> R.string.app_tab_food
-    TopLevelDestination.Training -> R.string.app_tab_train
     TopLevelDestination.Progress -> R.string.app_tab_progress
     TopLevelDestination.Profile -> R.string.app_tab_profile
 }
@@ -132,7 +131,6 @@ internal fun showsTabChrome(current: NavKey?, beneath: NavKey?, twoPane: Boolean
 private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
     TopLevelDestination.Home -> AppIcons.Home
     TopLevelDestination.Food -> AppIcons.Food
-    TopLevelDestination.Training -> AppIcons.Train
     TopLevelDestination.Progress -> AppIcons.Progress
     TopLevelDestination.Profile -> AppIcons.Profile
 }
@@ -143,7 +141,7 @@ private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
 private enum class ActiveSheet { None, QuickAction, LogExercise, LogWeight, AddPhoto }
 
 /**
- * Tab navigation (5 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
+ * Tab navigation (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
  * depends on every `:feature:*` module and `:core:navigation` at once, so it's the only place
  * real navigation wiring can live — see the Phase 2 plan's "flagged architectural decision."
  *
@@ -246,12 +244,10 @@ fun AppScaffold(
     // owning the state here is also what preserves each tab's scroll position across tab switches.
     val homeScroll = rememberScrollState()
     val foodScroll = rememberScrollState()
-    val trainingScroll = rememberScrollState()
     val progressScroll = rememberScrollState()
     val profileScroll = rememberScrollState()
     val currentScroll = when (topLevelBackStack.topLevelKey) {
         TopLevelDestination.Food.route -> foodScroll
-        TopLevelDestination.Training.route -> trainingScroll
         TopLevelDestination.Progress.route -> progressScroll
         TopLevelDestination.Profile.route -> profileScroll
         else -> homeScroll
@@ -363,22 +359,7 @@ fun AppScaffold(
                             },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )
-                        trainingEntries(
-                            scrollState = trainingScroll,
-                            onLogExercise = { date, editingId ->
-                                sheetDate = date
-                                sheetEditingId = editingId
-                                activeSheet = ActiveSheet.LogExercise
-                            },
-                            onOpenStrength = { date, editingId ->
-                                topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
-                            },
-                            // Day 0 is today, as it is everywhere a routine is started.
-                            onStartRoutine = { routineId ->
-                                topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
-                            },
-                            onExitFlow = { topLevelBackStack.removeLast() },
-                        )
+                        trainingEntries(onExitFlow = { topLevelBackStack.removeLast() })
                         progressEntries(
                             scrollState = progressScroll,
                             twoPane = twoPane,

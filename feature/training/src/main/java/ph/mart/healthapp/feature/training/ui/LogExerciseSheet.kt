@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.training.ui.exercise
+package ph.mart.healthapp.feature.training.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,7 +24,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.training.R
-import ph.mart.healthapp.feature.training.ui.exercise.components.ExerciseFormFields
+import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
 
 /** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; the FAB's
  * quick-action sheet leaves it 0, which the repository stamps as today.

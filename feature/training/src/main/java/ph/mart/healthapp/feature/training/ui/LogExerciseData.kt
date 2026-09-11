@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.training.ui.exercise
+package ph.mart.healthapp.feature.training.ui
 
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType

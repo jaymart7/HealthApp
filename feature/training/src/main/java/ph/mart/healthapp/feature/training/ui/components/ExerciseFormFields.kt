@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.training.ui.exercise.components
+package ph.mart.healthapp.feature.training.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,10 +14,10 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.training.R
-import ph.mart.healthapp.feature.training.ui.exercise.KCAL_STEP
-import ph.mart.healthapp.feature.training.ui.exercise.LogExerciseForm
-import ph.mart.healthapp.feature.training.ui.exercise.MINUTES_STEP
-import ph.mart.healthapp.feature.training.ui.exercise.withEstimate
+import ph.mart.healthapp.feature.training.ui.KCAL_STEP
+import ph.mart.healthapp.feature.training.ui.LogExerciseForm
+import ph.mart.healthapp.feature.training.ui.MINUTES_STEP
+import ph.mart.healthapp.feature.training.ui.withEstimate
 
 /**
  * The note/duration/burn trio every activity carries, whichever surface is logging it — the sheet

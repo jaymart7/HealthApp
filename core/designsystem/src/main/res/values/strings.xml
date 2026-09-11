@@ -95,15 +95,4 @@
     <!-- Shared image (ShareImageSheet) -->
     <string name="ds_share">Share</string>
     <string name="ds_share_brand">FitPulse</string>
-
-    <!-- Training plan card — drawn by Home and by the Train tab -->
-    <string name="ds_plan_title">Today\'s workout</string>
-    <string name="ds_plan_ratio">%1$d of %2$d this week</string>
-    <string name="ds_plan_rest">Rest day.</string>
-    <string name="ds_plan_rest_trained">Rest day — and you trained anyway.</string>
-    <string name="ds_plan_logged">Logged</string>
-    <string name="ds_plan_start">Start</string>
-    <string name="ds_plan_day_done">%1$s done</string>
-    <string name="ds_plan_day_planned">%1$s planned</string>
-    <string name="ds_plan_nothing">Nothing planned this week</string>
 </resources>

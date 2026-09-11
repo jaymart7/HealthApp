@@ -19,13 +19,11 @@ Precision stays available; it never leads.
 
 ## Product Purpose
 
-FitPulse tracks three things in one loop: **body** (weight, measurements, progress photos),
-**nutrition** (calories, macros) and **training** (activities, strength sets, a weekday plan).
-The three are one loop and not three apps: burn credits the day's budget, the diary still shows
-it, and the week's plan is scored against what was actually logged. Success is a user who keeps
-logging — the streak is the product's real metric, not the accuracy of any single entry.
-Everything that makes logging faster or less punishing is on-mission; everything that makes a day
-feel like a grade is off-mission.
+FitPulse tracks two things in one loop: **body** (weight, measurements, progress photos)
+and **nutrition** (calories, macros). Success is a user who keeps logging — the streak
+is the product's real metric, not the accuracy of any single entry. Everything that makes
+logging faster or less punishing is on-mission; everything that makes a day feel like a
+grade is off-mission.
 
 ## Positioning
 
@@ -33,9 +31,8 @@ Four things a neighboring tracker could not truthfully claim at once:
 
 1. **AI photo food logging.** Point the camera at a plate and it logs. The fastest path
    from meal to entry, with no search-and-scroll.
-2. **Body, nutrition and training in one loop.** Weight, measurements and photos sit beside
-   calories, and what was trained raises the day's budget — so each is always read against the
-   others, not in a silo.
+2. **Body and nutrition in one loop.** Weight, measurements, and photos sit beside
+   calories, so food data is always read against actual body change — not in a silo.
 3. **Offline-first, no account wall.** All core data works with no network and no sign-up.
    Room on the device is the source of truth; there is no server holding the user's history.
 4. **Warm and unjudgmental.** Bibo the mascot, streaks with a grace day, badges earned off
@@ -110,9 +107,8 @@ Explicitly undecided:
    and stay one gesture from it.
 3. **Offline is the normal case, not the error case.** Network-dependent features announce
    their fallback rather than presenting failure.
-4. **Body, food and training are read together.** No pillar gets a surface that pretends the
-   others don't exist: burn still credits the budget, the diary still shows the day's sessions,
-   and the Train tab still counts the week against the plan.
+4. **Body and food are read together.** Neither pillar gets a surface that pretends the
+   other doesn't exist.
 5. **Consistency is the brand.** A macro is the same color in every chart in the app; a
    spacing value comes from the scale or doesn't exist. Personality lives in Bibo, copy,
    and motion — never in one-off visual exceptions.

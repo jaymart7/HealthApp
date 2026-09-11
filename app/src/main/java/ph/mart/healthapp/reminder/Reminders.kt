@@ -77,7 +77,7 @@ enum class Reminder(
     Supplements(1, 9, null, "Supplements", "Tick off what you've taken today.", TopLevelDestination.Home, null, checksSupplements = true),
     // Appended for [Supplements]' reason — [ordinal] is the notification id. Late afternoon: early
     // enough to still train today, late enough that a morning session has already been logged.
-    Workout(1, 17, null, "Training day", "Today's routine is on the plan.", TopLevelDestination.Training, null, checksPlan = true),
+    Workout(1, 17, null, "Training day", "Today's routine is on the plan.", TopLevelDestination.Home, null, checksPlan = true),
     // Appended for [Supplements]' reason once more — [ordinal] is the notification id. Sunday
     // 19:00: late enough that the week is over, early enough to still be read.
     WeeklyRecap(
