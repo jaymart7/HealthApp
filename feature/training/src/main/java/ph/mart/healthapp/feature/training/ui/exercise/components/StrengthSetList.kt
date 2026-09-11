@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise.components
+package ph.mart.healthapp.feature.training.ui.exercise.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,7 +25,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
-import ph.mart.healthapp.feature.food.R
+import ph.mart.healthapp.feature.training.R
 
 /**
  * The sets logged so far, grouped under the lift they belong to.
@@ -46,7 +46,7 @@ internal fun StrengthSetList(
 ) {
     if (sets.isEmpty()) {
         Text(
-            text = stringResource(R.string.food_strength_no_sets),
+            text = stringResource(R.string.training_strength_no_sets),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier,
@@ -64,7 +64,7 @@ internal fun StrengthSetList(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = name.ifBlank { stringResource(R.string.food_strength_unnamed) },
+                        text = name.ifBlank { stringResource(R.string.training_strength_unnamed) },
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -96,7 +96,7 @@ internal fun StrengthSetList(
                         IconButton(onClick = { onRemove(index) }, modifier = Modifier.size(44.dp)) {
                             Icon(
                                 imageVector = AppIcons.Delete,
-                                contentDescription = stringResource(R.string.food_strength_remove_set, position + 1, name),
+                                contentDescription = stringResource(R.string.training_strength_remove_set, position + 1, name),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }

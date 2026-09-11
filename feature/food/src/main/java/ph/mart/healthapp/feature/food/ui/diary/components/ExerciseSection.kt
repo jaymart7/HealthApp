@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise.components
+package ph.mart.healthapp.feature.food.ui.diary.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -35,8 +35,6 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.diary.components.MealSectionHeader
-import ph.mart.healthapp.feature.food.ui.diary.components.SectionCorner
 import ph.mart.healthapp.feature.food.ui.shared.components.EntryIndent
 import ph.mart.healthapp.feature.food.ui.shared.components.SwipeToDeleteRow
 

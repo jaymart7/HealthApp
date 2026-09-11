@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise.components
+package ph.mart.healthapp.feature.training.ui.exercise.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +18,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.R
+import ph.mart.healthapp.feature.training.R
 
 /**
  * Names the workout on screen as a routine — [SaveMealSheet]'s twin, one domain over: a routine is
@@ -38,26 +38,26 @@ internal fun SaveRoutineSheet(
 ) {
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
-            text = stringResource(R.string.food_routine_sheet_title),
+            text = stringResource(R.string.training_routine_sheet_title),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 4.dp),
         )
         Text(
             text = stringResource(
-                R.string.food_routine_sheet_body,
-                pluralStringResource(R.plurals.food_routine_lifts, liftCount, liftCount),
-                pluralStringResource(R.plurals.food_strength_sets, setCount, setCount),
+                R.string.training_routine_sheet_body,
+                pluralStringResource(R.plurals.training_routine_lifts, liftCount, liftCount),
+                pluralStringResource(R.plurals.training_strength_sets, setCount, setCount),
             ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            AppTextField(value = name, onValueChange = onNameChange, placeholder = stringResource(R.string.food_routine_placeholder))
+            AppTextField(value = name, onValueChange = onNameChange, placeholder = stringResource(R.string.training_routine_placeholder))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.food_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(label = stringResource(R.string.food_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.training_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
+                PrimaryButton(label = stringResource(R.string.training_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
             }
         }
     }

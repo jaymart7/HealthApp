@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise.components
+package ph.mart.healthapp.feature.training.ui.exercise.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
@@ -21,10 +21,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
 
 /**
- * [MealTypeChipRow]'s pill in a scrolling row — eight activity types don't divide a phone width
+ * The diary's meal-type pill in a scrolling row — eight activity types don't divide a phone width
  * into readable equal shares the way four meals do, so these size to their labels and scroll.
  */
 @Composable

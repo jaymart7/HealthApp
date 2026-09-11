@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.FoodRoute
 import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
-import ph.mart.healthapp.feature.food.ui.exercise.StrengthWorkoutScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 import ph.mart.healthapp.feature.food.ui.voice.VoiceLogScreen
@@ -28,32 +27,20 @@ data class BarcodeScanRoute(val dateEpochDay: Long) : NavKey
 @Serializable
 data object RecipeBuilderRoute : NavKey
 
-/** Authoring a strength workout — reached from the log-exercise sheet, and from tapping a logged
- * one to correct it — and, from Home's training-plan card, to start today's routine. It carries the
- * day like [BarcodeScanRoute] does, so a workout logged while reviewing a past day lands on that
- * day; [editingId] of 0 is a new one, and a non-zero id is the row being superseded, resolved by
- * the screen rather than passed through the back stack.
- *
- * [routineId] seeds a new workout from a saved routine, and is resolved the same way for the same
- * reason: the back stack carries an id, never a row. It is meaningless beside a non-zero
- * [editingId] — a workout being corrected already has its sets. */
-@Serializable
-data class StrengthWorkoutRoute(
-    val dateEpochDay: Long,
-    val editingId: Long = 0,
-    val routineId: Long = 0,
-) : NavKey
-
 /** Logging a meal by saying or typing a sentence. Carries the day like [BarcodeScanRoute], and
  * for the same reason — a meal described while reviewing a past day belongs to that day; `0` is
- * today, the convention [StrengthWorkoutRoute] uses from Home and the FAB. */
+ * today, the convention `StrengthWorkoutRoute` uses from Home and the FAB. */
 @Serializable
 data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
 
 /** [twoPane] comes from `AppScaffold`, the one place in the app that reads the window's width, so
  * this tab is told rather than asking — which is also why `:feature:food` needs no adaptive
  * dependency of its own. It reaches the diary and nothing else: the camera flows are full-bleed at
- * every width, and the recipe and workout screens are forms. */
+ * every width, and the recipe screen is a form.
+ *
+ * [onOpenStrength] and [onLogExercise] leave this module entirely — the strength screen and the
+ * log-exercise sheet are `:feature:training`'s, and a feature never imports another's types, so
+ * both stay callbacks resolved in `AppScaffold`. The shape `onOpenCoach` already has. */
 fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
     twoPane: Boolean = false,
@@ -62,6 +49,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
     onCapturePhoto: (Long) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
+    onLogExercise: (Long, Long) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<FoodRoute> {
@@ -73,17 +61,10 @@ fun EntryProviderScope<NavKey>.foodEntries(
             onCapturePhoto = onCapturePhoto,
             onNewRecipe = onNewRecipe,
             onOpenStrength = onOpenStrength,
+            onLogExercise = onLogExercise,
         )
     }
     entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }
-    entry<StrengthWorkoutRoute> { key ->
-        StrengthWorkoutScreen(
-            dateEpochDay = key.dateEpochDay,
-            editingId = key.editingId,
-            routineId = key.routineId,
-            onExit = onExitFlow,
-        )
-    }
     entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<VoiceLogRoute> { key -> VoiceLogScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }

@@ -11,7 +11,8 @@ either. `DECISIONS.md` also holds what was weighed and deferred.
 
 ## Surfaces
 
-**Four tabs** (`:core:navigation`): `HomeRoute` · `FoodRoute` · `ProgressRoute` · `ProfileRoute`.
+**Five tabs** (`:core:navigation`): `HomeRoute` · `FoodRoute` · `TrainingRoute` · `ProgressRoute` ·
+`ProfileRoute`. The two logging tabs together, then the history, then the person.
 
 **Routes above a tab** (own back toolbar, no bottom bar/FAB):
 `CoachRoute` · `FoodCaptureRoute(dateEpochDay)` · `BarcodeScanRoute(dateEpochDay)` ·
@@ -122,6 +123,20 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Camera permission screen; predictive back branches per flow state.
 - Progress photo capture with a date-stamped file.
 
+## Training (`:feature:training`)
+
+The **Train tab** — today and doing; Progress is the history.
+
+- Today's plan: the same `TrainingPlanCard` Home draws, hidden until a routine has weekdays on it.
+- Today's sessions: the day's burn and minutes, each row tapping back into the form that logged it.
+- Two logging doors, "Log activity" and "Lift" — the same two the FAB's sheet offers.
+- Recent: the last five sessions behind today, read-only.
+- Empty state: the mascot page, with both doors under it.
+
+The log-exercise sheet and the strength workout screen live here too, and `AppScaffold` hosts the
+sheet's one instance — the diary opens it by id through a callback, since a feature never imports
+another feature's types.
+
 ## Exercise & strength
 
 - Log a workout: type, duration, MET-estimated burn (editable; stops re-estimating once touched).
@@ -131,7 +146,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Bodyweight sets (0 kg) are a real value.
 - "Repeat last workout" seeds the whole set list.
 - Routines: save a session as a routine (modal reps), start one to seed sets at last-lifted loads.
-- Training plan: a weekday picker per routine; Home shows today's routine and a week ratio.
+- Training plan: a weekday picker per routine; Home and the Train tab both show today's routine
+  and the week ratio.
 - Edit or delete a logged workout (sets re-pointed in the same transaction).
 
 ## Progress
@@ -258,7 +274,7 @@ MascotAvatar · MascotSpeechBubble · MealThumbnail · MicronutrientInputGroup �
 PhotoBitmap (`rememberBitmapFromFile`, every stored photo in the app decodes through it) ·
 NumericStepperField · SegmentedToggle · SelectableCard · ShareImageSheet (`captureToPicture` +
 `sharePng`, every picture the app hands the chooser) · SheetDatePicker · StepProgressBar ·
-WaterGlassRow.
+TrainingPlanCard (Home's Workout card and the Train tab both draw it) · WaterGlassRow.
 
 Charts live in `:feature:progress/ui/shared/`: `DayBarChart` (zero-based) and `RangeBarChart`
 (floating bars).
@@ -266,7 +282,7 @@ Charts live in `:feature:progress/ui/shared/`: `DayBarChart` (zero-based) and `R
 ## Localization scaffolding
 
 Every module owns a `res/values/strings.xml` and every user-facing string reads from it —
-about 1,100 across eleven modules. **No translation ships**; this is what makes one possible.
+about 1,100 across twelve modules. **No translation ships**; this is what makes one possible.
 `./gradlew checkUiLiterals` is the gate that keeps it that way.
 
 ---

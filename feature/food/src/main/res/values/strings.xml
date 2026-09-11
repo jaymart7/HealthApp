@@ -218,50 +218,16 @@
 
     <!-- Exercise -->
     <string name="food_exercise">Exercise</string>
-    <string name="food_exercise_log">Log exercise</string>
-    <string name="food_exercise_edit">Edit exercise</string>
-    <string name="food_exercise_log_sets">Log sets instead →</string>
-    <string name="food_exercise_note">Note (optional)</string>
-    <string name="food_exercise_duration">Duration</string>
-    <string name="food_exercise_minutes">min</string>
-    <string name="food_exercise_kcal">kcal</string>
-    <string name="food_exercise_burned_manual">Burned · your figure</string>
-    <string name="food_exercise_burned_estimated">Burned · estimated from %1$s at your latest weight</string>
+
+    <!-- Strength -->
+    <!-- Under the diary's nutrient rows: what the figures are standing on, since 0 means
+         unknown-or-none and half the built-in foods have no vitamin figures. -->
+    <string name="food_nutrient_coverage">Vitamins and minerals from %1$d of %2$d foods</string>
+
+    <!-- Diary exercise block -->
     <string name="food_exercise_row">%1$d min</string>
     <string name="food_exercise_row_kcal">%1$d kcal</string>
     <string name="food_exercise_adds_today">Adds to today</string>
     <string name="food_exercise_subtotal">+%1$d kcal</string>
     <string name="food_exercise_spoken">Exercise, %1$d kilocalories burned, added to today\'s budget</string>
-
-    <!-- Strength -->
-    <string name="food_strength_repeat">Repeat last workout</string>
-    <string name="food_strength_start_routine">Start a routine</string>
-    <string name="food_strength_save_routine">Save as routine</string>
-    <string name="food_strength_saved_routine">Saved as \"%1$s\"</string>
-    <string name="food_strength_save_workout">Save workout</string>
-    <string name="food_strength_discard_new">Discard this workout?</string>
-    <string name="food_strength_discard_edit">Discard these changes?</string>
-    <plurals name="food_strength_sets">
-        <item quantity="one">%1$d set</item>
-        <item quantity="other">%1$d sets</item>
-    </plurals>
-    <string name="food_strength_summary">%1$s · %2$d lifted</string>
-    <string name="food_strength_no_sets">No sets yet. Add the first one below.</string>
-    <string name="food_strength_unnamed">Unnamed lift</string>
-    <string name="food_strength_remove_set">Remove set %1$d of %2$s</string>
-    <string name="food_strength_exercise_placeholder">Bench press</string>
-    <string name="food_strength_reps">Reps</string>
-    <string name="food_strength_load">Load</string>
-    <string name="food_strength_load_bodyweight">Load · bodyweight</string>
-    <string name="food_strength_add_set">Add set</string>
-    <string name="food_routine_sheet_title">Save as a routine</string>
-    <plurals name="food_routine_lifts">
-        <item quantity="one">%1$d lift</item>
-        <item quantity="other">%1$d lifts</item>
-    </plurals>
-    <string name="food_routine_sheet_body">%1$s · %2$s — start it again in one tap, at whatever you\'re lifting then.</string>
-    <string name="food_routine_placeholder">Push day</string>
-    <!-- Under the diary's nutrient rows: what the figures are standing on, since 0 means
-         unknown-or-none and half the built-in foods have no vitamin figures. -->
-    <string name="food_nutrient_coverage">Vitamins and minerals from %1$d of %2$d foods</string>
 </resources>

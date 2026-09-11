@@ -24,7 +24,6 @@ import ph.mart.healthapp.feature.food.ui.diary.mealIdeaRequest
 import ph.mart.healthapp.feature.food.ui.diary.rememberFoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.diary.toSavedMealItem
-import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasScreen
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
@@ -43,7 +42,6 @@ internal fun DiarySheets(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onNewRecipe: () -> Unit,
-    onOpenStrength: (Long, Long) -> Unit,
 ) {
     var pendingDeleteSavedMeal by remember { mutableStateOf<SavedMeal?>(null) }
     var pendingDeleteRecipe by remember { mutableStateOf<Recipe?>(null) }
@@ -152,26 +150,6 @@ internal fun DiarySheets(
         )
     }
 
-    // The row being corrected is resolved off the loaded day rather than held in screen
-    // state, so the saver stays flat. The guard is what makes that safe: after a rotation
-    // the day arrives an emission later, and a sheet composed against a null row would
-    // seed itself blank and save as a *new* activity.
-    val editingExercise = state.editingExerciseId?.let { id -> uiState.exercise.find { it.id == id } }
-    if (state.exerciseSheetOpen && (state.editingExerciseId == null || editingExercise != null)) {
-        LogExerciseSheet(
-            onDismiss = state::closeExerciseSheet,
-            // Closing first means back from the workout screen lands on the diary rather than
-            // reopening a stale sheet — the same handover "New recipe" makes.
-            onOpenStrength = { date ->
-                val id = state.editingExerciseId ?: 0
-                state.closeExerciseSheet()
-                onOpenStrength(date, id)
-            },
-            dateEpochDay = uiState.selectedDate,
-            editing = editingExercise,
-        )
-    }
-
     if (state.calendarOpen) {
         AppBottomSheet(onDismiss = { state.calendarOpen = false }) {
             CalendarPanel(
@@ -232,7 +210,6 @@ private fun DiarySheetsPreview() {
                 state = rememberFoodScreenState().apply { calendarOpen = true },
                 onEvent = {},
                 onNewRecipe = {},
-                onOpenStrength = { _, _ -> },
             )
         }
     }

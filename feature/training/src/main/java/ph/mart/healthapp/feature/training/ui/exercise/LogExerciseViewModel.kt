@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise
+package ph.mart.healthapp.feature.training.ui.exercise
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.combine
@@ -44,6 +44,7 @@ class LogExerciseViewModel(
     fun handleEvent(event: LogExerciseEvent) {
         when (event) {
             is LogExerciseEvent.OnSave -> onSave(event.form, event.dateEpochDay, event.editingId)
+            is LogExerciseEvent.OnLoadEditing -> onLoadEditing(event.id)
             is LogExerciseEvent.OnOpenStrength -> onOpenStrength(event.editingId, event.routineId)
             is LogExerciseEvent.OnSaveRoutine -> onSaveRoutine(event.name, event.lifts)
         }
@@ -68,6 +69,13 @@ class LogExerciseViewModel(
                 )
             }
         }
+    }
+
+    /** The sheet's share of [onOpenStrength]'s first read, and nothing else: it shows no chips,
+     * no last workout and no routines. */
+    private fun onLoadEditing(id: Long) = intent {
+        val entry = exerciseRepository.entry(id)
+        reduce { state.copy(editing = entry) }
     }
 
     /** One read for all four: the row being corrected, the session to repeat, the chips, and what

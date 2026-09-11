@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise.components
+package ph.mart.healthapp.feature.training.ui.exercise.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,11 +13,11 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.exercise.KCAL_STEP
-import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseForm
-import ph.mart.healthapp.feature.food.ui.exercise.MINUTES_STEP
-import ph.mart.healthapp.feature.food.ui.exercise.withEstimate
+import ph.mart.healthapp.feature.training.R
+import ph.mart.healthapp.feature.training.ui.exercise.KCAL_STEP
+import ph.mart.healthapp.feature.training.ui.exercise.LogExerciseForm
+import ph.mart.healthapp.feature.training.ui.exercise.MINUTES_STEP
+import ph.mart.healthapp.feature.training.ui.exercise.withEstimate
 
 /**
  * The note/duration/burn trio every activity carries, whichever surface is logging it — the sheet
@@ -47,14 +47,14 @@ internal fun ExerciseFormFields(
             )
         }
         AppTextField(
-            label = stringResource(R.string.food_exercise_note),
+            label = stringResource(R.string.training_exercise_note),
             value = form.name,
             onValueChange = { onFormChange(form.copy(name = it)) },
         )
         NumericStepperField(
-            label = stringResource(R.string.food_exercise_duration),
+            label = stringResource(R.string.training_exercise_duration),
             value = "${form.minutes}",
-            unitSuffix = stringResource(R.string.food_exercise_minutes),
+            unitSuffix = stringResource(R.string.training_exercise_minutes),
             onValueChange = { update(form.copy(minutes = it.toIntOrNull() ?: 0)) },
             onIncrement = { update(form.copy(minutes = form.minutes + MINUTES_STEP)) },
             onDecrement = {
@@ -66,15 +66,15 @@ internal fun ExerciseFormFields(
             // stop saying "estimated" at the same moment — otherwise it describes a
             // calculation that is no longer running.
             label = if (form.burnedEdited) {
-                stringResource(R.string.food_exercise_burned_manual)
+                stringResource(R.string.training_exercise_burned_manual)
             } else {
                 stringResource(
-                    R.string.food_exercise_burned_estimated,
+                    R.string.training_exercise_burned_estimated,
                     stringResource(form.type.label).lowercase(),
                 )
             },
             value = "${form.burnedKcal}",
-            unitSuffix = stringResource(R.string.food_exercise_kcal),
+            unitSuffix = stringResource(R.string.training_exercise_kcal),
             onValueChange = { onFormChange(form.copy(burnedKcal = it.toIntOrNull() ?: 0, burnedEdited = true)) },
             onIncrement = { onFormChange(form.copy(burnedKcal = form.burnedKcal + KCAL_STEP, burnedEdited = true)) },
             onDecrement = {

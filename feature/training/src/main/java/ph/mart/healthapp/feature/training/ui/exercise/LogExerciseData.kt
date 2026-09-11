@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise
+package ph.mart.healthapp.feature.training.ui.exercise
 
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -110,6 +110,13 @@ sealed interface LogExerciseEvent {
         val dateEpochDay: Long = 0,
         val editingId: Long? = null,
     ) : LogExerciseEvent
+
+    /** Fired once when the sheet opens on a row being corrected. The sheet is handed an id
+     * rather than a row — it is hosted by `AppScaffold`, whose sheet state is `rememberSaveable`
+     * and an `ExerciseEntry` is not — so the row is resolved here, onto [LogExerciseUiState.editing].
+     * The sheet holds its form back until that row names the same id, which is the hold-back
+     * [LogExerciseUiState.strengthLoaded] is for the strength screen, without a second flag. */
+    data class OnLoadEditing(val id: Long) : LogExerciseEvent
 
     /** Fired once when the strength screen opens: it resolves the workout being corrected (if
      * [editingId] is non-zero), the session to repeat, the lift-name chips and what each lift was

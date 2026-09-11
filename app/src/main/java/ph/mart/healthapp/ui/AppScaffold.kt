@@ -49,9 +49,7 @@ import ph.mart.healthapp.feature.coach.ui.coachEntries
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
-import ph.mart.healthapp.feature.food.ui.StrengthWorkoutRoute
 import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
-import ph.mart.healthapp.feature.food.ui.exercise.LogExerciseSheet
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.AboutYouRoute
@@ -66,6 +64,9 @@ import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
+import ph.mart.healthapp.feature.training.ui.StrengthWorkoutRoute
+import ph.mart.healthapp.feature.training.ui.exercise.LogExerciseSheet
+import ph.mart.healthapp.feature.training.ui.trainingEntries
 
 /** What the toolbar says on each route a level above a tab. It lives here rather than on the route
  * types because `:core:navigation` is a leaf module and this is already the one place that sees
@@ -75,6 +76,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
 private fun TopLevelDestination.label(): Int = when (this) {
     TopLevelDestination.Home -> R.string.app_tab_home
     TopLevelDestination.Food -> R.string.app_tab_food
+    TopLevelDestination.Training -> R.string.app_tab_train
     TopLevelDestination.Progress -> R.string.app_tab_progress
     TopLevelDestination.Profile -> R.string.app_tab_profile
 }
@@ -130,6 +132,7 @@ internal fun showsTabChrome(current: NavKey?, beneath: NavKey?, twoPane: Boolean
 private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
     TopLevelDestination.Home -> AppIcons.Home
     TopLevelDestination.Food -> AppIcons.Food
+    TopLevelDestination.Training -> AppIcons.Train
     TopLevelDestination.Progress -> AppIcons.Progress
     TopLevelDestination.Profile -> AppIcons.Profile
 }
@@ -140,7 +143,7 @@ private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
 private enum class ActiveSheet { None, QuickAction, LogExercise, LogWeight, AddPhoto }
 
 /**
- * Tab navigation (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
+ * Tab navigation (5 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
  * depends on every `:feature:*` module and `:core:navigation` at once, so it's the only place
  * real navigation wiring can live — see the Phase 2 plan's "flagged architectural decision."
  *
@@ -184,6 +187,11 @@ fun AppScaffold(
         }
     }
     var activeSheet by rememberSaveable { mutableStateOf(ActiveSheet.None) }
+    // [ActiveSheet.LogExercise]'s two arguments. Beside the enum rather than inside it because
+    // the sheet is `rememberSaveable` and an `ExerciseEntry` is not — the diary names the row it
+    // wants corrected by id, and the sheet resolves it. 0/0 is a new activity, today.
+    var sheetDate by rememberSaveable { mutableStateOf(0L) }
+    var sheetEditingId by rememberSaveable { mutableStateOf(0L) }
 
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val rail = windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
@@ -238,10 +246,12 @@ fun AppScaffold(
     // owning the state here is also what preserves each tab's scroll position across tab switches.
     val homeScroll = rememberScrollState()
     val foodScroll = rememberScrollState()
+    val trainingScroll = rememberScrollState()
     val progressScroll = rememberScrollState()
     val profileScroll = rememberScrollState()
     val currentScroll = when (topLevelBackStack.topLevelKey) {
         TopLevelDestination.Food.route -> foodScroll
+        TopLevelDestination.Training.route -> trainingScroll
         TopLevelDestination.Progress.route -> progressScroll
         TopLevelDestination.Profile.route -> profileScroll
         else -> homeScroll
@@ -346,6 +356,27 @@ fun AppScaffold(
                             onOpenStrength = { date, editingId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
                             },
+                            onLogExercise = { date, editingId ->
+                                sheetDate = date
+                                sheetEditingId = editingId
+                                activeSheet = ActiveSheet.LogExercise
+                            },
+                            onExitFlow = { topLevelBackStack.removeLast() },
+                        )
+                        trainingEntries(
+                            scrollState = trainingScroll,
+                            onLogExercise = { date, editingId ->
+                                sheetDate = date
+                                sheetEditingId = editingId
+                                activeSheet = ActiveSheet.LogExercise
+                            },
+                            onOpenStrength = { date, editingId ->
+                                topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
+                            },
+                            // Day 0 is today, as it is everywhere a routine is started.
+                            onStartRoutine = { routineId ->
+                                topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
+                            },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )
                         progressEntries(
@@ -391,18 +422,32 @@ fun AppScaffold(
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(FoodCaptureRoute(0))
                 },
-                onLogExercise = { activeSheet = ActiveSheet.LogExercise },
+                onLogExercise = {
+                    sheetDate = 0
+                    sheetEditingId = 0
+                    activeSheet = ActiveSheet.LogExercise
+                },
                 onLogWeight = { activeSheet = ActiveSheet.LogWeight },
                 onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
             )
             ActiveSheet.LogExercise -> LogExerciseSheet(
-                onDismiss = { activeSheet = ActiveSheet.None },
+                onDismiss = {
+                    activeSheet = ActiveSheet.None
+                    sheetDate = 0
+                    sheetEditingId = 0
+                },
                 // The FAB's sheet carries no day, so the workout screen it opens gets 0 too —
                 // which the repository stamps as today, exactly as the sheet's own save would.
+                // The diary's does carry one, and the row being corrected rides with it.
                 onOpenStrength = { date ->
+                    val editingId = sheetEditingId
                     activeSheet = ActiveSheet.None
-                    topLevelBackStack.add(StrengthWorkoutRoute(date, 0))
+                    sheetDate = 0
+                    sheetEditingId = 0
+                    topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
                 },
+                dateEpochDay = sheetDate,
+                editingId = sheetEditingId,
             )
             ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })

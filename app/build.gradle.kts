@@ -70,6 +70,7 @@ dependencies {
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:home"))
     implementation(project(":feature:food"))
+    implementation(project(":feature:training"))
     implementation(project(":feature:progress"))
     implementation(project(":feature:coach"))
     implementation(project(":feature:profile"))

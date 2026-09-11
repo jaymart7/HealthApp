@@ -106,20 +106,11 @@
     <string name="home_fasting_discard_keep">Keep fasting</string>
 
     <!-- Training plan -->
-    <string name="home_plan_title">Today\'s workout</string>
-    <string name="home_plan_ratio">%1$d of %2$d this week</string>
-    <string name="home_plan_rest">Rest day.</string>
-    <string name="home_plan_rest_trained">Rest day — and you trained anyway.</string>
     <plurals name="home_plan_lifts">
         <item quantity="one">%1$d lift</item>
         <item quantity="other">%1$d lifts</item>
     </plurals>
     <string name="home_plan_summary">%1$s · %2$d sets · %3$s</string>
-    <string name="home_plan_logged">Logged</string>
-    <string name="home_plan_start">Start</string>
-    <string name="home_plan_day_done">%1$s done</string>
-    <string name="home_plan_day_planned">%1$s planned</string>
-    <string name="home_plan_nothing">Nothing planned this week</string>
 
     <!-- Progress photo -->
     <string name="home_photo_title">Progress photo</string>

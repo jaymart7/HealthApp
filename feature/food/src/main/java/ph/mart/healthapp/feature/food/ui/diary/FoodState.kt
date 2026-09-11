@@ -7,7 +7,6 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealIdea
 import ph.mart.healthapp.core.data.food.MealType
@@ -27,13 +26,11 @@ internal class FoodScreenState(
     searchQuery: String = "",
     filterExpanded: Boolean = false,
     expandedMeals: Map<MealType, Boolean> = MealType.entries.associateWith { true },
-    exerciseSheetOpen: Boolean = false,
     exerciseExpanded: Boolean = true,
     calendarOpen: Boolean = false,
     saveMealFor: MealType? = null,
     savedMealName: String = "",
     editingEntryId: Long? = null,
-    editingExerciseId: Long? = null,
     ideasFor: MealType? = null,
     shareOpen: Boolean = false,
 ) {
@@ -46,7 +43,6 @@ internal class FoodScreenState(
      * one you will not remember is hiding rows. */
     var filterExpanded: Boolean by mutableStateOf(filterExpanded)
     var expandedMeals: Map<MealType, Boolean> by mutableStateOf(expandedMeals)
-    var exerciseSheetOpen: Boolean by mutableStateOf(exerciseSheetOpen)
     var exerciseExpanded: Boolean by mutableStateOf(exerciseExpanded)
     var calendarOpen: Boolean by mutableStateOf(calendarOpen)
 
@@ -55,13 +51,13 @@ internal class FoodScreenState(
     var ideasFor: MealType? by mutableStateOf(ideasFor)
 
     /**
-     * Which logged row each sheet is *correcting* rather than adding to — null means a new entry.
+     * Which logged row the add-entry sheet is *correcting* rather than adding to — null means a
+     * new entry.
      *
-     * Ids rather than the rows themselves: the screen resolves them back off the loaded day, which
-     * keeps this saveable across a rotation without teaching the saver two more record shapes.
+     * An id rather than the row itself: the screen resolves it back off the loaded day, which
+     * keeps this saveable across a rotation without teaching the saver another record shape.
      */
     var editingEntryId: Long? by mutableStateOf(editingEntryId)
-    var editingExerciseId: Long? by mutableStateOf(editingExerciseId)
 
     /** Whether the day's share sheet is over the diary. UI-only: what it shows is the day the
      * screen is already holding, so there is nothing to restore but the fact that it was open. */
@@ -114,16 +110,6 @@ internal class FoodScreenState(
         activeMealSheet = mealType
     }
 
-    fun openExerciseSheet(entry: ExerciseEntry? = null) {
-        editingExerciseId = entry?.id
-        exerciseSheetOpen = true
-    }
-
-    fun closeExerciseSheet() {
-        exerciseSheetOpen = false
-        editingExerciseId = null
-    }
-
     fun openSaveMealSheet(mealType: MealType) {
         savedMealName = mealType.name
         saveMealFor = mealType
@@ -152,9 +138,9 @@ internal class FoodScreenState(
                     f.calories, f.proteinG, f.carbsG, f.fatG,
                 ) + MealType.entries.map { m -> it.expandedMeals[m] != false } +
                     listOf(
-                        it.exerciseSheetOpen, it.exerciseExpanded, it.calendarOpen,
+                        it.exerciseExpanded, it.calendarOpen,
                         it.saveMealFor?.name, it.savedMealName,
-                        it.editingEntryId, it.editingExerciseId, it.ideasFor?.name,
+                        it.editingEntryId, it.ideasFor?.name,
                         // Appended, never inserted: every index below is positional, so a new
                         // field in the middle would silently re-point all of them.
                         it.filterExpanded,
@@ -176,16 +162,14 @@ internal class FoodScreenState(
                         fatG = saved[9] as Int,
                     ),
                     expandedMeals = MealType.entries.mapIndexed { index, m -> m to (saved[10 + index] as Boolean) }.toMap(),
-                    exerciseSheetOpen = saved[10 + MealType.entries.size] as Boolean,
-                    exerciseExpanded = saved[11 + MealType.entries.size] as Boolean,
-                    calendarOpen = saved[12 + MealType.entries.size] as Boolean,
-                    saveMealFor = (saved[13 + MealType.entries.size] as String?)?.let(MealType::valueOf),
-                    savedMealName = saved[14 + MealType.entries.size] as String,
-                    editingEntryId = saved[15 + MealType.entries.size] as Long?,
-                    editingExerciseId = saved[16 + MealType.entries.size] as Long?,
-                    ideasFor = (saved[17 + MealType.entries.size] as String?)?.let(MealType::valueOf),
-                    filterExpanded = saved[18 + MealType.entries.size] as Boolean,
-                    shareOpen = saved[19 + MealType.entries.size] as Boolean,
+                    exerciseExpanded = saved[10 + MealType.entries.size] as Boolean,
+                    calendarOpen = saved[11 + MealType.entries.size] as Boolean,
+                    saveMealFor = (saved[12 + MealType.entries.size] as String?)?.let(MealType::valueOf),
+                    savedMealName = saved[13 + MealType.entries.size] as String,
+                    editingEntryId = saved[14 + MealType.entries.size] as Long?,
+                    ideasFor = (saved[15 + MealType.entries.size] as String?)?.let(MealType::valueOf),
+                    filterExpanded = saved[16 + MealType.entries.size] as Boolean,
+                    shareOpen = saved[17 + MealType.entries.size] as Boolean,
                 )
             },
         )

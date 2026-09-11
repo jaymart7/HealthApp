@@ -22,15 +22,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import java.util.Calendar
 import ph.mart.healthapp.core.data.cycle.cycleDayNumber
 import ph.mart.healthapp.core.data.cycle.cyclePrediction
 import ph.mart.healthapp.core.data.cycle.periods
+import ph.mart.healthapp.core.data.exercise.PlanDay
+import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.anyScheduled
 import ph.mart.healthapp.core.data.exercise.budgetKcal
+import ph.mart.healthapp.core.data.exercise.dayLabel
 import ph.mart.healthapp.core.data.exercise.plannedOn
+import ph.mart.healthapp.core.data.exercise.plannedSoFar
+import ph.mart.healthapp.core.data.exercise.totalSets
+import ph.mart.healthapp.core.data.exercise.trainedSoFar
+import ph.mart.healthapp.core.data.exercise.weekdayInitials
+import ph.mart.healthapp.core.data.exercise.weekdayNames
 import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.data.insight.insightFor
 import ph.mart.healthapp.core.data.profile.DailyTargets
@@ -45,7 +54,10 @@ import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HomeCard
+import ph.mart.healthapp.core.designsystem.component.PlanCell
+import ph.mart.healthapp.core.designsystem.component.PlannedRoutine
 import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.component.TrainingPlanCard
 import ph.mart.healthapp.core.designsystem.component.homeCardLayout
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.R
@@ -335,9 +347,11 @@ private fun HomeCardContent(
         }
 
         HomeCard.Workout -> TrainingPlanCard(
-            todayRoutines = uiState.routines.plannedOn(todayEpochDay()),
-            week = uiState.trainingWeek,
+            todayRoutines = uiState.routines.plannedOn(todayEpochDay()).map { it.toPlannedRoutine() },
+            week = uiState.trainingWeek.toPlanCells(),
             trained = uiState.trainingWeek.any { it.isToday && it.trained },
+            plannedSoFar = uiState.trainingWeek.plannedSoFar(),
+            trainedSoFar = uiState.trainingWeek.trainedSoFar(),
             onStart = onStartRoutine,
             modifier = modifier,
         )
@@ -431,5 +445,39 @@ private fun appearModifier(index: Int, appear: Boolean): Modifier {
         val value = progress.value
         alpha = value
         translationY = (1f - value) * 8.dp.toPx()
+    }
+}
+
+/**
+ * `:core:data`'s plan types into the card's own. The card lives in `:core:designsystem`, which has
+ * no project dependencies at all, so the words are worked out here — and the Train tab does the
+ * same twelve lines against its own `R`.
+ *
+ * ponytail: two copies of one mapping, because neither module can host the third. A shared home
+ * would mean giving the design system a dependency on `:core:data`, which is a much larger bill.
+ */
+@Composable
+private fun Routine.toPlannedRoutine(): PlannedRoutine = PlannedRoutine(
+    id = id,
+    name = name,
+    summary = stringResource(
+        R.string.home_plan_summary,
+        pluralStringResource(R.plurals.home_plan_lifts, lifts.size, lifts.size),
+        totalSets(),
+        dayLabel(),
+    ),
+)
+
+private fun List<PlanDay>.toPlanCells(): List<PlanCell> {
+    val initials = weekdayInitials()
+    val names = weekdayNames()
+    return mapIndexed { index, day ->
+        PlanCell(
+            initial = initials[index],
+            name = names[index],
+            planned = day.planned,
+            trained = day.trained,
+            isToday = day.isToday,
+        )
     }
 }

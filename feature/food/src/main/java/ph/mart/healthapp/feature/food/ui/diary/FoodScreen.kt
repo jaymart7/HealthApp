@@ -63,6 +63,7 @@ fun FoodScreen(
     onCapturePhoto: (Long) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
+    onLogExercise: (Long, Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
     viewModel: FoodViewModel = koinViewModel(),
@@ -78,6 +79,7 @@ fun FoodScreen(
         onCapturePhoto = onCapturePhoto,
         onNewRecipe = onNewRecipe,
         onOpenStrength = onOpenStrength,
+        onLogExercise = onLogExercise,
         scrollState = scrollState,
         twoPane = twoPane,
     )
@@ -93,6 +95,7 @@ private fun FoodContent(
     onCapturePhoto: (Long) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
+    onLogExercise: (Long, Long) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
 ) {
@@ -147,6 +150,7 @@ private fun FoodContent(
                     onSpeakFood = onSpeakFood,
                     onCapturePhoto = onCapturePhoto,
                     onOpenStrength = onOpenStrength,
+                    onLogExercise = onLogExercise,
                     snackbarHostState = snackbarHostState,
                     modifier = modifier,
                     scrollState = scrollState,
@@ -177,7 +181,6 @@ private fun FoodContent(
                 state = state,
                 onEvent = onEvent,
                 onNewRecipe = onNewRecipe,
-                onOpenStrength = onOpenStrength,
             )
 
             // Above the docked FAB, so an Undo is never the thing hidden behind it.
@@ -250,6 +253,7 @@ private fun FoodScreenPreview() {
             onCapturePhoto = {},
             onNewRecipe = {},
             onOpenStrength = { _, _ -> },
+            onLogExercise = { _, _ -> },
         )
     }
 }
@@ -269,6 +273,7 @@ private fun FoodScreenTwoPanePreview() {
             onCapturePhoto = {},
             onNewRecipe = {},
             onOpenStrength = { _, _ -> },
+            onLogExercise = { _, _ -> },
             twoPane = true,
         )
     }

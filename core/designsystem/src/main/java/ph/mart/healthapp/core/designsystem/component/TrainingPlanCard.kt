@@ -1,54 +1,63 @@
-package ph.mart.healthapp.feature.home.ui.components
+package ph.mart.healthapp.core.designsystem.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.data.exercise.PlanDay
-import ph.mart.healthapp.core.data.exercise.Routine
-import ph.mart.healthapp.core.data.exercise.RoutineLift
-import ph.mart.healthapp.core.data.exercise.dayLabel
-import ph.mart.healthapp.core.data.exercise.plannedSoFar
-import ph.mart.healthapp.core.data.exercise.totalSets
-import ph.mart.healthapp.core.data.exercise.trainedSoFar
-import ph.mart.healthapp.core.data.exercise.weekdayInitials
-import ph.mart.healthapp.core.data.exercise.weekdayNames
-import ph.mart.healthapp.core.designsystem.component.AppCard
-import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
-import ph.mart.healthapp.feature.home.R
 
 private val CELL_RADIUS = 8.dp
 private val DOT_SIZE = 6.dp
+private val TapTargetMin = 44.dp
 
 /**
- * What the week's plan asks for today, and how the week is going.
+ * One routine the plan asks for today. [summary] is the caller's sentence ("2 lifts · 6 sets ·
+ * Mon · Wed · Fri") rather than a `Routine`, and [PlanCell] carries words rather than an epoch
+ * day, for the reason this card lives here at all: `:core:designsystem` is a leaf with no project
+ * dependencies, and the six enums whose labels a feature renders are the standing argument for
+ * keeping it one. So `Routine`, `PlanDay` and `weekdayNames()` stay in `:core:data` and the two
+ * callers map into these.
+ */
+data class PlannedRoutine(val id: Long, val name: String, val summary: String)
+
+/** One day of the week strip: what it is called, what was intended, and what happened. */
+data class PlanCell(
+    val initial: String,
+    val name: String,
+    val planned: Boolean,
+    val trained: Boolean,
+    val isToday: Boolean,
+)
+
+/**
+ * What the week's plan asks for today, and how the week is going. Drawn by Home's Workout card and
+ * by the Train tab, which is why it sits here rather than in either.
  *
- * Home renders; Profile → Workout routines authors — the division the supplement list already
- * draws, so there is no editing here and no way to change which days a routine falls on.
+ * Profile → Workout routines authors — the division the supplement list already draws, so there is
+ * no editing here and no way to change which days a routine falls on.
  *
  * A day with nothing planned reads **Rest day** rather than hiding the card: once a plan exists,
  * "nothing today" is the answer the user came for. The card as a whole is hidden only until the
@@ -58,12 +67,18 @@ private val DOT_SIZE = 6.dp
  * nothing links a logged workout back to a routine, and this feature does not add that link. So
  * the Start button is replaced by a done line once *something* was lifted, rather than offering to
  * start a session that is already in the diary.
+ *
+ * [plannedSoFar]/[trainedSoFar] arrive counted rather than derived here: `plannedSoFar()` and
+ * `trainedSoFar()` in `:core:data/exercise/TrainingPlan.kt` are the one definition of "so far",
+ * and `TrainingPlanTest` is what holds them to it.
  */
 @Composable
 fun TrainingPlanCard(
-    todayRoutines: List<Routine>,
-    week: List<PlanDay>,
+    todayRoutines: List<PlannedRoutine>,
+    week: List<PlanCell>,
     trained: Boolean,
+    plannedSoFar: Int,
+    trainedSoFar: Int,
     onStart: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -74,15 +89,15 @@ fun TrainingPlanCard(
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
         ) {
             Text(
-                text = stringResource(R.string.home_plan_title),
+                text = stringResource(R.string.ds_plan_title),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             // Nothing has been asked of the week yet (a Friday-only plan read on Monday), so
             // there is no ratio to print — "0 of 0" reads as a broken counter, not as a rest.
-            if (week.plannedSoFar() > 0) {
+            if (plannedSoFar > 0) {
                 Text(
-                    text = stringResource(R.string.home_plan_ratio, week.trainedSoFar(), week.plannedSoFar()),
+                    text = stringResource(R.string.ds_plan_ratio, trainedSoFar, plannedSoFar),
                     style = MaterialTheme.typography.titleSmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
@@ -91,7 +106,7 @@ fun TrainingPlanCard(
 
         when {
             todayRoutines.isEmpty() -> Text(
-                text = stringResource(if (trained) R.string.home_plan_rest_trained else R.string.home_plan_rest),
+                text = stringResource(if (trained) R.string.ds_plan_rest_trained else R.string.ds_plan_rest),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -106,7 +121,7 @@ fun TrainingPlanCard(
 }
 
 @Composable
-private fun PlannedRoutineRow(routine: Routine, trained: Boolean, onStart: () -> Unit) {
+private fun PlannedRoutineRow(routine: PlannedRoutine, trained: Boolean, onStart: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -118,24 +133,19 @@ private fun PlannedRoutineRow(routine: Routine, trained: Boolean, onStart: () ->
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = stringResource(
-                    R.string.home_plan_summary,
-                    pluralStringResource(R.plurals.home_plan_lifts, routine.lifts.size, routine.lifts.size),
-                    routine.totalSets(),
-                    routine.dayLabel(),
-                ),
+                text = routine.summary,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (trained) {
             Text(
-                text = stringResource(R.string.home_plan_logged),
+                text = stringResource(R.string.ds_plan_logged),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
             )
         } else {
-            PrimaryButton(label = stringResource(R.string.home_plan_start), onClick = onStart)
+            PrimaryButton(label = stringResource(R.string.ds_plan_start), onClick = onStart)
         }
     }
 }
@@ -152,20 +162,20 @@ private fun PlannedRoutineRow(routine: Routine, trained: Boolean, onStart: () ->
  * beside the heading already says it in words.
  */
 @Composable
-private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
-    val names = weekdayNames()
-    val spoken = week.mapIndexedNotNull { index, day ->
+private fun WeekStrip(week: List<PlanCell>, modifier: Modifier = Modifier) {
+    // mapNotNull is inline, so stringResource is legal inside it; joinToString is not, which is
+    // why the two steps stay separate — the shape this file has always had.
+    val spoken = week.mapNotNull { day ->
         if (!day.planned) {
             null
         } else {
             stringResource(
-                if (day.trained) R.string.home_plan_day_done else R.string.home_plan_day_planned,
-                names[index],
+                if (day.trained) R.string.ds_plan_day_done else R.string.ds_plan_day_planned,
+                day.name,
             )
         }
     }.joinToString(", ")
-    val nothingPlanned = stringResource(R.string.home_plan_nothing)
-    val initials = weekdayInitials()
+    val nothingPlanned = stringResource(R.string.ds_plan_nothing)
     Row(
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier
@@ -174,7 +184,7 @@ private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
                 contentDescription = nothingPlanned.takeIf { spoken.isEmpty() } ?: spoken
             },
     ) {
-        week.forEachIndexed { index, day ->
+        week.forEach { day ->
             // Today wears the same `secondaryContainer` pill the selected nav tab does — one
             // "you are here" treatment across the app, not a second one invented for a strip.
             val onCell = if (day.isToday) {
@@ -197,7 +207,7 @@ private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     Text(
-                        text = initials[index],
+                        text = day.initial,
                         style = MaterialTheme.typography.labelMedium,
                         textAlign = TextAlign.Center,
                         color = onCell,
@@ -221,22 +231,20 @@ private fun WeekStrip(week: List<PlanDay>, modifier: Modifier = Modifier) {
     }
 }
 
+private val PREVIEW_DAYS = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
 private fun previewWeek(todayIndex: Int, planned: Set<Int>, trainedDays: Set<Int>) =
-    (0..6).map { index ->
-        PlanDay(
-            epochDay = 20_000L + index,
+    PREVIEW_DAYS.mapIndexed { index, name ->
+        PlanCell(
+            initial = name.take(1),
+            name = name,
             planned = index in planned,
             trained = index in trainedDays,
             isToday = index == todayIndex,
         )
     }
 
-private val previewPushDay = Routine(
-    id = 1,
-    name = "Push day",
-    lifts = listOf(RoutineLift("Bench press", 3, 8), RoutineLift("Overhead press", 3, 8)),
-    days = 0b0010101,
-)
+private val previewPushDay = PlannedRoutine(id = 1, name = "Push day", summary = "2 lifts · 6 sets · Mon · Wed · Fri")
 
 @PreviewLightDark
 @Composable
@@ -246,6 +254,8 @@ private fun TrainingPlanCardPreview() {
             todayRoutines = listOf(previewPushDay),
             week = previewWeek(todayIndex = 2, planned = setOf(0, 2, 4), trainedDays = setOf(0)),
             trained = false,
+            plannedSoFar = 2,
+            trainedSoFar = 1,
             onStart = {},
             modifier = Modifier.padding(16.dp),
         )
@@ -261,6 +271,8 @@ private fun TrainingPlanCardDonePreview() {
             todayRoutines = listOf(previewPushDay),
             week = previewWeek(todayIndex = 2, planned = setOf(0, 2, 4), trainedDays = setOf(0, 2)),
             trained = true,
+            plannedSoFar = 2,
+            trainedSoFar = 2,
             onStart = {},
             modifier = Modifier.padding(16.dp),
         )
@@ -276,6 +288,8 @@ private fun TrainingPlanCardRestDayPreview() {
             todayRoutines = emptyList(),
             week = previewWeek(todayIndex = 3, planned = setOf(0, 2, 4), trainedDays = setOf(0, 2)),
             trained = false,
+            plannedSoFar = 2,
+            trainedSoFar = 2,
             onStart = {},
             modifier = Modifier.padding(16.dp),
         )

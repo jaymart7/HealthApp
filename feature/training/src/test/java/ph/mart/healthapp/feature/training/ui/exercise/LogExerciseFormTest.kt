@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.exercise
+package ph.mart.healthapp.feature.training.ui.exercise
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

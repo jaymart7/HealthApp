@@ -24,6 +24,7 @@ val localizedModules = listOf(
     "feature/onboarding",
     "feature/profile",
     "feature/progress",
+    "feature/training",
     "wear",
 )
 

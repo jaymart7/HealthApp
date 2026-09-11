@@ -34,7 +34,6 @@ import ph.mart.healthapp.feature.food.ui.diary.FoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.FoodUiState
 import ph.mart.healthapp.feature.food.ui.diary.dayBudgetKcal
 import ph.mart.healthapp.feature.food.ui.diary.rememberFoodScreenState
-import ph.mart.healthapp.feature.food.ui.exercise.components.ExerciseSection
 import ph.mart.healthapp.feature.food.ui.shared.components.LabelledActionChip
 import ph.mart.healthapp.feature.food.ui.shared.components.SectionRule
 
@@ -67,6 +66,7 @@ internal fun DiaryBody(
     onSpeakFood: (Long) -> Unit,
     onCapturePhoto: (Long) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
+    onLogExercise: (Long, Long) -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
@@ -212,12 +212,12 @@ internal fun DiaryBody(
                 expanded = state.exerciseExpanded,
                 dayIsEmpty = dayIsEmpty,
                 onToggle = { state.exerciseExpanded = !state.exerciseExpanded },
-                onAdd = { state.openExerciseSheet() },
+                onAdd = { onLogExercise(uiState.selectedDate, 0) },
                 // A workout with sets reopens on the screen that can show them; everything
                 // else reopens in the sheet that logged it.
                 onEditEntry = { entry ->
                     if (entry.sets.isEmpty()) {
-                        state.openExerciseSheet(entry)
+                        onLogExercise(uiState.selectedDate, entry.id)
                     } else {
                         onOpenStrength(uiState.selectedDate, entry.id)
                     }
@@ -266,6 +266,7 @@ private fun DiaryBodyPreview() {
             onSpeakFood = {},
             onCapturePhoto = {},
             onOpenStrength = { _, _ -> },
+            onLogExercise = { _, _ -> },
             snackbarHostState = SnackbarHostState(),
         )
     }

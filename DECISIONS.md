@@ -1012,7 +1012,7 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   more contextual tap and is the wrong one: it is hidden on day one, hidden when the model has
   nothing to say, and gone once dismissed, so a door on it is a door that isn't there most days.
   The `AIChip` under the greeting is what makes the tap visible. `CoachRoute` is a route above the
-  Home tab rather than a fifth tab or a sheet — `AppScaffold`'s existing `isTopLevel` rule then
+  Home tab rather than a tab of its own or a sheet — `AppScaffold`'s existing `isTopLevel` rule then
   gives it a back toolbar with no bottom bar and no FAB, which is exactly what a chat with a
   keyboard wants, and no new case was added there.
 - **The coach is not exported, not a streak domain, has no reminder and no widget surface.** The
@@ -1122,10 +1122,49 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Profile → Workout routines authors the plan; Home starts it.** The weekday picker hangs off
   `LibraryRow`'s new `trailing` slot (null for both food libraries, which are untouched), and Home
   reaches `StrengthWorkoutRoute`'s new `routineId` through `AppScaffold` — `:feature:home` cannot
-  import `:feature:food`, the shape `onOpenCoach` already has. A started routine seeds through
+  import the feature that owns that route (`:feature:food` then, `:feature:training` now), the
+  shape `onOpenCoach` already has. A started routine seeds through
   `toSets()`, the *same* path the strength screen's own chips take, so an opened-from-Home workout
   and a chip-tapped one are the same workout. Routines are still not exported, so `days` isn't
   either.
+- **Training is a pillar, and a pillar gets a tab.** The domain was already whole in
+  `:core:data/exercise/` — MET burn, strength sets, routines, a weekday plan, adherence, Epley 1RM,
+  five test files — and had no home: its UI sat in `:feature:food` because burn credits the
+  calorie budget, which is an accident of arithmetic, not a statement about what training is. So
+  `:feature:training` holds the *doing* (the tab, the log-exercise sheet, the strength screen), and
+  nothing else moved: Profile still authors routines (the entry above), Progress still owns the
+  history and its charts, and Home still draws the plan card. The tab is **today and doing**; every
+  chart stayed where the history is. The schema did not change and neither did the export.
+- **Five tabs, ordered logging-logging-history-person.** Train sits between Food and Progress
+  because the two tabs that log belong together. Five is the M3 maximum and `BottomNavBar` was
+  already generic, so a fifth item cost nothing structurally — but at 360dp each tab has 72dp, and
+  the `NavRail`'s `SpaceEvenly` column is tighter still on a ~410dp-tall landscape phone. *ponytail:
+  that is the ceiling; a sixth tab is not a thing to add, it is a thing to redesign around.*
+- **The exercise UI left `:feature:food`; `ExerciseSection` did not.** The diary's exercise block
+  draws `MealSectionHeader`, `SectionCorner`, `EntryIndent` and `SwipeToDeleteRow` — four things
+  that are the diary's — and it exists because burned calories raise `budgetKcal()`, which is the
+  diary's arithmetic. So it moved one directory, to `ui/diary/components/`, where it plainly
+  belonged all along. Swipe-to-delete stayed with it: deletion lives where the day is, and the
+  Train tab deliberately offers none.
+- **The log-exercise sheet takes an id, not a row — and `AppScaffold` hosts the only copy.** A
+  feature never imports another feature's types, so once the sheet moved, the diary could not host
+  it. `AppScaffold` already hosted one for the FAB, and its sheet state is `rememberSaveable`,
+  which an `ExerciseEntry` is not — hence `(dateEpochDay, editingId)`, two Longs beside the enum.
+  The ViewModel resolves the row with the `exerciseRepository.entry(id)` call it already made for
+  the strength screen, and the sheet holds its form back until `uiState.editing` names *that* id:
+  that one check is both the hold-back (a row arriving an emission later would re-key the saveable
+  form under the user — `strengthLoaded`'s reason) and the staleness guard (the ViewModel outlives
+  the sheet, so a previous edit's row is still on the state when the FAB opens a blank one). Net:
+  one sheet host instead of two, and `FoodScreenState`'s saver is two slots shorter.
+- **`TrainingPlanCard` moved to `:core:designsystem`, and maps rather than depends.** Two screens
+  draw it, which is the rule. The interesting half is what it takes: `PlannedRoutine` and
+  `PlanCell` — a summary sentence and a weekday name, not a `Routine` and a `PlanDay` — with
+  `plannedSoFar`/`trainedSoFar` arriving pre-counted. Giving the design system a dependency on
+  `:core:data` would have been the smaller diff and the larger bill; the six enums whose labels a
+  feature renders are the standing argument for keeping that module a leaf. The cost is twelve
+  lines of mapping in Home and twelve in Train, each against its own `R`, and it is named in a
+  `ponytail:` comment at both sites. `plannedSoFar()` and `trainedSoFar()` stay the one definition
+  of "so far", where `TrainingPlanTest` can still hold them to it.
 
 - **The sheet hands off to a screen; it does not redirect.** Picking Strength grows one "Log sets
   instead →" button rather than navigating on the chip tap, so the plain duration-and-kcal path
