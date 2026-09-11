@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.FoodRoute
 import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
+import ph.mart.healthapp.feature.food.ui.history.FoodHistoryScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 import ph.mart.healthapp.feature.food.ui.voice.VoiceLogScreen
@@ -21,6 +22,15 @@ data class FoodCaptureRoute(val dateEpochDay: Long) : NavKey
  * selected day, so a scan taken while reviewing a past day is logged to that day. */
 @Serializable
 data class BarcodeScanRoute(val dateEpochDay: Long) : NavKey
+
+/**
+ * Searching everything ever logged. Carries the day like [BarcodeScanRoute] and for the same
+ * reason — a row re-logged from here belongs to the day the diary was showing — plus whatever was
+ * already typed into that day's filter, so walking up from a day that had no match doesn't cost
+ * the user their word twice. [query] is empty when the filter was closed.
+ */
+@Serializable
+data class FoodHistoryRoute(val dateEpochDay: Long, val query: String) : NavKey
 
 /** Authoring a recipe — reached from the add-entry sheet, and carrying nothing: a recipe belongs
  * to no day, so unlike [BarcodeScanRoute] it has no date to pass. */
@@ -47,6 +57,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
     onScanBarcode: (Long) -> Unit,
     onSpeakFood: (Long) -> Unit,
     onCapturePhoto: (Long) -> Unit,
+    onOpenHistory: (Long, String) -> Unit,
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
@@ -59,6 +70,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
             onScanBarcode = onScanBarcode,
             onSpeakFood = onSpeakFood,
             onCapturePhoto = onCapturePhoto,
+            onOpenHistory = onOpenHistory,
             onNewRecipe = onNewRecipe,
             onOpenStrength = onOpenStrength,
             onLogExercise = onLogExercise,
@@ -68,4 +80,5 @@ fun EntryProviderScope<NavKey>.foodEntries(
     entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<VoiceLogRoute> { key -> VoiceLogScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
+    entry<FoodHistoryRoute> { key -> FoodHistoryScreen(dateEpochDay = key.dateEpochDay, query = key.query) }
 }

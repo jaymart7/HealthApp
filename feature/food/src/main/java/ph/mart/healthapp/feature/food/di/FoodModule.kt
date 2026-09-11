@@ -4,6 +4,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanViewModel
 import ph.mart.healthapp.feature.food.ui.diary.FoodViewModel
+import ph.mart.healthapp.feature.food.ui.history.FoodHistoryViewModel
 import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasViewModel
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureViewModel
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderViewModel
@@ -18,4 +19,5 @@ val foodModule = module {
     viewModelOf(::RecipeBuilderViewModel)
     viewModelOf(::MealIdeasViewModel)
     viewModelOf(::VoiceLogViewModel)
+    viewModelOf(::FoodHistoryViewModel)
 }

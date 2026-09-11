@@ -84,6 +84,9 @@ internal class FoodRepositoryImpl(
 
     override suspend fun allEntries(): List<FoodEntry> = dao.allActive().map { it.toFoodEntry() }
 
+    override suspend fun searchEntries(query: String): List<FoodEntry> =
+        dao.searchByName(likeContains(query), MAX_HISTORY_RESULTS).map { it.toFoodEntry() }
+
     override suspend fun deleteAllEntries() {
         dao.softDeleteAll()
     }

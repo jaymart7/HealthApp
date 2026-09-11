@@ -14,6 +14,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -65,6 +66,7 @@ internal fun DiaryBody(
     onScanBarcode: (Long) -> Unit,
     onSpeakFood: (Long) -> Unit,
     onCapturePhoto: (Long) -> Unit,
+    onOpenHistory: (Long, String) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
     snackbarHostState: SnackbarHostState,
@@ -235,12 +237,23 @@ internal fun DiaryBody(
                 },
             )
 
-            // The one door to the day's shared image, at the foot of the scroll rather than in the
-            // date header — that row already carries three 48dp buttons and a label it goes out of
-            // its way to protect at large font scales. Home's "Rearrange your Home" link is the
-            // shape. Absent on a day with nothing on it: there is no day to share yet.
-            if (!dayIsEmpty && uiState.targets != null) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            // Two doors at the foot of the scroll rather than in the date header — that row
+            // already carries three 48dp buttons and a label it goes out of its way to protect at
+            // large font scales. Home's "Rearrange your Home" link is the shape.
+            //
+            // The search is always here, including on a bare day: a day with nothing on it is
+            // exactly when you want to look backwards. Sharing is not — there is no day to share
+            // yet. It carries the day's filter query along, so a word already typed into the
+            // header survives the step up to every day.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            ) {
+                TextButton(
+                    label = stringResource(R.string.food_history_link),
+                    onClick = { onOpenHistory(uiState.selectedDate, state.searchQuery) },
+                )
+                if (!dayIsEmpty && uiState.targets != null) {
                     TextButton(
                         label = stringResource(R.string.food_share_day),
                         onClick = { state.shareOpen = true },
@@ -265,6 +278,7 @@ private fun DiaryBodyPreview() {
             onScanBarcode = {},
             onSpeakFood = {},
             onCapturePhoto = {},
+            onOpenHistory = { _, _ -> },
             onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
             snackbarHostState = SnackbarHostState(),

@@ -187,6 +187,35 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   genuinely mean today, so don't collapse them into the dated ones.
 - **The diary's top field is a local filter over logged entries**, not a
   food search. Food search is `searchCommonFoods()`/`FoodSearchPanel`.
+- **Searching *across* days is a route, not a third meaning for that field.** The header filter
+  narrows the open day and `FoodSearchPanel` searches foods-you-could-log; neither can answer "when
+  did I last eat that", and the add-entry sheet's recents cap at five names. `FoodHistoryRoute`
+  does, and it is a route rather than an overlay for the reason meal ideas is an overlay: ideas are
+  folded out of state the diary already holds, while this has its own query, its own Room read and
+  its own ViewModel — which is what `CLAUDE.md` says earns a flow package. The door sits at the
+  foot of the scroll beside "Share the day", and unlike that one it is drawn on an **empty** day
+  too: a day with nothing on it is exactly when you want to look backwards. It carries
+  `FoodScreenState.searchQuery` along, so a word already typed into the header isn't typed twice.
+- **The history search is a suspend one-shot, and its results do not live-update.** Every other
+  read in `FoodRepository` is a `Flow`; this one is answered per keystroke, and a flow would tear
+  down and re-subscribe a query instead of running it. The consequence is deliberate: a row logged
+  elsewhere while the screen is open doesn't appear until the next keystroke, because a result list
+  that reorders itself under a reading finger is worse than a slightly stale one. A late answer to
+  a superseded query is dropped by comparing `state.query` in the second `reduce`.
+- **`likeContains()` escapes; `FoodEntryDao.searchByName` declares `ESCAPE '\'`.** They are two
+  halves of one decision and `LikeContainsTest` is what keeps them in step — without it a food
+  named "100% oats" turns its own name into a wildcard and the search quietly returns the table.
+- **A re-logged row is a copy with no `id` and no `photoPath`.** `addEntry` keeps a path it is
+  handed, and two rows pointing at one file would break the `MAX_MEAL_PHOTOS` prune, which counts
+  paths — it would reclaim the file out from under the row that earned it. The source row keeps its
+  plate; the copy has none. The copy keeps the **source row's** meal slot rather than
+  `defaultMealTypeForNow()`: unlike the photo and barcode flows that helper exists for, this one
+  already knows where the food belongs. And no Undo on the confirmation — `addEntry` returns no id
+  to undo with, and the row it wrote is a swipe away in the diary it just landed in.
+- **History dates are absolute, always.** No "Today"/"Yesterday" here, unlike `diaryDateLabel()`
+  two files over. A list spanning months is scanned by date rather than read top-down, and two
+  relative labels among forty absolute ones are the two that have to be decoded. It also leaves
+  that helper `internal` to `ui/diary/components/` where its test already lives.
 - **The diary's calendar is a pane at ≥840dp, and the same calendar either way.** It was declined
   once — the diary has no list to put beside its day — and reopened on the condition recorded with
   it: the swap-in `FoodScreenState.calendarOpen` opens is the list, so at expanded width

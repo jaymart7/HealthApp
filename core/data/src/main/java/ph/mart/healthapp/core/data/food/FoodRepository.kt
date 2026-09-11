@@ -105,6 +105,25 @@ const val MAX_MEAL_PHOTOS = 500
  * hundred on disk; 768 still fills the gallery's full-frame viewer without upscaling. */
 const val MEAL_PHOTO_EDGE = 768
 
+/**
+ * How many rows the diary's history search hands back. A cap rather than the whole table, the rule
+ * every read in `FoodEntryDao` follows — and high enough that the list is a history rather than a
+ * window, since nothing above it counts.
+ */
+const val MAX_HISTORY_RESULTS = 200
+
+/**
+ * Wraps a search term as a LIKE "contains" pattern, escaping the three characters SQLite reads as
+ * syntax: `%` and `_` are its wildcards and `\` is the escape character named by
+ * `FoodEntryDao.searchByName`'s `ESCAPE` clause. Without this, searching for "100%" matches every
+ * row in the table.
+ *
+ * Here rather than in the impl because it is the one piece of this query that is pure, and
+ * `LikeContainsTest` is what keeps it and the `ESCAPE` clause in step.
+ */
+internal fun likeContains(query: String): String =
+    "%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+
 interface FoodRepository {
     fun observeTodayEntries(): Flow<List<FoodEntry>>
 
@@ -137,6 +156,16 @@ interface FoodRepository {
 
     /** Full history, oldest first — for data export. The diary itself never needs this. */
     suspend fun allEntries(): List<FoodEntry>
+
+    /**
+     * Logged entries whose name contains [query], newest first and capped at
+     * [MAX_HISTORY_RESULTS] — the diary's history search, which is the one read in this app that
+     * looks across days. A blank [query] is the newest rows, not an error: the screen opens on it.
+     *
+     * A suspend one-shot, unlike every other read here, because its input is a text field — see
+     * `FoodEntryDao.searchByName`.
+     */
+    suspend fun searchEntries(query: String): List<FoodEntry>
 
     /** Soft-deletes every entry, for import's replace-in-full semantics. */
     suspend fun deleteAllEntries()

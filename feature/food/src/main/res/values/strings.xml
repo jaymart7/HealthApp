@@ -230,4 +230,12 @@
     <string name="food_exercise_adds_today">Adds to today</string>
     <string name="food_exercise_subtotal">+%1$d kcal</string>
     <string name="food_exercise_spoken">Exercise, %1$d kilocalories burned, added to today\'s budget</string>
+    <!-- Diary history search -->
+    <string name="food_history_link">Search your diary</string>
+    <string name="food_history_placeholder">Search everything you\'ve logged</string>
+    <!-- %1$s the food, %2$s the meal it landed in. -->
+    <string name="food_history_logged">%1$s added to %2$s</string>
+    <string name="food_history_empty_query">No match for \u201c%1$s\u201d</string>
+    <string name="food_history_empty_diary">Nothing logged yet</string>
+    <string name="food_history_empty_body">This searches every food you have ever logged, on any day.</string>
 </resources>

@@ -24,6 +24,25 @@ internal interface FoodEntryDao {
     )
     fun observeRecent(limit: Int, exclude: String): Flow<List<FoodEntryEntity>>
 
+    /**
+     * Every logged row whose name matches, newest first — the diary's history search.
+     *
+     * Capped for the reason every other read in here is: the whole table is only ever read by
+     * export. [pattern] arrives already wrapped and escaped — see
+     * [likeContains][ph.mart.healthapp.core.data.food.likeContains], which is the other half of
+     * the `ESCAPE` clause below.
+     *
+     * Suspend rather than a [Flow]: the screen re-asks on every keystroke, and a flow would tear
+     * down and re-subscribe a query each time instead of just running it.
+     */
+    // ponytail: no debounce — one query per keystroke over a local table of a few thousand rows.
+    // Debounce the caller if a diary ever gets big enough to feel it.
+    @Query(
+        "SELECT * FROM food_entry WHERE isDeleted = 0 AND name LIKE :pattern ESCAPE '\\' " +
+            "ORDER BY date DESC, loggedAt DESC LIMIT :limit",
+    )
+    suspend fun searchByName(pattern: String, limit: Int): List<FoodEntryEntity>
+
     /** Bounded history for the Nutrition trend — the whole table is only ever read by export. */
     @Query("SELECT * FROM food_entry WHERE date >= :from AND isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
     fun observeSince(from: Long): Flow<List<FoodEntryEntity>>

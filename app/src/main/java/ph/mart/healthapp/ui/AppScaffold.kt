@@ -48,6 +48,7 @@ import ph.mart.healthapp.feature.coach.ui.CoachRoute
 import ph.mart.healthapp.feature.coach.ui.coachEntries
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
+import ph.mart.healthapp.feature.food.ui.FoodHistoryRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
 import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
 import ph.mart.healthapp.feature.food.ui.foodEntries
@@ -88,6 +89,7 @@ private fun NavKey?.title(): String = when (this) {
         if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
     )
     is VoiceLogRoute -> stringResource(R.string.app_title_voice_log)
+    is FoodHistoryRoute -> stringResource(R.string.app_title_food_history)
     HealthConnectionRoute -> stringResource(R.string.app_title_google_health)
     FoodLibraryRoute -> stringResource(R.string.app_title_food_library)
     RoutinesRoute -> stringResource(R.string.app_title_routines)
@@ -348,6 +350,9 @@ fun AppScaffold(
                             onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },
                             onSpeakFood = { date -> topLevelBackStack.add(VoiceLogRoute(date)) },
                             onCapturePhoto = { date -> topLevelBackStack.add(FoodCaptureRoute(date)) },
+                            onOpenHistory = { date, query ->
+                                topLevelBackStack.add(FoodHistoryRoute(date, query))
+                            },
                             onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
                             onOpenStrength = { date, editingId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
