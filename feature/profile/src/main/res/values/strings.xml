@@ -172,11 +172,6 @@
     <string name="profile_colour">Colour</string>
     <string name="profile_colour_sub">Every buddy wears the one you pick.</string>
     <string name="profile_colour_cell">%1$s colour</string>
-    <string name="profile_settings_colour_soft">Soft</string>
-    <string name="profile_settings_colour_bold">Bold</string>
-    <string name="profile_settings_colour_muted">Muted</string>
-    <string name="profile_settings_colour_contrast">Contrast</string>
-    <string name="profile_settings_colour_neutral">Neutral</string>
 
     <!-- About -->
     <string name="profile_version">Version</string>

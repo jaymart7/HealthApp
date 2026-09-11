@@ -143,6 +143,14 @@ nothing about this feature is reachable, so a phone renders exactly the path it 
 - **Never hardcode a hex inline.** Every color reads from the theme — that is
   what lets `AppTheme` swap in the medium/high-contrast schemes from
   `UiModeManager.getContrast()` (API 34+) without touching component code.
+  **One exception, and it is the whole list:** `MascotPalette`'s thirty hues are
+  computed from a hue angle by `Color.hsl()` in
+  `:core:designsystem/component/MascotPalette.kt`. They exist because the scheme
+  cannot supply a pink or a red — the roles that would are the ones reserved
+  below — and they are safe because they take part in no scheme: a mascot fill is
+  decorative, nothing else is drawn from them, and a contrast swap has nothing to
+  say about them. Still no hex: a colour is one number, and
+  `MascotPaletteTest` holds every pair at ≥ 4.5:1.
 - **Semantic color assignments are fixed:** Protein = `primary`, Carbs =
   `tertiary`, Fat = `secondary` — identical in every macro bar, chart, and
   legend across the whole app. AI/insight accent = `tertiaryContainer`

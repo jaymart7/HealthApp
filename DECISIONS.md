@@ -274,11 +274,49 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `tertiaryContainer` (the AI accent and the carbs colour), never `error` (off-track only), and
   never `secondaryContainer` — both picker rows fill their selected cell with exactly that, and a
   mascot that vanished the moment it was chosen is the one thing a picker must not do. The colour
-  cells are plain swatches sharing the buddy row's `PickerCell`, each ringed in `outlineVariant`
-  whatever its fill — `Neutral` is a near neighbour of the card behind it. They carry no visible
-  label, unlike the buddy cells: the scheme flips in dark mode, so a hue name would be wrong half
-  the time — the name rides a `contentDescription` instead. `mascotSwatchColor()` is public where
-  `mascotColors()` is internal because a circle needs the fill and nothing else.
+  cells are plain swatches, each ringed in `outlineVariant` whatever its fill — `Neutral` is a near
+  neighbour of the card behind it. `mascotSwatchColor()` is public where `mascotColors()` is
+  internal because a circle needs the fill and nothing else.
+- **Then thirty more, and those are hue angles rather than theme roles.** "Pink and red" cannot come
+  from the scheme: the roles that would carry them are exactly the three the entry above rules out.
+  So `MascotPalette` gained thirty entries carrying a `hue: Float?`, and `mascotColors()` returns
+  early on it — `Color.hsl(h, 0.55f, 0.72f)` for the body, `Color.hsl(h, 0.70f, 0.20f)` for the
+  face. This is the app's one exception to *never hardcode a hex*, and it is narrow on purpose: a
+  mascot fill takes part in no scheme, so a contrast swap has nothing to say about it. **Angles, not
+  a hex table**, because thirty colours are then thirty numbers and one edit to the four constants
+  retunes all of them — where sixty hand-picked values are sixty things to re-eyeball. **One pair,
+  not a light table and a dark one**, because lightness `0.72` is a bright figure on a dark surface
+  and a saturated one on a light surface, and the feature colour rides the *body*, never the
+  surface: nothing in the hue path reads the scheme, so nothing in it can disagree with the scheme.
+  `FEATURE_LIGHTNESS` is `0.20` and not `0.24` because HSL lightness is not perceptual — yellow near
+  54° is the brightest body in the table and a `0.24` face on it clears only ~4.2:1. That is a
+  number a preview cannot be trusted to catch, so `MascotPaletteTest` sweeps all thirty for
+  ≥ 4.5:1, and `mascotFeatureColor()` is public so the picker's tick mark rides the one colour that
+  ratio is asserted for rather than an `on*` role that knows nothing about the swatch under it.
+  **The five stay**, and stay first: `MascotPalette.name` is a persisted token, so deleting `Bold`
+  re-defaults every install that picked it, and they are the only theme-reactive entries left.
+  Declaration order walks the wheel once, and that order *is* the grid's order.
+- **The colour row became a door; the buddy row did not.** Thirty-five swatches in the Appearance
+  card would push Notifications, Connections and Data off the bottom of Settings, so
+  `SettingsColourPicker` is now one `AppListRow` carrying the current swatch and its name, opening
+  `MascotColourSheet`. Five buddies still fit in the card, so `SettingsBuddyPicker` is untouched —
+  and `SettingsAppearanceSection`'s signature is unchanged, because `sheetOpen` is a `remember` in
+  the picker itself: which sheet is open is UI-only state with nothing on the other side of it.
+  The sheet's grid is a **`FlowRow`, never a `LazyVerticalGrid`** — `AppBottomSheet` hands its
+  children unbounded height, which its own KDoc says no lazy list may take. Picking applies
+  immediately and leaves the sheet open, because the buddy behind the scrim *is* the preview.
+  No `NavChevron` on the row: that composable means "this row leaves the screen" everywhere else in
+  Profile, and a sheet does not. Back dismisses the sheet rather than the screen under it, which
+  comes free from `ModalBottomSheet` — the same reason `SupplementEditSheet` wires no handler.
+- **Hue names are now legitimate, and that reverses half of one rule.** The colour cells carried no
+  visible label because the scheme flips in dark mode and a hue name would have been wrong half the
+  time. A fixed hue does not flip, so the thirty name themselves honestly — `ds_mascot_colour_*` in
+  `:core:designsystem`, alongside the five moved out of `:feature:profile`, reached through a public
+  `@StringRes val labelRes` on the enum. That constructor param is what deleted the feature's
+  `label()` `when`, which would otherwise be a thirty-five-branch second list to keep in step with
+  the first. The names still do not appear *under* the swatches — thirty-five labels is a wall of
+  text — so each cell keeps the name on its `contentDescription`, and the row that opens the sheet
+  prints the chosen one.
 - **The mascot blinks and breathes, and both rest at phase `1f`.** One
   `rememberInfiniteTransition` inside `MascotAvatar` drives a ~140ms blink every 3.6s and a 2.6s bob
   of 2% of the avatar's height, so no call site passes anything and none can forget to. The end
@@ -1574,7 +1612,9 @@ editable after onboarding. The split is what fixed both halves of that.
   sublabel's honesty: a switch that quietly adds two surfaces should name them.
 - **Palette names stay Soft/Bold/Muted/Contrast/Neutral.** The handoff renamed them
   Sprout/Fern/Sage/Lagoon/Bone; `MascotPalette.name` is a persisted token, and the picker prints
-  the selected name beside the label precisely so the row is not colour-only.
+  the selected name beside the label precisely so the row is not colour-only. This binds **those
+  five only** — it is a rule against renaming a stored token, not against the list growing, and the
+  thirty hues added beside them name themselves after their hue for the reason recorded above.
 - **Nav rows still carry no counts.** Unchanged rule, and the reason is unchanged: a number here is
   one more thing that can go stale, and the screen it opens is where counting is honest.
 

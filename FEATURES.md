@@ -66,7 +66,9 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Card order and visibility edited in Profile → Home layout (drag handle + move up/down a11y
   actions), reachable from a "Rearrange your Home" link at the foot of Home; "Reset to default"
   restores declaration order.
-- Mascot picker: five characters (Rui, Gel, Mart, Alo, Lala) × five palettes; blink + breathe,
+- Mascot picker: five characters (Rui, Gel, Mart, Alo, Lala) × thirty-five colours — five
+  theme-derived (Soft, Bold, Muted, Contrast, Neutral) and thirty named hues from Red to
+  Crimson, picked from a bottom sheet off Settings → Appearance; blink + breathe,
   a per-state performance (Celebrating hops and twinkles, Thinking tilts over a three-dot mouth,
   Sleepy breathes under a drifting "z", Happy sways), a spring on every state change, and a poke
   on the four screens where the mascot is the subject — all of it resting when system animations
@@ -217,7 +219,7 @@ panes at ≥840dp.
 - Metric/imperial toggles; water glass size and daily goal; fasting goal hours; step goal.
 - Sex, age, height, current weight, **target weight**, goal and activity level all editable on
   About you — no save button, and the result card reprices as you nudge.
-- Light / dark / follow-device; mascot character and palette pickers.
+- Light / dark / follow-device; mascot character row and a colour row opening the 35-swatch sheet.
 - Supplements: name, dose label, times per day; edit and delete.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything).

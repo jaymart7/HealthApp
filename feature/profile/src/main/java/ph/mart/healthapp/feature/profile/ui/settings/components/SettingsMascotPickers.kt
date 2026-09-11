@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.profile.ui.settings.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,11 +15,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,14 +38,14 @@ import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.mascotSwatchColor
-import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
+import ph.mart.healthapp.feature.profile.ui.shared.components.AppListRow
 
 private val AvatarSize = 40.dp
 
-/** Smaller than an avatar because it carries no face — but the cell around it is still the tap
- * target, so the row's touch area is unchanged. */
+/** Smaller than an avatar because it carries no face — but the row around it is still the tap
+ * target, so the touch area is unchanged. */
 private val SwatchSize = 32.dp
 
 /** One tap, one buddy — the pick reaches every mascot in the app through the theme, so there is
@@ -49,8 +53,10 @@ private val SwatchSize = 32.dp
  * sitting at their natural size: five 56dp avatars overflowed a 360dp screen, and a scrolling row
  * would hide a buddy behind no affordance.
  *
- * The buddy chosen here is what the Profile header draws at 64dp, which is what makes that header
- * read as a profile at all — the app has no avatar and deliberately no account to hang one on. */
+ * Five is few enough to draw in the card, which is the whole reason this stays a row where
+ * [SettingsColourPicker] became a door. The buddy chosen here is what the Profile header draws at
+ * 64dp, which is what makes that header read as a profile at all — the app has no avatar and
+ * deliberately no account to hang one on. */
 @Composable
 internal fun SettingsBuddyPicker(
     selected: MascotCharacter,
@@ -83,15 +89,18 @@ internal fun SettingsBuddyPicker(
 }
 
 /**
- * The same row, the other axis: one colour worn by every buddy, shown as a plain swatch. Every
- * circle carries an `outlineVariant` ring whatever its fill — [MascotPalette.Neutral] is a near
- * neighbour of the card behind it, and a swatch nobody can find is not a swatch.
+ * The colour, on a row rather than in the card: thirty-five swatches is a grid, and a grid that
+ * tall pushes Notifications, Connections and Data off the bottom of Settings. So the row carries
+ * the answer — the current swatch and its name — and [MascotColourSheet] does the choosing.
  *
- * The selected palette's **name is printed beside the label**, and the chosen swatch also carries a
- * check: a row of five circles that says which one is on by fill alone is a row that means nothing
- * to anyone who cannot separate the fills. There is still no label *under* each swatch — the scheme
- * flips in dark mode, so a hue name would be wrong half the time — so every cell keeps the name on
- * its contentDescription as well.
+ * No [NavChevron]: that composable means "this row leaves the screen" everywhere else in Profile,
+ * and a sheet does not leave the screen. The row is a `Role.Button` instead, and its
+ * contentDescription names the colour that is on, because a swatch alone says nothing to anyone who
+ * cannot separate the fills.
+ *
+ * `sheetOpen` lives here and nowhere else: which sheet is open is UI-only state with nothing on the
+ * other side of it, so it never reaches `SettingsViewModel` — and keeping it here is what leaves
+ * `SettingsAppearanceSection`'s signature, and everything above it, untouched.
  */
 @Composable
 internal fun SettingsColourPicker(
@@ -99,81 +108,54 @@ internal fun SettingsColourPicker(
     onSelect: (MascotPalette) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier) {
-        PickerLabel(
-            label = stringResource(R.string.profile_colour),
-            sublabel = stringResource(R.string.profile_colour_sub),
-            trailingValue = stringResource(selected.label()),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MascotPalette.entries.forEach { palette ->
-                val isSelected = palette == selected
-                // Resolved here rather than inside the semantics lambda, which cannot read a
-                // resource — the same one-line-above pattern every clearAndSetSemantics in this
-                // app uses.
-                val spoken = stringResource(R.string.profile_colour_cell, stringResource(palette.label()))
-                PickerCell(
-                    selected = isSelected,
-                    onClick = { onSelect(palette) },
-                    modifier = Modifier.semantics { contentDescription = spoken },
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(SwatchSize)
-                            .background(mascotSwatchColor(palette), CircleShape)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                    ) {
-                        if (isSelected) {
-                            Icon(
-                                imageVector = AppIcons.Check,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(16.dp),
-                            )
-                        }
-                    }
-                }
+    var sheetOpen by remember { mutableStateOf(false) }
+    val name = stringResource(selected.labelRes)
+    // Resolved here rather than inside the semantics lambda, which cannot read a resource.
+    val spoken = stringResource(R.string.profile_colour_cell, name)
+    AppListRow(
+        label = stringResource(R.string.profile_colour),
+        sublabel = stringResource(R.string.profile_colour_sub),
+        trailing = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Box(
+                    modifier = Modifier
+                        .size(SwatchSize)
+                        .background(mascotSwatchColor(selected), CircleShape)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                )
             }
-        }
+        },
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(role = Role.Button) { sheetOpen = true }
+            .semantics { contentDescription = spoken },
+    )
+    if (sheetOpen) {
+        MascotColourSheet(
+            selected = selected,
+            onSelect = onSelect,
+            onDismiss = { sheetOpen = false },
+        )
     }
 }
 
-/**
- * The five palette names. Resources rather than the enum's `name`, which is a persisted token —
- * `mascotPaletteName` on the profile row is that string, and translating it would rename the
- * stored value. Deliberately the existing vocabulary (Soft / Bold / Muted / Contrast / Neutral)
- * rather than new hue names: these describe how strongly the buddy is drawn, not what colour it
- * is, which is the only description that stays true when the scheme flips in dark mode.
- */
-@androidx.annotation.StringRes
-private fun MascotPalette.label(): Int = when (this) {
-    MascotPalette.Soft -> R.string.profile_settings_colour_soft
-    MascotPalette.Bold -> R.string.profile_settings_colour_bold
-    MascotPalette.Muted -> R.string.profile_settings_colour_muted
-    MascotPalette.Contrast -> R.string.profile_settings_colour_contrast
-    MascotPalette.Neutral -> R.string.profile_settings_colour_neutral
-}
-
-/** The heading over either picker's row of cells: a label, a sublabel, and — for colour — the name
- * of what is currently chosen, so the swatches are never the only thing carrying the answer. */
+/** The heading over the buddy row's cells. */
 @Composable
-private fun PickerLabel(label: String, sublabel: String, trailingValue: String? = null) {
+private fun PickerLabel(label: String, sublabel: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            if (trailingValue != null) {
-                Text(
-                    text = trailingValue,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
         Text(
             text = sublabel,
             style = MaterialTheme.typography.bodySmall,
@@ -182,9 +164,9 @@ private fun PickerLabel(label: String, sublabel: String, trailingValue: String? 
     }
 }
 
-/** One cell of either row. secondaryContainer is the app's "you are here" fill — the nav pill and
- * the SegmentedToggle chip already use it, and unlike a border it needs no per-character Shape now
- * that every silhouette is drawn on one canvas. It is also why no [MascotPalette] may take that
+/** One cell of the buddy row. secondaryContainer is the app's "you are here" fill — the nav pill
+ * and the SegmentedToggle chip already use it, and unlike a border it needs no per-character Shape
+ * now that every silhouette is drawn on one canvas. It is also why no [MascotPalette] may take that
  * role: a mascot that vanished the moment it was chosen is the one thing a picker must not do. */
 @Composable
 private fun RowScope.PickerCell(
@@ -219,7 +201,7 @@ private fun SettingsBuddyPickerPreview() {
                 modifier = Modifier.padding(16.dp),
             ) {
                 SettingsBuddyPicker(selected = MascotCharacter.Lala, onSelect = {})
-                SettingsColourPicker(selected = MascotPalette.Contrast, onSelect = {})
+                SettingsColourPicker(selected = MascotPalette.Pink, onSelect = {})
             }
         }
     }

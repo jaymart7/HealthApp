@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -95,40 +96,6 @@ enum class MascotCharacter(
     Lala("Lala", MascotBody.Capsule, EyeStyle.Dot, MascotAccent.Sprout, topInset = 0.24f, sideInset = 0.17f),
 }
 
-internal data class MascotColors(val body: Color, val feature: Color)
-
-/**
- * The colour the user picks in Profile → Appearance, applied to whichever buddy is picked. Every
- * pair here was one character's fill before the colour became a choice of its own, so each is
- * already proven against light, dark and all three contrast schemes — none of them is a new colour.
- *
- * [Soft] is the default because [MascotCharacter.Rui] is, so an untouched install renders exactly
- * as it did.
- *
- * Three roles are deliberately absent and the list stops at five because of them: **tertiary** and
- * **tertiaryContainer** are the AI accent and the carbs colour, **error** means genuinely
- * off-track, and **secondaryContainer** is what both picker rows fill their selected cell with — a
- * mascot that vanished the moment it was chosen is the one thing a picker must not do.
- *
- * [Contrast] is the one pair that *inverts* with the theme: `inverseSurface` is dark on a light
- * scheme and light on a dark one, so it swaps ground for figure when the theme does. [Neutral] is
- * the one whose *features* carry the accent rather than its fill — a grey chassis with a lit face,
- * which is what made Mart read as a machine before any buddy could wear it.
- */
-enum class MascotPalette { Soft, Bold, Muted, Contrast, Neutral }
-
-@Composable
-internal fun mascotColors(palette: MascotPalette): MascotColors {
-    val scheme = MaterialTheme.colorScheme
-    return when (palette) {
-        MascotPalette.Soft -> MascotColors(scheme.primaryContainer, scheme.onPrimaryContainer)
-        MascotPalette.Bold -> MascotColors(scheme.primary, scheme.onPrimary)
-        MascotPalette.Muted -> MascotColors(scheme.secondary, scheme.onSecondary)
-        MascotPalette.Contrast -> MascotColors(scheme.inverseSurface, scheme.inverseOnSurface)
-        MascotPalette.Neutral -> MascotColors(scheme.surfaceContainerHighest, scheme.primary)
-    }
-}
-
 /** Resolves the name stored on the profile. Anything null or unrecognised is [MascotCharacter.Rui]
  * — a name from a newer build, or from an export written before the picker existed, degrades to the
  * default rather than failing. */
@@ -139,20 +106,6 @@ fun mascotCharacterOf(name: String?): MascotCharacter =
  * why not one of its ~16 call sites passes a character — only the picker does. `static` because it
  * changes at most once a session. */
 val LocalMascot = staticCompositionLocalOf { MascotCharacter.Rui }
-
-/** The palette's fill on its own, for the swatch the Profile picker draws. Public where
- * [mascotColors] is internal because a plain circle needs the body colour and nothing else — the
- * feature colour has no meaning without a face to put it on. */
-@Composable
-fun mascotSwatchColor(palette: MascotPalette): Color = mascotColors(palette).body
-
-/** [mascotCharacterOf] for the colour, and it degrades the same way and for the same reasons. */
-fun mascotPaletteOf(name: String?): MascotPalette =
-    MascotPalette.entries.firstOrNull { it.name == name } ?: MascotPalette.Soft
-
-/** Provided by `AppTheme` beside [LocalMascot], off the same profile row. The colour is an
- * appearance choice like the buddy and the scheme, so it is resolved where those are. */
-val LocalMascotPalette = staticCompositionLocalOf { MascotPalette.Soft }
 
 /**
  * The idle loop. Two linear phases rather than one because a blink and a breath share no period,
@@ -772,11 +725,13 @@ private fun MascotAvatarPreview() {
                         }
                     }
                 }
-                // The other axis: one buddy, every colour. Both grids matter in both schemes —
-                // Contrast inverts between them and Neutral is nearly the surface it sits on.
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // The other axis: one buddy, every colour, and the only place the thirty hues get
+                // eyeballed. Both grids matter in both schemes — Contrast inverts between them and
+                // Neutral is nearly the surface it sits on. FlowRow because thirty-five in a Row is
+                // thirty-one off the right edge.
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     MascotPalette.entries.forEach { palette ->
-                        MascotAvatar(state = MascotState.Happy, size = 56.dp, palette = palette)
+                        MascotAvatar(state = MascotState.Happy, size = 40.dp, palette = palette)
                     }
                 }
             }
