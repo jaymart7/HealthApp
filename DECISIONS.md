@@ -280,22 +280,33 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Then thirty more, and those are hue angles rather than theme roles.** "Pink and red" cannot come
   from the scheme: the roles that would carry them are exactly the three the entry above rules out.
   So `MascotPalette` gained thirty entries carrying a `hue: Float?`, and `mascotColors()` returns
-  early on it — `Color.hsl(h, 0.55f, 0.72f)` for the body, `Color.hsl(h, 0.70f, 0.20f)` for the
-  face. This is the app's one exception to *never hardcode a hex*, and it is narrow on purpose: a
-  mascot fill takes part in no scheme, so a contrast swap has nothing to say about it. **Angles, not
-  a hex table**, because thirty colours are then thirty numbers and one edit to the four constants
-  retunes all of them — where sixty hand-picked values are sixty things to re-eyeball. **One pair,
-  not a light table and a dark one**, because lightness `0.72` is a bright figure on a dark surface
-  and a saturated one on a light surface, and the feature colour rides the *body*, never the
-  surface: nothing in the hue path reads the scheme, so nothing in it can disagree with the scheme.
-  `FEATURE_LIGHTNESS` is `0.20` and not `0.24` because HSL lightness is not perceptual — yellow near
-  54° is the brightest body in the table and a `0.24` face on it clears only ~4.2:1. That is a
-  number a preview cannot be trusted to catch, so `MascotPaletteTest` sweeps all thirty for
-  ≥ 4.5:1, and `mascotFeatureColor()` is public so the picker's tick mark rides the one colour that
-  ratio is asserted for rather than an `on*` role that knows nothing about the swatch under it.
-  **The five stay**, and stay first: `MascotPalette.name` is a persisted token, so deleting `Bold`
-  re-defaults every install that picked it, and they are the only theme-reactive entries left.
-  Declaration order walks the wheel once, and that order *is* the grid's order.
+  early on it into `Color.hsl()`. This is the app's one exception to *never hardcode a hex*, and it
+  is narrow on purpose: a mascot fill takes part in no scheme, so a contrast swap has nothing to say
+  about it. **Angles, not a hex table**, because thirty colours are then thirty numbers and one edit
+  to five constants retunes all of them, where sixty hand-picked values are sixty things to
+  re-eyeball. **The five stay**, and stay first: `MascotPalette.name` is a persisted token, so
+  deleting `Bold` re-defaults every install that picked it, and they are the only theme-reactive
+  entries left.
+- **Fifteen families of two, not thirty points on one wheel.** The first cut *was* thirty points on
+  one wheel, and it was wrong on sight: thirty hues evenly spaced sit 12° apart, 12° of a pale fill
+  is a colour nobody can tell from the one beside it, and a whole row of the picker read as one
+  colour. So the wheel now carries fifteen hues at 15–35° — the wide gaps go to the greens and
+  blues, where hue moves slowest to the eye — and each appears twice, once pale and once vivid.
+  What separates a tier is **chroma, not lightness** (`0.26` against `0.52`), because chroma is the
+  axis a pale fill has none of; lightness stays high in both, since a mascot is drawn on `surface`
+  in either scheme and a genuinely dark tier would be a silhouette in dark mode. Declaration order
+  is the grid's order and it alternates pale, vivid, pale, vivid, so **every neighbour in the grid
+  differs by a whole tier or by a family's worth of hue** — `MascotPaletteTest` asserts exactly
+  that, and it is the guard against packing the list tight again.
+- **One near-black face for all thirty, and that is what fixes the tier's lightness.** `0.72` for
+  the vivid tier is not a taste call: at `0.64` a saturated blue body lands at luminance `0.14`,
+  too dark to carry a dark face and still too dark to carry a light one, and `Red`, `Blue` and
+  `Indigo` all fell under 4.5:1 whichever way the face went. Lifting the tier put the darkest body
+  back above `0.23`, where a single `hsl(h, 0.80f, 0.15f)` serves every entry — which deleted the
+  pick-the-face-off-the-body's-luminance branch the failure first bought. `MascotPaletteTest` sweeps
+  all thirty for ≥ 4.5:1, and `mascotFeatureColor()` is public so the picker's tick mark rides the
+  one colour that ratio is asserted for rather than an `on*` role that knows nothing about the
+  swatch under it.
 - **The colour row became a door; the buddy row did not.** Thirty-five swatches in the Appearance
   card would push Notifications, Connections and Data off the bottom of Settings, so
   `SettingsColourPicker` is now one `AppListRow` carrying the current swatch and its name, opening

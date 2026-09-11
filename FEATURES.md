@@ -67,8 +67,9 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   actions), reachable from a "Rearrange your Home" link at the foot of Home; "Reset to default"
   restores declaration order.
 - Mascot picker: five characters (Rui, Gel, Mart, Alo, Lala) × thirty-five colours — five
-  theme-derived (Soft, Bold, Muted, Contrast, Neutral) and thirty named hues from Red to
-  Crimson, picked from a bottom sheet off Settings → Appearance; blink + breathe,
+  theme-derived (Soft, Bold, Muted, Contrast, Neutral) and fifteen named hues in a pale and a
+  vivid tier (Blush/Red through Rose/Crimson), picked from a bottom sheet off Settings →
+  Appearance; blink + breathe,
   a per-state performance (Celebrating hops and twinkles, Thinking tilts over a three-dot mouth,
   Sleepy breathes under a drifting "z", Happy sways), a spring on every state change, and a poke
   on the four screens where the mascot is the subject — all of it resting when system animations
