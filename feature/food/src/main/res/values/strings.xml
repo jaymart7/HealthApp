@@ -112,6 +112,8 @@
     <string name="food_search_previous">Previous</string>
     <string name="food_search_next">Next</string>
     <string name="food_search_page">%1$d–%2$d of %3$d</string>
+    <string name="food_search_online_searching">Looking for packaged foods…</string>
+    <string name="food_search_online_failed">Couldn\'t reach the packaged-food list.</string>
 
     <!-- Meal ideas -->
     <string name="food_ideas_title">Meal ideas</string>

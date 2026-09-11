@@ -118,6 +118,65 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   it is the user's, so `EXPORT_SCHEMA_VERSION` does not move — and `scanned_product` is the one
   table where `fallbackToDestructiveMigration` costs literally nothing: a dropped cache refills
   itself on the next scan.
+- **Open Food Facts answers a scan first, and FDC is the fallback.** Four reasons and they compound:
+  OFF is keyless, so it spends nothing from the app-wide 3600 req/hour budget the Backlog worries
+  about; `api/v2/product/{code}.json` is a real *lookup*, so it cannot hand back someone else's
+  product; it returns a few kilobytes where FDC's `foods/search` ships 25 × ~21 KB; and it is
+  stocked internationally, which for a `ph.mart` app is the entire point. A consequence worth
+  naming: a clone with no `fdcApiKey` now scans, where before `fdcGet` refused before opening a
+  socket. The FDC leg moved into a private `fdcLookup()` and is otherwise untouched — the padding
+  query and the `gtinUpc` comparison are exactly what they were.
+- **`Failed` only when *neither* source could answer; a `NotFound` from either is an answer.** This
+  is the one line in the chain that is easy to "tidy" into a bug. `ScanFlow` maps `Failed` to "Try
+  again" (or the Offline screen), so letting FDC's keyless `Failed` outrank OFF's genuine miss would
+  park an unknown package on a retry button forever instead of the manual-entry path a miss exists
+  to lead to.
+- **There is no `gtinUpc`-style echo check on the OFF leg, and that is not the FDC check being
+  relaxed.** FDC's is load-bearing because `foods/search` falls back to relevance on a code it
+  cannot tokenize; a v2 lookup has no relevance to fall back to. Different endpoint kind, not a
+  dropped guard — and the FDC one stays exactly as the entry above it says. OFF also normalises
+  zero-padding server-side (`28400642255` and `0028400642255` answer with the same product,
+  verified), so `barcodeKey`'s stripped code goes straight into the path with none of FDC's
+  four-width query.
+- **`nutriments_estimated` is never read, and a test is what keeps it that way.** OFF publishes it
+  beside `nutriments` and computes it from the ingredient list — Nutella's real payload declares
+  calcium, iron, potassium and vitamin D *only* there. Reading it would put a derived number in the
+  same field a label figure goes in, which is `FEATURES.md`'s "AI-estimated micronutrients" rule
+  with a different model behind it, and it would quietly break what `Nutrients` promises: that `0`
+  means unknown-or-none and `foodsWithMicronutrients` can count coverage. Every `<key>_100g` OFF
+  publishes is in **grams** (`sodium_100g: 0.0428`, `calcium_100g: 0.0253`,
+  `iron_100g: 0.00094`) — pinned against live products rather than inferred, because a `_unit` field
+  in the payload describes `_value`, not `_100g`, and reading the wrong one is a 1000× error in a
+  number shown to the user.
+- **The text search is search-a-licious, not `cgi/search.pl`.** Measured back to back, `search.pl`
+  answered 200, then 503, then 503; `search.openfoodfacts.org/search` served five rapid queries at
+  ~0.7s each and finds the products this app exists for ("Sky Flakes"). *ponytail: two OFF hosts and
+  one mapper between them; if search-a-licious ever gains the product endpoint, this collapses to
+  one.*
+- **The online search tier is additive, and the local list is untouched.** `COMMON_FOODS` was chosen
+  on three grounds — it answers with no debounce, it answers offline, it spends nothing — and OFF
+  answers only the third, so it does not get to replace anything. It is folded in **behind** both
+  local tiers by a defaulted third parameter on `searchFoods()` (every existing call site and its
+  tests unchanged), deduped by the `nameKey()` that was already the identity there. Behind, not
+  in front, because it arrives late and rows appended to the back cannot move a page someone is
+  reading. 500 ms debounce, three characters minimum, and a blank field never asks — "list
+  everything" is a local concept. Offline short-circuits to `Idle`, **not** `Failed`: the local list
+  answering with no network is the feature, and an error message for working as designed is worse
+  than silence. *Skipped: a per-query cache — measured, the endpoint is fast and unthrottled; add
+  one keyed on the trimmed query if backspacing ever shows up.*
+- **`onlineStatus` exists because "No matches" became a lie.** The panel has always answered an
+  empty result with "No matches — enter it by hand instead.", which is wrong while a request is in
+  flight and wrong in a different way when it failed. Three values, and `Idle` deliberately covers
+  nothing-asked, answer-landed and offline alike, because the panel draws all three identically.
+  The tiers themselves draw as one list with no badge or divider: they are all per-100 g figures a
+  row can be seeded from, the panel has silently mixed the first two since it existed, and a
+  "where this came from" mark is something to explain on a surface whose whole job is to be picked
+  from. The order *is* the ranking.
+- **`brandedName()` is one rule for every source.** FDC's all-caps recasing and brand-leads join
+  moved out of `FoodDataCentral.kt` into its own file the OFF mapper shares, so a scanned package
+  reads the same however it was resolved — and "Nutella" branded "Nutella, Ferrero, Yum yum" stays
+  "Nutella" rather than becoming "Nutella · Nutella". `brands` is a comma-string on the product
+  endpoint and an **array** on the search one; the first entry is the one on the package.
 - **The analyzed plate is kept, and the rule for which meals get one is "whatever the flow is
   holding".** The photo used to be thrown away at the moment of logging, which left the app's
   headline feature — point the camera and it logs — with a text row to show for it. It is now
@@ -1844,10 +1903,10 @@ Connect.
 Weighed and deferred — not `FEATURES.md`'s "Deliberately absent" list, which is what was
 ruled out on principle. Each note says what would reopen it.
 
-- **Open Food Facts as a second food source.** FoodData Central is a US database. For a
-  `ph.mart` app, local dishes and locally-packaged products largely return nothing, and OFF is
-  free, keyless and internationally stocked. Reopened by: the search and scan miss rate on real
-  use.
+- ~~**Open Food Facts as a second food source.**~~ **Shipped** — on both legs. The reopening
+  condition was the miss rate on real use, and FDC being a US database is the miss: for a `ph.mart`
+  app a locally-packaged product largely is not in it. See the Food entries above for the ordering,
+  the estimates that are not read and the endpoint that is not used.
 - ~~**Keeping the analyzed meal photo on the diary entry.**~~ **Shipped** — the three objections
   (storage growth, downsampling, the export question) are each answered in the Food entries above:
   a 500-photo cap, 768px at JPEG 85, and images stay out of the export exactly as they always have.

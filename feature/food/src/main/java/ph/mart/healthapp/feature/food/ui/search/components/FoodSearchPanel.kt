@@ -35,18 +35,25 @@ import ph.mart.healthapp.feature.food.ui.search.FOOD_PAGE_SIZE
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchEvent
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchUiState
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchViewModel
+import ph.mart.healthapp.feature.food.ui.search.OnlineSearch
 import ph.mart.healthapp.feature.food.ui.search.pageCount
 import ph.mart.healthapp.feature.food.ui.search.pageItems
 
 /**
- * Food search over the built-in [COMMON_FOODS][ph.mart.healthapp.core.data.food.COMMON_FOODS]
- * list, shared by the diary's add-entry sheet, the photo flow's manual-search state and the recipe
- * ingredient editor. Picking a hit hands a [ScannedProduct] to the host, which seeds its own form
- * from it — the panel never logs anything itself.
+ * Food search over the user's own foods, the built-in
+ * [COMMON_FOODS][ph.mart.healthapp.core.data.food.COMMON_FOODS] list and an Open Food Facts tier
+ * behind them, shared by the diary's add-entry sheet, the photo flow's manual-search state and the
+ * recipe ingredient editor. Picking a hit hands a [ScannedProduct] to the host, which seeds its own
+ * form from it — the panel never logs anything itself.
  *
- * An empty field is not an empty panel: it lists every food, a page at a time. That is the whole
- * reason for the pager — the list is a couple of hundred rows and this is drawn inside a bottom
- * sheet with a form underneath it.
+ * The three tiers draw as one list with no badge or divider between them. They are all per-100 g
+ * figures a row can be seeded from, the panel has always mixed the first two silently, and a
+ * "where this came from" mark is a thing to explain on a surface whose job is to be picked from.
+ * Their *order* is the ranking — see [searchFoods][ph.mart.healthapp.core.data.food.searchFoods].
+ *
+ * An empty field is not an empty panel: it lists every local food, a page at a time. That is the
+ * whole reason for the pager — the list is a couple of hundred rows and this is drawn inside a
+ * bottom sheet with a form underneath it.
  */
 @Composable
 internal fun FoodSearchPanel(
@@ -91,13 +98,21 @@ private fun FoodSearchPanelContent(
             modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         ) {
             val page = uiState.pageItems
-            if (page.isEmpty()) {
+            // "No matches" is only true once the online tier has stopped having something to say:
+            // while it is in flight the honest answer is that we are still looking, and when it
+            // failed the honest answer is that we could not ask.
+            if (page.isEmpty() && uiState.onlineStatus == OnlineSearch.Idle) {
                 Hint(stringResource(R.string.food_search_no_matches))
             } else {
                 page.forEach { product ->
                     SearchHitRow(product = product, onClick = { onSelect(product) })
                 }
                 Pager(uiState = uiState, onEvent = onEvent)
+            }
+            when (uiState.onlineStatus) {
+                OnlineSearch.Searching -> Hint(stringResource(R.string.food_search_online_searching))
+                OnlineSearch.Failed -> Hint(stringResource(R.string.food_search_online_failed))
+                OnlineSearch.Idle -> Unit
             }
         }
     }
@@ -190,6 +205,44 @@ private fun FoodSearchPanelResultsPreview() {
                         ScannedProduct("Greek yogurt, plain nonfat", 100.0, "g", 59, 10, 4, 0),
                         ScannedProduct("Yogurt, plain whole milk", 100.0, "g", 61, 4, 5, 3),
                     ),
+                ),
+                onEvent = {},
+                onSelect = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun FoodSearchPanelSearchingOnlinePreview() {
+    AppTheme {
+        Surface {
+            FoodSearchPanelContent(
+                uiState = FoodSearchUiState(
+                    query = "sky flakes",
+                    results = emptyList(),
+                    onlineStatus = OnlineSearch.Searching,
+                ),
+                onEvent = {},
+                onSelect = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun FoodSearchPanelOnlineFailedPreview() {
+    AppTheme {
+        Surface {
+            FoodSearchPanelContent(
+                uiState = FoodSearchUiState(
+                    query = "sky flakes",
+                    results = listOf(ScannedProduct("Cracker", 100.0, "g", 500, 7, 70, 20)),
+                    onlineStatus = OnlineSearch.Failed,
                 ),
                 onEvent = {},
                 onSelect = {},

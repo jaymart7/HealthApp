@@ -39,8 +39,9 @@ behaviour**, and add one when a decision is taken.
 - **Navigation:** Navigation 3 — use skill `/navigation-3`
 - **Predictive back:** `androidx.navigationevent` (see below)
 - **Also in use:** ML Kit barcode scanning, Firebase AI + App Check,
-  WorkManager (reminders), USDA FoodData Central (`api.nal.usda.gov/fdc/v1`) over
-  `HttpURLConnection` + kotlinx.serialization — no HTTP client dependency, don't add one
+  WorkManager (reminders), USDA FoodData Central (`api.nal.usda.gov/fdc/v1`) and Open Food
+  Facts (`world.openfoodfacts.org/api/v2` for a barcode, `search.openfoodfacts.org` for text),
+  both over `HttpURLConnection` + kotlinx.serialization — no HTTP client dependency, don't add one
 - **Health Connect** (`androidx.health.connect:connect-client`) — the *local* health
   provider, Android 9+, read-only. `implementation`-scoped in `:core:data` only
 - **Google Health API** (`health.googleapis.com/v4`, the Fitbit Web API's

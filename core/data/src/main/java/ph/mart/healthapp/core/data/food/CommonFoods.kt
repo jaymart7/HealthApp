@@ -221,20 +221,38 @@ private fun food(
 )
 
 /**
- * The whole food search once the user owns foods of their own: **their list leads**, then
- * [COMMON_FOODS], deduped against it by the same case-insensitive name key [mergeSuggestions]
- * already treats as identity — a custom "Chicken breast, cooked" *replaces* the built-in row
- * rather than sitting beside it, so the search can never offer two answers for one food.
+ * The whole food search: **the user's own foods lead**, then [COMMON_FOODS], then [online] — the
+ * Open Food Facts tier, which arrives late and is the least certain of the three, so it goes at the
+ * back where it cannot move a page someone is already reading.
  *
- * Both halves take the same substring filter, so a query narrows the user's foods exactly as it
- * narrows the built-in list, and neither half touches the network.
+ * All three are deduped by the same case-insensitive name key [mergeSuggestions] treats as
+ * identity — a custom "Chicken breast, cooked" *replaces* the built-in row rather than sitting
+ * beside it, so the search can never offer two answers for one food.
+ *
+ * The two local halves take the same substring filter, so a query narrows the user's foods exactly
+ * as it narrows the built-in list, and neither touches the network. [online] arrives already
+ * matched by the server and is not re-filtered: OFF matches brands, categories and labels, so a
+ * substring pass over the name would throw away most of what was asked for.
  */
-fun searchFoods(query: String, myFoods: List<ScannedProduct>): List<ScannedProduct> {
-    if (myFoods.isEmpty()) return searchCommonFoods(query)
-    val term = query.trim()
-    val mine = if (term.isEmpty()) myFoods else myFoods.filter { it.name.contains(term, ignoreCase = true) }
-    val claimed = mine.mapTo(mutableSetOf()) { it.nameKey() }
-    return mine + searchCommonFoods(query).filterNot { it.nameKey() in claimed }
+fun searchFoods(
+    query: String,
+    myFoods: List<ScannedProduct>,
+    online: List<ScannedProduct> = emptyList(),
+): List<ScannedProduct> {
+    val local = if (myFoods.isEmpty()) {
+        searchCommonFoods(query)
+    } else {
+        val term = query.trim()
+        val mine = if (term.isEmpty()) myFoods else myFoods.filter { it.name.contains(term, ignoreCase = true) }
+        val claimed = mine.mapTo(mutableSetOf()) { it.nameKey() }
+        mine + searchCommonFoods(query).filterNot { it.nameKey() in claimed }
+    }
+    if (online.isEmpty()) return local
+
+    // add() both dedupes against the local tiers and stops OFF listing one product twice, which it
+    // does whenever the same package is entered under two codes.
+    val seen = local.mapTo(mutableSetOf()) { it.nameKey() }
+    return local + online.filter { seen.add(it.nameKey()) }
 }
 
 /** Name is the identity of a food the user owns — it is `favorite_food`'s primary key — and it is

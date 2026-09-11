@@ -66,4 +66,28 @@ class CommonFoodsTest {
         }
         assertEquals(COMMON_FOODS.size, COMMON_FOODS.map { it.name.lowercase() }.toSet().size)
     }
+
+    @Test
+    fun `an online hit whose name matches a built-in food does not appear twice`() {
+        val online = listOf(
+            ScannedProduct("Broccoli, cooked", 100.0, "g", 34, 3, 7, 0),
+            ScannedProduct("Sky Flakes · Cracker Sandwich", 100.0, "g", 500, 7, 70, 20),
+        )
+
+        val results = searchFoods("", myFoods = emptyList(), online = online)
+
+        assertEquals(1, results.count { it.name.equals("Broccoli, cooked", ignoreCase = true) })
+        assertEquals("Sky Flakes · Cracker Sandwich", results.last().name)
+    }
+
+    @Test
+    fun `the online tier goes behind both local ones`() {
+        val mine = listOf(ScannedProduct("My protein shake", 100.0, "g", 120, 20, 5, 2))
+        val online = listOf(ScannedProduct("Branded shake", 100.0, "g", 130, 21, 6, 2))
+
+        val results = searchFoods("shake", myFoods = mine, online = online)
+
+        assertEquals("My protein shake", results.first().name)
+        assertEquals("Branded shake", results.last().name)
+    }
 }

@@ -109,7 +109,9 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Saved meals — snapshot a diary section, re-log as separate rows.
 - Recipes — a saved meal with servings; logs as one priced row.
 - Food search — the user's own foods first, then a built-in list of ~120 common foods, offline
-  and instant; the empty field lists all of them, eight at a time.
+  and instant; the empty field lists all of them, eight at a time. Behind both, an Open Food
+  Facts tier folds packaged products in at the back — debounced, three characters minimum,
+  never blocking or replacing the local answer, and silently absent offline.
 - Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at
   once, every parsed row editable and repriceable before anything is written. Speech is the
   system's own dialog; typing is the same path.
@@ -125,7 +127,10 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - The plate is kept. Every exit from the camera flow attaches its photo to the entry — recognized,
   gallery-picked, or hand-entered after a failed analyze — scaled to 768px, newest 500 retained.
   No other logging path attaches one.
-- Barcode scanning (ML Kit) → FoodData Central branded lookup, with a `gtinUpc` match check.
+- Barcode scanning (ML Kit) → **Open Food Facts first, FoodData Central second**. OFF is keyless,
+  is a real barcode lookup and is stocked internationally, so a locally-packaged product resolves
+  where FDC's US database has nothing; FDC's `foods/search` with its `gtinUpc` match check is the
+  fallback. Not-found only when both answered; try-again only when neither could.
 - Barcode memory — a resolved product is remembered by its barcode, so a rescan is instant, works
   offline and spends none of the shared FDC budget. Not exported.
 - The diary's mic, barcode and camera doors all log to the day being reviewed; the FAB and the

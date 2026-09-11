@@ -28,7 +28,8 @@ private const val USER_AGENT = "FitPulse/1.0 (Android)"
 
 private const val TIMEOUT_MS = 10_000
 
-private const val KJ_PER_KCAL = 4.184
+/** Shared with the Open Food Facts mapper, which has the same kJ-only fallback. */
+internal const val KJ_PER_KCAL = 4.184
 
 /** FDC reports every search nutrient per 100 g, whatever the package's own serving size says —
  * the convention [COMMON_FOODS] follows too, so a scan and a picked food seed the same form. */
@@ -142,32 +143,10 @@ internal fun JsonObject.toScannedProduct(): ScannedProduct? {
     )
 }
 
-/**
- * FDC shouts its branded descriptions ("SPICY SWEET CHILI FLAVORED TORTILLA CHIPS") while its
- * Foundation rows are ordinary prose ("Broccoli, raw"), so only the all-caps ones are recased —
- * title-casing everything would turn "Broccoli, raw" into "Broccoli, Raw". The brand leads, since
- * two brands' version of the same product are otherwise indistinguishable in the diary.
- */
-private fun JsonObject.displayName(): String? {
-    val description = string("description")?.normalizeCase().orEmpty()
-    if (description.isEmpty()) return null
-
-    val brand = (string("brandName") ?: string("brandOwner"))?.normalizeCase().orEmpty()
-    return when {
-        brand.isEmpty() -> description
-        description.startsWith(brand, ignoreCase = true) -> description
-        else -> "$brand · $description"
-    }
-}
-
-/** All-caps in, title case out; anything already carrying lowercase is left as its source wrote it. */
-private fun String.normalizeCase(): String {
-    val trimmed = trim()
-    if (trimmed != trimmed.uppercase()) return trimmed
-    return trimmed.split(' ').joinToString(" ") { word ->
-        word.lowercase().replaceFirstChar(Char::uppercaseChar)
-    }
-}
+/** The brand-leads rule and the all-caps recasing both live in [brandedName], which the Open Food
+ * Facts mapper shares — a scanned package reads the same however it was resolved. */
+private fun JsonObject.displayName(): String? =
+    brandedName(brand = string("brandName") ?: string("brandOwner"), description = string("description"))
 
 private fun JsonObject.string(key: String): String? =
     this[key]?.jsonPrimitive?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }
