@@ -14,7 +14,7 @@ import com.google.firebase.ai.type.thinkingConfig
  * at every call site — which is exactly how `gemini-1.5-flash` outlived its shutdown in this
  * codebase. One constant is one line to change when the next date lands.
  */
-internal const val AI_MODEL_NAME = "gemini-3.8-flash"
+internal const val AI_MODEL_NAME = "gemini-3.5-flash-lite"
 
 /**
  * The one thinking setting for every Firebase AI Logic call in the app, here for the same reason
