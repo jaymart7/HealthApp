@@ -791,6 +791,20 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   door would open onto what is already on screen — `DiaryDateHeader`'s rule about the calendar
   pane. An overlay becomes worth its `ProgressScreenState` field and back handler the day the spec
   list is long enough that the fifth pattern is worth reading.
+- **The Photos card quotes the weight the shots carry, not just their date.** A count and a
+  recency nag said nothing about what a progress photo is kept for, while the field that answers
+  it — `ProgressPhoto.weightKg`, the Add photo sheet's stepper — was already on every shot and
+  already read by the comparison overlay. The card now leads with the oldest-to-newest arc across
+  the weighed shots and keeps "last one N days ago" behind it. Three calls follow. **Two weighed
+  shots on different dates is the floor**: one end is not two (`Recap.weightArcKg`'s rule), and a
+  delta reported "over 0 days" is a change over no time at all — under it the card says exactly
+  what it said before, arrowless and neutral, because the field is optional and logging a shot
+  without a weight is an ordinary thing to do. **The span is the weighed pair's own**, not the
+  first-to-last of every photo, or the number would cover ground the delta doesn't. **The
+  judgement is `goalRelativeTrend`, not the sign of the delta** — the call `ComparisonHeadline`
+  makes over a hand-picked pair, so the card and the overlay behind it cannot read one run two
+  ways. Direction rides the arrow and the judgement rides the colour, which is what `TrendArrow`
+  and `TrendDirection` are separate for; the text stays absolute, the Weight card's rule.
 - **An empty subject keeps its slot, dashed.** A card that vanished when it had no data is a
   subject nobody would ever find, so an untracked one draws a 1dp **dashed** `outlineVariant`
   outline over nothing, says "Nothing yet", and still opens its page. The dash is what carries the

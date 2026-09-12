@@ -373,6 +373,51 @@ private fun SubjectCardPreview() {
     }
 }
 
+/** Two cards at the width the grid actually gives them, because the Photos footnote runs to the
+ * two lines [TrendFootnote] allows and a wider preview would never show the wrap. */
+@PreviewLightDark
+@Composable
+private fun SubjectCardPhotoPreview() {
+    AppTheme {
+        Surface {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(16.dp),
+            ) {
+                SubjectCard(
+                    summary = SubjectSummary(
+                        subject = Subject.Photos,
+                        value = "4",
+                        unit = "shots",
+                        // No paths behind them in a preview — the tiles draw as their placeholder
+                        // ground, which is what a photo that hasn't decoded yet looks like anyway.
+                        preview = SubjectPreview.PhotoStrip(listOf("", "", "")),
+                        footnote = "2.1 kg over 92 days · last one 12 days ago",
+                        arrow = TrendArrow.Down,
+                        trend = TrendDirection.OnTrack,
+                    ),
+                    onClick = {},
+                    onHint = {},
+                    modifier = Modifier.weight(1f),
+                )
+                // The same subject with nothing weighed on it: the date alone, no arrow, no colour.
+                SubjectCard(
+                    summary = SubjectSummary(
+                        subject = Subject.Photos,
+                        value = "2",
+                        unit = "shots",
+                        preview = SubjectPreview.PhotoStrip(listOf("", "")),
+                        footnote = "Last one 12 days ago",
+                    ),
+                    onClick = {},
+                    onHint = {},
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun SubjectCardBarsPreview() {

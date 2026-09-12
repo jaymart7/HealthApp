@@ -30,6 +30,7 @@ import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
+import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.toDisplay
 import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.streak.streakStats
@@ -126,6 +127,12 @@ fun summarize(
             val photos = uiState.photos
             if (photos.isEmpty()) return SubjectSummary(subject)
             val newest = photos.maxOf { it.dateEpochDay }
+            val ago = daysAgo(newest, todayEpochDay)
+            // The weight the shots themselves carry, oldest to newest — the same field and the
+            // same goal-relative call `ComparisonHeadline` makes over a hand-picked pair, so the
+            // card and the overlay cannot read one run two ways. Absent it, the date alone, which
+            // is what this card said before there was anything else to say.
+            val arc = photos.weightArc()
             SubjectSummary(
                 subject = subject,
                 value = "${photos.size}",
@@ -133,7 +140,15 @@ fun summarize(
                 preview = SubjectPreview.PhotoStrip(
                     photos.sortedByDescending { it.dateEpochDay }.take(3).map { it.filePath },
                 ),
-                footnote = "Last one ${daysAgo(newest, todayEpochDay)}",
+                footnote = arc?.let { (deltaKg, days) ->
+                    "${formatKg(abs(deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
+                        "over $days ${if (days == 1L) "day" else "days"} · last one $ago"
+                } ?: "Last one $ago",
+                // Direction is the arrow and the judgement is the colour — the split `TrendArrow`
+                // and `TrendDirection` exist for. The text stays absolute, the Weight card's rule.
+                arrow = arc?.let { (deltaKg, _) -> arrowFor(deltaKg, TREND_ARROW_DEADBAND_KG) },
+                trend = arc?.let { (deltaKg, _) -> goalRelativeTrend(uiState.goal, deltaKg) }
+                    ?: TrendDirection.Neutral,
             )
         }
 
@@ -368,6 +383,18 @@ fun summarizeAll(uiState: ProgressUiState, todayEpochDay: Long): Map<Subject, Su
 /** Latest minus the reading before it, or null when there is only one — the reading
  * `MeasurementRow` gives a single entry, rather than a false 0.0. In stored units, so the caller
  * converts it through the part like every other figure on the card. */
+/** Kilograms gained or lost between the oldest and the newest photo that carry a weight, and the
+ * days between the two — null unless two shots do and they fall on different dates. The field is
+ * optional on a shot (the Add photo sheet's stepper opens at none), and a delta "over 0 days" is
+ * not a change over time. */
+private fun List<ProgressPhoto>.weightArc(): Pair<Double, Long>? {
+    val weighed = mapNotNull { photo -> photo.weightKg?.let { photo.dateEpochDay to it } }
+        .sortedBy { (day, _) -> day }
+    val (firstDay, firstKg) = weighed.firstOrNull() ?: return null
+    val (lastDay, lastKg) = weighed.last()
+    return if (lastDay == firstDay) null else (lastKg - firstKg) to (lastDay - firstDay)
+}
+
 private fun List<MeasurementEntry>.delta(): Double? =
     if (size >= 2) last().value - this[size - 2].value else null
 

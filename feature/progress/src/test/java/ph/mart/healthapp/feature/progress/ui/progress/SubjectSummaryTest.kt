@@ -120,6 +120,61 @@ class SubjectSummaryTest {
         assertEquals("Last one 3 days ago", summary.footnote)
     }
 
+    /** The shots carry their own weights, so the card reports the run rather than only its date —
+     * the same oldest-to-newest reading the comparison overlay gives a hand-picked pair. */
+    @Test
+    fun `photos report the weight change across the run`() {
+        val summary = summaryFor(
+            Subject.Photos,
+            ProgressUiState(
+                photos = listOf(
+                    ProgressPhoto(id = 1, dateEpochDay = TODAY - 95, filePath = "a", weightKg = 79.0),
+                    ProgressPhoto(id = 2, dateEpochDay = TODAY - 3, filePath = "b", weightKg = 76.9),
+                ),
+                goal = Goal.Lose,
+            ),
+        )
+        assertEquals("2.1 kg over 92 days · last one 3 days ago", summary.footnote)
+        assertEquals(TrendArrow.Down, summary.arrow)
+        assertEquals(TrendDirection.OnTrack, summary.trend)
+    }
+
+    /** The same 2.1 kg lost against a Build goal. The colour is `goalRelativeTrend`'s call, never
+     * the sign of the delta — losing weight is the wrong way for this reader. */
+    @Test
+    fun `the same photo run reads off track for a build goal`() {
+        val summary = summaryFor(
+            Subject.Photos,
+            ProgressUiState(
+                photos = listOf(
+                    ProgressPhoto(id = 1, dateEpochDay = TODAY - 95, filePath = "a", weightKg = 79.0),
+                    ProgressPhoto(id = 2, dateEpochDay = TODAY - 3, filePath = "b", weightKg = 76.9),
+                ),
+                goal = Goal.Build,
+            ),
+        )
+        assertEquals(TrendDirection.OffTrack, summary.trend)
+        assertEquals(TrendArrow.Down, summary.arrow)
+    }
+
+    /** One weighed shot is not a run: a delta needs two ends, and the card says what it always
+     * said rather than reporting a change over no time at all. */
+    @Test
+    fun `one weighed photo keeps the date-only footnote`() {
+        val summary = summaryFor(
+            Subject.Photos,
+            ProgressUiState(
+                photos = listOf(
+                    ProgressPhoto(id = 1, dateEpochDay = TODAY - 30, filePath = "a"),
+                    ProgressPhoto(id = 2, dateEpochDay = TODAY - 1, filePath = "b", weightKg = 76.9),
+                ),
+            ),
+        )
+        assertEquals("Last one yesterday", summary.footnote)
+        assertEquals(null, summary.arrow)
+        assertEquals(TrendDirection.Neutral, summary.trend)
+    }
+
     /** The part measured most recently leads, because that is the one being worked on. */
     @Test
     fun `measurements lead with the most recently measured part`() {
