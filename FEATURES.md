@@ -223,7 +223,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Photo food recognition (the food-logging path above).
 - Daily insight — one line on Home, cached per day, falls back to three local rules.
 - Coach — a chat screen told the day's numbers and what it doesn't know; history persisted,
-  clearable with a confirm. A mic on the chat bar dictates the question through the system's own
+  clearable with a confirm. The answer streams in word by word, under the question, which is on
+  screen from the moment it's sent. A mic on the chat bar dictates the question through the system's own
   speech dialog and fills the field in — it never sends on its own, and it is absent where no
   recognizer is installed.
 - Meal ideas (above).

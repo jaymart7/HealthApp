@@ -24,8 +24,6 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
-import ph.mart.healthapp.core.designsystem.component.MascotAvatar
-import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.coach.R
@@ -33,6 +31,7 @@ import ph.mart.healthapp.feature.coach.ui.components.ChatBubble
 import ph.mart.healthapp.feature.coach.ui.components.ChatInputBar
 import ph.mart.healthapp.feature.coach.ui.components.CoachEmptyState
 import ph.mart.healthapp.feature.coach.ui.components.FailureBubble
+import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 
 @Composable
 fun CoachScreen(viewModel: CoachViewModel = koinViewModel()) {
@@ -60,10 +59,19 @@ private fun CoachContent(
 ) {
     val listState = rememberLazyListState()
     // The newest turn is the one worth reading, so every arrival — a reply, a failure, or the
-    // user's own question — scrolls to it.
-    val lastIndex = uiState.messages.size + if (uiState.failure != null || uiState.sending) 1 else 0
-    LaunchedEffect(lastIndex) {
-        if (lastIndex > 0) listState.animateScrollToItem(lastIndex - 1)
+    // user's own question — scrolls to it. A pending turn is two items: the question and the
+    // answer filling in under it.
+    val itemCount = uiState.messages.size +
+        (if (uiState.pending != null) 2 else 0) +
+        (if (uiState.failure != null) 1 else 0)
+    LaunchedEffect(itemCount) {
+        if (itemCount > 0) listState.animateScrollToItem(itemCount - 1)
+    }
+    // Chunks arrive faster than an animation settles, so the growing bubble is followed without one.
+    // ponytail: a scroll per chunk, and this pins the bubble's top rather than its bottom — both
+    // only show on a reply taller than the viewport, which MAX_REPLY_CHARS all but rules out.
+    LaunchedEffect(uiState.streaming) {
+        if (uiState.streaming != null && itemCount > 0) listState.scrollToItem(itemCount - 1)
     }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
@@ -82,12 +90,11 @@ private fun CoachContent(
                 items(uiState.messages, key = { it.id }) { message ->
                     ChatBubble(text = message.text, fromUser = message.fromUser)
                 }
-                if (uiState.sending) {
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MascotAvatar(state = MascotState.Thinking, size = 32.dp)
-                        }
-                    }
+                // The turn in flight, neither half of it in Room yet: the question is on screen
+                // from the tap, and the answer grows under it in place.
+                uiState.pending?.let { pending ->
+                    item(key = "pending-question") { ChatBubble(text = pending, fromUser = true) }
+                    item(key = "pending-answer") { StreamingBubble(text = uiState.streaming) }
                 }
                 uiState.failure?.let { failure ->
                     item {
@@ -110,7 +117,7 @@ private fun CoachContent(
 
             ChatInputBar(
                 draft = state.draft,
-                sending = uiState.sending,
+                sending = uiState.pending != null,
                 onDraftChange = { state.draft = it },
                 onSend = {
                     onEvent(CoachEvent.OnSend(state.draft))
@@ -166,6 +173,26 @@ private fun CoachScreenPreview() {
 private fun CoachScreenEmptyPreview() {
     AppTheme {
         CoachContent(uiState = CoachUiState(loaded = true), state = CoachScreenState(), onEvent = {})
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun CoachScreenStreamingPreview() {
+    AppTheme {
+        CoachContent(
+            uiState = CoachUiState(
+                loaded = true,
+                messages = listOf(
+                    ChatMessage(id = 1, fromUser = true, text = "How am I doing today?", sentAtMillis = 1),
+                    ChatMessage(id = 2, fromUser = false, text = "Nicely — you're on target.", sentAtMillis = 2),
+                ),
+                pending = "What should I eat tonight?",
+                streaming = "You have 600 kcal left and most of your protein still to",
+            ),
+            state = CoachScreenState(),
+            onEvent = {},
+        )
     }
 }
 

@@ -1284,6 +1284,24 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `CoachFailure` carries the question text. Clearing the chat is a soft delete like everything
   else, and it *asks first* — a conversation is user-authored, the saved-meal rule, not the
   diary's swipe-and-undo.
+- **The coach streams, and Room is what ends the stream on screen.** `CoachRepository.send()`
+  returns a cold `Flow<CoachReply>` over `Chat.sendMessageStream` rather than suspending on a whole
+  answer: `MAX_OUTPUT_TOKENS` is 300, and a lone thinking mascot for those seconds is the longest
+  wait in the app. Four things follow. **The pair of rows is still written once, on the last
+  chunk** — the entry above is untouched, and a collection cancelled by leaving the screen simply
+  never reaches the write. **There is no `Answered` variant**: the finished answer arrives the way
+  every other row does, through `observeMessages()`, so flow completion *is* the success signal and
+  only `Failed` is explicit. **A partial is sanitized cumulatively** — `sanitizeReply` takes the
+  whole answer so far on every chunk, because the whole of it is what a bubble draws, and the trust
+  boundary is still exactly one function; a partial past `MAX_REPLY_CHARS` sanitizes to null, the
+  bubble stops growing, and the final check fails the send rather than truncating it. **And
+  `pending`/`streaming` are retired by the Room emission, not by the stream ending** — `withMessages`
+  clears them when the list size changes, because the write and the invalidation are not the same
+  instant and clearing at completion blinks the finished turn off screen in between; a shrink counts
+  too, so a `clear()` mid-send cannot strand the input bar. That pure function is the JVM test
+  (`CoachUiStateTest`), the reason `sanitizeReply` is one. `CoachUiState.sending` became
+  `pending: String?` in the same move: same boolean, plus the question to draw above the answer, so
+  the turn assembles top-down instead of the question popping in over a finished reply.
 - **The coach's model is rebuilt on every send; the insight's is a field.** Its system instruction
   carries the day's numbers, and those move while the screen is open — a glass logged in another
   tab must not leave it quoting a stale figure. A `GenerativeModel` is a config object, so this

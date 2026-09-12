@@ -15,11 +15,17 @@ data class ChatMessage(
     val sentAtMillis: Long,
 )
 
-/** What a send produced. There is no error *type*: offline, throttled, App Check refused and a
- * model with nothing usable to say all land on the same fallback, exactly as they do for the
- * daily insight. */
+/**
+ * What a send emits while it runs. [Partial] is the whole answer *so far*, re-emitted as each
+ * chunk lands; there is no `Answered` variant because there is nothing left to say once the stream
+ * ends — the finished answer reaches the screen the way every other row does, through
+ * [CoachRepository.observeMessages]. Completing without a [Failed] is the success signal.
+ *
+ * There is no error *type*: offline, throttled, App Check refused and a model with nothing usable
+ * to say all land on the same fallback, exactly as they do for the daily insight.
+ */
 sealed interface CoachReply {
-    data class Answered(val text: String) : CoachReply
+    data class Partial(val text: String) : CoachReply
     data object Failed : CoachReply
 }
 
@@ -31,13 +37,17 @@ sealed interface CoachReply {
  * the device" auditable in one place.
  *
  * A question is only persisted once it has been answered: [send] writes both rows in one
- * transaction, so a call killed by process death or by leaving the screen loses the un-sent
- * question rather than stranding it in the history with nothing under it. That is the same
- * reading `FastingRepository.discardActive()` gives an unfinished fast — it never became history.
+ * transaction *after* the stream completes, so a call killed by process death or by leaving the
+ * screen — a cancelled collection simply never reaches the write — loses the un-sent question
+ * rather than stranding it in the history with nothing under it. That is the same reading
+ * `FastingRepository.discardActive()` gives an unfinished fast: it never became history.
  */
 interface CoachRepository {
     fun observeMessages(): Flow<List<ChatMessage>>
-    suspend fun send(question: String, request: InsightRequest?): CoachReply
+
+    /** The answer as it arrives. Cold: nothing is sent until it is collected, and the row pair is
+     * written on the last chunk. */
+    fun send(question: String, request: InsightRequest?): Flow<CoachReply>
 
     /** Soft-deletes the whole conversation. Room's rows stay, like every other domain's. */
     suspend fun clear()

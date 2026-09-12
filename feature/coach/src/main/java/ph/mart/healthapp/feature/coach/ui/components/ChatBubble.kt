@@ -62,6 +62,29 @@ internal fun ChatBubble(text: String, fromUser: Boolean, modifier: Modifier = Mo
 }
 
 /**
+ * The answer as it arrives, and the wait before it: [text] is null until the first chunk lands.
+ *
+ * One `Row` across both, deliberately — the avatar stays a single node for the whole turn, so
+ * `MascotAvatar`'s state spring plays the `Thinking → Idle` move when the answer starts instead of
+ * remounting as a cut. It is the coach's side of [ChatBubble], which is what the finished turn
+ * becomes once Room has the rows.
+ */
+@Composable
+internal fun StreamingBubble(text: String?, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        MascotAvatar(
+            state = if (text == null) MascotState.Thinking else MascotState.Idle,
+            size = 32.dp,
+        )
+        if (text != null) MascotSpeechBubble(text = text)
+    }
+}
+
+/**
  * What a send that didn't land says. The reason is `onSurfaceVariant` rather than `error`: the
  * network dropping is not the user doing something wrong, and `error` is reserved for genuinely
  * off-track figures. [insight] is the rule-based line for the same day, so the screen still says
@@ -96,6 +119,8 @@ private fun ChatBubblePreview() {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 ChatBubble(text = "Am I getting enough protein?", fromUser = true)
+                StreamingBubble(text = null)
+                StreamingBubble(text = "You're at 62 g of 150 g, so there's plenty of")
                 ChatBubble(
                     text = "You're at 62 g of 150 g, so there's plenty of room. A high-protein " +
                         "dinner would close most of that gap.",

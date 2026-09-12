@@ -10,6 +10,11 @@ import ph.mart.healthapp.feature.coach.R
  * told about, rebuilt from the repositories on every emission so a meal logged in another tab is
  * already in the next answer.
  *
+ * [pending] and [streaming] are the turn in flight, and neither is in Room — the pair of rows is
+ * written on the stream's last chunk, so until then the question and the half-arrived answer exist
+ * only here. A `sending` flag would say strictly less: `pending != null` is the same boolean, and
+ * it also carries the text to draw above the answer.
+ *
  * [failure] is UI-only and deliberately not persisted: a send that didn't land wrote no rows, so
  * there is nothing in Room for it to describe. It clears on the next successful send.
  */
@@ -19,9 +24,35 @@ data class CoachUiState(
     val loaded: Boolean = false,
     val messages: List<ChatMessage> = emptyList(),
     val request: InsightRequest? = null,
-    val sending: Boolean = false,
+    /** The question being answered right now, drawn as the user's bubble until Room has it. */
+    val pending: String? = null,
+    /** The answer so far, null until the first chunk lands. */
+    val streaming: String? = null,
     val failure: CoachFailure? = null,
 )
+
+/**
+ * A Room emission folded in.
+ *
+ * [pending] and [streaming] stand until the list itself changes, rather than being cleared when
+ * the stream ends: the write and Room's invalidation are not the same instant, and dropping the
+ * bubbles at completion blinks the finished turn off screen for the frames in between. Any change
+ * to the list while a send is in flight is Room having spoken — a shrink counts too, which is what
+ * keeps a `clear()` mid-send from stranding the input bar.
+ */
+internal fun CoachUiState.withMessages(
+    messages: List<ChatMessage>,
+    request: InsightRequest?,
+): CoachUiState {
+    val landed = messages.size != this.messages.size
+    return copy(
+        loaded = true,
+        messages = messages,
+        request = request,
+        pending = pending.takeUnless { landed },
+        streaming = streaming.takeUnless { landed },
+    )
+}
 
 /**
  * What to show when a send didn't produce an answer. [reason] says why in one line; [insight] is

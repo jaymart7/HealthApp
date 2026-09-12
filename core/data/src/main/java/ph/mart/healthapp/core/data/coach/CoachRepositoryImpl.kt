@@ -7,6 +7,8 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.AI_THINKING
@@ -21,7 +23,7 @@ import ph.mart.healthapp.core.data.logAiFailure
 private const val MAX_OUTPUT_TOKENS = 300
 
 /**
- * Plain text out, not JSON — the same call the daily insight makes, one turn longer.
+ * Plain text out, not JSON — the same call the daily insight makes, one turn longer and streamed.
  *
  * The model is rebuilt on every [send] rather than held as a field, because its system
  * instruction carries the day's numbers and those move while the screen is open: a glass of water
@@ -30,13 +32,17 @@ private const val MAX_OUTPUT_TOKENS = 300
  *
  * Nothing is cached, unlike the insight: an insight is one line per day, while every question is
  * its own answer.
+ *
+ * The answer is streamed. The pair of rows is still written once, on the last chunk, so the
+ * "persisted only when answered" rule is unchanged — what streaming buys is the screen, not the
+ * history.
  */
 internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepository {
 
     override fun observeMessages(): Flow<List<ChatMessage>> =
         dao.observeAll().map { messages -> messages.map { it.toMessage() } }
 
-    override suspend fun send(question: String, request: InsightRequest?): CoachReply {
+    override fun send(question: String, request: InsightRequest?): Flow<CoachReply> = flow {
         val model = Firebase.ai(
             backend = GenerativeBackend.googleAI(),
             useLimitedUseAppCheckTokens = true,
@@ -49,14 +55,18 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
             systemInstruction = content { text(systemPromptFor(request)) },
         )
 
-        val answer = try {
-            val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
-            sanitizeReply(chat.sendMessage(question).text)
-        } catch (e: Exception) {
-            logAiFailure("coach send", e)
-            null
-        } ?: return CoachReply.Failed
+        val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
+        val raw = StringBuilder()
+        chat.sendMessageStream(question).collect { chunk ->
+            chunk.text?.let(raw::append)
+            // The accumulated answer, not the chunk: a bubble renders the whole of it, so the whole
+            // of it is what has to clear the trust boundary. A partial past MAX_REPLY_CHARS
+            // sanitizes to null and the bubble simply stops growing — the check below then fails
+            // the send, rather than truncating.
+            sanitizeReply(raw.toString())?.let { emit(CoachReply.Partial(it)) }
+        }
 
+        val answer = sanitizeReply(raw.toString()) ?: return@flow emit(CoachReply.Failed)
         val now = System.currentTimeMillis()
         dao.addExchange(
             question = ChatMessageEntity(fromUser = true, text = question, sentAtMillis = now),
@@ -64,7 +74,11 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
             // id tie-break in the DAO covers a clock that doesn't move between the two.
             answer = ChatMessageEntity(fromUser = false, text = answer, sentAtMillis = now + 1),
         )
-        return CoachReply.Answered(answer)
+    }.catch { e ->
+        // `catch` rather than a `try` around the loop: wrapping an `emit` in `catch (e: Exception)`
+        // swallows the CancellationException downstream cancellation throws back through it.
+        logAiFailure("coach send", e)
+        emit(CoachReply.Failed)
     }
 
     override suspend fun clear() = dao.softDeleteAll()
