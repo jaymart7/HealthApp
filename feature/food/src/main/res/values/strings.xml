@@ -248,6 +248,23 @@
     <string name="food_exercise_adds_today">Adds to today</string>
     <string name="food_exercise_subtotal">+%1$d kcal</string>
     <string name="food_exercise_spoken">Exercise, %1$d kilocalories burned, added to today\'s budget</string>
+    <!-- Copy a day -->
+    <string name="food_copy_link">Copy a day</string>
+    <string name="food_copy_pick_title">Copy from which day?</string>
+    <!-- %1$s the day being copied from, e.g. "Yesterday" or "12 Sep". -->
+    <string name="food_copy_title">Copy from %1$s</string>
+    <string name="food_copy_body">Everything you tick lands on the day you\'re looking at.</string>
+    <string name="food_copy_water">Water</string>
+    <plurals name="food_copy_glasses">
+        <item quantity="one">%1$d glass</item>
+        <item quantity="other">%1$d glasses</item>
+    </plurals>
+    <plurals name="food_copy_workouts">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
+    </plurals>
+    <string name="food_copy_confirm">Copy</string>
+    <string name="food_copy_empty">Nothing was logged that day, so there is nothing to bring over.</string>
     <!-- Diary history search -->
     <string name="food_history_link">Search your diary</string>
     <string name="food_history_placeholder">Search everything you\'ve logged</string>

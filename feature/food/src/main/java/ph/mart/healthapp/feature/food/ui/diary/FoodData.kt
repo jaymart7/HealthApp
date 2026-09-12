@@ -54,7 +54,50 @@ data class FoodUiState(
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     val unit: UnitSystem = UnitSystem.Metric,
+    /** The day a copy is being taken *from* — null unless the copy sheet is open, and what the
+     * sheet's own visibility is read off. */
+    val copySource: CopyDay? = null,
 )
+
+/**
+ * Another day's log, loaded while the copy sheet is over the diary: what that day held, so the
+ * sheet can say what there is to bring over before anything is written.
+ *
+ * It rides the diary's own combine rather than sitting beside it — `observeDiary` ends in
+ * `reduce { newState }`, which replaces the state wholesale, so anything held outside the emission
+ * is wiped the next time Room speaks.
+ */
+data class CopyDay(
+    val dateEpochDay: Long,
+    val entries: List<FoodEntry> = emptyList(),
+    val exercise: List<ExerciseEntry> = emptyList(),
+    val waterGlasses: Int = 0,
+)
+
+/** Nothing was logged that day, so there is nothing to copy — the sheet's one dead end. */
+val CopyDay.isEmpty: Boolean
+    get() = entries.isEmpty() && exercise.isEmpty() && waterGlasses == 0
+
+/**
+ * The ticked meals, re-stamped for [dateEpochDay]. `id = 0` so each row is an insert rather than a
+ * collision, and the plate stays behind: a photo belongs to the meal it was taken of, which is the
+ * call `FoodHistoryViewModel.logAgain` already makes for a single re-logged row.
+ */
+internal fun CopyDay.foodOnto(dateEpochDay: Long, meals: Set<MealType>): List<FoodEntry> =
+    entries
+        .filter { it.mealType in meals }
+        .map { it.copy(id = 0, dateEpochDay = dateEpochDay, photoPath = null) }
+
+/**
+ * The day's workouts, re-stamped the same way, sets and all — they ride on the entry, so
+ * `ExerciseRepository.addEntry` writes a copied strength session whole.
+ *
+ * `steps = 0` is not data loss: `addEntry` re-estimates a step count from the type and the minutes
+ * when it sees zero, and the figure being dropped is the watch's own, recorded against the day it
+ * was actually walked.
+ */
+internal fun CopyDay.exerciseOnto(dateEpochDay: Long): List<ExerciseEntry> =
+    exercise.map { it.copy(id = 0, dateEpochDay = dateEpochDay, steps = 0) }
 
 /**
  * The calorie goal the summary bar reads against: the target, plus the day's burn when the profile
@@ -155,6 +198,24 @@ sealed interface FoodEvent {
     data class OnLogSavedMeal(val meal: SavedMeal, val mealType: MealType) : FoodEvent
     data class OnDeleteSavedMeal(val id: Long) : FoodEvent
     data class OnDeleteRecipe(val id: Long) : FoodEvent
+
+    /** Opens the copy sheet on a source day, or closes it with null. Loading that day is a read,
+     * so it goes through the ViewModel rather than living in the screen's own state — which is
+     * also what keeps the open sheet across a rotation. */
+    data class OnPickCopySource(val dateEpochDay: Long?) : FoodEvent
+
+    /**
+     * Brings the ticked parts of [FoodUiState.copySource] onto the day being shown.
+     *
+     * ponytail: no undo. `addEntries` hands back no ids, so one would mean widening the repository
+     * or deleting by name match; a copied row swipe-deletes like any other. Add it if a mis-copied
+     * day turns out to be common.
+     */
+    data class OnCopyDay(
+        val meals: Set<MealType>,
+        val water: Boolean,
+        val exercise: Boolean,
+    ) : FoodEvent
 }
 
 /**

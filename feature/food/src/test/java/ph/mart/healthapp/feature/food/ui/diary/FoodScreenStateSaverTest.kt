@@ -42,6 +42,7 @@ class FoodScreenStateSaverTest {
             filterExpanded = true,
             editingEntryId = 7L,
             shareOpen = true,
+            copyPickerOpen = true,
         )
 
         val restored = roundTrip(state)
@@ -52,5 +53,6 @@ class FoodScreenStateSaverTest {
         assertEquals(true, restored.filterExpanded)
         assertEquals(7L, restored.editingEntryId)
         assertEquals(true, restored.shareOpen)
+        assertEquals(true, restored.copyPickerOpen)
     }
 }

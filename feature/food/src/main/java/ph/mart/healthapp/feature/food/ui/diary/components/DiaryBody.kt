@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -237,21 +238,27 @@ internal fun DiaryBody(
                 },
             )
 
-            // Two doors at the foot of the scroll rather than in the date header — that row
+            // Three doors at the foot of the scroll rather than in the date header — that row
             // already carries three 48dp buttons and a label it goes out of its way to protect at
-            // large font scales. Home's "Rearrange your Home" link is the shape.
+            // large font scales. Home's "Rearrange your Home" link is the shape. The row wraps
+            // rather than shrinking, so a large font scale costs a line and not a label.
             //
-            // The search is always here, including on a bare day: a day with nothing on it is
-            // exactly when you want to look backwards. Sharing is not — there is no day to share
-            // yet. It carries the day's filter query along, so a word already typed into the
-            // header survives the step up to every day.
-            Row(
+            // Search and copy are always here, including on a bare day: a day with nothing on it
+            // is exactly when you want to look backwards, and exactly when you want yesterday
+            // again. Sharing is not — there is no day to share yet. The search carries the day's
+            // filter query along, so a word already typed into the header survives the step up to
+            // every day.
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
             ) {
                 TextButton(
                     label = stringResource(R.string.food_history_link),
                     onClick = { onOpenHistory(uiState.selectedDate, state.searchQuery) },
+                )
+                TextButton(
+                    label = stringResource(R.string.food_copy_link),
+                    onClick = { state.copyPickerOpen = true },
                 )
                 if (!dayIsEmpty && uiState.targets != null) {
                     TextButton(

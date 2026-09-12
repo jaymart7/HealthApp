@@ -2,6 +2,9 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
@@ -146,6 +150,44 @@ internal fun DiarySheets(
                     ),
                 )
                 state.closeSaveMealSheet()
+            },
+        )
+    }
+
+    // Which day to copy *from*. Its own sheet rather than a mode on the one below: that calendar
+    // moves the diary, this one picks a source and leaves the day where it is — and at expanded
+    // width the diary's calendar is a permanent pane, where this is still a sheet.
+    if (state.copyPickerOpen) {
+        AppBottomSheet(onDismiss = { state.copyPickerOpen = false }) {
+            Text(
+                text = stringResource(R.string.food_copy_pick_title),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+            CalendarPanel(
+                // The day being shown, drawn selected — and the one day that is not a source: the
+                // ViewModel ignores it, because copying a day onto itself only doubles it.
+                selectedDate = uiState.selectedDate,
+                markedDates = emptySet(),
+                maxDate = uiState.today,
+                onSelectDate = { date ->
+                    onEvent(FoodEvent.OnPickCopySource(date))
+                    state.copyPickerOpen = false
+                },
+                onBack = { state.copyPickerOpen = false },
+            )
+        }
+    }
+
+    // Opens off the loaded day rather than a flag, so it is still here after a rotation.
+    uiState.copySource?.let { source ->
+        CopyDaySheet(
+            source = source,
+            today = uiState.today,
+            onDismiss = { onEvent(FoodEvent.OnPickCopySource(null)) },
+            onCopy = { meals, water, exercise ->
+                onEvent(FoodEvent.OnCopyDay(meals, water, exercise))
             },
         )
     }

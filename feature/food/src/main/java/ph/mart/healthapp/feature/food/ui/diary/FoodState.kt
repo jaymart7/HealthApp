@@ -33,6 +33,7 @@ internal class FoodScreenState(
     editingEntryId: Long? = null,
     ideasFor: MealType? = null,
     shareOpen: Boolean = false,
+    copyPickerOpen: Boolean = false,
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -62,6 +63,15 @@ internal class FoodScreenState(
     /** Whether the day's share sheet is over the diary. UI-only: what it shows is the day the
      * screen is already holding, so there is nothing to restore but the fact that it was open. */
     var shareOpen: Boolean by mutableStateOf(shareOpen)
+
+    /**
+     * Whether the calendar that picks a day to copy *from* is showing. Only the picker: which day
+     * was picked, and what is on it, live in [FoodUiState.copySource] — loading a day is a read.
+     *
+     * Separate from [calendarOpen] because the two calendars answer different questions, and at
+     * expanded width one of them is a permanent pane while this one is still a sheet.
+     */
+    var copyPickerOpen: Boolean by mutableStateOf(copyPickerOpen)
 
     /** Which meal section's entries the "save this meal" sheet is naming, and the name so far. */
     var saveMealFor: MealType? by mutableStateOf(saveMealFor)
@@ -145,6 +155,7 @@ internal class FoodScreenState(
                         // field in the middle would silently re-point all of them.
                         it.filterExpanded,
                         it.shareOpen,
+                        it.copyPickerOpen,
                     )
             },
             restore = { saved ->
@@ -170,6 +181,7 @@ internal class FoodScreenState(
                     ideasFor = (saved[15 + MealType.entries.size] as String?)?.let(MealType::valueOf),
                     filterExpanded = saved[16 + MealType.entries.size] as Boolean,
                     shareOpen = saved[17 + MealType.entries.size] as Boolean,
+                    copyPickerOpen = saved[18 + MealType.entries.size] as Boolean,
                 )
             },
         )

@@ -86,6 +86,41 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   never steps past today, and there are no planned meals. The day comes from the
   screen you left, never from a control on a viewfinder.
 
+- **"Copy a day" is a copy, never a link.** Picking a source day writes fresh rows onto the day
+  being shown — the diary has no concept of a day that *refers* to another one, and one would have
+  to survive the source being edited or deleted for the rest of the app's life. The rows it writes
+  are ordinary: they swipe-delete, they edit, they export, and nothing downstream can tell one from
+  a hand-logged row. Three fields are re-stamped and the argument is in each. `id = 0` so the write
+  is an insert. `photoPath = null`, the call `FoodHistoryViewModel.logAgain` already makes for a
+  single re-logged row — a plate belongs to the meal it was taken of, and 500 kept photos is a cap,
+  not a budget to spend duplicating. `steps = 0` on a copied workout, because
+  `ExerciseRepositoryImpl.addEntry` re-estimates a step count from the type and the minutes when it
+  sees zero, and the figure being dropped is the watch's own, recorded against the day it was
+  actually walked.
+- **Water is set, and only from a day that had some.** Food and exercise are rows and add; water is
+  one row per day holding a count, so a copy can only overwrite. A source day with no water
+  therefore copies nothing rather than zeroing a count already standing on the target — the one
+  place in this feature where "copy everything" would destroy data instead of adding it. That is
+  also why water is a tick like the rest: the user can see it is going to be replaced.
+- **The copy sheet has no undo, and the ticks are what stands in for one.** `addEntries` hands back
+  no ids, so an undo would mean widening the repository or deleting by name match; a copied row
+  swipes away like any other, and the sheet shows every part with its item count and calories
+  *before* anything is written. The empty parts draw disabled rather than being left out, so the
+  sheet reads as a report of that day — a missing Dinner row would look like the sheet forgot about
+  dinner, where a disabled one says the day had none.
+- **Two calendars, not one with a mode.** The date header's calendar moves the diary; the copy
+  picker names a source and leaves the day where it is. They also live differently: at ≥840dp the
+  first is a permanent pane and the second is still a sheet. The day being shown is drawn selected
+  in the picker and is the one day that is not a source — copying a day onto itself only doubles
+  it, so the ViewModel ignores it and the tap does nothing.
+- **The loaded source day rides the diary's own combine.** `observeDiary` ends in
+  `reduce { newState }`, which replaces state wholesale, so a day held beside it would be wiped the
+  next time Room spoke. It reads through the three dated flows the diary already uses
+  (`observeEntries`, `ExerciseRepository.observeEntries`, `WaterRepository.observeDay`) — no query
+  of its own — and is null whenever the sheet is closed, which is what keeps those reads off the
+  diary's path. The sheet's visibility is that null, not a flag, so it survives a rotation; only
+  the picker's open/closed is screen state.
+
 ### Camera, barcode & Open Food Facts
 
 - **Both viewfinders carry a gallery door and a manual door** (`ViewfinderActions`, in

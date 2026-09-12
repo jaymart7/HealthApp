@@ -2,9 +2,11 @@ package ph.mart.healthapp.feature.food.ui.diary
 
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
@@ -42,6 +44,10 @@ class FoodViewModel(
     /** The diary's day, and the only thing that re-points the three dated flows below. */
     private val selectedDate = MutableStateFlow(todayEpochDay())
 
+    /** The day a copy is being taken from — null whenever the copy sheet is closed, which is what
+     * keeps the three reads behind it off the diary's own path. */
+    private val copySourceDate = MutableStateFlow<Long?>(null)
+
     override val container = orbitContainer<FoodUiState, FoodSideEffect>(FoodUiState()) {
         observeDiary(foodRepository, profileRepository, waterRepository, exerciseRepository, stepsRepository)
         followMidnight()
@@ -63,6 +69,8 @@ class FoodViewModel(
             is FoodEvent.OnLogSavedMeal -> onLogSavedMeal(event)
             is FoodEvent.OnDeleteSavedMeal -> onDeleteSavedMeal(event.id)
             is FoodEvent.OnDeleteRecipe -> onDeleteRecipe(event.id)
+            is FoodEvent.OnPickCopySource -> onPickCopySource(event.dateEpochDay)
+            is FoodEvent.OnCopyDay -> onCopyDay(event)
         }
     }
 
@@ -122,9 +130,55 @@ class FoodViewModel(
             dated,
             foodRepository.observeSavedMeals(),
             foodRepository.observeRecipes(),
-        ) { newState, savedMeals, recipes ->
-            newState.copy(savedMeals = savedMeals, recipes = recipes)
+            copySource(),
+        ) { newState, savedMeals, recipes, copySource ->
+            newState.copy(savedMeals = savedMeals, recipes = recipes, copySource = copySource)
         }.collect { newState -> reduce { newState } }
+    }
+
+    /**
+     * The source day, read through the same three dated flows the diary itself uses — a copy needs
+     * no query of its own. Null while nothing is being copied, so the reads only exist while the
+     * sheet is open.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun copySource(): Flow<CopyDay?> = copySourceDate.flatMapLatest { date ->
+        if (date == null) {
+            flowOf(null)
+        } else {
+            combine(
+                foodRepository.observeEntries(date),
+                exerciseRepository.observeEntries(date),
+                waterRepository.observeDay(date),
+            ) { entries, exercise, glasses -> CopyDay(date, entries, exercise, glasses) }
+        }
+    }
+
+    /** Copying a day onto itself would only double it, so the day already being shown is not a
+     * source: the calendar draws it selected, and a tap on it does nothing. */
+    private fun onPickCopySource(dateEpochDay: Long?) {
+        if (dateEpochDay == selectedDate.value) return
+        copySourceDate.value = dateEpochDay
+    }
+
+    /**
+     * One batched food write plus a workout each, so a copied day lands in as few emissions as a
+     * saved meal does.
+     *
+     * Water is *set* rather than added, and only from a day that had some — a copy must never zero
+     * a count already standing on the day being copied onto.
+     */
+    private fun onCopyDay(event: FoodEvent.OnCopyDay) = intent {
+        val source = state.copySource ?: return@intent
+        val target = selectedDate.value
+        foodRepository.addEntries(source.foodOnto(target, event.meals))
+        if (event.exercise) {
+            source.exerciseOnto(target).forEach { exerciseRepository.addEntry(it) }
+        }
+        if (event.water && source.waterGlasses > 0) {
+            waterRepository.upsertDay(WaterDay(dateEpochDay = target, glasses = source.waterGlasses))
+        }
+        copySourceDate.value = null
     }
 
     // Dated writes, not the "today" convenience overloads — on a past day those would silently
