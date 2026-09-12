@@ -297,17 +297,19 @@ with nothing logged in it.
 
 ## Design system (`:core:designsystem`)
 
-AIChip · AppBottomSheet · AppCard · AppTextField · AppTopBar · BadgeDot · BottomNavBar · Buttons ·
-CalendarPanel · DateFormat · DiscardConfirmDialog · DockedFab · FoodItemRow · FullScreenState ·
-GoalProjectionLine · HealthDisclosurePanel · HomeCardLayout · MacroBar · MacroInputGroup ·
-MascotAvatar · MascotSpeechBubble · MealThumbnail · MicronutrientInputGroup · NutrientPanel ·
+AIChip · AIInsightCard · AppBottomSheet · AppCard · AppTextField · AppTopBar · BadgeDot ·
+BottomNavBar · Buttons · CalendarPanel · DateFormat · DiscardConfirmDialog · DockedFab ·
+FoodItemRow (with `MealThumbnail`) · FullScreenState · GoalProjectionLine ·
+HealthDisclosurePanel · HomeCardLayout · MacroBar · MacroFieldCell · MacroInputGroup ·
+MascotAvatar · MascotPalette (the 35 swatches) · MascotSpeechBubble · MicronutrientInputGroup ·
+NavRail (`BottomNavBar`'s ≥600dp sibling) · NumericStepperField · NutrientPanel ·
 PhotoBitmap (`rememberBitmapFromFile`, every stored photo in the app decodes through it) ·
-NumericStepperField · SegmentedToggle · SelectableCard · ShareImageSheet (`captureToPicture` +
-`sharePng`, every picture the app hands the chooser) · SheetDatePicker · StepProgressBar ·
+SegmentedToggle · SelectableCard · ShareImage (`ShareImageSheet`, `captureToPicture` +
+`sharePng` — every picture the app hands the chooser) · SheetDatePicker · StepProgressBar ·
 WaterGlassRow.
 
-Charts live in `:feature:progress/ui/shared/`: `DayBarChart` (zero-based) and `RangeBarChart`
-(floating bars).
+Charts live in `:feature:progress/ui/shared/components/`: `DayBarChart` (zero-based) and
+`RangeBarChart` (floating bars).
 
 ## Localization scaffolding
 

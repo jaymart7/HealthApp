@@ -335,7 +335,17 @@ a duration that hasn't picked a side.
 - **220ms — State.** A routine state change, and *every* exit. Exits are never slower than the
   entrance that preceded them.
 - **300ms — Enter.** Something joining or leaving the layout.
-- **450ms — Settle.** Reserved. Exactly one thing in the app is allowed it: Home's calorie ring.
+- **450ms — Settle.** Home's calorie ring, and nothing else.
+
+Three constants sit beside the durations in the same file, because they are the same kind of
+decision — a number no call site may invent:
+
+- **`StaggerStep` (40ms) / `StaggerCap` (5)** — the delay between Home's rows on entry, and the
+  index past which every row shares the last delay, so the curtain can't grow as the screen
+  gains cards.
+- **`ActiveStepScale` (1.08)** — how much larger an active step of a meter sits than an inactive
+  one. A second channel beside colour and the filled/outlined glyph, so the state reads without
+  relying on hue alone.
 
 Easings are Material 3's published curves, written out in `Motion.kt` — `Standard`,
 `EmphasizedDecelerate` for confident arrivals, `EmphasizedAccelerate` for exits. No bounce, no
@@ -343,9 +353,11 @@ elastic; the system is unhurried, and things settle rather than spring.
 
 ### Named Rules
 
-**The One Authored Moment Rule.** The calorie ring's sweep is the app's only authored entrance.
-Everything else that moves is explaining feedback, a state change, or a spatial relationship. A
-second 450ms flourish anywhere would spend the ring's meaning, not add to it.
+**The One Settle Rule.** `Settle` (450ms) is the calorie ring's alone. Home's card entrance is
+the app's second authored moment, and it deliberately doesn't reach for the ring's duration: it
+is `Enter` (300ms) plus a `StaggerStep` delay per row, which reads as a curtain rather than a
+flourish. A second 450ms anywhere would spend the ring's meaning, not add to it. Everything else
+that moves is explaining feedback, a state change, or a spatial relationship.
 
 **The Motion-Marks-Change Rule.** Animate what *changed*, never what merely exists. The badge dot
 that just turned earned animates; five badges already earned when the screen opens simply draw.
@@ -363,8 +375,13 @@ one telling the truth — the ring catches up to the number, never the other way
 `State<Float>` down instead of a `Float` is how that gets enforced at the call boundary. The one
 sanctioned exception is a leaf `Icon`'s `tint`, which has no draw-phase equivalent.
 
-**The No Loops Rule.** Nothing animates at rest. No idle mascot, no pulsing accent, no shimmer.
-Every animation in the app is triggered by a state change and ends.
+**The One Loop Rule.** Exactly one thing in the app animates at rest, and it is the mascot.
+`MascotAvatar` runs a single `rememberInfiniteTransition` with two channels — a blink and a bob,
+kept separate because they share no period — phase-offset per instance so the picker's grid
+doesn't blink in lockstep, and frozen in previews. Every state
+reads that one phase and **every channel rests at `1f`**, which is what lets a still mascot be
+the same drawing as a moving one. Nothing else loops: no pulsing accent, no shimmer, no
+breathing card. Every other animation in the app is triggered by a state change and ends.
 
 **The Remove-Animations Rule.** All motion is expressed through Compose's animation APIs, never a
 hand-rolled `LaunchedEffect` + `delay`. Android's recomposer carries a `MotionDurationScale` from
@@ -433,7 +450,7 @@ glyphs. **No other detail is added at any size.** The mascot is the app's only i
 its entire vocabulary; the final illustration is still outstanding and these geometric forms are
 the placeholder standing in for it.
 
-Five characters, picked in Profile → Appearance. Each varies on **four axes** — silhouette, fill
+Five characters, picked in Settings → Appearance. Each varies on **four axes** — silhouette, fill
 pair, eyes and one accent — because two characters differing only in outline read as the same
 character badly drawn. What every one shares is the **mouth geometry and the five states**, so a
 state reads identically whichever buddy is chosen and no character carries a meaning of its own:
@@ -462,6 +479,24 @@ lets an antenna or an ear sit *above* the head (`topInset`/`sideInset` carve the
 Rui's are zero so it fills its box exactly as it always did) with nothing slicing the
 Celebrating sparkles. The picker marks the selected buddy with a `secondaryContainer` cell rather
 than an outline, since there is no per-character `Shape` to trace any more.
+
+**The fifth axis is colour, and it is the one place in the app that computes one.** A buddy's
+fill is a `MascotPalette`: five entries read straight off the scheme — **Soft**
+(`primaryContainer`, the default), **Bold** (`primary`), **Muted** (`secondary`), **Contrast**
+(`inverseSurface`, the one pair that inverts with the theme) and **Neutral**
+(`surfaceContainerHighest` with `primary` features) — plus thirty hues in fifteen families of
+two, a pale tier and a vivid one (Blush/Red, Peach/Orange, … Rose/Crimson). Thirty-five swatches,
+picked from a sheet off Settings → Appearance and travelling as `LocalMascotPalette`.
+
+The thirty are the **only** sanctioned exception to the no-inline-hex rule, and they earn it by
+taking part in no scheme: a mascot fill is decorative, nothing else is drawn from it, and a
+contrast swap has nothing to say about it. They are still not hexes — a colour here is one hue
+angle through `Color.hsl()`, with the two tiers separated by *saturation* rather than lightness
+(`PALE_SATURATION` 0.58 against `VIVID_SATURATION` 0.92) so a pale buddy is not a near-miss of
+its vivid twin. Neither tier may go
+dark, because a mascot is drawn on `surface` in either scheme — which is what lets one near-black
+face serve all thirty. `MascotPaletteTest` sweeps every pair at ≥ 4.5:1 and is what stops the
+next tune of those five constants flattening a face into its head.
 
 ### Signature: `MacroBar`
 

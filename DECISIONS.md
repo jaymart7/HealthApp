@@ -5,11 +5,23 @@ The decision log. Each entry was argued once and is easy to "fix" back into a bu
 binding and holds the constraints; this file holds the reasoning behind them.
 `FEATURES.md` says what ships.
 
+**Areas:** Streak & badges · The day's calorie budget · The diary & sharing a day · Camera,
+barcode & Open Food Facts · Meal photos · Food search, the diary filter & history · The
+add-entry form & the review screen · Theme, mascot & colour · Home · Progress, recap & the
+energy check-in · Saved meals, recipes & the food library · Nutrients · Targets & editing an
+entry · Fasting · Export, backup & reminder plumbing · Launcher shortcuts & the quick-action
+sheet · Reminders & notifications · Widget & Wear · AI — the coach & the daily insight ·
+Training, strength & routines · Meal ideas & talk-to-log · Blood pressure, BMI & measurements ·
+Cycle · Progress photos & timelapse · Supplements · Steps, activity & charts · Adaptive layout ·
+Profile & Settings · Health Connect · Google Health · Localization.
+
 ---
 
 ## Decisions that aren't obvious from the code
 
 Keep these — each one was argued once and is easy to "fix" back into a bug.
+
+### Streak & badges
 
 - **Streak:** a grace day (today still empty counts back from yesterday), and
   badges are earned off the *best* run, so breaking a streak never un-earns one.
@@ -31,6 +43,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   not the ruled-out celebration. *ponytail: days-logged and workouts ride windowed inputs — a dense
   year of nutrition, a rolling year of exercise — so both stop well inside a year; a `COUNT(*)`
   flow on the two DAOs is the upgrade path if that ever grates.*
+
+### The day's calorie budget
+
 - **`budgetKcal()` is the only place burned calories fold into the day**, and
   `Profile.addExerciseToBudget` (default on) can switch that credit off —
   `calculateDailyTargets()` already applies an activity multiplier, so crediting
@@ -38,6 +53,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   target itself is never touched.
 - **Estimated burn stops re-estimating** (MET × kg × hours) once the user edits
   the kcal field by hand.
+
+### The diary & sharing a day
+
 - **Diary date navigation:** forward stepping stops at today (there are no
   planned meals), and system back from a past day returns to today rather than
   leaving the tab.
@@ -67,6 +85,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   can tell one past-day log from another. Forward-dating is still absent: the diary
   never steps past today, and there are no planned meals. The day comes from the
   screen you left, never from a control on a viewfinder.
+
+### Camera, barcode & Open Food Facts
+
 - **Both viewfinders carry a gallery door and a manual door** (`ViewfinderActions`, in
   `:feature:food`'s `ui/shared/components/` because the two flows share it). A picked image runs
   the pipeline its screen's live camera runs — `decodeRotatedBitmap(context, uri)` then
@@ -189,6 +210,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   gets **no** new camera door. The bitmap goes down to the repository rather than a path coming up
   from the UI, because where a plate lives, what it is scaled to and how many are kept are all
   `:core:data`'s to know — the same division `ProgressRepository.addPhoto` already draws.
+
+### Meal photos
+
 - **The photo survives an edit, and that is what `AddEntryForm.photoPath` is for.** Correcting a
   logged row *supersedes* it — soft delete plus a fresh insert — so the entry is rebuilt from the
   form every time, and a form that didn't carry the path would silently drop the plate on a
@@ -224,6 +248,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **`rememberBitmapFromFile` moved to `:core:designsystem`.** Two features draw stored photos now,
   and a second decoder is a second downsampling rule to keep in step. Nothing about it changed but
   its package and one more size constant (`THUMB_PX`, for the diary row's 40dp tile).
+
+### Food search, the diary filter & history
+
 - **Food search is a list shipped in the APK, not an API call.** `COMMON_FOODS` in
   `:core:data/food/CommonFoods.kt` is ~120 hand-written staples, per 100 g like every FDC row, and
   `searchCommonFoods()` is a case-insensitive substring over it — pure data, no table, no
@@ -301,6 +328,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   still `emptySet()` for the reason the sheet gave: dots would cost a query the diary never makes.
   The add sheet is unchanged and still a sheet — its panels and form are built for a sheet's
   scroll, and nothing about a wider window changes that.
+
+### The add-entry form & the review screen
+
 - **The form's four figures are nullable; the store's are not, and that split is the point.** A
   `FoodEntry` cannot tell a zero from an unknown — `Nutrients` says so at its own definition and
   reports coverage alongside instead — but `AddEntryForm` can, because it knows whether anything
@@ -396,6 +426,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   that name so every quick add doesn't collapse into one meaningless row eating a
   `MAX_SUGGESTIONS` slot — which is also why the suggestion panel's one-tap re-log callback is
   `onLogAgain`, not `onQuickAdd`.
+
+### Theme, mascot & colour
+
 - **`Profile.darkThemeOn` is nullable and null means follow the device.** A plain `false`
   default would force light on a phone already in dark mode; the Profile switch resolves it
   with `darkThemeOn ?: isSystemInDarkTheme()`, the same expression `MainActivity` uses to pick
@@ -536,6 +569,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   face geometry added, and like the mouth they are **shared across every buddy** — arched for
   Happy/Celebrating, one raised for Thinking, absent for Idle and Sleepy, so no character can come
   to mean something a state does not.
+
+### Home
+
 - **The Home card order is one nullable String on `Profile`, not a `home_card` table.**
   `homeLayout` holds the card names in display order with a `-` prefix on the hidden ones, and
   `homeCardLayout()`/`encodeHomeCardLayout()` in `:core:designsystem` are the only things that read
@@ -639,6 +675,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   the row would both delay the gesture and compete with the list's scroll), and every row carries
   **Move up / Move down** accessibility actions, because a drag nobody using TalkBack can perform
   is not a control.
+
+### Progress, recap & the energy check-in
+
 - **Every recap window is rolling-and-ending-today**, never a calendar week or month — a calendar
   week reports a half-empty Monday. The card is *hidden* when nothing was logged in the window
   rather than rendering zeros, and its "days logged" uses the streak's four-domain definition
@@ -833,6 +872,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   switch and the screen it lives on and changes nothing itself — the warn-and-point shape
   `HomeCard.note` uses. *ponytail: no Home card, no coach field, no reminder and no history of past
   adjustments — nothing is stored, so there is nothing to chart.*
+
+### Saved meals, recipes & the food library
+
 - **A saved meal is a snapshot, not a live link.** Saving copies the section's entries into
   `saved_meal`/`saved_meal_item`; editing or deleting the original diary rows never touches it,
   and deleting the saved meal never touches what was logged from it. Re-logging always writes
@@ -912,6 +954,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   against 30 g. The factor applies to the *current* pair rather than a remembered original, so
   there is no seed to carry and a run of stepper taps stays within a unit of the one-shot answer.
   A zero starting portion has no price-per-unit, so the amount moves alone.
+
+### Nutrients
+
 - **~~Fiber, sugar and sodium are reported, never graded.~~ Seven nutrients, all graded.** The old
   entry's reason was specific and it no longer holds: *"there is nothing on the profile to derive a
   fiber goal from."* There is. The DRIs are published as a function of **sex and age band**, and the
@@ -993,6 +1038,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   takes iron in milligrams and converts, so a reference table's number is typed once as printed
   rather than multiplied by hand 118 times. Rows with no figure stay at 0, which is what the
   coverage line is for.
+
+### Targets & editing an entry
+
 - **Targets are editable from Profile, and a manual calorie target reprices the split.** The four
   `Profile` overrides used to be reachable only from onboarding's Confirm step, which left a user
   who wanted a different target with no path but a reinstall — Goals is now an editable card, like
@@ -1044,6 +1092,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   bar up put a "Log food" FAB over it and let a tab tap walk away from a half-written recipe
   without the discard question `NavigationBackHandler` asks. The camera flows want one thing more
   than that, which is why `fullBleed` is a separate test beside it.
+
+### Fasting
+
 - **A fast is a session, not a day.** Fasts cross midnight by design, so `fast_session` holds
   `startMillis`/`endMillis` rather than an epoch day, and `endMillis IS NULL` *is* the active-fast
   marker — no status column, no "currently fasting" flag on the profile, so the two can never
@@ -1075,6 +1126,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `updatePeriodMillis` is 30 minutes, so "14h 20m" would be wrong for up to half an hour after every
   redraw; "Fasting until 12:30" is computed once and stays true. Home's card, which *can* tick, runs
   a 1-second ticker only while a fast is open and reads it inside a draw lambda.
+
+### Export, backup & reminder plumbing
+
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.
@@ -1113,6 +1167,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   database. The one exclusion is `progress_photos/` from the cloud copy — the only thing that can
   blow the 25 MB cap, and the thing the export has never carried either. `device-transfer` is
   absent on purpose: it has no cap, so the photos should ride along.
+
+### Launcher shortcuts & the quick-action sheet
+
 - **Launcher shortcuts are static resources, never `ShortcutManager` dynamic ones.** A dynamic
   shortcut needs code that runs to publish it and state to keep it in step with what it points at;
   a static one is a resource the launcher reads, and nothing in the four varies per user. A
@@ -1154,6 +1211,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `flags`, so the notification's `FLAG_ACTIVITY_CLEAR_TOP` has no shortcut equivalent; without
   `singleTop` a shortcut tapped on a running app would stack a second `MainActivity` instead of
   reaching `onNewIntent`. It is also what makes that method's comment true for both callers.
+
+### Reminders & notifications
+
 - **Only the water reminder gets an action button, and answering it cancels it.** `addGlass()` is a
   single unambiguous write already shared with the widget and the watch, so a fourth surface caps
   at the same goal for free; "Log breakfast" has no single write — it needs the sheet, and a button
@@ -1192,6 +1252,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `workoutRemindersOn` landed on `Profile` after v15 shipped and was simply missed, so a restored
   backup silently lost a training-day switch the user had set. Both are defaulted, so a v15 file
   still imports — the rule every addition follows.
+
+### Widget & Wear
+
 - **The home-screen widget lives in `:app`, for the same reason reminders do** — a widget is a
   system surface, not a screen. It reads the repository interfaces directly (no ViewModel; there
   is no Compose lifecycle to hold one) and gets them from Koin's global context via
@@ -1263,6 +1326,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   and the two listener services do not, because they are system surfaces. Its `applicationId` and
   version must move with `:app`'s — that is what pairs the two halves rather than shipping two
   products — and it is signed with the same key.
+
+### AI — the coach & the daily insight
+
 - **The coach and the daily insight describe the same day, in one place.** `InsightRequest` is
   the *only* payload either sends — the goal, the calorie/macro/water gaps, the streak and the
   weekly weight delta, still never age, sex, height, absolute weight, name or email. `insightFor()`
@@ -1399,6 +1465,8 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   The `useAppLanguage()` call went with the rest: the
   `Ignoring header X-Firebase-Locale because its value was null` log it silenced comes from
   `firebase-auth`'s own GMS plumbing, which is no longer here to emit it.
+
+### Training, strength & routines
 
 - **A strength workout is an `ExerciseEntry` with sets, not a second kind of thing.** One table for
   the workout, one child table for the sets, and `sets.isEmpty()` is what says "cardio" — the
@@ -1554,6 +1622,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   recent and a search hit already have, so the feature adds no write path at all. The button sits
   *above* the sheet's four panels because it answers a different question — they are faster ways to
   log something already decided on.
+
+### Meal ideas & talk-to-log
+
 - **`MealIdeaRequest` is a second payload off the device, and it is narrower than the first.**
   `InsightRequest` describes the whole day (water, streak, the week's weight delta) because a
   one-line nudge can be about any of it; an idea can only be about the gap it fills, so a payload
@@ -1622,6 +1693,8 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   rule the supplements card follows — a control that can't answer shouldn't be there. The budget it
   spends is `budgetKcal()` over `dayBurnedKcal()`, the *same* arithmetic the diary's summary bar
   draws, so the screen can never offer more calories than the bar above it says are left.
+
+### Blood pressure, BMI & measurements
 
 - **A blood pressure reading is a reading, not a day.** `blood_pressure_reading` holds
   `takenAtMillis` per row, because morning and evening readings are the entire point and a
@@ -1723,6 +1796,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   takes the flag, and both the grid *and* the detail page's sibling switcher read it — a page
   offering a door to a subject the overview has removed is the failure that pairing prevents. The
   Home card is gated the same way, inside its own `when` branch like every other data gate there.
+
+### Cycle
+
 - **No fertile window, no ovulation date, ever.** This app names things and reports numbers; it does
   not advise — and a fertile window derived from a mean cycle length is a contraception claim it
   cannot stand behind. `cyclePrediction()` reports one thing: the next start, the average it was
@@ -1778,6 +1854,8 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   a delete), and the sheet says so under the chips. Home stays today-only and read-only beyond the
   one tap — the history and the symptoms belong where a date picker can live.
 
+### Progress photos & timelapse
+
 - **A timelapse is a way of looking at the grid, not a thing to store.** `TimelapseScreen` plays
   `uiState.photos` (already ascending by date, already combined) in place — no schema, no
   repository, no ViewModel, the `badgeGroups()` and `goalProjection()` shape — which is also why it
@@ -1826,6 +1904,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   a count out of N, which is what makes the Home row a counter rather than a checkbox. One tap
   advances a dose and wraps to zero at the target, so both shapes share one gesture and a mis-tap
   is corrected by the gesture that made it — the same call `MoodCard`'s rows make.
+
+### Supplements
+
 - **`supplement_day.dueTimes` is snapshotted at write time and never re-read.** Dropping a
   supplement from twice daily to once next month must not turn a past day that read "2 of 2" into
   "2 of 1" — the rule `fast_session.goalHours` and `step_day.burnedKcal` already follow. The
@@ -1863,6 +1944,9 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   notification already pending on a device. It rides `checksSupplements`, the third flag of its
   kind, and stays quiet both when everything is already ticked *and* when the list is empty — a
   reminder about an empty list is a nudge to open a screen with nothing on it.
+
+### Steps, activity & charts
+
 - **The step goal is current-only, and that is the opposite call to `fast_session.goalHours`.**
   `Profile.stepGoal` (nudge-only over `STEP_GOAL_STEPS`, on Profile → Exercise beside the budget
   switch) is *not* snapshotted per day, so raising it re-scores every past day's "hit". Forced,
@@ -1884,6 +1968,60 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   which is deliberately not zero-based. Mood, Nutrition and Supplements keep their own canvases —
   two series with a legend, a target line over a dense series, and percentages. A fifth near-copy
   of the same `Canvas` is the thing to avoid, not a fourth parameter on `DayBarChart`.
+
+### Adaptive layout
+
+The binding shape — the two breakpoints, what each one does, and `ProfileDetailRoutes` —
+is `CLAUDE.md` → **Window width**. These are the calls behind it.
+
+- **`NavRail` is `BottomNavBar`'s sibling in `:core:designsystem`, not a `when` inside it.** Same
+  `BottomNavItem` list, index and callback, same `secondaryContainer` pill — one bar rotated, not a
+  second design — and `AppScaffold` picks. Deliberately **not**
+  `NavigationSuiteScaffold`: that artifact is not on the classpath, and its M3 defaults would
+  replace the hand-drawn pill, which is a phone-visual regression for a tablet feature. The docked
+  FAB moves into the rail *collapsed* — an extended FAB does not fit 80dp, and
+  `rememberFabExpanded` is a scroll affordance a rail has nothing to say about. The rail's tabs sit
+  in a `weight(1f)` column arranged `SpaceEvenly`, because the window that is wide is usually the
+  one that is short: a landscape phone is ~410dp tall and a fixed stack put the fourth tab off the
+  bottom edge.
+- **`showsTabChrome` is a pure function, and `beneath` is what keeps it honest.** A tab always
+  wears the rail/bar and the FAB; so does a Profile detail at two-pane width, because its tab root
+  is still on screen beside it. The five routes that qualify are one `ProfileDetailRoutes` set read
+  by *both* the pane metadata and the chrome rule, so the scene and the chrome cannot disagree —
+  and the entry beneath must be `ProfileRoute`, so Health Connect's rationale intent landing on the
+  Home tab stays single-pane. It is the one branch here a JVM test can reach, and `TabChromeTest`
+  is that test.
+- **The top bar is *not* folded into that rule.** In a two-pane Profile it spans both panes, names
+  the detail and keeps its back arrow — back is the only way to dismiss a pane back to its
+  placeholder. That is a deliberate departure from the `adaptive` skill's "no back arrow in a
+  list-detail layout", which assumes the list is the way out.
+- **`BackNavigationBehavior.PopLatest`, never the default.** Closing a Profile detail leaves the
+  list beside its placeholder, which is *still* a two-pane scaffold value, so
+  `PopUntilScaffoldValueChange` keeps popping and back walks out of the tab. One press is one
+  entry, which is what `NavDisplay`'s `onBack` (`TopLevelBackStack.removeLast()`) already means.
+- **Profile is a Nav3 list-detail scene; Progress is a `Row`.** Profile's five sub-routes are real
+  nav entries, so they take `ListDetailSceneStrategy` metadata — the skill's binding call, and
+  `shouldHandleSinglePaneLayout = false` plus gating `sceneStrategies` on the expanded breakpoint is
+  what leaves narrow windows on the path they were already on. Progress cannot: its detail is a
+  swap-in over `selectedSubject`, and routing it to earn a scene would buy a second
+  `ViewModelStoreOwner` and a second copy of twelve repositories — the exact thing the swap-in was
+  chosen to avoid. So the tab draws its own two panes and `SubjectDetail` takes an `embedded` flag:
+  no back handler and no back arrow, because a pane beside its own list is not a level.
+- **The diary's second pane is the calendar, and it is 320dp wide, not weighted.** The swap-in
+  `FoodScreenState.calendarOpen` opens in a sheet was named as the pane that would earn one, and it
+  has: at expanded width `FoodContent` draws `CalendarPanel` beside the day rather than over it.
+  Fixed width is where this departs from Progress's weights, and the reason is what is *in* the
+  pane — a month grid is seven fixed 44dp cells, so every weighted pixel goes into spreading them
+  apart, while Progress's card grid and its charts both use what they are given. The day itself is
+  unchanged at both widths: still one scrolling column, still one `FoodViewModel`, no route, nothing
+  new saved. Two consequences that are not optional — `DiaryDateHeader` takes a **nullable**
+  `onOpenCalendar` and drops the chevron with the tap target when the pane is drawn (a door onto
+  what is already on screen is a lie), and `FoodContent` clears `calendarOpen` on becoming
+  two-pane, or unfolding mid-sheet leaves a sheet over its own calendar.
+- **Home and the camera flows stay one pane at every width.** A two-pane Home would need
+  a second card order to author and `Profile.homeLayout` stores one; `fullBleed` is unchanged,
+  because a viewfinder beside a list is not a viewfinder. Single columns are **not** width-capped
+  either — that is a visual-design decision and this work is layout only.
 
 ### Profile & Settings
 
@@ -2116,6 +2254,80 @@ Connect.
 - **Two ViewModels, not one shared.** `:feature:onboarding` and `:feature:profile` each own their
   slice of `HealthSyncRepository`; `:feature:*` modules never import each other, and only the
   disclosure UI is genuinely common.
+
+### Localization
+
+The rules that bind are `CLAUDE.md` → **Localization**. These are the arguments behind them.
+
+- **`./gradlew checkUiLiterals` is the gate, and stock lint is not.** `HardcodedText` scans XML
+  layout resources; this app has none, so it would pass clean on a module with three hundred
+  Kotlin literals. The task in the root build greps every module in `localizedModules` for a
+  capitalized literal in a copy-carrying argument (`text =`, `label =`, `contentDescription =`,
+  and the rest) and skips preview fixtures — a `fun *Preview()` body or a `val PREVIEW_*` block,
+  debug-only sample data no translator reads. A module joins the list in its own commit.
+- **A positional literal is copy too, and three more patterns say so.** `StatRow("Systolic", …)`
+  carries a name and is not a named argument, which is how thirteen empty-state pages stayed
+  English through the pass that was supposed to have converted them — the named rule ran clean over
+  every one. So the gate also flags a literal opening an argument (`("Cap`), a literal alone on its
+  own line (the multi-line-constructor shape), and a `when` branch returning one (`-> "Cap"`).
+  Those three run **only** where copy lives — a `ui/` tree or `:core:designsystem`'s `component/` —
+  because `("Branded"` reads identically in a Room query, an AI prompt or a request header, and
+  scoping the rule was cheaper than allowlisting every file that holds one. `error()` and
+  `require()` lines are skipped: an exception message is not copy. `literalExceptions` in the root
+  build is the six files whose English is a decision recorded at its own definition, one name per
+  line, and it is the only place the gate can be argued with. *ponytail: still a line-based grep,
+  not a parser — a literal split across lines, or one starting with a template (`"$n tracked"`),
+  slips through, and a Compose lint rule is the upgrade path.*
+- **Keys are `<module>_<screen>_<thing>`,** flat, lowercase. Enough to grep, not a taxonomy.
+- **A resource id is never a `const val`.** A library module's R fields are runtime values, and
+  `const` inlines the placeholder `0` — which is a `Resources$NotFoundException: String resource
+  ID #0x0` at the call site, not a compile error. Three of these shipped into a crash on Profile
+  before the device run caught them. `@StringRes val`, always.
+- **Composables resolve; ViewModels name.** A `message` field that crosses a ViewModel boundary
+  carries an `@StringRes Int` (onboarding's health step, the coach's `CoachFailure.reason`) — or,
+  where the message has arguments the screen cannot work out for itself, a small type the screen
+  turns into words (`HealthMessage`). No Context reaches a ViewModel. A string built in a
+  coroutine or a permission callback is the exception, and reads through `LocalContext`.
+- **A semantics lambda cannot read a resource**, so every `contentDescription` inside
+  `clearAndSetSemantics {}` is resolved one line above it. That is a dozen call sites and the
+  pattern is uniform on purpose.
+- **Weekday names come from `DateFormatSymbols`, not a resource array.** The stdlib already has
+  them per locale, so `weekdayNames()`/`weekdayShort()`/`weekdayInitials()` in
+  `:core:data/exercise/TrainingPlan.kt` replaced three English lists and there is nothing to
+  translate. They index from Sunday and this app counts from Monday — `WeekdayNamesTest` is the
+  guard, because getting it wrong rotates every routine's plan by a day.
+- **`:core:data` has a `strings.xml`, and that is not a layering breach.** Six enums there
+  (`ChartRange`, `MoodLevel`, `ExerciseType`, `BloodPressureCategory`, `FlowLevel`,
+  `CycleSymptom`) carry labels a feature renders, and `:core:designsystem` has no dependency on
+  that module — so the alternative was the same six lists copied into every feature that draws a
+  chip. `CALORIE_FLOOR_WARNING` lives there for the reason it always did: one safety warning, three
+  screens.
+- **Display names live where the enum's `name` is not the display name.** `MealType.labelRes()`
+  sits in `:feature:food/ui/shared/`, `ActivityLevel.label()` in `:feature:profile`, the four tab
+  names in `:app` — because each enum's `name` is a stored token (a diary row, an export field, a
+  profile column) and six screens were printing it at the user. `:core:navigation` lost
+  `TopLevelDestination.label` outright: a leaf module with no resources has nowhere to put one.
+- **What stays in Kotlin, each commented at its definition.** Two rules, and only two.
+  **Persisted or compared:** `QUICK_ADD_NAME`, the `COMMON_FOODS` names (`searchFoods()` dedupes
+  on them), portion units (`portionStep` switches on `"g"`/`"oz"`/`"cup"`/`SERVING_UNIT`), every
+  enum `name`, `HomeCard`'s stored layout format, Room queries, Data Layer paths, `@SerialName`s,
+  intent extras. An imported workout's fallback name takes `ExerciseType.name` for the same
+  reason — a resource would freeze the import-time language into a row that outlives it.
+  **Pure functions with a JVM test over their wording:** `insightFor()`, `goalProjectionLine()`,
+  `:feature:home`'s `greetingFor`, `:feature:progress`'s
+  `summarize()` and `captionFor()`, `:feature:food`'s `diaryDateLabel` ("Today"/"Yesterday"), and
+  `:core:data/exercise/Strength.kt`'s three label functions (`loadLabel`, `summaryLabel`,
+  `LiftPerformance.label` — "Bodyweight × 20", "3 sets", "Last: 60 kg × 8"). Converting those means
+  returning a case type per branch for a composable to resolve, or handing a non-composable a
+  `Context` for a noun and a plural; that is one decision, not eight, and it has not been taken —
+  the test is what earns each of them the exemption, so a label without one gets a test rather than
+  a comment. Also staying: AI prompts (the model reads them in English), `Reminder.title`/`body`,
+  `MascotCharacter`'s five proper names, `parseExport`'s `require()` message and the import
+  fallback beside it (an exception's text is an exception's text), and unit symbols — kg, lb, cm,
+  in, kcal, g, mg are not copy.
+- **A test that asserted wording now asserts the rule.** `FoodLibraryDataTest` checks the totals,
+  the per-serving division and the portion's dropped trailing zero rather than the sentence the
+  resource now owns. Nothing it covered was lost.
 
 ## Considered and declined
 
