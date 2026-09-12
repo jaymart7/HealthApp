@@ -31,6 +31,7 @@ import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.progress.weightArc
 import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.supplement.SupplementToday
@@ -167,6 +168,8 @@ class HomeViewModel(
                 foodEntryCount = entries.size,
                 weightEntries = weightEntries,
                 lastPhotoEpochDay = photos.maxOfOrNull { it.dateEpochDay },
+                photoCount = photos.size,
+                photoArc = photos.weightArc(),
                 waterGlasses = waterGlasses,
                 waterGoalGlasses = profile?.waterGoalGlasses ?: DEFAULT_WATER_GOAL_GLASSES,
                 fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,

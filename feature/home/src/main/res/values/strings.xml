@@ -134,6 +134,14 @@
         <item quantity="one">Last photo %1$d day ago</item>
         <item quantity="other">Last photo %1$d days ago</item>
     </plurals>
+    <plurals name="home_photo_shots">
+        <item quantity="one">%1$d shot</item>
+        <item quantity="other">%1$d shots</item>
+    </plurals>
+    <plurals name="home_photo_arc">
+        <item quantity="one">%1$s %2$s in %3$d day</item>
+        <item quantity="other">%1$s %2$s in %3$d days</item>
+    </plurals>
     <string name="home_photo_cta">Take one</string>
 
     <!-- The one door from Home to Profile - Home layout; the block is undiscoverable otherwise. -->

@@ -607,6 +607,18 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 
 ### Home
 
+- **The photo card reports the run, and `weightArc()` sits in `:core:data` because two features
+  draw it.** Home's card counted the days since the last shot and said nothing about the shots
+  themselves, while `HomeViewModel`'s first combine was already collecting the whole list and
+  keeping only its newest date. It now carries the count and the oldest-to-newest weight across the
+  shots that have one — the same figure the Progress tab's Photos card reports, folded once in
+  `:core:data/progress/` rather than twice: `:feature:*` modules never import each other, so a
+  feature-local copy on each side is two answers to one question waiting to diverge. The line on
+  Home is deliberately **uncoloured**, which is where it differs from the Progress card: the arrow
+  carries direction, but the weight card on this same screen already prints the goal-relative
+  verdict on that movement, and a second coloured one would be Home grading one number twice.
+  `StatusMark`'s KDoc already put photos among the subjects with no verdict of their own, and that
+  stays true — the card still wears no dot, because the *cadence* has no target to miss.
 - **The Home card order is one nullable String on `Profile`, not a `home_card` table.**
   `homeLayout` holds the card names in display order with a `-` prefix on the hidden ones, and
   `homeCardLayout()`/`encodeHomeCardLayout()` in `:core:designsystem` are the only things that read

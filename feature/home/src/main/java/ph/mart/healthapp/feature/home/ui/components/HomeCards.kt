@@ -344,6 +344,9 @@ private fun HomeCardContent(
 
         HomeCard.ProgressPhoto -> ProgressPhotoReminderCard(
             daysSinceLastPhoto = daysSincePhoto(uiState.lastPhotoEpochDay, todayEpochDay()),
+            photoCount = uiState.photoCount,
+            arc = uiState.photoArc,
+            unit = unit,
             onTakePhoto = onAddPhoto,
             wide = wide,
             modifier = modifier,

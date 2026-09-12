@@ -30,9 +30,9 @@ import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
-import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.toDisplay
 import ph.mart.healthapp.core.data.progress.unitLabel
+import ph.mart.healthapp.core.data.progress.weightArc
 import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.supplement.adherenceByDay
 import ph.mart.healthapp.core.data.supplement.averageAdherence
@@ -383,18 +383,6 @@ fun summarizeAll(uiState: ProgressUiState, todayEpochDay: Long): Map<Subject, Su
 /** Latest minus the reading before it, or null when there is only one — the reading
  * `MeasurementRow` gives a single entry, rather than a false 0.0. In stored units, so the caller
  * converts it through the part like every other figure on the card. */
-/** Kilograms gained or lost between the oldest and the newest photo that carry a weight, and the
- * days between the two — null unless two shots do and they fall on different dates. The field is
- * optional on a shot (the Add photo sheet's stepper opens at none), and a delta "over 0 days" is
- * not a change over time. */
-private fun List<ProgressPhoto>.weightArc(): Pair<Double, Long>? {
-    val weighed = mapNotNull { photo -> photo.weightKg?.let { photo.dateEpochDay to it } }
-        .sortedBy { (day, _) -> day }
-    val (firstDay, firstKg) = weighed.firstOrNull() ?: return null
-    val (lastDay, lastKg) = weighed.last()
-    return if (lastDay == firstDay) null else (lastKg - firstKg) to (lastDay - firstDay)
-}
-
 private fun List<MeasurementEntry>.delta(): Double? =
     if (size >= 2) last().value - this[size - 2].value else null
 

@@ -58,6 +58,27 @@ data class ProgressPhoto(
     val weightKg: Double? = null,
 )
 
+/** What a run of progress photos adds up to: kilograms gained or lost between its ends, and the
+ * days between them. */
+data class PhotoWeightArc(val deltaKg: Double, val days: Long)
+
+/**
+ * The arc between the oldest and the newest photo that carry a weight — null unless two shots do
+ * and they fall on different dates. The field is optional on a shot (the Add photo sheet's stepper
+ * opens at none), and a delta "over 0 days" is not a change over time.
+ *
+ * Here rather than beside either card that draws it: Home's `ProgressPhotoReminderCard` and the
+ * Progress overview's Photos card both report this run, `:feature:*` modules never import each
+ * other, and two folds would be two answers to one question.
+ */
+fun List<ProgressPhoto>.weightArc(): PhotoWeightArc? {
+    val weighed = mapNotNull { photo -> photo.weightKg?.let { photo.dateEpochDay to it } }
+        .sortedBy { (day, _) -> day }
+    val (firstDay, firstKg) = weighed.firstOrNull() ?: return null
+    val (lastDay, lastKg) = weighed.last()
+    return if (lastDay == firstDay) null else PhotoWeightArc(lastKg - firstKg, lastDay - firstDay)
+}
+
 enum class ChartRange(@StringRes val label: Int, val days: Int?) {
     OneMonth(R.string.data_chart_range_1m, 30),
     ThreeMonths(R.string.data_chart_range_3m, 90),

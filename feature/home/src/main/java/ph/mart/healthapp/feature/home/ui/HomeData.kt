@@ -13,6 +13,7 @@ import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightRequest
 import ph.mart.healthapp.core.data.profile.Profile
+import ph.mart.healthapp.core.data.progress.PhotoWeightArc
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
@@ -38,6 +39,11 @@ data class HomeUiState(
     val foodEntryCount: Int = 0,
     val weightEntries: List<WeightEntry> = emptyList(),
     val lastPhotoEpochDay: Long? = null,
+    val photoCount: Int = 0,
+    /** What the photos add up to, or null until two of them carry a weight — see `weightArc()`.
+     * Derived in the container rather than held as the list: the card is the only reader, and
+     * [lastPhotoEpochDay] beside it is what the rest of this file asks the photos for. */
+    val photoArc: PhotoWeightArc? = null,
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     /** Today's reflection, 1-5 each; 0 means the user hasn't tapped that row. */

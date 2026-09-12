@@ -111,7 +111,8 @@ fun WeightMetricCard(
     }
 }
 
-private fun formatWeight(value: Double): String =
+/** Shared with `ProgressPhotoReminderCard`, which prints a weight under the same rule. */
+internal fun formatWeight(value: Double): String =
     if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
