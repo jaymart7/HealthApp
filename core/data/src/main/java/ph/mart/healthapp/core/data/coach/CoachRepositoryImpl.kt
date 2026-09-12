@@ -45,7 +45,6 @@ internal class CoachRepositoryImpl(private val dao: ChatMessageDao) : CoachRepos
     override fun send(question: String, request: InsightRequest?): Flow<CoachReply> = flow {
         val model = Firebase.ai(
             backend = GenerativeBackend.googleAI(),
-            useLimitedUseAppCheckTokens = true,
         ).generativeModel(
             modelName = AI_MODEL_NAME,
             generationConfig = generationConfig {
