@@ -39,7 +39,6 @@ import ph.mart.healthapp.feature.progress.ui.heart.components.HeartDetailBody
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsDetailBody
 import ph.mart.healthapp.feature.progress.ui.mood.components.MoodDetailBody
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionDetailBody
-import ph.mart.healthapp.feature.progress.ui.photo.components.PhotosDetailBody
 import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureDetailBody
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
@@ -53,11 +52,12 @@ import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsDe
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightDetailBody
 
 /**
- * Photos draws a `LazyVerticalGrid` and Blood pressure a `LazyColumn`; nesting either in a
- * `verticalScroll` column measures it with infinite height and throws. They own their scroll, so
- * the page gives them the room and keeps the switcher off the bottom of it.
+ * Blood pressure draws a `LazyColumn`; nesting one in a `verticalScroll` column measures it with
+ * infinite height and throws. It owns its scroll, so the page gives it the room and keeps the
+ * switcher off the bottom of it. Photos was the other member and left this set entirely when it
+ * became a route of its own.
  */
-private val SelfScrolling = setOf(Subject.Photos, Subject.BloodPressure)
+private val SelfScrolling = setOf(Subject.BloodPressure)
 
 /**
  * One subject's page — the surface behind every card on the overview.
@@ -109,13 +109,7 @@ internal fun SubjectDetail(
             DetailHeader(
                 title = stringResource(subject.label),
                 onBack = if (embedded) null else state::closeSubject,
-                // Photos is the one subject whose share is not the weekly recap: the page is a set
-                // of images, and the thing worth sending from it is the strip those images make.
-                onShare = when {
-                    subject == Subject.Photos && uiState.photos.isNotEmpty() -> state::openPhotoShare
-                    canShare -> state::openRecap
-                    else -> null
-                },
+                onShare = if (canShare) state::openRecap else null,
             )
             when {
                 !summary.tracked -> EmptyDetail(
@@ -165,7 +159,9 @@ private fun ColumnScope.Body(
 ) {
     when (subject) {
         Subject.Weight -> WeightDetailBody(uiState, state, checkIn, projection)
-        Subject.Photos -> PhotosDetailBody(uiState, state)
+        // Unreachable: `ProgressScreenState.open` pushes the Photos route rather than selecting
+        // the subject, so this page is never asked to draw it. The arm exists for the `when`.
+        Subject.Photos -> Unit
         Subject.Measurements -> MeasurementsDetailBody(uiState, state)
         Subject.Nutrition -> NutritionDetailBody(uiState, state)
         Subject.Fasting -> FastingDetailBody(uiState, state)

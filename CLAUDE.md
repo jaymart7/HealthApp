@@ -271,15 +271,18 @@ throughout; a commissioned set replaces the five drawings, not the picker around
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `history`,
   `recipe`, `search`, `ideas`, `voice`, `shared`), `:feature:progress` (`progress` — the overview and
-  the detail chrome — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
+  the detail chrome — plus `weight`, `measurement`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts;
-  the tab's three read-only surfaces are flows of their own *and routes of their own* —
-  `comparison`, `timelapse` and `recap`, each with the `*Data`/`*State`/`*ViewModel`/`*Screen`
-  quartet, each declared in `ProgressNavigation.kt` so none of them wears the bottom bar or the
-  FAB — and a `shared/` holding `Recap.kt` plus a `components/` with `RangeBarChart` and
-  `DayBarChart`, which between them draw every subject's bars except Mood's, Nutrition's and
-  Supplements', beside `RecapCard`, `SharePhotoStripSheet`, `PhotoOverlayLabel` and `Note`),
+  the tab's four read-only surfaces are flows of their own *and routes of their own* — `photo`
+  (the Photos page, the one subject that is a route rather than one of `SubjectDetail`'s
+  swap-ins), `comparison`, `timelapse` and `recap`, each with the
+  `*Data`/`*State`/`*ViewModel`/`*Screen` quartet, each declared in `ProgressNavigation.kt` so none
+  of them wears the bottom bar or the FAB; `addphoto` is the add-photo sheet, which left `photo`
+  when the page took that package — and a `shared/` holding `Recap.kt` plus a `components/`
+  with `RangeBarChart` and `DayBarChart`, which between them draw every subject's bars except
+  Mood's, Nutrition's and Supplements', beside `RecapCard`, `SharePhotoStripSheet`,
+  `PhotoOverlayLabel` and `Note`),
   `:feature:profile` (`profile`, `settings`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
   `shared/` holding the row primitives — `AppListRow`, `IconTile`, `SectionHeader`, `StepperRow`
   — beside `LibraryRow` and `RenameSheet`, which the food library and the routine library both

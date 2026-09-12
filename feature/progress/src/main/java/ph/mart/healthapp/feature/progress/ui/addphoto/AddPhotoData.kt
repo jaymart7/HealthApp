@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.photo
+package ph.mart.healthapp.feature.progress.ui.addphoto
 
 import android.graphics.Bitmap
 import ph.mart.healthapp.core.data.profile.UnitSystem

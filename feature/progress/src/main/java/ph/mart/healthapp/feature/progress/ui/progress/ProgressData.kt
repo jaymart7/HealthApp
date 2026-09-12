@@ -24,7 +24,7 @@ import ph.mart.healthapp.core.data.supplement.SupplementDay
 
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
  * all happen through the FAB's [ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet]/
- * [ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet] or the screen-local
+ * [ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoSheet] or the screen-local
  * [ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet], each with its own container. */
 data class ProgressUiState(
     val weightEntries: List<WeightEntry> = emptyList(),

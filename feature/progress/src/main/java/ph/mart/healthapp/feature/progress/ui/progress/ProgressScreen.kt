@@ -44,22 +44,21 @@ import ph.mart.healthapp.feature.progress.ui.nutrition.components.MealPhotoGalle
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
-import ph.mart.healthapp.feature.progress.ui.shared.components.SharePhotoStripSheet
 import ph.mart.healthapp.feature.progress.ui.shared.recap
 import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 
 /**
- * The three read-only surfaces this tab used to draw over itself — the comparison, the timelapse
- * and the recap — are routes now, pushed by `AppScaffold`. This is where a tap inside the tab
- * becomes one: every open site writes [ProgressScreenState.pendingRoute], and the effect below is
- * the single place that consumes it.
+ * The surfaces this tab used to draw over itself are routes now, pushed by `AppScaffold`. This is
+ * where a tap inside the tab becomes one: every open site writes
+ * [ProgressScreenState.pendingRoute], and the effect below is the single place that consumes it.
+ * The comparison and the timelapse are not among them — both are reached from the Photos page,
+ * which is itself a route and raises them directly.
  */
 @Composable
 fun ProgressScreen(
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
-    onCompare: (Long, Long) -> Unit = { _, _ -> },
-    onOpenTimelapse: () -> Unit = {},
+    onOpenPhotos: () -> Unit = {},
     onOpenRecap: () -> Unit = {},
     viewModel: ProgressViewModel = koinViewModel(),
 ) {
@@ -67,15 +66,7 @@ fun ProgressScreen(
     val state = rememberProgressScreenState()
     LaunchedEffect(state.pendingRoute) {
         when (state.pendingRoute) {
-            ProgressDestination.Comparison -> {
-                val ids = state.selectedPhotoIds
-                if (ids.size == 2) onCompare(ids[0], ids[1])
-                // Cleared on the way out, as closing the overlay used to do: `PhotoSelectionHint`
-                // draws nothing at two picks, so a selection left standing on the grid behind the
-                // comparison would have no way back out of itself.
-                state.clearPhotoSelection()
-            }
-            ProgressDestination.Timelapse -> onOpenTimelapse()
+            ProgressDestination.Photos -> onOpenPhotos()
             ProgressDestination.Recap -> onOpenRecap()
             null -> Unit
         }
@@ -204,16 +195,6 @@ private fun ProgressContent(
                 overview(Modifier)
             } else {
                 detail(subject, Modifier)
-            }
-
-            // The Photos page's own share. A sheet rather than an overlay, and reached from the
-            // header rather than from inside a comparison, so it reads the tab's photos directly.
-            if (state.activePhotoShare && uiState.photos.isNotEmpty()) {
-                SharePhotoStripSheet(
-                    photos = uiState.photos,
-                    unit = uiState.preferredUnit,
-                    onDismiss = state::closePhotoShare,
-                )
             }
 
             // The one overlay that writes — the apply goes back up to the container that owns the

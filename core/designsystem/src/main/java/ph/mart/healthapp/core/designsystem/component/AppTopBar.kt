@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -18,8 +19,14 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
- * The toolbar every non-top-level destination wears — a title and a back arrow, nothing else. The
- * counterpart to [BottomNavBar]: a tab gets the bar and the FAB, anything a level above gets this.
+ * The toolbar every non-top-level destination wears — a title, a back arrow, and an [actions] slot
+ * that is empty unless a screen fills it. The counterpart to [BottomNavBar]: a tab gets the bar and
+ * the FAB, anything a level above gets this.
+ *
+ * [actions] is empty by default because `AppScaffold` draws this bar for most routes from a `NavKey`
+ * and nothing else, and a trailing control generally needs data only that screen's own container
+ * holds — the Photos page's share needs the photo set. A screen with one therefore draws its own
+ * bar and `AppScaffold` stands down, the way the camera flows already do.
  *
  * [onBack] is wired to the back *dispatcher* rather than a direct pop (see `AppScaffold`), so a
  * screen holding its own `NavigationBackHandler` still gets to ask before it loses anything.
@@ -37,6 +44,7 @@ fun AppTopBar(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
         title = {
@@ -55,6 +63,7 @@ fun AppTopBar(
                 )
             }
         },
+        actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,

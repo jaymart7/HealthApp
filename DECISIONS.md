@@ -2197,6 +2197,32 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   that keeps the **subject pages** swap-ins is untouched and still load-bearing — a subject page
   would clone `ProgressViewModel`'s twelve repositories, where these three already have containers
   of their own.
+- **The Photos page is the fourteenth subject and the only one that is a route.** It was
+  `PhotosDetailBody`, a `*DetailBody` in the *add-photo sheet's* `components/` folder, reading a
+  slice of `ProgressUiState` and keeping its selection in another screen's state holder. Three
+  things made it the odd one out long before this: the other thirteen subjects are charts and stat
+  rows, this one is a grid whose whole job is to launch two routes; it had already been pushed out
+  of `SubjectDetail`'s scrolling column into `SelfScrolling`, because a `LazyVerticalGrid` cannot
+  nest in a `verticalScroll`; and the set it draws is the same set `ComparisonViewModel` and
+  `TimelapseViewModel` each observe for themselves, so `PhotosViewModel` is the third of a triplet
+  rather than a new idea. So `ui/photo/` is the page now — `PhotosScreen` with the full quartet and
+  the grid, hint and header strip under it — and the add-photo sheet moved to `ui/addphoto/`.
+  `ProgressScreenState.open()` carries the whole switch: `Subject.Photos` sets `pendingRoute`
+  instead of `selectedSubject`, and the overview card, the sibling switcher and the empty-card hint
+  all funnel through it already. **What it costs is the two-pane page at ≥840dp** — Photos no longer
+  draws beside the overview, it opens over it. That is the right trade for a photo grid, which wants
+  the full width more than it wants a list it just came from; a chart does not, which is why the
+  other thirteen stay swap-ins.
+- **`AppTopBar` grew an `actions` slot, and the Photos page draws its own bar.** The page's share is
+  the PNG strip of its own photo set, and `AppScaffold` builds that toolbar from a `NavKey` and
+  nothing else — it cannot reach the set. Rather than hoisting the photos up to the scaffold or
+  re-introducing the request-flag round trip the recap notification just lost, the screen draws the
+  bar and `AppScaffold` stands down: `ownsTopBar = fullBleed || current is PhotosRoute`. It is
+  deliberately a second boolean rather than a wider `fullBleed`, because the two want opposite
+  insets — the camera flows draw under the system bars, the Photos page clears them.
+  `ScanConfirmationScreen` was already the precedent for a feature drawing this bar. The slot itself
+  stays empty by default, so the sentence its KDoc used to open with — "a title and a back arrow,
+  nothing else" — is now a statement about what `AppScaffold` passes, not about what the bar can do.
 - **A tap inside the tab reaches the navigator through one field, not three callbacks.** Every open
   site is a `state::openX` reference threaded through the overview, `SubjectDetail`'s fourteen-way
   dispatch and the photo grid, so routing them as parameters meant about twelve new arguments across

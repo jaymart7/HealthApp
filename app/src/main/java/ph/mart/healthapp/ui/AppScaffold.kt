@@ -63,9 +63,10 @@ import ph.mart.healthapp.feature.profile.ui.SettingsRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
+import ph.mart.healthapp.feature.progress.ui.PhotosRoute
 import ph.mart.healthapp.feature.progress.ui.RecapRoute
 import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
-import ph.mart.healthapp.feature.progress.ui.photo.AddPhotoSheet
+import ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
 import ph.mart.healthapp.feature.training.ui.LogExerciseSheet
@@ -272,6 +273,12 @@ fun AppScaffold(
     // (appScaffold.js) and dispatch back per capture state, so a generic toolbar would break both.
     val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute
 
+    // Routes that draw their own `AppTopBar`. The camera flows do it full-bleed, under the system
+    // bars; the Photos page keeps the window's insets and only wants the bar's `actions` slot,
+    // which the call below cannot fill — its share needs the photo set, and all this has is a
+    // `NavKey`. Deliberately not folded into [fullBleed]: the two want opposite insets.
+    val ownsTopBar = fullBleed || current is PhotosRoute
+
     // Tapping the arrow has to run the same handler chain system back runs — the recipe builder
     // asks before discarding, and popping the stack here would walk straight past that question.
     val backDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -309,7 +316,7 @@ fun AppScaffold(
             Scaffold(
                 contentWindowInsets = if (fullBleed) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
                 topBar = {
-                    if (!isTopLevel && !fullBleed) {
+                    if (!isTopLevel && !ownsTopBar) {
                         AppTopBar(
                             title = current.title(),
                             onBack = { backDispatcher?.onBackPressed() },
@@ -372,6 +379,7 @@ fun AppScaffold(
                         progressEntries(
                             scrollState = progressScroll,
                             twoPane = twoPane,
+                            onOpenPhotos = { topLevelBackStack.add(PhotosRoute) },
                             onCompare = { first, second ->
                                 topLevelBackStack.add(PhotoComparisonRoute(first, second))
                             },

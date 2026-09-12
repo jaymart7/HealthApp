@@ -6,9 +6,16 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
+import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
 import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
+
+/** The whole progress-photo set. A route rather than one of `SubjectDetail`'s thirteen swap-in
+ * subject pages: it is a full-bleed grid that launches [PhotoComparisonRoute] and [TimelapseRoute]
+ * rather than a chart, and it already owned its scroll. Carries nothing — the set is the page. */
+@Serializable
+data object PhotosRoute : NavKey
 
 /** Two progress photos read against each other. Carries the grid's selection, and the order of the
  * two ids does not matter — `comparisonPair()` sorts by date, so the route names a pair rather than
@@ -32,14 +39,16 @@ data object RecapRoute : NavKey
  * the one place in the app that reads the window's width, so this tab is told rather than asking —
  * which is also why `:feature:progress` needs no adaptive dependency of its own.
  *
- * The three read-only surfaces are routes rather than overlays drawn inside [ProgressRoute], so
- * none of them wears the bottom bar or the FAB and none wires a back handler of its own. What the
- * tab hands up is the tap: [onCompare] carries the two photos the grid picked, [onOpenTimelapse]
- * and [onOpenRecap] carry nothing.
+ * The four read-only surfaces are routes rather than overlays drawn inside [ProgressRoute], so
+ * none of them wears the bottom bar or the FAB and none wires a back handler of its own. Two of
+ * the four are reached from the tab itself ([onOpenPhotos], [onOpenRecap]) and two from the Photos
+ * page ([onCompare], carrying the pair the grid picked, and [onOpenTimelapse]) — which is why the
+ * callbacks land on different entries rather than all on [ProgressScreen].
  */
 fun EntryProviderScope<NavKey>.progressEntries(
     scrollState: ScrollState,
     twoPane: Boolean = false,
+    onOpenPhotos: () -> Unit,
     onCompare: (Long, Long) -> Unit,
     onOpenTimelapse: () -> Unit,
     onOpenRecap: () -> Unit,
@@ -49,9 +58,15 @@ fun EntryProviderScope<NavKey>.progressEntries(
         ProgressScreen(
             scrollState = scrollState,
             twoPane = twoPane,
+            onOpenPhotos = onOpenPhotos,
+            onOpenRecap = onOpenRecap,
+        )
+    }
+    entry<PhotosRoute> {
+        PhotosScreen(
             onCompare = onCompare,
             onOpenTimelapse = onOpenTimelapse,
-            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
         )
     }
     entry<PhotoComparisonRoute> { key ->
