@@ -1298,6 +1298,20 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   Home tab rather than a fifth tab or a sheet — `AppScaffold`'s existing `isTopLevel` rule then
   gives it a back toolbar with no bottom bar and no FAB, which is exactly what a chat with a
   keyboard wants, and no new case was added there.
+- **The coach's mic fills the field and stops.** It is the same system dialog talk-to-log uses
+  (`RecognizerIntent.ACTION_RECOGNIZE_SPEECH`, no `RECORD_AUDIO`, no permission screen, no
+  in-app `SpeechRecognizer`), and the manifest `<queries>` entry that makes
+  `isRecognitionAvailable()` answer truthfully is already in `:app` and merges app-wide, so
+  `:feature:coach` needed no manifest. Three calls beyond copying that flow. **It never
+  auto-sends** — a send is a model call and a persisted pair of rows, and a misheard question
+  would be spent before it could be read; the field stays editable, exactly as the voice-log
+  screen's does. **It appends rather than replaces** (`withSpoken`), because a half-typed question
+  is the user's — the reading `CoachFailure.question` already gives one that failed to send — and
+  a trailing space is trimmed so speaking twice doesn't accumulate them. It is **absent, not
+  disabled**, where no recognizer exists, Home's supplements-card rule. `speechAvailable` is
+  hoisted as a defaulted parameter for one reason only: the preview renderer reports no
+  recognizer, so without it no `@PreviewLightDark` could draw the control this entry is about.
+
 - **The coach is not exported, not a streak domain, has no reminder and no widget surface.** The
   backup file is a record of what the user *did*; a conversation about one day's numbers has no
   meaning restored on another device — `health_link`'s reasoning. And talking to a coach is not

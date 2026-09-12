@@ -9,6 +9,7 @@
     <string name="coach_clear_dismiss">Keep it</string>
     <string name="coach_input_placeholder">Ask your coach</string>
     <string name="coach_input_send">Send</string>
+    <string name="coach_input_speak">Speak your question</string>
     <string name="coach_empty_greeting">Ask me about today — what you\'ve eaten, your macros, or how the week\'s going.</string>
     <string name="coach_empty_limits">I only see today\'s totals, not your meals or your weight.</string>
 
