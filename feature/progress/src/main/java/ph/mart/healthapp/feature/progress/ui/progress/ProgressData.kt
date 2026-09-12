@@ -32,6 +32,11 @@ data class ProgressUiState(
     val photos: List<ProgressPhoto> = emptyList(),
     val goalWeightKg: Double? = null,
     val goal: Goal? = null,
+    /** The profile's height, the second input to both figures on
+     * [BodyIndex][ph.mart.healthapp.core.data.progress.bmiOf]. Null with no profile, which is what
+     * removes the BMI chip and the waist-to-height rows rather than printing a figure derived from
+     * a zero. */
+    val heightCm: Double? = null,
     val preferredUnit: UnitSystem = UnitSystem.Metric,
     /** Dense, one row per day for the last year — the Nutrition tab slices it per selected range. */
     val dailyNutrition: List<DayNutrition> = emptyList(),

@@ -25,6 +25,8 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.ChartRange
+import ph.mart.healthapp.core.data.progress.bmiCategoryOf
+import ph.mart.healthapp.core.data.progress.bmiOf
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
 import ph.mart.healthapp.core.data.progress.WeightEntry
@@ -99,6 +101,18 @@ internal fun ColumnScope.WeightDetailBody(
                         R.string.progress_weight_to_goal,
                         formatKg(abs(current - it).kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
+                    ),
+                )
+            },
+            // Neutral and iconless on purpose. A band is not a direction, and the chip's own
+            // contract is never a trend without an arrow to say which way — so it carries neither.
+            // Absent rather than zeroed when the profile has no height, like the goal chip above it.
+            uiState.heightCm?.let { heightCm -> bmiOf(current, heightCm) }?.let { bmi ->
+                FactChip(
+                    text = stringResource(
+                        R.string.progress_weight_bmi,
+                        formatBmi(bmi),
+                        stringResource(bmiCategoryOf(bmi).label),
                     ),
                 )
             },
@@ -270,6 +284,10 @@ private fun TrendDirection.word(deltaKg: Double): String = when {
     else -> stringResource(R.string.progress_word_recorded)
 }
 
+/** Always one decimal, unlike [formatKg] beside it — a weight reads fine as "84", but "BMI 23"
+ * next to "BMI 23.4" looks like two different precisions of the same figure. */
+private fun formatBmi(value: Double): String = "%.1f".format(value)
+
 private fun arrowFor(delta: Double) = when {
     abs(delta) < TREND_ARROW_DEADBAND_KG -> AppIcons.TrendFlat
     delta < 0 -> AppIcons.TrendDown
@@ -288,6 +306,7 @@ private fun WeightDetailPreview() {
         goalWeightKg = 82.0,
         goal = Goal.Lose,
         preferredUnit = UnitSystem.Metric,
+        heightCm = 178.0,
     )
     AppTheme {
         Surface {

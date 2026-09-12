@@ -135,6 +135,7 @@
     <string name="progress_weight_today">%1$s today</string>
     <string name="progress_weight_in_span">%1$s %2$s in %3$s · %4$s</string>
     <string name="progress_weight_to_goal">%1$s %2$s to goal</string>
+    <string name="progress_weight_bmi">BMI %1$s · %2$s</string>
     <string name="progress_weight_trend">Trend</string>
     <string name="progress_weight_daily">Daily</string>
     <string name="progress_weight_average7">7-day average</string>
@@ -271,6 +272,9 @@
     <string name="progress_measurement_none">No readings yet</string>
     <string name="progress_measurement_value">%1$s %2$s</string>
     <string name="progress_measurement_delta">%1$s%2$s %3$s</string>
+    <string name="progress_measurement_waist_height">Waist to height</string>
+    <string name="progress_measurement_waist_height_healthy">Healthy range</string>
+    <string name="progress_measurement_waist_height_max">Under %1$s</string>
     <plurals name="progress_photos_shots">
         <item quantity="one">shot</item>
         <item quantity="other">shots</item>

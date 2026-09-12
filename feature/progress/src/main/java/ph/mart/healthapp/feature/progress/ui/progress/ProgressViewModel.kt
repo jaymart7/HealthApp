@@ -90,6 +90,7 @@ class ProgressViewModel(
                 photos = photos,
                 goalWeightKg = profile?.targetWeightKg,
                 goal = profile?.goal,
+                heightCm = profile?.heightCm,
                 preferredUnit = profile?.preferredUnit ?: UnitSystem.Metric,
                 dailyNutrition = dailyNutrition,
                 // Computed live off the profile, same as every other place targets are shown.

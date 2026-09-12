@@ -1613,6 +1613,32 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   applied once, rather than a five-colour scale that would have the app grading a reading. The
   labels carry no advice copy: naming the band is what makes 128/82 mean something, and that is
   the whole of the claim.
+- **BMI and waist-to-height are derived on read, and neither earned a subject card.** Both are
+  ratios over figures already on screen — the profile's height against the newest weigh-in, and
+  against the newest waist reading. So there is no table, no column, no export field and no
+  migration: `BodyIndex.kt` is four declarations in `:core:data/progress/`, folded the way
+  `withMovingAverage()` and the streak are. A fifteenth Progress subject would have bought a grid
+  tile, a detail page, a range toggle and a chart to restate two numbers, so BMI is a third fact
+  chip on the Weight page and waist-to-height is two stat rows above the measurement list — each
+  beside the input it is derived from.
+- **`bmiCategoryOf` is `BloodPressureCategory`'s rule applied a second time: the band is named and
+  nothing else is said.** 24.1 means nothing to most people without the word next to it, and that
+  word is the whole of the claim — no advice copy, no colour. Unlike the AHA bands there is not
+  even a `severe`: a band is not a direction, so the chip carries `Neutral` and no arrow, which is
+  what `FactChip`'s "never a trend without an arrow" already required. Each boundary lands in the
+  **higher** band (25.0 is Overweight, never Healthy) and `BodyIndexTest` pins all three, because
+  an off-by-one there inverts a label silently.
+- **Waist-to-height reports the boundary and refuses the band.** One published number — keep your
+  waist under half your height — is a fact the app can stand behind; the four-step scale derived
+  from it would be the app grading a body, which is the line the cycle tab holds when it refuses to
+  derive a fertile window. Two stat rows rather than one, because the ratio means nothing without
+  the boundary beside it and `StatRow` carries a label and a value, not a caption. The card is gone
+  entirely until both inputs exist: a ratio with a side missing is not a reading nobody has taken,
+  it is a ratio that does not exist, so there is no dash state.
+- **Neither figure converts a unit.** kg/m² and waist÷height are the same numbers in pounds and
+  inches, so the display toggle has nothing to say about either, and both take stored kg/cm rather
+  than what the screen happens to be showing. `BodyIndexTest` asserts it, because the obvious
+  "fix" is to reach for `kgToDisplayUnit` on the way in and quietly report a BMI of 10.
 - **Blood pressure has a Google Health scope, and it is deliberately not requested.** The four the
   app already asks for cap it at 100 users pending OAuth verification and a CASA assessment; a
   fifth would need its own justification on that form. Manual entry only, like measurements — and

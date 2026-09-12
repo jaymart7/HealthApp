@@ -38,6 +38,12 @@
     <string name="data_bp_category_stage2">High (stage 2)</string>
     <string name="data_bp_category_crisis">Crisis</string>
 
+    <!-- BmiCategory — the WHO bands, named and not graded, same as the block above. -->
+    <string name="data_bmi_category_underweight">Underweight</string>
+    <string name="data_bmi_category_healthy">Healthy</string>
+    <string name="data_bmi_category_overweight">Overweight</string>
+    <string name="data_bmi_category_obese">Obese</string>
+
     <!-- FlowLevel — Unstated is rendered for imported days, never offered as a tap. -->
     <string name="data_flow_level_unstated">Logged</string>
     <string name="data_flow_level_light">Light</string>
