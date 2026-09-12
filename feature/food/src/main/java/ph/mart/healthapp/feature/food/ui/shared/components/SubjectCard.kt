@@ -5,10 +5,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -162,7 +165,11 @@ private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             CardLabel(stringResource(R.string.food_calories_label))
             Row(verticalAlignment = Alignment.Bottom) {
-                Box {
+                // Sized to its digits for the reason `MacroFieldCell`'s is: left to fill, the field
+                // takes the whole row and "kcal" measures against zero, drawing over the edit button
+                // rather than beside the number. The button is already this row's large tap target,
+                // so the field gives up nothing by being the width of what it holds.
+                Box(modifier = Modifier.width(IntrinsicSize.Min)) {
                     if (calories == null) {
                         Text(
                             text = "—",
@@ -183,7 +190,9 @@ private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit) {
                             keyboardType = KeyboardType.Number,
                             imeAction = ImeAction.Done,
                         ),
-                        modifier = Modifier.focusRequester(focusRequester),
+                        modifier = Modifier
+                            .defaultMinSize(minWidth = 32.dp)
+                            .focusRequester(focusRequester),
                     )
                 }
                 Text(
@@ -191,11 +200,7 @@ private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit) {
                     text = "kcal",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    // The field beside it fills the width it is given so a tap to the right of a
-                    // short number still lands in it, which leaves the unit hard against whatever
-                    // comes next — the edit button here, the tile's border in `MacroFieldCell`.
-                    // The gap belongs on the unit, not on the field's tap target.
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp, end = 4.dp),
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
                 )
             }
             Text(

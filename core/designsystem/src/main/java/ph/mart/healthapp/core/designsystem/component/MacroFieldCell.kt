@@ -2,22 +2,29 @@ package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -64,12 +71,17 @@ fun MacroFieldCell(
     modifier: Modifier = Modifier,
     dotColor: Color? = null,
 ) {
+    val focusRequester = remember { FocusRequester() }
+    val editLabel = stringResource(R.string.ds_macro_field, label, unit)
     Column(
         modifier = modifier
             .heightIn(min = 72.dp)
             .clip(CellShape)
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CellShape)
+            // The whole tile is the target, which is what lets the field stay the width of its own
+            // digits. Before the padding, so the ripple covers the border rather than insetting.
+            .clickable(onClickLabel = editLabel) { focusRequester.requestFocus() }
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -90,7 +102,15 @@ fun MacroFieldCell(
             )
         }
         Row(verticalAlignment = Alignment.Bottom) {
-            Box {
+            // `IntrinsicSize.Min` is load-bearing, not layout garnish. `BasicTextField` fills
+            // whatever width it is handed, so left alone it ate the whole row: the unit was then
+            // measured against zero and drew *past* the tile's padding onto the border, which no
+            // amount of end padding could pull back inside a box it was already outside of. Giving
+            // the field a weight instead fixed the overflow and broke the reading — "32" at one end
+            // of the tile and "g" at the other are not one figure. So the field is the width of its
+            // own digits and the unit sits against it, with the tile carrying the tap target the
+            // field was filling for. The floor keeps an empty field tappable and its caret visible.
+            Box(modifier = Modifier.width(IntrinsicSize.Min)) {
                 // Behind the field rather than inside it: the field holds its own text so a
                 // backspace to empty stays empty, and the dash is exactly what "empty" looks like.
                 if (value == null) {
@@ -104,18 +124,18 @@ fun MacroFieldCell(
                     value = value?.toString().orEmpty(),
                     // A cleared field is nobody's opinion again, not a zero.
                     onValueChange = { onValueChange(it.toIntOrNull()) },
-                    contentDescription = stringResource(R.string.ds_macro_field, label, unit),
+                    contentDescription = editLabel,
                     textStyle = ValueStyle(),
+                    modifier = Modifier
+                        .defaultMinSize(minWidth = 24.dp)
+                        .focusRequester(focusRequester),
                 )
             }
             Text(
                 text = unit,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                // The field beside it fills the width it is given so a tap to the right of a short
-                // number still lands in it, which leaves the unit hard against the tile's border.
-                // The gap belongs on the unit, not on the field's tap target.
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp, end = 4.dp),
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
             )
         }
     }
