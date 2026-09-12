@@ -12,7 +12,24 @@
           "package_name": "ph.mart.healthapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "609834767104-2rtp9qrr7q68dd7c825nce382obi664u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ph.mart.healthapp",
+            "certificate_hash": "21b2cf7ba55887d9d4a7e0937275be65b5c65a60"
+          }
+        },
+        {
+          "client_id": "609834767104-lvf1i7indvsi66147v6jhn60j88qiop2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ph.mart.healthapp",
+            "certificate_hash": "26ae2f9ef2653f2bda98adf90400be16348ffb63"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD8_8MCzVORBa7EAQi-9qBMURW5-5NHg_8"
