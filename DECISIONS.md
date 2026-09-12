@@ -1638,6 +1638,21 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   was a one-tap door to the strength screen — a row in a sheet, not a screen, and not yet worth
   adding. *A pillar earns a module when its code has no home; it earns a tab only when it has a
   surface no other tab is already drawing.*
+- **The rest timer is screen state, not a domain.** No table, no repository, no ViewModel field: a
+  rest is not part of the workout, so it is saved with nothing, makes nothing dirty, and travels in
+  two `rememberSaveable` primitives beside the set draft that already lives there — the length and
+  a wall-clock end time. **Wall-clock, not a tick count**, so a rotation or a trip to another app
+  resumes on the time that actually remains; and `delay` rather than a frame clock, because frames
+  stop when the app does and this has to keep counting with the phone face-down on the bench.
+  **"Add set" is the only thing that starts one**, `commit()` being the one place a set lands, and
+  **Off is a real choice** rather than a missing one — a lifter who counts their own rest should not
+  dismiss a card every set. The cue at zero is a haptic: the app's first, and it costs no
+  permission, no manifest entry and no notification channel, which a buzzer or an alarm would.
+  The chosen length is **not persisted** — `rememberSaveable` survives the rotation it needs to and
+  a `Profile` column would have cost a Room version and an export schema bump for a knob with four
+  settings. *ponytail: the buzz only reaches a living process — a killed app loses the rest. An
+  AlarmManager-backed timer with a notification is the upgrade if that starts to matter, and a
+  `Profile.restSeconds` is the one if the pick turns out to be worth keeping between sessions.*
 - **The exercise UI left `:feature:food`; `ExerciseSection` did not.** The diary's exercise block
   draws `MealSectionHeader`, `SectionCorner`, `EntryIndent` and `SwipeToDeleteRow` — four things
   that are the diary's — and it exists because burned calories raise `budgetKcal()`, which is the

@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -51,11 +52,18 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.training.R
 import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
+import ph.mart.healthapp.feature.training.ui.components.NO_REST
 import ph.mart.healthapp.feature.training.ui.components.NameChipRow
+import ph.mart.healthapp.feature.training.ui.components.REST_EXTEND_SECONDS
+import ph.mart.healthapp.feature.training.ui.components.RestTimerCard
 import ph.mart.healthapp.feature.training.ui.components.SaveRoutineSheet
 import ph.mart.healthapp.feature.training.ui.components.StrengthSetEditor
 import ph.mart.healthapp.feature.training.ui.components.StrengthSetList
 import ph.mart.healthapp.feature.training.ui.components.canAdd
+
+/** The rest a fresh screen offers — the middle of [ph.mart.healthapp.feature.training.ui.components.REST_CHOICES],
+ * and the one most programmes are written around. */
+private const val DEFAULT_REST_SECONDS = 90
 
 /**
  * Authors a strength workout: the duration and burn every activity carries, plus what was actually
@@ -136,6 +144,13 @@ private fun StrengthWorkoutContent(
     var discardOpen by rememberSaveable { mutableStateOf(false) }
     val draft = StrengthSet(draftName, draftReps, draftKg)
 
+    // The rest between sets: the chosen length, and when the running one is up (0 = not resting).
+    // Two more Bundle-native primitives for the draft's reason — a rotation mid-rest must not
+    // restart it — and deliberately not part of the form: a rest is not part of the workout, so it
+    // is saved with nothing and makes nothing dirty.
+    var restSeconds by rememberSaveable { mutableIntStateOf(DEFAULT_REST_SECONDS) }
+    var restEndAt by rememberSaveable { mutableLongStateOf(NO_REST) }
+
     // The routine sheet's name, and what it was saved as. There is no toast or snackbar here (the
     // saved-meal path has none either), so the button reporting its own result is the confirmation.
     var routineName by rememberSaveable { mutableStateOf("") }
@@ -144,8 +159,11 @@ private fun StrengthWorkoutContent(
     // Adding or removing a set makes it a different workout, so it can be saved again.
     LaunchedEffect(form.sets.size) { savedRoutineName = null }
 
+    // The one place a set lands, so it is the one place a rest starts — "Add set" begins one and
+    // nothing else does.
     fun commit(set: StrengthSet) {
         state.form = form.copy(sets = form.sets + set)
+        if (restSeconds > 0) restEndAt = System.currentTimeMillis() + restSeconds * 1000L
     }
 
     // Back out of a half-written workout is the one destructive gesture here, so it only
@@ -213,6 +231,15 @@ private fun StrengthWorkoutContent(
                     onRemove = { index ->
                         state.form = form.copy(sets = form.sets.filterIndexed { i, _ -> i != index })
                     },
+                )
+
+                RestTimerCard(
+                    endAtMillis = restEndAt,
+                    durationSeconds = restSeconds,
+                    onDurationChange = { restSeconds = it },
+                    onExtend = { restEndAt += REST_EXTEND_SECONDS * 1000L },
+                    onSkip = { restEndAt = NO_REST },
+                    onFinished = { restEndAt = NO_REST },
                 )
 
                 StrengthSetEditor(

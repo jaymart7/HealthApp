@@ -180,6 +180,8 @@ see `DECISIONS.md`.
 - Routines: save a session as a routine (modal reps), start one to seed sets at last-lifted loads.
 - Training plan: a weekday picker per routine; Home shows today's routine and a week ratio.
 - Edit or delete a logged workout (sets re-pointed in the same transaction).
+- Rest timer between sets: Off/1:00/1:30/2:00/3:00, auto-started by "Add set", with +30 sec,
+  Skip and a buzz at zero. Screen-local — it keeps time off the clock, not a tick count.
 
 ## Progress
 

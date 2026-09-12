@@ -38,6 +38,13 @@
     <string name="training_strength_load_bodyweight">Load · bodyweight</string>
     <string name="training_strength_add_set">Add set</string>
 
+    <!-- Rest timer -->
+    <string name="training_rest_title">Rest timer</string>
+    <string name="training_rest_off">Off</string>
+    <string name="training_rest_extend">+30 sec</string>
+    <string name="training_rest_skip">Skip</string>
+    <string name="training_rest_running">Rest timer running</string>
+
     <!-- Save as routine -->
     <string name="training_routine_sheet_title">Save as a routine</string>
     <plurals name="training_routine_lifts">
