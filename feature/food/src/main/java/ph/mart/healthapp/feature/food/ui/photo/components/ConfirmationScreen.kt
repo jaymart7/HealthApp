@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.food.ui.photo.components
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,6 +51,7 @@ internal fun ConfirmationScreen(
     form: AddEntryForm,
     confidence: RecognitionConfidence,
     onFormChange: (AddEntryForm) -> Unit,
+    onViewPhoto: () -> Unit,
     onMealTypeSelect: (MealType) -> Unit,
     onSearchInstead: () -> Unit,
     onLogMeal: () -> Unit,
@@ -66,11 +68,16 @@ internal fun ConfirmationScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                // A 64dp centre-crop is the worst look at the plate the numbers were read off,
+                // so it opens: tappable, and therefore described rather than decorative.
                 Image(
                     bitmap = photo.asImageBitmap(),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.food_photo_view),
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)),
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onViewPhoto),
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     AIChip(label = stringResource(R.string.food_photo_chip), variant = AIChipVariant.Default)
@@ -155,7 +162,7 @@ private fun ConfirmationScreenPreview() {
                 portionUnit = "g", calories = 210, proteinG = 32, carbsG = 2, fatG = 8,
             ),
             confidence = RecognitionConfidence.High,
-            onFormChange = {}, onMealTypeSelect = {}, onSearchInstead = {}, onLogMeal = {}, onDiscard = {},
+            onFormChange = {}, onViewPhoto = {}, onMealTypeSelect = {}, onSearchInstead = {}, onLogMeal = {}, onDiscard = {},
         )
     }
 }
@@ -171,7 +178,7 @@ private fun ConfirmationScreenLowConfidencePreview() {
                 portionUnit = "cup", calories = 85, proteinG = 1, carbsG = 21, fatG = 0,
             ),
             confidence = RecognitionConfidence.Low,
-            onFormChange = {}, onMealTypeSelect = {}, onSearchInstead = {}, onLogMeal = {}, onDiscard = {},
+            onFormChange = {}, onViewPhoto = {}, onMealTypeSelect = {}, onSearchInstead = {}, onLogMeal = {}, onDiscard = {},
         )
     }
 }

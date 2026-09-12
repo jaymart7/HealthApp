@@ -146,6 +146,7 @@
 
     <!-- Photo flow -->
     <string name="food_photo_close">Close</string>
+    <string name="food_photo_view">View photo full screen</string>
     <string name="food_photo_center">Center one food item</string>
     <string name="food_photo_take">Take photo</string>
     <string name="food_photo_analyzing">Looking at your photo…</string>

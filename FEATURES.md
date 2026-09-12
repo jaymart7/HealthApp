@@ -145,6 +145,7 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 ## Camera & barcode
 
 - AI photo food logging: capture → analyze → confirm, with retry, offline and manual-search paths.
+  The confirm screen's 64dp plate opens full-screen on a tap — pinch to 4x, pan, X or back to close.
 - The plate is kept. Every exit from the camera flow attaches its photo to the entry — recognized,
   gallery-picked, or hand-entered after a failed analyze — scaled to 768px, newest 500 retained.
   No other logging path attaches one.

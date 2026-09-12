@@ -280,6 +280,20 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   empty "Meal photos" card is an ad for the camera on a page about what was eaten. The frame's
   caption says the day and the calories and *not* the meal name: `MealType.labelRes()` is
   `:feature:food`'s string, and features do not import each other.
+- **The confirmation plate opens, and the viewer is a boolean rather than a ninth `CaptureFlow`.**
+  A 64dp centre-crop is the worst available look at the photo the estimate was read off, and it sat
+  above a form asking the user to trust that estimate. `PhotoCaptureScreenState.viewingPhoto` is a
+  flag *inside* `Confirmation`: the form underneath is unchanged and still dirty or not, so a ninth
+  state would only have had to answer what logging and discarding mean from a picture. Back reads
+  it in the flow's one always-mounted handler — the viewer first, the form second — which is
+  `MealPhotoGallery`'s frame-over-grid shape, not a second handler competing with the first.
+- **The viewer is full-bleed, and it lives in `:feature:food`.** Every non-camera state in the flow
+  is inset by the screen's `safeDrawingPadding`; the viewer is drawn outside that box, because one
+  that letterboxes itself inside the system bars shows less of the plate than the camera did — its
+  close button carries the inset instead. It stays in `ui/photo/components/` rather than moving to
+  `:core:designsystem` because one screen draws it: the diary rows and the edit sheet keep their
+  inert thumbnails, and the second caller is what would earn the move. `maxPan` is a pure Float
+  function with `PhotoViewerZoomTest` over it, which is the only real arithmetic in the thing.
 - **`rememberBitmapFromFile` moved to `:core:designsystem`.** Two features draw stored photos now,
   and a second decoder is a second downsampling rule to keep in step. Nothing about it changed but
   its package and one more size constant (`THUMB_PX`, for the diary row's 40dp tile).

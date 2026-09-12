@@ -42,6 +42,12 @@ internal class PhotoCaptureScreenState(
     var originalForm: AddEntryForm by mutableStateOf(originalForm)
     var confidence: RecognitionConfidence by mutableStateOf(confidence)
 
+    /** The captured plate open full-screen over the review form. A flag inside
+     * [CaptureFlow.Confirmation] rather than a ninth [CaptureFlow]: nothing about the flow changes
+     * while it's up — the form is still there underneath, still dirty or not — only what's drawn
+     * over it, and a ninth state would have to answer what logging and discarding mean from it. */
+    var viewingPhoto: Boolean by mutableStateOf(false)
+
     /** What a confirmed discard does — go back to the camera, back to the search, or leave the
      * flow. Non-null exactly while the dialog is up. A lambda rather than a [CaptureFlow] because
      * the Discard *button* leaves the flow entirely, and it has to ask the same question the back

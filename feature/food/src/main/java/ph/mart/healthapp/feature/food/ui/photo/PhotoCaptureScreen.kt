@@ -41,6 +41,7 @@ import ph.mart.healthapp.feature.food.ui.photo.components.CameraPermissionScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.PhotoOfflineScreen
+import ph.mart.healthapp.feature.food.ui.photo.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.photo.components.RetryScreen
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
@@ -115,7 +116,11 @@ fun PhotoCaptureScreen(
                     state.flow = CaptureFlow.Capture
                 }
 
-                CaptureFlow.Confirmation -> if (state.isDirty) {
+                // Two levels, one handler: the viewer closes first, the form second. Same shape
+                // as the meal-photo gallery's frame-over-grid on the Progress tab.
+                CaptureFlow.Confirmation -> if (state.viewingPhoto) {
+                    state.viewingPhoto = false
+                } else if (state.isDirty) {
                     state.pendingDiscard = { state.flow = CaptureFlow.Capture }
                 } else {
                     state.flow = CaptureFlow.Capture
@@ -177,6 +182,7 @@ fun PhotoCaptureScreen(
                         form = state.form,
                         confidence = state.confidence,
                         onFormChange = { state.form = it },
+                        onViewPhoto = { state.viewingPhoto = true },
                         onMealTypeSelect = state::selectMealType,
                         onSearchInstead = { state.flow = CaptureFlow.NoFood },
                         // The diary's day, not today — a plate photographed while reviewing
@@ -262,6 +268,14 @@ fun PhotoCaptureScreen(
                     },
                     onDismiss = { state.pendingDiscard = null },
                 )
+            }
+        }
+
+        // Outside the inset box on purpose: the viewer is full-bleed, and its own close button
+        // carries the safe-area padding instead.
+        if (state.viewingPhoto && state.flow == CaptureFlow.Confirmation) {
+            state.photo?.let { photo ->
+                PhotoViewerOverlay(photo = photo, onClose = { state.viewingPhoto = false })
             }
         }
     }
