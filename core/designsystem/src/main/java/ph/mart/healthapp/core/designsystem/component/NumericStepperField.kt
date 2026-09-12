@@ -175,20 +175,23 @@ internal fun String.keepDigits(decimal: Boolean): String {
 private fun String.trimLeadingZeros(): String = trimStart('0').ifEmpty { if (isEmpty()) "" else "0" }
 
 /**
- * Shared circular +/- button reused by [NumericStepperField], [MacroInputGroup] and [FoodItemRow].
+ * Shared circular +/- button reused by [NumericStepperField], [MacroInputGroup] and [FoodItemRow],
+ * and public because onboarding's confirm step draws the same pair beside a 57sp hero figure that
+ * is no longer a field — one button, wherever a figure is nudged.
  *
  * [label] is what a screen reader announces: three identical "minus, plus" pairs down a macro group
  * tell a TalkBack user nothing about which row they are on. 48dp because that is the platform
  * minimum for anything tappable; the visible circle stays smaller than the target it carries.
  */
 @Composable
-internal fun StepperButton(symbol: String, label: String, onClick: () -> Unit) {
+fun StepperButton(symbol: String, label: String, onClick: () -> Unit, enabled: Boolean = true) {
     Box(
         modifier = Modifier.size(48.dp),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
             onClick = onClick,
+            enabled = enabled,
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             contentColor = MaterialTheme.colorScheme.onSurface,

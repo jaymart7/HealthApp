@@ -46,13 +46,22 @@ scene, and the Food tab draws the calendar as a fixed 320dp pane beside the day.
 
 ## Onboarding
 
-- Welcome screen with mascot and "I already have an account" (a no-op — no auth exists).
-- Basics: age, sex, height, weight, units.
-- Activity level; goal (lose / maintain / gain).
-- Dietary preference (four-value enum; read only by meal ideas).
-- Google Health disclosure + connect step (step 5 of 6, before Confirm).
-- Confirm targets: Mifflin–St Jeor calories + 30/40/30 macro split, editable, 1200/1500 kcal
-  warn-don't-block floor.
+Seven steps under one chrome — a 48dp app bar, Rui's avatar and one line, the headline — with a
+slide between them and back never clearing a thing.
+
+- Welcome: 104dp mascot, the bubble beside it, title/body/button anchored to the bottom.
+- Goal (lose / maintain / build) and Activity level: full-height cards with a 64dp icon, and
+  **no Next button** — a tap selects, holds 400ms and advances. The selected activity card names
+  its own multiplier ("× 1.375 on your maintenance").
+- Basics: units and sex toggles, then age, height, weight and optional target weight on draggable
+  ruler pickers; tap a value to type it. Everything starts unset.
+- Dietary preference (four-value enum; read only by meal ideas): the one optional step, outlined
+  cards and a tonal Next, with Skip in the header.
+- Google Health disclosure + connect step (step 5 of 6, before Confirm): one glyph row per
+  requested scope and three assurance rows, with unavailable and declined states.
+- Confirm targets: the calorie figure at 57sp with its derivation printed under it
+  ("1,961 kcal maintenance − 500 for steady loss"), Mifflin–St Jeor + 30/40/30 macro split,
+  editable, 1200/1500 kcal warn-don't-block floor, and a 900ms celebration on finish.
 
 ## Home
 

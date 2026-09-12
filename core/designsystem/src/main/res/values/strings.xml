@@ -7,6 +7,9 @@
     <string name="ds_step_of">Step %1$d of %2$d</string>
     <string name="ds_decrease">Decrease %1$s</string>
     <string name="ds_increase">Increase %1$s</string>
+    <string name="ds_ruler_hint">Drag or tap to set</string>
+    <string name="ds_ruler_range">%1$s–%2$s %3$s</string>
+    <string name="ds_ruler_done">Done</string>
 
     <!-- AI insight card -->
     <string name="ds_insight">Insight</string>
@@ -84,16 +87,19 @@
     <!-- Google Health disclosure. The wording is a Restricted-scope requirement: one bullet per
          requested scope, in the order HEALTH_SCOPES asks for them. -->
     <string name="ds_health_title">FitPulse and Google Health</string>
-    <string name="ds_health_intro">FitPulse collects health and fitness data from Google Health to show your workouts and steps and the calories they burned, track your weight trend, and show your heart rate and how you slept. It also sends the meals and water you log to Google Health, so your nutrition stays in one place.</string>
-    <string name="ds_health_scope_activity">Workouts and activity</string>
-    <string name="ds_health_scope_activity_body">Imported so your workouts and daily steps raise your calorie budget.</string>
-    <string name="ds_health_scope_body">Weight, body measurements and heart rate</string>
-    <string name="ds_health_scope_body_body">Imported so your weight trend and goal date use your real weigh-ins, and to show your daily heart rate.</string>
+    <string name="ds_health_reads">What FitPulse reads and writes</string>
+    <string name="ds_health_scope_activity">Workouts and steps</string>
+    <string name="ds_health_scope_activity_line">Raises your calorie budget</string>
+    <string name="ds_health_scope_body">Weight, measurements and heart rate</string>
+    <string name="ds_health_scope_body_line">Your trend uses real weigh-ins</string>
     <string name="ds_health_scope_sleep">Sleep</string>
-    <string name="ds_health_scope_sleep_body">Imported to show last night\'s sleep on your home screen.</string>
+    <string name="ds_health_scope_sleep_line">Last night, alongside your day</string>
     <string name="ds_health_scope_nutrition">Nutrition and hydration</string>
-    <string name="ds_health_scope_nutrition_body">The meals and water you log in FitPulse are sent to Google Health.</string>
-    <string name="ds_health_storage">Your health data is stored on this device. FitPulse never sells or shares it, and doesn\'t upload it anywhere except Google Health. You can disconnect and delete it at any time from Profile.</string>
+    <string name="ds_health_scope_nutrition_line">The meals and water you log, sent back</string>
+    <string name="ds_health_assure_write">Only the meals and water you log are written back. Nothing else in Google Health changes.</string>
+    <string name="ds_health_assure_device">Stored on this device. Never sold, never shared.</string>
+    <string name="ds_health_assure_undo">Disconnect and delete it any time from Profile.</string>
+    <string name="ds_health_continue">Continue</string>
     <string name="ds_health_connect">Connect Google Health</string>
 
     <!-- Shared image (ShareImageSheet) -->

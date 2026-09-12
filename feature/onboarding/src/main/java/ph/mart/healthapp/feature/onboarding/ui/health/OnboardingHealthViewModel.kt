@@ -19,6 +19,9 @@ data class OnboardingHealthUiState(
     val canConnect: Boolean = false,
     @StringRes val message: Int? = null,
     val messageIsError: Boolean = false,
+    /** The consent sheet was raised and refused. The screen swaps its two actions' weight on
+     * this: the question has been answered, so continuing is what the filled button should do. */
+    val declined: Boolean = false,
 )
 
 sealed interface OnboardingHealthSideEffect {
@@ -71,7 +74,7 @@ class OnboardingHealthViewModel(
             repository.sync()
             postSideEffect(OnboardingHealthSideEffect.Connected)
         } else {
-            reduce { state.copy(message = DECLINED, messageIsError = false) }
+            reduce { state.copy(message = DECLINED, messageIsError = false, declined = true) }
         }
     }
 }

@@ -45,6 +45,38 @@ fun PrimaryButton(
     }
 }
 
+/**
+ * Pill button, [MaterialTheme.colorScheme.secondaryContainer] fill — the weight between
+ * [PrimaryButton] and [SecondaryButton].
+ *
+ * It exists for the one place a step is genuinely optional: onboarding's dietary preference fills
+ * to primary once something is chosen and sits tonal until then, so the button gains weight as the
+ * answer does. A filled button on a question nobody has to answer is the app telling the reader
+ * they must.
+ */
+@Composable
+fun TonalButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = modifier
+            .graphicsLayer(alpha = if (enabled) 1f else 0.4f)
+            .heightIn(min = 48.dp),
+    ) {
+        Box(modifier = Modifier.padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
+            Text(text = label, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+        }
+    }
+}
+
 /** Pill button, [MaterialTheme.colorScheme.outline] border, transparent fill, primary text. */
 @Composable
 fun SecondaryButton(

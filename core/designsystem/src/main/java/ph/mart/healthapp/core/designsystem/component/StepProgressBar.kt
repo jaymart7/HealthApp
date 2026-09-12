@@ -21,9 +21,20 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** 5-segment (or N-segment) progress bar with a "Step N of totalSteps" label. */
+/**
+ * N-segment progress bar with a "Step N of totalSteps" label.
+ *
+ * [showLabel] false leaves the bar alone, for a caller that puts the count somewhere the bar
+ * cannot reach it — onboarding's app bar is one 48dp row of back arrow, bar and count, so the
+ * label sits beside the bar rather than under it and the caller draws it.
+ */
 @Composable
-fun StepProgressBar(currentStep: Int, totalSteps: Int, modifier: Modifier = Modifier) {
+fun StepProgressBar(
+    currentStep: Int,
+    totalSteps: Int,
+    modifier: Modifier = Modifier,
+    showLabel: Boolean = true,
+) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             repeat(totalSteps) { index ->
@@ -39,6 +50,7 @@ fun StepProgressBar(currentStep: Int, totalSteps: Int, modifier: Modifier = Modi
                 )
             }
         }
+        if (!showLabel) return@Column
         Text(
             text = stringResource(R.string.ds_step_of, currentStep, totalSteps),
             style = MaterialTheme.typography.labelMedium,

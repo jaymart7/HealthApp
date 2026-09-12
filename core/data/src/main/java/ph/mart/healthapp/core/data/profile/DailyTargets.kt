@@ -52,17 +52,37 @@ private fun targetsFor(calories: Int, floor: Int) = DailyTargets(
  * formula, same floor, same split.
  */
 fun calculateDailyTargets(profile: Profile): DailyTargets {
-    val isMale = profile.sex == Sex.Male
-    val bmr = if (isMale) {
+    val floor = if (profile.sex == Sex.Male) MALE_CALORIE_FLOOR else FEMALE_CALORIE_FLOOR
+    val calories = (tdee(profile) + (GOAL_ADJUSTMENT_KCAL[profile.goal] ?: 0)).roundToInt().coerceAtLeast(floor)
+    return targetsFor(calories, floor)
+}
+
+private fun tdee(profile: Profile): Double {
+    val bmr = if (profile.sex == Sex.Male) {
         10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5
     } else {
         10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161
     }
-    val tdee = bmr * (ACTIVITY_MULTIPLIER[profile.activityLevel] ?: 1.2)
-    val floor = if (isMale) MALE_CALORIE_FLOOR else FEMALE_CALORIE_FLOOR
-    val calories = (tdee + (GOAL_ADJUSTMENT_KCAL[profile.goal] ?: 0)).roundToInt().coerceAtLeast(floor)
-    return targetsFor(calories, floor)
+    return bmr * (ACTIVITY_MULTIPLIER[profile.activityLevel] ?: 1.2)
 }
+
+/** Total expenditure before the goal adjustment — what the target would be to hold this weight.
+ *
+ * [calculateDailyTargets] computes it and throws it away, and onboarding's confirm step is the one
+ * place it is worth printing: a calorie goal that shows the figure it was derived from is a
+ * calculation the user can check rather than a number the app asserts. Not a field on
+ * [DailyTargets], because that would put a sixth argument through every construction of it for one
+ * caller. */
+fun Profile.maintenanceKcal(): Int = tdee(this).roundToInt()
+
+/** The activity multiplier this profile's maintenance figure uses. Onboarding's activity step
+ * prints it at the moment of choosing, so the arithmetic the confirm step pays off is visible
+ * where it is decided — one table, read twice, never copied. */
+fun ActivityLevel.maintenanceMultiplier(): Double = ACTIVITY_MULTIPLIER[this] ?: 1.2
+
+/** The goal's daily adjustment, for the same reason: the line under the calorie figure names it,
+ * and a second copy of −500 would be a second answer. */
+fun Goal.calorieAdjustment(): Int = GOAL_ADJUSTMENT_KCAL[this] ?: 0
 
 /** The targets actually shown to the user: computed live from [Profile], with any manual overrides
  * layered on top — never a second cached copy of the computed value.

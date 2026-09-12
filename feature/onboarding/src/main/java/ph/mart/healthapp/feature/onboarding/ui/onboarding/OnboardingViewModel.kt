@@ -32,7 +32,9 @@ class OnboardingViewModel(
 
     private suspend fun Syntax<OnboardingUiState, OnboardingSideEffect>.celebrateThenSave(profile: Profile) {
         reduce { state.copy(isCelebrating = true) }
-        delay(700)
+        // The celebration's own length: the macro bar draws for 500ms and the button is held
+        // until the whole thing has landed.
+        delay(900)
         profileRepository.saveProfile(profile)
         postSideEffect(OnboardingSideEffect.Finished)
     }

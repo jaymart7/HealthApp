@@ -13,7 +13,7 @@ entry · Fasting · Export, backup & reminder plumbing · Launcher shortcuts & t
 sheet · Reminders & notifications · Widget & Wear · AI — the coach & the daily insight ·
 Training, strength & routines · Meal ideas & talk-to-log · Blood pressure, BMI & measurements ·
 Cycle · Progress photos & timelapse · Supplements · Steps, activity & charts · Adaptive layout ·
-Profile & Settings · Health Connect · Google Health · Localization.
+Onboarding · Profile & Settings · Health Connect · Google Health · Localization.
 
 ---
 
@@ -2072,6 +2072,65 @@ is `CLAUDE.md` → **Window width**. These are the calls behind it.
   because a viewfinder beside a list is not a viewfinder. Single columns are **not** width-capped
   either — that is a visual-design decision and this work is layout only.
 
+### Onboarding
+
+The seven steps, the copy and the order they ask in are unchanged. What the redesign changed is
+density, input, momentum and the weight given to the last screen — the flow read like a settings
+form, three cards against the top of a 915dp screen and twenty-six taps to set a weight.
+
+- **Rui is on every step, or he is not a guide.** A 104dp mascot on Welcome, a 32dp avatar and one
+  line in the header on steps 1–6, 48dp for the celebration on 6. The avatar and the bubble are one
+  fixed row inside `OnboardingStep`, so they never move between screens and Rui never appears to
+  arrive or leave. Before this he was on 0, 1 and 6 and absent in between, which is a decoration,
+  not a guide. His line is per-*option* on the steps that have options (`GoalOption.bubble`,
+  `DietOption.bubble`) because a guide that says the same thing whatever you picked is not
+  reacting to you.
+- **Steps 1 and 3 advance on tap; step 4 does not.** A disabled Next on a mandatory single-select
+  step is a receipt for a decision already made, and the header's back arrow is the undo. The
+  400ms hold (`SELECTION_HOLD_MS`) is what stops it reading as a mis-tap — the check lands and the
+  icon circle flips before the screen moves. **Step 4 keeps its button** because tapping the
+  selected card deselects it, so auto-advance would make deselection impossible, and "no
+  preference" is a real answer that needs somewhere to go. The pending advance is local to
+  `OnboardingScreen`, not in the saved `OnboardingState`: a process death mid-hold should restore
+  the step the user was looking at, not finish a navigation they never saw.
+- **`RulerPickerField` could not have been `NumericStepperField`.** The stepper's whole interaction
+  model is one tap = one unit, which is right for ±50 kcal and ±5 g and wrong for a value chosen
+  out of a range — 65 kg to 78 kg is 26 taps there and one gesture on a ruler. The stepper is not
+  deleted; it still draws step 6's calorie and macro adjustments and every other field in the app.
+  The ruler's tick geometry is **dp and does not scale with the font**: a scale whose ticks grew
+  would stop mapping 11dp to one unit and the caret would stop pointing at the numeral under it.
+- **Height and weight start unset.** `OnboardingForm.heightCm` and `weightKg` became nullable. A
+  170cm/65kg default the user never chose is two numbers the confirm step computes a calorie
+  target from, and they look like answers. "—" and a drawn-but-inactive scale says the gesture
+  exists without claiming a value; nothing is red, because an untouched form is not an error.
+- **The card steps divide the column, but only when there is a column to divide.** `weight(1f)`
+  with a minimum height clips silently on a short screen, and on a step with no button underneath
+  the missing card is the last one. `cardsFit()` asks first and falls back to a scroll with
+  fixed-height cards; a large font scale takes the same fallback.
+- **Step 4 is quieter by weight, not by label.** Outlined cards, a tonal Next until something is
+  chosen, and the stack bottom-anchored under one band of air. Three steps of filled cards have
+  already taught the reader what required looks like. The selected state is the same
+  `primaryContainer` + 2dp border as everywhere else: *optional* applies to the question, not to
+  the answer. `TonalButton` exists for this one place.
+- **Step 6 leads with the number and shows its working.** The calorie figure at 57sp on its own
+  card, and under it "1,961 kcal maintenance − 500 for steady loss". The derivation is the part
+  that earns the size: it turns the number from an assertion into a calculation the reader can
+  check, which is also what makes the stepper read as an adjustment rather than a correction.
+  `Profile.maintenanceKcal()` prints the figure `calculateDailyTargets` already computes and
+  throws away — a function rather than a sixth field on `DailyTargets`, which has ~18 construction
+  sites and one caller that wants this. After a manual change the line says "you set yourself",
+  which is what makes an override visible rather than silent.
+- **Below the floor is still error *text*, not an `errorContainer` strip.** The design handoff
+  asked for the strip; the rule in **Profile & Settings** says a caution the user may walk past
+  never gets that surface, and two treatments of one warning across the two screens that show it
+  would be worse than either. The number goes `error`, the glyph and sentence go under it, and the
+  button stays filled and enabled.
+- **The celebration is the same four roles behaving differently.** Rui grows 32→48dp and switches
+  to Celebrating, the hero card takes a `primary` border while its steppers fade out, the macro
+  bar redraws left to right over 500ms, and the button is held for the 900ms the whole thing runs.
+  No confetti and no new colour. With animations off the state still applies and navigation is
+  immediate, because every piece of it rides the app's existing `MotionDurationScale` idiom.
+
 ### Profile & Settings
 
 The tab was fourteen caption-over-card sections in one scroll, and none of them were about the
@@ -2298,6 +2357,19 @@ Connect.
   `HealthDisclosurePanel` in `:core:designsystem` because onboarding (step 5 of 6) and Profile →
   Connections both show it, and `connect()` is the only path from it to Google's consent prompt.
   It must stay in the normal flow, carry nothing unrelated, and name each scope's purpose.
+- **Four glyph rows, not four two-line bullets — and the fourth one writes.** The panel is now a
+  one-line row per scope in `HEALTH_SCOPES` order plus three assurance rows, ~180 words down to
+  ~70: trust comes from being scannable, and a wall of grey prose above two buttons is what a
+  consent form looks like. The onboarding redesign's frames said "read-only"; `HEALTH_SCOPES`
+  requests `nutrition.writeonly`, so that would have been false. The assurance reads "only the
+  meals and water you log are written back" instead. **One row per requested scope stays the
+  rule** — if a scope is added or dropped, this panel changes with it.
+- **Neither the unavailable nor the declined state is an error.** A device without Play services is
+  a fact about the device and a decline is an answer, so both take a `surfaceContainerHigh` strip
+  and an `onSurfaceVariant` glyph, never `error`. Declined additionally swaps the two actions'
+  weight — continuing becomes the filled button and retrying drops to a text button — because the
+  question has been answered and the screen's job is to get out of the way without implying they
+  got it wrong.
 - **Onboarding's health step sits before Confirm, not after.** Finishing onboarding writes the
   profile, and `AppRoot` swaps the whole wizard out the moment that lands.
 - **Two ViewModels, not one shared.** `:feature:onboarding` and `:feature:profile` each own their

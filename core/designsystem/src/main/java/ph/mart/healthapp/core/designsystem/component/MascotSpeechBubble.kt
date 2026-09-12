@@ -20,15 +20,23 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** Rounded speech bubble with a left tail, used for mascot dialogue. */
+/** Which edge the tail leaves from. [Top] is a bubble under the mascot; [Start] is a bubble
+ * *beside* one, where the tail has to point at the face or the bubble reads as a caption rather
+ * than as speech. */
+enum class BubbleTail { Top, Start }
+
+/** Rounded speech bubble with a tail, used for mascot dialogue. */
 @Composable
-fun MascotSpeechBubble(text: String, modifier: Modifier = Modifier) {
+fun MascotSpeechBubble(text: String, modifier: Modifier = Modifier, tail: BubbleTail = BubbleTail.Top) {
     val bubbleColor = MaterialTheme.colorScheme.surfaceContainerHigh
     Box(modifier = modifier.widthIn(max = 280.dp)) {
         Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = 20.dp, y = (-6).dp)
+                .align(if (tail == BubbleTail.Top) Alignment.TopStart else Alignment.CenterStart)
+                .offset(
+                    x = if (tail == BubbleTail.Top) 20.dp else (-6).dp,
+                    y = if (tail == BubbleTail.Top) (-6).dp else 0.dp,
+                )
                 .size(12.dp)
                 .rotate(45f)
                 .background(bubbleColor),

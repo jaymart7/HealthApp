@@ -1,6 +1,9 @@
 <resources>
     <string name="onboarding_back">Back</string>
     <string name="onboarding_next">Next</string>
+    <string name="onboarding_step_of">Step %1$d of %2$d</string>
+    <string name="onboarding_selected_moving">Selected, %1$s, moving to step %2$d of %3$d</string>
+    <string name="onboarding_not_selected">Not selected</string>
 
     <!-- Step 0 · Welcome -->
     <string name="onboarding_welcome_bubble">Let\'s build healthy habits together.</string>
@@ -10,6 +13,9 @@
 
     <!-- Step 1 · Goal -->
     <string name="onboarding_goal_bubble">What\'s your goal?</string>
+    <string name="onboarding_goal_lose_bubble">Got it — a deficit it is.</string>
+    <string name="onboarding_goal_maintain_bubble">Got it — steady as she goes.</string>
+    <string name="onboarding_goal_build_bubble">Got it — let\'s build.</string>
     <string name="onboarding_goal_title">What brings you here?</string>
     <string name="onboarding_goal_lose">Lose weight</string>
     <string name="onboarding_goal_lose_sub">Gradual, sustainable calorie deficit</string>
@@ -19,7 +25,9 @@
     <string name="onboarding_goal_build_sub">Calorie surplus with more protein</string>
 
     <!-- Step 2 · Basics -->
+    <string name="onboarding_basics_bubble">Four numbers and I can do the maths.</string>
     <string name="onboarding_basics_title">Tell us about yourself</string>
+    <string name="onboarding_basics_target_hint">Target weight appears once a goal other than Maintain is set.</string>
     <string name="onboarding_basics_metric">Metric (kg, cm)</string>
     <string name="onboarding_basics_imperial">Imperial (lb, in)</string>
     <string name="onboarding_basics_sex">Sex</string>
@@ -33,7 +41,9 @@
     <string name="onboarding_basics_clear">Clear</string>
 
     <!-- Step 3 · Activity -->
+    <string name="onboarding_activity_bubble">Be honest, not aspirational.</string>
     <string name="onboarding_activity_title">How active are you?</string>
+    <string name="onboarding_activity_multiplier">× %1$s on your maintenance</string>
     <string name="onboarding_activity_sedentary">Sedentary</string>
     <string name="onboarding_activity_sedentary_sub">Desk job, little exercise</string>
     <string name="onboarding_activity_light">Light</string>
@@ -44,6 +54,11 @@
     <string name="onboarding_activity_very_sub">Hard exercise 6–7 days/week</string>
 
     <!-- Step 4 · Dietary preference -->
+    <string name="onboarding_diet_bubble">Skip it if you like — this only tunes suggestions.</string>
+    <string name="onboarding_diet_none_bubble">Noted — nothing off the table.</string>
+    <string name="onboarding_diet_vegetarian_bubble">Noted — I\'ll keep suggestions meat-free.</string>
+    <string name="onboarding_diet_vegan_bubble">Noted — plant-based it is.</string>
+    <string name="onboarding_diet_other_bubble">Noted — I\'ll keep suggestions general.</string>
     <string name="onboarding_diet_title">Any dietary preference?</string>
     <string name="onboarding_diet_skip">Skip</string>
     <string name="onboarding_diet_none">None</string>
@@ -52,6 +67,8 @@
     <string name="onboarding_diet_other">Other</string>
 
     <!-- Step 5 · Google Health -->
+    <string name="onboarding_health_bubble">Entirely optional. Your call.</string>
+    <string name="onboarding_health_title">Connect Google Health</string>
     <string name="onboarding_health_skip">Skip for now</string>
     <string name="onboarding_health_unavailable">Google Health needs Google Play services and a Google account on this device.</string>
     <string name="onboarding_health_declined">Not connected — nothing was shared. You can do this later in Profile.</string>
@@ -61,7 +78,15 @@
     <string name="onboarding_confirm_bubble">Here\'s what I calculated for you — feel free to adjust it.</string>
     <string name="onboarding_confirm_title">Your daily targets</string>
     <string name="onboarding_confirm_calories">Daily calorie goal</string>
+    <string name="onboarding_confirm_decrease">Decrease daily calorie goal</string>
+    <string name="onboarding_confirm_increase">Increase daily calorie goal</string>
     <string name="onboarding_confirm_macro_split">Macro split</string>
+    <string name="onboarding_confirm_derivation">%1$,d kcal maintenance %2$s</string>
+    <string name="onboarding_confirm_adjust_lose">− %1$d for steady loss</string>
+    <string name="onboarding_confirm_adjust_build">+ %1$d to build muscle</string>
+    <string name="onboarding_confirm_adjust_maintain">with no adjustment</string>
+    <string name="onboarding_confirm_adjust_manual_down">− %1$d you set yourself</string>
+    <string name="onboarding_confirm_adjust_manual_up">+ %1$d you set yourself</string>
     <string name="onboarding_confirm_disclaimer">Estimates based on your inputs, not medical advice.</string>
     <string name="onboarding_confirm_cta">Let\'s go</string>
 </resources>
