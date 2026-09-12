@@ -191,7 +191,11 @@ private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit) {
                     text = "kcal",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                    // The field beside it fills the width it is given so a tap to the right of a
+                    // short number still lands in it, which leaves the unit hard against whatever
+                    // comes next — the edit button here, the tile's border in `MacroFieldCell`.
+                    // The gap belongs on the unit, not on the field's tap target.
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp, end = 4.dp),
                 )
             }
             Text(
