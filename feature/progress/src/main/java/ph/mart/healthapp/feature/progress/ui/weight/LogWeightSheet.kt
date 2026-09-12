@@ -29,7 +29,7 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
-import ph.mart.healthapp.feature.progress.ui.progress.components.Note
+import ph.mart.healthapp.feature.progress.ui.shared.components.Note
 
 @Composable
 fun LogWeightSheet(onDismiss: () -> Unit, viewModel: LogWeightViewModel = koinViewModel()) {

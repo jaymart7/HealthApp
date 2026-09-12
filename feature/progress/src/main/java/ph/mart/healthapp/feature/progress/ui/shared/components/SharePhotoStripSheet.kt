@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.photo.components
+package ph.mart.healthapp.feature.progress.ui.shared.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,7 +55,7 @@ internal fun sampleFrames(photos: List<ProgressPhoto>, max: Int = STRIP_FRAMES):
 
 /**
  * Preview-then-share for a run of progress photos: the sheet shows exactly the PNG that leaves the
- * app, [ShareRecapSheet][ph.mart.healthapp.feature.progress.ui.progress.components.ShareRecapSheet]'s
+ * app, [ShareRecapSheet][ph.mart.healthapp.feature.progress.ui.recap.components.ShareRecapSheet]'s
  * contract. One sheet serves both photo shares — the comparison slider hands it its two photos and
  * the timelapse hands it the whole set, because a before/after *is* a two-frame strip and a second
  * near-identical sheet would be the thing to avoid.

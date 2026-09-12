@@ -34,7 +34,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
-import ph.mart.healthapp.feature.progress.ui.progress.components.Note
+import ph.mart.healthapp.feature.progress.ui.shared.components.Note
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
 import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 

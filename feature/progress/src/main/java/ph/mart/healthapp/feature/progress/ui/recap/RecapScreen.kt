@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.progress.components
+package ph.mart.healthapp.feature.progress.ui.recap
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,10 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -32,36 +29,40 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import org.koin.androidx.compose.koinViewModel
+import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.exercise.volumeLabel
-import ph.mart.healthapp.core.data.food.DayNutrition
+import ph.mart.healthapp.core.data.food.NutritionAverages
 import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
-import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
+import ph.mart.healthapp.core.designsystem.component.GRID_TILE_PX
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
-import ph.mart.healthapp.core.designsystem.component.GRID_TILE_PX
-import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
-import ph.mart.healthapp.feature.progress.ui.photo.components.sampleFrames
-import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
-import ph.mart.healthapp.feature.progress.ui.progress.Recap
-import ph.mart.healthapp.feature.progress.ui.progress.RecapPeriod
-import ph.mart.healthapp.feature.progress.ui.progress.recap
+import ph.mart.healthapp.feature.progress.ui.shared.components.Note
+import ph.mart.healthapp.feature.progress.ui.recap.components.ShareRecapSheet
+import ph.mart.healthapp.feature.progress.ui.shared.BestDay
+import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
+import ph.mart.healthapp.feature.progress.ui.shared.components.RecapCard
+import ph.mart.healthapp.feature.progress.ui.shared.components.sampleFrames
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
 import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
@@ -69,47 +70,41 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
  * The whole period in one page — the question the charts answer one metric at a time and Home
  * doesn't answer at all.
  *
- * It reads [uiState] straight off the Progress screen's already-combined state and derives
- * everything else, so it needs no ViewModel, no route and no schema: a recap is a way of looking
- * at what is already on the tab, [TimelapseScreen]'s call. A route would have earned its own
- * `ViewModelStoreOwner` and with it a second copy of `ProgressViewModel`'s twelve repositories,
- * to render a page that writes nothing.
+ * A full-screen overlay inside the Progress tab, not a route: it wires its own
+ * `NavigationBackHandler`, or back would leave the tab. [RecapViewModel] folds the report for the
+ * period on show, so what arrives here is one [Recap] rather than the dozen series behind it.
  *
  * Every section is omitted when its window holds nothing, rather than drawn as zeros — the recap
  * card's own rule, and Home's rule for the three watch cards.
  */
 @Composable
 internal fun RecapScreen(
-    uiState: ProgressUiState,
-    period: RecapPeriod,
-    projection: GoalProjection?,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: RecapViewModel = koinViewModel(),
+) {
+    val uiState by viewModel.collectAsState()
+    RecapContent(
+        uiState = uiState,
+        onPeriodChange = { period -> viewModel.handleEvent(RecapEvent.OnPeriodChange(period)) },
+        onClose = onClose,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun RecapContent(
+    uiState: RecapUiState,
     onPeriodChange: (RecapPeriod) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    state: RecapState = rememberRecapState(),
 ) {
-    var sharing by rememberSaveable { mutableStateOf(false) }
-
     // A full-screen overlay, not a route: back has to close it rather than leave the Progress tab.
     val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
     NavigationBackHandler(state = navigationState, onBackCompleted = onClose)
 
-    val today = todayEpochDay()
-    val report = remember(uiState, period, today) {
-        recap(
-            period = period,
-            dailyNutrition = uiState.dailyNutrition,
-            activeDays = uiState.activeDays,
-            weightEntries = uiState.weightEntries,
-            moodDays = uiState.moodDays,
-            targets = uiState.targets,
-            todayEpochDay = today,
-            exerciseEntries = uiState.exerciseEntries,
-            stepDays = uiState.stepDays,
-            stepGoal = uiState.stepGoal,
-            photos = uiState.photos,
-        )
-    }
-
+    val report = uiState.report
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -123,11 +118,11 @@ internal fun RecapScreen(
             // Three pills, so the toggle splits its width evenly rather than scrolling.
             SegmentedToggle(
                 options = RecapPeriod.entries.map { stringResource(it.short) },
-                selectedIndex = RecapPeriod.entries.indexOf(period),
+                selectedIndex = RecapPeriod.entries.indexOf(uiState.period),
                 onSelect = { index -> onPeriodChange(RecapPeriod.entries[index]) },
             )
             if (report == null) {
-                Box(modifier = Modifier.weight(1f)) { EmptyRecap(period = period, onClose = onClose) }
+                Box(modifier = Modifier.weight(1f)) { EmptyRecap(period = uiState.period, onClose = onClose) }
                 return@Column
             }
             Column(
@@ -137,28 +132,28 @@ internal fun RecapScreen(
                 RecapCard(
                     recap = report,
                     goal = uiState.goal,
-                    unit = uiState.preferredUnit,
-                    projection = projection,
+                    unit = uiState.unit,
+                    projection = uiState.projection,
                 )
-                BodySection(recap = report, unit = uiState.preferredUnit)
+                BodySection(recap = report, unit = uiState.unit)
                 NutritionSection(recap = report)
-                MovementSection(recap = report, unit = uiState.preferredUnit)
+                MovementSection(recap = report, unit = uiState.unit)
                 PhotoSection(recap = report)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SecondaryButton(label = stringResource(R.string.progress_share), onClick = { sharing = true }, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_share), onClick = { state.sharing = true }, modifier = Modifier.weight(1f))
                 SecondaryButton(label = stringResource(R.string.progress_close), onClick = onClose, modifier = Modifier.weight(1f))
             }
         }
     }
 
-    if (sharing && report != null) {
+    if (state.sharing && report != null) {
         ShareRecapSheet(
             recap = report,
             goal = uiState.goal,
-            unit = uiState.preferredUnit,
-            projection = projection,
-            onDismiss = { sharing = false },
+            unit = uiState.unit,
+            projection = uiState.projection,
+            onDismiss = { state.sharing = false },
         )
     }
 }
@@ -312,30 +307,38 @@ private fun SectionHeading(text: String) {
 private fun RecapScreenPreview() {
     val today = todayEpochDay()
     AppTheme {
-        RecapScreen(
-            uiState = ProgressUiState(
-                weightEntries = listOf(
-                    WeightEntry(dateEpochDay = today - 28, weightKg = 78.4),
-                    WeightEntry(dateEpochDay = today - 12, weightKg = 77.1),
-                    WeightEntry(dateEpochDay = today - 1, weightKg = 76.3),
+        RecapContent(
+            uiState = RecapUiState(
+                report = Recap(
+                    period = RecapPeriod.Month,
+                    daysLogged = 26,
+                    averages = NutritionAverages(1940, 141, 196, 68, daysLogged = 24),
+                    targets = DailyTargets(calories = 2000, proteinG = 150, carbsG = 200, fatG = 67, floor = 1500),
+                    weightTrend = WeightTrendDisplay(currentKg = 76.3, deltaKg = -0.8, hasPrior = true),
+                    moodAverages = null,
+                    bestDay = BestDay(dateEpochDay = today - 3, calories = 1985),
+                    startWeightKg = 78.4,
+                    endWeightKg = 76.3,
+                    photos = listOf(
+                        ProgressPhoto(id = 1, dateEpochDay = today - 28, filePath = ""),
+                        ProgressPhoto(id = 2, dateEpochDay = today - 2, filePath = ""),
+                    ),
                 ),
-                photos = listOf(
-                    ProgressPhoto(id = 1, dateEpochDay = today - 28, filePath = ""),
-                    ProgressPhoto(id = 2, dateEpochDay = today - 2, filePath = ""),
-                ),
+                period = RecapPeriod.Month,
                 goal = Goal.Lose,
-                preferredUnit = UnitSystem.Metric,
-                dailyNutrition = (0..29).map { offset ->
-                    val calories = if (offset % 5 == 0) 0 else 1_800 + offset * 7
-                    DayNutrition(today - 29 + offset, calories, calories / 16, calories / 10, calories / 30)
-                },
-                activeDays = (today - 25..today).toSet(),
-                targets = DailyTargets(calories = 2000, proteinG = 150, carbsG = 200, fatG = 67, floor = 1500),
+                unit = UnitSystem.Metric,
             ),
-            period = RecapPeriod.Month,
-            projection = null,
             onPeriodChange = {},
             onClose = {},
         )
+    }
+}
+
+/** Nothing logged in the window — the page that replaces the page. */
+@PreviewLightDark
+@Composable
+private fun RecapScreenEmptyPreview() {
+    AppTheme {
+        RecapContent(uiState = RecapUiState(period = RecapPeriod.Week), onPeriodChange = {}, onClose = {})
     }
 }

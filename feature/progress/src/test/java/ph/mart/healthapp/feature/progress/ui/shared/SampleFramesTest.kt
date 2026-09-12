@@ -1,9 +1,9 @@
-package ph.mart.healthapp.feature.progress.ui.photo
+package ph.mart.healthapp.feature.progress.ui.shared
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
-import ph.mart.healthapp.feature.progress.ui.photo.components.sampleFrames
+import ph.mart.healthapp.feature.progress.ui.shared.components.sampleFrames
 
 private fun photos(count: Int): List<ProgressPhoto> =
     (0 until count).map { ProgressPhoto(id = it.toLong(), dateEpochDay = 20_000L + it, filePath = "") }

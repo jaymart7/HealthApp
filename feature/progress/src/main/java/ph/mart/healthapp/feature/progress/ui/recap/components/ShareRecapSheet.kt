@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.progress.components
+package ph.mart.healthapp.feature.progress.ui.recap.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -11,9 +11,10 @@ import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.designsystem.component.ShareImageSheet
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.progress.ui.progress.BestDay
-import ph.mart.healthapp.feature.progress.ui.progress.Recap
-import ph.mart.healthapp.feature.progress.ui.progress.RecapPeriod
+import ph.mart.healthapp.feature.progress.ui.shared.BestDay
+import ph.mart.healthapp.feature.progress.ui.shared.components.RecapCard
+import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 
 /**
  * Preview-then-share for the recap: the sheet shows exactly the PNG that leaves the app, which is

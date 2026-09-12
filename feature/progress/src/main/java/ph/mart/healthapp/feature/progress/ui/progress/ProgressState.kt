@@ -30,7 +30,6 @@ internal class ProgressScreenState(
     activeBloodPressureSheet: Boolean = false,
     activeCycleSheet: Boolean = false,
     activeRecap: Boolean = false,
-    recapPeriod: RecapPeriod = DEFAULT_RECAP_PERIOD,
     activeTimelapse: Boolean = false,
     activeEnergyCheckIn: Boolean = false,
     pendingDeleteReadingId: Long? = null,
@@ -54,7 +53,6 @@ internal class ProgressScreenState(
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
     var activeCycleSheet: Boolean by mutableStateOf(activeCycleSheet)
     var activeRecap: Boolean by mutableStateOf(activeRecap)
-    var recapPeriod: RecapPeriod by mutableStateOf(recapPeriod)
     var activeTimelapse: Boolean by mutableStateOf(activeTimelapse)
     var activeEnergyCheckIn: Boolean by mutableStateOf(activeEnergyCheckIn)
 
@@ -167,10 +165,12 @@ internal class ProgressScreenState(
                     it.expandedGroups.map { group -> group.name },
                     it.selectedPhotoIds,
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
-                    it.activeBloodPressureSheet, it.activeRecap, it.recapPeriod.name, it.activeTimelapse,
+                    it.activeBloodPressureSheet, it.activeRecap, it.activeTimelapse,
                     it.activeEnergyCheckIn, it.pendingDeleteReadingId, it.activeCycleSheet,
                     // Appended, never renumbered: an index that moves restores the wrong field
-                    // into the wrong overlay.
+                    // into the wrong overlay. The recap's period was removed from index 8 when it
+                    // moved into `RecapViewModel`, and everything after it shifted down by one —
+                    // the one renumber this list has had, both halves in the same commit.
                     it.activeMealGallery, it.viewedMealPhotoId,
                 )
             },
@@ -189,13 +189,12 @@ internal class ProgressScreenState(
                     measurementSheetPart = (saved[5] as String?)?.let(MeasurementPart::valueOf),
                     activeBloodPressureSheet = saved[6] as Boolean,
                     activeRecap = saved[7] as Boolean,
-                    recapPeriod = RecapPeriod.valueOf(saved[8] as String),
-                    activeTimelapse = saved[9] as Boolean,
-                    activeEnergyCheckIn = saved[10] as Boolean,
-                    pendingDeleteReadingId = saved[11] as Long?,
-                    activeCycleSheet = saved[12] as Boolean,
-                    activeMealGallery = saved[13] as Boolean,
-                    viewedMealPhotoId = saved[14] as Long?,
+                    activeTimelapse = saved[8] as Boolean,
+                    activeEnergyCheckIn = saved[9] as Boolean,
+                    pendingDeleteReadingId = saved[10] as Long?,
+                    activeCycleSheet = saved[11] as Boolean,
+                    activeMealGallery = saved[12] as Boolean,
+                    viewedMealPhotoId = saved[13] as Long?,
                 )
             },
         )

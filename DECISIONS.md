@@ -787,15 +787,19 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   **inside** the same `Canvas` as the gridlines they name, off the same `yFor` mapping — a label
   gutter laid out beside the plot would distribute four labels evenly and be a pixel or two out at
   every font scale.
-- **The recap screen is an overlay inside the Progress tab, not a route.** A route earns its own
-  `ViewModelStoreOwner`, and with it a second copy of `ProgressViewModel`'s twelve repositories,
-  to render a page that writes nothing — so it reads `ProgressUiState` verbatim and folds its own
-  `recap()`, the call `TimelapseScreen` and `PhotoComparisonScreen` already make (and, like them,
-  it wires its own `NavigationBackHandler`, or back would leave the tab). The Progress header's
-  icon opens it; the week share it used to open lives inside it now, on whichever period is
-  showing. Its movement row and its lift notes are drawn for Month and Year only, which is what
-  leaves the weekly card on the overview untouched. The header icon is hidden when there is no
-  recap, the card's own rule.
+- **The recap screen is an overlay inside the Progress tab, not a route** — and that half has
+  never moved. A route earns its own `ViewModelStoreOwner` *and* a back that leaves the tab, so it
+  stays a swap-in over `ProgressContent` wiring its own `NavigationBackHandler`. What did move is
+  where its data comes from: it read `ProgressUiState` verbatim and folded its own `recap()` in
+  composition until it was given a flow package, and now `RecapViewModel` does the folding. That
+  container reads seven of `ProgressViewModel`'s repositories a second time, which is the cost the
+  old entry refused — taken deliberately (see **Three overlays became flows** below), and paid
+  back in one place: the **period lives in the container**, so `RecapUiState` is a single folded
+  `Recap` rather than a second copy of the dozen series behind it, and a period picked once
+  survives closing and reopening. The Progress header's icon opens it; the week share it used to
+  open lives inside it now, on whichever period is showing. Its movement row and its lift notes
+  are drawn for Month and Year only, which is what leaves the weekly card on the overview
+  untouched. The header icon is hidden when there is no recap, the card's own rule.
 - **The share image is one card, never the page.** `captureToPicture` records what was *drawn*,
   so capturing the recap's scrolling column would hand the chooser a screenshot clipped at the
   fold. `ShareRecapSheet` therefore still renders exactly one `RecapCard` plus the brand footer —
@@ -1882,11 +1886,12 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 
 ### Progress photos & timelapse
 
-- **A timelapse is a way of looking at the grid, not a thing to store.** `TimelapseScreen` plays
-  `uiState.photos` (already ascending by date, already combined) in place — no schema, no
-  repository, no ViewModel, the `badgeGroups()` and `goalProjection()` shape — which is also why it
-  sits in `ui/photo/components/` beside `PhotoComparisonScreen` rather than earning a flow package:
-  a second ViewModel is what earns one. Playback **loops** rather than stopping at the end, since
+- **A timelapse is a way of looking at the grid, not a thing to store.** No schema and no table:
+  the player reads the photos the repository already returns, ascending by date, and derives
+  everything else — the `badgeGroups()` and `goalProjection()` shape. It used to read them
+  second-hand off `ProgressUiState` and sit in `ui/photo/components/`; it is now `ui/timelapse/`
+  with its own container (see **Three overlays became flows** below), which changes where the list
+  comes from and nothing about what it means. Playback **loops** rather than stopping at the end, since
   stopping would need a restart control for a gesture the loop gives away free, and scrubbing
   pauses it — a slider that kept advancing under the finger fights whoever is looking for one
   particular week. The Photos tab offers it at **two** photos, the same floor the comparison slider
@@ -1912,7 +1917,25 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Both photo overlays take back themselves.** `PhotoComparisonScreen` and `TimelapseScreen` are
   full-screen overlays inside the Progress tab, not routes, so each wires its own
   `NavigationBackHandler` — without one, back out of a comparison left the Progress tab entirely
-  rather than clearing the selection.
+  rather than clearing the selection. A flow package did not turn either into a route: `ProgressScreen`
+  still draws them over `ProgressContent`, and `ProgressScreenState` still owns what opened them.
+- **Three overlays became flows, and the duplication is the price.** `PhotoComparisonScreen`,
+  `TimelapseScreen` and `RecapScreen` are screens, and a `*Screen` inside a `components/` package
+  was the thing being fixed — a sub-view lives there (onboarding's six steps, the photo flow's
+  three), a screen does not. Each now has `ui/<flow>/` with the full
+  `*Data`/`*State`/`*ViewModel`/`*Screen` quartet, which the "a second ViewModel is what earns a
+  flow package" rule is satisfied by rather than bent around. **None of the three writes anything**,
+  so every container exists to re-observe series `ProgressViewModel` already streams:
+  `ComparisonViewModel` and `TimelapseViewModel` read the same two flows as each other (photos +
+  profile), and `RecapViewModel` reads seven of `ProgressViewModel`'s thirteen repositories. That
+  is a real cost and it was taken with eyes open, not overlooked. What it buys back: each overlay
+  owns the data it draws instead of a slice of `ProgressUiState`, `ProgressContent` hands down only
+  the selection that opened it (the photo pairing moved into `comparisonPair()`, the two-photo
+  floor into `TimelapseUiState.playable`, the period into `RecapViewModel`), and the screen-local
+  state that was loose `rememberSaveable`s in three composable bodies became three state holders —
+  which is how the comparison divider stopped being lost to a rotation, since it had been a bare
+  `remember`. `ProgressViewModel` stays read-only, and `ProgressScreenState`'s saver was
+  renumbered once, both halves in the same commit, when the recap's period left it.
 - **The Blood pressure page scrolls itself**, joining Photos in `SubjectDetail`'s `SelfScrolling`
   set — its list is per-reading rather than per-day, so a 3M window can hold a couple of hundred
   rows, and a `LazyColumn` nested in a scrolling column is measured with infinite height. Its delete

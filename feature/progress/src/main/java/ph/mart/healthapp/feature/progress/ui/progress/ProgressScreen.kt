@@ -41,11 +41,13 @@ import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.MealPhotoGallery
-import ph.mart.healthapp.feature.progress.ui.photo.components.PhotoComparisonScreen
-import ph.mart.healthapp.feature.progress.ui.photo.components.TimelapseScreen
+import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
+import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
-import ph.mart.healthapp.feature.progress.ui.progress.components.RecapScreen
+import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
+import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
+import ph.mart.healthapp.feature.progress.ui.shared.recap
 import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 
 /** [openRecap] is the weekly recap notification asking for its overlay — see `progressEntries`.
@@ -189,36 +191,22 @@ private fun ProgressContent(
                 detail(subject, Modifier)
             }
 
-            val selectedPhotos = uiState.photos.filter { it.id in state.selectedPhotoIds }
-            if (selectedPhotos.size == 2) {
-                val (older, newer) = selectedPhotos.sortedBy { it.dateEpochDay }
+            // Each of the three reads its own container, so all this hands down is the selection
+            // that opened it — the photo pairing, the two-photo floor and the period all sit behind
+            // those. They stay overlays rather than routes; only the state moved.
+            if (state.selectedPhotoIds.size == 2) {
                 PhotoComparisonScreen(
-                    photoA = older,
-                    photoB = newer,
-                    unit = uiState.preferredUnit,
+                    selectedIds = state.selectedPhotoIds,
                     onClose = { state.selectedPhotoIds = emptyList() },
                 )
             }
 
-            if (state.activeTimelapse && uiState.photos.size >= 2) {
-                TimelapseScreen(
-                    photos = uiState.photos,
-                    unit = uiState.preferredUnit,
-                    onClose = state::closeTimelapse,
-                )
+            if (state.activeTimelapse) {
+                TimelapseScreen(onClose = state::closeTimelapse)
             }
 
-            // A full-screen overlay inside the tab, like the two photo ones — it reads the same
-            // combined state, so it needs neither a route nor a second ViewModel. It owns its own
-            // share sheet, which is why nothing here does.
             if (state.activeRecap) {
-                RecapScreen(
-                    uiState = uiState,
-                    period = state.recapPeriod,
-                    projection = projection,
-                    onPeriodChange = { state.recapPeriod = it },
-                    onClose = state::closeRecap,
-                )
+                RecapScreen(onClose = state::closeRecap)
             }
 
             // The third overlay, and the only one that writes — the apply goes back up to the

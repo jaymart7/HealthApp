@@ -46,7 +46,8 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
-import ph.mart.healthapp.feature.progress.ui.progress.Recap
+import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.feature.progress.ui.shared.components.RecapCard
 import ph.mart.healthapp.feature.progress.ui.progress.patterns
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.SubjectGroup

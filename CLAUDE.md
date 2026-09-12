@@ -270,12 +270,15 @@ throughout; a commissioned set replaces the five drawings, not the picker around
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `history`,
-  `recipe`, `search`, `ideas`, `voice`, `shared`), `:feature:progress` (`progress` — the overview, the
-  detail chrome and the recap — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
+  `recipe`, `search`, `ideas`, `voice`, `shared`), `:feature:progress` (`progress` — the overview and
+  the detail chrome — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
-  `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts, and a
-  `shared/components/` holding `RangeBarChart` and `DayBarChart`, which between them draw every
-  subject's bars except Mood's, Nutrition's and Supplements'),
+  `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts;
+  the tab's three read-only overlays are flows of their own — `comparison`, `timelapse` and
+  `recap`, each with the `*Data`/`*State`/`*ViewModel`/`*Screen` quartet — and a
+  `shared/` holding `Recap.kt` plus a `components/` with `RangeBarChart` and `DayBarChart`, which
+  between them draw every subject's bars except Mood's, Nutrition's and Supplements', beside
+  `RecapCard`, `SharePhotoStripSheet`, `PhotoOverlayLabel` and `Note`),
   `:feature:profile` (`profile`, `settings`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
   `shared/` holding the row primitives — `AppListRow`, `IconTile`, `SectionHeader`, `StepperRow`
   — beside `LibraryRow` and `RenameSheet`, which the food library and the routine library both

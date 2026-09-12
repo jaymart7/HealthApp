@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.progress
+package ph.mart.healthapp.feature.progress.ui.shared
 
 import androidx.annotation.StringRes
 import kotlin.math.abs

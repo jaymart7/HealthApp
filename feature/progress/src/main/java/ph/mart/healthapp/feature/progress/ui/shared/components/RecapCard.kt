@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.progress.components
+package ph.mart.healthapp.feature.progress.ui.shared.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,9 +50,9 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
-import ph.mart.healthapp.feature.progress.ui.progress.BestDay
-import ph.mart.healthapp.feature.progress.ui.progress.Recap
-import ph.mart.healthapp.feature.progress.ui.progress.RecapPeriod
+import ph.mart.healthapp.feature.progress.ui.shared.BestDay
+import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
 import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
