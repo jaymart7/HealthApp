@@ -35,6 +35,7 @@ internal class ProgressScreenState(
     pendingDeleteReadingId: Long? = null,
     activeMealGallery: Boolean = false,
     viewedMealPhotoId: Long? = null,
+    activePhotoShare: Boolean = false,
 ) {
     /** Null is the overview. A detail page is a swap-in inside this tab rather than a route, so it
      * keeps the bottom bar and the FAB and costs no second copy of [ProgressViewModel]. */
@@ -62,6 +63,10 @@ internal class ProgressScreenState(
     /** The meal-photo gallery, a fifth overlay over this tab. */
     var activeMealGallery: Boolean by mutableStateOf(activeMealGallery)
 
+    /** The progress-photo strip sheet, opened from the Photos page's own share icon. The one
+     * subject whose header share is not the weekly recap — see `DECISIONS.md`. */
+    var activePhotoShare: Boolean by mutableStateOf(activePhotoShare)
+
     /** The one plate opened full-frame inside that gallery. Two levels, so back closes the frame
      * before the gallery — see the gallery's own handler. */
     var viewedMealPhotoId: Long? by mutableStateOf(viewedMealPhotoId)
@@ -82,6 +87,10 @@ internal class ProgressScreenState(
 
     fun toggleGroup(group: SubjectGroup) {
         expandedGroups = if (group in expandedGroups) expandedGroups - group else expandedGroups + group
+    }
+
+    fun clearPhotoSelection() {
+        selectedPhotoIds = emptyList()
     }
 
     fun togglePhotoSelection(id: Long) {
@@ -123,6 +132,14 @@ internal class ProgressScreenState(
 
     fun closeRecap() {
         activeRecap = false
+    }
+
+    fun openPhotoShare() {
+        activePhotoShare = true
+    }
+
+    fun closePhotoShare() {
+        activePhotoShare = false
     }
 
     fun openTimelapse() {
@@ -171,7 +188,7 @@ internal class ProgressScreenState(
                     // into the wrong overlay. The recap's period was removed from index 8 when it
                     // moved into `RecapViewModel`, and everything after it shifted down by one —
                     // the one renumber this list has had, both halves in the same commit.
-                    it.activeMealGallery, it.viewedMealPhotoId,
+                    it.activeMealGallery, it.viewedMealPhotoId, it.activePhotoShare,
                 )
             },
             restore = { saved ->
@@ -195,6 +212,7 @@ internal class ProgressScreenState(
                     activeCycleSheet = saved[11] as Boolean,
                     activeMealGallery = saved[12] as Boolean,
                     viewedMealPhotoId = saved[13] as Long?,
+                    activePhotoShare = saved[14] as Boolean,
                 )
             },
         )

@@ -47,6 +47,7 @@ import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
+import ph.mart.healthapp.feature.progress.ui.shared.components.SharePhotoStripSheet
 import ph.mart.healthapp.feature.progress.ui.shared.recap
 import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 
@@ -207,6 +208,16 @@ private fun ProgressContent(
 
             if (state.activeRecap) {
                 RecapScreen(onClose = state::closeRecap)
+            }
+
+            // The Photos page's own share. A sheet rather than an overlay, and reached from the
+            // header rather than from inside a comparison, so it reads the tab's photos directly.
+            if (state.activePhotoShare && uiState.photos.isNotEmpty()) {
+                SharePhotoStripSheet(
+                    photos = uiState.photos,
+                    unit = uiState.preferredUnit,
+                    onDismiss = state::closePhotoShare,
+                )
             }
 
             // The third overlay, and the only one that writes — the apply goes back up to the

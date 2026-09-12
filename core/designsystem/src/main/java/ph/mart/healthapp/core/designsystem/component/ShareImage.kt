@@ -1,9 +1,16 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Picture
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -27,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
@@ -62,6 +70,63 @@ fun Modifier.captureToPicture(picture: Picture): Modifier = drawWithCache {
 }
 
 /**
+ * Software bitmap on every API: `Bitmap.createBitmap(picture)` is shorter above API 28 but yields a
+ * hardware bitmap, and compressing one of those is its own compatibility story.
+ */
+private fun Picture.toSoftwareBitmap(): Bitmap {
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    android.graphics.Canvas(bitmap).drawPicture(this)
+    return bitmap
+}
+
+/** True on API 29 and up, where MediaStore owns the write and no permission is asked for. */
+private val ScopedStorage: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+
+/** The one permission [savePng] needs, and only below API 29. */
+internal const val LEGACY_SAVE_PERMISSION = android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+
+/**
+ * True when [savePng] can run without asking — always on API 29+, and below it only once
+ * `WRITE_EXTERNAL_STORAGE` has been granted.
+ */
+internal fun canSaveWithoutAsking(context: Context): Boolean = ScopedStorage ||
+    ContextCompat.checkSelfPermission(context, LEGACY_SAVE_PERMISSION) == PackageManager.PERMISSION_GRANTED
+
+/**
+ * The same PNG [sharePng] hands the chooser, written into the device's own gallery under
+ * `Pictures/FitPulse` — the copy that survives the cache being cleared.
+ *
+ * Returns false rather than throwing: a full disk, a revoked permission and a provider that
+ * refuses the insert all look the same from here, and none of them is worth taking the sheet down
+ * over. `IS_PENDING` keeps the half-written file out of every gallery until the bytes are there;
+ * below API 29 there is no pending flag, which is the API the permission exists for.
+ */
+suspend fun savePng(context: Context, picture: Picture, fileName: String): Boolean =
+    withContext(Dispatchers.IO) {
+        runCatching {
+            val bitmap = picture.toSoftwareBitmap()
+            val resolver = context.contentResolver
+            val pending = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                if (ScopedStorage) {
+                    put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_PICTURES}/FitPulse")
+                    put(MediaStore.Images.Media.IS_PENDING, 1)
+                }
+            }
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, pending)
+                ?: return@runCatching false
+            resolver.openOutputStream(uri)?.use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                ?: return@runCatching false
+            if (ScopedStorage) {
+                val done = ContentValues().apply { put(MediaStore.Images.Media.IS_PENDING, 0) }
+                resolver.update(uri, done, null, null)
+            }
+            true
+        }.getOrDefault(false)
+    }
+
+/**
  * One file per [fileName], overwritten: the last image shared is the only one worth keeping, and a
  * fixed name means nothing accumulates in the cache. The grant is read-only and scoped to
  * `cacheDir/share` by `@xml/file_paths` — nothing in `filesDir` (the progress photos, the
@@ -69,10 +134,7 @@ fun Modifier.captureToPicture(picture: Picture): Modifier = drawWithCache {
  */
 suspend fun sharePng(context: Context, picture: Picture, fileName: String) {
     val uri = withContext(Dispatchers.IO) {
-        // Software bitmap on every API: Bitmap.createBitmap(picture) is shorter above API 28 but
-        // yields a hardware bitmap, and compressing one of those is its own compatibility story.
-        val bitmap = Bitmap.createBitmap(picture.width, picture.height, Bitmap.Config.ARGB_8888)
-        android.graphics.Canvas(bitmap).drawPicture(picture)
+        val bitmap = picture.toSoftwareBitmap()
         val dir = File(context.cacheDir, "share").apply { mkdirs() }
         val file = File(dir, fileName)
         FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -107,6 +169,16 @@ fun ShareImageSheet(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val picture = remember { Picture() }
+
+    // Zero until the sheet has drawn a frame — a tap that fast would otherwise write an empty file.
+    fun save() {
+        scope.launch { if (picture.width > 0 && savePng(context, picture, fileName)) onDismiss() }
+    }
+    // Below API 29 the gallery write needs asking for; at 29 and up the launcher is never reached.
+    val permissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) save()
+        }
 
     AppBottomSheet(onDismiss = onDismiss) {
         Column(
@@ -146,6 +218,14 @@ fun ShareImageSheet(
                 }
             },
             modifier = Modifier.padding(top = 16.dp),
+        )
+        // The chooser is a hand-off; this is the copy that stays. Same picture, same failure
+        // policy — the sheet stays put rather than announcing what went wrong.
+        TextButton(
+            label = stringResource(R.string.ds_share_save),
+            onClick = {
+                if (canSaveWithoutAsking(context)) save() else permissionLauncher.launch(LEGACY_SAVE_PERMISSION)
+            },
         )
     }
 }

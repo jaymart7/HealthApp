@@ -31,11 +31,17 @@ internal class TimelapseState(
     var speed: Int by mutableIntStateOf(speed)
     var sharing: Boolean by mutableStateOf(sharing)
 
-    /** Scrubbing takes over: a slider that kept advancing under the finger would fight whoever is
+    /** Scrubbing takes over: a timeline that kept advancing under the finger would fight whoever is
      * looking for one particular week. */
     fun scrubTo(frame: Int, frameCount: Int) {
         playing = false
         index = frame.coerceIn(0, (frameCount - 1).coerceAtLeast(0))
+    }
+
+    /** One control, three speeds — a chip that cycles rather than three pills that don't fit
+     * beside the transport row. */
+    fun cycleSpeed() {
+        speed = (speed + 1) % TIMELAPSE_FPS.size
     }
 
     companion object {

@@ -3,17 +3,16 @@ package ph.mart.healthapp.feature.progress.ui.comparison.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.input.pointer.pointerInput
@@ -48,15 +46,19 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.comparison.ComparisonPair
 import ph.mart.healthapp.feature.progress.ui.comparison.ComparisonState
+import ph.mart.healthapp.feature.progress.ui.comparison.DIVIDER_RANGE
 import ph.mart.healthapp.feature.progress.ui.comparison.rememberComparisonState
 import ph.mart.healthapp.feature.progress.ui.shared.components.PhotoOverlayLabel
 
 /** Half the handle, in dp — it is clamped by this so it stays fully inside the clipped frame. */
-private val HandleRadius = 16.dp
+private val HandleRadius = 24.dp
 
 /**
  * Before/after: the older shot fills the frame and the newer one is drawn over it, clipped to the
  * right of a draggable divider.
+ *
+ * Full-bleed and square-cornered. The frame is the screen's subject, and a rounded card floating
+ * in a padded column was framing a photograph like a settings row.
  */
 @Composable
 internal fun ComparisonSlider(
@@ -73,22 +75,31 @@ internal fun ComparisonSlider(
 
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(0.75f)
-            .clip(RoundedCornerShape(12.dp))
+            // Height-first: on a wide, short window the picture is bounded by the room above the
+            // controls, not by the width it could stretch to.
+            .aspectRatio(0.75f, matchHeightConstraintsFirst = true)
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .onSizeChanged { widthPx = it.width.toFloat() }
+            // Anywhere on the frame, not just on the handle — a 48dp target in the middle of a
+            // 549dp picture is a target you have to look for.
             .pointerInput(Unit) {
-                detectHorizontalDragGestures { change, drag ->
+                detectHorizontalDragGestures(
+                    onDragStart = { offset -> state.moveDivider(offset.x / size.width) },
+                ) { change, drag ->
                     change.consume()
-                    state.dividerFraction = (state.dividerFraction + drag / size.width).coerceIn(0f, 1f)
+                    state.moveDivider(state.dividerFraction + drag / size.width)
                 }
+            }
+            // A tap never becomes a drag, so without this the first touch on a fresh comparison
+            // does nothing at all.
+            .pointerInput(Unit) {
+                detectTapGestures { offset -> state.moveDivider(offset.x / size.width) }
             }
             // Drag-only would leave this unreachable with a screen reader or a switch device.
             .semantics {
                 contentDescription = spoken
-                progressBarRangeInfo = ProgressBarRangeInfo(state.dividerFraction, 0f..1f)
-                setProgress { target -> state.dividerFraction = target.coerceIn(0f, 1f); true }
+                progressBarRangeInfo = ProgressBarRangeInfo(state.dividerFraction, DIVIDER_RANGE)
+                setProgress { target -> state.moveDivider(target); true }
             },
     ) {
         bitmapA?.let {
@@ -113,13 +124,14 @@ internal fun ComparisonSlider(
             modifier = Modifier
                 .offset { IntOffset((widthPx * state.dividerFraction).roundToInt(), 0) }
                 .fillMaxHeight()
-                .width(2.dp)
-                .background(MaterialTheme.colorScheme.surface),
+                .width(4.dp)
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest),
         )
         Surface(
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.surface,
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
             contentColor = MaterialTheme.colorScheme.onSurface,
+            shadowElevation = 2.dp,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset {
@@ -129,13 +141,13 @@ internal fun ComparisonSlider(
                     val max = (widthPx.roundToInt() - 2 * half).coerceAtLeast(0)
                     IntOffset(((widthPx * state.dividerFraction).roundToInt() - half).coerceIn(0, max), 0)
                 }
-                .size(32.dp),
+                .size(48.dp),
         ) {
-            Icon(imageVector = AppIcons.Compare, contentDescription = null, modifier = Modifier.padding(6.dp))
+            Icon(imageVector = AppIcons.Compare, contentDescription = null, modifier = Modifier.padding(12.dp))
         }
 
-        PhotoOverlayLabel(text = labelA, modifier = Modifier.align(Alignment.BottomStart).padding(8.dp))
-        PhotoOverlayLabel(text = labelB, modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp))
+        PhotoOverlayLabel(text = labelA, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
+        PhotoOverlayLabel(text = labelB, modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp))
     }
 }
 

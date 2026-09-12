@@ -47,6 +47,7 @@ class ComparisonViewModel(
                 photos = photos,
                 unit = profile?.preferredUnit ?: UnitSystem.Metric,
                 selectedIds = ids,
+                goal = profile?.goal,
             )
         }.collect { newState -> reduce { newState } }
     }

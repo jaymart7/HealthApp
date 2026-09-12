@@ -14,22 +14,45 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
+/** [Small] is a grid tile's corner; [Medium] is a full-frame one — compare, timelapse, the PNG. */
+internal enum class OverlayLabelSize { Small, Medium }
+
 /**
- * The pill that sits over a progress photo — a date in the corner of a comparison frame, a date or
- * a weight in the corner of a timelapse one. One component rather than two near-identical private
- * ones, so the two overlays can't drift apart in how a caption reads over an image.
+ * The pill that sits over a progress photo — a date in the corner of a grid tile or a comparison
+ * frame, a weight in the corner of a timelapse one. One component rather than three near-identical
+ * private ones, so the surfaces can't drift apart in how a caption reads over an image.
+ *
+ * The plate is **opaque** `surfaceContainerLowest` with `onSurface` text, never a translucent
+ * scrim over muted text: a photo can be light or dark under any corner of any frame, and an
+ * alpha-blended label is legible over exactly one of those. It is the plate that guarantees the
+ * contrast, so the type on it needs no alpha of its own.
  *
  * [tabular] is for a number: a weight jittering as the player cycles frames is exactly what
  * tabular figures exist to stop.
  */
 @Composable
-internal fun PhotoOverlayLabel(text: String, modifier: Modifier = Modifier, tabular: Boolean = false) {
-    Surface(color = MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(8.dp), modifier = modifier) {
+internal fun PhotoOverlayLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+    size: OverlayLabelSize = OverlayLabelSize.Medium,
+    tabular: Boolean = false,
+) {
+    val style = when (size) {
+        OverlayLabelSize.Small -> MaterialTheme.typography.labelSmall
+        OverlayLabelSize.Medium -> MaterialTheme.typography.labelMedium
+    }
+    val horizontal = if (size == OverlayLabelSize.Small) 8.dp else 12.dp
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shape = RoundedCornerShape(8.dp),
+        shadowElevation = 1.dp,
+        modifier = modifier,
+    ) {
         Text(
             text = text,
-            style = if (tabular) MaterialTheme.typography.labelMedium.tabularNums else MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = if (tabular) style.tabularNums else style,
+            modifier = Modifier.padding(horizontal = horizontal, vertical = 4.dp),
         )
     }
 }
@@ -40,7 +63,8 @@ private fun PhotoOverlayLabelPreview() {
     AppTheme {
         Surface {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PhotoOverlayLabel(text = "12 Mar")
+                PhotoOverlayLabel(text = "12 Mar", size = OverlayLabelSize.Small)
+                PhotoOverlayLabel(text = "12 Mar 2026")
                 PhotoOverlayLabel(text = "76.9 kg", tabular = true)
             }
         }

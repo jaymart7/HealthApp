@@ -109,7 +109,13 @@ internal fun SubjectDetail(
             DetailHeader(
                 title = stringResource(subject.label),
                 onBack = if (embedded) null else state::closeSubject,
-                onShare = if (canShare) state::openRecap else null,
+                // Photos is the one subject whose share is not the weekly recap: the page is a set
+                // of images, and the thing worth sending from it is the strip those images make.
+                onShare = when {
+                    subject == Subject.Photos && uiState.photos.isNotEmpty() -> state::openPhotoShare
+                    canShare -> state::openRecap
+                    else -> null
+                },
             )
             when {
                 !summary.tracked -> EmptyDetail(

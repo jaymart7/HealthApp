@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.progress.ui.comparison
 
+import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 
@@ -13,6 +14,9 @@ data class ComparisonUiState(
     val photos: List<ProgressPhoto> = emptyList(),
     val unit: UnitSystem = UnitSystem.Metric,
     val selectedIds: List<Long> = emptyList(),
+    /** Which way is the right way for this reader. A kilo gained is the goal or the opposite of it
+     * depending on nothing the photos themselves carry. */
+    val goal: Goal? = null,
 ) {
     val pair: ComparisonPair? get() = comparisonPair(photos, selectedIds)
 }

@@ -282,6 +282,15 @@
         <item quantity="other">shots</item>
     </plurals>
     <string name="progress_photos_timelapse">Play timelapse</string>
+    <string name="progress_photos_timelapse_short">Timelapse</string>
+    <plurals name="progress_photos_count">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <string name="progress_photos_span">%1$s · %2$s – %3$s</string>
+    <string name="progress_photos_hint_none">Tap two photos to compare them side by side.</string>
+    <string name="progress_photos_hint_one">One picked. Tap a second photo to compare.</string>
+    <string name="progress_photos_clear">Clear</string>
     <string name="progress_photo_generic">Progress photo</string>
     <string name="progress_photo_from">Progress photo from %1$s</string>
     <string name="progress_meal_photos">Meal photos</string>
@@ -295,14 +304,25 @@
     <string name="progress_timelapse_slow">Slow</string>
     <string name="progress_timelapse_normal">Normal</string>
     <string name="progress_timelapse_fast">Fast</string>
+    <string name="progress_timelapse_speed">%1$s · %2$d fps</string>
+    <string name="progress_timelapse_frame_of">Frame %1$d of %2$d</string>
+    <string name="progress_timelapse_status_playing">Playing · loops</string>
+    <string name="progress_timelapse_status_paused">Paused · drag the timeline</string>
+    <string name="progress_timelapse_timeline">Timeline</string>
     <string name="progress_compare_title">Compare photos</string>
     <string name="progress_compare_spoken">Before %1$s, after %2$s. Drag to reveal.</string>
+    <string name="progress_compare_mode_slider">Slider</string>
+    <string name="progress_compare_mode_side">Side by side</string>
+    <string name="progress_compare_over">over %1$s · %2$s → %3$s</string>
+    <string name="progress_compare_between">%1$s → %2$s</string>
     <string name="progress_weight_value">%1$s %2$s</string>
     <plurals name="progress_strip_days">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
     <string name="progress_strip_span">%1$s · %2$s%3$s %4$s</string>
+    <string name="progress_strip_range">%1$s – %2$s</string>
+    <string name="progress_strip_caption">Four frames, evenly spaced across the range. This is exactly the image that leaves the app.</string>
 
     <!-- Add photo sheet -->
     <string name="progress_photo_add">Add photo</string>
@@ -380,7 +400,7 @@
     <string name="progress_empty_weight_heading">No weight logged yet</string>
     <string name="progress_empty_weight_body">Log your weight from the button on any tab and your trend shows up here.</string>
     <string name="progress_empty_photos_heading">No progress photos yet</string>
-    <string name="progress_empty_photos_body">Add your first photo from the button on any tab to start tracking changes over time.</string>
+    <string name="progress_empty_photos_body">Shots you add show up here, grouped by month, ready to compare.</string>
     <string name="progress_empty_measurements_heading">No measurements yet</string>
     <string name="progress_empty_measurements_body">Add a chest, waist, hips, arm, thigh or body fat reading and it charts here.</string>
     <string name="progress_empty_nutrition_heading">Nothing logged yet</string>

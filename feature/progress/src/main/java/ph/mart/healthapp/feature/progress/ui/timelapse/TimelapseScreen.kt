@@ -1,14 +1,16 @@
 package ph.mart.healthapp.feature.progress.ui.timelapse
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,20 +24,23 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.todayEpochDay
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
-import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
+import ph.mart.healthapp.feature.progress.ui.shared.components.PhotoOverlayStage
 import ph.mart.healthapp.feature.progress.ui.shared.components.SharePhotoStripSheet
 import ph.mart.healthapp.feature.progress.ui.timelapse.components.TimelapseFrame
+import ph.mart.healthapp.feature.progress.ui.timelapse.components.TimelapseTimeline
+
+/** The one emphasised control on the screen. Everything else here is a setting. */
+private val TransportButtonSize = 56.dp
 
 /**
  * Every progress photo played in date order — the whole-set answer to `PhotoComparisonScreen`'s
@@ -74,56 +79,117 @@ private fun TimelapseContent(
     LaunchedEffect(state.playing, state.speed, photos.size) {
         if (!state.playing) return@LaunchedEffect
         while (true) {
-            delay(1000L / TIMELAPSE_FPS[state.speed])
+            delay(frameIntervalMillis(state.speed))
             state.index = (state.index + 1) % photos.size
         }
     }
 
-    val current = photos[state.index.coerceIn(photos.indices)]
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(text = stringResource(R.string.progress_timelapse_title), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+    val index = state.index.coerceIn(photos.indices)
+    val current = photos[index]
 
-            TimelapseFrame(photo = current, unit = unit)
+    PhotoOverlayStage(onClose = onClose, onShare = { state.sharing = true }, modifier = modifier) {
+        TimelapseFrame(
+            photo = current,
+            unit = unit,
+            speed = state.speed,
+            // See `PhotoOverlayStage`: the picture yields to the controls, not the other way round.
+            modifier = Modifier.weight(1f, fill = false),
+        )
 
-            if (photos.size > 1) {
-                Slider(
-                    value = state.index.toFloat(),
-                    onValueChange = { value -> state.scrubTo(value.roundToInt(), photos.size) },
-                    valueRange = 0f..(photos.size - 1).toFloat(),
-                    steps = (photos.size - 2).coerceAtLeast(0),
+        TimelapseTimeline(
+            photos = photos,
+            index = index,
+            onScrubTo = { frame -> state.scrubTo(frame, photos.size) },
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            PlayButton(playing = state.playing, onClick = { state.playing = !state.playing })
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.progress_timelapse_frame_of, index + 1, photos.size),
+                    style = MaterialTheme.typography.titleSmall.tabularNums,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { state.playing = !state.playing }) {
-                    Icon(
-                        imageVector = if (state.playing) AppIcons.Pause else AppIcons.Play,
-                        contentDescription = stringResource(if (state.playing) R.string.progress_timelapse_pause else R.string.progress_timelapse_play),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-                SegmentedToggle(
-                    options = listOf(
-                        stringResource(R.string.progress_timelapse_slow),
-                        stringResource(R.string.progress_timelapse_normal),
-                        stringResource(R.string.progress_timelapse_fast),
+                Text(
+                    text = stringResource(
+                        if (state.playing) {
+                            R.string.progress_timelapse_status_playing
+                        } else {
+                            R.string.progress_timelapse_status_paused
+                        },
                     ),
-                    selectedIndex = state.speed,
-                    onSelect = { state.speed = it },
-                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                SecondaryButton(label = stringResource(R.string.progress_share), onClick = { state.sharing = true }, modifier = Modifier.weight(1f))
-                SecondaryButton(label = stringResource(R.string.progress_close), onClick = onClose, modifier = Modifier.weight(1f))
-            }
+            SpeedChip(speed = state.speed, onClick = { state.cycleSpeed() })
         }
     }
 
     if (state.sharing) {
         SharePhotoStripSheet(photos = photos, unit = unit, onDismiss = { state.sharing = false })
+    }
+}
+
+@Composable
+private fun PlayButton(playing: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shadowElevation = 2.dp,
+        modifier = modifier.size(TransportButtonSize),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = if (playing) AppIcons.Pause else AppIcons.Play,
+                contentDescription = stringResource(
+                    if (playing) R.string.progress_timelapse_pause else R.string.progress_timelapse_play,
+                ),
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+/**
+ * Demoted on purpose. It used to be a full-width segmented toggle sharing a row with the play
+ * button, which gave "how fast does this run" the same weight as "does it run" — a choice made
+ * once at the same size as the control used every time.
+ */
+@Composable
+private fun SpeedChip(speed: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val label = stringResource(
+        when (speed) {
+            0 -> R.string.progress_timelapse_slow
+            2 -> R.string.progress_timelapse_fast
+            else -> R.string.progress_timelapse_normal
+        },
+    )
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.heightIn(min = 32.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(imageVector = AppIcons.Timer, contentDescription = null, modifier = Modifier.size(12.dp))
+            Text(
+                text = stringResource(R.string.progress_timelapse_speed, label, TIMELAPSE_FPS[speed]),
+                style = MaterialTheme.typography.labelSmall.tabularNums,
+            )
+        }
     }
 }
 

@@ -1946,9 +1946,10 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   pauses it — a slider that kept advancing under the finger fights whoever is looking for one
   particular week. The Photos tab offers it at **two** photos, the same floor the comparison slider
   has: one control appearing without the other reads as a bug.
-- **One share sheet serves both photo shares.** A before/after *is* a two-frame strip, so the
-  comparison slider hands `SharePhotoStripSheet` its two photos and the timelapse hands it the
-  whole set; `sampleFrames()` spreads up to four evenly with the first and last always in, because a
+- **One share sheet serves every photo share.** A before/after was taken to *be* a two-frame strip
+  (superseded by the entry below it), so the comparison slider handed `SharePhotoStripSheet` its
+  two photos and the timelapse handed it the whole set; the Photos page's own header share is the
+  third caller. `sampleFrames()` spreads up to four evenly with the first and last always in, because a
   strip whose ends aren't the start and the end of the run isn't the story being told. The capture
   itself (`Modifier.captureToPicture` + `sharePng`) moved to `ui/shared/` when the second caller
   arrived — `ShareRecapSheet` had owned it — so the two images can't drift apart in how they reach
@@ -1956,6 +1957,62 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   PNG-only: an MP4 needs either a new media3 dependency or an EGL renderer, since a `MediaCodec`
   input surface can't be `lockCanvas`'d at minSdk 24. *ponytail: media3-transformer is the upgrade
   path if a video is ever asked for.*
+- **A before/after shares as a strip spanning the pair, not as two frames.** This supersedes the
+  rule directly above it. A two-frame share is two portraits side by side — a thin picture and a
+  thinner story, since the whole claim of a progress photo is that the change was gradual rather
+  than a trick of one day's light. `sampleBetween()` keeps the picked pair as the ends and fills
+  the middle from whatever was logged nearest the thirds of the interval, **by date rather than by
+  index**, so an unevenly photographed month doesn't hand both middle frames to its busiest week.
+  Nothing is padded: a pair with nothing logged between them still shares as two.
+- **The Photos page's header share is the strip, not the weekly recap** — the one subject page
+  whose `DetailHeader` share differs from the other thirteen. A page that *is* a set of images has
+  an obvious thing to send, and routing it to a nutrition-and-weight recap would be the header
+  disagreeing with the page under it. It sits in `ProgressScreenState` as `activePhotoShare`
+  beside the overlays, and the header falls back to the recap everywhere else.
+- **The timelapse scrubber is a date timeline, not a frame index.** Each shot's tick sits where it
+  was actually taken within the run (`tickFractions()`), and a scrub snaps to the nearest shot by
+  that position (`nearestFrame()`). An index slider draws a fortnight of daily photos and the month
+  of nothing after it as equal steps, which quietly tells the reader the run was evenly paced — the
+  one claim a progress timelapse should never make on its own. The ticks are **drawn**, not
+  composed: one node per photo would be sixty layout nodes redrawn eight times a second. Past
+  twenty-four shots they thin from 2dp to 1dp and read as density rather than as countable marks,
+  and the playhead carries a ring in the stage colour because a `primary` circle sitting on its own
+  `primary` fill has nothing to follow at speed.
+- **Frames crossfade hold-under, never cross-dissolve.** The outgoing shot stays at full opacity
+  underneath while the incoming one fades in above it, so the stage colour never shows between the
+  two — dissolving both through the background is what makes a player strobe, and at eight frames a
+  second that reads as the photos flickering rather than as one becoming the next. The fade is
+  220 / 150 / 80 ms for 2 / 4 / 8 fps, always inside its own frame interval (`TimelapseTimelineTest`
+  holds that), linear, and the layer underneath is dropped once it is covered.
+- **Both overlays draw on one stage, and close is a corner control.** `PhotoOverlayStage` owns the
+  `surfaceContainerHighest` ground, the floating close button and the single Share pill for the
+  comparison and the player alike. The bottom row that held Share and Close side by side is gone:
+  it gave equal weight to the action that publishes and the one that leaves, and a full-screen
+  viewer whose way out is the last item in a column reads as a form with a Cancel on it. The photo
+  frames are full-bleed and square-cornered — corners belong to tiles and cards, not to a media
+  surface that reaches both edges.
+- **The comparison headline is the delta, coloured by `goalRelativeTrend`.** It is what the two
+  photos are being read for, so it is the largest thing on the screen; a kilo gained is the point
+  for someone building and the opposite for someone cutting, and the existing tested function —
+  not a sign test — decides which. Maintain stays Neutral there rather than taking the handoff's
+  ±0.5 kg on-track band: that threshold is exactly the "how much drift is too much" question
+  `WeightTrend.kt`'s KDoc says has no defined answer. A pair missing a weight at either end keeps
+  the span as its headline rather than losing the answer entirely.
+- **The grid teaches its own gesture.** Tapping two tiles opens a comparison and nothing about a
+  grid of photos says so, so the hint bar states the rule, then names what the second tap will do
+  and offers the way back out of a half-made selection. Two states, not three: at two picks the
+  comparison is already on screen, so the third would only ever be read on its way out. The tile
+  badge is the same component the hint draws, because the numeral is the half the comparison
+  actually depends on — the border alone says *that* a tile is picked, not which end of the pair
+  it is. Tiles are 3:4 rather than square: a square centre-crop of a portrait loses the head and
+  the feet first, which are the two things a body record is read for.
+- **Every share sheet can save its picture, not only send it.** `savePng()` sits beside `sharePng()`
+  in `:core:designsystem`, so the recap, the diary day card and the photo strip all gained the
+  action at once. API 29+ writes into MediaStore's own `Pictures/FitPulse` with `IS_PENDING` held
+  until the bytes land and asks for nothing; below 29 there is no scoped write, which is the whole
+  reason `WRITE_EXTERNAL_STORAGE` exists in that module's manifest at `maxSdkVersion="28"`. It
+  returns false rather than throwing — a full disk, a revoked permission and a refused insert all
+  look the same from there, and none is worth taking the sheet down over.
 - **`rememberBitmapFromFile` downsamples, and every progress photo in the app goes through it.**
   `inSampleSize` against the width the caller actually draws into (`GRID_TILE_PX` for a grid cell,
   `FULL_FRAME_PX` otherwise) — a grid holding a year of camera JPEGs was keeping every one at

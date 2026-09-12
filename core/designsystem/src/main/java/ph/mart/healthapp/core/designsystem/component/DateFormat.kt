@@ -52,6 +52,11 @@ fun epochDayToDate(epochDay: Long): java.util.Date = epochDayToCalendar(epochDay
 fun formatEpochDay(epochDay: Long): String =
     SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(epochDayToDate(epochDay))
 
+/** "Sep 12" — a date inside a set whose year the set itself already establishes: a grid of months,
+ * a comparison pair, a strip. The year would be the same word repeated on every frame. */
+fun formatDayMonth(epochDay: Long): String =
+    SimpleDateFormat("MMM d", Locale.getDefault()).format(epochDayToDate(epochDay))
+
 /** "Tuesday" — unambiguous inside a week-long window, where the full date is too long a label. */
 fun formatWeekday(epochDay: Long): String =
     SimpleDateFormat("EEEE", Locale.getDefault()).format(epochDayToDate(epochDay))

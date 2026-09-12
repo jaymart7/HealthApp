@@ -35,6 +35,9 @@ dependencies {
     // FileProvider, for the share-image grant.
     implementation(libs.androidx.core.ktx)
 
+    // The permission launcher behind "Save to photos" on API 28 and below.
+    implementation(libs.androidx.activity.compose)
+
     implementation(libs.androidx.navigationevent)
     implementation(libs.androidx.navigationevent.compose)
 

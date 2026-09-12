@@ -104,6 +104,7 @@
 
     <!-- Shared image (ShareImageSheet) -->
     <string name="ds_share">Share</string>
+    <string name="ds_share_save">Save to photos</string>
     <string name="ds_share_brand">FitPulse</string>
 
     <!-- Mascot colours. The first five describe how strongly the buddy is drawn, because their

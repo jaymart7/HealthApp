@@ -1,55 +1,34 @@
 package ph.mart.healthapp.feature.progress.ui.photo.components
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.todayEpochDay
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
-import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 
 /**
  * Scrolls itself — a `LazyVerticalGrid` cannot be nested in a `verticalScroll` column, which is why
- * `SubjectDetail` names this one in `SelfScrolling`. The empty state is the page's, not this body's.
+ * `SubjectDetail` names this one in `SelfScrolling`. The empty state is the page's, not this
+ * body's.
+ *
+ * Nothing but the grid: the count, the span and the way into the player are the grid's own header
+ * items now, so the page has one scroller rather than a fixed column sitting on top of one. That
+ * is what lets the month headers pin.
  */
 @Composable
 internal fun PhotosDetailBody(uiState: ProgressUiState, state: ProgressScreenState) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        HeroValue(
-            value = "${uiState.photos.size}",
-            caption = pluralStringResource(R.plurals.progress_photos_shots, uiState.photos.size),
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        // Two photos is the least that plays as a sequence, and it is also the point at which
-        // the comparison slider becomes reachable — one control appearing without the other
-        // would read as a bug.
-        if (uiState.photos.size >= 2) {
-            SecondaryButton(
-                label = stringResource(R.string.progress_photos_timelapse),
-                onClick = state::openTimelapse,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-            )
-        }
-        ProgressPhotoGrid(
-            photos = uiState.photos,
-            selectedIds = state.selectedPhotoIds,
-            onToggleSelect = state::togglePhotoSelection,
-            modifier = Modifier.fillMaxSize(),
-        )
-    }
+    ProgressPhotoGrid(
+        photos = uiState.photos,
+        selectedIds = state.selectedPhotoIds,
+        onToggleSelect = state::togglePhotoSelection,
+        onClearSelection = state::clearPhotoSelection,
+        onOpenTimelapse = state::openTimelapse,
+        modifier = Modifier.fillMaxSize(),
+    )
 }
 
 @PreviewLightDark
@@ -68,4 +47,3 @@ private fun PhotosDetailPreview() {
         )
     }
 }
-

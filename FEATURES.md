@@ -205,7 +205,13 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.
 - Activity: two charts — daily steps (imported) and daily burn.
 - Strength: volume chart, all-time personal records ranked by estimated 1RM (Epley).
-- Photos: grid, before/after comparison slider, timelapse player, share as a PNG strip.
+- Photos: a 3:4 grid under sticky month headers, each month counted, opened by a header strip
+  carrying the count, the span and the way into the player. A hint bar teaches the tap-two rule and
+  numbers each pick; the second tap opens the comparison. Before/after reads as a full-bleed stage
+  — the weight delta as the headline in goal-relative colour, a drag-anywhere divider or a
+  side-by-side toggle under it. The timelapse plays on the same stage over a date-positioned
+  timeline, so a gap in logging looks like one, with a hold-under crossfade between frames. Both
+  share as a PNG strip, and every share sheet in the app can now save its picture to the gallery.
 - Body: five measurement sites (chest, waist, hips, arms, thighs) plus body fat %, chart + history,
   a waist-to-height ratio against the published 0.50 boundary once a waist reading exists, and a
   fat-mass / lean-mass split once a body fat reading and a weigh-in both exist. Body fat is logged
