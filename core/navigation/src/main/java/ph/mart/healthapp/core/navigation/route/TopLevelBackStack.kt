@@ -80,7 +80,14 @@ class TopLevelBackStack(val backStack: MutableList<NavKey>) {
     fun removeLast() {
         val removedKey = topLevelStacks[topLevelKey]?.removeLastOrNull()
         topLevelStacks.remove(removedKey)
-        topLevelKey = topLevelStacks.keys.last()
+        // `lastOrNull`, because the line above can empty the map: popping a tab's own root removes
+        // its group, and if that was the only group there is no previous tab to fall back to.
+        // `NavDisplay` does not dispatch back at a stack of one, so today nothing reaches it — but
+        // the alternative to this fallback is a NoSuchElementException, and [regroup] already
+        // answers the same question the same way.
+        topLevelKey = topLevelStacks.keys.lastOrNull() ?: TopLevelDestination.Home.route.also {
+            topLevelStacks[it] = mutableStateListOf(it)
+        }
         updateBackStack()
     }
 }

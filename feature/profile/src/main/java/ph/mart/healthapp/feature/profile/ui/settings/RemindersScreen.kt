@@ -99,10 +99,16 @@ fun RemindersScreen(viewModel: SettingsViewModel = koinViewModel()) {
         onOpenSystemSettings = {
             // Not the permission dialog: once it has been refused twice Android stops showing it,
             // and this app's notification page is the only remaining way back.
-            context.startActivity(
-                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                    .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
-            )
+            //
+            // Guarded because a device that cannot resolve it is a real case — a stripped OEM build,
+            // a managed work profile — and there is nothing useful to do about it but stay put. The
+            // same refusal-to-crash `HealthConnectionScreen` makes around its own intent.
+            runCatching {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+                )
+            }
         },
     )
 }

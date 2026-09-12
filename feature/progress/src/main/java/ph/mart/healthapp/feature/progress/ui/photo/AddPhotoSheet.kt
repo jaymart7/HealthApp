@@ -118,7 +118,9 @@ private fun AddPhotoCaptureScreen(onClose: () -> Unit, onCaptured: (Bitmap) -> U
 
         Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
             Surface(
-                onClick = { scope.launch { onCaptured(controller.capture()) } },
+                // Null is a shot that didn't happen — see [CameraCaptureController.capture].
+                // The camera stays up, which is the only useful thing to do about it.
+                onClick = { scope.launch { controller.capture()?.let(onCaptured) } },
                 shape = CircleShape,
                 color = Color.White,
                 modifier = Modifier.size(72.dp),

@@ -3,10 +3,8 @@ package ph.mart.healthapp.reminder
 import android.content.Context
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import java.util.concurrent.TimeUnit
@@ -25,21 +23,31 @@ class ReminderScheduler(context: Context) {
 
     fun reconcile(enabled: Set<Reminder>) {
         Reminder.entries.forEach { reminder ->
-            if (reminder in enabled) {
-                workManager.enqueueUniquePeriodicWork(
-                    reminder.uniqueName,
-                    // KEEP, not UPDATE: reconcile runs on every app start, and UPDATE would reset
-                    // the initial delay each time — a daily reminder would never reach its first
-                    // run on someone who opens the app most mornings.
-                    // ponytail: the flip side is that changing an hour in a later release won't
-                    // reach existing installs. Rename the unique work if that ever matters.
-                    ExistingPeriodicWorkPolicy.KEEP,
-                    reminder.request(),
-                )
-            } else {
-                workManager.cancelUniqueWork(reminder.uniqueName)
-            }
+            // KEEP, not REPLACE: reconcile runs on every app start, and REPLACE would push the
+            // pending firing back each time — a daily reminder would never reach its first run on
+            // someone who opens the app most mornings. Once a run has finished, the unique name is
+            // no longer held, so this also re-forms a chain that was somehow broken.
+            if (reminder in enabled) schedule(reminder, ExistingWorkPolicy.KEEP)
+            else workManager.cancelUniqueWork(reminder.uniqueName)
         }
+    }
+
+    /**
+     * The **next single firing** of [reminder], and only that one. [ReminderWorker] books the one
+     * after it as its last act, so the schedule is a chain of one-shots rather than a
+     * `PeriodicWorkRequest`.
+     *
+     * That is the whole point. A periodic request takes its initial delay once and then re-anchors
+     * every subsequent period to the end of the previous window — Doze deferrals accumulate, and a
+     * DST change or a move between timezones shifted every later firing permanently with no way
+     * back. A chain re-reads [nextRunMillis] against the current clock and zone on every run, so an
+     * 08:00 reminder is at 08:00 the next morning whatever happened to the clock overnight.
+     *
+     * It also retires the old `ponytail:` caveat here: changing an hour in a later release now
+     * reaches existing installs at their next firing, with no unique-work rename.
+     */
+    fun schedule(reminder: Reminder, policy: ExistingWorkPolicy) {
+        workManager.enqueueUniqueWork(reminder.uniqueName, policy, reminder.request())
     }
 
     /**
@@ -65,9 +73,11 @@ class ReminderScheduler(context: Context) {
         )
     }
 
-    private fun Reminder.request() = PeriodicWorkRequestBuilder<ReminderWorker>(periodDays, TimeUnit.DAYS)
+    private fun Reminder.request() = OneTimeWorkRequestBuilder<ReminderWorker>()
         .setInitialDelay(
-            System.currentTimeMillis().let { now -> nextRunMillis(hour, dayOfWeek, now) - now },
+            System.currentTimeMillis().let { now ->
+                nextRunMillis(hour, dayOfWeek, now, periodDays) - now
+            },
             TimeUnit.MILLISECONDS,
         )
         .setInputData(workDataOf(KEY_REMINDER to name))

@@ -206,9 +206,20 @@ internal fun notify(
 }
 
 /**
- * Absolute millis of the next [hour]:00 local — strictly in the future, and on [dayOfWeek] when one
- * is given. Takes primitives rather than a [Reminder] so it stays a plain JVM function the unit
- * test can drive at a fixed instant.
+ * Absolute millis of the next [hour]:00 local — strictly in the future, on [dayOfWeek] when one is
+ * given, and [periodDays] apart when one isn't. Takes primitives rather than a [Reminder] so it
+ * stays a plain JVM function the unit test can drive at a fixed instant.
+ *
+ * **Re-derived at every firing, not once at enqueue.** That is what a `PeriodicWorkRequest` could
+ * not do: it re-anchors each period to the end of the previous window, so Doze deferrals accumulate
+ * and — the part that never self-corrects — a DST change or a flight to another timezone shifted
+ * every subsequent firing permanently. An 08:00 nudge became 07:00 and stayed there. Recomputing
+ * against the current clock and zone on each run is the whole fix; see [ReminderScheduler.schedule].
+ *
+ * [periodDays] only does anything without a [dayOfWeek]: a weekly reminder is pinned by its weekday
+ * already, and the fortnightly photo nudge is the one caller that is neither daily nor weekly.
+ * Stepped with [Calendar.add] rather than multiplied out, for `epochDayStartMillis`' reason — a
+ * fortnight is not always 14 × 86,400,000ms.
  *
  * ponytail: `java.util.Calendar`, not `java.time` — same reason as the comment in
  * `core/data/food/FoodRepositoryImpl.kt`: this project has no core-library desugaring configured.
@@ -217,6 +228,7 @@ internal fun nextRunMillis(
     hour: Int,
     dayOfWeek: Int?,
     nowMillis: Long,
+    periodDays: Long = 1L,
     zone: TimeZone = TimeZone.getDefault(),
 ): Long {
     val calendar = Calendar.getInstance(zone).apply {
@@ -232,5 +244,7 @@ internal fun nextRunMillis(
     while (dayOfWeek != null && calendar.get(Calendar.DAY_OF_WEEK) != dayOfWeek) {
         calendar.add(Calendar.DAY_OF_MONTH, 1)
     }
+    // The next hour:00 is already one day out, so only the rest of the period is owed.
+    if (dayOfWeek == null && periodDays > 1) calendar.add(Calendar.DAY_OF_MONTH, (periodDays - 1).toInt())
     return calendar.timeInMillis
 }

@@ -25,12 +25,16 @@ internal fun Context.permissionPermanentlyDenied(permission: String): Boolean {
  * Without this, "Grant access" re-launches a prompt Android silently refuses to show, and the
  * screen is a dead end. */
 internal fun Context.openAppSettings() {
-    startActivity(
-        Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.fromParts("package", packageName, null),
-        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-    )
+    // Guarded for `RemindersScreen.onOpenSystemSettings`' reason: a device with no resolver for this
+    // is a stripped OEM build or a managed profile, and the screen staying as it is beats a crash.
+    runCatching {
+        startActivity(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", packageName, null),
+            ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {

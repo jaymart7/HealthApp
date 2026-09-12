@@ -9,6 +9,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import javax.xml.datatype.DatatypeFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArrayBuilder
@@ -76,14 +78,35 @@ internal sealed interface HealthResponse {
     data object Failed : HealthResponse
 }
 
-internal fun healthGet(url: String, token: String): HealthResponse =
+internal suspend fun healthGet(url: String, token: String): HealthResponse =
     request(url, method = "GET", token = token, body = null)
 
-internal fun healthPost(url: String, token: String?, body: String): HealthResponse =
+internal suspend fun healthPost(url: String, token: String?, body: String): HealthResponse =
     request(url, method = "POST", token = token, body = body)
 
-private fun request(url: String, method: String, token: String?, body: String?): HealthResponse {
-    val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+/**
+ * Suspend, and dispatched here rather than at the call sites: [HttpURLConnection] blocks, and
+ * `HealthSyncRepositoryImpl` reaches this from an Orbit intent — `Dispatchers.Default`, a pool
+ * sized to the CPU count. A full sync is a dozen sequential calls at [TIMEOUT_MS] apiece, which is
+ * long enough to starve every other intent in the app of a thread.
+ *
+ * One `withContext` in the blocking function beats one per caller: the module's other three network
+ * paths (`BarcodeLookupRepositoryImpl`, `ProductSearchRepositoryImpl`, `GoogleHealthAuth`) each wrap
+ * their own, and this is the one that was missed by doing it that way.
+ *
+ * The `URL` is built here too, inside the guard: a malformed one throws [java.net.MalformedURLException],
+ * which is an [IOException] and so answers `Failed` like any other bad request rather than escaping.
+ */
+private suspend fun request(url: String, method: String, token: String?, body: String?): HealthResponse =
+    withContext(Dispatchers.IO) { blockingRequest(url, method, token, body) }
+
+private fun blockingRequest(url: String, method: String, token: String?, body: String?): HealthResponse {
+    val connection = try {
+        (URL(url).openConnection() as HttpURLConnection)
+    } catch (_: IOException) {
+        return HealthResponse.Failed
+    }
+    connection.apply {
         requestMethod = method
         connectTimeout = TIMEOUT_MS
         readTimeout = TIMEOUT_MS

@@ -271,7 +271,8 @@ fun PhotoCaptureScreen(
  * The one path into [CaptureFlow.Analyzing], whether the photo comes off the sensor
  * ([CameraCaptureController.capture]) or out of the gallery. The offline check runs before the
  * photo is loaded — recognition is the online part, and there is no point decoding first. A null
- * [loadPhoto] means the picker handed back something undecodable; the camera stays up.
+ * [loadPhoto] is a photo that never arrived — the picker handed back something undecodable, or the
+ * shutter found the sensor held by another app. Either way the camera stays up.
  */
 private fun startAnalysis(
     viewModel: PhotoCaptureViewModel,

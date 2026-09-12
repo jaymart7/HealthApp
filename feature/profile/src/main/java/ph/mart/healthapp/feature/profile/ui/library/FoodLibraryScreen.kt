@@ -1,11 +1,12 @@
 package ph.mart.healthapp.feature.profile.ui.library
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -81,53 +82,61 @@ private fun FoodLibraryContent(
             )
             return@Surface
         }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+        val myFoodsLabel = stringResource(R.string.profile_library_my_foods)
+        val savedMealsLabel = stringResource(R.string.profile_library_saved_meals)
+        val recipesLabel = stringResource(R.string.profile_library_recipes)
+        // Lazy, unlike the other Profile lists: this screen is the one that reads *past* the
+        // newest-N windows — `observeAllSavedMeals` and `observeAllRecipes` are unbounded — so
+        // "how many rows can there be" has no answer, and a scrolling Column would compose every
+        // one of them on open and keep them composed. `FoodHistoryScreen` is the same call.
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+            modifier = Modifier.fillMaxSize(),
         ) {
-            if (uiState.myFoods.isNotEmpty()) {
-                // First: it is the list the user authored deliberately, and the one the food
-                // search leads with.
-                LibrarySection(label = stringResource(R.string.profile_library_my_foods)) {
-                    uiState.myFoods.forEach { food ->
-                        LibraryRow(
-                            name = food.name,
-                            summary = food.summary(),
-                            contents = food.macroLine(),
-                            onRename = { renaming = Target.Food(food.name) },
-                            onDelete = { pendingDelete = Target.Food(food.name) },
-                        )
-                    }
-                }
+            // First: it is the list the user authored deliberately, and the one the food search
+            // leads with.
+            librarySection(
+                label = myFoodsLabel,
+                rows = uiState.myFoods,
+                first = true,
+                key = { "food-${it.name}" },
+            ) { food ->
+                LibraryRow(
+                    name = food.name,
+                    summary = food.summary(),
+                    contents = food.macroLine(),
+                    onRename = { renaming = Target.Food(food.name) },
+                    onDelete = { pendingDelete = Target.Food(food.name) },
+                )
             }
-            if (uiState.savedMeals.isNotEmpty()) {
-                LibrarySection(label = stringResource(R.string.profile_library_saved_meals)) {
-                    uiState.savedMeals.forEach { meal ->
-                        LibraryRow(
-                            name = meal.name,
-                            summary = meal.summary(),
-                            contents = meal.items.contents(),
-                            onRename = { renaming = Target.Meal(meal.id, meal.name) },
-                            onDelete = { pendingDelete = Target.Meal(meal.id, meal.name) },
-                        )
-                    }
-                }
+            librarySection(
+                label = savedMealsLabel,
+                rows = uiState.savedMeals,
+                first = uiState.myFoods.isEmpty(),
+                key = { "meal-${it.id}" },
+            ) { meal ->
+                LibraryRow(
+                    name = meal.name,
+                    summary = meal.summary(),
+                    contents = meal.items.contents(),
+                    onRename = { renaming = Target.Meal(meal.id, meal.name) },
+                    onDelete = { pendingDelete = Target.Meal(meal.id, meal.name) },
+                )
             }
-            if (uiState.recipes.isNotEmpty()) {
-                LibrarySection(label = stringResource(R.string.profile_library_recipes)) {
-                    uiState.recipes.forEach { recipe ->
-                        LibraryRow(
-                            name = recipe.name,
-                            summary = recipe.summary(),
-                            contents = recipe.items.contents(),
-                            onRename = { renaming = Target.Dish(recipe.id, recipe.name) },
-                            onDelete = { pendingDelete = Target.Dish(recipe.id, recipe.name) },
-                        )
-                    }
-                }
+            librarySection(
+                label = recipesLabel,
+                rows = uiState.recipes,
+                first = uiState.myFoods.isEmpty() && uiState.savedMeals.isEmpty(),
+                key = { "recipe-${it.id}" },
+            ) { recipe ->
+                LibraryRow(
+                    name = recipe.name,
+                    summary = recipe.summary(),
+                    contents = recipe.items.contents(),
+                    onRename = { renaming = Target.Dish(recipe.id, recipe.name) },
+                    onDelete = { pendingDelete = Target.Dish(recipe.id, recipe.name) },
+                )
             }
         }
     }
@@ -177,16 +186,35 @@ private fun FoodLibraryContent(
     }
 }
 
-@Composable
-private fun LibrarySection(label: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+/**
+ * A header and its rows, or nothing at all when the list is empty — the three sections differ only
+ * in what they draw, so the emptiness check and the spacing live here once.
+ *
+ * [first] is what keeps the spacing scale honest: the list's own arrangement puts 8dp between every
+ * item, and a section break is 24, so every header but the leading one owes another 16. The leading
+ * one owes nothing — the content padding is already 16 above it.
+ *
+ * [key] is per-row and prefixed, because saved meals and recipes are the same table and so share an
+ * id space; without the prefix a meal and a recipe could collide and Lazy would reuse the wrong
+ * slot.
+ */
+private fun <T> LazyListScope.librarySection(
+    label: String,
+    rows: List<T>,
+    first: Boolean,
+    key: (T) -> Any,
+    row: @Composable (T) -> Unit,
+) {
+    if (rows.isEmpty()) return
+    item(key = "header-$label") {
         Text(
             text = label,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = if (first) Modifier else Modifier.padding(top = 16.dp),
         )
-        content()
     }
+    items(rows, key = key) { row(it) }
 }
 
 @PreviewLightDark

@@ -126,10 +126,9 @@ internal class FoodRepositoryImpl(
         }
 
     override suspend fun saveMeal(name: String, items: List<SavedMealItem>) {
-        val mealId = savedMealDao.insertMeal(
+        savedMealDao.insertMealWithItems(
             SavedMealEntity(name = name, createdAt = System.currentTimeMillis()),
-        )
-        savedMealDao.insertItems(items.map { it.toEntity(mealId) })
+        ) { mealId -> items.map { it.toEntity(mealId) } }
     }
 
     override suspend fun deleteSavedMeal(id: Long) {
@@ -151,10 +150,9 @@ internal class FoodRepositoryImpl(
         }
 
     override suspend fun saveRecipe(name: String, servings: Int, items: List<SavedMealItem>) {
-        val recipeId = savedMealDao.insertMeal(
+        savedMealDao.insertMealWithItems(
             SavedMealEntity(name = name, createdAt = System.currentTimeMillis(), servings = servings),
-        )
-        savedMealDao.insertItems(items.map { it.toEntity(recipeId) })
+        ) { recipeId -> items.map { it.toEntity(recipeId) } }
     }
 
     /** Same soft delete as [deleteSavedMeal] — one table — but named for what the caller is

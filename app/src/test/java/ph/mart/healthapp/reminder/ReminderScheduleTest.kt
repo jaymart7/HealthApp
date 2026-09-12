@@ -11,14 +11,24 @@ import ph.mart.healthapp.core.data.fasting.FastSession
 
 private val ZONE: TimeZone = TimeZone.getTimeZone("Asia/Manila")
 
+/** Manila has no DST, so the drift these schedules used to suffer needs a zone that does.
+ * 2026-11-01 is the US fall-back Sunday. */
+private val DST_ZONE: TimeZone = TimeZone.getTimeZone("America/New_York")
+
 private fun at(year: Int, month: Int, day: Int, hour: Int, minute: Int = 0): Long =
     Calendar.getInstance(ZONE).apply {
         clear()
         set(year, month, day, hour, minute, 0)
     }.timeInMillis
 
-private fun describe(millis: Long): String =
-    Calendar.getInstance(ZONE).apply { timeInMillis = millis }.let {
+private fun at(zone: TimeZone, year: Int, month: Int, day: Int, hour: Int): Long =
+    Calendar.getInstance(zone).apply {
+        clear()
+        set(year, month, day, hour, 0, 0)
+    }.timeInMillis
+
+private fun describe(millis: Long, zone: TimeZone = ZONE): String =
+    Calendar.getInstance(zone).apply { timeInMillis = millis }.let {
         "%04d-%02d-%02d %02d:%02d".format(
             it.get(Calendar.YEAR),
             it.get(Calendar.MONTH) + 1,
@@ -74,6 +84,44 @@ class ReminderScheduleTest {
     fun `weekly early on the Sunday itself runs that same evening`() {
         val now = at(2026, Calendar.AUGUST, 30, 9)
         assertEquals("2026-08-30 19:00", describe(nextRunMillis(hour = 19, dayOfWeek = Calendar.SUNDAY, nowMillis = now, zone = ZONE)))
+    }
+
+    // `periodDays` is only consulted without a weekday — the fortnightly photo nudge is the one
+    // reminder that is neither daily nor weekly, and a chain of one-shots has to carry its own
+    // period or it fires every morning.
+
+    @Test
+    fun `a fortnightly reminder lands a fortnight out, not tomorrow`() {
+        val now = at(2026, Calendar.AUGUST, 25, 9, 30)
+        assertEquals(
+            "2026-09-08 09:00",
+            describe(nextRunMillis(hour = 9, dayOfWeek = null, nowMillis = now, periodDays = 14, zone = ZONE)),
+        )
+    }
+
+    @Test
+    fun `a weekday pins the day, so the period is ignored`() {
+        val now = at(2026, Calendar.AUGUST, 25, 9)
+        assertEquals(
+            "2026-08-31 08:00",
+            describe(
+                nextRunMillis(hour = 8, dayOfWeek = Calendar.MONDAY, nowMillis = now, periodDays = 7, zone = ZONE),
+            ),
+        )
+    }
+
+    // The drift this schedule exists to fix: a periodic request took its delay once and then ran a
+    // fixed period later, so an hour crossing a DST boundary moved and never moved back.
+    // Re-deriving from the firing instant is what holds the local hour.
+
+    @Test
+    fun `re-deriving across a DST boundary keeps the local hour`() {
+        // 08:00 EDT on the Saturday; the next morning is the fall-back Sunday.
+        val fired = at(DST_ZONE, 2026, Calendar.OCTOBER, 31, 8)
+        val next = nextRunMillis(hour = 8, dayOfWeek = null, nowMillis = fired + 60_000L, zone = DST_ZONE)
+        assertEquals("2026-11-01 08:00", describe(next, DST_ZONE))
+        // And the proof it is not fixed-interval arithmetic: that day is 25 hours long.
+        assertEquals(25 * 60 * 60 * 1000L, next - fired)
     }
 
     // The recap's quiet-week guard: the same predicate `recap()` returns null on, so the

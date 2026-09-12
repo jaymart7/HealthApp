@@ -1132,6 +1132,32 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Reminders never touch a `:feature:*` module.** The Profile switches are a
   plain Room write; `FitPulseApplication` reconciles WorkManager off
   `ProfileRepository.observeProfile()`.
+- **A reminder is a chain of one-shots, not a `PeriodicWorkRequest`.** A periodic request takes its
+  initial delay once and then re-anchors every later period to the end of the previous window. Doze
+  deferrals accumulate, and — the part that never self-corrected — a DST change or a move between
+  timezones shifted every subsequent firing permanently: an 08:00 nudge became 07:00 and stayed
+  there for the life of the install. `nextRunMillis` was only ever consulted at enqueue, so nothing
+  in the schedule could notice. Now `ReminderScheduler.schedule` books exactly the **next** firing
+  and `ReminderWorker` books the one after it, re-deriving `nextRunMillis` against the current clock
+  and zone every time. `ReminderScheduleTest` pins the property directly — 08:00 the Saturday before
+  the US fall-back is 08:00 the Sunday after, 25 hours later, not 24.
+  - The reschedule is on **every** path out of `doWork`, which is why the quiet checks moved into a
+    `shouldNotify` predicate: an early `return Result.success()` for "breakfast already logged"
+    would have ended that reminder for good, and an early return is exactly what the old worker was
+    made of.
+  - It is the **last** statement rather than the first. `REPLACE` on a unique name cancels whatever
+    is running under it, which is this worker — by that point the notification is posted and there
+    is nothing left to lose, and `enqueueUniqueWork` hands off to WorkManager's own executor, so the
+    next run is booked whether or not the coroutine survives the line.
+  - `reconcile` keeps `KEEP` for the reason it always had — it runs on every app start, and
+    replacing would push the pending firing back each time — but the policy now also re-forms a
+    chain that was somehow broken, because a finished unique work no longer holds its name.
+  - `nextRunMillis` gained a defaulted `periodDays`, consulted only when there is no `dayOfWeek`. A
+    weekly reminder is pinned by its weekday already; the fortnightly photo nudge is the one caller
+    that is neither daily nor weekly, and without it a chain would have fired it every morning. It
+    steps with `Calendar.add` rather than multiplying out, for `epochDayStartMillis`' reason.
+  - This retires the `ponytail:` note that changing an hour in a later release could not reach
+    existing installs. It now reaches them at their next firing, with no unique-work rename.
 - **The export format lives in `:core:data/transfer/`, and moving it there was the backup's first
   step.** `BackupWorker` is in `:app` because a background job is a system surface, not a screen —
   the rule reminders and the widget both follow — and `:app` reaching into `:feature:profile`'s

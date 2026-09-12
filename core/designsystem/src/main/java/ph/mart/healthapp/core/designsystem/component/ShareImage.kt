@@ -137,8 +137,11 @@ fun ShareImageSheet(
                     // Zero until the sheet has drawn a frame — a tap that fast would otherwise
                     // hand the chooser an empty file.
                     if (picture.width > 0) {
-                        sharePng(context, picture, fileName)
-                        onDismiss()
+                        // A tall card can exhaust the heap on the intermediate bitmap, a full disk
+                        // fails the write, and a device with nothing to receive an image has no
+                        // chooser to open. The sheet simply stays put — the same refusal-to-crash
+                        // `HealthConnectionScreen` makes around its own intent.
+                        runCatching { sharePng(context, picture, fileName) }.onSuccess { onDismiss() }
                     }
                 }
             },
