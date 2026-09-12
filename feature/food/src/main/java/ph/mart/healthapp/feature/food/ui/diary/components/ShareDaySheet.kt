@@ -25,7 +25,6 @@ import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.FoodUiState
 import ph.mart.healthapp.feature.food.ui.diary.dayBudgetKcal
 import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * The day as a picture: preview-then-share, the recap's contract, with [ShareImageSheet] supplying
@@ -81,7 +80,7 @@ private fun MealTotals(entries: List<FoodEntry>) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = stringResource(mealType.labelRes()),
+                        text = stringResource(mealType.labelRes),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )

@@ -33,7 +33,6 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.CopyDay
 import ph.mart.healthapp.feature.food.ui.diary.isEmpty
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * What another day held, ticked down to the parts worth bringing over. The counterpart to the
@@ -99,7 +98,7 @@ internal fun CopyDaySheet(
             MealType.entries.forEach { mealType ->
                 val mealEntries = source.entries.filter { it.mealType == mealType }
                 CopyChoice(
-                    label = stringResource(mealType.labelRes()),
+                    label = stringResource(mealType.labelRes),
                     detail = stringResource(
                         R.string.food_meal_summary,
                         pluralStringResource(R.plurals.food_items, mealEntries.size, mealEntries.size),

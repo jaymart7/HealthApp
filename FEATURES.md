@@ -244,11 +244,18 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 
 - Photo food recognition (the food-logging path above).
 - Daily insight — one line on Home, cached per day, falls back to three local rules.
-- Coach — a chat screen told the day's numbers and what it doesn't know; history persisted,
-  clearable with a confirm. The answer streams in word by word, under the question, which is on
-  screen from the moment it's sent. A mic on the chat bar dictates the question through the system's own
-  speech dialog and fills the field in — it never sends on its own, and it is absent where no
-  recognizer is installed.
+- Coach — a chat screen told the day's numbers, which can read the rest of the diary itself:
+  `get_day` for any past day's meals, macros, water and activity, `get_history` for a span of up to
+  a month with weigh-ins. History persisted, clearable with a confirm. The answer streams in word
+  by word, under the question, which is on screen from the moment it's sent, and may be a short
+  list where a list answers better.
+- Coach proposals — asked to log something, the coach drafts the row and the user taps to confirm
+  it: a food into today's diary, or glasses of water. It never writes on its own, and nothing —
+  not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
+  writes nothing.
+- Coach voice — a mic on the chat bar dictates the question through the system's own speech dialog
+  and fills the field in. It never sends on its own, and it is absent where no recognizer is
+  installed.
 - Meal ideas (above).
 - Talk-to-log (above) — a sentence parsed into several priced diary rows.
 - Every AI path degrades to a manual or local-derivation path offline.

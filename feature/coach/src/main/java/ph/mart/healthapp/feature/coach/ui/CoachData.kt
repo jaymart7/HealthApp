@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.coach.ui
 
 import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.coach.ChatMessage
+import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.feature.coach.R
 
@@ -17,6 +18,11 @@ import ph.mart.healthapp.feature.coach.R
  *
  * [failure] is UI-only and deliberately not persisted: a send that didn't land wrote no rows, so
  * there is nothing in Room for it to describe. It clears on the next successful send.
+ *
+ * [proposal] is the third thing not in Room, and for the same reason as the other two: the coach
+ * drafted a row and the user has not agreed to it, so neither the row nor the turn that drafted it
+ * exists yet. It is retired the way [pending] and [streaming] are — by the Room emission that the
+ * user's own tap eventually causes.
  */
 data class CoachUiState(
     /** False until the first emission. An empty conversation and an unread one look identical
@@ -29,6 +35,8 @@ data class CoachUiState(
     /** The answer so far, null until the first chunk lands. */
     val streaming: String? = null,
     val failure: CoachFailure? = null,
+    /** A row the coach drafted, waiting on a tap. [streaming] holds the prose that came with it. */
+    val proposal: CoachAction? = null,
 )
 
 /**
@@ -51,6 +59,7 @@ internal fun CoachUiState.withMessages(
         request = request,
         pending = pending.takeUnless { landed },
         streaming = streaming.takeUnless { landed },
+        proposal = proposal.takeUnless { landed },
     )
 }
 
@@ -67,21 +76,32 @@ data class CoachFailure(@StringRes val reason: Int, val insight: String?, val qu
 
 @StringRes val FAILED_REASON = R.string.coach_failure_failed
 
-/** All the screen's writes. [OnRetry] resends the question the failure is holding, so a dropped
- * connection doesn't cost the user their typing. */
+/**
+ * All the screen's writes. [OnRetry] resends the question the failure is holding, so a dropped
+ * connection doesn't cost the user their typing.
+ *
+ * [OnConfirmProposal] carries its own copy because the line it appends to the persisted answer is
+ * user-facing, and the screen is the only place that can resolve a resource — *composables
+ * resolve, ViewModels name*, and no `Context` reaches this one. [OnDismissProposal] needs no such
+ * line: the turn is persisted with the coach's prose alone.
+ */
 sealed interface CoachEvent {
     data class OnSend(val question: String) : CoachEvent
     data object OnRetry : CoachEvent
     data object OnClear : CoachEvent
+    data class OnConfirmProposal(val loggedLine: String) : CoachEvent
+    data object OnDismissProposal : CoachEvent
 }
 
 /**
  * Openers for an empty conversation. A blank text box against a coach the user has never used is
- * a dead end — and these three are the questions the day's numbers can actually answer, which is
- * also what teaches the coach's limits without a paragraph explaining them.
+ * a dead end, and these four teach its reach faster than a paragraph would: one about today, one
+ * about a past day, one about a span, and one that needs an opinion. The first three exist to show
+ * that the diary questions now have answers — before the tools they were the deflections.
  */
 val STARTERS = listOf(
     R.string.coach_starter_today,
+    R.string.coach_starter_yesterday,
+    R.string.coach_starter_week,
     R.string.coach_starter_dinner,
-    R.string.coach_starter_protein,
 )

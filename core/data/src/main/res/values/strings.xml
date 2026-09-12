@@ -21,6 +21,13 @@
     <string name="data_mood_level_good">Good</string>
     <string name="data_mood_level_great">Great</string>
 
+    <!-- MealType — the diary's four slots. Moved here from :feature:food when the coach
+         started drawing one too, which is exactly the duplication this file exists to stop. -->
+    <string name="data_meal_breakfast">Breakfast</string>
+    <string name="data_meal_lunch">Lunch</string>
+    <string name="data_meal_dinner">Dinner</string>
+    <string name="data_meal_snacks">Snacks</string>
+
     <!-- ExerciseType -->
     <string name="data_exercise_type_walk">Walk</string>
     <string name="data_exercise_type_run">Run</string>

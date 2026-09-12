@@ -25,7 +25,6 @@ import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * One day of history: the date, then the rows logged on it.
@@ -59,7 +58,7 @@ internal fun HistoryDayGroup(
 
 @Composable
 private fun HistoryRow(entry: FoodEntry, onLogAgain: () -> Unit) {
-    val mealLabel = stringResource(entry.mealType.labelRes())
+    val mealLabel = stringResource(entry.mealType.labelRes)
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         shape = MaterialTheme.shapes.medium,

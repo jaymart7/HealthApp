@@ -20,7 +20,6 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /** Names the snapshot of [mealType]'s entries. Seeded with the meal's own name, so the fast path
  * is Save without typing; [itemCount] is there so the user can see what they're about to keep. */
@@ -37,7 +36,7 @@ internal fun SaveMealSheet(
         Text(
             // Word-for-word the header button's own accessible name, so the sheet confirms the
             // thing that was tapped. "Save this Snacks" also read as a grammatical slip.
-            text = stringResource(R.string.food_save_meal_title, stringResource(mealType.labelRes())),
+            text = stringResource(R.string.food_save_meal_title, stringResource(mealType.labelRes)),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 4.dp),

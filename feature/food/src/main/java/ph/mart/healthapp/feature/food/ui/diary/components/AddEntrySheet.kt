@@ -34,7 +34,6 @@ import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
 import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.isValid
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /**
@@ -75,7 +74,7 @@ internal fun AddEntrySheet(
         Text(
             text = stringResource(
                 if (editing) R.string.food_edit_meal_entry else R.string.food_add_to,
-                stringResource(mealType.labelRes()),
+                stringResource(mealType.labelRes),
             ),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,

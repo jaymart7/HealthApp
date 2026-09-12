@@ -38,7 +38,6 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.history.components.HistoryDayGroup
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * Search everything ever logged, by name — the one screen that reads the diary across days, where
@@ -125,7 +124,7 @@ private fun FoodHistoryContent(
                                                 message = context.getString(
                                                     R.string.food_history_logged,
                                                     entry.name,
-                                                    context.getString(entry.mealType.labelRes()),
+                                                    context.getString(entry.mealType.labelRes),
                                                 ),
                                                 duration = SnackbarDuration.Short,
                                             )

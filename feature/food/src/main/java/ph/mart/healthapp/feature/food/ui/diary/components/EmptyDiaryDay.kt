@@ -19,7 +19,6 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * The day before anything is on it.
@@ -59,7 +58,7 @@ internal fun EmptyDiaryDay(isToday: Boolean, modifier: Modifier = Modifier) {
             )
             Text(
                 text = if (isToday) {
-                    stringResource(R.string.food_empty_start, stringResource(defaultMealTypeForNow().labelRes()))
+                    stringResource(R.string.food_empty_start, stringResource(defaultMealTypeForNow().labelRes))
                 } else {
                     stringResource(R.string.food_empty_add)
                 },

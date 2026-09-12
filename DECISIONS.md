@@ -1443,10 +1443,13 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   cards; the coach has no such state and uses `observeInsightRequest()`, which combines the seven
   flows itself. Both land in `insightRequest()`, and both prompts format their numbers with
   `dayNumbersBlock()`, so a field added to one is shown by the other — a coach contradicting the
-  card that sent the user to it is the failure this prevents. The coach is additionally told *what
-  it does not know* (no yesterday, no individual meals, no weight) and pointed at the tab that
-  does, because a free-form question will otherwise be answered with an invented figure the diary
-  contradicts two taps away.
+  card that sent the user to it is the failure this prevents. The coach *used* to be told
+  additionally what it did not know (no yesterday, no individual meals, no weight) and pointed at
+  the tab that did, because a free-form question would otherwise be answered with an invented
+  figure the diary contradicts two taps away. That paragraph is gone: it is no longer true. The
+  coach reads those days itself now, and what replaced it is narrower and does the same job —
+  **call a tool rather than guess.** The payload is unchanged, which is the point; see *The coach
+  reads the diary with tools* below for why widening it was the wrong fix.
 - **A question is only persisted once it is answered.** `CoachRepository.send()` writes both rows
   in one `@Transaction` when the reply lands, so `chat_message` needs no `pending` column and there
   are no half-conversations to reconcile after process death. A call killed by leaving the screen
@@ -1501,10 +1504,80 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   hoisted as a defaulted parameter for one reason only: the preview renderer reports no
   recognizer, so without it no `@PreviewLightDark` could draw the control this entry is about.
 
+- **The coach reads the diary with tools rather than being handed a bigger payload.** It was told
+  one `InsightRequest` and a paragraph listing what it could not see — yesterday, any past week,
+  individual meals, weight, exercise — so every question outside today's seven numbers was met with
+  a deflection to another tab. Widening the payload was the cheap fix and the wrong one: the coach
+  and the insight card share `InsightRequest` precisely so neither can describe the day the other
+  doesn't, and a second coach-only payload would have ended that. So the payload is untouched and
+  the coach got `get_day` and `get_history` instead, in `coach/CoachTools.kt`. Consequences worth
+  keeping. **Two read tools, not five** — a question is nearly always about one day or one span,
+  and one round trip beats four; a third domain (sleep, mood, fasting) is a branch in `runTool` and
+  a line in `COACH_TOOLS`, which is why none are there up front. **Days are `days_ago`, never a
+  date string** — a model handed a date format invents them (the wrong year, a timezone's
+  yesterday, a 31st of February), while an offset needs no parsing and is one subtraction off
+  `todayEpochDay()`; it is clamped silently, because a model asking for day 900 means "recently"
+  and failing the turn over it helps nobody. **A tool answers in plain text, not JSON**, the call
+  `sanitizeInsight` already makes, and `formatDay` deliberately echoes `dayNumbersBlock()` so a
+  tool result and the day block cannot describe one day two ways. **An unlogged day is named, not
+  dropped**: `observeDailyNutrition()` is a dense zero-filled series, so a silent omission would
+  let the model average over days the user never opened the app. **And a weigh-in still leaves as a
+  *change*, never as a weight** — `InsightRequest` has never sent an absolute figure, for the
+  data-minimisation reason the 30-day health backfill is written against, and a tool is not a
+  loophole in that rule just because the user asked the question out loud. A delta answers "is this
+  going the right way?" in full, which is the whole of what anyone asks a coach about a trend; a
+  model told the user weighs 94.2 kg is answering a different, unasked question. `weightDeltas()`
+  reaches one entry *behind* the window so the oldest day in a span still carries a change rather
+  than a shrug, and `CoachToolsTest` asserts no absolute figure appears in the text at all. And `MAX_TOOL_ROUNDS` is a flat 3
+  — ponytail, not a token budget; price it if a tool ever fans out.
+- **The coach drafts a row; the user commits it. That narrows "talking to a coach is not logging"
+  rather than repealing it.** `log_food` and `log_water` are declared to the model and *never
+  executed*: a write call stops the stream, becomes a `CoachAction`, and nothing at all is
+  persisted — not the row, not even the turn that drafted it. `CoachRepository.settle()` is what
+  ends that turn, after the tap. So the coach still never writes; what it does is fill in the
+  add-entry sheet's fields and hand them over, which is that sheet's confirm step reached through a
+  different door. A read tool, by contrast, runs the instant it is asked for — it is a local Room
+  query with no user-visible effect, and making the user approve a `SELECT` would be theatre.
+  `parseAction()` is the whole trust boundary and it is **pure over `kotlinx.serialization` types**,
+  which is the point: `FunctionCallPart.args` is a `Map<String, JsonElement>`, so unlike the photo
+  path's `org.json` parse this one has a JVM test (`CoachToolsTest`), the same argument
+  `sanitizeReply` won. It rejects rather than coerces — an absurd or negative figure, an unknown
+  `MealType`, a name that arrived as a boolean — and its ceilings exist so a dropped decimal point
+  cannot put 90,000 kcal in front of a Confirm button. Two things follow at the screen.
+  `CoachUiState.proposal` is the **third** thing not in Room and is retired by exactly the
+  predicate `pending` and `streaming` are, so a `clear()` mid-proposal cannot strand the card. And
+  **the input bar stays locked while a card is up**: a second send would race the first turn's
+  write, and `withMessages` retiring the bubbles on a list-size change would take the new question
+  with it. The card carries both ways out, which is what a locked bar is for. `log_weight` is
+  deliberately absent — kg/lb is a second trap for no new capability.
+- **The coach is the first call site to leave `AI_THINKING`, and it moved both halves of the
+  budget.** `ThinkingLevel.LOW` and `maxOutputTokens` 300 → 700, together, in
+  `CoachRepositoryImpl`. That constant's own entry names this case and its condition — *"If a call
+  site ever genuinely needs to reason, it raises the level **and** `maxOutputTokens` together —
+  they are one budget"* — and choosing a tool and filling in its arguments is the first thing this
+  app does that genuinely reasons; the alternative is a model guessing `days_ago` or inventing a
+  calorie count. The shared `MINIMAL` is unchanged and still right for the other four, which
+  flatten a photo into JSON and write a line of encouragement. `LOW`, not `MEDIUM`: this is picking
+  one of four functions. The reply cap moved with it (`MAX_REPLY_CHARS` 900 → 1400) because the
+  prompt now permits up to six short lines where a list genuinely answers better — `sanitizeReply`
+  already preserved line breaks and `Text` already renders them, so no component changed, but a cap
+  that rejects the format the prompt asks for is a cap that fails every list.
+- **A tool response goes back under the `"user"` role, not `"function"`.** `firebase-ai` 17.17.0's
+  `Chat.assertComesFromUser` accepts only `"user"`, and logs *"The 'function' role is deprecated
+  and will be removed in a future release"* for the role every function-calling tutorial still
+  shows. Worth writing down because it is invisible until runtime and the fix is one string.
+- **`MealType` carries its own `labelRes` now, in `:core:data`.** It lived as an `internal`
+  `labelRes()` in `:feature:food/ui/shared/`, which was right while one feature drew a meal name.
+  The coach's proposal card is the second, `:feature:*` modules never import each other, and
+  `:core:data`'s `strings.xml` exists precisely so a label is not "copied into every feature that
+  shows a chip or a pill" — its own comment. So it moved onto the enum, the shape `ExerciseType`
+  and `MoodLevel` already have, and the nine call sites lost a pair of parentheses. The `name` is
+  untouched, as always: that is what the Room row, the export and the Google Health push carry.
 - **The coach is not exported, not a streak domain, has no reminder and no widget surface.** The
   backup file is a record of what the user *did*; a conversation about one day's numbers has no
   meaning restored on another device — `health_link`'s reasoning. And talking to a coach is not
-  logging.
+  logging — still true once the coach could draft a row, because *drafting* is not writing: see
+  *The coach drafts a row; the user commits it* above for where that line moved to.
 - **The AI insight is an upgrade to the insight card, never its source.** Home renders
   `uiState.aiInsight ?: insightFor(...)`: the three rules that shipped before there was a model
   still draw the card offline, on a failed call, and when the model answers `NONE` — the offline

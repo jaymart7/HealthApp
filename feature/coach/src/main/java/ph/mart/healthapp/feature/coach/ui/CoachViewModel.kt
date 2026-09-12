@@ -50,6 +50,8 @@ class CoachViewModel(
             is CoachEvent.OnSend -> onSend(event.question)
             CoachEvent.OnRetry -> onRetry()
             CoachEvent.OnClear -> intent { coachRepository.clear() }
+            is CoachEvent.OnConfirmProposal -> onSettle(event.loggedLine)
+            CoachEvent.OnDismissProposal -> onSettle(null)
         }
     }
 
@@ -80,6 +82,26 @@ class CoachViewModel(
     }
 
     /**
+     * Ends a turn that stopped on a proposal. [loggedLine] non-null is a confirmation: the
+     * repository commits the drafted row and the line is appended to what gets persisted, so
+     * reopening the chat still shows that something was logged. Null is a dismissal.
+     *
+     * Nothing is cleared here on success, for the reason [onSend] gives — `withMessages` is what
+     * knows when Room has the rows. The one case that needs clearing is a dismissal of a proposal
+     * that came with no prose: there is no answer to persist, so no write happens, so no emission
+     * arrives to retire the bubbles.
+     */
+    private fun onSettle(loggedLine: String?) = intent {
+        val action = state.proposal ?: return@intent
+        val question = state.pending ?: return@intent
+        val answer = listOfNotNull(state.streaming, loggedLine).joinToString("\n")
+        if (answer.isEmpty()) {
+            return@intent reduce { state.copy(pending = null, streaming = null, proposal = null) }
+        }
+        coachRepository.settle(question, answer, action.takeIf { loggedLine != null })
+    }
+
+    /**
      * Offline the model is never asked at all — the check is the same `NetworkMonitor` recheck
      * Home makes before its one insight call. Either way a failure writes nothing: the repository
      * only persists a question once it has an answer, so a retry is a fresh send and not a repair.
@@ -88,11 +110,15 @@ class CoachViewModel(
      * rather than appearing above a finished answer. Nothing clears it here on success: the
      * repository's flow completing is not the moment Room has the rows, and `withMessages` is what
      * knows that.
+     *
+     * A third ending arrives now: a [CoachReply.Proposal] leaves the turn in flight on purpose —
+     * the coach has drafted a row nobody has agreed to, so no write has happened and the bubbles
+     * must stay up. [onSettle] is what ends it.
      */
     private fun onSend(question: String) = intent {
         val text = question.trim()
         if (text.isEmpty() || state.pending != null) return@intent
-        reduce { state.copy(pending = text, streaming = null, failure = null) }
+        reduce { state.copy(pending = text, streaming = null, failure = null, proposal = null) }
 
         // Read once and reused for the message below: a second recheck could disagree with the
         // one that decided whether to call, and then an offline send would report a model failure.
@@ -104,9 +130,13 @@ class CoachViewModel(
             reduce {
                 when (reply) {
                     is CoachReply.Partial -> state.copy(streaming = reply.text)
+                    // Nothing is written and nothing is cleared: the turn stays in flight, on
+                    // screen, until the user's tap ends it through `onSettle`.
+                    is CoachReply.Proposal -> state.copy(proposal = reply.action)
                     CoachReply.Failed -> state.copy(
                         pending = null,
                         streaming = null,
+                        proposal = null,
                         failure = CoachFailure(
                             reason = if (online) FAILED_REASON else OFFLINE_REASON,
                             insight = state.request?.let(::insightFor),

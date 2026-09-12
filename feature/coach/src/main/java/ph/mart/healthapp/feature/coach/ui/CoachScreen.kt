@@ -31,6 +31,7 @@ import ph.mart.healthapp.feature.coach.ui.components.ChatBubble
 import ph.mart.healthapp.feature.coach.ui.components.ChatInputBar
 import ph.mart.healthapp.feature.coach.ui.components.CoachEmptyState
 import ph.mart.healthapp.feature.coach.ui.components.FailureBubble
+import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 
 @Composable
@@ -63,6 +64,7 @@ private fun CoachContent(
     // answer filling in under it.
     val itemCount = uiState.messages.size +
         (if (uiState.pending != null) 2 else 0) +
+        (if (uiState.proposal != null) 1 else 0) +
         (if (uiState.failure != null) 1 else 0)
     LaunchedEffect(itemCount) {
         if (itemCount > 0) listState.animateScrollToItem(itemCount - 1)
@@ -96,6 +98,18 @@ private fun CoachContent(
                     item(key = "pending-question") { ChatBubble(text = pending, fromUser = true) }
                     item(key = "pending-answer") { StreamingBubble(text = uiState.streaming) }
                 }
+                // Under the answer that introduced it, and inside the list rather than over it:
+                // a proposal is part of the conversation, so it scrolls with the conversation and
+                // ignoring it is as valid an answer as tapping it.
+                uiState.proposal?.let { action ->
+                    item(key = "proposal") {
+                        ProposalCard(
+                            action = action,
+                            onConfirm = { onEvent(CoachEvent.OnConfirmProposal(it)) },
+                            onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
+                        )
+                    }
+                }
                 uiState.failure?.let { failure ->
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -117,6 +131,10 @@ private fun CoachContent(
 
             ChatInputBar(
                 draft = state.draft,
+                // A proposal leaves `pending` set and the bar locked, which is deliberate: the
+                // turn has not ended, and starting a second one would race the first one's write
+                // — `withMessages` retires the bubbles on a list-size change, so the new question
+                // would vanish the moment the old pair landed. The card carries both ways out.
                 sending = uiState.pending != null,
                 onDraftChange = { state.draft = it },
                 onSend = {

@@ -32,10 +32,6 @@
 
     <!-- Meal slots. MealType is a :core:data enum with no copy on it; these are the only place
          its four values are named on screen. -->
-    <string name="food_meal_breakfast">Breakfast</string>
-    <string name="food_meal_lunch">Lunch</string>
-    <string name="food_meal_dinner">Dinner</string>
-    <string name="food_meal_snacks">Snacks</string>
 
     <!-- Diary summary bar -->
     <string name="food_summary_over">over</string>

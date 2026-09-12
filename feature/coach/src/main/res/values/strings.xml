@@ -10,12 +10,28 @@
     <string name="coach_input_placeholder">Ask your coach</string>
     <string name="coach_input_send">Send</string>
     <string name="coach_input_speak">Speak your question</string>
-    <string name="coach_empty_greeting">Ask me about today — what you\'ve eaten, your macros, or how the week\'s going.</string>
-    <string name="coach_empty_limits">I only see today\'s totals, not your meals or your weight.</string>
+    <string name="coach_empty_greeting">Ask me about any day you\'ve logged — meals, macros, how the week\'s going.</string>
+    <string name="coach_empty_limits">I can read your diary, and draft a log for you to confirm.</string>
 
     <!-- Openers for an empty conversation. Translated, unlike the prompts in :core:data: these are
-         the user's own words, and what gets sent is whatever the button said. -->
+         the user's own words, and what gets sent is whatever the button said. The first three are
+         diary questions on purpose — before the coach had tools, all three were deflections. -->
     <string name="coach_starter_today">How am I doing today?</string>
+    <string name="coach_starter_yesterday">What did I eat yesterday?</string>
+    <string name="coach_starter_week">How has my week gone?</string>
     <string name="coach_starter_dinner">What should I eat tonight?</string>
-    <string name="coach_starter_protein">Am I getting enough protein?</string>
+
+    <!-- The proposal card: a row the coach drafted and the user has not agreed to yet. -->
+    <string name="coach_proposal_food_title">Add to %1$s</string>
+    <string name="coach_proposal_water_title">Add water</string>
+    <string name="coach_proposal_water_body">%1$d glasses</string>
+    <string name="coach_proposal_water_body_one">1 glass</string>
+    <string name="coach_proposal_macros">%1$d kcal · %2$dg protein · %3$dg carbs · %4$dg fat</string>
+    <string name="coach_proposal_confirm">Log it</string>
+    <string name="coach_proposal_dismiss">No thanks</string>
+
+    <!-- Appended to the persisted answer once the user confirms, so reopening the chat still shows
+         that something was logged. Resolved on the screen, never in the ViewModel. -->
+    <string name="coach_proposal_logged_food">Logged: %1$s, %2$d kcal.</string>
+    <string name="coach_proposal_logged_water">Logged: %1$s.</string>
 </resources>

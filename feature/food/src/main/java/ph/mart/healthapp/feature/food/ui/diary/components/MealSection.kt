@@ -30,7 +30,6 @@ import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.EntryIndent
 import ph.mart.healthapp.feature.food.ui.shared.components.SwipeToDeleteRow
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /** The section cards' corner. Tighter than [AppCard]'s own 20dp because four of these stack down
  * one screen, where a card is a band in a run rather than a block on its own. */
@@ -68,7 +67,7 @@ internal fun MealSection(
     onDeleteEntry: (FoodEntry) -> Unit,
     onEditEntry: (FoodEntry) -> Unit,
 ) {
-    val label = stringResource(mealType.labelRes())
+    val label = stringResource(mealType.labelRes)
     AppCard(shape = SectionCorner, contentPadding = PaddingValues(0.dp)) {
         MealSectionHeader(
             label = label,

@@ -1,9 +1,22 @@
 package ph.mart.healthapp.core.data.food
 
 import android.graphics.Bitmap
+import androidx.annotation.StringRes
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.R
 
-enum class MealType { Breakfast, Lunch, Dinner, Snacks }
+/**
+ * The diary's four slots. [labelRes] rides on the enum the way `ExerciseType`'s and `MoodLevel`'s
+ * do, because two features now draw a meal name — the diary and the coach's proposal card — and
+ * `:feature:*` modules never import each other. The `name` is untouched: it is what the Room row,
+ * the export and the Google Health push all carry.
+ */
+enum class MealType(@StringRes val labelRes: Int) {
+    Breakfast(R.string.data_meal_breakfast),
+    Lunch(R.string.data_meal_lunch),
+    Dinner(R.string.data_meal_dinner),
+    Snacks(R.string.data_meal_snacks),
+}
 
 /** [dateEpochDay] is 0 for a not-yet-stored entry — the repository stamps today on insert.
  * A non-zero value is only ever set by a read, or by an import restoring a dated entry. */

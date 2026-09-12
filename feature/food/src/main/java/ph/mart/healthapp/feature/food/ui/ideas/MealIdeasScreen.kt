@@ -41,7 +41,6 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.ideas.components.MealIdeaCard
 import ph.mart.healthapp.feature.food.ui.shared.components.ThinkingState
-import ph.mart.healthapp.feature.food.ui.shared.labelRes
 
 /**
  * The one screen in FitPulse that answers "what should I eat?" rather than "what did I eat?".
@@ -201,7 +200,7 @@ private fun NothingToSuggest(offline: Boolean) {
  * would read as a warning. */
 @Composable
 private fun MealIdeaRequest.remainingLine(): String {
-    val meal = stringResource(mealType.labelRes()).lowercase()
+    val meal = stringResource(mealType.labelRes).lowercase()
     return if (remainingProteinG > 0) {
         stringResource(R.string.food_ideas_budget_protein, remainingKcal, remainingProteinG, meal)
     } else {
