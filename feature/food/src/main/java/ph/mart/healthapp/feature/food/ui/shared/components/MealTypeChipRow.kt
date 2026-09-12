@@ -44,14 +44,16 @@ internal fun MealTypeChipRow(selected: MealType, onSelect: (MealType) -> Unit) {
             val isSelected = mealType == selected
             Surface(
                 onClick = { onSelect(mealType) },
-                shape = RoundedCornerShape(999.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
                 contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                 // 2dp is the system's selected weight; the 1.5dp this used to draw was a third
                 // border width in a system that has exactly two.
                 border = BorderStroke(
                     width = if (isSelected) 2.dp else 1.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    // `outline`, not `outlineVariant`: these chips now sit on plain `surface`
+                    // beside a bordered card, and the variant tone disappeared against it.
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 ),
                 // A quarter of the width holds "Breakfast" at the default font scale and not much
                 // past it, so the chip grows a second line rather than clipping the word. 48dp is

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,14 +40,14 @@ import ph.mart.healthapp.feature.food.ui.search.OnlineSearch
 import ph.mart.healthapp.feature.food.ui.search.hasMore
 import ph.mart.healthapp.feature.food.ui.search.visibleItems
 
-/** Four rows and a sliver of the fifth — the cap where the host has no height to give. */
+/** Four rows and a sliver of the fifth — the cap on a panel with a form underneath it. */
 private val RESULTS_MAX_HEIGHT = 280.dp
 
 /**
  * Food search over the user's own foods, the built-in
  * [COMMON_FOODS][ph.mart.healthapp.core.data.food.COMMON_FOODS] list and an Open Food Facts tier
- * behind them, shared by the diary's add-entry sheet, the photo flow's manual-search state and the
- * recipe ingredient editor. Picking a hit hands a [ScannedProduct] to the host, which seeds its own
+ * behind them, shared by the diary's add-entry sheet and the recipe ingredient editor — the two
+ * hosts that draw a form directly beneath it. Picking a hit hands a [ScannedProduct] to the host, which seeds its own
  * form from it — the panel never logs anything itself.
  *
  * The three tiers draw as one list with no badge or divider between them. They are all per-100 g
@@ -56,20 +57,19 @@ private val RESULTS_MAX_HEIGHT = 280.dp
  *
  * An empty field is not an empty panel: it lists every local food, eight rows at a time, appending
  * the next eight when the results box is scrolled to its bottom. The box is bounded and scrolls
- * itself rather than growing, because two of the three hosts draw their own form directly beneath
- * it — a list that got taller as you read it would walk that form down the screen.
+ * itself rather than growing, because **both** its hosts draw their own form directly beneath it —
+ * a list that got taller as you read it would walk that form down the screen.
  *
- * [fillHeight] is for the host that has height to give: the photo flow's manual search owns its
- * whole screen, so its box takes `weight(1f)` and ends where the buttons begin instead of stopping
- * at [RESULTS_MAX_HEIGHT]. It is a parameter rather than something the panel works out for itself
- * because a weight is worth 0dp inside the `verticalScroll` the other two hosts draw it in, and the
- * panel cannot see which one it is in. Pass `Modifier.weight(1f)` with it.
+ * There was a third host and a `fillHeight` flag for it: the photo flow's manual search, the one
+ * host with a whole screen to give. That screen is now
+ * [FoodSearchScreen][ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen] and draws its own
+ * list, so the flag and the `weight(1f)` branch it switched are gone — every host left is a bounded
+ * one, which is the shape this panel was always for.
  */
 @Composable
 internal fun FoodSearchPanel(
     onSelect: (ScannedProduct) -> Unit,
     modifier: Modifier = Modifier,
-    fillHeight: Boolean = false,
     viewModel: FoodSearchViewModel = koinViewModel(),
 ) {
     // koinViewModel() has no graph to resolve against under @Preview — render the first page so
@@ -79,7 +79,6 @@ internal fun FoodSearchPanel(
             uiState = FoodSearchUiState(),
             onEvent = {},
             onSelect = onSelect,
-            fillHeight = fillHeight,
             modifier = modifier,
         )
         return
@@ -90,7 +89,6 @@ internal fun FoodSearchPanel(
         uiState = uiState,
         onEvent = viewModel::handleEvent,
         onSelect = onSelect,
-        fillHeight = fillHeight,
         modifier = modifier,
     )
 }
@@ -100,7 +98,6 @@ private fun FoodSearchPanelContent(
     uiState: FoodSearchUiState,
     onEvent: (FoodSearchEvent) -> Unit,
     onSelect: (ScannedProduct) -> Unit,
-    fillHeight: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -114,9 +111,7 @@ private fun FoodSearchPanelContent(
         // keystroke to finish being announced.
         Column(
             verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier
-                .then(if (fillHeight) Modifier.weight(1f) else Modifier)
-                .semantics { liveRegion = LiveRegionMode.Polite },
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
         ) {
             val items = uiState.visibleItems
             // "No matches" is only true once the online tier has stopped having something to say:
@@ -129,7 +124,7 @@ private fun FoodSearchPanelContent(
                     uiState = uiState,
                     onEvent = onEvent,
                     onSelect = onSelect,
-                    modifier = if (fillHeight) Modifier.weight(1f) else Modifier.heightIn(max = RESULTS_MAX_HEIGHT),
+                    modifier = Modifier.heightIn(max = RESULTS_MAX_HEIGHT),
                 )
                 if (uiState.hasMore) {
                     Hint(stringResource(R.string.food_search_showing, items.size, uiState.results.size))
@@ -146,9 +141,8 @@ private fun FoodSearchPanelContent(
 
 /**
  * The rows, and only the rows: the hints stay outside so "searching online…" never needs scrolling
- * to. The height comes from the caller — a weight where the host has height to give, else
- * [RESULTS_MAX_HEIGHT], which is deliberately not a multiple of the row height: the row cut in half
- * at the bottom edge is what says there is more, the job the Next button used to do.
+ * to. [RESULTS_MAX_HEIGHT] is deliberately not a multiple of the row height: the row cut in half at
+ * the bottom edge is what says there is more, the job the Next button used to do.
  *
  * Scrolling to the bottom asks for the next page. `maxValue` grows with each one, so the flag falls
  * back to false and re-arms; at the end of the list the state stops changing and the ask is dropped.
@@ -161,11 +155,14 @@ private fun ResultsBox(
     modifier: Modifier = Modifier,
 ) {
     val scroll = rememberScrollState()
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = modifier.verticalScroll(scroll),
-    ) {
-        uiState.visibleItems.forEach { product ->
+    Column(modifier = modifier.verticalScroll(scroll)) {
+        uiState.visibleItems.forEachIndexed { index, product ->
+            if (index > 0) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier.padding(start = 16.dp),
+                )
+            }
             SearchHitRow(product = product, onClick = { onSelect(product) })
         }
     }
@@ -176,25 +173,29 @@ private fun ResultsBox(
     }
 }
 
+/**
+ * One hit. The same [FoodItemRowVariant.Result] the full-screen search draws, separated by a rule
+ * rather than wrapped in a `surfaceContainerHighest` card.
+ *
+ * The card was a per-row box, which is what a *stack of things* looks like; a search result is one
+ * line of a list being scanned down, and a list is what the rules say. It also freed the row's
+ * whole width for the name — a card ate 12dp of padding either side of every row — and promoted
+ * the calorie figure, which is what a picker actually aims at. The sheet and the recipe editor draw
+ * it too: one search, one row, wherever it appears.
+ */
 @Composable
 private fun SearchHitRow(product: ScannedProduct, onClick: () -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-        shape = MaterialTheme.shapes.medium,
+    FoodItemRow(
+        variant = FoodItemRowVariant.Result,
+        name = product.name,
+        portionAmount = product.portionAmount,
+        portionUnit = product.portionUnit,
+        calories = product.calories,
+        proteinG = product.proteinG,
+        carbsG = product.carbsG,
+        fatG = product.fatG,
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-    ) {
-        FoodItemRow(
-            variant = FoodItemRowVariant.Display,
-            name = product.name,
-            portionAmount = product.portionAmount,
-            portionUnit = product.portionUnit,
-            calories = product.calories,
-            proteinG = product.proteinG,
-            carbsG = product.carbsG,
-            fatG = product.fatG,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
-    }
+    )
 }
 
 @Composable

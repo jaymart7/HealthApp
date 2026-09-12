@@ -57,6 +57,7 @@ class FoodSearchViewModel(
         when (event) {
             is FoodSearchEvent.OnQueryChange -> onQueryChange(event.query)
             FoodSearchEvent.OnLoadMore -> loadMore()
+            FoodSearchEvent.OnRetryOnline -> retryOnline()
         }
     }
 
@@ -118,4 +119,13 @@ class FoodSearchViewModel(
         }
 
     private fun loadMore() = intent { reduce { state.withMore() } }
+
+    /** The retry the failure row offers. It goes back through [searchOnline], so the same three
+     * guards apply — too short, no network, and the query-changed-underneath check on the way
+     * back — and the debounce is paid again, which costs half a second and keeps one path. */
+    private fun retryOnline() {
+        onlineJob?.cancel()
+        intent { reduce { state.copy(onlineStatus = OnlineSearch.Idle) } }
+        searchOnline(container.stateFlow.value.query.trim())
+    }
 }

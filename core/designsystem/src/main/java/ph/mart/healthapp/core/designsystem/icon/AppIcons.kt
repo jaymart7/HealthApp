@@ -30,11 +30,13 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.AddAPhoto
+import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.outlined.Edit
@@ -47,6 +49,7 @@ import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Timer
@@ -75,6 +78,9 @@ object AppIcons {
     val Bookmark: ImageVector = Icons.Filled.BookmarkAdd
     val Camera: ImageVector = Icons.Filled.PhotoCamera
     val Check: ImageVector = Icons.Filled.Check
+    /** The packaged-food lookup could not be reached. Never the offline state: a local list
+     * answering with no network is the feature, and only a *failed* ask gets a glyph. */
+    val CloudOff: ImageVector = Icons.Outlined.CloudOff
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
     val ChevronLeft: ImageVector = Icons.Filled.KeyboardArrowLeft
@@ -92,8 +98,14 @@ object AppIcons {
     /** An outbound connection to another service — Google Health, and whatever follows it. */
     val Link: ImageVector = Icons.Filled.Link
     val Mic: ImageVector = Icons.Filled.Mic
+    /** The minus of a stepper. Same vector as [TrendFlat] and deliberately its own name: one of
+     * them means "take some away" and the other means "this has not moved". */
+    val Minus: ImageVector = Icons.Filled.Remove
     val Pause: ImageVector = Icons.Filled.Pause
     val Play: ImageVector = Icons.Filled.PlayArrow
+    val Search: ImageVector = Icons.Filled.Search
+    /** Nothing matched — the search's own empty state, distinct from [CloudOff]'s could-not-ask. */
+    val SearchOff: ImageVector = Icons.Outlined.SearchOff
     val Settings: ImageVector = Icons.Outlined.Settings
     val Steps: ImageVector = Icons.Outlined.DirectionsWalk
     val Supplement: ImageVector = Icons.Outlined.Medication

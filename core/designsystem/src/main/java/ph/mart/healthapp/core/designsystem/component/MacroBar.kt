@@ -74,6 +74,20 @@ fun MacroBar(
     val fatKcal = (fatG * 9).coerceAtLeast(0).toFloat()
     val total = (proteinKcal + carbsKcal + fatKcal).coerceAtLeast(1f)
 
+    // Nothing to split. Three zero-weight segments draw an 8dp strip of nothing, which reads as a
+    // rendering failure rather than as an empty state — so the bar keeps its shape and shows the
+    // track it would be filling. The same tone the unfilled half of a segment already uses.
+    if (proteinKcal + carbsKcal + fatKcal <= 0f) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(height)
+                .clip(RoundedCornerShape(height / 2))
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+        )
+        return
+    }
+
     Row(
         modifier = modifier.fillMaxWidth().height(height),
         // spacedBy, not padding on each segment: a macro whose goal is zero draws nothing at all,

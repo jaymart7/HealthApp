@@ -11,6 +11,16 @@
     <string name="food_back">Back</string>
     <string name="food_undo">Undo</string>
     <string name="food_macros">Macros</string>
+    <string name="food_portion_label">Portion</string>
+    <string name="food_portion_decrease">Decrease portion</string>
+    <string name="food_portion_increase">Increase portion</string>
+    <string name="food_portion_caveat_per_100g">Database values are per 100 g.</string>
+    <string name="food_portion_scaled">Scaled ×%1$s.</string>
+    <string name="food_portion_caveat_manual">Enter the values for this portion, not per 100 g.</string>
+    <string name="food_name_placeholder">Name this food</string>
+    <string name="food_calories_label">Calories</string>
+    <string name="food_calories_follows_portion">Follows the portion.</string>
+    <string name="food_calories_edit">Edit calories</string>
     <string name="food_no_connection">No connection</string>
     <string name="food_camera_needed">Camera access needed</string>
     <string name="food_open_settings">Open settings</string>
@@ -110,8 +120,16 @@
     <string name="food_search_placeholder">Search foods…</string>
     <string name="food_search_no_matches">No matches — enter it by hand instead.</string>
     <string name="food_search_showing">%1$d of %2$d</string>
+    <!-- The count while the packaged-food lookup is running or after it failed: the total is every
+         food this phone carries, and a bare "4 of 4" would read as the size of the whole search. -->
+    <string name="food_search_showing_local">%1$d of %2$d on this device</string>
     <string name="food_search_online_searching">Looking for packaged foods…</string>
-    <string name="food_search_online_failed">Couldn\'t reach the packaged-food list.</string>
+    <string name="food_search_online_failed">Couldn\'t reach the packaged-food list. Showing your foods only.</string>
+    <string name="food_search_retry">Retry</string>
+    <string name="food_search_close">Close search</string>
+    <string name="food_search_clear">Clear search</string>
+    <string name="food_search_no_matches_title">Nothing matches \u201C%1$s\u201D</string>
+    <string name="food_search_no_matches_body">Searched your foods, the common-foods list and the packaged-food database.</string>
 
     <!-- Meal ideas -->
     <string name="food_ideas_title">Meal ideas</string>
@@ -140,7 +158,6 @@
     <string name="food_photo_offline_retry">Still nothing. Photo logging needs a connection — you can log manually in the meantime.</string>
     <string name="food_photo_offline">Photo logging needs a connection. You can still log manually — everything else works offline.</string>
     <string name="food_photo_log_manually">Log manually</string>
-    <string name="food_photo_no_item">I couldn\'t spot a food item in that photo — let\'s search instead.</string>
     <string name="food_photo_enter_manually">Enter it manually</string>
     <string name="food_photo_chip">AI detected</string>
     <string name="food_photo_review">Review your meal</string>
@@ -155,8 +172,7 @@
 
     <!-- Barcode flow -->
     <string name="food_scan_line_up">Line up the barcode</string>
-    <string name="food_scan_found_subtitle">Values are per 100 g — adjust the portion to match what you ate.</string>
-    <string name="food_scan_manual_subtitle">We didn\'t have that product, so this one\'s on you.</string>
+    <string name="food_scan_manual_subtitle">That barcode isn\'t in the database, so these numbers are yours to fill in — check the label.</string>
     <string name="food_scan_looking_up">Looking that up…</string>
     <string name="food_scan_looking_up_body">Checking the product database for this barcode.</string>
     <string name="food_scan_not_found">We don\'t have that product</string>
@@ -171,6 +187,8 @@
     <string name="food_scan_permission_grant">Grant camera access to scan a barcode, or go back and log manually.</string>
     <string name="food_scan_discard_title">Discard this item?</string>
     <string name="food_scan_review">Review this item</string>
+    <!-- The not-found and hand-entry paths: nothing was supplied, so there is nothing to review. -->
+    <string name="food_scan_add_title">Add this item</string>
     <string name="food_scan_log_item">Log item</string>
 
     <!-- Voice flow -->

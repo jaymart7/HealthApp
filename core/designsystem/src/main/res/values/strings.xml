@@ -32,11 +32,15 @@
     <string name="ds_macro_fat">Fat</string>
     <string name="ds_macro_percent">%1$s · %2$d%%</string>
     <string name="ds_macro_grams">%1$s in grams</string>
+    <!-- MacroFieldCell speaks its own unit: it draws the micronutrients too, where "g" is wrong. -->
+    <string name="ds_macro_field">%1$s in %2$s</string>
 
     <!-- Micronutrients -->
     <string name="ds_nutrients_more">More nutrients</string>
     <string name="ds_nutrients_show">Show more nutrients</string>
     <string name="ds_nutrients_hide">Hide more nutrients</string>
+    <!-- The closed disclosure's summary when none of the three carries a figure. -->
+    <string name="ds_nutrients_optional">Optional</string>
     <string name="ds_nutrient_fiber">Fiber</string>
     <string name="ds_nutrient_sugar">Sugar</string>
     <string name="ds_nutrient_sodium">Sodium</string>

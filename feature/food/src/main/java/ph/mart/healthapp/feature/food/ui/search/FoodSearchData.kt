@@ -50,6 +50,18 @@ val FoodSearchUiState.hasMore: Boolean
     get() = shown < results.size
 
 /**
+ * Whether the running count has to say *on this device*.
+ *
+ * "12 of 40" is a whole answer only once nothing is still being asked. While the packaged-food
+ * lookup is in flight the 40 is a number that is about to change, and when it failed the 40 is
+ * every food this phone happens to carry — in both cases a bare total reads as the size of the
+ * search, which it is not. `Idle` is the one state where the count is the count: it covers
+ * answer-landed and offline alike, and offline genuinely has nothing further to add.
+ */
+val FoodSearchUiState.countIsLocalOnly: Boolean
+    get() = onlineStatus != OnlineSearch.Idle
+
+/**
  * The clamp is load-bearing: at the end of the list this returns an equal state, which the state
  * flow drops, so the panel re-asking every time the box is already scrolled to the bottom cannot
  * loop. It never falls below one page, or a three-hit local answer would leave the window at three
@@ -61,4 +73,9 @@ fun FoodSearchUiState.withMore(): FoodSearchUiState =
 sealed interface FoodSearchEvent {
     data class OnQueryChange(val query: String) : FoodSearchEvent
     data object OnLoadMore : FoodSearchEvent
+
+    /** Re-asks the packaged-food tier for the query already typed. Only the online leg: the local
+     * results on screen were never the thing that failed, and re-running them would re-window a
+     * list somebody is reading. */
+    data object OnRetryOnline : FoodSearchEvent
 }

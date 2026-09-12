@@ -55,9 +55,6 @@ import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
 import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
-private val FOUND_SUBTITLE = R.string.food_scan_found_subtitle
-private val MANUAL_SUBTITLE = R.string.food_scan_manual_subtitle
-
 /**
  * The barcode flow, built to the same shape as [PhotoCaptureScreen]: one always-mounted
  * [NavigationBackHandler] that dispatches on the current [ScanFlow] instead of applying one
@@ -192,11 +189,15 @@ fun BarcodeScanScreen(
                     },
                 )
 
+                // A blank seed is the not-found path or the viewfinder's manual door: nothing was
+                // supplied, so the screen says "Add" and asks for the portion's own figures. A
+                // found product needs no subtitle at all now — its per-100 g caveat sits under the
+                // portion it is about.
                 ScanFlow.Confirmation -> ScanConfirmationScreen(
                     form = state.form,
-                    subtitle = stringResource(
-                        if (state.originalForm.name.isBlank()) MANUAL_SUBTITLE else FOUND_SUBTITLE,
-                    ),
+                    manualEntry = state.originalForm.name.isBlank(),
+                    subtitle = stringResource(R.string.food_scan_manual_subtitle)
+                        .takeIf { state.originalForm.name.isBlank() },
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
                     // The diary's day, not today — a scan while reviewing Tuesday belongs to Tuesday.

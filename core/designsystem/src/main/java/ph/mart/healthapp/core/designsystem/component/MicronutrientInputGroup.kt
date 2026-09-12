@@ -1,7 +1,6 @@
 package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.R
@@ -49,18 +46,27 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  *
  * The section opens itself when a value arrives non-zero, so a scanned or AI-estimated food shows
  * its sodium without a tap, while a hand-typed quick add keeps the sheet the height it is today.
+ *
+ * **Null is unset, and the callers are the ones mapping `0` onto it.** `Nutrients` stores these as
+ * non-null `Int` and records at its own definition that `0` means unknown-or-none, so a caller
+ * holding one passes `takeIf { it > 0 }` and writes back `?: 0` — the conflation stays exactly
+ * where it already was, and the cells get to print a dash rather than three zeroes nobody typed.
+ *
+ * The closed row carries a **summary of what is actually set**, so the section says whether there
+ * is anything behind it without being opened. Listing all three names when only sodium arrived
+ * would be the same claim the dash exists to avoid.
  */
 @Composable
 fun MicronutrientInputGroup(
-    fiberG: Int,
-    sugarG: Int,
-    sodiumMg: Int,
-    onFiberChange: (Int) -> Unit,
-    onSugarChange: (Int) -> Unit,
-    onSodiumChange: (Int) -> Unit,
+    fiberG: Int?,
+    sugarG: Int?,
+    sodiumMg: Int?,
+    onFiberChange: (Int?) -> Unit,
+    onSugarChange: (Int?) -> Unit,
+    onSodiumChange: (Int?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val seeded = fiberG > 0 || sugarG > 0 || sodiumMg > 0
+    val seeded = fiberG != null || sugarG != null || sodiumMg != null
     // Seeded once, at first composition: the section must not slam shut again the moment the user
     // clears the field they just opened it to correct.
     var expanded by rememberSaveable { mutableStateOf(seeded) }
@@ -82,8 +88,14 @@ fun MicronutrientInputGroup(
             Text(
                 text = stringResource(R.string.ds_nutrients_more),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = summaryOf(fiberG, sugarG, sodiumMg),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 8.dp),
             )
             Icon(
                 imageVector = AppIcons.ChevronDown,
@@ -95,65 +107,44 @@ fun MicronutrientInputGroup(
             )
         }
         if (expanded) {
-            NutrientRow(stringResource(R.string.ds_nutrient_fiber), fiberG, "g", step = 1, onChange = onFiberChange)
-            NutrientRow(stringResource(R.string.ds_nutrient_sugar), sugarG, "g", step = 1, onChange = onSugarChange)
-            // A 50mg step: sodium is the one figure here counted in the hundreds, and nudging it
-            // by 1 would be the tap-count problem StepperValueField exists to solve.
-            NutrientRow(stringResource(R.string.ds_nutrient_sodium), sodiumMg, "mg", step = 50, onChange = onSodiumChange)
+            // Unit symbols are not copy. Sodium's is the reason the cell takes one at all.
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MacroFieldCell(
+                    label = stringResource(R.string.ds_nutrient_fiber),
+                    value = fiberG,
+                    unit = "g",
+                    onValueChange = onFiberChange,
+                    modifier = Modifier.weight(1f),
+                )
+                MacroFieldCell(
+                    label = stringResource(R.string.ds_nutrient_sugar),
+                    value = sugarG,
+                    unit = "g",
+                    onValueChange = onSugarChange,
+                    modifier = Modifier.weight(1f),
+                )
+                MacroFieldCell(
+                    label = stringResource(R.string.ds_nutrient_sodium),
+                    value = sodiumMg,
+                    unit = "mg",
+                    onValueChange = onSodiumChange,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
 
+/** The names of the nutrients that actually carry a figure, or "Optional" when none does. The
+ * separator is punctuation, not copy. */
 @Composable
-private fun NutrientRow(
-    nutrient: String,
-    value: Int,
-    unit: String,
-    step: Int,
-    onChange: (Int) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .padding(start = 16.dp, end = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = nutrient,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        StepperValueField(
-            value = value.toString(),
-            onValueChange = { onChange(it.toIntOrNull() ?: 0) },
-            contentDescription = stringResource(
-                if (unit == "mg") R.string.ds_nutrient_in_milligrams else R.string.ds_nutrient_in_grams,
-                nutrient,
-            ),
-            // Four digits wide, not three: sodium routinely runs past 1000mg.
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(64.dp),
-        )
-        Text(
-            text = unit,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        StepperButton(
-            symbol = "−",
-            label = stringResource(R.string.ds_decrease, nutrient),
-            onClick = { onChange((value - step).coerceAtLeast(0)) },
-        )
-        StepperButton(
-            symbol = "+",
-            label = stringResource(R.string.ds_increase, nutrient),
-            onClick = { onChange(value + step) },
-        )
-    }
+private fun summaryOf(fiberG: Int?, sugarG: Int?, sodiumMg: Int?): String {
+    val set = listOfNotNull(
+        fiberG?.let { stringResource(R.string.ds_nutrient_fiber) },
+        sugarG?.let { stringResource(R.string.ds_nutrient_sugar) },
+        sodiumMg?.let { stringResource(R.string.ds_nutrient_sodium) },
+    )
+    return if (set.isEmpty()) stringResource(R.string.ds_nutrients_optional) else set.joinToString(" · ")
 }
 
 /** Nothing seeded — the state a quick add opens in, and the one that must not grow the sheet. */
@@ -163,9 +154,9 @@ private fun MicronutrientInputGroupCollapsedPreview() {
     AppTheme {
         Surface {
             MicronutrientInputGroup(
-                fiberG = 0,
-                sugarG = 0,
-                sodiumMg = 0,
+                fiberG = null,
+                sugarG = null,
+                sodiumMg = null,
                 onFiberChange = {},
                 onSugarChange = {},
                 onSodiumChange = {},

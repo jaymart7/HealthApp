@@ -301,6 +301,92 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   still `emptySet()` for the reason the sheet gave: dots would cost a query the diary never makes.
   The add sheet is unchanged and still a sheet — its panels and form are built for a sheet's
   scroll, and nothing about a wider window changes that.
+- **The form's four figures are nullable; the store's are not, and that split is the point.** A
+  `FoodEntry` cannot tell a zero from an unknown — `Nutrients` says so at its own definition and
+  reports coverage alongside instead — but `AddEntryForm` can, because it knows whether anything
+  seeded it. So `calories`/`proteinG`/`carbsG`/`fatG` are `Int?` defaulting to null, and
+  `MacroFieldCell` prints an em dash rather than a `0` nobody typed; clearing a field returns to
+  null, so the distinction survives a correction, and a food that genuinely is fat-free is typed as
+  `0` and prints as `0`. It collapses at `toFoodEntry()` and `toSuggestion()` with `?: 0` and
+  nothing downstream of those two sees a null — **`:core:data`, Room, the export and `Nutrients`
+  itself are untouched**, which is what kept this a feature-local change. The three micronutrients
+  the review screen edits map `0 → null` at the cell boundary only, by `takeIf { it > 0 }` in each
+  caller: the conflation stays exactly where it already was. `SavedMealItem` is a `:core:data` type
+  with non-null figures, so the recipe editor's cells never draw a dash.
+- **`isValid()` did not change, and the handoff's version of it was the thing to refuse.** The
+  redesign specified `name non-empty && calories != null`, which would deadlock the quick add the
+  entry below this one exists to protect. It stays `name.isNotBlank() || (calories ?: 0) > 0` —
+  identical semantics once calories is nullable — and the "Required" label that went with the
+  handoff's rule was dropped rather than shipped: it names an invalid state this app does not have.
+- **Calories already followed the portion, so the redesign's one real behaviour change was already
+  built.** The brief called out "today the user recomputes by hand"; `withPortionAmount()` has
+  repriced calories, all three macros and every nutrient since it was written. What was *not* taken
+  is the `caloriesOverridden` flag that came with it — under it, correcting a figure at 100 g and
+  then moving to 150 g leaves the corrected number behind, in the direction that under-counts.
+  Scaling off the current pair means a correction is still correct at the next portion, so the
+  screen shows the big figure and the edit affordance the handoff drew and keeps the arithmetic it
+  already had. The hint reads "Follows the portion." with no override clause.
+- **The per-100 g caveat moved to the number it is about.** It was the review screen's subtitle, a
+  card away from the portion; it now sits under the portion control and names the factor currently
+  applied ("Scaled ×1.5.") so the arithmetic is visible at the moment it starts being true. The
+  factor is printed **only in grams** — the seed is per 100 g so `amount / 100` is the factor, but
+  switching the unit moves neither the amount nor the values, and "×1.5" against a number meaning
+  ounces would be arithmetic nobody performed. A found product now carries no subtitle at all.
+- **`manualEntry` is a parameter, not a third subtitle string.** Three paths reach the review
+  screen: a barcode match, a search hit, and a blank form from either flow's hand-entry door. The
+  blank one needs the opposite caveat *and* a different title ("Add this item" — there is nothing to
+  review), and both hosts already knew which it was from `originalForm.name.isBlank()`. Wiring it
+  also fixed a standing mismatch: the photo flow's hand-entry path was printing "From the food
+  database" over a form the user was typing.
+- **The search is a screen in `ui/search/`, not a state in `ui/photo/`.** `ManualSearchScreen` was a
+  photo-flow sub-view that happened to be a search; grouping in this repo is by *subject*, and
+  `FoodSearchViewModel` and `FoodSearchPanel` were already in `ui/search/`. The photo flow is one
+  caller. Three things went with the move. The **mascot and its apology are gone** — an apology is a
+  thing to read on a screen whose job is to be typed into, and by the time anyone lands here they
+  know the photo failed. **Cancel became the bar's back arrow**, beside the finger already typing
+  rather than under a full-height list. And **`fillHeight` was deleted** with its `weight(1f)`
+  branch: it existed for exactly this host, and every host the panel has left is a bounded one, which
+  is the shape it was always for.
+- **The online tier's status lives at the end of the list, and a failure is a row.** The local tiers
+  have already answered and their rows are pickable; the packaged-food tier is a thing happening
+  behind them, which is where `searchFoods()` already puts it. A banner would interrupt an answer
+  that is not waiting on anything and a spinner over the list would imply the rows under it are
+  provisional. So: two skeleton rows and a spinner at the tail while it runs, an inline `cloud_off`
+  row with a **Retry** that re-asks *only* the online leg when it fails, and the 2dp progress rule
+  under the search bar because progress belongs to the query. `OnRetryOnline` goes back through
+  `searchOnline()` so the same three guards and the same debounce apply — one path, half a second.
+- **The count says "on this device" while anything is still being asked.** "12 of 40" is a whole
+  answer only once `onlineStatus` is `Idle`; while the lookup is in flight the total is about to
+  change, and after it failed the total is whatever this phone happens to carry. `countIsLocalOnly`
+  is that rule and `FoodSearchWindowTest` holds it — including that **offline is `Idle`**, so the
+  count there does *not* hedge: the local list answering with no network is the feature.
+- **`FoodItemRowVariant.Result` is a third variant, and the search's card went with it.** A hit was
+  a `surfaceContainerHighest` card per row, which is what a *stack of things* looks like; a search
+  result is one line being scanned down, so rows are separated by start-inset rules instead. That
+  freed 12dp either side for the name and promoted the calorie figure to the heaviest thing on the
+  row — what a picker actually aims at. `Display` (the diary) is untouched, the detail line is the
+  same `macroLine()` both variants draw, and all three panel hosts get the new row: one search, one
+  row, wherever it appears.
+- **Macro tiles replace the stepper rows for foods, and only for foods.** `MacroFieldGroup` draws
+  three typable cells in one row's height where `MacroInputGroup` stacked three rows, each spending
+  its width on steppers for a two-digit number that was already typable. It is used by all five
+  food-logging forms. `MacroInputGroup` **stays** for onboarding's confirm-targets step and
+  Profile's calorie section: a target is nudged toward a split, which is what steppers are for; a
+  food's macros are copied off a label.
+- **`MacroBar` draws a track when there is nothing to split.** Three zero-weight segments rendered an
+  8dp strip of nothing, which reads as a broken view rather than an empty one — so a zero total now
+  fills the bar's shape with `surfaceContainerHighest`, the tone the unfilled half of a segment
+  already uses.
+- **The review screen's bar is `AppTopBar` with a `titleStyle`, not a `TopAppBarScrollBehavior`.**
+  That M3 type is still experimental, and putting it in `AppTopBar`'s signature would push an
+  `@OptIn` onto every screen in the app that wears a toolbar — to answer a question the screen's own
+  `ScrollState` already answers. Both scroll reads are `derivedStateOf` so the screen re-composes at
+  the thresholds rather than per pixel, and `form.name` is deliberately *outside* them: a
+  `derivedStateOf` captures a non-state value at the composition it was remembered in, which would
+  have frozen the bar on whatever the name was when the screen opened.
+- **Discard leaves while the keyboard is up.** A destructive full-width button directly under the
+  IME is a button placed where a mis-swipe at the suggestion bar lands, and nothing on the review
+  screen needs discarding mid-word. Back still does it, and still asks first.
 - **A nameless entry is a quick add, not an invalid one.** `AddEntryForm.isValid()` accepts a bare
   calorie figure, and `toFoodEntry()` fills the blank with `QUICK_ADD_NAME` and collapses the
   portion to one serving — the form's default 100 g is a number the user never supplied. The guard

@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -117,6 +118,9 @@ fun NumericStepperField(
  *
  * [decimal] admits one decimal point, for the portion amounts that are 0.5 of a cup rather than a
  * whole number of grams.
+ *
+ * [textStyle] is always rendered `tabularNums`, whatever is passed: a figure that jitters as it is
+ * typed is the one thing every caller of this field has in common.
  */
 @Composable
 internal fun StepperValueField(
@@ -126,6 +130,7 @@ internal fun StepperValueField(
     modifier: Modifier = Modifier,
     decimal: Boolean = false,
     textAlign: TextAlign = TextAlign.Start,
+    textStyle: TextStyle = MaterialTheme.typography.titleMedium,
 ) {
     var text by remember { mutableStateOf(value) }
     // Re-seed only when the incoming value is a different *number*: a stepper tap, a portion
@@ -141,7 +146,7 @@ internal fun StepperValueField(
             onValueChange(cleaned)
         },
         singleLine = true,
-        textStyle = MaterialTheme.typography.titleMedium.tabularNums
+        textStyle = textStyle.tabularNums
             .copy(color = MaterialTheme.colorScheme.onSurface, textAlign = textAlign),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(

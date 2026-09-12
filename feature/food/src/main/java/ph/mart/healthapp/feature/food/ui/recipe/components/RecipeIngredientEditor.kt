@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
+import ph.mart.healthapp.core.designsystem.component.MacroFieldGroup
 import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -72,21 +72,23 @@ internal fun RecipeIngredientEditor(
             onPortionUnitChange = { onDraftChange(draft.copy(portionUnit = it)) },
             onCaloriesChange = { onDraftChange(draft.copy(calories = it)) },
         )
-        MacroInputGroup(
+        // A [SavedMealItem] is a `:core:data` type with non-null figures, so an ingredient's cells
+        // never draw the dash: `0` here has always meant unknown-or-none and still does.
+        MacroFieldGroup(
             proteinG = draft.proteinG,
             carbsG = draft.carbsG,
             fatG = draft.fatG,
-            onProteinChange = { onDraftChange(draft.copy(proteinG = it)) },
-            onCarbsChange = { onDraftChange(draft.copy(carbsG = it)) },
-            onFatChange = { onDraftChange(draft.copy(fatG = it)) },
+            onProteinChange = { onDraftChange(draft.copy(proteinG = it ?: 0)) },
+            onCarbsChange = { onDraftChange(draft.copy(carbsG = it ?: 0)) },
+            onFatChange = { onDraftChange(draft.copy(fatG = it ?: 0)) },
         )
         MicronutrientInputGroup(
-            fiberG = draft.nutrients.fiberG,
-            sugarG = draft.nutrients.sugarG,
-            sodiumMg = draft.nutrients.sodiumMg,
-            onFiberChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(fiberG = it))) },
-            onSugarChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(sugarG = it))) },
-            onSodiumChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(sodiumMg = it))) },
+            fiberG = draft.nutrients.fiberG.takeIf { it > 0 },
+            sugarG = draft.nutrients.sugarG.takeIf { it > 0 },
+            sodiumMg = draft.nutrients.sodiumMg.takeIf { it > 0 },
+            onFiberChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(fiberG = it ?: 0))) },
+            onSugarChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(sugarG = it ?: 0))) },
+            onSodiumChange = { onDraftChange(draft.copy(nutrients = draft.nutrients.copy(sodiumMg = it ?: 0))) },
         )
         SecondaryButton(
             label = stringResource(R.string.food_recipe_add_ingredient),

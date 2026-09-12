@@ -112,7 +112,14 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   and instant; the empty field lists all of them, eight rows at a time in a box that appends the
   next eight when it is scrolled to its bottom. Behind both, an Open Food
   Facts tier folds packaged products in at the back — debounced, three characters minimum,
-  never blocking or replacing the local answer, and silently absent offline.
+  never blocking or replacing the local answer, and silently absent offline. One row design
+  everywhere it draws: name, portion, coloured P/C/F initials, and the calorie figure as the
+  heaviest thing on the row.
+- Food search as a screen — the photo flow's no-food fallback and the barcode flow's dead ends
+  open the search full height: a search bar whose back arrow is the way out, results running to a
+  docked bar carrying the count and the hand-entry door, skeleton rows and a retry while the
+  packaged-food tier is in flight or after it failed, and a named "nothing matches" that says where
+  it looked.
 - Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at
   once, every parsed row editable and repriceable before anything is written. Speech is the
   system's own dialog; typing is the same path.
@@ -137,6 +144,11 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - The diary's mic, barcode and camera doors all log to the day being reviewed; the FAB and the
   launcher shortcuts log to today.
 - Both viewfinders carry a gallery door and a manual-entry door.
+- Review this item — the confirm step for a barcode match, a search hit or a hand entry. One card
+  carries what is being checked (name, portion, calories); the portion is a stepper with presets, a
+  unit toggle and the per-100 g caveat against the number it is about, and every value reprices
+  with it. Macros and micronutrients are tiles below, printing a dash where nobody has supplied a
+  figure. Log and Discard are docked.
 - Camera permission screen; predictive back branches per flow state.
 - Progress photo capture with a date-stamped file.
 

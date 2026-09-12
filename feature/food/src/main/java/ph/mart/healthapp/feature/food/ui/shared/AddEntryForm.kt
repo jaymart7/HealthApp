@@ -15,16 +15,25 @@ import ph.mart.healthapp.core.data.food.times
  * record) each time a meal section's "+" is tapped.
  *
  * It lives here rather than with the diary because all three logging paths — the diary sheet, the
- * photo flow's confirmation, and the barcode flow's — edit and log this same form. */
+ * photo flow's confirmation, and the barcode flow's — edit and log this same form.
+ *
+ * **The four figures are nullable and null is "nobody has said".** A stored [FoodEntry] cannot tell
+ * a zero from an unknown — `Nutrients` says so at its own definition, and reports coverage
+ * alongside instead — but a *form* can, because it knows whether anything seeded it. That is the
+ * whole reason: the barcode flow's not-found path and a blank quick add open with no numbers at
+ * all, and a fat cell printing `0` there is a claim the app has no basis for. Everything seeded
+ * from a scan, a photo, a search hit or a logged row arrives non-null, so this only ever shows on
+ * a form the user is filling in themselves. It collapses back to `0` at [toFoodEntry] and
+ * [toSuggestion]; nothing downstream of those two sees a null. */
 data class AddEntryForm(
     val mealType: MealType = MealType.Breakfast,
     val name: String = "",
     val portionAmount: Double = 100.0,
     val portionUnit: String = "g",
-    val calories: Int = 0,
-    val proteinG: Int = 0,
-    val carbsG: Int = 0,
-    val fatG: Int = 0,
+    val calories: Int? = null,
+    val proteinG: Int? = null,
+    val carbsG: Int? = null,
+    val fatG: Int? = null,
     val nutrients: Nutrients = Nutrients(),
     /** The plate a logged row was photographed from, carried so an edit gives it back. Only ever
      * non-null on a form seeded from an already-logged entry — the camera flow hands its bitmap to
@@ -35,7 +44,7 @@ data class AddEntryForm(
 /** A bare calorie figure is enough — that is the quick add. The guard is deliberately shared with
  * the photo and barcode confirmation screens: all three log through [toFoodEntry], which fills the
  * blank, so clearing a name there degrades to a quick add rather than deadlocking the button. */
-fun AddEntryForm.isValid(): Boolean = name.isNotBlank() || calories > 0
+fun AddEntryForm.isValid(): Boolean = name.isNotBlank() || (calories ?: 0) > 0
 
 /** [dateEpochDay] 0 leaves the stamping to the repository, which means today.
  *
@@ -47,10 +56,10 @@ fun AddEntryForm.toFoodEntry(dateEpochDay: Long = 0): FoodEntry = FoodEntry(
     mealType = mealType,
     portionAmount = if (name.isBlank()) 1.0 else portionAmount,
     portionUnit = if (name.isBlank()) SERVING_UNIT else portionUnit,
-    calories = calories,
-    proteinG = proteinG,
-    carbsG = carbsG,
-    fatG = fatG,
+    calories = calories ?: 0,
+    proteinG = proteinG ?: 0,
+    carbsG = carbsG ?: 0,
+    fatG = fatG ?: 0,
     nutrients = nutrients,
     // An edit rebuilds the whole entry from the form, so a photo that isn't carried here is a
     // photo the correction throws away — see `FoodEntryDao.replace`, which supersedes the row.
@@ -87,10 +96,10 @@ fun AddEntryForm.toSuggestion(): FoodSuggestion = FoodSuggestion(
     name = name.trim(),
     portionAmount = portionAmount,
     portionUnit = portionUnit,
-    calories = calories,
-    proteinG = proteinG,
-    carbsG = carbsG,
-    fatG = fatG,
+    calories = calories ?: 0,
+    proteinG = proteinG ?: 0,
+    carbsG = carbsG ?: 0,
+    fatG = fatG ?: 0,
     nutrients = nutrients,
     isFavorite = true,
 )
@@ -98,7 +107,7 @@ fun AddEntryForm.toSuggestion(): FoodSuggestion = FoodSuggestion(
 /** A food with no name is a quick add and a food with no calories is nothing — neither is
  * something to keep. The sheet hides the button rather than disabling it, so this is what it
  * hides on. */
-fun AddEntryForm.isSaveableFood(): Boolean = name.isNotBlank() && calories > 0
+fun AddEntryForm.isSaveableFood(): Boolean = name.isNotBlank() && (calories ?: 0) > 0
 
 /** Added to the add-entry sheet's portion-unit pills, so a seeded recipe shows its unit selected
  * instead of no pill at all — and so a leftovers-by-hand entry can say "serving" too. */
@@ -156,6 +165,9 @@ fun ScannedProduct.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
  * so a run of stepper taps can land a unit off the one-shot answer — bounded, not compounding, and
  * a kilocalorie either way. A zero or absent starting portion has no price-per-unit to scale from,
  * so the amount moves alone.
+ *
+ * A null figure stays null: there is nothing to reprice, and inventing a `0` here would be the
+ * claim the nullability exists to avoid.
  */
 fun AddEntryForm.withPortionAmount(amount: Double): AddEntryForm {
     val factor = portionFactor(from = portionAmount, to = amount) ?: return copy(portionAmount = amount)
@@ -188,3 +200,6 @@ private fun portionFactor(from: Double, to: Double): Double? =
     if (from <= 0.0 || to < 0.0) null else to / from
 
 private fun scale(value: Int, factor: Double): Int = (value * factor).roundToInt()
+
+@JvmName("scaleNullable")
+private fun scale(value: Int?, factor: Double): Int? = value?.let { scale(it, factor) }

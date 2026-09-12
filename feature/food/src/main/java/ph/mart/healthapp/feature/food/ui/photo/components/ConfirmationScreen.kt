@@ -33,7 +33,7 @@ import ph.mart.healthapp.core.designsystem.component.AIChip
 import ph.mart.healthapp.core.designsystem.component.AIChipVariant
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
+import ph.mart.healthapp.core.designsystem.component.MacroFieldGroup
 import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
@@ -89,10 +89,10 @@ internal fun ConfirmationScreen(
                 name = form.name,
                 portionAmount = form.portionAmount,
                 portionUnit = form.portionUnit,
-                calories = form.calories,
-                proteinG = form.proteinG,
-                carbsG = form.carbsG,
-                fatG = form.fatG,
+                calories = form.calories ?: 0,
+                proteinG = form.proteinG ?: 0,
+                carbsG = form.carbsG ?: 0,
+                fatG = form.fatG ?: 0,
                 onNameChange = { onFormChange(form.copy(name = it)) },
                 onPortionAmountChange = { onFormChange(form.withPortionAmount(it)) },
                 onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
@@ -101,7 +101,7 @@ internal fun ConfirmationScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(text = stringResource(R.string.food_macros), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                MacroInputGroup(
+                MacroFieldGroup(
                     proteinG = form.proteinG,
                     carbsG = form.carbsG,
                     fatG = form.fatG,
@@ -110,12 +110,12 @@ internal fun ConfirmationScreen(
                     onFatChange = { onFormChange(form.copy(fatG = it)) },
                 )
                 MicronutrientInputGroup(
-                    fiberG = form.nutrients.fiberG,
-                    sugarG = form.nutrients.sugarG,
-                    sodiumMg = form.nutrients.sodiumMg,
-                    onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it))) },
-                    onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it))) },
-                    onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it))) },
+                    fiberG = form.nutrients.fiberG.takeIf { it > 0 },
+                    sugarG = form.nutrients.sugarG.takeIf { it > 0 },
+                    sodiumMg = form.nutrients.sodiumMg.takeIf { it > 0 },
+                    onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it ?: 0))) },
+                    onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it ?: 0))) },
+                    onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it ?: 0))) },
                 )
             }
 

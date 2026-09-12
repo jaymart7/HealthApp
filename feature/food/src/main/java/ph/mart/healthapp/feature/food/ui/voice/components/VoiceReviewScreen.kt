@@ -31,7 +31,7 @@ import ph.mart.healthapp.core.designsystem.component.AIChipVariant
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
+import ph.mart.healthapp.core.designsystem.component.MacroFieldGroup
 import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
@@ -48,7 +48,7 @@ import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
  * One meal slot for the whole batch: a sentence is one meal, and a slot per row would ask four
  * questions to log one breakfast. Rows are collapsed by default and open one at a time — the list
  * is the thing being checked, and a screen of five expanded forms is not a list. Every open row is
- * the same [FoodItemRow] and [MacroInputGroup] pair the photo and barcode confirmations use, so a
+ * the same [FoodItemRow] and [MacroFieldGroup] pair the photo confirmation uses, so a
  * portion change reprices through the existing `withPortionAmount()`.
  *
  * This screen *is* the trust boundary on the numbers: every figure is shown and adjustable before
@@ -138,10 +138,10 @@ private fun ReviewItemCard(
                     name = item.name,
                     portionAmount = item.portionAmount,
                     portionUnit = item.portionUnit,
-                    calories = item.calories,
-                    proteinG = item.proteinG,
-                    carbsG = item.carbsG,
-                    fatG = item.fatG,
+                    calories = item.calories ?: 0,
+                    proteinG = item.proteinG ?: 0,
+                    carbsG = item.carbsG ?: 0,
+                    fatG = item.fatG ?: 0,
                     modifier = Modifier.padding(vertical = 4.dp),
                 )
             }
@@ -164,16 +164,16 @@ private fun ReviewItemCard(
                     name = item.name,
                     portionAmount = item.portionAmount,
                     portionUnit = item.portionUnit,
-                    calories = item.calories,
-                    proteinG = item.proteinG,
-                    carbsG = item.carbsG,
-                    fatG = item.fatG,
+                    calories = item.calories ?: 0,
+                    proteinG = item.proteinG ?: 0,
+                    carbsG = item.carbsG ?: 0,
+                    fatG = item.fatG ?: 0,
                     onNameChange = { onChange(item.copy(name = it)) },
                     onPortionAmountChange = { onChange(item.withPortionAmount(it)) },
                     onPortionUnitChange = { onChange(item.copy(portionUnit = it)) },
                     onCaloriesChange = { onChange(item.copy(calories = it)) },
                 )
-                MacroInputGroup(
+                MacroFieldGroup(
                     proteinG = item.proteinG,
                     carbsG = item.carbsG,
                     fatG = item.fatG,
@@ -182,12 +182,12 @@ private fun ReviewItemCard(
                     onFatChange = { onChange(item.copy(fatG = it)) },
                 )
                 MicronutrientInputGroup(
-                    fiberG = item.nutrients.fiberG,
-                    sugarG = item.nutrients.sugarG,
-                    sodiumMg = item.nutrients.sodiumMg,
-                    onFiberChange = { onChange(item.copy(nutrients = item.nutrients.copy(fiberG = it))) },
-                    onSugarChange = { onChange(item.copy(nutrients = item.nutrients.copy(sugarG = it))) },
-                    onSodiumChange = { onChange(item.copy(nutrients = item.nutrients.copy(sodiumMg = it))) },
+                    fiberG = item.nutrients.fiberG.takeIf { it > 0 },
+                    sugarG = item.nutrients.sugarG.takeIf { it > 0 },
+                    sodiumMg = item.nutrients.sodiumMg.takeIf { it > 0 },
+                    onFiberChange = { onChange(item.copy(nutrients = item.nutrients.copy(fiberG = it ?: 0))) },
+                    onSugarChange = { onChange(item.copy(nutrients = item.nutrients.copy(sugarG = it ?: 0))) },
+                    onSodiumChange = { onChange(item.copy(nutrients = item.nutrients.copy(sodiumMg = it ?: 0))) },
                 )
             }
         }

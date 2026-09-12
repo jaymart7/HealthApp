@@ -21,7 +21,7 @@ import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.MacroInputGroup
+import ph.mart.healthapp.core.designsystem.component.MacroFieldGroup
 import ph.mart.healthapp.core.designsystem.component.MealThumbnail
 import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
@@ -135,10 +135,10 @@ internal fun AddEntrySheet(
                 name = form.name,
                 portionAmount = form.portionAmount,
                 portionUnit = form.portionUnit,
-                calories = form.calories,
-                proteinG = form.proteinG,
-                carbsG = form.carbsG,
-                fatG = form.fatG,
+                calories = form.calories ?: 0,
+                proteinG = form.proteinG ?: 0,
+                carbsG = form.carbsG ?: 0,
+                fatG = form.fatG ?: 0,
                 onNameChange = { onFormChange(form.copy(name = it)) },
                 onPortionAmountChange = { onFormChange(form.withPortionAmount(it)) },
                 onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
@@ -147,7 +147,7 @@ internal fun AddEntrySheet(
                 // them, and SERVING_UNIT is the value a recipe row is priced in.
                 portionUnitOptions = listOf("g", "oz", "cup", SERVING_UNIT),
             )
-            MacroInputGroup(
+            MacroFieldGroup(
                 proteinG = form.proteinG,
                 carbsG = form.carbsG,
                 fatG = form.fatG,
@@ -156,12 +156,12 @@ internal fun AddEntrySheet(
                 onFatChange = { onFormChange(form.copy(fatG = it)) },
             )
             MicronutrientInputGroup(
-                fiberG = form.nutrients.fiberG,
-                sugarG = form.nutrients.sugarG,
-                sodiumMg = form.nutrients.sodiumMg,
-                onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it))) },
-                onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it))) },
-                onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it))) },
+                fiberG = form.nutrients.fiberG.takeIf { it > 0 },
+                sugarG = form.nutrients.sugarG.takeIf { it > 0 },
+                sodiumMg = form.nutrients.sodiumMg.takeIf { it > 0 },
+                onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it ?: 0))) },
+                onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it ?: 0))) },
+                onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it ?: 0))) },
             )
             // The authoring door, and the whole of it: the form above already holds every field a
             // food has, so keeping one is one more button rather than a second screen. Hidden

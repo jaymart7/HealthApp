@@ -6,7 +6,6 @@ import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -41,17 +40,13 @@ import ph.mart.healthapp.feature.food.ui.photo.components.AnalyzingScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.CameraPermissionScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
-import ph.mart.healthapp.feature.food.ui.photo.components.ManualSearchScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.PhotoOfflineScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.RetryScreen
+import ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
 import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
-
-@StringRes
-private val SEARCH_SUBTITLE =
-    R.string.food_photo_db_subtitle
 
 /**
  * Hosts the whole 6(+1)-state flow from `PhotoLogging.dc.html`, same shape as
@@ -141,8 +136,8 @@ fun PhotoCaptureScreen(
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         // AppScaffold hands this route the whole window. Capture/Analyzing are full-bleed camera
         // surfaces that inset their own chrome; the other five states are ordinary content.
-        // safeDrawing unions the IME, so Confirmation's editable rows and ManualSearch's field
-        // get keyboard avoidance from this same line.
+        // safeDrawing unions the IME, so Confirmation's editable rows and the search screen's
+        // field get keyboard avoidance from this same line.
         val insets = if (state.flow == CaptureFlow.Capture || state.flow == CaptureFlow.Analyzing) {
             Modifier
         } else {
@@ -203,17 +198,25 @@ fun PhotoCaptureScreen(
                     onLogManually = { state.flow = CaptureFlow.NoFood },
                 )
 
-                CaptureFlow.NoFood -> ManualSearchScreen(
+                CaptureFlow.NoFood -> FoodSearchScreen(
                     onSelectProduct = state::applyProduct,
                     onEnterManually = state::startManualEntry,
-                    onCancel = onExit,
+                    onBack = onExit,
                 )
 
                 // A searched or hand-entered item is not an AI detection, so it gets the barcode
                 // flow's plain confirmation — no photo, no AI chip.
+                // Two paths land here and they are not the same claim: a search hit carries the
+                // database's per-100 g figures, while "enter it manually" carries nobody's. Both
+                // used to get the database line, which was wrong on a form the user was typing.
                 CaptureFlow.SearchConfirmation -> ScanConfirmationScreen(
                     form = state.form,
-                    subtitle = stringResource(SEARCH_SUBTITLE),
+                    manualEntry = state.originalForm.name.isBlank(),
+                    subtitle = if (state.originalForm.name.isBlank()) {
+                        stringResource(R.string.food_scan_manual_subtitle)
+                    } else {
+                        stringResource(R.string.food_photo_db_subtitle)
+                    },
                     onFormChange = { state.form = it },
                     onMealTypeSelect = state::selectMealType,
                     // The numbers were searched or typed, but the plate is still the plate: a meal

@@ -46,4 +46,24 @@ class FoodSearchWindowTest {
         assertFalse(short.hasMore)
         assertTrue(short.copy(results = results(23)).hasMore)
     }
+
+    /**
+     * The count in the action bar says "of N" — and N is only the size of the search once nothing
+     * further is being asked. Getting this backwards prints a total that is about to change, or one
+     * that is just the contents of this phone, as if it were the answer.
+     */
+    @Test
+    fun `the count only claims to be the whole answer when nothing is still being asked`() {
+        val local = FoodSearchUiState(results = results(4))
+        assertFalse(local.countIsLocalOnly)
+        assertTrue(local.copy(onlineStatus = OnlineSearch.Searching).countIsLocalOnly)
+        assertTrue(local.copy(onlineStatus = OnlineSearch.Failed).countIsLocalOnly)
+    }
+
+    /** Offline is `Idle`, not `Failed` — the local list answering with no network is the feature,
+     * so the count is a whole answer there and must not hedge. */
+    @Test
+    fun `offline is a whole answer, not a hedged one`() {
+        assertFalse(FoodSearchUiState(results = results(4), onlineStatus = OnlineSearch.Idle).countIsLocalOnly)
+    }
 }

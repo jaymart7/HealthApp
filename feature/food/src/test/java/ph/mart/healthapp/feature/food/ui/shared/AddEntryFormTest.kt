@@ -230,8 +230,39 @@ class AddEntryFormTest {
         var stepped = start
         repeat(7) { stepped = stepped.withPortionAmount(stepped.portionAmount - 10.0) }
         val direct = start.withPortionAmount(30.0)
-        assertTrue(abs(direct.calories - stepped.calories) <= 1)
-        assertTrue(abs(direct.carbsG - stepped.carbsG) <= 1)
+        assertTrue(abs(direct.calories!! - stepped.calories!!) <= 1)
+        assertTrue(abs(direct.carbsG!! - stepped.carbsG!!) <= 1)
+    }
+
+    /**
+     * The nullability's own rule: a figure nobody supplied has nothing to reprice, so it comes out
+     * the other side of a portion change still unsupplied rather than as a `0` the rescale invented.
+     */
+    @Test
+    fun `a portion change leaves an unsupplied figure unsupplied`() {
+        val partial = AddEntryForm(name = "Label half read", portionAmount = 100.0, calories = 240, proteinG = 9)
+        val scaled = partial.withPortionAmount(50.0)
+        assertEquals(120, scaled.calories)
+        assertEquals(5, scaled.proteinG)
+        assertNull(scaled.carbsG)
+        assertNull(scaled.fatG)
+    }
+
+    /** Nothing downstream of the two exits sees a null: the store cannot tell a zero from an
+     * unknown, which is exactly why the form is the only place that can. */
+    @Test
+    fun `an unsupplied figure logs and saves as zero`() {
+        val form = AddEntryForm(name = "Sky flakes", calories = 120)
+        assertEquals(0, form.toFoodEntry().proteinG)
+        assertEquals(0, form.toSuggestion().fatG)
+    }
+
+    /** A blank form still logs: the quick add's guard is a calorie figure, not a complete label. */
+    @Test
+    fun `a form with no figures at all is still valid once it has a name`() {
+        assertTrue(AddEntryForm(name = "Leftovers").isValid())
+        assertFalse(AddEntryForm().isValid())
+        assertFalse(AddEntryForm(name = "Leftovers").isSaveableFood())
     }
 
     @Test
