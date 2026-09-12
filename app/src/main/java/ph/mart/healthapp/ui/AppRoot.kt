@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotCharacter
 import ph.mart.healthapp.core.designsystem.component.MascotPalette
 import ph.mart.healthapp.core.designsystem.component.mascotCharacterOf
 import ph.mart.healthapp.core.designsystem.component.mascotPaletteOf
+import ph.mart.healthapp.BuildConfig
 import ph.mart.healthapp.ShortcutAction
 import ph.mart.healthapp.core.navigation.route.TopLevelDestination
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingScreen
@@ -30,9 +31,16 @@ sealed interface AppRootState {
     data object Ready : AppRootState
 }
 
+/** Debug-only escape hatch: flip to true to see onboarding on every run without clearing app
+ * data. Dead in release — [BuildConfig.DEBUG] guards the read. */
+private const val FORCE_ONBOARDING = false
+
 class AppRootViewModel(profileRepository: ProfileRepository) : ViewModel() {
     val state: StateFlow<AppRootState> = profileRepository.observeProfile()
-        .map { profile -> if (profile == null) AppRootState.Onboarding else AppRootState.Ready }
+        .map { profile ->
+            if (profile == null || (BuildConfig.DEBUG && FORCE_ONBOARDING)) AppRootState.Onboarding
+            else AppRootState.Ready
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AppRootState.Loading)
 
     /** Read by [MainActivity] above the theme. Its own chain rather than a share of [state]'s: the
