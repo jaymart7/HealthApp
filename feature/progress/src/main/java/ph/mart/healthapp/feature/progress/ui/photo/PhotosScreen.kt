@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.progress.ui.photo
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -76,9 +77,14 @@ private fun PhotosContent(
             // Its own bar rather than `AppScaffold`'s, for the share: that one is built from a
             // `NavKey` and cannot reach the photo set this sheet needs. The scaffold stands down
             // for this route the way it does for the camera flows.
+            //
+            // Zero insets, unlike every other caller: this bar sits in the scaffold's *content*,
+            // which its `innerPadding` has already cleared of the status bar. The default would
+            // apply that inset a second time and leave a bar-height gap above the toolbar.
             AppTopBar(
                 title = stringResource(R.string.progress_subject_photos),
                 onBack = onExitFlow,
+                windowInsets = WindowInsets(0),
                 actions = {
                     if (photos.isNotEmpty()) {
                         IconButton(onClick = { state.sharing = true }) {

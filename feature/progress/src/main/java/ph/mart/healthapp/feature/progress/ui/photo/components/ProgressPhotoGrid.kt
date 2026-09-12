@@ -35,7 +35,6 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.todayEpochDay
-import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.GRID_TILE_PX
 import ph.mart.healthapp.core.designsystem.component.epochDayToDate
 import ph.mart.healthapp.core.designsystem.component.formatDayMonth
@@ -78,7 +77,10 @@ fun ProgressPhotoGrid(
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = modifier,
-        contentPadding = PaddingValues(top = 8.dp, bottom = DockedFabContentPadding),
+        // No `DockedFabContentPadding` at the bottom: the Photos page is a route, so there is no
+        // docked FAB over it to clear, and the scaffold's own `innerPadding` already clears the
+        // navigation bar. The 72dp that used to sit here was a gap under the last row.
+        contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +32,11 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * [onBack] is wired to the back *dispatcher* rather than a direct pop (see `AppScaffold`), so a
  * screen holding its own `NavigationBackHandler` still gets to ask before it loses anything.
  *
+ * [windowInsets] is the status bar by default, because the usual caller is `AppScaffold`, where
+ * this sits in the `Scaffold`'s `topBar` slot with the window's inset still unconsumed. A screen
+ * drawing its own bar *inside* that scaffold's content has already been padded clear of the status
+ * bar by `innerPadding`, and must pass `WindowInsets(0)` or the inset lands twice.
+ *
  * [titleStyle] exists for the one screen whose bar changes what it says: the barcode flow's review
  * step hands over to the food's own name once the subject card has scrolled past, at a smaller
  * size. Deliberately **not** an M3 `TopAppBarScrollBehavior` — that type is still experimental, and
@@ -45,6 +51,7 @@ fun AppTopBar(
     modifier: Modifier = Modifier,
     titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
     actions: @Composable RowScope.() -> Unit = {},
+    windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
 ) {
     TopAppBar(
         title = {
@@ -64,6 +71,7 @@ fun AppTopBar(
             }
         },
         actions = actions,
+        windowInsets = windowInsets,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
