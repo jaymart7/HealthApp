@@ -1621,6 +1621,46 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   level instead, where `MINIMAL` is the floor; `ThinkingConfig.Builder` rejects both at once.
   If a call site ever genuinely needs to reason, it raises the level *and* `maxOutputTokens`
   together — they are one budget, and that is the whole lesson here.
+- **A debug build calls no model at all, and the fakes live in a source set rather than behind a
+  flag.** Every debug run was billing real Gemini usage across five repositories, and two of them
+  fire without being asked — the daily insight on every Home session, and the coach now spending up
+  to three tool rounds at 700 output tokens per question. `core/data/src/{debug,release}/…/DebugAi.kt`
+  is a pair in the shape `app/src/{debug,release}/…/DebugSeed.kt` already has: five
+  `debugX(): T?` functions that are all `null` in release, so every binding reads
+  `single<T> { debugX() ?: RealImpl() }` and a release build **cannot contain** a fake rather than
+  merely never reaching one. A `BuildConfig.DEBUG` branch in `main` would have left five fake
+  repositories sitting beside the real ones trusting R8 to notice; this way `assembleRelease` fails
+  to compile if the two halves ever drift, and the release dex is checkably empty of them. One
+  `USE_REAL_AI` const covers all five, because the reason to flip is always the same — checking
+  against the real thing before a release — and five booleans is five ways to leave one on.
+  Koin's `single {}` being lazy is what makes it airtight: the real `…Impl` is never constructed,
+  and each one builds its `Firebase.ai(…)` model as a constructor field, so nothing is even created.
+- **The fakes answer from local data that already ships, and that is the design, not an economy.**
+  A stub returning null everywhere would cost the same and hide exactly what a debug build exists
+  to show — a streamed answer that scrolls badly, a proposal card with an absurd figure on it, a
+  parse that finds nothing. So `FakeInsightRepository` *is* `insightFor(request)`, the rule-based
+  line Home already falls back to; the meal-idea fake applies `localMealIdeas`' own rule to
+  `COMMON_FOODS`; the parse fake runs `searchCommonFoods` over the sentence and ends on the real
+  `loggable()`. `FakeCoachRepository` is `CoachRepository by real` — only `send` is replaced, so
+  `observeMessages`, `clear` and the Room write are the shipping code, reached through the public
+  `settle(question, answer, null)` path, and it holds *the same* `CoachToolbox` as the real
+  repository, so "what did I eat yesterday?" answers off the real diary. What is faked is the model
+  and nothing else: the tool loop, `parseAction`, `sanitizeReply` and every write are real either
+  way. The toolbox moved into `coachDataModule` to make that sharing possible, which also dropped
+  three forwarded constructor params from `CoachRepositoryImpl`.
+  Two things worth knowing before trusting a faked run. The coach's routing checks "log" **before**
+  "yesterday", because a real model handed *"log the eggs I had yesterday"* drafts a row rather
+  than reading a day — `FakeCoachScriptTest` pins that ordering, and it is the thing a rewrite gets
+  backwards. And `commonFoodFor` singularises on a miss: `COMMON_FOODS` is written singular while
+  people say "eggs", so a literal `searchCommonFoods` found nothing for the most common sentence
+  either fake will see. The fakes also carry a deliberate `delay` — a call that returns instantly
+  hides every spinner, and looking at them is the point.
+  Nothing here needs a `checkUiLiterals` exception: the task walks
+  `localizedModules.map { file("$it/src/main") }`, so a debug source set is outside its scope by
+  construction — scaffolding that never ships is never translated. And `DebugAi.kt` logs once under
+  `logAiFailure`'s own `FitPulseAI` tag, because every AI call site here swallows its exception and
+  degrades gracefully, so a real call and a faked one look identical on screen; `logcat -s
+  FitPulseAI` is the answer to "is this build costing me anything?" rather than the bill.
 - **There is no Firebase Authentication in this app, and adding it back will not fix an AI call.**
   App Check is the only thing the Firebase AI Logic backend gates on. `firebase-ai`'s
   `AppCheckHeaderProvider.generateHeaders()` treats the auth provider as strictly optional and its

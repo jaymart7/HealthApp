@@ -20,14 +20,11 @@ import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
-import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.profile.ProfileRepository
-import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
@@ -83,22 +80,13 @@ private const val MAX_TOOL_ROUNDS = 3
  */
 internal class CoachRepositoryImpl(
     private val dao: ChatMessageDao,
-    // Only these two are the repository's own: they are what `settle` writes through. The other
-    // three exist solely to build the toolbox below, so they never become fields.
+    // The two `settle` writes through, and the toolbox the reads run against. The toolbox is
+    // built by the Koin module rather than here so the debug build's fake coach can be handed the
+    // *same* one — a faked answer then reads the same Room rows the real one would.
     private val foodRepository: FoodRepository,
     private val waterRepository: WaterRepository,
-    progressRepository: ProgressRepository,
-    exerciseRepository: ExerciseRepository,
-    profileRepository: ProfileRepository,
+    private val toolbox: CoachToolbox,
 ) : CoachRepository {
-
-    private val toolbox = CoachToolbox(
-        foodRepository = foodRepository,
-        progressRepository = progressRepository,
-        waterRepository = waterRepository,
-        exerciseRepository = exerciseRepository,
-        profileRepository = profileRepository,
-    )
 
     override fun observeMessages(): Flow<List<ChatMessage>> =
         dao.observeAll().map { messages -> messages.map { it.toMessage() } }
