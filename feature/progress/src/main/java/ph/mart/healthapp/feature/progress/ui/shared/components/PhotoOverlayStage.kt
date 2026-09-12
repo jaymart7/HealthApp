@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -32,16 +31,14 @@ import ph.mart.healthapp.feature.progress.R
 internal fun photoStageColor() = MaterialTheme.colorScheme.surfaceContainerHighest
 
 /**
- * The ground and the chrome both photo overlays share: a full-bleed stage with the picture
- * centred on it, a close control at one top corner and the one deliberate action at the other.
+ * The ground and the chrome both photo screens share: a full-bleed stage with the picture centred
+ * on it and the one deliberate action floating at its top corner.
  *
- * The chrome **floats over** the stage rather than stacking above the photo, and close is a corner
- * control rather than a button in a row at the bottom. A full-screen viewer whose way out is the
- * last item in a column reads as a form with a Cancel on it, and the row it sat in was giving
- * Share and Close equal weight — one of them leaves, the other publishes.
- *
- * Both overlays keep the tab's bottom bar and docked FAB underneath, so the content column stops
- * at [DockedFabContentPadding] the way every other page in the tab does.
+ * The chrome **floats over** the stage rather than stacking above the photo. Share is all of it
+ * now: both callers are routes, so the way out is the toolbar's back arrow, and the corner close
+ * button this used to draw would have been a second one an inch below it. Neither route wears the
+ * tab's bottom bar or its docked FAB either, so the content column runs to the bottom of the
+ * window rather than stopping short of a FAB that is not there.
  *
  * A frame in [content] is expected to take `Modifier.weight(1f, fill = false)` and size itself
  * height-first — a 3:4 photo filling the width of a landscape phone or a tablet is taller than the
@@ -49,7 +46,6 @@ internal fun photoStageColor() = MaterialTheme.colorScheme.surfaceContainerHighe
  */
 @Composable
 internal fun PhotoOverlayStage(
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     onShare: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
@@ -57,9 +53,7 @@ internal fun PhotoOverlayStage(
     Surface(color = photoStageColor(), modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = DockedFabContentPadding),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 content = content,
@@ -67,31 +61,10 @@ internal fun PhotoOverlayStage(
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.End,
             ) {
-                CloseButton(onClick = onClose)
-                Box(modifier = Modifier.weight(1f))
                 onShare?.let { SharePill(onClick = it) }
             }
-        }
-    }
-}
-
-@Composable
-private fun CloseButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 2.dp,
-        modifier = modifier.size(48.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                imageVector = AppIcons.Close,
-                contentDescription = stringResource(R.string.progress_close),
-                modifier = Modifier.size(20.dp),
-            )
         }
     }
 }
@@ -124,7 +97,7 @@ private fun SharePill(onClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 private fun PhotoOverlayStagePreview() {
     AppTheme {
-        PhotoOverlayStage(onClose = {}, onShare = {}) {
+        PhotoOverlayStage(onShare = {}) {
             Surface(color = MaterialTheme.colorScheme.surfaceContainerLow) {
                 Box(modifier = Modifier.fillMaxWidth().size(240.dp))
             }

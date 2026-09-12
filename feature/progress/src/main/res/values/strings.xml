@@ -384,7 +384,6 @@
     <string name="progress_supplements_adherence">Adherence</string>
     <string name="progress_supplements_legend">Share of the day\'s doses taken</string>
     <string name="progress_badges_title">Badges</string>
-    <string name="progress_recap_title">Recap</string>
     <string name="progress_recap_body">Body</string>
     <string name="progress_recap_nutrition">Nutrition</string>
     <string name="progress_recap_started">Started</string>

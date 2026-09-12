@@ -2097,11 +2097,13 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   second that reads as the photos flickering rather than as one becoming the next. The fade is
   220 / 150 / 80 ms for 2 / 4 / 8 fps, always inside its own frame interval (`TimelapseTimelineTest`
   holds that), linear, and the layer underneath is dropped once it is covered.
-- **Both overlays draw on one stage, and close is a corner control.** `PhotoOverlayStage` owns the
-  `surfaceContainerHighest` ground, the floating close button and the single Share pill for the
-  comparison and the player alike. The bottom row that held Share and Close side by side is gone:
-  it gave equal weight to the action that publishes and the one that leaves, and a full-screen
-  viewer whose way out is the last item in a column reads as a form with a Cancel on it. The photo
+- **Both photo screens draw on one stage, and the only floating control is Share.** `PhotoOverlayStage`
+  owns the `surfaceContainerHighest` ground and the single Share pill for the comparison and the
+  player alike. The bottom row that held Share and Close side by side went first: it gave equal
+  weight to the action that publishes and the one that leaves, and a full-screen viewer whose way
+  out is the last item in a column reads as a form with a Cancel on it. The corner close button that
+  replaced it went when both became routes — see the routes entry below — and the stage's
+  `DockedFabContentPadding` went with it, since there is no longer a FAB to clear. The photo
   frames are full-bleed and square-cornered — corners belong to tiles and cards, not to a media
   surface that reaches both edges.
 - **The comparison headline is the delta, coloured by `goalRelativeTrend`.** It is what the two
@@ -2134,11 +2136,39 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   next decode is in flight, which at eight frames a second would strobe the frame to empty.
   *ponytail: no bitmap cache — one downsampled decode per frame off the IO dispatcher; an LRU is
   the upgrade if the fast speed stutters.*
-- **Both photo overlays take back themselves.** `PhotoComparisonScreen` and `TimelapseScreen` are
-  full-screen overlays inside the Progress tab, not routes, so each wires its own
+- **Both photo overlays take back themselves.** *(Superseded by the entry below — all three are
+  routes now, and Nav3 takes their back.)* `PhotoComparisonScreen` and `TimelapseScreen` were
+  full-screen overlays inside the Progress tab, not routes, so each wired its own
   `NavigationBackHandler` — without one, back out of a comparison left the Progress tab entirely
   rather than clearing the selection. A flow package did not turn either into a route: `ProgressScreen`
-  still draws them over `ProgressContent`, and `ProgressScreenState` still owns what opened them.
+  still drew them over `ProgressContent`, and `ProgressScreenState` still owned what opened them.
+- **The three read-only surfaces became routes, and the chrome is the reason.** An overlay drawn
+  inside the `ProgressRoute` entry renders inside the `Scaffold` that draws the bottom bar and the
+  docked FAB, so a comparison slider was inset by the nav bar with a FAB floating over its corner —
+  tab chrome on top of a full-screen viewer, which is the one place it has nothing to offer.
+  `PhotoComparisonRoute`, `TimelapseRoute` and `RecapRoute` sit in `ProgressNavigation.kt` beside
+  `progressEntries`, and `showsTabChrome` needed **no change at all**: a route that is neither a tab
+  nor a Profile detail already wears nothing, at every width. Three things fall out for free — the
+  three hand-wired `NavigationBackHandler`s are gone, each container now dies with its entry instead
+  of living as long as the tab, and the recap notification's `openRecapRequest` round trip through
+  `progressEntries` collapses into `addTopLevel(Progress)` + `add(RecapRoute)`. What it costs is the
+  corner close control: a route wears `AppTopBar`, and a floating × an inch under a back arrow is
+  two ways out of one screen, so `PhotoOverlayStage` draws only the Share pill now. The argument
+  that keeps the **subject pages** swap-ins is untouched and still load-bearing — a subject page
+  would clone `ProgressViewModel`'s twelve repositories, where these three already have containers
+  of their own.
+- **A tap inside the tab reaches the navigator through one field, not three callbacks.** Every open
+  site is a `state::openX` reference threaded through the overview, `SubjectDetail`'s fourteen-way
+  dispatch and the photo grid, so routing them as parameters meant about twelve new arguments across
+  seven files to carry three lambdas. `ProgressScreenState.pendingRoute` records which surface was
+  asked for and `ProgressScreen` — the one composable that holds the callbacks — consumes it and
+  nulls it. It is deliberately **not** in the saver: after a process death the back stack has already
+  restored whichever route was open, and a surviving request would push a second copy on top of it.
+  `togglePhotoSelection` raises the comparison request itself, since "the second pick opens it" is a
+  rule about the selection rather than about a composable watching the list reach two, and
+  `ProgressScreen` clears the selection on the way out — `PhotoSelectionHint` draws nothing at two
+  picks, so a selection left standing on the grid behind the comparison would have no way out of
+  itself.
 - **Three overlays became flows, and the duplication is the price.** `PhotoComparisonScreen`,
   `TimelapseScreen` and `RecapScreen` are screens, and a `*Screen` inside a `components/` package
   was the thing being fixed — a sub-view lives there (onboarding's six steps, the photo flow's

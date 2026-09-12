@@ -41,33 +41,45 @@ import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.MealPhotoGallery
-import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
-import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
-import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
 import ph.mart.healthapp.feature.progress.ui.shared.components.SharePhotoStripSheet
 import ph.mart.healthapp.feature.progress.ui.shared.recap
 import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 
-/** [openRecap] is the weekly recap notification asking for its overlay — see `progressEntries`.
- * Consumed once and reported back, so a second notification can re-open a recap the user closed. */
+/**
+ * The three read-only surfaces this tab used to draw over itself — the comparison, the timelapse
+ * and the recap — are routes now, pushed by `AppScaffold`. This is where a tap inside the tab
+ * becomes one: every open site writes [ProgressScreenState.pendingRoute], and the effect below is
+ * the single place that consumes it.
+ */
 @Composable
 fun ProgressScreen(
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
-    openRecap: Boolean = false,
-    onOpenRecapHandled: () -> Unit = {},
+    onCompare: (Long, Long) -> Unit = { _, _ -> },
+    onOpenTimelapse: () -> Unit = {},
+    onOpenRecap: () -> Unit = {},
     viewModel: ProgressViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
     val state = rememberProgressScreenState()
-    LaunchedEffect(openRecap) {
-        if (openRecap) {
-            state.openRecap()
-            onOpenRecapHandled()
+    LaunchedEffect(state.pendingRoute) {
+        when (state.pendingRoute) {
+            ProgressDestination.Comparison -> {
+                val ids = state.selectedPhotoIds
+                if (ids.size == 2) onCompare(ids[0], ids[1])
+                // Cleared on the way out, as closing the overlay used to do: `PhotoSelectionHint`
+                // draws nothing at two picks, so a selection left standing on the grid behind the
+                // comparison would have no way back out of itself.
+                state.clearPhotoSelection()
+            }
+            ProgressDestination.Timelapse -> onOpenTimelapse()
+            ProgressDestination.Recap -> onOpenRecap()
+            null -> Unit
         }
+        state.pendingRoute = null
     }
     // The one thing on this tab that writes has its own container, so ProgressViewModel stays
     // read-only. It is read here rather than inside the card because the card and the overlay
@@ -111,8 +123,10 @@ private const val DetailPaneWeight = 0.6f
  * already exists, no route, no `ListDetailSceneStrategy` (which needs two nav entries and would
  * charge the second repository set the swap-in was chosen to avoid), and nothing new to save.
  *
- * The four overlays and two sheets sit outside the swap, so a comparison, a timelapse, the recap or
- * the energy check-in can be opened from either surface and drawn over both.
+ * The overlays and sheets that are left sit outside the swap, so the meal gallery, the energy
+ * check-in or any of the three log sheets can be opened from either surface and drawn over both.
+ * The comparison, the timelapse and the recap are no longer among them — they are routes, and a
+ * route draws over the whole window rather than over this tab.
  */
 @Composable
 private fun ProgressContent(
@@ -192,24 +206,6 @@ private fun ProgressContent(
                 detail(subject, Modifier)
             }
 
-            // Each of the three reads its own container, so all this hands down is the selection
-            // that opened it — the photo pairing, the two-photo floor and the period all sit behind
-            // those. They stay overlays rather than routes; only the state moved.
-            if (state.selectedPhotoIds.size == 2) {
-                PhotoComparisonScreen(
-                    selectedIds = state.selectedPhotoIds,
-                    onClose = { state.selectedPhotoIds = emptyList() },
-                )
-            }
-
-            if (state.activeTimelapse) {
-                TimelapseScreen(onClose = state::closeTimelapse)
-            }
-
-            if (state.activeRecap) {
-                RecapScreen(onClose = state::closeRecap)
-            }
-
             // The Photos page's own share. A sheet rather than an overlay, and reached from the
             // header rather than from inside a comparison, so it reads the tab's photos directly.
             if (state.activePhotoShare && uiState.photos.isNotEmpty()) {
@@ -220,8 +216,8 @@ private fun ProgressContent(
                 )
             }
 
-            // The third overlay, and the only one that writes — the apply goes back up to the
-            // container that owns the profile rather than being reached for down here.
+            // The one overlay that writes — the apply goes back up to the container that owns the
+            // profile rather than being reached for down here.
             if (state.activeEnergyCheckIn && checkIn != null) {
                 EnergyCheckInScreen(
                     checkIn = checkIn,
@@ -232,9 +228,9 @@ private fun ProgressContent(
                 )
             }
 
-            // The fifth overlay, and the only one opened from inside a detail page rather than
-            // from the overview — outside the swap all the same, so at two-pane width it covers
-            // both panes rather than just the one it was opened from.
+            // The one overlay opened from inside a detail page rather than from the overview —
+            // outside the swap all the same, so at two-pane width it covers both panes rather than
+            // just the one it was opened from.
             if (state.activeMealGallery) {
                 MealPhotoGallery(
                     photos = uiState.mealPhotos,

@@ -274,11 +274,12 @@ throughout; a commissioned set replaces the five drawings, not the picker around
   the detail chrome — plus `weight`, `measurement`, `photo`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's `*Detail.kt` body and its own charts;
-  the tab's three read-only overlays are flows of their own — `comparison`, `timelapse` and
-  `recap`, each with the `*Data`/`*State`/`*ViewModel`/`*Screen` quartet — and a
-  `shared/` holding `Recap.kt` plus a `components/` with `RangeBarChart` and `DayBarChart`, which
-  between them draw every subject's bars except Mood's, Nutrition's and Supplements', beside
-  `RecapCard`, `SharePhotoStripSheet`, `PhotoOverlayLabel` and `Note`),
+  the tab's three read-only surfaces are flows of their own *and routes of their own* —
+  `comparison`, `timelapse` and `recap`, each with the `*Data`/`*State`/`*ViewModel`/`*Screen`
+  quartet, each declared in `ProgressNavigation.kt` so none of them wears the bottom bar or the
+  FAB — and a `shared/` holding `Recap.kt` plus a `components/` with `RangeBarChart` and
+  `DayBarChart`, which between them draw every subject's bars except Mood's, Nutrition's and
+  Supplements', beside `RecapCard`, `SharePhotoStripSheet`, `PhotoOverlayLabel` and `Note`),
   `:feature:profile` (`profile`, `settings`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
   `shared/` holding the row primitives — `AppListRow`, `IconTile`, `SectionHeader`, `StepperRow`
   — beside `LibraryRow` and `RenameSheet`, which the food library and the routine library both

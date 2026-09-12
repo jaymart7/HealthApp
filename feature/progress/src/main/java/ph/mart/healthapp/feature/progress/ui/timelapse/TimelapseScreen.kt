@@ -21,9 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
@@ -46,35 +43,30 @@ private val TransportButtonSize = 56.dp
  * Every progress photo played in date order — the whole-set answer to `PhotoComparisonScreen`'s
  * two-photo one.
  *
- * A full-screen overlay inside the Progress tab rather than a route, which is why it wires its own
- * `NavigationBackHandler`. Playback loops rather than stopping at the end: a run of ten photos is
+ * A route rather than an overlay drawn over the Progress tab, so it wears the toolbar's back arrow
+ * and none of the tab's chrome, and wires no back handler of its own. Playback loops rather than
+ * stopping at the end: a run of ten photos is
  * a few seconds long, and stopping would need a restart control for a gesture the loop already
  * gives away for free.
  */
 @Composable
 internal fun TimelapseScreen(
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TimelapseViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
     if (!uiState.playable) return
-    TimelapseContent(photos = uiState.photos, unit = uiState.unit, onClose = onClose, modifier = modifier)
+    TimelapseContent(photos = uiState.photos, unit = uiState.unit, modifier = modifier)
 }
 
 @Composable
 private fun TimelapseContent(
     photos: List<ProgressPhoto>,
     unit: UnitSystem,
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     state: TimelapseState = rememberTimelapseState(),
 ) {
     if (photos.isEmpty()) return
-
-    // A full-screen overlay, not a route: back has to close it rather than leave the Progress tab.
-    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
-    NavigationBackHandler(state = navigationState, onBackCompleted = onClose)
 
     LaunchedEffect(state.playing, state.speed, photos.size) {
         if (!state.playing) return@LaunchedEffect
@@ -87,7 +79,7 @@ private fun TimelapseContent(
     val index = state.index.coerceIn(photos.indices)
     val current = photos[index]
 
-    PhotoOverlayStage(onClose = onClose, onShare = { state.sharing = true }, modifier = modifier) {
+    PhotoOverlayStage(onShare = { state.sharing = true }, modifier = modifier) {
         TimelapseFrame(
             photo = current,
             unit = unit,
@@ -205,7 +197,6 @@ private fun TimelapseScreenPreview() {
                 ProgressPhoto(id = 3, dateEpochDay = today, filePath = "", weightKg = 76.9),
             ),
             unit = UnitSystem.Metric,
-            onClose = {},
         )
     }
 }

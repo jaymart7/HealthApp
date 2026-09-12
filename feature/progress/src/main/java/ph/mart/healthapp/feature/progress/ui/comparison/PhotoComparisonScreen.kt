@@ -18,9 +18,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlin.math.abs
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
@@ -54,15 +51,14 @@ private val ModeToggleWidth = 168.dp
  * Two shots under a divider you drag, or side by side — the question a grid of thumbnails can't
  * answer, with the answer stated rather than implied.
  *
- * A full-screen overlay inside the Progress tab rather than a route, which is why it wires its own
- * `NavigationBackHandler`: without one, back out of a comparison left the tab entirely instead of
- * clearing the selection. [selectedIds] is the grid's selection handed down; the container turns it
- * into a pair, and nothing is drawn until exactly two of them resolve.
+ * A route rather than an overlay drawn over the Progress tab, so it wears the toolbar's back arrow
+ * and none of the tab's chrome — no bottom bar and no FAB over a full-screen viewer, and no back
+ * handler of its own. [selectedIds] is the pair `PhotoComparisonRoute` carries; the container turns
+ * it into an ordered pair, and nothing is drawn until exactly two of them resolve.
  */
 @Composable
 internal fun PhotoComparisonScreen(
     selectedIds: List<Long>,
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ComparisonViewModel = koinViewModel(),
 ) {
@@ -74,7 +70,6 @@ internal fun PhotoComparisonScreen(
         photos = uiState.photos,
         unit = uiState.unit,
         goal = uiState.goal,
-        onClose = onClose,
         modifier = modifier,
     )
 }
@@ -85,16 +80,10 @@ private fun PhotoComparisonContent(
     photos: List<ProgressPhoto>,
     unit: UnitSystem,
     goal: Goal?,
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     state: ComparisonState = rememberComparisonState(),
 ) {
-    // A full-screen overlay, not a route: back has to clear the selection rather than leave the
-    // Progress tab entirely.
-    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
-    NavigationBackHandler(state = navigationState, onBackCompleted = onClose)
-
-    PhotoOverlayStage(onClose = onClose, onShare = { state.sharing = true }, modifier = modifier) {
+    PhotoOverlayStage(onShare = { state.sharing = true }, modifier = modifier) {
         // `fill = false`: the frame takes what it needs of the free height and leaves the rest,
         // rather than stretching a photo to fill a tall window.
         val frame = Modifier.weight(1f, fill = false)
@@ -210,7 +199,6 @@ private fun PhotoComparisonScreenPreview() {
             photos = listOf(pair.older, pair.newer),
             unit = UnitSystem.Metric,
             goal = Goal.Lose,
-            onClose = {},
         )
     }
 }

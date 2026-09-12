@@ -47,6 +47,9 @@
     <string name="app_title_settings">Settings</string>
     <string name="app_title_about_you">About you</string>
     <string name="app_title_reminders">Reminders</string>
+    <string name="app_title_compare">Compare</string>
+    <string name="app_title_timelapse">Timelapse</string>
+    <string name="app_title_recap">Recap</string>
 
     <!-- Notifications. The Reminder enum's own titles and bodies stay in Kotlin - see Reminders.kt. -->
     <string name="app_notification_channel">Reminders</string>

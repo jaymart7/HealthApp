@@ -26,9 +26,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.exercise.volumeLabel
@@ -70,16 +67,18 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
  * The whole period in one page — the question the charts answer one metric at a time and Home
  * doesn't answer at all.
  *
- * A full-screen overlay inside the Progress tab, not a route: it wires its own
- * `NavigationBackHandler`, or back would leave the tab. [RecapViewModel] folds the report for the
- * period on show, so what arrives here is one [Recap] rather than the dozen series behind it.
+ * A route rather than an overlay drawn over the Progress tab, so it wears the toolbar's back arrow
+ * — which is what names the page, hence no heading of its own — and none of the tab's chrome, and
+ * wires no back handler. Its Close buttons pop the same entry back does. [RecapViewModel] folds the
+ * report for the period on show, so what arrives here is one [Recap] rather than the dozen series
+ * behind it.
  *
  * Every section is omitted when its window holds nothing, rather than drawn as zeros — the recap
  * card's own rule, and Home's rule for the three watch cards.
  */
 @Composable
 internal fun RecapScreen(
-    onClose: () -> Unit,
+    onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecapViewModel = koinViewModel(),
 ) {
@@ -87,7 +86,7 @@ internal fun RecapScreen(
     RecapContent(
         uiState = uiState,
         onPeriodChange = { period -> viewModel.handleEvent(RecapEvent.OnPeriodChange(period)) },
-        onClose = onClose,
+        onExitFlow = onExitFlow,
         modifier = modifier,
     )
 }
@@ -96,25 +95,16 @@ internal fun RecapScreen(
 private fun RecapContent(
     uiState: RecapUiState,
     onPeriodChange: (RecapPeriod) -> Unit,
-    onClose: () -> Unit,
+    onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: RecapState = rememberRecapState(),
 ) {
-    // A full-screen overlay, not a route: back has to close it rather than leave the Progress tab.
-    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
-    NavigationBackHandler(state = navigationState, onBackCompleted = onClose)
-
     val report = uiState.report
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(R.string.progress_recap_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
             // Three pills, so the toggle splits its width evenly rather than scrolling.
             SegmentedToggle(
                 options = RecapPeriod.entries.map { stringResource(it.short) },
@@ -122,7 +112,7 @@ private fun RecapContent(
                 onSelect = { index -> onPeriodChange(RecapPeriod.entries[index]) },
             )
             if (report == null) {
-                Box(modifier = Modifier.weight(1f)) { EmptyRecap(period = uiState.period, onClose = onClose) }
+                Box(modifier = Modifier.weight(1f)) { EmptyRecap(period = uiState.period, onExit = onExitFlow) }
                 return@Column
             }
             Column(
@@ -142,7 +132,7 @@ private fun RecapContent(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SecondaryButton(label = stringResource(R.string.progress_share), onClick = { state.sharing = true }, modifier = Modifier.weight(1f))
-                SecondaryButton(label = stringResource(R.string.progress_close), onClick = onClose, modifier = Modifier.weight(1f))
+                SecondaryButton(label = stringResource(R.string.progress_close), onClick = onExitFlow, modifier = Modifier.weight(1f))
             }
         }
     }
@@ -160,7 +150,7 @@ private fun RecapContent(
 
 /** Nothing logged in the window — said plainly rather than drawn as a page of zeros. */
 @Composable
-private fun EmptyRecap(period: RecapPeriod, onClose: () -> Unit) {
+private fun EmptyRecap(period: RecapPeriod, onExit: () -> Unit) {
     FullScreenState(
         icon = { MascotAvatar(state = MascotState.Idle, size = 96.dp) },
         heading = stringResource(R.string.progress_recap_empty_heading),
@@ -168,7 +158,7 @@ private fun EmptyRecap(period: RecapPeriod, onClose: () -> Unit) {
         actions = {
             SecondaryButton(
                 label = stringResource(R.string.progress_close),
-                onClick = onClose,
+                onClick = onExit,
                 modifier = Modifier.fillMaxWidth(),
             )
         },
@@ -329,7 +319,7 @@ private fun RecapScreenPreview() {
                 unit = UnitSystem.Metric,
             ),
             onPeriodChange = {},
-            onClose = {},
+            onExitFlow = {},
         )
     }
 }
@@ -339,6 +329,6 @@ private fun RecapScreenPreview() {
 @Composable
 private fun RecapScreenEmptyPreview() {
     AppTheme {
-        RecapContent(uiState = RecapUiState(period = RecapPeriod.Week), onPeriodChange = {}, onClose = {})
+        RecapContent(uiState = RecapUiState(period = RecapPeriod.Week), onPeriodChange = {}, onExitFlow = {})
     }
 }

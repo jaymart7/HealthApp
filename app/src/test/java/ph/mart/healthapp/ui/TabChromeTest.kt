@@ -10,6 +10,9 @@ import ph.mart.healthapp.feature.coach.ui.CoachRoute
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
+import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
+import ph.mart.healthapp.feature.progress.ui.RecapRoute
+import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
 
 class TabChromeTest {
 
@@ -43,6 +46,17 @@ class TabChromeTest {
     @Test
     fun `a route that is not a Profile detail never earns a pane`() {
         assertFalse(showsTabChrome(current = CoachRoute, beneath = HomeRoute, twoPane = true))
+    }
+
+    /** Progress' three read-only surfaces stopped being overlays drawn inside the tab and became
+     * routes, which is the whole point: a full-screen viewer wears no bottom bar and no FAB, at
+     * either width. Nothing in [showsTabChrome] names them — that is what this pins. */
+    @Test
+    fun `a Progress viewer route wears no chrome at either width`() {
+        listOf(PhotoComparisonRoute(1, 2), TimelapseRoute, RecapRoute).forEach { route ->
+            assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = false))
+            assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = true))
+        }
     }
 
     @Test

@@ -17,6 +17,10 @@ internal fun rememberProgressScreenState(): ProgressScreenState =
 /** The range a subject's chart opens on, before the user picks another. */
 internal val DEFAULT_CHART_RANGE = ChartRange.ThreeMonths
 
+/** The three surfaces on this tab that are routes rather than overlays — see
+ * [ProgressScreenState.pendingRoute]. */
+internal enum class ProgressDestination { Comparison, Timelapse, Recap }
+
 /** UI-only — which subject is open, which range its chart is showing, which photos are selected
  * has no business meaning outside this screen; the actual weight/measurement/photo data lives in
  * [ProgressUiState]. */
@@ -29,8 +33,6 @@ internal class ProgressScreenState(
     measurementSheetPart: MeasurementPart? = null,
     activeBloodPressureSheet: Boolean = false,
     activeCycleSheet: Boolean = false,
-    activeRecap: Boolean = false,
-    activeTimelapse: Boolean = false,
     activeEnergyCheckIn: Boolean = false,
     pendingDeleteReadingId: Long? = null,
     activeMealGallery: Boolean = false,
@@ -49,12 +51,23 @@ internal class ProgressScreenState(
     var expandedGroups: Set<SubjectGroup> by mutableStateOf(expandedGroups)
 
     var selectedPhotoIds: List<Long> by mutableStateOf(selectedPhotoIds)
+
+    /**
+     * The route a tap on this tab has asked for, consumed by [ProgressScreen] and turned into a
+     * push. The comparison, the timelapse and the recap are routes rather than overlays drawn over
+     * this tab, and every open site in here is a `state::openX` call threaded through the overview,
+     * `SubjectDetail`'s fourteen-way dispatch and the photo grid — so the tap is recorded here
+     * rather than three callbacks being threaded through all of it.
+     *
+     * Transient on purpose: it never rides the saver. After a process death the back stack has
+     * already restored whichever route was open, and a surviving request would push a second copy
+     * of it on top.
+     */
+    var pendingRoute: ProgressDestination? by mutableStateOf(null)
     var activeMeasurementSheet: Boolean by mutableStateOf(activeMeasurementSheet)
     var measurementSheetPart: MeasurementPart? by mutableStateOf(measurementSheetPart)
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
     var activeCycleSheet: Boolean by mutableStateOf(activeCycleSheet)
-    var activeRecap: Boolean by mutableStateOf(activeRecap)
-    var activeTimelapse: Boolean by mutableStateOf(activeTimelapse)
     var activeEnergyCheckIn: Boolean by mutableStateOf(activeEnergyCheckIn)
 
     /** The reading whose delete is waiting on its confirmation dialog. */
@@ -93,12 +106,15 @@ internal class ProgressScreenState(
         selectedPhotoIds = emptyList()
     }
 
+    /** The second pick is the gesture that opens a comparison, so the request is raised where the
+     * selection is made rather than by a composable watching the list reach two. */
     fun togglePhotoSelection(id: Long) {
         selectedPhotoIds = when {
             id in selectedPhotoIds -> selectedPhotoIds - id
             selectedPhotoIds.size >= 2 -> selectedPhotoIds.drop(1) + id
             else -> selectedPhotoIds + id
         }
+        if (selectedPhotoIds.size == 2) pendingRoute = ProgressDestination.Comparison
     }
 
     fun openMeasurementSheet(part: MeasurementPart?) {
@@ -127,11 +143,7 @@ internal class ProgressScreenState(
     }
 
     fun openRecap() {
-        activeRecap = true
-    }
-
-    fun closeRecap() {
-        activeRecap = false
+        pendingRoute = ProgressDestination.Recap
     }
 
     fun openPhotoShare() {
@@ -143,11 +155,7 @@ internal class ProgressScreenState(
     }
 
     fun openTimelapse() {
-        activeTimelapse = true
-    }
-
-    fun closeTimelapse() {
-        activeTimelapse = false
+        pendingRoute = ProgressDestination.Timelapse
     }
 
     /** The strip's tiles open the gallery *on* the plate they show, so a tap lands where it was
@@ -182,12 +190,14 @@ internal class ProgressScreenState(
                     it.expandedGroups.map { group -> group.name },
                     it.selectedPhotoIds,
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
-                    it.activeBloodPressureSheet, it.activeRecap, it.activeTimelapse,
+                    it.activeBloodPressureSheet,
                     it.activeEnergyCheckIn, it.pendingDeleteReadingId, it.activeCycleSheet,
                     // Appended, never renumbered: an index that moves restores the wrong field
-                    // into the wrong overlay. The recap's period was removed from index 8 when it
-                    // moved into `RecapViewModel`, and everything after it shifted down by one —
-                    // the one renumber this list has had, both halves in the same commit.
+                    // into the wrong overlay. Twice now it has been renumbered anyway, both halves
+                    // in the same commit each time — once when the recap's period moved into
+                    // `RecapViewModel`, and once when the recap and the timelapse became routes and
+                    // their two flags left indices 7 and 8. [pendingRoute] is not here and must not
+                    // be: the back stack is what restores an open route.
                     it.activeMealGallery, it.viewedMealPhotoId, it.activePhotoShare,
                 )
             },
@@ -205,14 +215,12 @@ internal class ProgressScreenState(
                     activeMeasurementSheet = saved[4] as Boolean,
                     measurementSheetPart = (saved[5] as String?)?.let(MeasurementPart::valueOf),
                     activeBloodPressureSheet = saved[6] as Boolean,
-                    activeRecap = saved[7] as Boolean,
-                    activeTimelapse = saved[8] as Boolean,
-                    activeEnergyCheckIn = saved[9] as Boolean,
-                    pendingDeleteReadingId = saved[10] as Long?,
-                    activeCycleSheet = saved[11] as Boolean,
-                    activeMealGallery = saved[12] as Boolean,
-                    viewedMealPhotoId = saved[13] as Long?,
-                    activePhotoShare = saved[14] as Boolean,
+                    activeEnergyCheckIn = saved[7] as Boolean,
+                    pendingDeleteReadingId = saved[8] as Long?,
+                    activeCycleSheet = saved[9] as Boolean,
+                    activeMealGallery = saved[10] as Boolean,
+                    viewedMealPhotoId = saved[11] as Long?,
+                    activePhotoShare = saved[12] as Boolean,
                 )
             },
         )
