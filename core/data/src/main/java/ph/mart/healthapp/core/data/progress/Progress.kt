@@ -4,12 +4,52 @@ import android.graphics.Bitmap
 import androidx.annotation.StringRes
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.R
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
+import ph.mart.healthapp.core.data.profile.displayUnitToCm
+import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 
-enum class MeasurementPart { Chest, Waist, Hips, Arms, Thighs }
+/**
+ * Five tape-measure sites and one percentage. [percent] is the whole of the difference: a body fat
+ * reading is stored as it is typed and drawn as it is typed, where a circumference is stored in cm
+ * and drawn in whichever unit the profile prefers. Callers ask the *part*, never the display
+ * toggle — [toDisplay], [fromDisplay] and [unitLabel] below are the only three places that branch.
+ *
+ * `name` is the stored token: the `measurement_entry` primary key and the export's part field. So
+ * the display name is a resource beside it, and a sixth value costs no migration — the table is
+ * keyed on that string, so `BodyFat` simply starts writing rows of its own.
+ */
+enum class MeasurementPart(@StringRes val label: Int, val percent: Boolean = false) {
+    Chest(R.string.data_measurement_chest),
+    Waist(R.string.data_measurement_waist),
+    Hips(R.string.data_measurement_hips),
+    Arms(R.string.data_measurement_arms),
+    Thighs(R.string.data_measurement_thighs),
+    BodyFat(R.string.data_measurement_body_fat, percent = true),
+}
+
+fun MeasurementPart.toDisplay(value: Double, unit: UnitSystem): Double =
+    if (percent) value else value.cmToDisplayUnit(unit)
+
+fun MeasurementPart.fromDisplay(value: Double, unit: UnitSystem): Double =
+    if (percent) value else value.displayUnitToCm(unit)
+
+/** "%" is a unit symbol, like kg and cm — not copy, and not a resource. */
+fun MeasurementPart.unitLabel(unit: UnitSystem): String = if (percent) "%" else unit.lengthUnitLabel()
+
+/** Stored units, both of them: what the stepper opens at with nothing on record, and the clamp
+ * either side of it. Two kinds rather than six constants — a body fat under 1% or over 70% is a
+ * slipped finger, and so is a 5cm waist. */
+fun MeasurementPart.defaultValue(): Double = if (percent) 20.0 else 80.0
+
+fun MeasurementPart.range(): ClosedFloatingPointRange<Double> = if (percent) 1.0..70.0 else 10.0..250.0
 
 data class WeightEntry(val dateEpochDay: Long, val weightKg: Double, val note: String = "")
 
-data class MeasurementEntry(val part: MeasurementPart, val dateEpochDay: Long, val valueCm: Double)
+/** [value] is centimetres for a circumference and percent for [MeasurementPart.BodyFat] — the part
+ * is what says which. The Room column and the export key are both still named `valueCm`: renaming
+ * a column is a migration, and renaming a wire field is a schema version, neither bought by a name. */
+data class MeasurementEntry(val part: MeasurementPart, val dateEpochDay: Long, val value: Double)
 
 data class ProgressPhoto(
     val id: Long = 0,

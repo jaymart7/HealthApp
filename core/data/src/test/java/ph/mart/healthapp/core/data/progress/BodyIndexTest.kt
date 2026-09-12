@@ -2,6 +2,8 @@ package ph.mart.healthapp.core.data.progress
 
 import ph.mart.healthapp.core.data.profile.CM_PER_IN
 import ph.mart.healthapp.core.data.profile.KG_PER_LB
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -45,6 +47,37 @@ class BodyIndexTest {
             waistToHeightOf(waistCm = 84.0 / CM_PER_IN, heightCm = 175.0 / CM_PER_IN)!!,
             0.0,
         )
+    }
+
+    @Test
+    fun `fat and lean mass split the weigh-in between them`() {
+        assertEquals(16.4, fatMassKgOf(weightKg = 82.0, bodyFatPercent = 20.0)!!, 0.0)
+        assertEquals(65.6, leanMassKgOf(weightKg = 82.0, bodyFatPercent = 20.0)!!, 0.0)
+        assertEquals(
+            82.0,
+            fatMassKgOf(82.0, 18.5)!! + leanMassKgOf(82.0, 18.5)!!,
+            0.1,
+        )
+    }
+
+    /** A percentage at or past 100 reports a negative lean mass if it is let through, and a body
+     * fat of zero is nobody — both are a slipped finger, not a reading. */
+    @Test
+    fun `an impossible percentage is null rather than a negative mass`() {
+        assertNull(leanMassKgOf(weightKg = 82.0, bodyFatPercent = 100.0))
+        assertNull(leanMassKgOf(weightKg = 82.0, bodyFatPercent = 0.0))
+        assertNull(leanMassKgOf(weightKg = 0.0, bodyFatPercent = 20.0))
+        assertNull(fatMassKgOf(weightKg = 82.0, bodyFatPercent = 120.0))
+    }
+
+    /** Unlike the two ratios, these take stored kg and hand back stored kg — the screen converts.
+     * Reaching for `kgToDisplayUnit` on the way *in* would report a lean mass of 144 to somebody
+     * who weighs 82. */
+    @Test
+    fun `fat and lean mass are stored kilos in and stored kilos out`() {
+        val lean = leanMassKgOf(weightKg = 82.0, bodyFatPercent = 20.0)!!
+        assertEquals(65.6, lean, 0.0)
+        assertEquals(lean / KG_PER_LB, lean.kgToDisplayUnit(UnitSystem.Imperial), 0.05)
     }
 
     @Test

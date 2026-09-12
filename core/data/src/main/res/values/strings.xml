@@ -44,6 +44,14 @@
     <string name="data_bmi_category_overweight">Overweight</string>
     <string name="data_bmi_category_obese">Obese</string>
 
+    <!-- MeasurementPart — the enum name is the stored key, so the display name lives here. -->
+    <string name="data_measurement_chest">Chest</string>
+    <string name="data_measurement_waist">Waist</string>
+    <string name="data_measurement_hips">Hips</string>
+    <string name="data_measurement_arms">Arms</string>
+    <string name="data_measurement_thighs">Thighs</string>
+    <string name="data_measurement_body_fat">Body fat</string>
+
     <!-- FlowLevel — Unstated is rendered for imported days, never offered as a tap. -->
     <string name="data_flow_level_unstated">Logged</string>
     <string name="data_flow_level_light">Light</string>

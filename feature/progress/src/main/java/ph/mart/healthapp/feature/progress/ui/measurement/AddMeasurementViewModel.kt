@@ -26,7 +26,7 @@ class AddMeasurementViewModel(
 
     private fun onSave(form: AddMeasurementForm) = intent {
         val part = form.part ?: return@intent
-        progressRepository.upsertMeasurementEntry(MeasurementEntry(part = part, dateEpochDay = form.dateEpochDay, valueCm = form.valueCm))
+        progressRepository.upsertMeasurementEntry(MeasurementEntry(part = part, dateEpochDay = form.dateEpochDay, value = form.value))
         postSideEffect(AddMeasurementSideEffect.Saved)
     }
 }

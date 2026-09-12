@@ -39,7 +39,7 @@ internal class ProgressRepositoryImpl(
 
     override suspend fun upsertMeasurementEntry(entry: MeasurementEntry) {
         measurementDao.upsert(
-            MeasurementEntryEntity(part = entry.part.name, date = entry.dateEpochDay, valueCm = entry.valueCm),
+            MeasurementEntryEntity(part = entry.part.name, date = entry.dateEpochDay, valueCm = entry.value),
         )
     }
 
@@ -57,7 +57,7 @@ internal class ProgressRepositoryImpl(
 private fun WeightEntryEntity.toWeightEntry() = WeightEntry(dateEpochDay = date, weightKg = weightKg, note = note)
 
 private fun MeasurementEntryEntity.toMeasurementEntry() =
-    MeasurementEntry(part = MeasurementPart.valueOf(part), dateEpochDay = date, valueCm = valueCm)
+    MeasurementEntry(part = MeasurementPart.valueOf(part), dateEpochDay = date, value = valueCm)
 
 private fun ProgressPhotoEntity.toProgressPhoto() =
     ProgressPhoto(id = id, dateEpochDay = date, filePath = filePath, weightKg = weightKg)

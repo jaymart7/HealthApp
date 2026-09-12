@@ -9,6 +9,7 @@ import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TrendDirection
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
@@ -138,6 +139,29 @@ class SubjectSummaryTest {
         assertEquals("cm waist", summary.unit)
         assertEquals(TrendDirection.OnTrack, summary.trend)
         assertTrue(summary.footnote, summary.footnote.contains("2 parts"))
+    }
+
+    /** Body fat is stored as a percentage in the same column the tape readings use, so the card
+     * has to ask the part rather than the unit toggle: converted, 18.5% would read as 7.3 in. */
+    @Test
+    fun `body fat leads as a percentage and never converts`() {
+        val measurements = mapOf(
+            MeasurementPart.Waist to listOf(MeasurementEntry(MeasurementPart.Waist, TODAY - 10, 89.5)),
+            MeasurementPart.BodyFat to listOf(
+                MeasurementEntry(MeasurementPart.BodyFat, TODAY - 5, 19.5),
+                MeasurementEntry(MeasurementPart.BodyFat, TODAY, 18.5),
+            ),
+        )
+        listOf(UnitSystem.Metric, UnitSystem.Imperial).forEach { unit ->
+            val summary = summaryFor(
+                Subject.Measurements,
+                ProgressUiState(measurements = measurements, preferredUnit = unit),
+            )
+            assertEquals(unit.name, "18.5", summary.value)
+            assertEquals(unit.name, "% body fat", summary.unit)
+            assertEquals(unit.name, TrendDirection.OnTrack, summary.trend)
+            assertTrue(summary.footnote, summary.footnote.startsWith("1 % · "))
+        }
     }
 
     /** A part with only one reading has no delta, and a false 0.0 would be worse than none. */

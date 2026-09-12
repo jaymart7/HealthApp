@@ -114,7 +114,7 @@ private suspend fun ProgressRepository.seedProgress(today: Long) {
                 MeasurementEntry(
                     part = part,
                     dateEpochDay = today - (5 - step) * 18L,
-                    valueCm = round1(startCm + perStep * step),
+                    value = round1(startCm + perStep * step),
                 ),
             )
         }

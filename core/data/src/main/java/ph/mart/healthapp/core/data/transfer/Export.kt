@@ -68,10 +68,14 @@ internal data class FitPulseExport(
  * [ExportProfile.recapReminderOn] — and [ExportProfile.workoutRemindersOn], which landed on
  * `Profile` after v15 and was simply missed here, so a restored backup silently lost it;
  * 17 added [FitPulseExport.cycleDays] and [ExportProfile.cycleTrackingOn]; 18 added the food
- * entries' vitamin D, calcium, iron and potassium.
+ * entries' vitamin D, calcium, iron and potassium; 19 added [MeasurementPart.BodyFat] as a sixth
+ * measurement part. That one adds no field, and the bump is the point: [enumOf] throws on a name
+ * it doesn't know, so without it a v18 build fed a file holding a body fat row would fail the
+ * whole all-or-nothing import on "Unrecognized MeasurementPart" instead of the version gate's
+ * plain "written by a newer version of FitPulse".
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 18
+internal const val EXPORT_SCHEMA_VERSION = 19
 
 @Serializable
 internal data class ExportProfile(
@@ -247,7 +251,7 @@ fun buildExportJson(
         profile = profile?.toExport(),
         foodEntries = foodEntries.map { it.toExport() },
         weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note) },
-        measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.valueCm) },
+        measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.value) },
         waterDays = waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
         exercises = exercises.map { entry ->
             ExportExercise(

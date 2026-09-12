@@ -272,6 +272,8 @@
     <string name="progress_measurement_none">No readings yet</string>
     <string name="progress_measurement_value">%1$s %2$s</string>
     <string name="progress_measurement_delta">%1$s%2$s %3$s</string>
+    <string name="progress_measurement_fat_mass">Fat mass</string>
+    <string name="progress_measurement_lean_mass">Lean mass</string>
     <string name="progress_measurement_waist_height">Waist to height</string>
     <string name="progress_measurement_waist_height_healthy">Healthy range</string>
     <string name="progress_measurement_waist_height_max">Under %1$s</string>
@@ -380,7 +382,7 @@
     <string name="progress_empty_photos_heading">No progress photos yet</string>
     <string name="progress_empty_photos_body">Add your first photo from the button on any tab to start tracking changes over time.</string>
     <string name="progress_empty_measurements_heading">No measurements yet</string>
-    <string name="progress_empty_measurements_body">Add a chest, waist, hips, arm or thigh reading and it charts here.</string>
+    <string name="progress_empty_measurements_body">Add a chest, waist, hips, arm, thigh or body fat reading and it charts here.</string>
     <string name="progress_empty_nutrition_heading">Nothing logged yet</string>
     <string name="progress_empty_nutrition_body">Log a few meals in the diary and your calorie trend shows up here.</string>
     <string name="progress_empty_fasting_heading">No fasts yet</string>

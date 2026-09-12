@@ -24,18 +24,19 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
 import ph.mart.healthapp.core.data.profile.TrendDirection
 import ph.mart.healthapp.core.data.profile.UnitSystem
-import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
 import ph.mart.healthapp.core.data.profile.goalRelativeTrend
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
+import ph.mart.healthapp.core.data.progress.toDisplay
+import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.supplement.adherenceByDay
 import ph.mart.healthapp.core.data.supplement.averageAdherence
 import ph.mart.healthapp.feature.progress.ui.achievement.badgeGroups
-import ph.mart.healthapp.feature.progress.ui.measurement.components.formatCm
+import ph.mart.healthapp.feature.progress.ui.measurement.components.formatMeasurement
 import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -144,17 +145,20 @@ fun summarize(
                 .maxByOrNull { (_, entries) -> entries.maxOf { it.dateEpochDay } }
                 ?: return SubjectSummary(subject)
             val history = lead.value.sortedBy { it.dateEpochDay }
-            val delta = history.deltaCm()
+            val delta = history.delta()
             SubjectSummary(
                 subject = subject,
-                value = formatCm(history.last().valueCm.cmToDisplayUnit(unit)),
-                unit = "${unit.lengthUnitLabel()} ${lead.key.name.lowercase()}",
+                value = formatMeasurement(lead.key.toDisplay(history.last().value, unit)),
+                // Body fat is a percentage, so it carries its own words rather than the unit
+                // toggle's. Two literals in a file the JVM test already pins, which is why this
+                // file is on the literal gate's exception list.
+                unit = if (lead.key.percent) "% body fat" else "${unit.lengthUnitLabel()} ${lead.key.name.lowercase()}",
                 preview = SubjectPreview.Line(
-                    history.takeLast(PREVIEW_POINTS).map { it.valueCm.cmToDisplayUnit(unit) },
+                    history.takeLast(PREVIEW_POINTS).map { lead.key.toDisplay(it.value, unit) },
                 ),
                 footnote = buildString {
                     if (delta != null) {
-                        append("${formatCm(abs(delta).cmToDisplayUnit(unit))} ${unit.lengthUnitLabel()} · ")
+                        append("${formatMeasurement(lead.key.toDisplay(abs(delta), unit))} ${lead.key.unitLabel(unit)} · ")
                     }
                     append("${tracked.size} ${if (tracked.size == 1) "part" else "parts"}")
                 },
@@ -362,9 +366,10 @@ fun summarizeAll(uiState: ProgressUiState, todayEpochDay: Long): Map<Subject, Su
     Subject.entries.associateWith { summarize(it, uiState, todayEpochDay) }
 
 /** Latest minus the reading before it, or null when there is only one — the reading
- * `MeasurementRow` gives a single entry, rather than a false 0.0. */
-private fun List<MeasurementEntry>.deltaCm(): Double? =
-    if (size >= 2) last().valueCm - this[size - 2].valueCm else null
+ * `MeasurementRow` gives a single entry, rather than a false 0.0. In stored units, so the caller
+ * converts it through the part like every other figure on the card. */
+private fun List<MeasurementEntry>.delta(): Double? =
+    if (size >= 2) last().value - this[size - 2].value else null
 
 private fun arrowFor(delta: Double, deadband: Double): TrendArrow = when {
     abs(delta) < deadband || delta == 0.0 -> TrendArrow.Flat

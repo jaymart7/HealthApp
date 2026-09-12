@@ -191,8 +191,11 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Activity: two charts — daily steps (imported) and daily burn.
 - Strength: volume chart, all-time personal records ranked by estimated 1RM (Epley).
 - Photos: grid, before/after comparison slider, timelapse player, share as a PNG strip.
-- Body: five measurement sites (chest, waist, hips, arms, thighs), chart + history, and a
-  waist-to-height ratio against the published 0.50 boundary once a waist reading exists.
+- Body: five measurement sites (chest, waist, hips, arms, thighs) plus body fat %, chart + history,
+  a waist-to-height ratio against the published 0.50 boundary once a waist reading exists, and a
+  fat-mass / lean-mass split once a body fat reading and a weigh-in both exist. Body fat is logged
+  from the same sheet as the tape readings, in percent — it is the one part the unit toggle does
+  not touch.
 - Mood + energy: two series, separate denominators.
 - Cycle: **off by default**, behind Profile → Cycle. Flow chart, average cycle and period lengths,
   a next-period estimate once two periods are on record, and the period list. Days are logged from

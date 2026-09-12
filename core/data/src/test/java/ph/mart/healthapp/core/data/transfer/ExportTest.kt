@@ -74,7 +74,12 @@ class ExportTest {
     )
 
     private val weightEntries = listOf(WeightEntry(20_000, 62.4, "after the gym"))
-    private val measurements = listOf(MeasurementEntry(MeasurementPart.Waist, 20_001, 78.5))
+    private val measurements = listOf(
+        MeasurementEntry(MeasurementPart.Waist, 20_001, 78.5),
+        // The sixth part rides the same rows as the five tape readings, so the round trip is what
+        // says its stored percentage survives a file written before it existed and read back after.
+        MeasurementEntry(MeasurementPart.BodyFat, 20_001, 18.5),
+    )
     private val waterDays = listOf(WaterDay(20_000, 6), WaterDay(20_001, 9))
     // The step count is the watch's own figure on an imported workout, so it has to travel: the
     // repository re-derives a missing one from the MET estimate, which is not what was measured.

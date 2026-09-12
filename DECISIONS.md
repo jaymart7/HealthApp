@@ -1639,6 +1639,40 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   inches, so the display toggle has nothing to say about either, and both take stored kg/cm rather
   than what the screen happens to be showing. `BodyIndexTest` asserts it, because the obvious
   "fix" is to reach for `kgToDisplayUnit` on the way in and quietly report a BMI of 10.
+- **Body fat is a sixth `MeasurementPart`, not a fifteenth subject.** `measurement_entry` is keyed
+  `(part, date)` with the part as a plain string, so a new enum value writes rows of its own with
+  **no migration** — and the sheet, the row, the sparkline, the delta rule and the overview card
+  are all already built for "a number with a history per part". A subject of its own would have
+  bought a grid tile, a detail page, a range toggle and a chart to draw one figure that changes
+  every few weeks, which is the same argument that kept BMI off the grid.
+- **The percentage rides `valueCm`, and the part is what says so.** Renaming the column is a
+  migration and renaming the export key is a schema version; neither is bought by a better name,
+  so the column stays and the *domain* field became `MeasurementEntry.value` — a compiler-enforced
+  rename that stops the next reader reaching for `cmToDisplayUnit` on a percentage and printing
+  18.5% as 7.3 in. Every unit decision now lives on the enum (`toDisplay`/`fromDisplay`/
+  `unitLabel`/`defaultValue`/`range`), so `MeasurementRow` takes display values and a resolved
+  label and converts nothing at all. Two kinds, not six constants: a percent or a length.
+  `SubjectSummaryTest` asserts the card under *both* unit systems, because that conversion is the
+  one that would ship silently.
+- **`EXPORT_SCHEMA_VERSION` 19 adds no field.** `enumOf` throws on a name it doesn't know rather
+  than falling back, so a v18 build handed a file with a `BodyFat` row would fail the whole
+  all-or-nothing import on "Unrecognized MeasurementPart". The bump is what turns that into the
+  version gate's own "written by a newer version of FitPulse".
+- **Fat mass and lean mass are `BodyIndex.kt`'s third and fourth figures, derived on read** — no
+  column, no export field, gone entirely until a body fat reading and a weigh-in both exist, and
+  no dash state, exactly like the waist-to-height card above them. The one departure from their
+  neighbours: **these convert.** A ratio is the same number in pounds as in kilos; a mass is not.
+  They still take and return stored kg and the screen applies `kgToDisplayUnit`, and `BodyIndexTest`
+  pins that, because the obvious "fix" is to convert on the way in and report a lean mass of 144 to
+  somebody who weighs 82. No band and no target beside them: there is no single published healthy
+  body-fat range to name the way `bmiCategoryOf` names the WHO bands, and inventing one would be
+  the app grading a body.
+- **The part chips wrap.** Six do not fit one phone-width line, and the day nothing is tracked yet
+  is the day all six are offered — so the row is a `FlowRow`, the same call `MascotColourSheet`
+  makes inside a sheet. Tapping a chip also re-seeds the figure (that day's reading for the new
+  part, or its opening figure), because carrying 80 over from a waist onto body fat is absurd and
+  the old sheet kept the value across the switch.
+
 - **Blood pressure has a Google Health scope, and it is deliberately not requested.** The four the
   app already asks for cap it at 100 users pending OAuth verification and a CASA assessment; a
   fifth would need its own justification on that form. Manual entry only, like measurements — and

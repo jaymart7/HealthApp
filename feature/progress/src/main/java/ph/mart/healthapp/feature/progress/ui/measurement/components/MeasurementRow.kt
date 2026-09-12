@@ -19,20 +19,22 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.data.profile.UnitSystem
-import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
-import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
 
 /** Name, current value, delta (shrink=primary, grow=error, flat/no-prior=onSurfaceVariant), and a
- * small inline sparkline over the part's full history — whole row is tappable. */
+ * small inline sparkline over the part's full history — whole row is tappable.
+ *
+ * [history] arrives already in display units and [unitLabel] already resolved, because a
+ * centimetre and a body fat percentage are not the same kind of number and the part is what knows
+ * which: see [toDisplay][ph.mart.healthapp.core.data.progress.toDisplay]. The row formats figures
+ * and converts nothing. */
 @Composable
-fun MeasurementRow(name: String, historyCm: List<Double>, unit: UnitSystem, onTap: () -> Unit, modifier: Modifier = Modifier) {
-    val current = historyCm.lastOrNull()
-    val prior = if (historyCm.size >= 2) historyCm[historyCm.size - 2] else null
-    val deltaCm = if (prior != null && current != null) current - prior else null
+fun MeasurementRow(name: String, history: List<Double>, unitLabel: String, onTap: () -> Unit, modifier: Modifier = Modifier) {
+    val current = history.lastOrNull()
+    val prior = if (history.size >= 2) history[history.size - 2] else null
+    val delta = if (prior != null && current != null) current - prior else null
 
     Surface(onClick = onTap, color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxWidth()) {
         Row(
@@ -44,26 +46,26 @@ fun MeasurementRow(name: String, historyCm: List<Double>, unit: UnitSystem, onTa
                 Text(text = name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     text = current?.let {
-                        stringResource(R.string.progress_measurement_value, formatCm(it.cmToDisplayUnit(unit)), unit.lengthUnitLabel())
+                        stringResource(R.string.progress_measurement_value, formatMeasurement(it), unitLabel)
                     } ?: stringResource(R.string.progress_measurement_none),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Sparkline(values = historyCm, modifier = Modifier.size(width = 56.dp, height = 24.dp))
+            Sparkline(values = history, modifier = Modifier.size(width = 56.dp, height = 24.dp))
             Text(
-                text = deltaCm?.let {
+                text = delta?.let {
                     stringResource(
                         R.string.progress_measurement_delta,
                         if (it > 0) "+" else "",
-                        formatCm(it.cmToDisplayUnit(unit)),
-                        unit.lengthUnitLabel(),
+                        formatMeasurement(it),
+                        unitLabel,
                     )
                 } ?: stringResource(R.string.progress_none),
                 style = MaterialTheme.typography.bodyMedium.tabularNums,
                 color = when {
-                    deltaCm == null || deltaCm == 0.0 -> MaterialTheme.colorScheme.onSurfaceVariant
-                    deltaCm < 0 -> MaterialTheme.colorScheme.primary
+                    delta == null || delta == 0.0 -> MaterialTheme.colorScheme.onSurfaceVariant
+                    delta < 0 -> MaterialTheme.colorScheme.primary
                     else -> MaterialTheme.colorScheme.error
                 },
                 modifier = Modifier.padding(start = 12.dp),
@@ -92,7 +94,7 @@ private fun Sparkline(values: List<Double>, modifier: Modifier = Modifier) {
     }
 }
 
-internal fun formatCm(value: Double): String =
+internal fun formatMeasurement(value: Double): String =
     if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
@@ -101,8 +103,8 @@ private fun MeasurementRowPreview() {
     AppTheme {
         MeasurementRow(
             name = "Waist",
-            historyCm = listOf(84.0, 83.2, 82.5, 81.8),
-            unit = UnitSystem.Metric,
+            history = listOf(84.0, 83.2, 82.5, 81.8),
+            unitLabel = "cm",
             onTap = {},
         )
     }

@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.progress.ui.measurement
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,10 +20,12 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.profile.UnitSystem
-import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
-import ph.mart.healthapp.core.data.profile.displayUnitToCm
-import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.data.progress.MeasurementPart
+import ph.mart.healthapp.core.data.progress.defaultValue
+import ph.mart.healthapp.core.data.progress.fromDisplay
+import ph.mart.healthapp.core.data.progress.range
+import ph.mart.healthapp.core.data.progress.toDisplay
+import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
@@ -68,12 +71,15 @@ private fun AddMeasurementContent(
     val untrackedParts = MeasurementPart.entries.filter { it !in trackedParts }
     val part = state.form.part
     val existingForDate = part?.let { p -> uiState.entriesByPart[p]?.find { it.dateEpochDay == state.form.dateEpochDay } }
-    val step = 0.5.displayUnitToCm(unit)
+    // Nothing picked yet still draws the field, and a length is the shape five of the six parts
+    // take — the stepper re-seeds itself the moment a chip is tapped.
+    val kind = part ?: MeasurementPart.Chest
+    val step = kind.fromDisplay(0.5, unit)
 
     AppBottomSheet(onDismiss = onDismiss) {
         Text(
             text = if (part != null && part !in untrackedParts) {
-                stringResource(R.string.progress_measurement_log, part.name)
+                stringResource(R.string.progress_measurement_log, stringResource(part.label))
             } else {
                 stringResource(R.string.progress_measurement_add_title)
             },
@@ -83,16 +89,28 @@ private fun AddMeasurementContent(
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (part == null || part in untrackedParts) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Wraps, because six chips do not fit one phone-width line and the day nothing is
+                // tracked yet is the day all six are offered.
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     untrackedParts.forEach { candidate ->
                         val selected = candidate == part
                         Surface(
-                            onClick = { state.form = state.form.copy(part = candidate) },
+                            // Switching part switches units and scale with it, so the figure has
+                            // to follow: that day's reading for the new part, or its own opening
+                            // figure. Carrying 80 over from a waist onto body fat would be absurd.
+                            onClick = {
+                                val existing = uiState.entriesByPart[candidate]?.find { it.dateEpochDay == state.form.dateEpochDay }
+                                state.form = state.form.copy(part = candidate, value = existing?.value ?: candidate.defaultValue())
+                            },
                             color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
                             contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                             shape = RoundedCornerShape(999.dp),
                         ) {
-                            Text(text = candidate.name, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                            Text(text = stringResource(candidate.label), modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
                         }
                     }
                 }
@@ -106,7 +124,7 @@ private fun AddMeasurementContent(
                 markedDates = part?.let { p -> uiState.entriesByPart[p]?.map { it.dateEpochDay }?.toSet() } ?: emptySet(),
                 onSelectDate = { date ->
                     val existing = part?.let { p -> uiState.entriesByPart[p]?.find { it.dateEpochDay == date } }
-                    state.form = state.form.copy(dateEpochDay = date, valueCm = existing?.valueCm ?: state.form.valueCm)
+                    state.form = state.form.copy(dateEpochDay = date, value = existing?.value ?: state.form.value)
                     state.showingCalendar = false
                 },
             ) {
@@ -120,10 +138,10 @@ private fun AddMeasurementContent(
                     }
                     NumericStepperField(
                         label = stringResource(R.string.progress_measurement_value_label),
-                        value = formatValue(state.form.valueCm.cmToDisplayUnit(unit)),
-                        unitSuffix = unit.lengthUnitLabel(),
-                        onIncrement = { state.form = state.form.copy(valueCm = state.form.valueCm + step) },
-                        onDecrement = { state.form = state.form.copy(valueCm = (state.form.valueCm - step).coerceAtLeast(10.0)) },
+                        value = formatValue(kind.toDisplay(state.form.value, unit)),
+                        unitSuffix = kind.unitLabel(unit),
+                        onIncrement = { state.form = state.form.copy(value = (state.form.value + step).coerceIn(kind.range())) },
+                        onDecrement = { state.form = state.form.copy(value = (state.form.value - step).coerceIn(kind.range())) },
                     )
                 }
             }

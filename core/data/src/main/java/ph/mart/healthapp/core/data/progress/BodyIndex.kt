@@ -59,3 +59,24 @@ fun waistToHeightOf(waistCm: Double, heightCm: Double): Double? {
  * published number is a fact the app can stand behind; a four-step scale derived from it would be
  * the app grading a body, which is the line the cycle tab's absent fertile window also draws. */
 const val WAIST_TO_HEIGHT_HEALTHY_MAX = 0.5
+
+/**
+ * The third and fourth figures, once a body fat reading exists: what of the newest weigh-in is fat
+ * and what is everything else. Same shape as the two above — derived on read, no column, no export
+ * field — and the same null-rather-than-throw rule, because a percentage at or past 100 is not a
+ * body, it is a typo that would report a negative mass.
+ *
+ * Unlike BMI and waist-to-height these two **do** convert on the way out: a ratio is the same
+ * number in pounds as in kilos, a mass is not. They still take stored kg, and the screen applies
+ * [kgToDisplayUnit][ph.mart.healthapp.core.data.profile.kgToDisplayUnit] the way it does to every
+ * other weight it draws.
+ */
+fun fatMassKgOf(weightKg: Double, bodyFatPercent: Double): Double? {
+    if (weightKg <= 0 || bodyFatPercent <= 0 || bodyFatPercent >= 100) return null
+    return round1(weightKg * bodyFatPercent / 100)
+}
+
+fun leanMassKgOf(weightKg: Double, bodyFatPercent: Double): Double? {
+    if (weightKg <= 0 || bodyFatPercent <= 0 || bodyFatPercent >= 100) return null
+    return round1(weightKg * (1 - bodyFatPercent / 100))
+}
