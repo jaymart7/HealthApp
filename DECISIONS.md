@@ -3233,6 +3233,27 @@ The rules that bind are `CLAUDE.md` → **Localization**. These are the argument
   the per-serving division and the portion's dropped trailing zero rather than the sentence the
   resource now owns. Nothing it covered was lost.
 
+### Build & release
+
+- **R8 optimizes and obfuscates, and `mapping.txt` is the proof.** The release build carried
+  `optimization { enable = false }` next to `isMinifyEnabled = true` — AGP 9's
+  `Optimization.enable` is R8's optimization switch, so the two pulled against each other and
+  shrinking won alone: `assembleRelease` produced `seeds.txt` and `usage.txt` and no
+  `mapping.txt` at all. Nothing in this file argued for it, which is what marked it as drift
+  rather than a decision. With the block gone, R8 runs in full mode as AGP intends, 1640 app
+  classes are renamed, and the file the Play Console wants for deobfuscated crash reports
+  exists again. Nothing needed a keep rule: Compose, Koin, kotlinx.serialization, Room and the
+  Firebase AI SDK all ship consumer rules, and the missing-rule reporter stayed quiet.
+- **`proguard-rules.pro` keeps two attributes and nothing else.** It was the untouched AGP
+  template — every line a comment — which was harmless only while the entry above meant nothing
+  was obfuscated. `-keepattributes SourceFile,LineNumberTable` is what stops a release crash
+  report naming a class and no line; `-renamesourcefileattribute SourceFile` is what stops the
+  original file name riding back in beside it and undoing half the point. A keep rule wider
+  than one library's actual need does not go in this file — an over-broad
+  `-keep class androidx.compose.**` is how an app quietly ships unoptimized.
+- **`ndk.debugSymbolLevel` is gone.** FitPulse is Kotlin and Compose with no native code and no
+  `.so` of its own, so the line asked the build to package debug symbols for nothing.
+
 ## Considered and declined
 
 Weighed and deferred — not `FEATURES.md`'s "Deliberately absent" list, which is what was

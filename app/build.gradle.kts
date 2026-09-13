@@ -14,8 +14,8 @@ android {
         applicationId = "ph.mart.healthapp"
         minSdk = 24
         targetSdk = 37
-        versionCode = 10
-        versionName = "1.10"
+        versionCode = 11
+        versionName = "1.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,10 +39,6 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release").takeIf { keystoreFile != null }
-            optimization {
-                enable = false
-            }
-            ndk.debugSymbolLevel = "FULL"
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
