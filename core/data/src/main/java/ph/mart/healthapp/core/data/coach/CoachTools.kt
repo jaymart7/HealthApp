@@ -12,11 +12,22 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.fasting.FastingRepository
+import ph.mart.healthapp.core.data.fasting.dateEpochDay
+import ph.mart.healthapp.core.data.fasting.durationMinutes
+import ph.mart.healthapp.core.data.fasting.isActive
+import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.health.SleepRepository
+import ph.mart.healthapp.core.data.health.formatDuration
+import ph.mart.healthapp.core.data.mood.MOOD_SCALE
+import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -34,8 +45,10 @@ import ph.mart.healthapp.core.data.water.WaterRepository
  * a different door.
  *
  * Two read tools rather than five, because a question is nearly always about one day or about a
- * span, and one round trip beats four. Adding a third domain (sleep, mood, fasting) is a branch in
- * [runTool] and a line in [COACH_TOOLS], which is why none of them are here up front.
+ * span, and one round trip beats four. That holds when a domain is added, too: sleep, mood and
+ * fasting widened what [formatDay] and [formatHistory] *answer with* rather than earning
+ * declarations of their own — a question is still about one day or one span, and a third and
+ * fourth function are two more things for the model to pick wrong.
  *
  * Tool names, descriptions and schema text stay in Kotlin: they are model prompts, which the
  * localization rules exempt exactly as they exempt the system instruction below them.
@@ -85,14 +98,16 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
         FunctionDeclaration(
             name = TOOL_GET_DAY,
             description = "Read one day of the user's diary in full: every food they logged with " +
-                "its calories and macros, the day's totals against their targets, water, and any " +
-                "activity. Call this before answering anything about a specific day.",
+                "its calories and macros, the day's totals against their targets, water, any " +
+                "activity, and their sleep, mood and fasting where they track those. Call this " +
+                "before answering anything about a specific day.",
             parameters = mapOf("days_ago" to daysAgoSchema),
         ),
         FunctionDeclaration(
             name = TOOL_GET_HISTORY,
-            description = "Read a span of recent days: calories and protein per day, plus any " +
-                "weigh-in. Call this for trends, averages, or anything about a week or a month.",
+            description = "Read a span of recent days: calories and protein per day, any " +
+                "training, any sleep, and any weigh-in. Call this for trends, averages, or " +
+                "anything about a week or a month.",
             parameters = mapOf(
                 "days" to Schema.integer(
                     description = "How many days back from today, up to $MAX_HISTORY_DAYS.",
@@ -239,6 +254,9 @@ internal fun formatDay(
     targetCalories: Int?,
     waterGlasses: Int,
     exercise: List<ExerciseEntry>,
+    sleepMinutes: Int? = null,
+    mood: MoodDay? = null,
+    fastedMinutes: Int? = null,
 ): String = buildString {
     appendLine("$label:")
     if (foods.isEmpty()) {
@@ -266,6 +284,24 @@ internal fun formatDay(
             appendLine("- Activity: $name, ${it.minutes} min, ${it.burnedKcal} kcal burned")
         }
     }
+    // The three that are *omitted* rather than reported empty. Food, water and activity are things
+    // the user does in this app, so a zero there is a fact worth stating; sleep comes off a watch,
+    // fasting and the mood check-in are opt-in surfaces, and a daily "No sleep recorded" would
+    // have the coach nagging about a feature that is not switched on. The system instruction
+    // carries the other half of this: a category absent from a day is one the user does not track.
+    sleepMinutes?.let { appendLine("Slept: ${formatDuration(it)}") }
+    mood?.describe()?.let(::appendLine)
+    fastedMinutes?.let { appendLine("Fasted: ${formatDuration(it)}") }
+}
+
+/** Null when neither half was tapped, and each half omitted on its own: `mood_day` stores 0 for
+ * "not set", which is the reading [MoodDay]'s own doc gives it — never a zero score. */
+private fun MoodDay.describe(): String? {
+    val parts = listOfNotNull(
+        "mood ${mood}/${MOOD_SCALE.last}".takeIf { mood in MOOD_SCALE },
+        "energy ${energy}/${MOOD_SCALE.last}".takeIf { energy in MOOD_SCALE },
+    )
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(", ", prefix = "Felt: ")
 }
 
 /**
@@ -288,23 +324,41 @@ internal fun formatHistory(
     nutrition: List<DayNutrition>,
     weights: List<WeightEntry>,
     today: Long,
+    exercise: List<ExerciseEntry> = emptyList(),
+    sleep: List<SleepNight> = emptyList(),
 ): String = buildString {
     val from = today - days + 1
     val deltas = weightDeltas(weights, from, today)
-    val logged = nutrition.filter { it.dateEpochDay in from..today }
-    if (logged.none { it.isLogged } && deltas.isEmpty()) {
+    val byDay = nutrition.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
+    // A day's whole training, not one line per session: a week of two-a-days would otherwise be
+    // fourteen lines of an answer that has six of them to spend.
+    val training = exercise.filter { it.dateEpochDay in from..today }.groupBy { it.dateEpochDay }
+    val slept = sleep.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
+    if (byDay.values.none { it.isLogged } && deltas.isEmpty() && training.isEmpty() && slept.isEmpty()) {
         return "Nothing logged in the last $days days."
     }
     appendLine("The last $days days, oldest first:")
-    logged.forEach { day ->
-        val ago = (today - day.dateEpochDay).toInt()
+    // The window is what the lines are counted off, not the nutrition series: it is dense and
+    // zero-filled today, but a day carrying only a workout or a night's sleep must still get a
+    // line, and iterating the range is what makes that true of any series shape.
+    (from..today).forEach { date ->
+        val ago = (today - date).toInt()
         val label = when (ago) {
             0 -> "Today"
             1 -> "Yesterday"
             else -> "$ago days ago"
         }
-        val food = if (day.isLogged) "${day.calories} kcal, ${day.proteinG}g protein" else "nothing logged"
-        appendLine("- $label: $food${deltas[day.dateEpochDay].orEmpty()}")
+        val day = byDay[date]
+        val food = if (day?.isLogged == true) {
+            "${day.calories} kcal, ${day.proteinG}g protein"
+        } else {
+            "nothing logged"
+        }
+        val activity = training[date]?.let {
+            ", ${it.sumOf { entry -> entry.minutes }} min activity, ${it.totalBurnedKcal()} kcal burned"
+        }.orEmpty()
+        val night = slept[date]?.let { ", slept ${formatDuration(it.minutesAsleep)}" }.orEmpty()
+        appendLine("- $label: $food$activity$night${deltas[date].orEmpty()}")
     }
 }
 
@@ -333,7 +387,7 @@ private fun weightDeltas(weights: List<WeightEntry>, from: Long, to: Long): Map<
 // endregion
 
 /**
- * The four repositories a read tool reaches, behind one call.
+ * The repositories a read tool reaches, behind one call.
  *
  * It sits here rather than in [CoachRepositoryImpl] so that file stays about the conversation and
  * this one stays about the tools. Cross-domain reach inside `:core:data` is the shape
@@ -349,6 +403,13 @@ internal class CoachToolbox(
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
     private val profileRepository: ProfileRepository,
+    // The three the coach could not see at all: a training week, a bad night, an opt-in check-in.
+    // They widen what the two existing tools *answer with* rather than adding tools of their own —
+    // a question is still about one day or one span, and three more function declarations would be
+    // three more things for the model to pick wrong.
+    private val sleepRepository: SleepRepository,
+    private val moodRepository: MoodRepository,
+    private val fastingRepository: FastingRepository,
 ) {
     /** Null for a tool this does not run — which is every write tool, and is how the caller's loop
      * tells a question from an instruction without a second lookup. */
@@ -372,14 +433,27 @@ internal class CoachToolbox(
             targetCalories = profileRepository.observeProfile().first()?.dailyTargets()?.calories,
             waterGlasses = waterRepository.observeDay(date).first(),
             exercise = exerciseRepository.observeEntries(date).first(),
+            sleepMinutes = sleepRepository.observeNights().first()
+                .firstOrNull { it.dateEpochDay == date }?.minutesAsleep,
+            mood = moodRepository.observeDays().first().firstOrNull { it.dateEpochDay == date },
+            // Finished fasts only, and a finished one is dated by the day it *ended* — the reading
+            // `FastSession.dateEpochDay` already gives it, and the reason the clock passed to
+            // `durationMinutes` is never read for one.
+            fastedMinutes = fastingRepository.observeSessions().first()
+                .firstOrNull { !it.isActive && it.dateEpochDay == date }
+                ?.durationMinutes(System.currentTimeMillis()),
         )
     }
 
+    /** `observeRecentEntries()` is already windowed to a year and `observeNights()` to what the
+     * watch has sent, so a span reads two flows rather than one per day. */
     private suspend fun getHistory(days: Int): String = formatHistory(
         days = days,
         nutrition = foodRepository.observeDailyNutrition().first(),
         weights = progressRepository.observeWeightEntries().first(),
         today = todayEpochDay(),
+        exercise = exerciseRepository.observeRecentEntries().first(),
+        sleep = sleepRepository.observeNights().first(),
     )
 }
 

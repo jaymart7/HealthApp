@@ -280,8 +280,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Photo food recognition (the food-logging path above).
 - Daily insight — one line on Home, cached per day, falls back to three local rules.
 - Coach — a chat screen told the day's numbers, which can read the rest of the diary itself:
-  `get_day` for any past day's meals, macros, water and activity, `get_history` for a span of up to
-  a month with weigh-ins. History persisted, clearable with a confirm. The answer streams in word
+  `get_day` for any past day's meals, macros, water and activity — plus that day's sleep, mood and
+  completed fast where those are tracked — and `get_history` for a span of up to a month with
+  training, sleep and weigh-ins. History persisted, clearable with a confirm. The answer streams in word
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
 - Coach proposals — asked to log something, the coach drafts the row and the user taps to confirm

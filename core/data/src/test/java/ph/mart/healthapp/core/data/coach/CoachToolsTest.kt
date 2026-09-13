@@ -11,6 +11,8 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
 /**
@@ -213,6 +215,56 @@ class CoachToolsTest {
         assertTrue(text, "Walk, 30 min, 120 kcal burned" in text)
     }
 
+    /**
+     * The three the coach used to be blind to. They ride on the existing day tool rather than on
+     * tools of their own, so this is where "the coach can see my sleep" is actually asserted.
+     */
+    @Test
+    fun `a day carries sleep, mood and a finished fast when they are tracked`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            sleepMinutes = 432,
+            mood = MoodDay(dateEpochDay = 20_000L, mood = 4, energy = 2),
+            fastedMinutes = 980,
+        )
+        assertTrue(text, "Slept: 7h 12m" in text)
+        assertTrue(text, "Felt: mood 4/5, energy 2/5" in text)
+        assertTrue(text, "Fasted: 16h 20m" in text)
+    }
+
+    /**
+     * Absent means *untracked*, and the whole point of omitting the line is that the coach cannot
+     * then nag about a watch the user does not own. A zero-filled "No sleep recorded" every day
+     * would do exactly that.
+     */
+    @Test
+    fun `an untracked domain leaves no line at all`() {
+        val text = formatDay("Today", emptyList(), null, waterGlasses = 0, exercise = emptyList())
+        listOf("Slept", "Felt", "Fasted").forEach {
+            assertTrue("$it appeared for an untracked domain: $text", it !in text)
+        }
+    }
+
+    /** `mood_day` stores 0 for "not set", never a zero score — so a day where only the face was
+     * tapped reports the face and says nothing about energy. */
+    @Test
+    fun `a half-filled check-in reports only the half that was filled`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            mood = MoodDay(dateEpochDay = 20_000L, mood = 0, energy = 5),
+        )
+        assertTrue(text, "Felt: energy 5/5" in text)
+        assertTrue(text, "mood" !in text)
+    }
+
     /** An empty day has to say so out loud. A model handed a blank block fills it in. */
     @Test
     fun `an empty day says nothing was logged rather than going quiet`() {
@@ -304,6 +356,48 @@ class CoachToolsTest {
             today = today,
         )
         assertEquals("Nothing logged in the last 2 days.", text)
+    }
+
+    /**
+     * "How did my training week go?" was unanswerable: a span carried food and weigh-ins only.
+     * Two-a-days collapse into one line per day, because six lines is the whole answer's budget.
+     */
+    @Test
+    fun `a span carries the day's training and sleep`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 2,
+            nutrition = listOf(
+                DayNutrition(dateEpochDay = today - 1, calories = 2100, proteinG = 140, carbsG = 0, fatG = 0),
+                DayNutrition(dateEpochDay = today, calories = 1800, proteinG = 120, carbsG = 0, fatG = 0),
+            ),
+            weights = emptyList(),
+            today = today,
+            exercise = listOf(
+                ExerciseEntry(dateEpochDay = today, type = ExerciseType.Run, minutes = 30, burnedKcal = 300),
+                ExerciseEntry(dateEpochDay = today, type = ExerciseType.Yoga, minutes = 20, burnedKcal = 60),
+            ),
+            sleep = listOf(SleepNight(dateEpochDay = today - 1, minutesAsleep = 400)),
+        )
+        assertTrue(text, "- Today: 1800 kcal, 120g protein, 50 min activity, 360 kcal burned" in text)
+        assertTrue(text, "- Yesterday: 2100 kcal, 140g protein, slept 6h 40m" in text)
+    }
+
+    /** The series a day's line is counted off is the window, not the nutrition list: a day holding
+     * only a workout still gets one. */
+    @Test
+    fun `a day with training but no food is still a line`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 1,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            exercise = listOf(
+                ExerciseEntry(dateEpochDay = today, type = ExerciseType.Walk, minutes = 45, burnedKcal = 150),
+            ),
+        )
+        assertTrue(text, "- Today: nothing logged, 45 min activity, 150 kcal burned" in text)
     }
 
     /** The window is what bounds the answer, not the series handed in — a year of dense rows must

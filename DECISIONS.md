@@ -1576,6 +1576,26 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   reaches one entry *behind* the window so the oldest day in a span still carries a change rather
   than a shrug, and `CoachToolsTest` asserts no absolute figure appears in the text at all. And `MAX_TOOL_ROUNDS` is a flat 3
   — ponytail, not a token budget; price it if a tool ever fans out.
+- **Sleep, mood and fasting widened what the two tools answer with; they did not become tools.**
+  The entry below says a third domain is "a branch in `runTool` and a line in `COACH_TOOLS`" — that
+  was the wrong half of its own argument. *Two read tools, not five* is justified there by "a
+  question is nearly always about one day or about a span", and that is still true of *"did I sleep
+  badly on the days I overate?"*: it is one span, asked once. So `formatDay` gained sleep, the mood
+  check-in and a completed fast, `formatHistory` gained the day's training and its sleep, and
+  `COACH_TOOLS` is unchanged — no third and fourth declaration for the model to pick wrong, and no
+  extra round trip. The cost is a few dozen *input* tokens on a call that was already being made.
+  Four things it turns on. **A day's whole training is one line**, not one per session: a week of
+  two-a-days is fourteen lines of an answer with six to spend. **The lines of a span are counted
+  off the window, not the nutrition series** — that series is dense and zero-filled *today*, but a
+  day carrying only a workout must still get a line, and iterating the range makes that true of any
+  series shape. **An untracked domain is omitted, never zero-filled** — the opposite call to
+  `formatHistory`'s *unlogged days are named, not dropped*, and deliberately: food, water and
+  activity are things the user does in this app, so a zero is a fact, while sleep comes off a watch
+  and mood and fasting are opt-in surfaces, and a daily *"No sleep recorded"* has the coach nagging
+  about a feature that is not switched on. The prompt carries the other half — *a category missing
+  from a day is one the user does not track* — because omission alone is what a model fills in.
+  **And a half-filled check-in reports the half that was filled**: `mood_day` stores 0 for "not
+  set", never a zero score, which is `MoodDay`'s own rule reaching the model intact.
 - **A tool round's preface is dropped, not carried into the answer.** `send()`'s `raw` builder
   accumulated across rounds and was never reset, so a model that said *"Let me check yesterday."*
   before calling `get_day` produced *"Let me check yesterday.You had 1,850 kcal…"* — unseparated,
