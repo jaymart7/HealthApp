@@ -38,6 +38,37 @@ import ph.mart.healthapp.core.data.insight.insightFor
  * deliberately crude and deliberately predictable, because its job is to reach every state of the
  * screen on demand rather than to be clever. [fakeCoachScript] is that routing, pulled out as a
  * pure function so it can be tested.
+ *
+ * ## What to type to reach each state
+ *
+ * The whole screen, in the order it is worth walking. The debug seed is what populates the diary,
+ * the library and the weigh-in these answer from, and it only fires on an install with no profile
+ * — so clear app data before starting.
+ *
+ * | Type this | Reaches |
+ * | --- | --- |
+ * | *(fresh install, nothing sent yet)* | the empty state and its four starters |
+ * | `am I doing okay?` | a streamed plain answer, then the follow-up chips under it |
+ * | `what did I eat yesterday?`, `how did 3 days ago go?` | a `get_day` round: preface, thinking mascot, then the day |
+ * | `how has my week gone?`, `what's my average this month?` | `get_history` at 7 and at 30 days |
+ * | `what have I saved recently?` | `get_library` |
+ * | `log a glass of water` | the single-row card |
+ * | `log a 45 minute run` | the same card, its burn priced off the real weigh-in |
+ * | `log two eggs for breakfast` | the single-row card, food |
+ * | `log eggs, rice and an apple for lunch` | the multi-row card, its per-row `✕` and a partial confirm |
+ * | `log my usual Overnight oats for breakfast` | a saved meal expanded into one row per item |
+ * | `log my saved Nothing At All` | prose, then the failure bubble — the draft resolved to nothing |
+ * | `quietly log a glass of water`, then Dismiss | a card with no prose above it: the turn is abandoned, not persisted |
+ * | `log egg rice bacon salmon chicken bread milk cheese apple banana potato pasta` | a draft past [MAX_DRAFT_ROWS], rejected whole |
+ * | `make this fail` | the failure bubble and its Retry |
+ * | any of the above, then Stop mid-stream | the turn abandoned, the question back in the field |
+ * | any answer, then its `↺` | the ask-again send |
+ * | Clear, then confirm | the confirmation dialog and an emptied conversation |
+ *
+ * Two states stay real-AI-only and are not worth faking. **Offline** (`OFFLINE_REASON`) never
+ * reaches this class at all — `CoachViewModel.onSend` short-circuits on the `NetworkMonitor`, so
+ * airplane mode is the whole test. And the **`MAX_REPLY_CHARS` rejection** is `sanitizeReply`'s,
+ * which only the real repository's chunks pass through; [stream] emits its own text verbatim.
  */
 internal class FakeCoachRepository(
     private val real: CoachRepository,
@@ -51,22 +82,33 @@ internal class FakeCoachRepository(
 
             is FakeScript.Propose -> {
                 // The prose comes first and the card follows, which is the order the real thing
-                // produces: the model says what it is about to propose, then calls the tool.
-                stream(script.preamble)
+                // produces: the model says what it is about to propose, then calls the tool. Empty
+                // is the `quietly` route — a write call that came with no prose at all, which is
+                // the one case a dismissal has nothing to persist.
+                if (script.preamble.isNotEmpty()) stream(script.preamble)
                 // Through `resolve` for the reason everything else here goes through the real
                 // path: a workout's burn is the app's arithmetic over the user's own weigh-in and
                 // a saved meal's rows are the user's own, so a fake that skipped it would draw a
                 // card the real one never draws.
                 val actions = script.actions.map { it.resolve(toolbox) }
+                val rows = actions.filterNotNull().flatten()
+                // Both of the real loop's failing endings, in its order: a call that resolved to
+                // nothing — a saved meal in no library — and a draft past the row ceiling.
+                // Rejected rather than truncated, which is why [matchedFoods] no longer caps.
                 emit(
-                    if (actions.any { it == null }) CoachReply.Failed
-                    else CoachReply.Proposal(actions.filterNotNull().flatten()),
+                    if (actions.any { it == null } || rows.size > MAX_DRAFT_ROWS) CoachReply.Failed
+                    else CoachReply.Proposal(rows),
                 )
             }
 
             is FakeScript.Tool -> {
-                val result = toolbox.runTool(script.name, script.args).orEmpty()
-                val answer = stream(script.preamble + "\n" + result)
+                // Preface, dropped, then the answer — `CoachRepositoryImpl`'s own shape between
+                // tool rounds, down to the empty partial that hands the screen back its thinking
+                // mascot while the tool runs. Only the tool's output is persisted, which is what
+                // the real loop's `raw.setLength(0)` means.
+                stream(script.preamble)
+                emit(CoachReply.Partial(""))
+                val answer = stream(toolbox.runTool(script.name, script.args).orEmpty())
                 real.settle(question, answer, emptyList())
             }
 
@@ -110,7 +152,7 @@ internal sealed interface FakeScript {
 
     /** A list, because one meal is several rows — [fakeCoachScript] drafts more than one for a
      * sentence naming more than one food, which is the only way a debug build reaches the multi-row
-     * card. */
+     * card. [preamble] is empty on the `quietly` route and only there. */
     data class Propose(val actions: List<CoachAction>, val preamble: String) : FakeScript
 
     data class Tool(val name: String, val args: Map<String, JsonElement>, val preamble: String) : FakeScript
@@ -140,7 +182,16 @@ internal fun fakeCoachScript(question: String): FakeScript {
         if (WATER_WORDS.any { it in asked }) {
             return FakeScript.Propose(
                 actions = listOf(CoachAction.LogWater(glasses = 1)),
-                preamble = "Sure — here's a glass of water to add:",
+                preamble = preamble(asked, "Sure — here's a glass of water to add:"),
+            )
+        }
+        // Before the exercise and food matches, because a saved meal is named by the user and its
+        // name can be anything — "log my usual Overnight oats" would otherwise draft a row for the
+        // oats alone at `COMMON_FOODS`' figures rather than the user's own saved ones.
+        savedMealNameIn(asked)?.let { name ->
+            return FakeScript.Propose(
+                actions = listOf(CoachAction.LogSavedMeal(name = name, mealType = mealFor(asked))),
+                preamble = preamble(asked, "Pulling that one out of your library:"),
             )
         }
         matchedExercise(asked)?.let { type ->
@@ -154,7 +205,10 @@ internal fun fakeCoachScript(question: String): FakeScript {
                         burnedKcal = 0,
                     ),
                 ),
-                preamble = "Here's the session I'd add — the burn is worked out from your weight:",
+                preamble = preamble(
+                    asked,
+                    "Here's the session I'd add — the burn is worked out from your weight:",
+                ),
             )
         }
         // Every food named in the sentence, not the longest one: "log eggs, toast and coffee" is
@@ -175,7 +229,7 @@ internal fun fakeCoachScript(question: String): FakeScript {
                         portionUnit = food.portionUnit,
                     )
                 },
-                preamble = "Here's what I'd log for that — check the numbers before you tap:",
+                preamble = preamble(asked, "Here's what I'd log for that — check the numbers before you tap:"),
             )
         }
     }
@@ -225,6 +279,33 @@ private val WATER_WORDS = listOf("water", "glass")
 private val HISTORY_WORDS = listOf("week", "month", "trend", "average", "lately", "recently")
 private val LIBRARY_WORDS = listOf("saved", "recipe", "library", "usual")
 
+/**
+ * The second magic word, in [FakeScript.Fail]'s shape and for its reason.
+ *
+ * Say "quietly" and the draft arrives with no prose above it. That is a real ending — a model can
+ * call `log_food` and say nothing — and it is the only one where a dismissal has no answer to
+ * persist, so `onSettle` abandons the turn instead of writing it. Nothing else in a debug build
+ * reaches `withTurnAbandoned` from a card.
+ */
+private const val QUIET_WORD = "quietly"
+
+private fun preamble(asked: String, text: String): String = if (QUIET_WORD in asked) "" else text
+
+/**
+ * The name after a library word, when the sentence gave one — "log my usual **Overnight oats** for
+ * breakfast".
+ *
+ * Null when nothing follows it, which is what keeps "what have I saved recently?" on the library
+ * *tool*: this only ever runs inside the `LOG_WORDS` block, and a question is not an instruction.
+ * The name goes to `savedMealRows` unchanged and is matched `equals(ignoreCase = true)`, so the
+ * lowercasing costs nothing — and a name in no library resolves to null, which is how a debug build
+ * reaches the failed-draft ending.
+ */
+private fun savedMealNameIn(asked: String): String? =
+    LIBRARY_WORDS.firstOrNull { it in asked }
+        ?.let { word -> asked.substringAfter(word).substringBefore(" for ").trim(' ', '.', ',', '?') }
+        ?.takeIf { it.isNotEmpty() }
+
 /** Only the calendar words, not a general number — "log 2 eggs" must not read as "two days ago". */
 private fun daysAgoIn(asked: String): Int? = when {
     "yesterday" in asked -> 1
@@ -244,8 +325,10 @@ private val DAYS_AGO = Regex("""(\d+)\s+days?\s+ago""")
  * whose whole promise is that what it shows is what gets written. A whole-word prefix keeps
  * "rice" → *Brown rice, cooked* and drops "ate" → *Water*.
  *
- * Distinct by name, so "eggs and more eggs" is one row rather than two identical ones, and capped
- * the way a real draft is.
+ * Distinct by name, so "eggs and more eggs" is one row rather than two identical ones, and
+ * **uncapped**: the real loop rejects a draft past [MAX_DRAFT_ROWS] rather than truncating it, so a
+ * fake that capped here would answer a twelve-food sentence with ten quiet rows and leave that
+ * rejection unreachable.
  */
 private fun matchedFoods(asked: String) = asked
     .split(' ', ',', '.')
@@ -254,7 +337,6 @@ private fun matchedFoods(asked: String) = asked
         commonFoodFor(word)?.takeIf { it.namesWord(stem) }
     }
     .distinctBy { it.name }
-    .take(MAX_DRAFT_ROWS)
 
 private fun ScannedProduct.namesWord(stem: String): Boolean =
     stem.isNotEmpty() && name.split(' ', ',', '(', '-').any { it.startsWith(stem, ignoreCase = true) }

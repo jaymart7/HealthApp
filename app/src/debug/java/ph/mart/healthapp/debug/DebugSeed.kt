@@ -19,6 +19,7 @@ import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ActivityLevel
@@ -366,7 +367,61 @@ private suspend fun FoodRepository.seedFood(today: Long) {
         if (daysAgo > 0 && daysAgo % 11 == 0) continue
         days[daysAgo % days.size].forEach { addEntry(it.copy(dateEpochDay = today - daysAgo)) }
     }
+
+    // The library, which none of the diary rows above fills. Profile's library screen, the
+    // add-entry sheet's saved-meal panel and the coach's `get_library` tool all read an empty one
+    // otherwise — and a coach-drafted saved meal has nothing to resolve against, which is the one
+    // proposal whose rows are the user's own figures rather than the model's.
+    saveMeal(
+        name = "Overnight oats",
+        items = listOf(
+            item("Rolled oats", 60.0, "g", 228, 8, 40, 4),
+            item("Greek yogurt", 150.0, "g", 130, 15, 8, 4),
+            item("Blueberries", 80.0, "g", 46, 1, 11, 0),
+        ),
+    )
+    // Two items against the first one's three, so a drafted meal is visibly several rows and not
+    // always the same count.
+    saveMeal(
+        name = "Post-gym shake",
+        items = listOf(
+            item("Protein shake", 400.0, "ml", 240, 30, 18, 4),
+            item("Banana", 1.0, "medium", 105, 1, 27, 0),
+        ),
+    )
+    // Four servings rather than one, so `perServing()` divides by something — a recipe logged from
+    // a proposal card goes down as one row at one serving, and that arithmetic is only visible
+    // against a batch cooked for several.
+    saveRecipe(
+        name = "Chicken adobo",
+        servings = 4,
+        items = listOf(
+            item("Chicken thighs", 1000.0, "g", 2090, 172, 0, 152),
+            item("Soy sauce", 120.0, "ml", 65, 10, 6, 0),
+            item("White rice, cooked", 600.0, "g", 780, 16, 172, 2),
+        ),
+    )
 }
+
+/** A saved meal's row: a [food] without the day or the meal slot, both of which are supplied when
+ * it is logged. */
+private fun item(
+    name: String,
+    portionAmount: Double,
+    portionUnit: String,
+    calories: Int,
+    proteinG: Int,
+    carbsG: Int,
+    fatG: Int,
+) = SavedMealItem(
+    name = name,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+)
 
 private fun food(
     name: String,

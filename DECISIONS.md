@@ -1914,6 +1914,28 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   people say "eggs", so a literal `searchCommonFoods` found nothing for the most common sentence
   either fake will see. The fakes also carry a deliberate `delay` — a call that returns instantly
   hides every spinner, and looking at them is the point.
+  **A state the fake cannot reach is a state nobody looks at**, which is the failure mode this
+  whole file exists to avoid, so the routing carries four things it would not otherwise need. A
+  `LOG_WORDS` sentence naming something after a library word drafts a `LogSavedMeal` — checked
+  before the food match, or *"log my usual Overnight oats"* drafts the oats alone at
+  `COMMON_FOODS`' figures instead of the rows the user saved — and a name in no library is also how
+  a debug build reaches the *resolved to nothing* ending, the second `resolve` null being a missing
+  weigh-in that the seed always writes. A second magic word beside `fail`: say **"quietly"** and
+  the draft arrives with no prose above it, which is the one ending where a dismissal has no answer
+  to persist and `onSettle` abandons the turn rather than writing it. The tool branch emits
+  `Partial("")` between the preface and the result, exactly as `CoachRepositoryImpl`'s
+  `raw.setLength(0)` does, because that empty partial is what hands the screen back its thinking
+  mascot mid-turn. And `matchedFoods` no longer caps at `MAX_DRAFT_ROWS`: the real loop *rejects* a
+  long draft rather than truncating it, so a fake that capped answered a twelve-food sentence with
+  ten quiet rows and left the rejection unreachable. Two states stay real-AI-only on purpose —
+  offline never reaches the fake at all (`CoachViewModel.onSend` short-circuits on the
+  `NetworkMonitor`, so airplane mode is the whole test) and the `MAX_REPLY_CHARS` rejection belongs
+  to `sanitizeReply`, which only the real repository's chunks pass through. The sentence that
+  reaches each state is a table in `FakeCoachRepository`'s KDoc rather than a document of its own,
+  because that is the file someone opens when they flip the switch. `DebugSeed` gained two saved
+  meals and a recipe for the same reason the rest of it exists: `get_library` answered *"they have
+  not saved any meals or recipes"* on every fresh install, and a saved-meal draft had nothing to
+  resolve against.
   Nothing here needs a `checkUiLiterals` exception: the task walks
   `localizedModules.map { file("$it/src/main") }`, so a debug source set is outside its scope by
   construction — scaffolding that never ships is never translated. And `DebugAi.kt` logs once under

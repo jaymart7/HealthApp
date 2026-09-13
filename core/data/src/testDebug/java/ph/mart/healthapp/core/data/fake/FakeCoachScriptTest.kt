@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.coach.MAX_DRAFT_ROWS
 import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_LIBRARY
@@ -148,6 +149,47 @@ class FakeCoachScriptTest {
     fun `the plain answer admits it has nothing when there is no profile`() {
         val say = fakeCoachScript("hello") as FakeScript.Say
         assertTrue(say.text(null), "profile" in say.text(null))
+    }
+
+    /**
+     * A saved meal is named by the user, so the name is whatever followed the library word — and
+     * it is checked before the food match, or "log my usual Overnight oats" drafts the oats alone
+     * at `COMMON_FOODS`' figures instead of the rows the user actually saved.
+     */
+    @Test
+    fun `a named saved meal is drafted rather than read back`() {
+        val script = fakeCoachScript("log my usual Overnight oats for breakfast") as FakeScript.Propose
+        val action = script.actions.single() as CoachAction.LogSavedMeal
+        assertEquals("overnight oats", action.name)
+        assertEquals(MealType.Breakfast, action.mealType)
+    }
+
+    /** The other half of that rule: with no name after the library word there is nothing to draft,
+     * so the question stays a question. */
+    @Test
+    fun `a library sentence with no name still reads the library`() {
+        val script = fakeCoachScript("log my usual") as FakeScript.Tool
+        assertEquals(TOOL_GET_LIBRARY, script.name)
+    }
+
+    /** The second magic word. A card with no prose above it is the one ending where a dismissal
+     * has no answer to persist, and nothing else in a debug build reaches it. */
+    @Test
+    fun `saying quietly drafts with no prose`() {
+        val quiet = fakeCoachScript("quietly log a glass of water") as FakeScript.Propose
+        assertEquals("", quiet.preamble)
+        val spoken = fakeCoachScript("log a glass of water") as FakeScript.Propose
+        assertTrue(spoken.preamble, spoken.preamble.isNotEmpty())
+    }
+
+    /** Uncapped on purpose: the real loop rejects a draft past the ceiling rather than truncating
+     * it, and a fake that capped here would answer with ten quiet rows instead. */
+    @Test
+    fun `a sentence naming too many foods drafts past the ceiling`() {
+        val script = fakeCoachScript(
+            "log egg rice bacon salmon chicken bread milk cheese apple banana potato pasta",
+        ) as FakeScript.Propose
+        assertTrue("${script.actions.size} rows", script.actions.size > MAX_DRAFT_ROWS)
     }
 
     // The voice parse shares the same "match words against COMMON_FOODS" trick, and shares the
