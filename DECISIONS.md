@@ -799,6 +799,18 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `TopLevelBackStack` has no `replace`, so `AppScaffold` spends a `removeLast()` before the `add()`.
   That is also the one place the half-converted state shows: a sibling that is still a swap-in has
   no route, so the pop lands on the overview rather than on its page.
+- **The conversion landed, and `SubjectDetail.kt` is gone.** All fourteen subject pages are routes:
+  `Body()`'s fourteen-way dispatch, `EmptyDetail`, `emptyCopy`, `DetailHeader`, the `embedded` flag
+  and `SelfScrolling` are deleted, and `ProgressScreenState` is down to the overview's own three
+  fields — which groups are expanded and the two log sheets its empty-card hints raise. The
+  `pendingRoute` indirection went with the dispatch it existed to avoid threading callbacks through:
+  `ProgressOverview` takes a plain `onOpenSubject` and `onOpenRecap` now.
+  What the thirteen containers actually cost, measured rather than feared: eleven read one to three
+  flows, Activity and Weight and Nutrition and Measurements read three, and only Badges reads six —
+  and that one folds its six down to five numbers and a unit, so no series reaches its state.
+  `ProgressViewModel` is unchanged at thirteen, because the overview still folds every subject for
+  its cards, its Patterns card and its weekly recap.
+
 - **`Subject` replaced `ProgressTab`, and `group == null` is Badges.** Twelve metric subjects in
   four groups (Body · Nutrition · Training · Wellbeing) plus Badges, which is drawn as a summary row
   under the grids because it is an achievement list, not a trend — a metric card promising a preview
@@ -2422,6 +2434,23 @@ is `CLAUDE.md` → **Window width**. These are the calls behind it.
   `ViewModelStoreOwner` and a second copy of twelve repositories — the exact thing the swap-in was
   chosen to avoid. So the tab draws its own two panes and `SubjectDetail` takes an `embedded` flag:
   no back handler and no back arrow, because a pane beside its own list is not a level.
+- **The Progress tab no longer draws two panes, and the entry above it is superseded.** That one
+  argued Progress *could not* earn a `ListDetailSceneStrategy` scene — its detail was a swap-in over
+  `selectedSubject`, and routing it would buy a second `ViewModelStoreOwner` and a second copy of
+  twelve repositories — so the tab drew its own `Row` instead. Every subject page is a route now
+  (**Progress, recap & the energy check-in**), which removes both halves of that: there is no
+  `selectedSubject` for a `Row` to switch on, and the second store owner has already been bought and
+  paid for, per page, as a one-to-three-flow slice rather than a clone of the tab.
+  What does *not* follow is that Progress should now become a scene. A `ListDetailSceneStrategy`
+  wants a list whose rows are the detail routes; the Progress overview is four collapsible grids, a
+  recap card, a Patterns card and a badge row, and only the grid cards open subjects. Drawing that
+  beside one subject page would leave the recap and the patterns stranded in a 40% column, and the
+  fourteen pages are charts — a chart wants the width, which is the trade the Photos page already
+  made when it became a route. So: **one column at every width**, `OverviewPaneWeight` /
+  `DetailPaneWeight` / `twoPane` / `embedded` all gone, and the two `@PreviewScreenSizes` previews
+  with them. `:feature:profile`'s list-detail scene and the diary's calendar pane are untouched —
+  both have a real list.
+
 - **The diary's second pane is the calendar, and it is 320dp wide, not weighted.** The swap-in
   `FoodScreenState.calendarOpen` opens in a sheet was named as the pane that would earn one, and it
   has: at expanded width `FoodContent` draws `CalendarPanel` beside the day rather than over it.

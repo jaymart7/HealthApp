@@ -85,8 +85,7 @@ downstream is handed a plain `Boolean`. Two breakpoints, from `currentWindowAdap
   `BottomNavBar`'s sibling in `:core:designsystem`, never a `when` inside it. The docked FAB
   moves into the rail *collapsed*.
 - **≥840dp** (`WIDTH_DP_EXPANDED_LOWER_BOUND`) — Profile draws its detail routes beside it as a
-  Nav3 `ListDetailSceneStrategy` scene; Progress draws its own two panes (a `Row`, not a scene,
-  with `SubjectDetail` taking an `embedded` flag); the diary draws `CalendarPanel` as a fixed
+  Nav3 `ListDetailSceneStrategy` scene; the diary draws `CalendarPanel` as a fixed
   320dp pane and `DiaryDateHeader`'s `onOpenCalendar` goes null. Back is
   `BackNavigationBehavior.PopLatest`, never the default.
 - **Below 600dp none of this is reachable** — a phone renders exactly the path it always did.
@@ -96,8 +95,8 @@ draw beside Profile, read by *both* the pane metadata and `showsTabChrome`, so t
 chrome can never disagree. The entry beneath must be `ProfileRoute`. `showsTabChrome` is a pure
 function and `TabChromeTest` is its test.
 
-**Home and the camera flows stay one pane at every width**, and single columns are not
-width-capped.
+**Home, Progress and the camera flows stay one pane at every width**, and single columns are not
+width-capped. Progress used to draw two, over a subject swap-in it no longer has.
 
 Why each of those calls was made — the `NavigationSuiteScaffold` refusal, the top bar spanning
 both panes, why Progress cannot earn a scene, why the calendar pane is fixed rather than
@@ -274,11 +273,11 @@ throughout; a commissioned set replaces the five drawings, not the picker around
   the detail chrome — plus `weight`, `measurement`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's charts;
-  **every subject page is becoming a route**, one commit at a time — a converted one holds the full
-  `*Data`/`*State`/`*ViewModel`/`*Screen` quartet at its package root and draws its own `AppTopBar`
-  (`photo`, `sleep`, `mood`, `heart`, `supplement`, `strength`, `fasting`, `activity`, `cycle`, `pressure`, `measurement`, `weight`, `nutrition`, `achievement` — all fourteen), an unconverted one still holds a `components/*Detail.kt` body that
-  `SubjectDetail.kt` swaps in. `ProgressSubjectRoutes` in `ProgressNavigation.kt` is the one list of
-  which is which, read by `AppScaffold`'s `ownsTopBar`, by `Subject.route()` and by `TabChromeTest`.
+  **every subject page is a route**, holding the full `*Data`/`*State`/`*ViewModel`/`*Screen`
+  quartet at its package root and drawing its own `AppTopBar` at `WindowInsets(0)`. `Badges` is the
+  one with no `*State.kt`, having no chart range and no sheet. `ProgressSubjectRoutes` in
+  `ProgressNavigation.kt` is the one list of them, read by `AppScaffold`'s `ownsTopBar`, by
+  `Subject.route()` and by `TabChromeTest`.
   The tab's three other read-only surfaces are flows and routes of their own too —
   `comparison`, `timelapse` and `recap`, each with the same quartet, each declared in
   `ProgressNavigation.kt` so none of them wears the bottom bar or the FAB; `addphoto` is the

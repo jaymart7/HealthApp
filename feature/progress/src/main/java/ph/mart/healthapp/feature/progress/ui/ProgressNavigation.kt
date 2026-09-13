@@ -136,9 +136,8 @@ data object RecapRoute : NavKey
 
 /**
  * [scrollState] is hoisted for the usual reason: the FAB's scroll-collapse lives in AppScaffold,
- * which can't see a ScrollState created inside the screen. [twoPane] comes from there too: that is
- * the one place in the app that reads the window's width, so this tab is told rather than asking —
- * which is also why `:feature:progress` needs no adaptive dependency of its own.
+ * which can't see a ScrollState created inside the screen. There is no `twoPane` flag any more:
+ * every subject page is a route, so this tab draws one column at every width.
  *
  * Every surface but [ProgressRoute] itself is a route rather than an overlay drawn inside it, so
  * none of them wears the bottom bar or the FAB and none wires a back handler of its own.
@@ -150,7 +149,6 @@ data object RecapRoute : NavKey
  */
 fun EntryProviderScope<NavKey>.progressEntries(
     scrollState: ScrollState,
-    twoPane: Boolean = false,
     onOpenSubject: (Subject) -> Unit,
     onSwitchSubject: (Subject) -> Unit,
     onCompare: (Long, Long) -> Unit,
@@ -161,7 +159,6 @@ fun EntryProviderScope<NavKey>.progressEntries(
     entry<ProgressRoute> {
         ProgressScreen(
             scrollState = scrollState,
-            twoPane = twoPane,
             onOpenSubject = onOpenSubject,
             onOpenRecap = onOpenRecap,
         )

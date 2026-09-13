@@ -2,21 +2,14 @@ package ph.mart.healthapp.feature.progress.ui.progress
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DayNutrition
@@ -27,86 +20,53 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.data.todayEpochDay
-import ph.mart.healthapp.core.designsystem.component.FullScreenState
-import ph.mart.healthapp.core.designsystem.component.MascotAvatar
-import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
 import ph.mart.healthapp.feature.progress.ui.shared.recap
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
 
 /**
- * The surfaces this tab used to draw over itself are routes now, pushed by `AppScaffold`. This is
- * where a tap inside the tab becomes one: every open site writes
- * [ProgressScreenState.pendingRoute], and the effect below is the single place that consumes it.
- * The comparison and the timelapse are not among them — both are reached from the Photos page,
- * which is itself a route and raises them directly.
+ * The tab itself: the overview, and the two log sheets its empty-card hints can raise.
  *
- * [onOpenSubject] takes the subjects that have become routes; the rest are still drawn in place by
- * `SubjectDetail`. It goes on being both until the last subject converts, at which point the
- * pending-route indirection goes and the overview takes this callback directly.
+ * Every subject page is a route now, pushed by `AppScaffold` — so a tap here is a plain callback
+ * rather than a field written for an effect to consume, and this screen has no navigator of its own
+ * left. The comparison and the timelapse are not among the callbacks: both are reached from the
+ * Photos page, which is itself a route and raises them directly.
  */
 @Composable
 fun ProgressScreen(
     scrollState: ScrollState = rememberScrollState(),
-    twoPane: Boolean = false,
     onOpenSubject: (Subject) -> Unit = {},
     onOpenRecap: () -> Unit = {},
     viewModel: ProgressViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
-    val state = rememberProgressScreenState()
-    LaunchedEffect(state.pendingRoute) {
-        when (val destination = state.pendingRoute) {
-            is ProgressDestination.Page -> onOpenSubject(destination.subject)
-            ProgressDestination.Recap -> onOpenRecap()
-            null -> Unit
-        }
-        state.pendingRoute = null
-    }
     ProgressContent(
         uiState = uiState,
-        state = state,
+        state = rememberProgressScreenState(),
         scrollState = scrollState,
-        twoPane = twoPane,
+        onOpenSubject = onOpenSubject,
+        onOpenRecap = onOpenRecap,
     )
 }
 
-/** The overview is a two-column grid of cards; a detail page is a chart and its stats. Weighted
- * rather than a fixed list pane, because at 840dp there is barely room for the grid and at 1600dp
- * a pinned 360dp list would leave the chart swimming. */
-private const val OverviewPaneWeight = 0.4f
-private const val DetailPaneWeight = 0.6f
-
 /**
- * Overview or one subject's page — [ProgressScreenState.selectedSubject] is the whole navigator.
+ * One column at every width.
  *
- * A subject page is a swap-in rather than a Nav3 route for the reason every read-only surface on
- * this tab is: a route earns its own `ViewModelStoreOwner`, and with it a second copy of
- * [ProgressViewModel]'s twelve repositories, to draw something that writes nothing. The overview's
- * scroll position survives the round trip because [scrollState] is hoisted all the way up in
- * `AppScaffold`, and a detail page holds its own.
- *
- * [twoPane] is what makes that decision pay twice. This tab was already a list beside a detail in
- * one screen, so a window with room for both draws both — a `Row` over the `selectedSubject` that
- * already exists, no route, no `ListDetailSceneStrategy` (which needs two nav entries and would
- * charge the second repository set the swap-in was chosen to avoid), and nothing new to save.
- *
- * The overlays and sheets that are left sit outside the swap, so the meal gallery, the energy
- * check-in or any of the three log sheets can be opened from either surface and drawn over both.
- * The comparison, the timelapse and the recap are no longer among them — they are routes, and a
- * route draws over the whole window rather than over this tab.
+ * This tab used to draw two panes at ≥840dp, a `Row` over the `selectedSubject` a swap-in already
+ * had. There is no `selectedSubject` any more: a subject page is a route, and a route drawn beside
+ * the tab that pushed it would need a `ListDetailSceneStrategy` scene the Progress overview has
+ * never been shaped for. See `DECISIONS.md` -> **Adaptive layout**.
  */
 @Composable
 private fun ProgressContent(
     uiState: ProgressUiState,
     state: ProgressScreenState,
     scrollState: ScrollState = rememberScrollState(),
-    twoPane: Boolean = false,
+    onOpenSubject: (Subject) -> Unit = {},
+    onOpenRecap: () -> Unit = {},
 ) {
     val today = todayEpochDay()
     // Above everything and inside nothing: the recap spans nutrition, weight and consistency at
@@ -130,49 +90,15 @@ private fun ProgressContent(
     )
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
-            val subject = state.selectedSubject
-            val overview = @Composable { modifier: Modifier ->
-                ProgressOverview(
-                    uiState = uiState,
-                    state = state,
-                    weekRecap = weekRecap,
-                    projection = projection,
-                    scrollState = scrollState,
-                    modifier = modifier,
-                )
-            }
-            val detail = @Composable { open: Subject, modifier: Modifier ->
-                SubjectDetail(
-                    subject = open,
-                    uiState = uiState,
-                    state = state,
-                    canShare = weekRecap != null,
-                    // Beside its own overview, a page is a pane rather than a level: back would have
-                    // nothing to go back to, and the arrow would point at a list already on screen.
-                    embedded = twoPane,
-                    modifier = modifier,
-                )
-            }
-            if (twoPane) {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    overview(Modifier.weight(OverviewPaneWeight))
-                    VerticalDivider()
-                    if (subject == null) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = stringResource(R.string.progress_pick_heading),
-                            body = stringResource(R.string.progress_pick_body),
-                            modifier = Modifier.weight(DetailPaneWeight),
-                        )
-                    } else {
-                        detail(subject, Modifier.weight(DetailPaneWeight))
-                    }
-                }
-            } else if (subject == null) {
-                overview(Modifier)
-            } else {
-                detail(subject, Modifier)
-            }
+            ProgressOverview(
+                uiState = uiState,
+                state = state,
+                weekRecap = weekRecap,
+                projection = projection,
+                scrollState = scrollState,
+                onOpenSubject = onOpenSubject,
+                onOpenRecap = onOpenRecap,
+            )
 
             if (state.activeBloodPressureSheet) {
                 LogBloodPressureSheet(onDismiss = state::closeBloodPressureSheet)
@@ -215,37 +141,3 @@ private fun ProgressScreenPreview() {
     }
 }
 
-/** One subject open — the same screen, one field different. */
-@PreviewLightDark
-@Composable
-private fun ProgressDetailPreview() {
-    AppTheme {
-        ProgressContent(
-            uiState = previewState(),
-            state = ProgressScreenState(selectedSubject = Subject.Weight),
-        )
-    }
-}
-
-/** The same two states again with room for both panes — the overview keeps its grid, the page it
- * came from sits beside it, and the header has lost its arrow. */
-@PreviewScreenSizes
-@Composable
-private fun ProgressTwoPanePreview() {
-    AppTheme {
-        ProgressContent(
-            uiState = previewState(),
-            state = ProgressScreenState(selectedSubject = Subject.Weight),
-            twoPane = true,
-        )
-    }
-}
-
-/** Nothing picked yet: the detail pane says what it is for rather than sitting blank. */
-@PreviewScreenSizes
-@Composable
-private fun ProgressTwoPaneEmptyPreview() {
-    AppTheme {
-        ProgressContent(uiState = previewState(), state = ProgressScreenState(), twoPane = true)
-    }
-}

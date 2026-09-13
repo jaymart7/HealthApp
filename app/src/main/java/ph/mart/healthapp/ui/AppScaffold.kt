@@ -381,15 +381,12 @@ fun AppScaffold(
                         trainingEntries(onExitFlow = { topLevelBackStack.removeLast() })
                         progressEntries(
                             scrollState = progressScroll,
-                            twoPane = twoPane,
-                            onOpenSubject = { subject -> subject.route()?.let(topLevelBackStack::add) },
+                            onOpenSubject = { subject -> topLevelBackStack.add(subject.route()) },
                             // A sibling hop replaces rather than pushes, so Sleep -> Mood -> Heart
-                            // leaves one back step. Mid-migration a sibling that is still a swap-in
-                            // has no route, and popping to the overview is the honest answer — that
-                            // arm goes with `Subject.route()`'s null when the last subject converts.
+                            // leaves one back step rather than three — the switcher's own promise.
                             onSwitchSubject = { subject ->
                                 topLevelBackStack.removeLast()
-                                subject.route()?.let(topLevelBackStack::add)
+                                topLevelBackStack.add(subject.route())
                             },
                             onCompare = { first, second ->
                                 topLevelBackStack.add(PhotoComparisonRoute(first, second))

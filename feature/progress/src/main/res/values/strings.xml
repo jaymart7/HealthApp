@@ -13,9 +13,6 @@
     <!-- Overview -->
     <string name="progress_title">Progress</string>
     <string name="progress_recap">Recap</string>
-    <string name="progress_back">Back to Progress</string>
-    <string name="progress_pick_heading">Pick a subject</string>
-    <string name="progress_pick_body">Tap a card and its page opens here.</string>
     <string name="progress_more_in">More in %1$s</string>
     <string name="progress_show_group">Show %1$s</string>
     <string name="progress_group_none_tracked">%1$d subjects · none tracked</string>

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,60 +42,12 @@ import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.subjectsIn
 
-/** Every tap target on a detail page clears this. */
+/** Every tap target on a subject page clears this. */
 private val TapTarget = 48.dp
 
 /** "1M" needs nothing like a `labelLarge` word's worth of pill, and four of them have to share a
  * card header with its title. */
 private val RangePillWidth = 40.dp
-
-/**
- * The detail page's own toolbar. Not `AppTopBar`: that one belongs to `AppScaffold` and is what a
- * *route* a level above a tab gets. A subject page is a swap-in inside the Progress tab — it keeps
- * the bottom bar and the FAB — so it draws its own back arrow, and back goes to the overview
- * rather than out of the tab.
- *
- * [onBack] is null on a window wide enough to draw the page beside that overview: an arrow pointing
- * at a list already on screen is an arrow with nowhere to go. Nullable like [onShare] beside it, and
- * for the same reason — the row closes up rather than showing a dead control.
- */
-@Composable
-internal fun DetailHeader(
-    title: String,
-    onBack: (() -> Unit)?,
-    onShare: (() -> Unit)?,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (onBack != null) {
-            IconButton(onClick = onBack, modifier = Modifier.size(TapTarget)) {
-                Icon(
-                    imageVector = AppIcons.Back,
-                    contentDescription = stringResource(R.string.progress_back),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f).padding(start = if (onBack != null) 4.dp else 8.dp),
-        )
-        if (onShare != null) {
-            IconButton(onClick = onShare, modifier = Modifier.size(TapTarget)) {
-                Icon(
-                    imageVector = AppIcons.Share,
-                    contentDescription = stringResource(R.string.progress_recap),
-                    tint = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-        }
-    }
-}
 
 /** The one number the page is about, and what it is. Baseline-aligned so the unit sits on the
  * figure's feet rather than its middle. */
@@ -445,7 +396,6 @@ private fun DetailChromePreview() {
     AppTheme {
         Surface {
             Column(modifier = Modifier.padding(bottom = 16.dp)) {
-                DetailHeader(title = "Weight", onBack = {}, onShare = {})
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),

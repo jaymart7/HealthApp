@@ -62,7 +62,12 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
  * This is the surface that replaced thirteen peer tabs. Everything on it is a fold over
  * [ProgressUiState]: [summarizeAll] for the cards, [ph.mart.healthapp.feature.progress.ui.progress.recap]
  * for the week card, [ph.mart.healthapp.core.data.progress.goalProjection] for the insight.
- * No new ViewModel, no new route, no schema.
+ * No new ViewModel, no new schema.
+ *
+ * [onOpenSubject] and [onOpenRecap] are plain callbacks reaching `AppScaffold`. They used to be
+ * `state::open` and `state::openRecap`, written into a pending-route field, because the alternative
+ * was threading them through `SubjectDetail`'s fourteen-way dispatch. Every subject is a route now,
+ * so there is no dispatch left to thread through and no indirection to keep.
  *
  * The insight card is the screen's **one** `tertiaryContainer` background, and it is null-hidden
  * rather than degraded: with no target weight, a Maintain goal, or too few recent weigh-ins there
@@ -75,6 +80,8 @@ internal fun ProgressOverview(
     weekRecap: Recap?,
     projection: GoalProjection?,
     scrollState: ScrollState,
+    onOpenSubject: (Subject) -> Unit,
+    onOpenRecap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val today = todayEpochDay()
@@ -116,7 +123,7 @@ internal fun ProgressOverview(
             )
             // No recap, nothing to share — the same rule the card itself follows.
             if (weekRecap != null) {
-                IconButton(onClick = state::openRecap) {
+                IconButton(onClick = onOpenRecap) {
                     Icon(
                         imageVector = AppIcons.Share,
                         contentDescription = stringResource(R.string.progress_recap),
@@ -173,7 +180,7 @@ internal fun ProgressOverview(
                 cycleTracking = uiState.cycleTrackingOn,
                 expanded = group in state.expandedGroups,
                 onToggle = { state.toggleGroup(group) },
-                onOpen = state::open,
+                onOpen = onOpenSubject,
                 onHint = { subject ->
                     // The one hint that isn't a door to the detail page: Blood pressure's sheet is
                     // already on this screen, so "Log a reading" means it.
@@ -182,7 +189,7 @@ internal fun ProgressOverview(
                         // already on this screen, so "Log a reading"/"Log a day" mean them.
                         Subject.BloodPressure -> state.openBloodPressureSheet()
                         Subject.Cycle -> state.openCycleSheet()
-                        else -> state.open(subject)
+                        else -> onOpenSubject(subject)
                     }
                 },
             )
@@ -193,7 +200,7 @@ internal fun ProgressOverview(
             earned = tally.earned,
             total = tally.total,
             families = tally.families,
-            onClick = { state.open(Subject.Badges) },
+            onClick = { onOpenSubject(Subject.Badges) },
         )
     }
 }
@@ -263,6 +270,8 @@ private fun ProgressOverviewPreview() {
                 weekRecap = null,
                 projection = null,
                 scrollState = rememberScrollState(),
+                onOpenSubject = {},
+                onOpenRecap = {},
             )
         }
     }
@@ -280,6 +289,8 @@ private fun ProgressOverviewSparsePreview() {
                 weekRecap = null,
                 projection = null,
                 scrollState = rememberScrollState(),
+                onOpenSubject = {},
+                onOpenRecap = {},
             )
         }
     }

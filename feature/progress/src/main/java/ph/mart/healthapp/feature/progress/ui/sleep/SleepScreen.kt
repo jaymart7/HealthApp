@@ -99,10 +99,10 @@ private fun SleepContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
-                    // Always offered, unlike `DetailHeader`'s conditional share: whether there is a
-                    // week worth reporting is a fold over every subject at once, which a page
-                    // holding one series cannot see. `RecapScreen` folds its own and says so when
-                    // there is nothing.
+                    // Always offered, unlike the header this page replaced, whose share was gated
+                    // on there being a week worth reporting — a fold over every subject at once,
+                    // which a page holding one series cannot see. `RecapScreen` folds its own and
+                    // says so when there is nothing.
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
