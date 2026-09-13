@@ -23,6 +23,7 @@ import ph.mart.healthapp.feature.progress.ui.strength.StrengthViewModel
 import ph.mart.healthapp.feature.progress.ui.supplement.SupplementsViewModel
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseViewModel
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightViewModel
+import ph.mart.healthapp.feature.progress.ui.weight.WeightViewModel
 
 val progressModule = module {
     viewModelOf(::ProgressViewModel)
@@ -46,6 +47,7 @@ val progressModule = module {
     viewModelOf(::CycleViewModel)
     viewModelOf(::BloodPressureViewModel)
     viewModelOf(::MeasurementsViewModel)
+    viewModelOf(::WeightViewModel)
     viewModelOf(::ComparisonViewModel)
     viewModelOf(::TimelapseViewModel)
     viewModelOf(::RecapViewModel)

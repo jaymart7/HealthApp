@@ -21,8 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import ph.mart.healthapp.core.data.profile.EnergyCheckIn
-import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -37,7 +35,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.summarize
-import ph.mart.healthapp.feature.progress.ui.weight.components.WeightDetailBody
 
 /**
  * One subject's page — the surface behind every card on the overview, for the subjects that have
@@ -68,8 +65,6 @@ internal fun SubjectDetail(
     subject: Subject,
     uiState: ProgressUiState,
     state: ProgressScreenState,
-    checkIn: EnergyCheckIn?,
-    projection: GoalProjection?,
     canShare: Boolean,
     modifier: Modifier = Modifier,
     embedded: Boolean = false,
@@ -108,7 +103,7 @@ internal fun SubjectDetail(
                         .padding(bottom = DockedFabContentPadding),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Body(subject, uiState, state, checkIn, projection)
+                    Body(subject, uiState, state)
                     SubjectSwitcher(
                         subject = subject,
                         cycleTracking = uiState.cycleTrackingOn,
@@ -128,17 +123,14 @@ private fun ColumnScope.Body(
     subject: Subject,
     uiState: ProgressUiState,
     state: ProgressScreenState,
-    checkIn: EnergyCheckIn?,
-    projection: GoalProjection?,
 ) {
     when (subject) {
-        Subject.Weight -> WeightDetailBody(uiState, state, checkIn, projection)
         // Unreachable, and the list grows by one per conversion: `ProgressScreenState.open` pushes
         // a route for every subject in its `RoutedSubjects` set rather than selecting it, so this
         // page is never asked to draw them. The arms exist for the `when`. When the last subject
         // joins them, this whole file goes.
         Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements,
-        Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements,
+        Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements, Subject.Weight,
         -> Unit
         Subject.Nutrition -> NutritionDetailBody(uiState, state)
         Subject.Badges -> AchievementsDetailBody(uiState)
@@ -283,8 +275,6 @@ private fun SubjectDetailEmptyPreview() {
             subject = Subject.Heart,
             uiState = ProgressUiState(),
             state = ProgressScreenState(selectedSubject = Subject.Heart),
-            checkIn = null,
-            projection = null,
             canShare = false,
         )
     }

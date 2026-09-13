@@ -31,7 +31,7 @@ internal sealed interface ProgressDestination {
  * [ProgressScreenState.selectedSubject] and [ProgressScreenState.pendingRoute] all go, and
  * `ProgressOverview` takes a plain `onOpenSubject` instead.
  */
-private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements, Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements)
+private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements, Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements, Subject.Weight)
 
 /** UI-only — which subject is open, which range its chart is showing, which sheet is up has no
  * business meaning outside this screen; the actual weight/measurement/photo data lives in
@@ -42,7 +42,6 @@ internal class ProgressScreenState(
     expandedGroups: Set<SubjectGroup> = emptySet(),
     activeBloodPressureSheet: Boolean = false,
     activeCycleSheet: Boolean = false,
-    activeEnergyCheckIn: Boolean = false,
     activeMealGallery: Boolean = false,
     viewedMealPhotoId: Long? = null,
 ) {
@@ -70,7 +69,6 @@ internal class ProgressScreenState(
     var pendingRoute: ProgressDestination? by mutableStateOf(null)
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
     var activeCycleSheet: Boolean by mutableStateOf(activeCycleSheet)
-    var activeEnergyCheckIn: Boolean by mutableStateOf(activeEnergyCheckIn)
 
     /** The meal-photo gallery, a fifth overlay over this tab. */
     var activeMealGallery: Boolean by mutableStateOf(activeMealGallery)
@@ -136,14 +134,6 @@ internal class ProgressScreenState(
         viewedMealPhotoId = null
     }
 
-    fun openEnergyCheckIn() {
-        activeEnergyCheckIn = true
-    }
-
-    fun closeEnergyCheckIn() {
-        activeEnergyCheckIn = false
-    }
-
     companion object {
         @Suppress("UNCHECKED_CAST")
         fun Saver(): Saver<ProgressScreenState, Any> = listSaver(
@@ -155,7 +145,7 @@ internal class ProgressScreenState(
                     it.ranges.flatMap { (subject, range) -> listOf(subject.name, range.name) },
                     it.expandedGroups.map { group -> group.name },
                     it.activeBloodPressureSheet,
-                    it.activeEnergyCheckIn, it.activeCycleSheet,
+                    it.activeCycleSheet,
                     // Appended, never renumbered: an index that moves restores the wrong field
                     // into the wrong overlay. Twice now it has been renumbered anyway, both halves
                     // in the same commit each time — the recap's period moving into
@@ -177,10 +167,9 @@ internal class ProgressScreenState(
                         .toMap(),
                     expandedGroups = (saved[2] as List<String>).mapNotNull(::groupOrNull).toSet(),
                     activeBloodPressureSheet = saved[3] as Boolean,
-                    activeEnergyCheckIn = saved[4] as Boolean,
-                    activeCycleSheet = saved[5] as Boolean,
-                    activeMealGallery = saved[6] as Boolean,
-                    viewedMealPhotoId = saved[7] as Long?,
+                    activeCycleSheet = saved[4] as Boolean,
+                    activeMealGallery = saved[5] as Boolean,
+                    viewedMealPhotoId = saved[6] as Long?,
                 )
             },
         )

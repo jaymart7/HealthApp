@@ -21,6 +21,7 @@ import ph.mart.healthapp.feature.progress.ui.sleep.SleepScreen
 import ph.mart.healthapp.feature.progress.ui.strength.StrengthScreen
 import ph.mart.healthapp.feature.progress.ui.supplement.SupplementsScreen
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
+import ph.mart.healthapp.feature.progress.ui.weight.WeightScreen
 
 /** The whole progress-photo set — a full-bleed grid that launches [PhotoComparisonRoute] and
  * [TimelapseRoute] rather than a chart. It was the first subject page to become a route; the other
@@ -68,6 +69,10 @@ data object BloodPressureRoute : NavKey
 @Serializable
 data object MeasurementsRoute : NavKey
 
+/** Weigh-ins, the goal line and the energy check-in. Carries nothing: `WeightViewModel` reads all three flows itself. */
+@Serializable
+data object WeightRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -75,7 +80,7 @@ data object MeasurementsRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute, WeightRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -95,6 +100,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Cycle -> CycleRoute
     Subject.BloodPressure -> BloodPressureRoute
     Subject.Measurements -> MeasurementsRoute
+    Subject.Weight -> WeightRoute
     else -> null
 }
 
@@ -218,6 +224,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<MeasurementsRoute> {
         MeasurementsScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<WeightRoute> {
+        WeightScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,

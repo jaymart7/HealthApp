@@ -12,7 +12,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -23,10 +22,8 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.DailyTargets
-import ph.mart.healthapp.core.data.profile.EnergyCheckIn
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
-import ph.mart.healthapp.core.data.profile.energyCheckIn
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.goalProjection
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -36,9 +33,6 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
-import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
-import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
-import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.MealPhotoGallery
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
@@ -75,25 +69,11 @@ fun ProgressScreen(
         }
         state.pendingRoute = null
     }
-    // The one thing on this tab that writes has its own container, so ProgressViewModel stays
-    // read-only. It is read here rather than inside the card because the card and the overlay
-    // must fold the same numbers, and the profile is the one input ProgressUiState doesn't carry.
-    val energyViewModel: EnergyCheckInViewModel = koinViewModel()
-    val energyState by energyViewModel.collectAsState()
-    val today = todayEpochDay()
-    val checkIn = energyState.profile?.let { profile ->
-        remember(uiState.dailyNutrition, uiState.weightEntries, profile, today) {
-            energyCheckIn(uiState.dailyNutrition, uiState.weightEntries, profile, today)
-        }
-    }
     ProgressContent(
         uiState = uiState,
         state = state,
         scrollState = scrollState,
         twoPane = twoPane,
-        checkIn = checkIn,
-        addExerciseToBudget = energyState.profile?.addExerciseToBudget ?: true,
-        onApplyTarget = { kcal -> energyViewModel.handleEvent(EnergyCheckInEvent.OnApply(kcal)) },
     )
 }
 
@@ -128,9 +108,6 @@ private fun ProgressContent(
     state: ProgressScreenState,
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
-    checkIn: EnergyCheckIn? = null,
-    addExerciseToBudget: Boolean = true,
-    onApplyTarget: (Int) -> Unit = {},
 ) {
     val today = todayEpochDay()
     // Above everything and inside nothing: the recap spans nutrition, weight and consistency at
@@ -170,8 +147,6 @@ private fun ProgressContent(
                     subject = open,
                     uiState = uiState,
                     state = state,
-                    checkIn = checkIn,
-                    projection = projection,
                     canShare = weekRecap != null,
                     // Beside its own overview, a page is a pane rather than a level: back would have
                     // nothing to go back to, and the arrow would point at a list already on screen.
@@ -198,18 +173,6 @@ private fun ProgressContent(
                 overview(Modifier)
             } else {
                 detail(subject, Modifier)
-            }
-
-            // The one overlay that writes — the apply goes back up to the container that owns the
-            // profile rather than being reached for down here.
-            if (state.activeEnergyCheckIn && checkIn != null) {
-                EnergyCheckInScreen(
-                    checkIn = checkIn,
-                    unit = uiState.preferredUnit,
-                    addExerciseToBudget = addExerciseToBudget,
-                    onApply = onApplyTarget,
-                    onClose = state::closeEnergyCheckIn,
-                )
             }
 
             // The one overlay opened from inside a detail page rather than from the overview —
