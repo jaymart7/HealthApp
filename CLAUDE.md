@@ -276,7 +276,7 @@ throughout; a commissioned set replaces the five drawings, not the picker around
   `achievement`, one per subject holding that subject's charts;
   **every subject page is becoming a route**, one commit at a time — a converted one holds the full
   `*Data`/`*State`/`*ViewModel`/`*Screen` quartet at its package root and draws its own `AppTopBar`
-  (`photo`, `sleep`, `mood` so far), an unconverted one still holds a `components/*Detail.kt` body that
+  (`photo`, `sleep`, `mood`, `heart` so far), an unconverted one still holds a `components/*Detail.kt` body that
   `SubjectDetail.kt` swaps in. `ProgressSubjectRoutes` in `ProgressNavigation.kt` is the one list of
   which is which, read by `AppScaffold`'s `ownsTopBar`, by `Subject.route()` and by `TabChromeTest`.
   The tab's three other read-only surfaces are flows and routes of their own too —

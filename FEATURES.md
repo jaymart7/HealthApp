@@ -200,7 +200,7 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the group. The range is remembered per subject for the session. Empty subjects get a mascot page
   and no call to action. Subject pages are becoming **routes**, one at a time — a converted one
   draws the full window with no bottom bar and no FAB over its chart, the way Photos already does.
-  Converted so far: Photos, Sleep, Mood.
+  Converted so far: Photos, Sleep, Mood, Heart.
 - Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, a BMI chip naming its WHO band, and an insight card carrying the projection and the
   energy check-in.
@@ -213,6 +213,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   count of nights recorded. No way to type one in — FitPulse cannot measure sleep.
 - Mood: mood and energy as two sparse series placed by date, each averaged over its own
   denominator, and the count of days logged. Filled by Home's two-tap card, not from here.
+- Heart: imported days as bars spanning each day's lowest reading to its average — the one chart
+  that is not zero-based — plus that window's average, its lowest, and the days recorded. The
+  lowest is never called a resting rate.
 - Photos: a full-screen **route** — a 3:4 grid under
   sticky month headers, each month counted, opened by a header strip carrying the count, the span
   and the way into the player, with the strip's share in the toolbar. A hint bar teaches the

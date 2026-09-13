@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
+import ph.mart.healthapp.feature.progress.ui.heart.HeartScreen
 import ph.mart.healthapp.feature.progress.ui.mood.MoodScreen
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
@@ -28,6 +29,10 @@ data object SleepRoute : NavKey
 @Serializable
 data object MoodRoute : NavKey
 
+/** Imported heart-rate days, charted. Carries nothing: `HeartViewModel` reads the series itself. */
+@Serializable
+data object HeartRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -35,7 +40,7 @@ data object MoodRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -47,6 +52,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Photos -> PhotosRoute
     Subject.Sleep -> SleepRoute
     Subject.Mood -> MoodRoute
+    Subject.Heart -> HeartRoute
     else -> null
 }
 
@@ -114,6 +120,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<MoodRoute> {
         MoodScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<HeartRoute> {
+        HeartScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
