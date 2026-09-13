@@ -13,6 +13,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
 import ph.mart.healthapp.feature.progress.ui.sleep.SleepScreen
+import ph.mart.healthapp.feature.progress.ui.supplement.SupplementsScreen
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
 
 /** The whole progress-photo set — a full-bleed grid that launches [PhotoComparisonRoute] and
@@ -33,6 +34,10 @@ data object MoodRoute : NavKey
 @Serializable
 data object HeartRoute : NavKey
 
+/** Adherence per day, charted. Carries nothing: `SupplementsViewModel` reads the days itself. */
+@Serializable
+data object SupplementsRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -40,7 +45,7 @@ data object HeartRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -53,6 +58,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Sleep -> SleepRoute
     Subject.Mood -> MoodRoute
     Subject.Heart -> HeartRoute
+    Subject.Supplements -> SupplementsRoute
     else -> null
 }
 
@@ -127,6 +133,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<HeartRoute> {
         HeartScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<SupplementsRoute> {
+        SupplementsScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,

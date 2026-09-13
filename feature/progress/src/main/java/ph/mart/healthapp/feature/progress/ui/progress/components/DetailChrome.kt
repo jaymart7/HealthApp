@@ -419,14 +419,16 @@ internal fun SiblingSwitcher(
  * thirteen screens do not each repeat the filter.
  *
  * [cycleTracking] is `Profile.cycleTrackingOn`: off drops Cycle from the row, or a page would offer
- * a door to the one subject the overview has taken away. Badges has no group and draws nothing.
+ * a door to the one subject the overview has taken away. It defaults to true because Cycle lives in
+ * Wellbeing, so it is only the five Wellbeing pages that have to read the profile to pass it — the
+ * other eight would be passing a constant. Badges has no group and draws nothing.
  */
 @Composable
 internal fun SubjectSwitcher(
     subject: Subject,
-    cycleTracking: Boolean,
     onSelect: (Subject) -> Unit,
     modifier: Modifier = Modifier,
+    cycleTracking: Boolean = true,
 ) {
     val group = subject.group ?: return
     SiblingSwitcher(

@@ -43,7 +43,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.summarize
 import ph.mart.healthapp.feature.progress.ui.strength.components.StrengthDetailBody
-import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsDetailBody
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightDetailBody
 
 /**
@@ -158,11 +157,10 @@ private fun ColumnScope.Body(
         // a route for every subject in its `RoutedSubjects` set rather than selecting it, so this
         // page is never asked to draw them. The arms exist for the `when`. When the last subject
         // joins them, this whole file goes.
-        Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart -> Unit
+        Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements -> Unit
         Subject.Measurements -> MeasurementsDetailBody(uiState, state)
         Subject.Nutrition -> NutritionDetailBody(uiState, state)
         Subject.Fasting -> FastingDetailBody(uiState, state)
-        Subject.Supplements -> SupplementsDetailBody(uiState, state)
         Subject.Activity -> ActivityDetailBody(uiState, state)
         Subject.Strength -> StrengthDetailBody(uiState, state)
         Subject.Cycle -> CycleDetailBody(uiState, state)

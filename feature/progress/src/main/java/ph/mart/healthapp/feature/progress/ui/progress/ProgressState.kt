@@ -32,7 +32,7 @@ internal sealed interface ProgressDestination {
  * [ProgressScreenState.selectedSubject] and [ProgressScreenState.pendingRoute] all go, and
  * `ProgressOverview` takes a plain `onOpenSubject` instead.
  */
-private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart)
+private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements)
 
 /** UI-only — which subject is open, which range its chart is showing, which sheet is up has no
  * business meaning outside this screen; the actual weight/measurement/photo data lives in
