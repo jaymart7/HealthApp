@@ -41,11 +41,11 @@ enum class SubjectAccent { Primary, Secondary }
  * [coachQuestion] is what this page would ask the coach, and **null means the page carries no
  * coach action at all**.
  *
- * The seven that have one are the seven the coach can answer: its tools reach food and macros,
- * water, training, sleep, mood, fasting and the weight trend, and nothing else. A button on Heart
- * or Measurements would buy a shrug, and a shrug reads as a broken feature — the rule the
- * follow-up chips already follow. This is the one place that decision lives, so a page cannot
- * disagree with it.
+ * The eight that have one are the eight the coach can answer: its tools reach food and macros,
+ * water, training, steps, sleep, mood, fasting, the weight trend and — since `get_history` began
+ * carrying them — the change in a body measurement. Nothing else. A button on Heart would buy a
+ * shrug, and a shrug reads as a broken feature — the rule the follow-up chips already follow.
+ * This is the one place that decision lives, so a page cannot disagree with it.
  */
 enum class Subject(
     @StringRes val label: Int,
@@ -56,7 +56,7 @@ enum class Subject(
 ) {
     Weight(R.string.progress_subject_weight, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_weight, R.string.progress_ask_weight),
     Photos(R.string.progress_subject_photos, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_photos),
-    Measurements(R.string.progress_subject_measurements, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_measurements),
+    Measurements(R.string.progress_subject_measurements, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_measurements, R.string.progress_ask_measurements),
     Nutrition(R.string.progress_subject_nutrition, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_nutrition, R.string.progress_ask_nutrition),
     Fasting(R.string.progress_subject_fasting, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_fasting, R.string.progress_ask_fasting),
     Supplements(R.string.progress_subject_supplements, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_supplements),

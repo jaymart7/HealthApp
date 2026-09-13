@@ -280,9 +280,11 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Photo food recognition (the food-logging path above).
 - Daily insight — one line on Home, cached per day, falls back to three local rules.
 - Coach — a chat screen told the day's numbers, which can read the rest of the diary itself:
-  `get_day` for any past day's meals, macros, water and activity — plus that day's sleep, mood and
-  completed fast where those are tracked — `get_history` for a span of up to a month with
-  training, sleep and weigh-ins, and `get_library` for the meals and recipes the user has saved.
+  `get_day` for any past day's meals, macros, water and activity — plus that day's steps against
+  the step goal, and its sleep, mood and completed fast where those are tracked — `get_history`
+  for a span of up to a month with training, steps, sleep, weigh-ins and body measurements (both
+  of the last two as a change since the reading before, never as a figure), and `get_library` for
+  the meals and recipes the user has saved.
   History persisted, clearable with a confirm. The answer streams in word
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
@@ -299,14 +301,15 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a
   protein gap, room left, water short, a weigh-in to compare) and falling back to diary questions.
   Rule-based, not generated: tapping one sends it exactly as an opener does.
-- Coach doors — the diary's day header and the seven Progress subject pages the coach has tools
-  for (weight, nutrition, fasting, activity, strength, sleep, mood) carry an "ask the coach"
-  action. It opens the chat with that day's or that subject's question **in the field, unsent**.
+- Coach doors — the diary's day header and the eight Progress subject pages the coach has tools
+  for (weight, measurements, nutrition, fasting, activity, strength, sleep, mood) carry an
+  "ask the coach" action. It opens the chat with that day's or that subject's question **in the field, unsent**.
 - Coach stop — the send button becomes a stop button while an answer is streaming. The turn is
   abandoned, nothing is written, and the question goes back into the field.
 - Coach voice — a mic on the chat bar dictates the question through the system's own speech dialog
   and fills the field in. It never sends on its own, and it is absent where no recognizer is
-  installed.
+  installed. The keyboard's own Send key sends, under the same rule the button follows: not on a
+  blank field, and not while an answer is still streaming.
 - Meal ideas (above).
 - Talk-to-log (above) — a sentence parsed into several priced diary rows.
 - Every AI path degrades to a manual or local-derivation path offline.

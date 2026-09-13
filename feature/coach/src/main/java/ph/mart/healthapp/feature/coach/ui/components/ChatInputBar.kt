@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppTextField
@@ -39,6 +40,9 @@ import ph.mart.healthapp.feature.coach.R
  * `VoiceInputScreen` makes for talk-to-log: no `RECORD_AUDIO`, so no permission screen and nothing
  * to deny. The transcript **fills the field and stops there** — it never sends, because a misheard
  * question would be spent before it could be read, and typing is the same path either way.
+ *
+ * The keyboard's own key sends too — `ImeAction.Send`, wired to the same lambda the button calls
+ * and gated by the same [canSend], so the two can never disagree about whether a send is available.
  *
  * [speechAvailable] is hoisted only so the previews can draw the mic: the preview renderer has no
  * recognizer installed, and a component preview that can't show its own control is worth one
@@ -76,6 +80,8 @@ internal fun ChatInputBar(
                 onValueChange = onDraftChange,
                 placeholder = prompt,
                 modifier = Modifier.weight(1f),
+                imeAction = ImeAction.Send,
+                onImeAction = onSend.takeIf { canSend(draft, sending) },
             )
             if (speechAvailable) {
                 IconButton(onClick = { speech.launch(speechIntent(prompt)) }) {
@@ -100,7 +106,7 @@ internal fun ChatInputBar(
                     }
                 }
             } else {
-                IconButton(onClick = onSend, enabled = draft.isNotBlank()) {
+                IconButton(onClick = onSend, enabled = canSend(draft, sending)) {
                     Icon(
                         imageVector = AppIcons.Send,
                         contentDescription = stringResource(R.string.coach_input_send),
@@ -117,6 +123,14 @@ private fun rememberSpeechAvailable(): Boolean {
     val context = LocalContext.current
     return remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
 }
+
+/**
+ * Whether a send is available at all — the button's `enabled` and the keyboard's action key read
+ * the same function, so the return key can never start a turn the button refuses to. [sending] is
+ * redundant for the button, which is replaced by Stop while a turn runs, and load-bearing for the
+ * keyboard, which is still up.
+ */
+internal fun canSend(draft: String, sending: Boolean): Boolean = draft.isNotBlank() && !sending
 
 /**
  * What the field holds after a phrase comes back. It **appends** rather than replaces: a half-typed

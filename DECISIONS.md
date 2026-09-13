@@ -1571,11 +1571,11 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   persisted pair of rows, and a question arrived at by tapping an icon is a starting point the user
   will often narrow first, so a mistap costs nothing. A saved `prefilled` flag on
   `CoachScreenState` is what stops a rotation re-filling a field the user had cleared — an opening
-  move, not a state the screen returns to. **Only seven of the fourteen subject pages carry the
-  action**, and that is the entry's most important half: the coach's tools reach food and macros,
-  water, training, sleep, mood, fasting and the weight trend, so Heart, Measurements, Supplements,
-  Cycle, Blood pressure, Photos and Badges would buy a shrug — and a shrug reads as a broken
-  feature, the rule the follow-up chips already follow. `Subject.coachQuestion` is nullable and is
+  move, not a state the screen returns to. **Only some of the fourteen subject pages carry the
+  action** — seven when this was written, eight since `get_history` began carrying measurement
+  changes — and that is the entry's most important half: the action exists exactly where a tool
+  answers it, so Heart, Supplements, Cycle, Blood pressure, Photos and Badges would buy a shrug —
+  and a shrug reads as a broken feature, the rule the follow-up chips already follow. `Subject.coachQuestion` is nullable and is
   the one place that decision lives, read by the shared `AskCoachAction` in `DetailChrome`, so a
   page cannot disagree with it; `SubjectCoachTest` is what stops a new subject arriving with a
   question no tool answers. The plumbing is `onAskCoach: (String) -> Unit` through each feature's
@@ -1648,6 +1648,50 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   from a day is one the user does not track* — because omission alone is what a model fills in.
   **And a half-filled check-in reports the half that was filled**: `mood_day` stores 0 for "not
   set", never a zero score, which is `MoodDay`'s own rule reaching the model intact.
+- **Steps and body measurements widened the same two tools, and a measurement is a delta.** The
+  entry above is the precedent and this is it applied twice more: `formatDay` gained the day's
+  steps *against the step goal* — "8,432" is a number and "8,432 of 10,000" is an answer, and the
+  goal is on the profile `getDay` already reads for the calorie target — and `formatHistory` gained
+  the day's steps beside its training, because a 14,000-step day with no logged session used to
+  read to the coach as a rest day. `COACH_TOOLS` is still three declarations. Steps join the
+  *omitted, never zero-filled* group rather than the food/water/activity one, for that group's own
+  reason: they come off a watch, so a daily "0 steps" would have the coach nagging about a handoff
+  nobody switched on. **The measurement half is the load-bearing one.** A tape measure is the same
+  class of figure as a weigh-in, so it gets the weigh-in's rule — *a change leaves the device, the
+  reading never does* — and the two now share one implementation, a generic `deltaClauses()` fold
+  over `(day, value, clause)`, rather than a second nearly identical one that could quietly start
+  sending a waist whole while a weight stayed a delta. Each part is its own series, so a waist is
+  compared against the last waist; a day can carry several clauses, because a waist and a body fat
+  measured in one sitting are two changes and the first must not overwrite the second. Units are
+  the **stored** ones, cm and %, matching the kg a weigh-in already reports: the file is pure over
+  `:core:data` types with no profile to read a preference off, and a coach quoting inches while the
+  weight came back in kilograms is worse than one that is consistently metric — converting both is
+  its own pass. **`Subject.Measurements` gains its coach door with the tool**, which is exactly
+  what `SubjectCoachTest` exists to force: the closed list is eight now, and it only moved because
+  something answers it.
+- **The tap retires the proposal card; a Room emission retires the bubbles.** They read like one
+  rule and are two, and conflating them was a double-log. `onSettle` guarded on
+  `state.proposal.isEmpty()` and then *awaited* `settle()` — but nothing reduces before that
+  suspension, by design, since `withMessages` is what knows when Room has the rows. So a second tap
+  landing while the first write was in flight cleared the identical guard and wrote the meal twice,
+  the water total read a figure the first call had not committed, and two exchanges landed in the
+  chat. The card is now cleared in a `reduce` *before* the write is awaited, because the tap is the
+  decision and a decision already taken is not one to offer again. `pending` and `streaming` are
+  not: those have to outlive the write or the finished turn blinks off screen for the frames
+  between it and the invalidation, which is the rule `CoachUiStateTest` was written for. Its
+  *"retiring it any earlier would drop the card out from under the finger"* is about an unrelated
+  emission retiring a card nobody touched, and still holds.
+- **A cleared conversation clears the failure with it.** `withMessages` folds a Room emission and
+  has never touched `failure`, which is right — a failure describes a send, not a list. But the
+  empty state is gated on `failure == null`, so clearing a chat that ended in a failed send left
+  the apology and its Retry button over an empty screen with the starters hidden behind them, and
+  Retry re-sent into a conversation that no longer existed. Cleared in `OnClear`, where the clear
+  is, rather than in the fold: the emission is not what made it stale.
+- **The empty state is hidden while a turn is in flight, not only while the list is non-empty.**
+  On the very first send the list is still empty, so the four starters sat above the question the
+  user had just asked — and `itemCount`, which has never counted that item, stopped matching the
+  list and scrolled to the question instead of the answer growing under it. One clause,
+  `pending == null`, fixes both, which is the tell that they were one bug.
 - **A tool round's preface is dropped, not carried into the answer.** `send()`'s `raw` builder
   accumulated across rounds and was never reset, so a model that said *"Let me check yesterday."*
   before calling `get_day` produced *"Let me check yesterday.You had 1,850 kcal…"* — unseparated,

@@ -98,7 +98,12 @@ private fun CoachContent(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                if (uiState.loaded && uiState.messages.isEmpty() && uiState.failure == null) {
+                // `pending == null` too: on the very first send the list is still empty, and
+                // without it the four starters sit above the question the user just asked — and
+                // `itemCount` above, which has never counted this item, stops matching the list.
+                if (uiState.loaded && uiState.messages.isEmpty() &&
+                    uiState.pending == null && uiState.failure == null
+                ) {
                     item {
                         CoachEmptyState(onStarter = { onEvent(CoachEvent.OnSend(it)) })
                     }

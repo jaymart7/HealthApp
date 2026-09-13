@@ -15,7 +15,10 @@ import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.progress.MeasurementEntry
+import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
 /**
@@ -407,6 +410,37 @@ class CoachToolsTest {
         assertTrue(text, "Fasted: 16h 20m" in text)
     }
 
+    /** Steps ride the same day tool, and they carry the goal: "8,432" is a number and
+     * "8,432 of 10,000" is an answer. */
+    @Test
+    fun `a day carries its steps against the goal`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            steps = 8432,
+            stepGoal = 10_000,
+        )
+        assertTrue(text, "Steps: 8,432 of 10,000" in text)
+    }
+
+    /** No profile, so no goal — the count still stands on its own rather than failing the read. */
+    @Test
+    fun `steps with no goal report the count alone`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            steps = 8432,
+        )
+        assertTrue(text, "Steps: 8,432" in text)
+        assertTrue(text, " of " !in text)
+    }
+
     /**
      * Absent means *untracked*, and the whole point of omitting the line is that the coach cannot
      * then nag about a watch the user does not own. A zero-filled "No sleep recorded" every day
@@ -415,7 +449,7 @@ class CoachToolsTest {
     @Test
     fun `an untracked domain leaves no line at all`() {
         val text = formatDay("Today", emptyList(), null, waterGlasses = 0, exercise = emptyList())
-        listOf("Slept", "Felt", "Fasted").forEach {
+        listOf("Steps", "Slept", "Felt", "Fasted").forEach {
             assertTrue("$it appeared for an untracked domain: $text", it !in text)
         }
     }
@@ -552,6 +586,89 @@ class CoachToolsTest {
         )
         assertTrue(text, "- Today: 1800 kcal, 120g protein, 50 min activity, 360 kcal burned" in text)
         assertTrue(text, "- Yesterday: 2100 kcal, 140g protein, slept 6h 40m" in text)
+    }
+
+    /** Walking that never reached a workout. It sits on the day's line beside the training it is
+     * not, because a 14,000-step day with no logged session used to read as a rest day. */
+    @Test
+    fun `a span carries the day's steps`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 1,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            steps = listOf(StepDay(dateEpochDay = today, steps = 14_204, burnedKcal = 480)),
+        )
+        assertTrue(text, "- Today: nothing logged, 14,204 steps" in text)
+    }
+
+    /**
+     * A tape measure is the same class of figure as a weigh-in, and gets the same rule: the change
+     * leaves the device, the reading never does. This is that rule's own test — the twin of
+     * `a weigh-in never sends an absolute weight`.
+     */
+    @Test
+    fun `a measurement never sends an absolute figure`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 3,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            measurements = mapOf(
+                MeasurementPart.Waist to listOf(
+                    MeasurementEntry(MeasurementPart.Waist, today - 9, 86.0),
+                    MeasurementEntry(MeasurementPart.Waist, today, 84.0),
+                ),
+            ),
+        )
+        listOf("86", "84").forEach { assertTrue("$it leaked into: $text", it !in text) }
+        // A reading older than the window is still what the one inside it compares against.
+        assertTrue(text, "measured waist (-2.0 cm since the last)" in text)
+    }
+
+    /** Two parts measured in one sitting are two clauses, not one overwriting the other — and a
+     * body fat is a percentage, which is the only thing [MeasurementPart.percent] changes here. */
+    @Test
+    fun `two parts measured on one day both reach the line`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 1,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            measurements = mapOf(
+                MeasurementPart.Waist to listOf(
+                    MeasurementEntry(MeasurementPart.Waist, today - 7, 86.0),
+                    MeasurementEntry(MeasurementPart.Waist, today, 84.5),
+                ),
+                MeasurementPart.BodyFat to listOf(
+                    MeasurementEntry(MeasurementPart.BodyFat, today - 7, 22.0),
+                    MeasurementEntry(MeasurementPart.BodyFat, today, 20.9),
+                ),
+            ),
+        )
+        assertTrue(text, "measured waist (-1.5 cm since the last)" in text)
+        assertTrue(text, "measured body fat (-1.1 % since the last)" in text)
+    }
+
+    /** The first reading of a part has nothing behind it, exactly as the first weigh-in does — and
+     * saying so beats a delta invented against zero. */
+    @Test
+    fun `the first measurement of a part says it has nothing to compare against`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 1,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            measurements = mapOf(
+                MeasurementPart.Arms to listOf(MeasurementEntry(MeasurementPart.Arms, today, 38.0)),
+            ),
+        )
+        assertTrue(text, "measured arms (first one, nothing to compare against)" in text)
+        assertTrue(text, "38" !in text)
     }
 
     /** The series a day's line is counted off is the window, not the nutrition list: a day holding

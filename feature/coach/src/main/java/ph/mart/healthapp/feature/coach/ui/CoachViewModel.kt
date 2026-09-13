@@ -57,7 +57,13 @@ class CoachViewModel(
             is CoachEvent.OnSend -> onSend(event.question)
             CoachEvent.OnStop -> onStop()
             CoachEvent.OnRetry -> onRetry()
-            CoachEvent.OnClear -> intent { coachRepository.clear() }
+            // The failure goes with the conversation: `withMessages` folds a Room emission and
+            // never touches it, so a chat cleared after a failed send would keep the apology and
+            // its Retry button over an empty screen — with the starters hidden behind them.
+            CoachEvent.OnClear -> intent {
+                reduce { state.copy(failure = null) }
+                coachRepository.clear()
+            }
             is CoachEvent.OnConfirmProposal -> onSettle(event.kept, event.loggedLine)
             CoachEvent.OnDismissProposal -> onSettle(emptyList(), null)
         }
@@ -107,10 +113,12 @@ class CoachViewModel(
      * repository commits [kept] and the line is appended to what gets persisted, so reopening the
      * chat still shows that something was logged. Null is a dismissal.
      *
-     * Nothing is cleared here on success, for the reason [onSend] gives — `withMessages` is what
-     * knows when Room has the rows. The one case that needs clearing is a dismissal of a proposal
-     * that came with no prose: there is no answer to persist, so no write happens, so no emission
-     * arrives to retire the bubbles.
+     * The **card** is cleared here, on the tap, because the tap is the decision — and because
+     * nothing else reduces before the write is awaited, which made a second tap a second write.
+     * The **bubbles** are not: `withMessages` is what knows when Room has the rows, the reason
+     * [onSend] leaves them standing too. The one case that clears both is a dismissal of a
+     * proposal that came with no prose: there is no answer to persist, so no write happens, so no
+     * emission arrives to retire them.
      */
     private fun onSettle(kept: List<CoachAction>, loggedLine: String?) = intent {
         if (state.proposal.isEmpty()) return@intent
@@ -119,6 +127,11 @@ class CoachViewModel(
         if (answer.isEmpty()) {
             return@intent reduce { state.withTurnAbandoned() }
         }
+        // The card goes on the tap, before the write is awaited. Nothing else reduces until Room
+        // emits, so without this a second tap landing while `settle` is in flight clears the same
+        // guard and the meal is written twice. [pending] and [streaming] still stand — retiring
+        // *those* is `withMessages`' job, and the bubbles have to outlive the write.
+        reduce { state.copy(proposal = emptyList()) }
         // [kept] rather than `state.proposal`: the card is where a row was struck out, and what
         // comes back from it is what the user agreed to. A dismissal sends nothing at all.
         coachRepository.settle(question, answer, kept)

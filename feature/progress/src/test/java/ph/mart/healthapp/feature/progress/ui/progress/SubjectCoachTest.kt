@@ -8,9 +8,10 @@ import org.junit.Test
  * Which subject pages offer to ask the coach.
  *
  * The list is the whole point and it is a *closed* one: the coach's tools reach food and macros,
- * water, training, sleep, mood, fasting and the weight trend, so those seven pages carry the
- * action and the other seven carry nothing. A button on Heart or Measurements would buy a shrug,
- * and a shrug reads as a broken feature — the rule the coach's own follow-up chips follow.
+ * water, training, steps, sleep, mood, fasting, the weight trend and the change in a body
+ * measurement, so those eight pages carry the action and the other six carry nothing. A button on
+ * Heart would buy a shrug, and a shrug reads as a broken feature — the rule the coach's own
+ * follow-up chips follow.
  *
  * This test is what stops a new subject quietly arriving with a question the coach cannot answer:
  * adding one here means adding the tool that answers it.
@@ -23,6 +24,7 @@ class SubjectCoachTest {
         assertEquals(
             listOf(
                 Subject.Weight,
+                Subject.Measurements,
                 Subject.Nutrition,
                 Subject.Fasting,
                 Subject.Activity,
@@ -34,12 +36,11 @@ class SubjectCoachTest {
         )
     }
 
-    /** The four read-only surfaces and the body pages the coach cannot see: no action, no shrug. */
+    /** The pages the coach cannot see: no action, no shrug. */
     @Test
     fun `the subjects it cannot answer carry nothing`() {
         listOf(
             Subject.Photos,
-            Subject.Measurements,
             Subject.Supplements,
             Subject.Cycle,
             Subject.Heart,

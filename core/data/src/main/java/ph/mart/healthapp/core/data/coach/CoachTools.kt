@@ -32,14 +32,21 @@ import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.food.totalKcal
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.SleepRepository
+import ph.mart.healthapp.core.data.health.StepDay
+import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.formatDuration
+import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.data.progress.MeasurementEntry
+import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
@@ -115,15 +122,16 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             name = TOOL_GET_DAY,
             description = "Read one day of the user's diary in full: every food they logged with " +
                 "its calories and macros, the day's totals against their targets, water, any " +
-                "activity, and their sleep, mood and fasting where they track those. Call this " +
-                "before answering anything about a specific day.",
+                "activity, their steps, and their sleep, mood and fasting where they track " +
+                "those. Call this before answering anything about a specific day.",
             parameters = mapOf("days_ago" to daysAgoSchema),
         ),
         FunctionDeclaration(
             name = TOOL_GET_HISTORY,
             description = "Read a span of recent days: calories and protein per day, any " +
-                "training, any sleep, and any weigh-in. Call this for trends, averages, or " +
-                "anything about a week or a month.",
+                "training, any steps, any sleep, any weigh-in and any change in their body " +
+                "measurements. Call this for trends, averages, or anything about a week or a " +
+                "month.",
             parameters = mapOf(
                 "days" to Schema.integer(
                     description = "How many days back from today, up to $MAX_HISTORY_DAYS.",
@@ -339,6 +347,8 @@ internal fun formatDay(
     targetCalories: Int?,
     waterGlasses: Int,
     exercise: List<ExerciseEntry>,
+    steps: Int? = null,
+    stepGoal: Int? = null,
     sleepMinutes: Int? = null,
     mood: MoodDay? = null,
     fastedMinutes: Int? = null,
@@ -369,11 +379,18 @@ internal fun formatDay(
             appendLine("- Activity: $name, ${it.minutes} min, ${it.burnedKcal} kcal burned")
         }
     }
-    // The three that are *omitted* rather than reported empty. Food, water and activity are things
-    // the user does in this app, so a zero there is a fact worth stating; sleep comes off a watch,
-    // fasting and the mood check-in are opt-in surfaces, and a daily "No sleep recorded" would
-    // have the coach nagging about a feature that is not switched on. The system instruction
+    // The four that are *omitted* rather than reported empty. Food, water and activity are things
+    // the user does in this app, so a zero there is a fact worth stating; steps and sleep come off
+    // a watch, fasting and the mood check-in are opt-in surfaces, and a daily "No sleep recorded"
+    // would have the coach nagging about a feature that is not switched on. The system instruction
     // carries the other half of this: a category absent from a day is one the user does not track.
+    //
+    // Steps carry their goal because the goal is on the profile the caller already read, and
+    // "8,432 of 10,000" is the difference between reporting a number and answering the question.
+    steps?.let {
+        val goal = stepGoal?.let { target -> " of ${formatSteps(target)}" }.orEmpty()
+        appendLine("Steps: ${formatSteps(it)}$goal")
+    }
     sleepMinutes?.let { appendLine("Slept: ${formatDuration(it)}") }
     mood?.describe()?.let(::appendLine)
     fastedMinutes?.let { appendLine("Fasted: ${formatDuration(it)}") }
@@ -396,13 +413,17 @@ private fun MoodDay.describe(): String? {
  * `observeDailyNutrition()` returns a dense zero-filled series, so a silent omission would let the
  * model average over days the user never opened the app and report a number nobody ate.
  *
- * And **a weigh-in is reported as a change, never as a weight.** `InsightRequest` sends
+ * And **a body reading is reported as a change, never as a figure.** `InsightRequest` sends
  * `weightDeltaKg` and has never sent an absolute figure, for the data-minimisation reason the
  * 30-day health backfill is written against — and a tool is not a loophole in that rule just
  * because the user asked the question out loud. A delta answers "is this going the right way?"
  * in full, which is the only thing anyone asks a coach about a trend; a model that knows the user
- * weighs 94.2 kg answers a different, unasked question. The first weigh-in in a window has nothing
+ * weighs 94.2 kg answers a different, unasked question. The first reading in a window has nothing
  * to compare against and says so, the distinction [WeightEntry] trends already draw.
+ *
+ * A tape measure is the same class of figure as a weigh-in and gets the same treatment, through
+ * the same [deltaClauses] fold — one rule with one implementation, so a waist cannot quietly start
+ * being sent whole while a weight is not.
  */
 internal fun formatHistory(
     days: Int,
@@ -411,15 +432,22 @@ internal fun formatHistory(
     today: Long,
     exercise: List<ExerciseEntry> = emptyList(),
     sleep: List<SleepNight> = emptyList(),
+    steps: List<StepDay> = emptyList(),
+    measurements: Map<MeasurementPart, List<MeasurementEntry>> = emptyMap(),
 ): String = buildString {
     val from = today - days + 1
-    val deltas = weightDeltas(weights, from, today)
+    // Weigh-ins and tape measures in one map, because they are one rule — see the doc above.
+    val changes = weightClauses(weights, from, today)
+        .mergedWith(measurementClauses(measurements, from, today))
     val byDay = nutrition.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
     // A day's whole training, not one line per session: a week of two-a-days would otherwise be
     // fourteen lines of an answer that has six of them to spend.
     val training = exercise.filter { it.dateEpochDay in from..today }.groupBy { it.dateEpochDay }
     val slept = sleep.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
-    if (byDay.values.none { it.isLogged } && deltas.isEmpty() && training.isEmpty() && slept.isEmpty()) {
+    val walked = steps.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
+    if (byDay.values.none { it.isLogged } && changes.isEmpty() && training.isEmpty() &&
+        slept.isEmpty() && walked.isEmpty()
+    ) {
         return "Nothing logged in the last $days days."
     }
     appendLine("The last $days days, oldest first:")
@@ -442,31 +470,91 @@ internal fun formatHistory(
         val activity = training[date]?.let {
             ", ${it.sumOf { entry -> entry.minutes }} min activity, ${it.totalBurnedKcal()} kcal burned"
         }.orEmpty()
+        val walk = walked[date]?.let { ", ${formatSteps(it.steps)} steps" }.orEmpty()
         val night = slept[date]?.let { ", slept ${formatDuration(it.minutesAsleep)}" }.orEmpty()
-        appendLine("- $label: $food$activity$night${deltas[date].orEmpty()}")
+        val change = changes[date].orEmpty().joinToString("")
+        appendLine("- $label: $food$activity$walk$night$change")
     }
 }
 
 /**
- * Each weigh-in in the window against the one before it — including a weigh-in from *before* the
+ * Each reading in the window against the one before it — including a reading from *before* the
  * window, which is what makes the oldest day in a span carry a change rather than a shrug.
+ *
+ * Generic over the series because a weigh-in and a tape measure differ only in the words: both
+ * report a change and neither ever reports the reading. [clause] is handed the delta, or null for
+ * the first reading of its kind, and returns the whole clause that goes on the day's line.
+ *
+ * A **list** per day, because a day can carry several: a waist and a body fat measured in the same
+ * sitting are two clauses, not one overwriting the other.
  */
-private fun weightDeltas(weights: List<WeightEntry>, from: Long, to: Long): Map<Long, String> {
-    val sorted = weights.sortedBy { it.dateEpochDay }
+private fun <T> deltaClauses(
+    readings: List<T>,
+    from: Long,
+    to: Long,
+    day: (T) -> Long,
+    value: (T) -> Double,
+    clause: (delta: Double?) -> String,
+): Map<Long, List<String>> {
+    val sorted = readings.sortedBy(day)
     return buildMap {
         sorted.forEachIndexed { index, entry ->
-            if (entry.dateEpochDay !in from..to) return@forEachIndexed
+            val date = day(entry)
+            if (date !in from..to) return@forEachIndexed
             val prior = sorted.getOrNull(index - 1)
-            put(
-                entry.dateEpochDay,
-                if (prior == null) {
-                    ", weighed in (first one, nothing to compare against)"
-                } else {
-                    ", weighed in (%+.1f kg since the last)".format(entry.weightKg - prior.weightKg)
-                },
-            )
+            put(date, getOrElse(date) { emptyList() } + clause(prior?.let { value(entry) - value(it) }))
         }
     }
+}
+
+private fun weightClauses(weights: List<WeightEntry>, from: Long, to: Long): Map<Long, List<String>> =
+    deltaClauses(weights, from, to, WeightEntry::dateEpochDay, WeightEntry::weightKg) { delta ->
+        if (delta == null) {
+            ", weighed in (first one, nothing to compare against)"
+        } else {
+            ", weighed in (%+.1f kg since the last)".format(delta)
+        }
+    }
+
+/**
+ * The same fold, once per part: each part is its own series, so a waist is compared against the
+ * last waist and never against a thigh.
+ *
+ * **Stored units, not the user's** — cm and %, matching the kg a weigh-in already reports. The
+ * whole file is pure over `:core:data` types with no profile to read a preference off, and a coach
+ * that quoted inches while the weight came back in kilograms would be worse than one that is
+ * consistently metric. Converting both is its own pass.
+ */
+private fun measurementClauses(
+    measurements: Map<MeasurementPart, List<MeasurementEntry>>,
+    from: Long,
+    to: Long,
+): Map<Long, List<String>> = measurements.entries.fold(emptyMap()) { acc, (part, entries) ->
+    val unit = part.unitLabel(UnitSystem.Metric)
+    acc.mergedWith(
+        deltaClauses(entries, from, to, MeasurementEntry::dateEpochDay, MeasurementEntry::value) { delta ->
+            if (delta == null) {
+                ", measured ${part.promptName()} (first one, nothing to compare against)"
+            } else {
+                // The number is formatted on its own and interpolated: `unit` is "%" for a body
+                // fat, and a "%" inside the format string is a conversion specifier, not a sign.
+                ", measured ${part.promptName()} (${"%+.1f".format(delta)} $unit since the last)"
+            }
+        },
+    )
+}
+
+/** Prompt text, so it stays in Kotlin like every other word the model reads here. The enum's own
+ * `label` is the user-facing name and needs a `Context` this file never has. */
+private fun MeasurementPart.promptName(): String =
+    if (this == MeasurementPart.BodyFat) "body fat" else name.lowercase()
+
+/** One merge rule for the clause maps, so two series landing on the same day cannot lose one. */
+private fun Map<Long, List<String>>.mergedWith(
+    other: Map<Long, List<String>>,
+): Map<Long, List<String>> = buildMap {
+    putAll(this@mergedWith)
+    other.forEach { (date, clauses) -> put(date, getOrElse(date) { emptyList() } + clauses) }
 }
 
 // endregion
@@ -566,13 +654,15 @@ internal class CoachToolbox(
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
     private val profileRepository: ProfileRepository,
-    // The three the coach could not see at all: a training week, a bad night, an opt-in check-in.
-    // They widen what the two existing tools *answer with* rather than adding tools of their own —
-    // a question is still about one day or one span, and three more function declarations would be
-    // three more things for the model to pick wrong.
+    // The four the coach could not see at all: a training week, a bad night, an opt-in check-in,
+    // and the walking that never reached a workout. They widen what the two existing tools
+    // *answer with* rather than adding tools of their own — a question is still about one day or
+    // one span, and four more function declarations would be four more things to pick wrong.
+    // Measurements need no repository of their own: `progressRepository` above already has them.
     private val sleepRepository: SleepRepository,
     private val moodRepository: MoodRepository,
     private val fastingRepository: FastingRepository,
+    private val stepsRepository: StepsRepository,
 ) {
     /** Null for a tool this does not run — which is every write tool, and is how the caller's loop
      * tells a question from an instruction without a second lookup. */
@@ -621,12 +711,19 @@ internal class CoachToolbox(
             1 -> "Yesterday"
             else -> "$daysAgo days ago"
         }
+        // Read once: the calorie target and the step goal come off the same row, and two reads
+        // could disagree if the user edits a target while the turn is in flight.
+        val profile = profileRepository.observeProfile().first()
         return formatDay(
             label = label,
             foods = foodRepository.observeEntries(date).first(),
-            targetCalories = profileRepository.observeProfile().first()?.dailyTargets()?.calories,
+            targetCalories = profile?.dailyTargets()?.calories,
             waterGlasses = waterRepository.observeDay(date).first(),
             exercise = exerciseRepository.observeEntries(date).first(),
+            // Null when nothing was imported for that day, which is what leaves the line out
+            // entirely — the rule sleep, mood and fasting already follow.
+            steps = stepsRepository.observeSteps(date).first()?.steps,
+            stepGoal = profile?.stepGoal,
             sleepMinutes = sleepRepository.observeNights().first()
                 .firstOrNull { it.dateEpochDay == date }?.minutesAsleep,
             mood = moodRepository.observeDays().first().firstOrNull { it.dateEpochDay == date },
@@ -648,6 +745,8 @@ internal class CoachToolbox(
         today = todayEpochDay(),
         exercise = exerciseRepository.observeRecentEntries().first(),
         sleep = sleepRepository.observeNights().first(),
+        steps = stepsRepository.observeDays().first(),
+        measurements = progressRepository.observeMeasurements().first(),
     )
 }
 

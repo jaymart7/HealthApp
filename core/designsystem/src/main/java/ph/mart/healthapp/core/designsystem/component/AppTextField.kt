@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,11 +21,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** 12dp-corner text field, [MaterialTheme.colorScheme.outline] border, transparent fill. */
+/**
+ * 12dp-corner text field, [MaterialTheme.colorScheme.outline] border, transparent fill.
+ *
+ * [imeAction] and [onImeAction] are the keyboard's own action key — the shape `RulerPickerField`
+ * already uses. A field that leaves them alone keeps the return key that does nothing, which is
+ * right for a field in a form; a field that *is* the whole gesture (the coach's chat bar) says
+ * `ImeAction.Send` and hands it the same lambda its button calls. [onImeAction] null is what makes
+ * the key inert while the action is unavailable, so the keyboard can never do what the button
+ * refuses to.
+ */
 @Composable
 fun AppTextField(
     value: String,
@@ -32,6 +44,8 @@ fun AppTextField(
     label: String? = null,
     placeholder: String? = null,
     error: String? = null,
+    imeAction: ImeAction = ImeAction.Default,
+    onImeAction: (() -> Unit)? = null,
 ) {
     Column(modifier = modifier) {
         if (label != null) {
@@ -67,6 +81,15 @@ fun AppTextField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = imeAction),
+                // One handler for all of them: the key the IME shows is `imeAction`'s, so whichever
+                // callback fires is the one the caller asked for.
+                keyboardActions = KeyboardActions(
+                    onSend = { onImeAction?.invoke() },
+                    onDone = { onImeAction?.invoke() },
+                    onSearch = { onImeAction?.invoke() },
+                    onGo = { onImeAction?.invoke() },
+                ),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 // The label and placeholder are siblings, not part of the field, so without this a

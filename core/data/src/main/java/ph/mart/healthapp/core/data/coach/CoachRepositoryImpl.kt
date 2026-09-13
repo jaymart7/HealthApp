@@ -286,9 +286,13 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
             "you were not given or did not read from a tool — call the tool instead of guessing, " +
             "and if a tool comes back empty, say plainly that nothing was logged. Do not narrate " +
             "that you are about to look something up: call the tool and answer. A day may also " +
-            "carry their sleep, how they felt, and a completed fast; a span carries their " +
-            "training and their sleep. Where one of those is missing from a day, the user does " +
-            "not track it at all — answer with what is there and do not ask them for it.",
+            "carry their steps against their step goal, their sleep, how they felt, and a " +
+            "completed fast; a span carries their training, their steps, their sleep, and any " +
+            "weigh-in or body measurement as a change since the one before it — you are never " +
+            "told what they weigh or what any measurement is, only which way it moved, so answer " +
+            "about the direction and never ask for the figure. Where one of those is missing " +
+            "from a day, the user does not track it at all — answer with what is there and do " +
+            "not ask them for it.",
     )
     appendLine(
         "If the user asks you to log something, call log_food, log_water, log_exercise or " +
