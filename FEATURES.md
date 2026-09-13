@@ -288,6 +288,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   it: a food into today's diary, or glasses of water. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
   writes nothing.
+- Coach stop — the send button becomes a stop button while an answer is streaming. The turn is
+  abandoned, nothing is written, and the question goes back into the field.
 - Coach voice — a mic on the chat bar dictates the question through the system's own speech dialog
   and fills the field in. It never sends on its own, and it is absent where no recognizer is
   installed.

@@ -10,6 +10,7 @@
     <string name="coach_input_placeholder">Ask your coach</string>
     <string name="coach_input_send">Send</string>
     <string name="coach_input_speak">Speak your question</string>
+    <string name="coach_input_stop">Stop answering</string>
     <string name="coach_empty_greeting">Ask me about any day you\'ve logged — meals, macros, how the week\'s going.</string>
     <string name="coach_empty_limits">I can read your diary, and draft a log for you to confirm.</string>
 

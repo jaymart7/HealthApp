@@ -6,6 +6,7 @@ import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,9 +30,10 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.coach.R
 
 /**
- * The question field, the mic, and the send button. The button is disabled on a blank draft and
- * while a send is in flight — the ViewModel guards both anyway, but a live button that does
- * nothing is the worse half of that pair.
+ * The question field, the mic, and the send button — which becomes a **stop** button while a send
+ * is in flight, rather than the bare spinner that used to sit there. An answer can take several
+ * seconds and a model can hang; a progress indicator that cannot be pressed leaves leaving the
+ * screen as the only way out, and that costs the user the question they typed.
  *
  * Speech is the system's own dialog ([RecognizerIntent.ACTION_RECOGNIZE_SPEECH]), the same call
  * `VoiceInputScreen` makes for talk-to-log: no `RECORD_AUDIO`, so no permission screen and nothing
@@ -49,6 +51,7 @@ internal fun ChatInputBar(
     sending: Boolean,
     onDraftChange: (String) -> Unit,
     onSend: () -> Unit,
+    onStop: () -> Unit,
     modifier: Modifier = Modifier,
     speechAvailable: Boolean = rememberSpeechAvailable(),
 ) {
@@ -84,7 +87,18 @@ internal fun ChatInputBar(
                 }
             }
             if (sending) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                // The spinner stays — it is what says the turn is still running — but it is now
+                // the ring *around* the control rather than the control itself.
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(40.dp), strokeWidth = 2.dp)
+                    IconButton(onClick = onStop) {
+                        Icon(
+                            imageVector = AppIcons.Stop,
+                            contentDescription = stringResource(R.string.coach_input_stop),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             } else {
                 IconButton(onClick = onSend, enabled = draft.isNotBlank()) {
                     Icon(
@@ -128,6 +142,7 @@ private fun ChatInputBarPreview() {
                 sending = false,
                 onDraftChange = {},
                 onSend = {},
+                onStop = {},
                 speechAvailable = true,
             )
         }
@@ -144,6 +159,7 @@ private fun ChatInputBarSendingPreview() {
                 sending = true,
                 onDraftChange = {},
                 onSend = {},
+                onStop = {},
                 speechAvailable = true,
             )
         }
@@ -161,6 +177,7 @@ private fun ChatInputBarNoSpeechPreview() {
                 sending = false,
                 onDraftChange = {},
                 onSend = {},
+                onStop = {},
                 speechAvailable = false,
             )
         }

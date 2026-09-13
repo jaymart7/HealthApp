@@ -90,7 +90,14 @@ private fun CoachContent(
                     }
                 }
                 items(uiState.messages, key = { it.id }) { message ->
-                    ChatBubble(text = message.text, fromUser = message.fromUser)
+                    ChatBubble(
+                        text = message.text,
+                        fromUser = message.fromUser,
+                        // The newest answer, and only it: the live region is what makes a finished
+                        // reply reach a screen reader at all, and marking every bubble would
+                        // re-announce the whole conversation.
+                        announce = !message.fromUser && message.id == uiState.messages.last().id,
+                    )
                 }
                 // The turn in flight, neither half of it in Room yet: the question is on screen
                 // from the tap, and the answer grows under it in place.
@@ -140,6 +147,14 @@ private fun CoachContent(
                 onSend = {
                     onEvent(CoachEvent.OnSend(state.draft))
                     state.draft = ""
+                },
+                // The abandoned question goes back in the field — the reading `CoachFailure`
+                // already gives one that failed to send: stopping must not cost the user their
+                // typing. Only into an empty field, since the field stays editable while a turn
+                // runs and whatever is in it is newer.
+                onStop = {
+                    if (state.draft.isBlank()) state.draft = uiState.pending.orEmpty()
+                    onEvent(CoachEvent.OnStop)
                 },
             )
         }

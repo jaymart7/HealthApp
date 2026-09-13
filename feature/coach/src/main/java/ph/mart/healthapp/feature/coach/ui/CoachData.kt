@@ -64,6 +64,18 @@ internal fun CoachUiState.withMessages(
 }
 
 /**
+ * The turn in flight, dropped. Nothing was persisted — the repository writes a question only once
+ * it has an answer — so there is nothing to reconcile and all three go together.
+ *
+ * Two callers, and they are the same ending reached two ways: the stop button, and a proposal
+ * dismissed when no prose came with it (no answer to persist means no write, so no Room emission
+ * arrives to retire the bubbles). A shared function rather than the same `copy` twice, because
+ * missing a field in one of them strands the input bar.
+ */
+internal fun CoachUiState.withTurnAbandoned(): CoachUiState =
+    copy(pending = null, streaming = null, proposal = null)
+
+/**
  * What to show when a send didn't produce an answer. [reason] says why in one line; [insight] is
  * the rule-based line for the same day — the identical fallback Home's insight card uses, so
  * offline the coach still says something true about today rather than only apologising.
@@ -87,6 +99,10 @@ data class CoachFailure(@StringRes val reason: Int, val insight: String?, val qu
  */
 sealed interface CoachEvent {
     data class OnSend(val question: String) : CoachEvent
+
+    /** Abandons the turn in flight. Nothing is persisted — a stopped turn is one the user walked
+     * away from, which is the reading leaving the screen already had. */
+    data object OnStop : CoachEvent
     data object OnRetry : CoachEvent
     data object OnClear : CoachEvent
     data class OnConfirmProposal(val loggedLine: String) : CoachEvent

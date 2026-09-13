@@ -130,6 +130,18 @@ internal class CoachRepositoryImpl(
                 return@flow emit(CoachReply.Proposal(action))
             }
 
+            // Whatever prose came with a *read* call is "let me check yesterday", not an answer,
+            // so it is dropped rather than carried into the round that answers — otherwise the
+            // two concatenate, unseparated, into the bubble and into the row `finish` writes. The
+            // empty partial hands the screen back its thinking mascot while the tool runs.
+            //
+            // Below the write check, never above it: a write call's prose *is* the answer, and it
+            // is the copy `settle` persists. And a turn that spends every round reaching for tools
+            // now arrives at `finish` with nothing, which already reads as a failure — which is
+            // the honest ending, rather than persisting "let me look that up" as the reply.
+            raw.setLength(0)
+            emit(CoachReply.Partial(""))
+
             // Reads run now and go straight back into the same turn. Run before the builder, not
             // inside it: `content {}` takes a plain lambda and a tool read is suspending.
             val results = calls.map { it to (toolbox.runTool(it.name, it.args) ?: UNKNOWN_TOOL) }
@@ -243,7 +255,8 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
             "as how many days back from today, where 0 is today and 1 is yesterday; today is day " +
             "number ${todayEpochDay()} internally, so just count backwards. Never state a figure " +
             "you were not given or did not read from a tool — call the tool instead of guessing, " +
-            "and if a tool comes back empty, say plainly that nothing was logged.",
+            "and if a tool comes back empty, say plainly that nothing was logged. Do not narrate " +
+            "that you are about to look something up: call the tool and answer.",
     )
     appendLine(
         "If the user asks you to log something, call log_food or log_water. These do not log " +

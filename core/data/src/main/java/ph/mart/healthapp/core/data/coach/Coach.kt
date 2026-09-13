@@ -53,6 +53,11 @@ sealed interface CoachAction {
  * to say all land on the same fallback, exactly as they do for the daily insight.
  */
 sealed interface CoachReply {
+    /**
+     * The answer so far. Empty is a real value and means *forget what I said*: it is emitted when
+     * a tool round's preface is dropped, and the screen reads it as "no answer yet" — the thinking
+     * mascot — rather than as an empty bubble.
+     */
     data class Partial(val text: String) : CoachReply
 
     /**

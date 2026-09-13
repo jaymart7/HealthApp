@@ -1576,6 +1576,38 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   reaches one entry *behind* the window so the oldest day in a span still carries a change rather
   than a shrug, and `CoachToolsTest` asserts no absolute figure appears in the text at all. And `MAX_TOOL_ROUNDS` is a flat 3
   — ponytail, not a token budget; price it if a tool ever fans out.
+- **A tool round's preface is dropped, not carried into the answer.** `send()`'s `raw` builder
+  accumulated across rounds and was never reset, so a model that said *"Let me check yesterday."*
+  before calling `get_day` produced *"Let me check yesterday.You had 1,850 kcal…"* — unseparated,
+  streamed that way, and written to Room that way; it also spent the 700-token output budget
+  twice. The reset sits **below** the write-tool check, which is the whole subtlety: a *write*
+  call's prose is the answer, and the copy `settle()` persists. Three things follow. A turn that
+  spends every round reaching for tools now reaches `finish()` empty and fails honestly, rather
+  than persisting *"let me look that up"* as the reply. An empty `CoachReply.Partial` is emitted
+  with the reset and the ViewModel maps it to `streaming = null`, so the mascot returns to
+  *Thinking* while the tool runs instead of the bubble jumping from preface to answer — empty is a
+  real value on that type now, meaning *forget what I said*, and there is still no new variant.
+  And the prompt gained the cheap half of the same fix — *do not narrate that you are about to
+  look something up* — which saves tokens rather than spending them; the reset is what makes the
+  behaviour correct whether or not the model obeys.
+- **The coach's send button becomes a stop button, and a stopped turn costs nothing.** An answer
+  takes seconds, a model can hang, and `pending != null` locks the input bar — so an unpressable
+  spinner left *leaving the screen* as the only way out, which also lost the typed question. The
+  shape is `PhotoCaptureViewModel`'s, held `Job` and all, because that flow had already answered
+  this for the photo path. Nothing is persisted, which needed no new rule: the repository writes a
+  question only once it has an answer, so a stopped turn is exactly a turn the user walked away
+  from. The question goes back into the field — the reading `CoachFailure.question` already gives
+  a send that failed — but only into an empty one, since the field stays editable while a turn
+  runs and whatever is in it is newer. The clearing is its own `intent`, because a cancelled one
+  cannot reduce, and it is `withTurnAbandoned()` rather than a second `copy`: the dismissal of a
+  prose-less proposal is the same ending reached another way, and a field missed in one of the two
+  strands the input bar. That pure function is the JVM test, the rule `withMessages` set.
+- **The newest coach answer is a polite live region; the streaming one is not.** A finished reply
+  arriving is the one thing on this screen a screen reader user would otherwise have to go looking
+  for, so `ChatBubble` takes an `announce` flag and the screen sets it on the last non-user message
+  only. Not on `StreamingBubble`, and not on every bubble: a live region over text that grows per
+  chunk makes TalkBack restart the whole answer on every chunk, and marking them all re-announces
+  the conversation.
 - **The coach drafts a row; the user commits it. That narrows "talking to a coach is not logging"
   rather than repealing it.** `log_food` and `log_water` are declared to the model and *never
   executed*: a write call stops the stream, becomes a `CoachAction`, and nothing at all is

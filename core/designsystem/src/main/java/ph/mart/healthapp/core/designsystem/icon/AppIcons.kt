@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.Bedtime
@@ -149,6 +150,9 @@ object AppIcons {
     val Run: ImageVector = Icons.Filled.DirectionsRun
     val Send: ImageVector = Icons.AutoMirrored.Filled.Send
     val Share: ImageVector = Icons.Filled.Share
+    /** Abandon something already running — the coach's answer mid-stream. Not [Close], which
+     * dismisses a surface the user opened. */
+    val Stop: ImageVector = Icons.Filled.Stop
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment
     val TrendDown: ImageVector = Icons.Filled.ArrowDownward
     /** The third trend glyph — a movement too small to call, or too few readings to call one.

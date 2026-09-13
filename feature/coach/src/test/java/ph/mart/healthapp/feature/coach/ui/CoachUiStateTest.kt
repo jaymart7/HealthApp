@@ -91,6 +91,20 @@ class CoachUiStateTest {
         assertNull(next.pending)
     }
 
+    /**
+     * The stop button, and a proposal dismissed with no prose behind it: both end a turn that
+     * wrote nothing, so all three in-flight fields have to go at once or the input bar stays
+     * locked with no conversation under it.
+     */
+    @Test
+    fun `abandoning a turn clears every in-flight field`() {
+        val next = awaitingTap.withTurnAbandoned()
+        assertNull(next.pending)
+        assertNull(next.streaming)
+        assertNull(next.proposal)
+        assertEquals(awaitingTap.messages, next.messages)
+    }
+
     @Test
     fun `the first emission only marks the conversation loaded`() {
         val next = CoachUiState().withMessages(emptyList(), request = null)

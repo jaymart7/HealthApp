@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.coach.ui
 
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.OrbitContainer
@@ -45,9 +46,15 @@ class CoachViewModel(
             )
         }
 
+    /** Lets [CoachEvent.OnStop] cancel just the turn in flight — the shape
+     * `PhotoCaptureViewModel` already uses for its recognition call, and cancellation reaches the
+     * Firebase AI SDK cooperatively through structured concurrency. */
+    private var sendJob: Job? = null
+
     fun handleEvent(event: CoachEvent) {
         when (event) {
             is CoachEvent.OnSend -> onSend(event.question)
+            CoachEvent.OnStop -> onStop()
             CoachEvent.OnRetry -> onRetry()
             CoachEvent.OnClear -> intent { coachRepository.clear() }
             is CoachEvent.OnConfirmProposal -> onSettle(event.loggedLine)
@@ -77,6 +84,19 @@ class CoachViewModel(
         }
     }
 
+    /**
+     * Ends the turn where it stands. Nothing is persisted, which is not a special case: the
+     * repository only ever writes a question once it has an answer, so a stopped turn is exactly
+     * a turn the user walked away from.
+     *
+     * The clearing is its own intent because a cancelled one cannot reduce — the same reason
+     * [onSettle]'s empty-answer branch exists.
+     */
+    private fun onStop() {
+        sendJob?.cancel()
+        intent { reduce { state.withTurnAbandoned() } }
+    }
+
     private fun onRetry() = intent {
         state.failure?.question?.let(::onSend)
     }
@@ -96,7 +116,7 @@ class CoachViewModel(
         val question = state.pending ?: return@intent
         val answer = listOfNotNull(state.streaming, loggedLine).joinToString("\n")
         if (answer.isEmpty()) {
-            return@intent reduce { state.copy(pending = null, streaming = null, proposal = null) }
+            return@intent reduce { state.withTurnAbandoned() }
         }
         coachRepository.settle(question, answer, action.takeIf { loggedLine != null })
     }
@@ -115,34 +135,40 @@ class CoachViewModel(
      * the coach has drafted a row nobody has agreed to, so no write has happened and the bubbles
      * must stay up. [onSettle] is what ends it.
      */
-    private fun onSend(question: String) = intent {
-        val text = question.trim()
-        if (text.isEmpty() || state.pending != null) return@intent
-        reduce { state.copy(pending = text, streaming = null, failure = null, proposal = null) }
+    private fun onSend(question: String) {
+        sendJob = intent {
+            val text = question.trim()
+            if (text.isEmpty() || state.pending != null) return@intent
+            reduce { state.copy(pending = text, streaming = null, failure = null, proposal = null) }
 
-        // Read once and reused for the message below: a second recheck could disagree with the
-        // one that decided whether to call, and then an offline send would report a model failure.
-        val online = networkMonitor.isOnline()
-        val replies =
-            if (online) coachRepository.send(text, state.request) else flowOf(CoachReply.Failed)
+            // Read once and reused for the message below: a second recheck could disagree with
+            // the one that decided whether to call, and then an offline send would report a model
+            // failure.
+            val online = networkMonitor.isOnline()
+            val replies =
+                if (online) coachRepository.send(text, state.request) else flowOf(CoachReply.Failed)
 
-        replies.collect { reply ->
-            reduce {
-                when (reply) {
-                    is CoachReply.Partial -> state.copy(streaming = reply.text)
-                    // Nothing is written and nothing is cleared: the turn stays in flight, on
-                    // screen, until the user's tap ends it through `onSettle`.
-                    is CoachReply.Proposal -> state.copy(proposal = reply.action)
-                    CoachReply.Failed -> state.copy(
-                        pending = null,
-                        streaming = null,
-                        proposal = null,
-                        failure = CoachFailure(
-                            reason = if (online) FAILED_REASON else OFFLINE_REASON,
-                            insight = state.request?.let(::insightFor),
-                            question = text,
-                        ),
-                    )
+            replies.collect { reply ->
+                reduce {
+                    when (reply) {
+                        // Empty is the preface of a tool round being dropped, and `null` is what
+                        // puts the thinking mascot back while the tool runs — an empty bubble
+                        // would be the wrong half of that.
+                        is CoachReply.Partial -> state.copy(streaming = reply.text.takeIf(String::isNotEmpty))
+                        // Nothing is written and nothing is cleared: the turn stays in flight, on
+                        // screen, until the user's tap ends it through `onSettle`.
+                        is CoachReply.Proposal -> state.copy(proposal = reply.action)
+                        CoachReply.Failed -> state.copy(
+                            pending = null,
+                            streaming = null,
+                            proposal = null,
+                            failure = CoachFailure(
+                                reason = if (online) FAILED_REASON else OFFLINE_REASON,
+                                insight = state.request?.let(::insightFor),
+                                question = text,
+                            ),
+                        )
+                    }
                 }
             }
         }

@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
@@ -31,11 +34,26 @@ import ph.mart.healthapp.feature.coach.R
  * The user's side is the mirror: `secondaryContainer`, right-aligned, no tail and no avatar. It
  * deliberately does *not* reuse the mascot bubble flipped — the tail points at whoever is
  * speaking, and there is no second face on this screen.
+ *
+ * [announce] marks this bubble a polite live region, and the screen sets it on the newest coach
+ * message only: a finished answer arriving is the one thing on this screen a screen reader user
+ * would otherwise have to go looking for. Deliberately *not* on [StreamingBubble] — a live region
+ * over text that grows per chunk makes TalkBack restart the whole answer on every chunk.
  */
 @Composable
-internal fun ChatBubble(text: String, fromUser: Boolean, modifier: Modifier = Modifier) {
+internal fun ChatBubble(
+    text: String,
+    fromUser: Boolean,
+    modifier: Modifier = Modifier,
+    announce: Boolean = false,
+) {
+    val announced = if (announce) {
+        modifier.semantics { liveRegion = LiveRegionMode.Polite }
+    } else {
+        modifier
+    }
     if (fromUser) {
-        Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Row(modifier = announced.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.secondaryContainer,
@@ -51,7 +69,7 @@ internal fun ChatBubble(text: String, fromUser: Boolean, modifier: Modifier = Mo
         }
     } else {
         Row(
-            modifier = modifier.fillMaxWidth(),
+            modifier = announced.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top,
         ) {
