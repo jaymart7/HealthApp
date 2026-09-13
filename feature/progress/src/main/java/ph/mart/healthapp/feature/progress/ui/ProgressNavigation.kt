@@ -6,6 +6,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
+import ph.mart.healthapp.feature.progress.ui.fasting.FastingScreen
 import ph.mart.healthapp.feature.progress.ui.heart.HeartScreen
 import ph.mart.healthapp.feature.progress.ui.mood.MoodScreen
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
@@ -43,6 +44,10 @@ data object SupplementsRoute : NavKey
 @Serializable
 data object StrengthRoute : NavKey
 
+/** Completed fasts, charted against the current goal. Carries nothing: `FastingViewModel` reads both itself. */
+@Serializable
+data object FastingRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -50,7 +55,7 @@ data object StrengthRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -65,6 +70,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Heart -> HeartRoute
     Subject.Supplements -> SupplementsRoute
     Subject.Strength -> StrengthRoute
+    Subject.Fasting -> FastingRoute
     else -> null
 }
 
@@ -153,6 +159,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<StrengthRoute> {
         StrengthScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<FastingRoute> {
+        FastingScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
