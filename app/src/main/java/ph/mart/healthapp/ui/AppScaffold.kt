@@ -63,11 +63,12 @@ import ph.mart.healthapp.feature.profile.ui.SettingsRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
-import ph.mart.healthapp.feature.progress.ui.PhotosRoute
+import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
 import ph.mart.healthapp.feature.progress.ui.RecapRoute
 import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
 import ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
+import ph.mart.healthapp.feature.progress.ui.route
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
 import ph.mart.healthapp.feature.training.ui.LogExerciseSheet
 import ph.mart.healthapp.feature.training.ui.StrengthWorkoutRoute
@@ -274,10 +275,12 @@ fun AppScaffold(
     val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute
 
     // Routes that draw their own `AppTopBar`. The camera flows do it full-bleed, under the system
-    // bars; the Photos page keeps the window's insets and only wants the bar's `actions` slot,
-    // which the call below cannot fill — its share needs the photo set, and all this has is a
-    // `NavKey`. Deliberately not folded into [fullBleed]: the two want opposite insets.
-    val ownsTopBar = fullBleed || current is PhotosRoute
+    // bars; every Progress subject page keeps the window's insets and wants the bar's `actions`
+    // slot, which the call below cannot fill — a page's share needs its own data, and all this has
+    // is a `NavKey`. Deliberately not folded into [fullBleed]: the two want opposite insets.
+    //
+    // A route in here never reaches `title()`, which is why none of them has a branch there.
+    val ownsTopBar = fullBleed || current in ProgressSubjectRoutes
 
     // Tapping the arrow has to run the same handler chain system back runs — the recipe builder
     // asks before discarding, and popping the stack here would walk straight past that question.
@@ -379,7 +382,15 @@ fun AppScaffold(
                         progressEntries(
                             scrollState = progressScroll,
                             twoPane = twoPane,
-                            onOpenPhotos = { topLevelBackStack.add(PhotosRoute) },
+                            onOpenSubject = { subject -> subject.route()?.let(topLevelBackStack::add) },
+                            // A sibling hop replaces rather than pushes, so Sleep -> Mood -> Heart
+                            // leaves one back step. Mid-migration a sibling that is still a swap-in
+                            // has no route, and popping to the overview is the honest answer — that
+                            // arm goes with `Subject.route()`'s null when the last subject converts.
+                            onSwitchSubject = { subject ->
+                                topLevelBackStack.removeLast()
+                                subject.route()?.let(topLevelBackStack::add)
+                            },
                             onCompare = { first, second ->
                                 topLevelBackStack.add(PhotoComparisonRoute(first, second))
                             },

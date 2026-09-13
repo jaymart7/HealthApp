@@ -8,14 +8,41 @@ import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
+import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
+import ph.mart.healthapp.feature.progress.ui.sleep.SleepScreen
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
 
-/** The whole progress-photo set. A route rather than one of `SubjectDetail`'s thirteen swap-in
- * subject pages: it is a full-bleed grid that launches [PhotoComparisonRoute] and [TimelapseRoute]
- * rather than a chart, and it already owned its scroll. Carries nothing — the set is the page. */
+/** The whole progress-photo set — a full-bleed grid that launches [PhotoComparisonRoute] and
+ * [TimelapseRoute] rather than a chart. It was the first subject page to become a route; the other
+ * thirteen are following. Carries nothing — the set is the page. */
 @Serializable
 data object PhotosRoute : NavKey
+
+/** Every imported night, charted. Carries nothing: `SleepViewModel` reads the series itself. */
+@Serializable
+data object SleepRoute : NavKey
+
+/**
+ * The subject pages that are routes rather than `SubjectDetail` swap-ins.
+ *
+ * One set, read by `AppScaffold`'s `ownsTopBar` (each page draws its own `AppTopBar`), by
+ * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
+ * converted. It grows by one per conversion commit.
+ */
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute)
+
+/**
+ * A subject to the route that draws it, or null while it is still a swap-in.
+ *
+ * The one place the mapping lives, which is what keeps `AppScaffold` at a single push site rather
+ * than one per subject. The null arm goes when the last subject converts.
+ */
+fun Subject.route(): NavKey? = when (this) {
+    Subject.Photos -> PhotosRoute
+    Subject.Sleep -> SleepRoute
+    else -> null
+}
 
 /** Two progress photos read against each other. Carries the grid's selection, and the order of the
  * two ids does not matter — `comparisonPair()` sorts by date, so the route names a pair rather than
@@ -39,16 +66,19 @@ data object RecapRoute : NavKey
  * the one place in the app that reads the window's width, so this tab is told rather than asking —
  * which is also why `:feature:progress` needs no adaptive dependency of its own.
  *
- * The four read-only surfaces are routes rather than overlays drawn inside [ProgressRoute], so
- * none of them wears the bottom bar or the FAB and none wires a back handler of its own. Two of
- * the four are reached from the tab itself ([onOpenPhotos], [onOpenRecap]) and two from the Photos
- * page ([onCompare], carrying the pair the grid picked, and [onOpenTimelapse]) — which is why the
- * callbacks land on different entries rather than all on [ProgressScreen].
+ * Every surface but [ProgressRoute] itself is a route rather than an overlay drawn inside it, so
+ * none of them wears the bottom bar or the FAB and none wires a back handler of its own.
+ *
+ * [onOpenSubject] **pushes** a subject page and [onSwitchSubject] **replaces** the one showing —
+ * the sibling switcher's promise that Sleep -> Mood -> Heart leaves one back step, not three. The
+ * comparison and the timelapse are reached from the Photos page rather than from the tab, which is
+ * why those callbacks land on a different entry.
  */
 fun EntryProviderScope<NavKey>.progressEntries(
     scrollState: ScrollState,
     twoPane: Boolean = false,
-    onOpenPhotos: () -> Unit,
+    onOpenSubject: (Subject) -> Unit,
+    onSwitchSubject: (Subject) -> Unit,
     onCompare: (Long, Long) -> Unit,
     onOpenTimelapse: () -> Unit,
     onOpenRecap: () -> Unit,
@@ -58,7 +88,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         ProgressScreen(
             scrollState = scrollState,
             twoPane = twoPane,
-            onOpenPhotos = onOpenPhotos,
+            onOpenSubject = onOpenSubject,
             onOpenRecap = onOpenRecap,
         )
     }
@@ -66,6 +96,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
         PhotosScreen(
             onCompare = onCompare,
             onOpenTimelapse = onOpenTimelapse,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<SleepRoute> {
+        SleepScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
         )
     }

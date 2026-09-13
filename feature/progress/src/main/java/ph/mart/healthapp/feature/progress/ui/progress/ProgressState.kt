@@ -17,9 +17,22 @@ internal fun rememberProgressScreenState(): ProgressScreenState =
 /** The range a subject's chart opens on, before the user picks another. */
 internal val DEFAULT_CHART_RANGE = ChartRange.ThreeMonths
 
-/** The three surfaces on this tab that are routes rather than overlays — see
- * [ProgressScreenState.pendingRoute]. */
-internal enum class ProgressDestination { Photos, Recap }
+/** The surfaces this tab asks for rather than draws — see [ProgressScreenState.pendingRoute].
+ * [Page] carries which subject, because a subject page is now a route too. */
+internal sealed interface ProgressDestination {
+    data object Recap : ProgressDestination
+    data class Page(val subject: Subject) : ProgressDestination
+}
+
+/**
+ * The subjects whose pages are routes rather than swap-ins inside this tab.
+ *
+ * It grows by one name per conversion commit and is the whole per-commit change to this file, so
+ * how far the migration has got is legible in one line. When the last subject joins it, this set,
+ * [ProgressScreenState.selectedSubject] and [ProgressScreenState.pendingRoute] all go, and
+ * `ProgressOverview` takes a plain `onOpenSubject` instead.
+ */
+private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep)
 
 /** UI-only — which subject is open, which range its chart is showing, which sheet is up has no
  * business meaning outside this screen; the actual weight/measurement/photo data lives in
@@ -50,8 +63,7 @@ internal class ProgressScreenState(
 
     /**
      * The route a tap on this tab has asked for, consumed by [ProgressScreen] and turned into a
-     * push. The Photos page and the recap are routes rather than surfaces drawn over this tab, and
-     * every open site in here is a `state::openX` or `state::open` call threaded through the
+     * push. Every open site in here is a `state::openX` or `state::open` call threaded through the
      * overview and `SubjectDetail`'s fourteen-way dispatch — so the tap is recorded here rather
      * than the callbacks being threaded through all of it.
      *
@@ -82,12 +94,12 @@ internal class ProgressScreenState(
         ranges = ranges + (subject to range)
     }
 
-    /** Photos is the one subject that is a route rather than a swap-in — it is a grid that
-     * launches two other routes, not a chart — so opening it asks for a push. Every entry point in
-     * this tab funnels through here, which is what keeps that a single branch. */
+    /** A subject that has become a route asks for a push; one that has not is still selected in
+     * place. Every entry point in this tab — the overview's cards, the empty-card hints, the
+     * sibling switcher — funnels through here, which is what keeps that a single branch. */
     fun open(subject: Subject) {
-        if (subject == Subject.Photos) {
-            pendingRoute = ProgressDestination.Photos
+        if (subject in RoutedSubjects) {
+            pendingRoute = ProgressDestination.Page(subject)
         } else {
             selectedSubject = subject
         }

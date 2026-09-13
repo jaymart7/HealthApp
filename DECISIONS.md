@@ -765,6 +765,40 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `DetailHeader` rather than borrowing `AppTopBar`. The overview's scroll survives the round trip
   for free (`AppScaffold` hoists it), and each detail holds its own so a sibling hop opens at the
   top.
+- **Every subject page becomes a route, and the entry above is superseded.** The argument that kept
+  them swap-ins was that a route "would have earned its own `ViewModelStoreOwner` and with it a
+  second copy of `ProgressViewModel`'s twelve repositories." That overstates it, and the overstated
+  version is what made the decision look settled. A per-subject container reads **its own one to
+  three flows**, not twelve; the overview beneath keeps the twelve either way; and only one subject
+  entry is ever on the back stack, so the peak is the tab's set plus that page's slice, not two
+  sets. Nutrition and Badges are the only two where it genuinely bites — one copies a targets fold,
+  the other reads five repositories to draw an achievement list.
+  What it buys is the thing `PhotoComparisonScreen` bought a commit earlier: a chart page drawn
+  inside the `ProgressRoute` entry renders inside the `Scaffold` that draws the bottom bar and the
+  docked FAB, so a subject page wore tab chrome while sitting a level below the tab, cleared the FAB
+  with 72dp of `DockedFabContentPadding`, and hand-wired a `NavigationBackHandler` so back would not
+  leave the tab. As routes: Nav3 owns back, each container dies with its entry rather than living as
+  long as the tab, and the page draws its own `AppTopBar` at `WindowInsets(0)` — the scaffold's
+  `innerPadding` has already cleared the status bar, and the default clears it twice.
+  What it costs, beyond the source: the sibling switcher's value column (below), Progress's two
+  panes at ≥840dp (**Adaptive layout**), and about fifty files.
+  The conversion runs one subject per commit. `RoutedSubjects` in `ProgressScreenState` and the
+  `else -> null` arm of `Subject.route()` are the migration's two moving parts, and both go with
+  `SubjectDetail.kt` when the last subject lands.
+- **The sibling switcher names its siblings and no longer quotes their figures.** A row used to
+  read "Mood · 4.2 / 5", folded out of `summarizeAll()` — every subject at once. A page owning one
+  series cannot fold that, and the alternative was a second container per page whose only job was
+  captioning a navigation row, which is the cost the entry above is at pains to say it is *not*
+  paying. It degrades exactly one group: the ≤3-sibling branch draws pills and never showed a
+  value, and Body, Nutrition and Training all have three or fewer — only Wellbeing's four rows lose
+  the column. For the same reason the page's toolbar share is unconditional where `DetailHeader`'s
+  was gated on there being a week worth reporting: `RecapScreen` folds its own recap and says so
+  when there is nothing, which is a better answer than a control that silently is not there.
+- **A hop between siblings replaces the page rather than pushing it**, which is what the switcher's
+  own KDoc has always promised — Sleep → Mood → Heart leaves one back step, not three.
+  `TopLevelBackStack` has no `replace`, so `AppScaffold` spends a `removeLast()` before the `add()`.
+  That is also the one place the half-converted state shows: a sibling that is still a swap-in has
+  no route, so the pop lands on the overview rather than on its page.
 - **`Subject` replaced `ProgressTab`, and `group == null` is Badges.** Twelve metric subjects in
   four groups (Body · Nutrition · Training · Wellbeing) plus Badges, which is drawn as a summary row
   under the grids because it is an achievement list, not a trend — a metric card promising a preview

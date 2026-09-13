@@ -41,6 +41,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.subjectsIn
 
 /** Every tap target on a detail page clears this. */
 private val TapTarget = 48.dp
@@ -327,18 +328,25 @@ internal fun StatRowsCard(rows: List<StatRow>, modifier: Modifier = Modifier) {
 }
 
 /**
- * The rest of the group, at the foot of a detail page — the one new navigation affordance, and what
- * replaces browsing by tab strip without bringing a strip back. It **replaces** the current page
- * rather than pushing onto it, so hopping Sleep → Mood → Heart leaves one back step, not three.
+ * The rest of the group, at the foot of a subject page — the one new navigation affordance, and
+ * what replaces browsing by tab strip without bringing a strip back. It **replaces** the current
+ * page rather than pushing onto it, so hopping Sleep → Mood → Heart leaves one back step, not
+ * three.
  *
  * Three siblings or fewer draw as pills; four draw as rows, because four pills on a 360dp screen
- * are four clipped words. A row says what the subject holds, or "Nothing yet" — which is the same
- * claim the overview's dashed card makes, in the same words.
+ * are four clipped words.
+ *
+ * **Names, no values.** Each row used to quote the sibling's current figure — "Mood · 4.2 / 5" —
+ * folded out of `summarizeAll()`, which reads the whole `ProgressUiState`. A subject page owning
+ * its own container sees one series and cannot fold that, and the alternative was a second
+ * container per page purely to caption a navigation row. It costs exactly one group: the pill
+ * branch below never showed a value, and Body, Nutrition and Training all have three siblings or
+ * fewer. See `DECISIONS.md` -> **Progress, recap & the energy check-in**.
  */
 @Composable
 internal fun SiblingSwitcher(
     groupLabel: String,
-    siblings: List<Pair<Subject, String?>>,
+    siblings: List<Subject>,
     onSelect: (Subject) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -352,7 +360,7 @@ internal fun SiblingSwitcher(
         )
         if (siblings.size <= 3) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                siblings.forEach { (subject, _) ->
+                siblings.forEach { subject ->
                     Surface(
                         onClick = { onSelect(subject) },
                         shape = RoundedCornerShape(999.dp),
@@ -373,7 +381,7 @@ internal fun SiblingSwitcher(
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                siblings.forEach { (subject, value) ->
+                siblings.forEach { subject ->
                     Surface(
                         onClick = { onSelect(subject) },
                         shape = RoundedCornerShape(16.dp),
@@ -392,11 +400,6 @@ internal fun SiblingSwitcher(
                                 color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.weight(1f),
                             )
-                            Text(
-                                text = value ?: stringResource(R.string.progress_nothing_yet),
-                                style = MaterialTheme.typography.bodySmall.tabularNums,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
                             Icon(
                                 imageVector = AppIcons.ChevronRight,
                                 contentDescription = null,
@@ -409,6 +412,29 @@ internal fun SiblingSwitcher(
             }
         }
     }
+}
+
+/**
+ * [SiblingSwitcher] with the group worked out — what every subject page draws at its foot, so
+ * thirteen screens do not each repeat the filter.
+ *
+ * [cycleTracking] is `Profile.cycleTrackingOn`: off drops Cycle from the row, or a page would offer
+ * a door to the one subject the overview has taken away. Badges has no group and draws nothing.
+ */
+@Composable
+internal fun SubjectSwitcher(
+    subject: Subject,
+    cycleTracking: Boolean,
+    onSelect: (Subject) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val group = subject.group ?: return
+    SiblingSwitcher(
+        groupLabel = stringResource(group.label),
+        siblings = subjectsIn(group, cycleTracking).filter { it != subject },
+        onSelect = onSelect,
+        modifier = modifier,
+    )
 }
 
 @PreviewLightDark
@@ -438,7 +464,7 @@ private fun DetailChromePreview() {
                     )
                     SiblingSwitcher(
                         groupLabel = "Body",
-                        siblings = listOf(Subject.Photos to "14 shots", Subject.Measurements to null),
+                        siblings = listOf(Subject.Photos, Subject.Measurements),
                         onSelect = {},
                     )
                 }

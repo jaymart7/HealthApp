@@ -11,7 +11,7 @@ import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
 import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
-import ph.mart.healthapp.feature.progress.ui.PhotosRoute
+import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
 import ph.mart.healthapp.feature.progress.ui.RecapRoute
 import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
 
@@ -50,11 +50,15 @@ class TabChromeTest {
     }
 
     /** Progress' read-only surfaces stopped being overlays drawn inside the tab and became routes,
-     * which is the whole point: a full-screen viewer wears no bottom bar and no FAB, at either
-     * width. Nothing in [showsTabChrome] names them — that is what this pins. */
+     * which is the whole point: a chart or a full-screen viewer wears no bottom bar and no FAB, at
+     * either width. Nothing in [showsTabChrome] names them — that is what this pins.
+     *
+     * It reads [ProgressSubjectRoutes] rather than listing the subject pages, so each conversion
+     * commit is covered by the set it already has to edit. */
     @Test
     fun `a Progress viewer route wears no chrome at either width`() {
-        listOf(PhotosRoute, PhotoComparisonRoute(1, 2), TimelapseRoute, RecapRoute).forEach { route ->
+        val routes = ProgressSubjectRoutes + listOf(PhotoComparisonRoute(1, 2), TimelapseRoute, RecapRoute)
+        routes.forEach { route ->
             assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = false))
             assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = true))
         }

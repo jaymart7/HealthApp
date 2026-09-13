@@ -53,20 +53,24 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectDetail
  * [ProgressScreenState.pendingRoute], and the effect below is the single place that consumes it.
  * The comparison and the timelapse are not among them — both are reached from the Photos page,
  * which is itself a route and raises them directly.
+ *
+ * [onOpenSubject] takes the subjects that have become routes; the rest are still drawn in place by
+ * `SubjectDetail`. It goes on being both until the last subject converts, at which point the
+ * pending-route indirection goes and the overview takes this callback directly.
  */
 @Composable
 fun ProgressScreen(
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
-    onOpenPhotos: () -> Unit = {},
+    onOpenSubject: (Subject) -> Unit = {},
     onOpenRecap: () -> Unit = {},
     viewModel: ProgressViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
     val state = rememberProgressScreenState()
     LaunchedEffect(state.pendingRoute) {
-        when (state.pendingRoute) {
-            ProgressDestination.Photos -> onOpenPhotos()
+        when (val destination = state.pendingRoute) {
+            is ProgressDestination.Page -> onOpenSubject(destination.subject)
             ProgressDestination.Recap -> onOpenRecap()
             null -> Unit
         }

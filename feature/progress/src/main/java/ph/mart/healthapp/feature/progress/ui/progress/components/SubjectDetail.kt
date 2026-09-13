@@ -43,10 +43,7 @@ import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureDe
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
-import ph.mart.healthapp.feature.progress.ui.progress.SubjectSummary
-import ph.mart.healthapp.feature.progress.ui.progress.subjectsIn
-import ph.mart.healthapp.feature.progress.ui.progress.summarizeAll
-import ph.mart.healthapp.feature.progress.ui.sleep.components.SleepDetailBody
+import ph.mart.healthapp.feature.progress.ui.progress.summarize
 import ph.mart.healthapp.feature.progress.ui.strength.components.StrengthDetailBody
 import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementsDetailBody
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightDetailBody
@@ -60,7 +57,10 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.WeightDetailBody
 private val SelfScrolling = setOf(Subject.BloodPressure)
 
 /**
- * One subject's page — the surface behind every card on the overview.
+ * One subject's page — the surface behind every card on the overview, for the subjects that have
+ * not yet become routes of their own. **This file is being dismantled**, one subject per commit;
+ * it goes entirely when the last of them lands. See `DECISIONS.md` ->
+ * **Progress, recap & the energy check-in**.
  *
  * It is a **swap-in inside the Progress tab, not a route**. A route would earn its own
  * `ViewModelStoreOwner` and with it a second copy of `ProgressViewModel`'s twelve repositories, to
@@ -97,8 +97,7 @@ internal fun SubjectDetail(
     }
 
     val today = todayEpochDay()
-    val summaries = remember(uiState, today) { summarizeAll(uiState, today) }
-    val summary = summaries[subject] ?: SubjectSummary(subject)
+    val summary = remember(uiState, today) { summarize(subject, uiState, today) }
     // Keyed on the subject, so hopping to a sibling opens at the top rather than at the offset the
     // page before it was left at. The overview's own scroll is hoisted in `AppScaffold` and
     // untouched by any of this, which is what preserves it across the round trip.
@@ -115,7 +114,6 @@ internal fun SubjectDetail(
                 !summary.tracked -> EmptyDetail(
                     subject = subject,
                     state = state,
-                    summaries = summaries,
                     cycleTracking = uiState.cycleTrackingOn,
                 )
 
@@ -134,11 +132,10 @@ internal fun SubjectDetail(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Body(subject, uiState, state, checkIn, projection)
-                    Switcher(
+                    SubjectSwitcher(
                         subject = subject,
-                        summaries = summaries,
-                        state = state,
                         cycleTracking = uiState.cycleTrackingOn,
+                        onSelect = state::open,
                     )
                 }
             }
@@ -159,16 +156,17 @@ private fun ColumnScope.Body(
 ) {
     when (subject) {
         Subject.Weight -> WeightDetailBody(uiState, state, checkIn, projection)
-        // Unreachable: `ProgressScreenState.open` pushes the Photos route rather than selecting
-        // the subject, so this page is never asked to draw it. The arm exists for the `when`.
-        Subject.Photos -> Unit
+        // Unreachable, and the list grows by one per conversion: `ProgressScreenState.open` pushes
+        // a route for every subject in its `RoutedSubjects` set rather than selecting it, so this
+        // page is never asked to draw them. The arms exist for the `when`. When the last subject
+        // joins them, this whole file goes.
+        Subject.Photos, Subject.Sleep -> Unit
         Subject.Measurements -> MeasurementsDetailBody(uiState, state)
         Subject.Nutrition -> NutritionDetailBody(uiState, state)
         Subject.Fasting -> FastingDetailBody(uiState, state)
         Subject.Supplements -> SupplementsDetailBody(uiState, state)
         Subject.Activity -> ActivityDetailBody(uiState, state)
         Subject.Strength -> StrengthDetailBody(uiState, state)
-        Subject.Sleep -> SleepDetailBody(uiState, state)
         Subject.Mood -> MoodDetailBody(uiState, state)
         Subject.Cycle -> CycleDetailBody(uiState, state)
         Subject.Heart -> HeartDetailBody(uiState, state)
@@ -181,7 +179,6 @@ private fun ColumnScope.Body(
 private fun EmptyDetail(
     subject: Subject,
     state: ProgressScreenState,
-    summaries: Map<Subject, SubjectSummary>,
     cycleTracking: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -220,33 +217,13 @@ private fun EmptyDetail(
                 },
             )
         }
-        Switcher(
+        SubjectSwitcher(
             subject = subject,
-            summaries = summaries,
-            state = state,
             cycleTracking = cycleTracking,
+            onSelect = state::open,
         )
         Box(modifier = Modifier.padding(bottom = DockedFabContentPadding))
     }
-}
-
-@Composable
-private fun Switcher(
-    subject: Subject,
-    summaries: Map<Subject, SubjectSummary>,
-    state: ProgressScreenState,
-    /** `Profile.cycleTrackingOn` — off drops Cycle from the sibling row, or a page would offer a
-     * door to the one subject the overview has taken away. */
-    cycleTracking: Boolean,
-) {
-    val group = subject.group ?: return
-    val siblings = subjectsIn(group, cycleTracking)
-        .filter { it != subject }
-        .map { sibling ->
-            val summary = summaries[sibling]
-            sibling to summary?.takeIf { it.tracked }?.let { "${it.value} ${it.unit.orEmpty()}".trim() }
-        }
-    SiblingSwitcher(groupLabel = stringResource(group.label), siblings = siblings, onSelect = state::open)
 }
 
 /** What a subject with nothing in it says. The copy each tab already carried, moved here so the
@@ -333,9 +310,9 @@ private fun emptyCopy(subject: Subject): EmptyCopy = when (subject) {
 private fun SubjectDetailEmptyPreview() {
     AppTheme {
         SubjectDetail(
-            subject = Subject.Sleep,
+            subject = Subject.Mood,
             uiState = ProgressUiState(),
-            state = ProgressScreenState(selectedSubject = Subject.Sleep),
+            state = ProgressScreenState(selectedSubject = Subject.Mood),
             checkIn = null,
             projection = null,
             canShare = false,
