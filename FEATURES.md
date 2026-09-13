@@ -200,14 +200,16 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the group. The range is remembered per subject for the session. Empty subjects get a mascot page
   and no call to action. Subject pages are becoming **routes**, one at a time — a converted one
   draws the full window with no bottom bar and no FAB over its chart, the way Photos already does.
-  Converted so far: Photos, Sleep, Mood, Heart, Supplements, Strength, Fasting.
+  Converted so far: Photos, Sleep, Mood, Heart, Supplements, Strength, Fasting, Activity.
 - Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, a BMI chip naming its WHO band, and an insight card carrying the projection and the
   energy check-in.
 - Food: calories + macros against target over the window, the seven nutrients averaged against
   their targets, then the meal-photo strip — the newest
   twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.
-- Activity: two charts — daily steps (imported) and daily burn.
+- Activity: two charts sharing one range toggle — daily steps against the profile's goal line
+  (imported) and daily burn, the latter folding steps and logged workouts so a counted walk is not
+  counted twice.
 - Strength: volume chart and the window's workout/set/volume totals, then all-time personal
   records ranked by estimated 1RM (Epley) — all-time on purpose, so a 1M filter cannot retire a
   record.
