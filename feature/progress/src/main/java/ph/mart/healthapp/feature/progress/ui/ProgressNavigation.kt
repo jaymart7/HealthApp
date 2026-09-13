@@ -5,6 +5,7 @@ import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
+import ph.mart.healthapp.feature.progress.ui.achievement.AchievementsScreen
 import ph.mart.healthapp.feature.progress.ui.activity.ActivityScreen
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.cycle.CycleScreen
@@ -78,6 +79,11 @@ data object WeightRoute : NavKey
 @Serializable
 data object NutritionRoute : NavKey
 
+/** Every badge in the app. Carries nothing: `AchievementsViewModel` folds the six repositories it
+ * takes into the five numbers `badgeGroups()` needs. */
+@Serializable
+data object AchievementsRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -85,15 +91,17 @@ data object NutritionRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute, WeightRoute, NutritionRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute, WeightRoute, NutritionRoute, AchievementsRoute)
 
 /**
- * A subject to the route that draws it, or null while it is still a swap-in.
+ * A subject to the route that draws it. The one place the mapping lives, which is what keeps
+ * `AppScaffold` at a single push site rather than one per subject.
  *
- * The one place the mapping lives, which is what keeps `AppScaffold` at a single push site rather
- * than one per subject. The null arm goes when the last subject converts.
+ * It is also where the one name difference is reconciled: the subject is `Badges` and the row on
+ * the overview says so, while the package, the derivation and the screen have always said
+ * achievements.
  */
-fun Subject.route(): NavKey? = when (this) {
+fun Subject.route(): NavKey = when (this) {
     Subject.Photos -> PhotosRoute
     Subject.Sleep -> SleepRoute
     Subject.Mood -> MoodRoute
@@ -107,7 +115,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Measurements -> MeasurementsRoute
     Subject.Weight -> WeightRoute
     Subject.Nutrition -> NutritionRoute
-    else -> null
+    Subject.Badges -> AchievementsRoute
 }
 
 /** Two progress photos read against each other. Carries the grid's selection, and the order of the
@@ -248,6 +256,9 @@ fun EntryProviderScope<NavKey>.progressEntries(
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
         )
+    }
+    entry<AchievementsRoute> {
+        AchievementsScreen(onOpenRecap = onOpenRecap, onExitFlow = onExitFlow)
     }
     entry<PhotoComparisonRoute> { key ->
         PhotoComparisonScreen(selectedIds = listOf(key.firstId, key.secondId))

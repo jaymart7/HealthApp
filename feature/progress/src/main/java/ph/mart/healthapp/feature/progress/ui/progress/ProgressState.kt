@@ -34,7 +34,7 @@ internal sealed interface ProgressDestination {
 private val RoutedSubjects = setOf(
     Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements,
     Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure,
-    Subject.Measurements, Subject.Weight, Subject.Nutrition,
+    Subject.Measurements, Subject.Weight, Subject.Nutrition, Subject.Badges,
 )
 
 /** UI-only — which subject is open and which sheet is up has no business meaning outside this

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,12 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
-import ph.mart.healthapp.core.data.streak.streakStats
-import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.BadgeDot
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -27,34 +25,16 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.achievement.BadgeFamily
 import ph.mart.healthapp.feature.progress.ui.achievement.BadgeGroup
-import ph.mart.healthapp.feature.progress.ui.achievement.badgeGroups
-import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 
 /**
- * Every badge in the app on one surface. The page takes no `ProgressScreenState` — unlike the chart
- * subjects it has no range to slice and no sheet to open, and its empty state is `SubjectDetail`'s.
+ * One badge family: its name, how many of its tiers are lit, the dots themselves, and a caption
+ * naming the next one.
  *
  * The copy lives here rather than in the derivation, the division `RecapCard` already draws:
  * `:core:data`-shaped folds count, the card names.
  */
 @Composable
-internal fun AchievementsDetailBody(uiState: ProgressUiState) {
-    val groups = badgeGroups(
-        // Read here rather than at flow-construction time, so the streak can't freeze at whatever
-        // day the app was opened — HomeViewModel's reason for doing the same.
-        streak = uiState.activeDays.streakStats(todayEpochDay()),
-        weightProgressKg = uiState.weightProgressKg,
-        workoutCount = uiState.exerciseEntries.size,
-        fasts = uiState.fastSessions,
-        photoCount = uiState.photos.size,
-    )
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        groups.forEach { group -> BadgeGroupCard(group = group, unit = uiState.preferredUnit) }
-    }
-}
-
-@Composable
-private fun BadgeGroupCard(group: BadgeGroup, unit: UnitSystem) {
+internal fun BadgeGroupCard(group: BadgeGroup, unit: UnitSystem) {
     AppCard {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -160,21 +140,15 @@ internal fun captionFor(group: BadgeGroup, unit: UnitSystem): String {
 
 @PreviewLightDark
 @Composable
-private fun AchievementsDetailPreview() {
-    val today = todayEpochDay()
-    val hour = 3_600_000L
+private fun BadgeGroupCardPreview() {
     AppTheme {
-        AchievementsDetailBody(
-            uiState = ProgressUiState(
-                activeDays = (today - 30..today).toSet(),
-                weightProgressKg = 5.2,
-                fastSessions = listOf(
-                    FastSession(startMillis = 0, endMillis = 17 * hour),
-                    FastSession(startMillis = 0, endMillis = 14 * hour),
-                ),
-                preferredUnit = UnitSystem.Metric,
-            ),
-        )
+        Surface {
+            Column(modifier = Modifier.padding(16.dp)) {
+                BadgeGroupCard(
+                    group = BadgeGroup(BadgeFamily.Streak, listOf(3, 7, 14, 30), current = 9),
+                    unit = UnitSystem.Metric,
+                )
+            }
+        }
     }
 }
-
