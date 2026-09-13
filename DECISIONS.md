@@ -1529,6 +1529,24 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   its own answer. `sanitizeReply` is the whole trust boundary and keeps line breaks where
   `sanitizeInsight` collapses them (an answer legitimately spans a short paragraph), and rejects
   past `MAX_REPLY_CHARS` rather than truncating, for the reason the insight cap gives.
+- **The follow-up chips are derived from the day, not generated.** A finished answer was a dead
+  end: the empty conversation gets four starters and every turn after it gets a blank field. The
+  obvious build is a second model call per turn asking for the next questions — and it doubles the
+  token cost of *every* question, adds a second AI call site with its own failure mode, and buys
+  chips that a protein gap, a calorie gap, an unfinished water goal and a weigh-in already predict.
+  So `followUpsFor()` is a pure rule over the same `InsightRequest` the screen already holds, which
+  costs nothing, cannot fail, and is a JVM test. Three constraints it is written to. **Every chip
+  is a question the coach can answer** — off the day payload, or through `get_day`/`get_history`;
+  one that needs a tool the coach lacks buys a shrug that reads as a broken feature, which is why
+  "how much water have I had this week?" is *not* there (a span carries calories, protein, training,
+  sleep and weigh-ins — never water). **The day's own gaps come first and filler completes the
+  row**, so it is the same height every turn and never degenerates into the starters with extra
+  steps. **And the row is an item in the list, not a bar above the field**: it scrolls away like
+  everything else the coach said, and it is hidden while a turn is in flight, because a row of new
+  questions beside a half-written answer asks the user to abandon what they are reading. The tap
+  sends the resolved string verbatim, the rule `CoachEmptyState` set — the question the user pressed
+  is the question the coach is asked. If the rules ever visibly miss, the model call is one `intent`
+  and the chips are already plumbed.
 - **The mascot greeting card is the app's one door to the coach.** The insight card would be the
   more contextual tap and is the wrong one: it is hidden on day one, hidden when the model has
   nothing to say, and gone once dismissed, so a door on it is a door that isn't there most days.

@@ -22,6 +22,14 @@
     <string name="coach_starter_week">How has my week gone?</string>
     <string name="coach_starter_dinner">What should I eat tonight?</string>
 
+    <!-- Follow-ups offered under a finished answer. Same rule as the starters: what gets sent is
+         whatever the chip said, so these are translated. Each one is a question the coach can
+         actually answer — three off the day it is told about, one through get_history. -->
+    <string name="coach_followup_protein">What\'s a high-protein dinner?</string>
+    <string name="coach_followup_water">Am I drinking enough water?</string>
+    <string name="coach_followup_weight">How\'s my weight trending?</string>
+    <string name="coach_followup_training">How has my training been?</string>
+
     <!-- The proposal card: a row the coach drafted and the user has not agreed to yet. -->
     <string name="coach_proposal_food_title">Add to %1$s</string>
     <string name="coach_proposal_water_title">Add water</string>

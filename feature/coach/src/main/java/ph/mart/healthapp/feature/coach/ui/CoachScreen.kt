@@ -31,6 +31,7 @@ import ph.mart.healthapp.feature.coach.ui.components.ChatBubble
 import ph.mart.healthapp.feature.coach.ui.components.ChatInputBar
 import ph.mart.healthapp.feature.coach.ui.components.CoachEmptyState
 import ph.mart.healthapp.feature.coach.ui.components.FailureBubble
+import ph.mart.healthapp.feature.coach.ui.components.FollowUpRow
 import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 
@@ -65,7 +66,10 @@ private fun CoachContent(
     val itemCount = uiState.messages.size +
         (if (uiState.pending != null) 2 else 0) +
         (if (uiState.proposal != null) 1 else 0) +
-        (if (uiState.failure != null) 1 else 0)
+        (if (uiState.failure != null) 1 else 0) +
+        // The follow-up row is an item too, and it is the last one — scrolling to the answer above
+        // it would leave the chips off screen, which is the whole of what they are for.
+        (if (uiState.messages.isNotEmpty() && uiState.pending == null && uiState.failure == null) 1 else 0)
     LaunchedEffect(itemCount) {
         if (itemCount > 0) listState.animateScrollToItem(itemCount - 1)
     }
@@ -114,6 +118,18 @@ private fun CoachContent(
                             action = action,
                             onConfirm = { onEvent(CoachEvent.OnConfirmProposal(it)) },
                             onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
+                        )
+                    }
+                }
+                // Under the newest answer, and only when nothing is in flight: a row of questions
+                // beside a half-written one asks the user to abandon the answer they are reading.
+                if (uiState.loaded && uiState.messages.isNotEmpty() &&
+                    uiState.pending == null && uiState.failure == null
+                ) {
+                    item(key = "follow-ups") {
+                        FollowUpRow(
+                            followUps = followUpsFor(uiState.request),
+                            onAsk = { onEvent(CoachEvent.OnSend(it)) },
                         )
                     }
                 }
