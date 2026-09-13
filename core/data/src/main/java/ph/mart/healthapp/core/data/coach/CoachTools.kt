@@ -42,6 +42,7 @@ import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -51,7 +52,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
- * The coach's tools: two the app *runs*, two it only ever *drafts*.
+ * The coach's tools: three the app *runs*, five it only ever *drafts*.
  *
  * The split is the whole design. A read is a local Room query with no user-visible effect, so it
  * executes the moment the model asks for it and the answer goes straight back into the same turn.
@@ -90,6 +91,17 @@ internal const val MAX_ACTION_GLASSES = 20
  * decimal [MAX_ACTION_CALORIES] guards against at the other end of the same card. */
 internal const val MAX_ACTION_MINUTES = 600
 
+/**
+ * A band wide enough to be right in either unit, because the number arrives before the unit does —
+ * 20 kg and 44 lb are both weights, and nothing between 1 and 1000 is absurd in one unit while
+ * being fine in the other.
+ *
+ * It is the dropped decimal point [MAX_ACTION_CALORIES] guards against, not a plausibility check:
+ * the card shows the figure it will write, so a user who is not 8.2 of anything dismisses it.
+ */
+internal const val MIN_ACTION_WEIGHT = 1.0
+internal const val MAX_ACTION_WEIGHT = 1000.0
+
 internal const val TOOL_GET_DAY = "get_day"
 internal const val TOOL_GET_HISTORY = "get_history"
 internal const val TOOL_GET_LIBRARY = "get_library"
@@ -97,11 +109,17 @@ internal const val TOOL_LOG_FOOD = "log_food"
 internal const val TOOL_LOG_WATER = "log_water"
 internal const val TOOL_LOG_EXERCISE = "log_exercise"
 internal const val TOOL_LOG_SAVED_MEAL = "log_saved_meal"
+internal const val TOOL_LOG_WEIGHT = "log_weight"
 
-/** The two the model may call but the app never executes. Kept as a set rather than a `when` so
- * [CoachRepositoryImpl]'s loop can ask the question without knowing what either one does. */
-internal val WRITE_TOOLS =
-    setOf(TOOL_LOG_FOOD, TOOL_LOG_WATER, TOOL_LOG_EXERCISE, TOOL_LOG_SAVED_MEAL)
+/** The ones the model may call but the app never executes. Kept as a set rather than a `when` so
+ * [CoachRepositoryImpl]'s loop can ask the question without knowing what any of them does. */
+internal val WRITE_TOOLS = setOf(
+    TOOL_LOG_FOOD,
+    TOOL_LOG_WATER,
+    TOOL_LOG_EXERCISE,
+    TOOL_LOG_SAVED_MEAL,
+    TOOL_LOG_WEIGHT,
+)
 
 /**
  * Days are `days_ago`, never a date string.
@@ -209,6 +227,19 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 ),
             ),
         ),
+        FunctionDeclaration(
+            name = TOOL_LOG_WEIGHT,
+            description = "Propose recording today's weigh-in. This does NOT log it: the user " +
+                "sees the figure and taps to confirm. Only call this when the user has told you " +
+                "what they weigh — never ask them for it. Pass the number exactly as they said " +
+                "it and do not convert it: the app knows whether they weigh themselves in " +
+                "kilograms or pounds.",
+            parameters = mapOf(
+                "weight" to Schema.double(
+                    description = "The number they gave, in their own unit, e.g. 82.4.",
+                ),
+            ),
+        ),
     ),
 )
 
@@ -234,6 +265,9 @@ internal fun parseAction(name: String, args: Map<String, JsonElement>): CoachAct
         ?.let(CoachAction::LogWater)
     TOOL_LOG_EXERCISE -> parseLogExercise(args)
     TOOL_LOG_SAVED_MEAL -> parseLogSavedMeal(args)
+    TOOL_LOG_WEIGHT -> args.double("weight")
+        ?.takeIf { it in MIN_ACTION_WEIGHT..MAX_ACTION_WEIGHT }
+        ?.let { CoachAction.LogWeight(weight = round1(it)) }
     else -> null
 }
 
@@ -703,6 +737,16 @@ internal class CoachToolbox(
         progressRepository.observeWeightEntries().first().maxByOrNull { it.dateEpochDay }?.weightKg
             ?: profileRepository.observeProfile().first()?.weightKg
 
+    /** The unit a drafted weigh-in is read in — the profile's, never the model's. Metric with no
+     * profile, which is `LogWeightUiState`'s own fallback. */
+    suspend fun unitSystem(): UnitSystem =
+        profileRepository.observeProfile().first()?.preferredUnit ?: UnitSystem.Metric
+
+    /** Deliberately *not* [weightKg]: that one falls back to the onboarding weight, and a card
+     * saying "since your last weigh-in" must mean a weigh-in. Null until there is one. */
+    suspend fun latestWeighInKg(): Double? =
+        progressRepository.observeWeightEntries().first().maxByOrNull { it.dateEpochDay }?.weightKg
+
     private suspend fun getDay(daysAgo: Int): String {
         val today = todayEpochDay()
         val date = today - daysAgo
@@ -767,6 +811,11 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
     is CoachAction.LogExercise -> toolbox.weightKg()
         ?.let { listOf(copy(burnedKcal = estimateBurnedKcal(type, minutes, it))) }
     is CoachAction.LogSavedMeal -> toolbox.savedMealRows(name, mealType)
+    // Never null: a weigh-in needs no history to be recorded, so a first one still drafts — it
+    // simply draws no change line.
+    is CoachAction.LogWeight -> listOf(
+        copy(unit = toolbox.unitSystem(), previousKg = toolbox.latestWeighInKg()),
+    )
     else -> listOf(this)
 }
 

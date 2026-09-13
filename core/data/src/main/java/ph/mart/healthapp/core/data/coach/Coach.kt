@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.coach
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.insight.InsightRequest
 
 /**
@@ -67,6 +68,29 @@ sealed interface CoachAction {
         val name: String,
         val minutes: Int,
         val burnedKcal: Int,
+    ) : CoachAction
+
+    /**
+     * Today's weigh-in, as the user said it.
+     *
+     * The fourth streak domain, and the one the coach could not draft. It is the mirror image of
+     * every other action here: the figure is the *user's*, said out loud in their own question,
+     * and the model's only job is to read it back. Nothing about what the app *tells* a model
+     * changes — `InsightRequest` still sends a change and never a weight, and the prompt still
+     * forbids asking for one.
+     *
+     * [weight] is in [unit] and is never converted before the write: the card draws this figure,
+     * and [CoachRepository.settle] is the one place it becomes kilograms.
+     *
+     * [unit] is the **profile's**, stamped by [resolve] — a model asked which unit a number was in
+     * is a model guessing at the one figure the card promises is exact. It is `Metric` until then,
+     * exactly as [LogExercise.burnedKcal] is 0 until it is priced. [previousKg] is the last
+     * weigh-in and is the card's change line only; null when there has never been one.
+     */
+    data class LogWeight(
+        val weight: Double,
+        val unit: UnitSystem = UnitSystem.Metric,
+        val previousKg: Double? = null,
     ) : CoachAction
 }
 

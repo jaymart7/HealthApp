@@ -54,6 +54,7 @@ import ph.mart.healthapp.core.data.insight.insightFor
  * | `what have I saved recently?` | `get_library` |
  * | `log a glass of water` | the single-row card |
  * | `log a 45 minute run` | the same card, its burn priced off the real weigh-in |
+ * | `log my weight 82.4` | the weigh-in card, in the profile's unit, with its change line |
  * | `log two eggs for breakfast` | the single-row card, food |
  * | `log eggs, rice and an apple for lunch` | the multi-row card, its per-row `✕` and a partial confirm |
  * | `log my usual Overnight oats for breakfast` | a saved meal expanded into one row per item |
@@ -179,6 +180,17 @@ internal fun fakeCoachScript(question: String): FakeScript {
     if ("fail" in asked) return FakeScript.Fail
 
     if (LOG_WORDS.any { it in asked }) {
+        // First in the block, because `EXERCISE_WORDS` claims "weights" for a lifting session and
+        // "log my weight 82.4" is not one.
+        weighInIn(asked)?.let { weight ->
+            return FakeScript.Propose(
+                actions = listOf(CoachAction.LogWeight(weight = weight)),
+                preamble = preamble(
+                    asked,
+                    "Here's today's weigh-in — the unit is whichever your profile uses:",
+                ),
+            )
+        }
         if (WATER_WORDS.any { it in asked }) {
             return FakeScript.Propose(
                 actions = listOf(CoachAction.LogWater(glasses = 1)),
@@ -274,7 +286,7 @@ internal fun fakeCoachScript(question: String): FakeScript {
     }
 }
 
-private val LOG_WORDS = listOf("log ", "add ", "i ate", "i had", "i drank", "note down")
+private val LOG_WORDS = listOf("log ", "add ", "i ate", "i had", "i drank", "i weigh", "note down")
 private val WATER_WORDS = listOf("water", "glass")
 private val HISTORY_WORDS = listOf("week", "month", "trend", "average", "lately", "recently")
 private val LIBRARY_WORDS = listOf("saved", "recipe", "library", "usual")
@@ -290,6 +302,21 @@ private val LIBRARY_WORDS = listOf("saved", "recipe", "library", "usual")
 private const val QUIET_WORD = "quietly"
 
 private fun preamble(asked: String, text: String): String = if (QUIET_WORD in asked) "" else text
+
+/**
+ * The number in a sentence that is about a weight — "log my weight 82.4", "i weigh 181".
+ *
+ * The weight word is what makes it one: without it "add 2 eggs" would draft a 2 kg weigh-in. It
+ * stays as the user said it, unconverted, because that is what the model passes and what the card
+ * draws — `resolve` is where the profile's unit gets stamped on it.
+ */
+private fun weighInIn(asked: String): Double? =
+    if (WEIGH_WORDS.any { it in asked }) DECIMAL.find(asked)?.value?.toDoubleOrNull() else null
+
+/** "weigh" covers weight, weighed and weigh-in; the two units cover a sentence that names one. */
+private val WEIGH_WORDS = listOf("weigh", "kg", "lb")
+
+private val DECIMAL = Regex("""\d+(?:\.\d+)?""")
 
 /**
  * The name after a library word, when the sentence gave one — "log my usual **Overnight oats** for

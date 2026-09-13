@@ -25,6 +25,9 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
+import ph.mart.healthapp.core.data.profile.displayUnitToKg
+import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -87,6 +90,10 @@ internal class CoachRepositoryImpl(
     private val foodRepository: FoodRepository,
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
+    // The fourth `settle` writes through. A read goes through the toolbox; a write goes through
+    // the ordinary repository the matching sheet uses, which is what makes a coach-drafted row
+    // indistinguishable from a hand-typed one.
+    private val progressRepository: ProgressRepository,
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
@@ -220,6 +227,19 @@ internal class CoachRepositoryImpl(
             )
         }
 
+        // Keyed on the day, so a second weigh-in today *replaces* today's rather than appending —
+        // the weigh-in sheet's own behaviour, and what lets the card's change line be read as
+        // "this is what it is about to overwrite". The conversion happens here and nowhere else:
+        // the figure on the card is the one the user said, in the unit they said it in.
+        actions.filterIsInstance<CoachAction.LogWeight>().forEach {
+            progressRepository.upsertWeightEntry(
+                WeightEntry(
+                    dateEpochDay = todayEpochDay(),
+                    weightKg = it.weight.displayUnitToKg(it.unit),
+                ),
+            )
+        }
+
         writeExchange(question, answer)
     }
 
@@ -295,8 +315,8 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
             "not ask them for it.",
     )
     appendLine(
-        "If the user asks you to log something, call log_food, log_water, log_exercise or " +
-            "log_saved_meal. These " +
+        "If the user asks you to log something, call log_food, log_water, log_exercise, " +
+            "log_saved_meal or log_weight. These " +
             "do not log anything themselves: the user sees what you drafted and taps to confirm " +
             "it, so say what you are proposing in the same reply. Call log_food once per food: a " +
             "meal of three things is three calls in the same turn, and they are drafted together " +
@@ -304,7 +324,10 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
             "food from their description; do not estimate the calories an activity burned, " +
             "because the app works that out from their own weight; and if they name one of their " +
             "own saved meals or recipes, call get_library for its exact name and then " +
-            "log_saved_meal with it rather than retyping what is in it. You cannot edit or delete " +
+            "log_saved_meal with it rather than retyping what is in it. If the user tells you " +
+            "what they weigh, call log_weight with the number exactly as they said it — but " +
+            "never ask them for it, and never state a weight you were not told in this " +
+            "conversation. You cannot edit or delete " +
             "anything, and you cannot log for a past day — point them at the Food tab's diary " +
             "for that.",
     )

@@ -1669,6 +1669,36 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   its own pass. **`Subject.Measurements` gains its coach door with the tool**, which is exactly
   what `SubjectCoachTest` exists to force: the closed list is eight now, and it only moved because
   something answers it.
+- **The coach can draft a weigh-in, and that is not a hole in the never-told-a-weight rule.**
+  The streak has four domains — food, water, weigh-in, exercise — and the coach could draft three
+  of them, so *"I'm 82.4 this morning"* got a sentence back and the user still opened Progress →
+  Weight → the sheet. `log_weight` is the fifth write tool and changes nothing about the four
+  existing ones: `parseAction` → `resolve` → `ProposalCard` → `settle`, the same path, and the
+  same promise that the coach never writes. **The data-minimisation rule is about what the app
+  sends, and it is untouched.** `InsightRequest` still carries a *change* and never a weight,
+  `get_history` still reports a delta, and the prompt still says the coach is never told what they
+  weigh and must never ask. What it may now do is *read back* a figure the user volunteered —
+  which was already being sent verbatim the moment they typed it, and which the prompt's new
+  clause bounds: record what you were told, never ask, never state a weight you were not given.
+  **The model passes a number and not a unit.** The profile is the authority on kg versus lb, so
+  `resolve` stamps `unitSystem()` on the action exactly as it prices an exercise off the user's own
+  weigh-in — a model asked which unit a number is in is a model guessing at the one figure the card
+  promises is exact. The cost is that a pounds user who types *"I'm 82 kg"* gets a card reading
+  `82.0 lb`; it is wrong, it is on screen before the tap, and the card exists to be read. The
+  figure is **not converted until the write**: `settle` is the only `displayUnitToKg`, so what the
+  card shows and what Room stores are one number. `parseAction`'s band is `1.0..1000.0` rather than
+  a plausible human range, because the number arrives before the unit does and 20 kg and 44 lb are
+  both weights — it is the dropped decimal point `MAX_ACTION_CALORIES` guards, nothing more.
+  **The change line carries no arrow and no colour.** Whether up is good depends on the user's
+  goal, which is the trend-arrow rule, and a plain `−0.6 kg since your last weigh-in` answers
+  without taking a side; it reads off `latestWeighInKg()`, which is deliberately *not*
+  `weightKg()`'s onboarding fallback, because a card saying "since your last weigh-in" must mean
+  one. The write goes through `ProgressRepository.upsertWeightEntry` — keyed on the day, so a
+  second draft today replaces today's rather than appending, which is the weigh-in sheet's own
+  behaviour and what lets that line be read as *what this is about to overwrite*. That is the
+  fourth repository `settle` writes through, and it joined the constructor rather than the toolbox:
+  the toolbox is reads.
+
 - **The tap retires the proposal card; a Room emission retires the bubbles.** They read like one
   rule and are two, and conflating them was a double-log. `onSettle` guarded on
   `state.proposal.isEmpty()` and then *awaited* `settle()` — but nothing reduces before that

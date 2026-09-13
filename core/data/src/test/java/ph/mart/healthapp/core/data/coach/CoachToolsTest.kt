@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
@@ -104,6 +105,32 @@ class CoachToolsTest {
         assertEquals(2, action.glasses)
     }
 
+    /**
+     * The figure is the user's own, said out loud, and it is left in whatever unit they said it
+     * in: `resolve` stamps the profile's, and `settle` is the one place it becomes kilograms. The
+     * defaults here are what "not resolved yet" looks like, the reading a zero burn already has.
+     */
+    @Test
+    fun `a weight call becomes an action the app will unit itself`() {
+        val action = parseAction(TOOL_LOG_WEIGHT, args("weight" to 82.4)) as CoachAction.LogWeight
+        assertEquals(82.4, action.weight, 0.001)
+        assertEquals(UnitSystem.Metric, action.unit)
+        assertNull(action.previousKg)
+    }
+
+    /** One decimal, so the card and the row it writes cannot show two different numbers. */
+    @Test
+    fun `a weight is rounded to one decimal`() {
+        val action = parseAction(TOOL_LOG_WEIGHT, args("weight" to 82.44999)) as CoachAction.LogWeight
+        assertEquals(82.4, action.weight, 0.001)
+    }
+
+    @Test
+    fun `a quoted weight is read, not rejected`() {
+        val action = parseAction(TOOL_LOG_WEIGHT, args("weight" to "181")) as CoachAction.LogWeight
+        assertEquals(181.0, action.weight, 0.001)
+    }
+
     // endregion
 
     // region The parse rejects what it should
@@ -149,9 +176,21 @@ class CoachToolsTest {
         assertNull(parseAction(TOOL_LOG_EXERCISE, args("type" to "Run")))
     }
 
+    /** The same dropped decimal the other ceilings guard, in a band that has to be right before
+     * the unit is known — 20 kg and 44 lb are both weights, so the band is wide and the card is
+     * what catches the rest. */
+    @Test
+    fun `an absurd, missing or non-numeric weight fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_WEIGHT, args("weight" to MAX_ACTION_WEIGHT + 1)))
+        assertNull(parseAction(TOOL_LOG_WEIGHT, args("weight" to 0)))
+        assertNull(parseAction(TOOL_LOG_WEIGHT, args("weight" to -70)))
+        assertNull(parseAction(TOOL_LOG_WEIGHT, args("weight" to "about eighty")))
+        assertNull(parseAction(TOOL_LOG_WEIGHT, emptyMap()))
+    }
+
     @Test
     fun `an unknown tool is not an action`() {
-        assertNull(parseAction("log_weight", args("weight_kg" to 70.0)))
+        assertNull(parseAction("delete_entry", args("id" to 4)))
     }
 
     /** A read tool reaching the parse would mean the caller's WRITE_TOOLS check had failed. It

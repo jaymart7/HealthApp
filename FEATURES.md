@@ -289,8 +289,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
 - Coach proposals — asked to log something, the coach drafts the rows and the user taps to confirm
-  them: foods into today's diary, glasses of water, or an activity — whose calorie burn is the
-  app's own MET estimate from the user's latest weigh-in, never the model's guess. A whole meal is
+  them: foods into today's diary, glasses of water, an activity — whose calorie burn is the
+  app's own MET estimate from the user's latest weigh-in, never the model's guess — or today's
+  weigh-in, drawn in the unit their profile uses with what it moves by under it, and only ever
+  from a figure they volunteered: the coach never asks what they weigh and is never told. A whole meal is
   one card of several rows, each removable before the tap, written to the diary together. One of
   the user's own saved meals or recipes is drafted by name, with the figures they saved and none
   the model invented. It never writes on its own, and nothing —

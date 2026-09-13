@@ -23,9 +23,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
+import ph.mart.healthapp.core.data.profile.round1
+import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
@@ -139,6 +144,12 @@ private fun SingleProposal(action: CoachAction) {
             ProposalHeadline(waterAmount(action.glasses))
         }
 
+        is CoachAction.LogWeight -> {
+            ProposalTitle(stringResource(R.string.coach_proposal_weight_title))
+            ProposalHeadline(weightAmount(action))
+            weightChange(action)?.let { ProposalDetail(it) }
+        }
+
         // `resolve()` turns a saved meal into its own rows before any card is drawn, so this is
         // only ever reached if that stops being true. It renders the name rather than nothing,
         // which stays honest: the name is the whole of what the model supplied.
@@ -243,6 +254,7 @@ private fun actionName(action: CoachAction): String = when (action) {
     is CoachAction.LogWater -> waterAmount(action.glasses)
     is CoachAction.LogExercise -> activityName(action)
     is CoachAction.LogSavedMeal -> action.name
+    is CoachAction.LogWeight -> weightAmount(action)
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -254,6 +266,7 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
         stringResource(R.string.coach_proposal_exercise_body, action.minutes, action.burnedKcal)
     // No figures to show: a saved meal carries a name until `resolve()` gives it its rows.
     is CoachAction.LogSavedMeal -> null
+    is CoachAction.LogWeight -> weightChange(action)
 }
 
 /**
@@ -272,6 +285,8 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
             stringResource(R.string.coach_proposal_logged_water, waterAmount(single.glasses))
         single is CoachAction.LogExercise ->
             stringResource(R.string.coach_proposal_logged_exercise, activityName(single), single.minutes)
+        single is CoachAction.LogWeight ->
+            stringResource(R.string.coach_proposal_logged_weight, weightAmount(single))
         else -> pluralStringResource(
             R.plurals.coach_proposal_logged_items,
             actions.size,
@@ -280,6 +295,41 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
         )
     }
 }
+
+/**
+ * The figure the user gave, in the unit their profile uses and **not converted** — this is the
+ * number `settle` is about to write, and the card's promise is that they are the same one.
+ */
+@Composable
+private fun weightAmount(action: CoachAction.LogWeight): String = stringResource(
+    R.string.coach_proposal_weight_body,
+    formatWeight(action.weight),
+    action.unit.weightUnitLabel(),
+)
+
+/**
+ * What it moves by, in the same unit. Null on a first weigh-in and on no change at all, the rule
+ * the water row follows — nothing to say is better said by saying nothing.
+ *
+ * Signed rather than an arrow, and uncoloured: whether up is good depends on the user's goal,
+ * which is the trend-arrow rule, and a plain "+0.4 kg" answers without taking a side.
+ */
+@Composable
+private fun weightChange(action: CoachAction.LogWeight): String? {
+    val previous = action.previousKg?.kgToDisplayUnit(action.unit) ?: return null
+    val delta = round1(action.weight - previous)
+    if (delta == 0.0) return null
+    return stringResource(
+        R.string.coach_proposal_weight_change,
+        (if (delta > 0) "+" else "\u2212") + formatWeight(abs(delta)),
+        action.unit.weightUnitLabel(),
+    )
+}
+
+/** Drops a trailing ".0" — 82 rather than 82.0, the same helper the weigh-in sheet and every
+ * measurement row keep locally. */
+private fun formatWeight(value: Double): String =
+    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 /** An unnamed activity is called after its type — what [ph.mart.healthapp.core.data.exercise.ExerciseEntry]
  * means by an empty name, resolved here because only a composable can read the enum's label. */
@@ -380,6 +430,28 @@ private fun ProposalCardExercisePreview() {
                         name = "Morning run",
                         minutes = 30,
                         burnedKcal = 343,
+                    ),
+                ),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** Both halves of the weigh-in card: the figure, and what it moves by. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardWeightPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(
+                    CoachAction.LogWeight(
+                        weight = 82.4,
+                        unit = UnitSystem.Metric,
+                        previousKg = 83.0,
                     ),
                 ),
                 onConfirm = { _, _ -> },

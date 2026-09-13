@@ -152,6 +152,24 @@ class FakeCoachScriptTest {
     }
 
     /**
+     * The weight word is what makes a number a weigh-in, and it is checked before the exercise
+     * match because `EXERCISE_WORDS` claims "weights" for a lifting session.
+     */
+    @Test
+    fun `a sentence about a weight drafts a weigh-in`() {
+        val script = fakeCoachScript("log my weight 82.4") as FakeScript.Propose
+        assertEquals(82.4, (script.actions.single() as CoachAction.LogWeight).weight, 0.001)
+        val spoken = fakeCoachScript("i weigh 181 today") as FakeScript.Propose
+        assertEquals(181.0, (spoken.actions.single() as CoachAction.LogWeight).weight, 0.001)
+    }
+
+    @Test
+    fun `a gym session is still an exercise, not a weigh-in`() {
+        val script = fakeCoachScript("log a 40 minute gym session") as FakeScript.Propose
+        assertTrue(script.actions.toString(), script.actions.single() is CoachAction.LogExercise)
+    }
+
+    /**
      * A saved meal is named by the user, so the name is whatever followed the library word — and
      * it is checked before the food match, or "log my usual Overnight oats" drafts the oats alone
      * at `COMMON_FOODS`' figures instead of the rows the user actually saved.

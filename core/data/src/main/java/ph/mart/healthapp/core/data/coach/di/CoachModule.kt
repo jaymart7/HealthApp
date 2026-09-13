@@ -39,6 +39,7 @@ val coachDataModule = module {
             foodRepository = get(),
             waterRepository = get(),
             exerciseRepository = get(),
+            progressRepository = get(),
             toolbox = get(),
         )
         debugCoach(real, get()) ?: real
