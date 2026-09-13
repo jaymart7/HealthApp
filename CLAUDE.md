@@ -256,6 +256,36 @@ a second thing to keep in step.
 **Final mascot illustration.** The geometric placeholders (Rui, Gel, Mart, Alo, Lala) are used
 throughout; a commissioned set replaces the five drawings, not the picker around them.
 
+**A 44dp tap target, fourteen times, against the app's own 48dp rule.** `IconButton(modifier =
+Modifier.size(44.dp))` appears at fourteen sites across nine files — the rename and delete buttons
+on every library row, the supplement rows, the recipe and saved-meal panels, the strength set list,
+the blood-pressure row — plus `MetricCard`'s named `TapTargetMin = 44.dp` for Home's cells. It is
+below the target `DECISIONS.md` → **Profile & Settings** states for the stepper ("the 48dp-touch /
+40dp-visual button split"), and it really is 44: `IconButton` applies
+`minimumInteractiveComponentSize()` *after* the caller's modifier, so an outer `.size(44.dp)` caps
+what the minimum could otherwise expand. Either raise the fourteen to a 48dp touch box over a 40dp
+visual (the split the stepper already ships) or write the entry saying why rows are the exception.
+One decision, fourteen sites — not something to change piecemeal.
+
+**Health-derived rows ride cloud Auto Backup.** `backup_rules.xml` and `data_extraction_rules.xml`
+are exclude-only and exclude just the two photo directories, so `fitpulse.db` — every row synced
+from Health Connect and Google Health, plus the cycle table — goes to the cloud copy. Both files
+are well argued on size and neither considers the Health Connect **Data Use** restrictions on
+storing HC-derived data off-device. Settle it with the two items above rather than before them:
+the answer is either that the user's own Auto Backup is in scope, or a `<cloud-backup>` exclusion
+for the database.
+
+**Five deprecations the compiler already reports**, none urgent, all cheap to lose track of:
+`rememberSwipeToDismissBoxState(confirmValueChange = …)` is deprecated *without replacement*
+(`DiarySection.kt:60`) and that callback is load-bearing — `DECISIONS.md` → **The diary & sharing
+a day** argues the delete happens *in* it; the replacement is dynamic anchors, so that entry needs
+rewriting, not just the call. `currentWindowAdaptiveInfo()` wants its V2 form for the L and XL
+width classes (`AppScaffold.kt:204`), which is the **Adaptive layout** section's business.
+`LocalLifecycleOwner` moved to `androidx.lifecycle.compose` (three sites).
+`View.announceForAccessibility` is deprecated (`OnboardingScreen.kt:102,159`). And thirteen "No
+cast needed" plus two unnecessary `!!` in `ExportTest` are one cleanup pass whenever those files
+are next open.
+
 ## Composable structure & previews
 
 - **File breakdown:** a screen's composable is `ScreenName.kt`; its
