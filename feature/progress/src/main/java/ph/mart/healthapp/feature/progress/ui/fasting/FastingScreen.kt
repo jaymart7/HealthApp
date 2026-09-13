@@ -27,7 +27,6 @@ import ph.mart.healthapp.core.data.fasting.durationMinutes
 import ph.mart.healthapp.core.data.fasting.fastingAverages
 import ph.mart.healthapp.core.data.fasting.inRange
 import ph.mart.healthapp.core.data.health.formatDuration
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -153,7 +152,7 @@ private fun ColumnScope.FastingBody(
 ) {
     val range = state.range
     val today = todayEpochDay()
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val inWindow = sessions.inRange(range, today)
     val averages = inWindow.fastingAverages()
 

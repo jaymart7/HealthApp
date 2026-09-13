@@ -28,7 +28,6 @@ import ph.mart.healthapp.core.data.health.burnSeries
 import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.data.health.inRange
 import ph.mart.healthapp.core.data.health.stepAverages
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -167,7 +166,7 @@ private fun ColumnScope.ActivityBody(
 ) {
     val range = state.range
     val today = todayEpochDay()
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val steps = stepDays.inRange(range, today)
     val stepStats = steps.stepAverages(stepGoal)
     val burn = burnSeries(stepDays, exerciseEntries).inRange(range, today)

@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -196,7 +195,7 @@ private fun WeightContent(
         EnergyCheckInScreen(
             checkIn = checkIn,
             unit = unit,
-            addExerciseToBudget = profile?.addExerciseToBudget ?: true,
+            addExerciseToBudget = profile.addExerciseToBudget,
             onApply = onApplyTarget,
             onClose = { state.checkInOpen = false },
         )
@@ -216,7 +215,7 @@ private fun ColumnScope.WeightBody(
     state: WeightState,
 ) {
     val range = state.range
-    val current = entries.maxByOrNull { it.dateEpochDay }!!.weightKg
+    val current = entries.maxByOrNull { it.dateEpochDay }?.weightKg ?: return
     val filtered = entries.inRange(range)
     val windowDelta = filtered.firstOrNull()?.let { current - it.weightKg }
 
@@ -333,8 +332,7 @@ private fun ColumnScope.WeightBody(
             ),
             StatRow(
                 label = stringResource(R.string.progress_weight_readings),
-                value = range.days?.let { stringResource(R.string.progress_weight_readings_of, filtered.size, it) }
-                    ?: pluralStringResource(R.plurals.progress_weight_readings_count, filtered.size, filtered.size),
+                value = stringResource(R.string.progress_weight_readings_of, filtered.size, range.days),
             ),
         ),
     )

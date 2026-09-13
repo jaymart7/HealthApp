@@ -156,10 +156,6 @@
     <string name="progress_weight_up">%1$s %2$s up</string>
     <string name="progress_weight_readings">Readings logged</string>
     <string name="progress_weight_readings_of">%1$d of %2$d days</string>
-    <plurals name="progress_weight_readings_count">
-        <item quantity="one">%1$d reading</item>
-        <item quantity="other">%1$d readings</item>
-    </plurals>
     <string name="progress_weight_current">Current</string>
     <string name="progress_weight_change">Change</string>
     <string name="progress_weight_goal_remaining">Goal remaining</string>

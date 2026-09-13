@@ -33,7 +33,6 @@ import ph.mart.healthapp.core.data.exercise.volumeByDay
 import ph.mart.healthapp.core.data.exercise.volumeLabel
 import ph.mart.healthapp.core.data.exercise.withSets
 import ph.mart.healthapp.core.data.profile.UnitSystem
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -157,7 +156,7 @@ private fun ColumnScope.StrengthBody(
 ) {
     val range = state.range
     val today = todayEpochDay()
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val series = entries.volumeByDay().inRange(range, today)
     // Recomputed over the window rather than over the whole year, so the stats and the chart above
     // them always describe the same days.

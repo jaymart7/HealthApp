@@ -49,7 +49,7 @@ fun List<MoodDay>.moodAverages(): MoodAverages {
  * not the 30 days around whenever the user last opened the app.
  */
 fun List<MoodDay>.inRange(range: ChartRange, todayEpochDay: Long): List<MoodDay> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

@@ -54,7 +54,7 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
 
     /** Window anchored here, not in the caller, for the same reason [observeLoggedDays]'s is. */
     override fun observeRecentEntries(): Flow<List<ExerciseEntry>> = forToday { today ->
-        val from = today - ChartRange.OneYear.days!!
+        val from = today - ChartRange.OneYear.days
         combine(dao.observeSince(from), dao.observeSetsSince(from), ::joinSets)
     }
 

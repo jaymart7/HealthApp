@@ -23,7 +23,7 @@ fun SleepNight.formatDuration(): String = formatDuration(minutesAsleep)
  * intact rather than the 30 days around whenever the watch last synced.
  */
 fun List<SleepNight>.inRange(range: ChartRange, todayEpochDay: Long): List<SleepNight> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

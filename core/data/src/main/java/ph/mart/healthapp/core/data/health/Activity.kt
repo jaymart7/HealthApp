@@ -32,6 +32,6 @@ fun burnSeries(steps: List<StepDay>, exercise: List<ExerciseEntry>): List<BurnDa
 
 /** Anchored to today like [List<StepDay>.inRange], for the same reason. */
 fun List<BurnDay>.inRange(range: ChartRange, todayEpochDay: Long): List<BurnDay> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }

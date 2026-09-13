@@ -24,7 +24,6 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.heartAverages
 import ph.mart.healthapp.core.data.health.inRange
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -142,7 +141,7 @@ private fun HeartContent(
 private fun ColumnScope.HeartBody(days: List<HeartDay>, state: HeartState) {
     val range = state.range
     val today = todayEpochDay()
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val inWindow = days.inRange(range, today)
     val averages = inWindow.heartAverages()
 

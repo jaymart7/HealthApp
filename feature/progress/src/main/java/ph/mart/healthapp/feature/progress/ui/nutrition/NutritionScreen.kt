@@ -182,7 +182,7 @@ private fun ColumnScope.NutritionBody(
     state: NutritionState,
 ) {
     val range = state.range
-    val days = range.days?.let { dailyNutrition.takeLast(it) } ?: dailyNutrition
+    val days = dailyNutrition.takeLast(range.days)
     val averages = days.averages()
     val target = targets?.calories
 

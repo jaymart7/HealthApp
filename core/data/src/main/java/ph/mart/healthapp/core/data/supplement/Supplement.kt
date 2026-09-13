@@ -88,7 +88,7 @@ fun List<SupplementDay>.averageAdherence(): Float? =
  * around whenever the user last ticked something.
  */
 fun List<SupplementDay>.inRange(range: ChartRange, todayEpochDay: Long): List<SupplementDay> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

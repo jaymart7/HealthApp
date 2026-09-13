@@ -79,7 +79,7 @@ fun List<ProgressPhoto>.weightArc(): PhotoWeightArc? {
     return if (lastDay == firstDay) null else PhotoWeightArc(lastKg - firstKg, lastDay - firstDay)
 }
 
-enum class ChartRange(@StringRes val label: Int, val days: Int?) {
+enum class ChartRange(@StringRes val label: Int, val days: Int) {
     OneMonth(R.string.data_chart_range_1m, 30),
     ThreeMonths(R.string.data_chart_range_3m, 90),
     SixMonths(R.string.data_chart_range_6m, 180),
@@ -105,7 +105,7 @@ fun List<WeightEntry>.withMovingAverage(): List<WeightPoint> {
 }
 
 fun List<WeightEntry>.inRange(range: ChartRange): List<WeightEntry> {
-    val days = range.days ?: return this
+    val days = range.days
     val latest = maxOfOrNull { it.dateEpochDay } ?: return this
     return filter { it.dateEpochDay >= latest - days }
 }

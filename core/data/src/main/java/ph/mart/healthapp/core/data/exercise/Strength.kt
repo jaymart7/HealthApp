@@ -60,7 +60,7 @@ fun List<ExerciseEntry>.volumeByDay(): List<DayVolume> = withSets()
 /** Anchored to today like [ph.mart.healthapp.core.data.health.BurnDay]'s, for the same reason:
  * a sparse series headed "1M" has to show the last 30 days with their gaps intact. */
 fun List<DayVolume>.inRange(range: ChartRange, todayEpochDay: Long): List<DayVolume> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

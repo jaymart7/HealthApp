@@ -185,7 +185,7 @@ fun List<CycleDay>.cycleAverages(todayEpochDay: Long): CycleAverages {
  * whenever the last one was logged.
  */
 fun List<CycleDay>.inRange(range: ChartRange, todayEpochDay: Long): List<CycleDay> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

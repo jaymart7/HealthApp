@@ -22,7 +22,7 @@ fun formatBpm(bpm: Int): String = "$bpm bpm"
  * gaps intact rather than the 30 days around whenever the watch last synced.
  */
 fun List<HeartDay>.inRange(range: ChartRange, todayEpochDay: Long): List<HeartDay> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

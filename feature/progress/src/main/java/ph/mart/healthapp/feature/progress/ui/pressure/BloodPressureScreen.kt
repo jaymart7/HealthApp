@@ -26,7 +26,6 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.averages
 import ph.mart.healthapp.core.data.bloodpressure.byDay
 import ph.mart.healthapp.core.data.bloodpressure.inRange
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
@@ -186,7 +185,7 @@ private fun BloodPressureList(
 ) {
     val today = todayEpochDay()
     val range = state.range
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val inWindow = readings.inRange(range, today)
     val averages = inWindow.averages()
 

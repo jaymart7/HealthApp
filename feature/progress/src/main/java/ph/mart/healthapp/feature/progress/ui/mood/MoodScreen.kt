@@ -25,7 +25,6 @@ import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.inRange
 import ph.mart.healthapp.core.data.mood.moodAverages
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -151,7 +150,7 @@ private fun MoodContent(
 private fun ColumnScope.MoodBody(days: List<MoodDay>, state: MoodState) {
     val range = state.range
     val today = todayEpochDay()
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val inWindow = days.inRange(range, today)
     val averages = inWindow.moodAverages()
 

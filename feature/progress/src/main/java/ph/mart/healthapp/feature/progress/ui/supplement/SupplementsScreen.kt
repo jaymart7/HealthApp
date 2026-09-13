@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.adherenceByDay
 import ph.mart.healthapp.core.data.supplement.averageAdherence
@@ -136,7 +135,7 @@ private fun SupplementsContent(
 private fun ColumnScope.SupplementsBody(days: List<SupplementDay>, state: SupplementsState) {
     val range = state.range
     val today = todayEpochDay()
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val inWindow = days.inRange(range, today)
     val byDay = inWindow.adherenceByDay()
     val average = inWindow.averageAdherence()

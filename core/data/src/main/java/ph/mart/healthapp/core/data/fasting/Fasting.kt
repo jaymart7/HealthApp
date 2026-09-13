@@ -69,7 +69,7 @@ fun formatClockTime(millis: Long): String =
  * is sparse, so a window headed "1M" has to show the last 30 days with their gaps intact.
  */
 fun List<FastSession>.inRange(range: ChartRange, todayEpochDay: Long): List<FastSession> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

@@ -83,7 +83,7 @@ fun dayBurnedKcal(exercise: List<ExerciseEntry>, steps: StepDay?): Int =
  * the 30 days around whenever the watch last synced.
  */
 fun List<StepDay>.inRange(range: ChartRange, todayEpochDay: Long): List<StepDay> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 

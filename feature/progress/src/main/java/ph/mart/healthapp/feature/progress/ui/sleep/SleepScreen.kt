@@ -25,7 +25,6 @@ import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.data.health.inRange
 import ph.mart.healthapp.core.data.health.sleepAverages
-import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -162,7 +161,7 @@ private fun SleepContent(
 private fun ColumnScope.SleepBody(nights: List<SleepNight>, state: SleepState) {
     val range = state.range
     val today = todayEpochDay()
-    val from = today - (range.days ?: ChartRange.OneYear.days!!)
+    val from = today - range.days
     val inWindow = nights.inRange(range, today)
     val averages = inWindow.sleepAverages()
 

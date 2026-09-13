@@ -128,7 +128,7 @@ fun List<BloodPressureReading>.averages(): BloodPressureAverages {
  * gaps intact rather than the 30 days around whenever the last reading happened to land.
  */
 fun List<BloodPressureReading>.inRange(range: ChartRange, todayEpochDay: Long): List<BloodPressureReading> {
-    val days = range.days ?: return this
+    val days = range.days
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 
