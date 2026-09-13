@@ -1,19 +1,30 @@
 package ph.mart.healthapp.feature.coach.ui.components
 
 import androidx.annotation.StringRes
+import android.content.ClipData
+import android.content.ClipboardManager
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -23,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotSpeechBubble
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.shareText
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.coach.R
 
@@ -39,6 +51,10 @@ import ph.mart.healthapp.feature.coach.R
  * message only: a finished answer arriving is the one thing on this screen a screen reader user
  * would otherwise have to go looking for. Deliberately *not* on [StreamingBubble] — a live region
  * over text that grows per chunk makes TalkBack restart the whole answer on every chunk.
+ *
+ * **Long-pressing the coach's side opens Copy / Share / Ask again**, the last only when
+ * [onAskAgain] is non-null. The user's own side has no menu: their question is already theirs, and
+ * the one thing worth doing to it — asking it again — is what the answer's menu does.
  */
 @Composable
 internal fun ChatBubble(
@@ -46,6 +62,7 @@ internal fun ChatBubble(
     fromUser: Boolean,
     modifier: Modifier = Modifier,
     announce: Boolean = false,
+    onAskAgain: (() -> Unit)? = null,
 ) {
     val announced = if (announce) {
         modifier.semantics { liveRegion = LiveRegionMode.Polite }
@@ -74,7 +91,65 @@ internal fun ChatBubble(
             verticalAlignment = Alignment.Top,
         ) {
             MascotAvatar(state = MascotState.Idle, size = 32.dp)
-            MascotSpeechBubble(text = text)
+            AnswerActions(text = text, onAskAgain = onAskAgain) { open ->
+                MascotSpeechBubble(
+                    text = text,
+                    modifier = Modifier.combinedClickable(
+                        // A plain tap does nothing: the bubble is text, not a control, and the
+                        // ripple is what says the long press is there at all.
+                        onClick = {},
+                        onLongClick = open,
+                        onLongClickLabel = stringResource(R.string.coach_bubble_actions),
+                    ),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The menu behind a long press on an answer.
+ *
+ * The clipboard is the platform's, not Compose's: `LocalClipboardManager` is deprecated and its
+ * replacement is a suspending API with a moving shape, while two lines of `ClipData` have been
+ * stable for a decade. Android 13 and up show their own "copied" confirmation, which is why
+ * nothing here raises a snackbar.
+ */
+@Composable
+private fun AnswerActions(
+    text: String,
+    onAskAgain: (() -> Unit)?,
+    bubble: @Composable (open: () -> Unit) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    Box {
+        bubble { open = true }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.coach_bubble_copy)) },
+                onClick = {
+                    context.getSystemService(ClipboardManager::class.java)
+                        ?.setPrimaryClip(ClipData.newPlainText(null, text))
+                    open = false
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.coach_bubble_share)) },
+                onClick = {
+                    shareText(context, text)
+                    open = false
+                },
+            )
+            if (onAskAgain != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.coach_bubble_ask_again)) },
+                    onClick = {
+                        onAskAgain()
+                        open = false
+                    },
+                )
+            }
         }
     }
 }

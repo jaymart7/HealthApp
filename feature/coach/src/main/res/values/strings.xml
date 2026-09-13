@@ -2,6 +2,12 @@
     <string name="coach_failure_offline">You\'re offline — the coach needs a connection.</string>
     <string name="coach_failure_failed">The coach couldn\'t answer that just now.</string>
     <string name="coach_retry">Try again</string>
+
+    <!-- The long-press menu on an answer. "Ask again" only appears on the newest one. -->
+    <string name="coach_bubble_actions">Answer options</string>
+    <string name="coach_bubble_copy">Copy</string>
+    <string name="coach_bubble_share">Share</string>
+    <string name="coach_bubble_ask_again">Ask again</string>
     <string name="coach_clear">Clear chat</string>
     <string name="coach_clear_title">Clear this chat?</string>
     <string name="coach_clear_body">The whole conversation goes. Your logged food and weight aren\'t affected.</string>

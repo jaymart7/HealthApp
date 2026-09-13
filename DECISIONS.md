@@ -1529,6 +1529,21 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   its own answer. `sanitizeReply` is the whole trust boundary and keeps line breaks where
   `sanitizeInsight` collapses them (an answer legitimately spans a short paragraph), and rejects
   past `MAX_REPLY_CHARS` rather than truncating, for the reason the insight cap gives.
+- **An answer can be copied, shared and asked again; a question can be none of those.** A long
+  press on the coach's side opens Copy / Share / Ask again, and the user's own bubble has no menu
+  at all — their question is already theirs, and the one thing worth doing to it is what the
+  *answer's* menu does. Three calls. **Ask again is on the newest answer only** and never while a
+  turn is in flight: re-asking an older one appends a fresh pair at the bottom and buries the
+  answer the user was looking at, which is worse than scrolling, and mid-turn it is the same send
+  the locked input bar is already refusing. `askAgainQuestion()` is that rule as a pure function
+  with the JVM test, the shape `followUpsFor` set. **It is a fresh send, not a repair** — `OnRetry`'s
+  reading — so the conversation keeps both answers, which is the honest record: the coach was asked
+  twice. **The clipboard is the platform's, not Compose's**: `LocalClipboardManager` is deprecated
+  and its replacement is a suspending API with a moving shape, while two lines of `ClipData` have
+  been stable for a decade — and Android 13+ shows its own "copied" confirmation, so nothing here
+  raises a snackbar. `shareText()` sits beside `sharePng()` in `:core:designsystem` rather than
+  inside the feature, because a second `ACTION_SEND` written locally is how two share sheets start
+  behaving differently; text needs no `FileProvider`, no cache file and no grant.
 - **The follow-up chips are derived from the day, not generated.** A finished answer was a dead
   end: the empty conversation gets four starters and every turn after it gets a blank field. The
   obvious build is a second model call per turn asking for the next questions — and it doubles the

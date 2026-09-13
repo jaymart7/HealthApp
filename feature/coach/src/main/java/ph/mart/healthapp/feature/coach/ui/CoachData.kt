@@ -65,6 +65,23 @@ internal fun CoachUiState.withMessages(
 }
 
 /**
+ * The question to re-ask for the message at [index], or null where re-asking makes no sense.
+ *
+ * Only the **newest** answer offers it: re-asking an old turn would append a fresh pair at the
+ * bottom and bury the answer the user was looking at, which is a worse outcome than scrolling. Not
+ * while a turn is in flight either — the input bar is locked for that, and this is the same send.
+ * Null also when the row above is not the user's, which is what an unpaired history row looks like.
+ *
+ * The re-ask itself is a fresh send, not a repair — the reading `OnRetry` already has — so the
+ * conversation keeps both answers. That is the honest record: the coach was asked twice.
+ */
+internal fun CoachUiState.askAgainQuestion(index: Int): String? {
+    if (pending != null || index != messages.lastIndex) return null
+    if (messages.getOrNull(index)?.fromUser != false) return null
+    return messages.getOrNull(index - 1)?.takeIf { it.fromUser }?.text
+}
+
+/**
  * The turn in flight, dropped. Nothing was persisted — the repository writes a question only once
  * it has an answer — so there is nothing to reconcile and all three go together.
  *

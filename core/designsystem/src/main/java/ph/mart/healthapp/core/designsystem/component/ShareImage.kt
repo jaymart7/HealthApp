@@ -149,6 +149,21 @@ suspend fun sharePng(context: Context, picture: Picture, fileName: String) {
 }
 
 /**
+ * The text twin of [sharePng], and deliberately the whole of it: no `FileProvider`, no cache file,
+ * no grant — a sentence goes in the intent itself.
+ *
+ * It lives beside the image one because they are the same decision made twice, and a second
+ * `ACTION_SEND` written inside a feature is how two share sheets start behaving differently.
+ */
+fun shareText(context: Context, text: String) {
+    val send = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, text)
+    }
+    context.startActivity(Intent.createChooser(send, null))
+}
+
+/**
  * Preview-then-share: the sheet shows exactly the PNG that leaves the app, which is why the
  * branding can exist here without ever appearing on the screen the card came from.
  *

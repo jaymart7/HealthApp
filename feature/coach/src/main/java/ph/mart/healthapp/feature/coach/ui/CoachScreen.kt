@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -103,7 +103,10 @@ private fun CoachContent(
                         CoachEmptyState(onStarter = { onEvent(CoachEvent.OnSend(it)) })
                     }
                 }
-                items(uiState.messages, key = { it.id }) { message ->
+                itemsIndexed(uiState.messages, key = { _, message -> message.id }) { index, message ->
+                    // The question this answer came from, when re-asking it makes sense — the
+                    // newest answer only, and never mid-turn. `askAgainQuestion` is the rule.
+                    val question = uiState.askAgainQuestion(index)
                     ChatBubble(
                         text = message.text,
                         fromUser = message.fromUser,
@@ -111,6 +114,7 @@ private fun CoachContent(
                         // reply reach a screen reader at all, and marking every bubble would
                         // re-announce the whole conversation.
                         announce = !message.fromUser && message.id == uiState.messages.last().id,
+                        onAskAgain = question?.let { { onEvent(CoachEvent.OnSend(it)) } },
                     )
                 }
                 // The turn in flight, neither half of it in Room yet: the question is on screen

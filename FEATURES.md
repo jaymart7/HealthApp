@@ -294,6 +294,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the model invented. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
   writes nothing.
+- Coach answer menu — long-press an answer to copy it, share it as text, or ask the same question
+  again. Ask again appears on the newest answer only, and is a fresh send rather than a repair.
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a
   protein gap, room left, water short, a weigh-in to compare) and falling back to diary questions.
   Rule-based, not generated: tapping one sends it exactly as an opener does.
