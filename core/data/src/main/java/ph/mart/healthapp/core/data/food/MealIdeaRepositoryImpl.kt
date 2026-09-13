@@ -10,7 +10,6 @@ import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.profile.DietaryPreference
 
 /** Three foods with ten fields each. [fitting] rejects whatever gets past it, but capping here is
  * cheaper than paying for a list that will be thrown away. */
@@ -115,7 +114,7 @@ private fun promptFor(request: MealIdeaRequest): String = buildString {
     appendLine("- Protein: ${request.remainingProteinG} g")
     appendLine("- Carbs: ${request.remainingCarbsG} g")
     appendLine("- Fat: ${request.remainingFatG} g")
-    request.dietLine()?.let(::appendLine)
+    dietLine(request.diet)?.let(::appendLine)
     appendLine()
     appendLine(
         "Suggest exactly $MAX_MEAL_IDEAS ordinary foods or simple meals that fit within those " +
@@ -126,14 +125,3 @@ private fun promptFor(request: MealIdeaRequest): String = buildString {
     )
 }
 
-/** Null for `None` and for a profile that never answered — a line saying "no restrictions" is one
- * more thing for the model to over-read. */
-private fun MealIdeaRequest.dietLine(): String? = when (diet) {
-    DietaryPreference.Vegetarian -> "They are vegetarian: no meat and no fish."
-    DietaryPreference.Vegan -> "They are vegan: no animal products at all."
-    // "Other" is the onboarding option for a diet FitPulse never asked them to name, so the
-    // honest instruction is to stay unremarkable rather than to guess at what it is.
-    DietaryPreference.Other -> "They follow a dietary restriction they have not described: keep " +
-        "suggestions plain and easy to swap an ingredient out of."
-    DietaryPreference.None, null -> null
-}

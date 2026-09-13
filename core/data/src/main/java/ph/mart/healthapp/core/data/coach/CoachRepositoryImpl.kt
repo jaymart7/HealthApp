@@ -101,6 +101,9 @@ internal class CoachRepositoryImpl(
         dao.observeAll().map { messages -> messages.map { it.toMessage() } }
 
     override fun send(question: String, request: InsightRequest?): Flow<CoachReply> = flow {
+        // Read before the builder, not inside it: `content {}` takes a plain lambda and a profile
+        // read is suspending — the same reason a tool read runs above `content` further down.
+        val dietLine = toolbox.dietLine()
         val model = Firebase.ai(
             backend = GenerativeBackend.googleAI(),
         ).generativeModel(
@@ -110,7 +113,7 @@ internal class CoachRepositoryImpl(
                 thinkingConfig = COACH_THINKING
             },
             tools = listOf(COACH_TOOLS),
-            systemInstruction = content { text(systemPromptFor(request)) },
+            systemInstruction = content { text(systemPromptFor(request, dietLine)) },
         )
 
         val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
@@ -283,7 +286,7 @@ private fun List<ChatMessageEntity>.asHistory(): List<Content> =
  *   over or under, and a coach that admits it beats one improvising one. The tools still work —
  *   a diary can be read without a profile.
  */
-private fun systemPromptFor(request: InsightRequest?): String = buildString {
+private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String = buildString {
     appendLine(
         "You are a friendly nutrition and fitness coach inside FitPulse, a food and body tracking " +
             "app. You are talking to the user who logs their day in it.",
@@ -294,6 +297,10 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
     } else {
         appendLine("Today so far, for a user whose goal is ${request.goal.name.lowercase()} weight:")
         append(dayNumbersBlock(request))
+    }
+    dietLine?.let {
+        appendLine()
+        appendLine(it)
     }
     appendLine()
     appendLine(
@@ -330,6 +337,16 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
             "conversation. You cannot edit or delete " +
             "anything, and you cannot log for a past day — point them at the Food tab's diary " +
             "for that.",
+    )
+    appendLine(
+        "When they ask what to eat, what to have for a meal or what you would recommend, work " +
+            "out what is left of their day from the numbers above and answer with food that fits " +
+            "it. Call get_library first and prefer what is already theirs — a saved meal, a " +
+            "recipe, or a food they log often — over something new, and say which of theirs it " +
+            "is. Estimating the calories and macros of a food you are *suggesting* is expected " +
+            "and is not the same thing as stating one of their logged figures, which still only " +
+            "ever comes from a tool. Keep portions ordinary and cookable, and once they pick one, " +
+            "draft it with log_food or log_saved_meal so they can confirm it into their diary.",
     )
     appendLine(
         "Reply in plain conversational text, in the second person. Keep it to three short " +

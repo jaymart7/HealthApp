@@ -22,12 +22,14 @@ import ph.mart.healthapp.core.data.fasting.isActive
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.RecipeServing
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.food.dietLine
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.food.totalKcal
 import ph.mart.healthapp.core.data.health.SleepNight
@@ -158,9 +160,10 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
         ),
         FunctionDeclaration(
             name = TOOL_GET_LIBRARY,
-            description = "Read the meals and recipes this user has saved, by name. Call this " +
-                "before answering anything about what they usually eat, what they could make, or " +
-                "before logging a meal they refer to by name.",
+            description = "Read the meals and recipes this user has saved and the foods they log " +
+                "most often, by name, with the figures they are logged at. Call this before " +
+                "answering anything about what they usually eat, before suggesting what they " +
+                "could eat, and before logging a meal they refer to by name.",
             parameters = emptyMap(),
         ),
         FunctionDeclaration(
@@ -594,14 +597,27 @@ private fun Map<Long, List<String>>.mergedWith(
 // endregion
 
 /**
- * The user's own meals and recipes, by name.
+ * The user's own meals and recipes, and the foods they actually eat, by name.
  *
  * Names first and figures second, because the names are what the model has to quote back exactly —
  * `log_saved_meal` matches on them and nothing else. A recipe reports **per serving**, the figure
  * the diary would get, rather than the whole pot.
+ *
+ * [foods] is `observeSuggestions()` — the user's starred favorites and recently logged foods, the
+ * same short list the add-entry sheet offers for a one-tap re-log. It is here so that *"what should
+ * I eat tonight?"* can be answered with food this user demonstrably eats, at the portion and the
+ * figures they log it at, rather than with something invented. It carries full macros where a
+ * saved meal carries only a calorie total: a recommendation is steered by the protein gap, and a
+ * single food is what the model would otherwise have to estimate.
  */
-internal fun formatLibrary(meals: List<SavedMeal>, recipes: List<Recipe>): String = buildString {
-    if (meals.isEmpty() && recipes.isEmpty()) return "They have not saved any meals or recipes."
+internal fun formatLibrary(
+    meals: List<SavedMeal>,
+    recipes: List<Recipe>,
+    foods: List<FoodSuggestion>,
+): String = buildString {
+    if (meals.isEmpty() && recipes.isEmpty() && foods.isEmpty()) {
+        return "They have not saved any meals or recipes, and have not logged any food yet."
+    }
     if (meals.isNotEmpty()) {
         appendLine("Saved meals:")
         meals.forEach {
@@ -614,7 +630,21 @@ internal fun formatLibrary(meals: List<SavedMeal>, recipes: List<Recipe>): Strin
             appendLine("- \"${it.name}\": ${it.perServing().calories} kcal per serving")
         }
     }
+    if (foods.isNotEmpty()) {
+        appendLine("Foods they log often:")
+        foods.forEach {
+            appendLine(
+                "- \"${it.name}\": ${it.portionAmount.formatPortion()} ${it.portionUnit}, " +
+                    "${it.calories} kcal, ${it.proteinG}P/${it.carbsG}C/${it.fatG}F",
+            )
+        }
+    }
 }
+
+/** `:core:designsystem` has the same one-liner for the diary's rows and this module cannot import
+ * it — a portion is written "2", never "2.0", wherever this app says one out loud. */
+private fun Double.formatPortion(): String =
+    if (this == toLong().toDouble()) toLong().toString() else toString()
 
 /**
  * A saved meal or recipe, by name, as the rows that would be written — or null when nothing
@@ -707,12 +737,30 @@ internal class CoachToolbox(
         else -> null
     }
 
-    /** The whole library, not the newest five the add-entry panel shows: the model is answering
-     * "what have I saved?", and a truncated list would have it deny a meal the user can see. */
+    /**
+     * The whole library, not the newest five the add-entry panel shows: the model is answering
+     * "what have I saved?", and a truncated list would have it deny a meal the user can see.
+     *
+     * The foods are the opposite call and deliberately so — `observeSuggestions()` is already
+     * capped at `MAX_SUGGESTIONS`, because "what do I eat" is answered by the handful they keep
+     * going back to, not by every row the diary holds.
+     */
     private suspend fun getLibrary(): String = formatLibrary(
         meals = foodRepository.observeAllSavedMeals().first(),
         recipes = foodRepository.observeAllRecipes().first(),
+        foods = foodRepository.observeSuggestions().first(),
     )
+
+    /**
+     * What the user won't eat, as the one sentence the meal-idea prompt already says it in.
+     *
+     * Null for `None` and for no profile at all, which appends nothing — the coach is told what to
+     * avoid or it is told nothing, never that there are "no restrictions". It lives on the toolbox
+     * because the toolbox is where this file's profile reads are, even though the caller spends it
+     * on the system instruction rather than on a tool result.
+     */
+    suspend fun dietLine(): String? =
+        dietLine(profileRepository.observeProfile().first()?.dietaryPreference)
 
     /** The two reads [savedMealRows] needs, and nothing else — the matching itself is pure, so it
      * is the part a JVM test can reach. */

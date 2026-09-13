@@ -298,6 +298,11 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the model invented. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
   writes nothing.
+- Coach recommendations — "what should I eat?" is answered from what is left of the day and from
+  food that is already theirs: the library tool hands the coach their saved meals, their recipes
+  *and* the foods they log most often, at the portions and figures they log them at, and their
+  dietary preference is in its instructions. What it picks is drafted as a proposal card, so a
+  suggestion is one tap from the diary.
 - Coach answer menu — long-press an answer to copy it, share it as text, or ask the same question
   again. Ask again appears on the newest answer only, and is a fresh send rather than a repair.
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a

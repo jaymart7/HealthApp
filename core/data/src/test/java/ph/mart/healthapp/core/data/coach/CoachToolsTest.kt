@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
@@ -291,17 +292,49 @@ class CoachToolsTest {
      * the name and nothing else. */
     @Test
     fun `the library lists meals and recipes by name`() {
-        val text = formatLibrary(listOf(usualBreakfast), listOf(chilli))
+        val text = formatLibrary(listOf(usualBreakfast), listOf(chilli), emptyList())
         assertTrue(text, "\"Usual breakfast\": 2 items, 390 kcal" in text)
         // Per serving, not the whole pot — the figure the diary would actually get.
         assertTrue(text, "\"Chilli\": 200 kcal per serving" in text)
     }
 
+    private val yogurt = FoodSuggestion(
+        name = "Greek yogurt",
+        portionAmount = 170.0,
+        portionUnit = "g",
+        calories = 140,
+        proteinG = 17,
+        carbsG = 9,
+        fatG = 4,
+        isFavorite = true,
+    )
+
+    /**
+     * The half of this tool that answers *"what should I eat?"*: the foods the user actually logs,
+     * at their own portion and their own figures. Full macros, because the answer is steered by
+     * the protein gap and a single food is what the model would otherwise estimate.
+     */
+    @Test
+    fun `the library lists the foods they log often, with the figures they log them at`() {
+        val text = formatLibrary(emptyList(), emptyList(), listOf(yogurt))
+        // "170 g", never "170.0 g" — a portion is said the way the diary says it.
+        assertTrue(text, "\"Greek yogurt\": 170 g, 140 kcal, 17P/9C/4F" in text)
+    }
+
+    /** A user with nothing saved still has food they eat, and that list alone is a usable answer —
+     * the empty sentence must not claim otherwise. */
+    @Test
+    fun `foods alone are a library`() {
+        val text = formatLibrary(emptyList(), emptyList(), listOf(yogurt))
+        assertTrue(text, "Greek yogurt" in text)
+        assertTrue(text, "have not" !in text)
+    }
+
     @Test
     fun `an empty library says so rather than going quiet`() {
         assertEquals(
-            "They have not saved any meals or recipes.",
-            formatLibrary(emptyList(), emptyList()),
+            "They have not saved any meals or recipes, and have not logged any food yet.",
+            formatLibrary(emptyList(), emptyList(), emptyList()),
         )
     }
 

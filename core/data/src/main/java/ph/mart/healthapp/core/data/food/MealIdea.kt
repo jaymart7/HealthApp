@@ -33,6 +33,24 @@ data class MealIdeaRequest(
 )
 
 /**
+ * The one sentence FitPulse says to a model about what the user won't eat, and it is said in two
+ * places: the meal-idea prompt and the coach's system instruction. One copy, because two would
+ * eventually disagree about veganism.
+ *
+ * Null for `None` and for a profile that never answered — a line saying "no restrictions" is one
+ * more thing for the model to over-read.
+ */
+internal fun dietLine(diet: DietaryPreference?): String? = when (diet) {
+    DietaryPreference.Vegetarian -> "They are vegetarian: no meat and no fish."
+    DietaryPreference.Vegan -> "They are vegan: no animal products at all."
+    // "Other" is the onboarding option for a diet FitPulse never asked them to name, so the
+    // honest instruction is to stay unremarkable rather than to guess at what it is.
+    DietaryPreference.Other -> "They follow a dietary restriction they have not described: keep " +
+        "suggestions plain and easy to swap an ingredient out of."
+    DietaryPreference.None, null -> null
+}
+
+/**
  * One suggestion: the same ten fields every seeded food in this app carries, so it seeds the
  * add-entry sheet through a `toAddEntryForm` twin like a search hit, a recipe or a scanned product
  * does — and is repriced by `withPortionAmount()` the moment the user changes the portion.

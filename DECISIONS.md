@@ -1839,6 +1839,36 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `log_mood` and `log_supplement` stayed out: the energy check-in owns a 1–5 tap and does it better
   than a sentence can, and a supplement needs fuzzy name-to-id matching against the user's own list,
   which is a new trust boundary for one tap. `log_weight` is still out, for the reason below.
+- **"What should I eat?" is answered from their own food, and that widened `get_library` rather
+  than adding a tool.** The starter chip `coach_starter_dinner` asks this, and the follow-up row
+  asks it again on every day with calories left — and the coach answered it with invented food,
+  because it could see their saved meals but not the foods they actually log, and was never told
+  their diet. Three small changes, no new declaration and no second model call. **`get_library`
+  grew a third section** rather than a `get_foods` appearing beside it — the precedent is *Sleep,
+  mood and fasting widened what the two tools answer with*, and "what do I eat" is the same
+  question as "what have I saved", asked of a different table. It is `observeSuggestions()`, the
+  add-entry sheet's own one-tap re-log list, so it is already capped at `MAX_SUGGESTIONS`: the
+  handful they keep going back to, which is the deliberate opposite of `getLibrary`'s *the whole
+  library, not the newest five* — a truncated library denies a meal the user can see, while a
+  hundred diary rows would answer a question nobody asked. Foods carry **full macros** where a
+  saved meal carries a calorie total, because a recommendation is steered by the protein gap.
+  **`dietLine()` moved rather than being copied**: it lived in `MealIdeaRepositoryImpl` and is now
+  `internal` in `MealIdea.kt`, read by both AI call sites, because two copies of one sentence about
+  veganism are two sentences that eventually disagree. It is appended only when it says something —
+  `None` and no-profile append nothing, never "no restrictions", which is one more thing for a model
+  to over-read. The read is hoisted above `content {}` in `send()`, the same shape a tool read has,
+  because that builder takes a plain lambda. **And the prompt's two clauses about figures were
+  contradicting each other.** *"Never state a figure you were not given or did not read from a
+  tool"* reads as forbidding the estimate a suggestion is made of, while `log_food`'s own line asks
+  for exactly that estimate. The new clause draws the line where it actually sits: estimating a
+  food you are *suggesting* is expected; one of *their* figures still only ever comes from a tool.
+  `dayNumbersBlock` is untouched — the model subtracts what is left from the numbers it already
+  has, and adding a "remaining" line there would have the insight card start describing the day
+  differently, which is the one thing that shared block exists to prevent. What a recommendation
+  ends in is unchanged: `log_food`/`log_saved_meal`, the proposal card, a tap. A named saved meal
+  still resolves to the user's own rows; a plain food is drafted from figures the model read back
+  out of the tool result, bounded by `parseAction` as always — resolving those by exact name too is
+  the upgrade if drafted rows ever drift from the library.
 - **The coach is the first call site to leave `AI_THINKING`, and it moved both halves of the
   budget.** `ThinkingLevel.LOW` and `maxOutputTokens` 300 → 700, together, in
   `CoachRepositoryImpl`. That constant's own entry names this case and its condition — *"If a call
