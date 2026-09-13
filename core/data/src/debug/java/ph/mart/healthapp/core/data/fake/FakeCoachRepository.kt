@@ -19,6 +19,7 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
+import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
  * The coach with the model taken out and nothing else changed.
@@ -59,6 +60,7 @@ import ph.mart.healthapp.core.data.insight.insightFor
  * | `log eggs, rice and an apple for lunch` | the multi-row card, its per-row `✕` and a partial confirm |
  * | `log my usual Overnight oats for breakfast` | a saved meal expanded into one row per item |
  * | `log my creatine` | the supplement card, ticked off against the user's own row |
+ * | `log two eggs for breakfast yesterday` | the same card, titled with the day it will write to |
  * | `took my Nothing At All supplement` | prose, then the failure bubble — no such supplement |
  * | `log my saved Nothing At All` | prose, then the failure bubble — the draft resolved to nothing |
  * | `quietly log a glass of water`, then Dismiss | a card with no prose above it: the turn is abandoned, not persisted |
@@ -182,6 +184,10 @@ internal fun fakeCoachScript(question: String): FakeScript {
     if ("fail" in asked) return FakeScript.Fail
 
     if (LOG_WORDS.any { it in asked }) {
+        // The same calendar words the read routing uses, read *inside* the log block: "log the
+        // eggs I had yesterday" is a draft for yesterday, not a question about it. Zero is today,
+        // which is what every action here means by a missing date.
+        val date = daysAgoIn(asked)?.takeIf { it > 0 }?.let { todayEpochDay() - it } ?: 0L
         // First in the block, because `EXERCISE_WORDS` claims "weights" for a lifting session and
         // "log my weight 82.4" is not one.
         weighInIn(asked)?.let { weight ->
@@ -195,7 +201,7 @@ internal fun fakeCoachScript(question: String): FakeScript {
         }
         if (WATER_WORDS.any { it in asked }) {
             return FakeScript.Propose(
-                actions = listOf(CoachAction.LogWater(glasses = 1)),
+                actions = listOf(CoachAction.LogWater(glasses = 1, dateEpochDay = date)),
                 preamble = preamble(asked, "Sure — here's a glass of water to add:"),
             )
         }
@@ -204,7 +210,13 @@ internal fun fakeCoachScript(question: String): FakeScript {
         // oats alone at `COMMON_FOODS`' figures rather than the user's own saved ones.
         savedMealNameIn(asked)?.let { name ->
             return FakeScript.Propose(
-                actions = listOf(CoachAction.LogSavedMeal(name = name, mealType = mealFor(asked))),
+                actions = listOf(
+                    CoachAction.LogSavedMeal(
+                        name = name,
+                        mealType = mealFor(asked),
+                        dateEpochDay = date,
+                    ),
+                ),
                 preamble = preamble(asked, "Pulling that one out of your library:"),
             )
         }
@@ -226,6 +238,7 @@ internal fun fakeCoachScript(question: String): FakeScript {
                         minutes = minutesIn(asked),
                         // Zero, exactly as `parseAction` leaves it: `priced` fills it in.
                         burnedKcal = 0,
+                        dateEpochDay = date,
                     ),
                 ),
                 preamble = preamble(
@@ -250,6 +263,7 @@ internal fun fakeCoachScript(question: String): FakeScript {
                         fatG = food.fatG,
                         portionAmount = food.portionAmount,
                         portionUnit = food.portionUnit,
+                        dateEpochDay = date,
                     )
                 },
                 preamble = preamble(asked, "Here's what I'd log for that — check the numbers before you tap:"),

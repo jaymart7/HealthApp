@@ -297,7 +297,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   from a figure they volunteered: the coach never asks what they weigh and is never told — or a
   dose of one of their own supplements, matched by exact name and ticked onto today, never one the
   coach suggested. A whole meal is
-  one card of several rows, each removable before the tap, written to the diary together. One of
+  one card of several rows, each removable before the tap, written to the diary together. A food,
+  a glass, an activity or a saved meal can be drafted **into an earlier day** — up to a month back,
+  with the day on the card's own title; every row of one draft shares that day, and a weigh-in or
+  a supplement is always today. One of
   the user's own saved meals or recipes is drafted by name, with the figures they saved and none
   the model invented. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and

@@ -98,6 +98,20 @@ internal const val MAX_ACTION_GLASSES = 20
  * edit sheet allows, and `setTakenToday` clamps to the row's own figure anyway. */
 internal val MAX_ACTION_DOSES = SUPPLEMENT_TIMES_PER_DAY.last
 
+/**
+ * How far back a draft may reach.
+ *
+ * A month, [MAX_HISTORY_DAYS]' figure, because that is the span the coach can *read* and nobody
+ * remembers an unlogged breakfast further back than the diary they are looking at.
+ *
+ * **Out of band fails the draft rather than clamping**, which is the opposite of [daysAgoOf]'s
+ * silent clamp on a read, and deliberately: a model asking to read day 900 means "recently" and
+ * failing that turn helps nobody, while a model asking to *write* into day 900 has misread the
+ * sentence, and a row quietly landing on a day the user never named is a row they will find
+ * months later without knowing how.
+ */
+internal const val MAX_DRAFT_DAYS_AGO = MAX_HISTORY_DAYS
+
 /** Ten hours. Past it the model has read "a 90 minute run" as 900, which is the same dropped
  * decimal [MAX_ACTION_CALORIES] guards against at the other end of the same card. */
 internal const val MAX_ACTION_MINUTES = 600
@@ -145,6 +159,17 @@ internal val WRITE_TOOLS = setOf(
  */
 private val daysAgoSchema = Schema.integer(
     description = "How many days back. 0 is today, 1 is yesterday. Maximum $MAX_DAYS_AGO.",
+)
+
+/**
+ * The same offset [daysAgoSchema] describes, on the tools that write one.
+ *
+ * Separate because the bound is different and the model is told so: a read reaches a year back, a
+ * draft a month, and a draft out of band fails rather than clamping.
+ */
+private val draftDaysAgoSchema = Schema.integer(
+    description = "How many days back to log it. Leave it out or use 0 for today, 1 for " +
+        "yesterday. Maximum $MAX_DRAFT_DAYS_AGO.",
 )
 
 internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
@@ -195,6 +220,7 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 "fat_g" to Schema.integer(description = "Fat in grams."),
                 "portion_amount" to Schema.double(description = "How much, e.g. 2 or 150."),
                 "portion_unit" to Schema.string(description = "The unit, e.g. 'g', 'ml', 'serving'."),
+                "days_ago" to draftDaysAgoSchema,
             ),
         ),
         FunctionDeclaration(
@@ -211,6 +237,7 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                     values = MealType.entries.map { it.name },
                     description = "Which meal it belongs to.",
                 ),
+                "days_ago" to draftDaysAgoSchema,
             ),
         ),
         FunctionDeclaration(
@@ -230,6 +257,7 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                     description = "What to call it, e.g. 'Morning run'. Optional — leave it out " +
                         "and it is named after its type.",
                 ),
+                "days_ago" to draftDaysAgoSchema,
             ),
         ),
         FunctionDeclaration(
@@ -240,6 +268,7 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 "glasses" to Schema.integer(
                     description = "How many glasses to ADD, not the new total. Usually 1.",
                 ),
+                "days_ago" to draftDaysAgoSchema,
             ),
         ),
         FunctionDeclaration(
@@ -289,13 +318,19 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
  * its response with `org.json` and is untestable on the JVM for it. [CoachToolsTest] is what this
  * file exists in this shape for.
  */
-internal fun parseAction(name: String, args: Map<String, JsonElement>): CoachAction? = when (name) {
-    TOOL_LOG_FOOD -> parseLogFood(args)
+internal fun parseAction(
+    name: String,
+    args: Map<String, JsonElement>,
+    today: Long,
+): CoachAction? = when (name) {
+    TOOL_LOG_FOOD -> parseLogFood(args, today)
     TOOL_LOG_WATER -> args.int("glasses")
         ?.takeIf { it in 1..MAX_ACTION_GLASSES }
-        ?.let(CoachAction::LogWater)
-    TOOL_LOG_EXERCISE -> parseLogExercise(args)
-    TOOL_LOG_SAVED_MEAL -> parseLogSavedMeal(args)
+        ?.let { glasses ->
+            draftDay(args, today)?.let { CoachAction.LogWater(glasses = glasses, dateEpochDay = it) }
+        }
+    TOOL_LOG_EXERCISE -> parseLogExercise(args, today)
+    TOOL_LOG_SAVED_MEAL -> parseLogSavedMeal(args, today)
     TOOL_LOG_WEIGHT -> args.double("weight")
         ?.takeIf { it in MIN_ACTION_WEIGHT..MAX_ACTION_WEIGHT }
         ?.let { CoachAction.LogWeight(weight = round1(it)) }
@@ -321,13 +356,31 @@ private fun parseLogSupplement(args: Map<String, JsonElement>): CoachAction.LogS
 
 /** Two fields, neither of them a figure: what [resolve] needs to find the meal, and the slot it
  * goes in. Everything else comes off the user's own saved row. */
-private fun parseLogSavedMeal(args: Map<String, JsonElement>): CoachAction.LogSavedMeal? {
+private fun parseLogSavedMeal(args: Map<String, JsonElement>, today: Long): CoachAction.LogSavedMeal? {
     val name = args.string("name")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS }
         ?: return null
     val meal = args.string("meal")
         ?.let { raw -> MealType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
         ?: return null
-    return CoachAction.LogSavedMeal(name = name, mealType = meal)
+    val date = draftDay(args, today) ?: return null
+    return CoachAction.LogSavedMeal(name = name, mealType = meal, dateEpochDay = date)
+}
+
+/**
+ * The absolute day a drafted row lands on, resolved here and nowhere else — or null when the model
+ * asked for one outside [MAX_DRAFT_DAYS_AGO], which fails the draft.
+ *
+ * [today] is passed in rather than read, so the parse stays the pure function [CoachToolsTest] can
+ * assert against. Resolving it at the *parse* is what makes the card's promise hold across
+ * midnight: the day the card drew is the day the tap writes to, not whatever day it happens to be
+ * when the user gets round to tapping.
+ *
+ * Zero for today, which is [CoachAction.draftedOn]'s reading of it and the diary's own.
+ */
+private fun draftDay(args: Map<String, JsonElement>, today: Long): Long? {
+    val daysAgo = args.int("days_ago") ?: 0
+    if (daysAgo !in 0..MAX_DRAFT_DAYS_AGO) return null
+    return if (daysAgo == 0) 0 else today - daysAgo
 }
 
 /**
@@ -335,16 +388,23 @@ private fun parseLogSavedMeal(args: Map<String, JsonElement>): CoachAction.LogSa
  * stays pure, and the figure on the card is the app's MET arithmetic rather than the model's
  * guess. A name is optional: empty is what [ExerciseEntry] means by "call it by its type".
  */
-private fun parseLogExercise(args: Map<String, JsonElement>): CoachAction.LogExercise? {
+private fun parseLogExercise(args: Map<String, JsonElement>, today: Long): CoachAction.LogExercise? {
     val type = args.string("type")
         ?.let { raw -> ExerciseType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
         ?: return null
     val minutes = args.int("minutes")?.takeIf { it in 1..MAX_ACTION_MINUTES } ?: return null
     val name = args.string("name")?.trim()?.takeIf { it.length <= MAX_NAME_CHARS }.orEmpty()
-    return CoachAction.LogExercise(type = type, name = name, minutes = minutes, burnedKcal = 0)
+    val date = draftDay(args, today) ?: return null
+    return CoachAction.LogExercise(
+        type = type,
+        name = name,
+        minutes = minutes,
+        burnedKcal = 0,
+        dateEpochDay = date,
+    )
 }
 
-private fun parseLogFood(args: Map<String, JsonElement>): CoachAction.LogFood? {
+private fun parseLogFood(args: Map<String, JsonElement>, today: Long): CoachAction.LogFood? {
     val name = args.string("name")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS }
         ?: return null
     val meal = args.string("meal")
@@ -359,6 +419,7 @@ private fun parseLogFood(args: Map<String, JsonElement>): CoachAction.LogFood? {
     val amount = args.double("portion_amount")?.takeIf { it > 0 && it <= MAX_PORTION_AMOUNT } ?: 1.0
     val unit = args.string("portion_unit")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_UNIT_CHARS }
         ?: DEFAULT_PORTION_UNIT
+    val date = draftDay(args, today) ?: return null
     return CoachAction.LogFood(
         name = name,
         mealType = meal,
@@ -368,6 +429,7 @@ private fun parseLogFood(args: Map<String, JsonElement>): CoachAction.LogFood? {
         fatG = fat,
         portionAmount = amount,
         portionUnit = unit,
+        dateEpochDay = date,
     )
 }
 
@@ -751,14 +813,15 @@ internal fun savedMealRows(
     mealType: MealType,
     meals: List<SavedMeal>,
     recipes: List<Recipe>,
+    dateEpochDay: Long = 0,
 ): List<CoachAction.LogFood>? {
     val wanted = name.trim()
     meals.firstOrNull { it.name.equals(wanted, ignoreCase = true) }
-        ?.let { meal -> return meal.items.map { it.toLogFood(it.name, mealType) } }
+        ?.let { meal -> return meal.items.map { it.toLogFood(it.name, mealType, dateEpochDay) } }
     return recipes.firstOrNull { it.name.equals(wanted, ignoreCase = true) }
         // One row at one serving, named after the recipe — how the app logs a recipe everywhere
         // else, and the reason `perServing()` exists.
-        ?.let { recipe -> listOf(recipe.perServing().toLogFood(recipe.name, mealType)) }
+        ?.let { recipe -> listOf(recipe.perServing().toLogFood(recipe.name, mealType, dateEpochDay)) }
 }
 
 /**
@@ -787,29 +850,33 @@ internal fun supplementDose(
     )
 }
 
-private fun SavedMealItem.toLogFood(name: String, mealType: MealType) = CoachAction.LogFood(
-    name = name,
-    mealType = mealType,
-    calories = calories,
-    proteinG = proteinG,
-    carbsG = carbsG,
-    fatG = fatG,
-    portionAmount = portionAmount,
-    portionUnit = portionUnit,
-)
+private fun SavedMealItem.toLogFood(name: String, mealType: MealType, dateEpochDay: Long) =
+    CoachAction.LogFood(
+        name = name,
+        mealType = mealType,
+        calories = calories,
+        proteinG = proteinG,
+        carbsG = carbsG,
+        fatG = fatG,
+        portionAmount = portionAmount,
+        portionUnit = portionUnit,
+        dateEpochDay = dateEpochDay,
+    )
 
 /** A serving is one row of one portion — the recipe's own name, its own figures, nothing
  * estimated. */
-private fun RecipeServing.toLogFood(name: String, mealType: MealType) = CoachAction.LogFood(
-    name = name,
-    mealType = mealType,
-    calories = calories,
-    proteinG = proteinG,
-    carbsG = carbsG,
-    fatG = fatG,
-    portionAmount = 1.0,
-    portionUnit = SERVING_UNIT,
-)
+private fun RecipeServing.toLogFood(name: String, mealType: MealType, dateEpochDay: Long) =
+    CoachAction.LogFood(
+        name = name,
+        mealType = mealType,
+        calories = calories,
+        proteinG = proteinG,
+        carbsG = carbsG,
+        fatG = fatG,
+        portionAmount = 1.0,
+        portionUnit = SERVING_UNIT,
+        dateEpochDay = dateEpochDay,
+    )
 
 /** Stays in Kotlin: it is persisted on the row, the rule every portion unit in this app follows. */
 private const val SERVING_UNIT = "serving"
@@ -882,12 +949,17 @@ internal class CoachToolbox(
 
     /** The two reads [savedMealRows] needs, and nothing else — the matching itself is pure, so it
      * is the part a JVM test can reach. */
-    suspend fun savedMealRows(name: String, mealType: MealType): List<CoachAction.LogFood>? =
+    suspend fun savedMealRows(
+        name: String,
+        mealType: MealType,
+        dateEpochDay: Long,
+    ): List<CoachAction.LogFood>? =
         savedMealRows(
             name = name,
             mealType = mealType,
             meals = foodRepository.observeAllSavedMeals().first(),
             recipes = foodRepository.observeAllRecipes().first(),
+            dateEpochDay = dateEpochDay,
         )
 
     /** The one read [supplementDose] needs — the matching itself is pure, [savedMealRows]' shape. */
@@ -992,7 +1064,7 @@ internal class CoachToolbox(
 internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachAction>? = when (this) {
     is CoachAction.LogExercise -> toolbox.weightKg()
         ?.let { listOf(copy(burnedKcal = estimateBurnedKcal(type, minutes, it))) }
-    is CoachAction.LogSavedMeal -> toolbox.savedMealRows(name, mealType)
+    is CoachAction.LogSavedMeal -> toolbox.savedMealRows(name, mealType, dateEpochDay)
     // Never null: a weigh-in needs no history to be recorded, so a first one still drafts — it
     // simply draws no change line.
     is CoachAction.LogWeight -> listOf(
@@ -1015,6 +1087,9 @@ internal fun List<CoachAction>.foodEntries(): List<FoodEntry> =
     filterIsInstance<CoachAction.LogFood>().map {
         FoodEntry(
             name = it.name,
+            // Zero is today, which is what `FoodRepository.addEntries` already reads it as — the
+            // coach needs no special case to log into the day the card named.
+            dateEpochDay = it.dateEpochDay,
             mealType = it.mealType,
             portionAmount = it.portionAmount,
             portionUnit = it.portionUnit,
@@ -1026,14 +1101,31 @@ internal fun List<CoachAction>.foodEntries(): List<FoodEntry> =
     }
 
 /**
- * Glasses to **add** to the day, summed across the draft.
+ * Glasses to **add**, summed per day.
  *
- * Summed rather than applied one at a time, and that is the load-bearing half: `setToday` takes the
- * day's *new total*, so two water rows written in sequence would have the second overwrite the
- * first and a draft of two glasses would land as one.
+ * Summed rather than applied one at a time, and that is the load-bearing half: a water write takes
+ * the day's *new total*, so two rows applied in sequence would have the second overwrite the first
+ * and a draft of two glasses would land as one. Keyed by day now that a draft can be backdated —
+ * the same reason [supplementDoses] is keyed by id.
  */
-internal fun List<CoachAction>.glassesToAdd(): Int =
-    filterIsInstance<CoachAction.LogWater>().sumOf { it.glasses }
+internal fun List<CoachAction>.glassesToAdd(): Map<Long, Int> =
+    filterIsInstance<CoachAction.LogWater>()
+        .groupBy { it.dateEpochDay }
+        .mapValues { (_, rows) -> rows.sumOf { it.glasses } }
+
+/**
+ * The one day every row of a draft agrees on, or **null when they disagree**, which fails the turn.
+ *
+ * The card draws one day for the whole card, so a draft holding yesterday's eggs and today's
+ * coffee could only ever label one of them correctly — and the card's whole promise is that what
+ * it shows is what gets written. A weigh-in and a supplement tick are always today
+ * ([CoachAction.draftedOn] is null for them), so a backdated draft cannot quietly carry one.
+ *
+ * "Log the eggs I had yesterday and a coffee just now" is the sentence this refuses. It is not one
+ * anybody types, and refusing it costs a re-ask; labelling it wrong costs a row on the wrong day.
+ */
+internal fun List<CoachAction>.draftDay(today: Long): Long? =
+    map { it.draftedOn ?: today }.distinct().singleOrNull()
 
 /**
  * Doses to **add** today, summed per supplement.

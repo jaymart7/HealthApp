@@ -1839,6 +1839,29 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `log_mood` and `log_supplement` stayed out: the energy check-in owns a 1–5 tap and does it better
   than a sentence can, and a supplement needs fuzzy name-to-id matching against the user's own list,
   which is a new trust boundary for one tap. `log_weight` is still out, for the reason below.
+- **A draft can name an earlier day, and one card draws one day.** *"Log the eggs I had
+  yesterday"* was answered by pointing at the Food tab's diary — the prompt said so in as many
+  words — which is a deflection to a screen the user was already avoiding by talking. `days_ago`
+  joins `log_food`, `log_water`, `log_exercise` and `log_saved_meal`, the four whose write call
+  takes a date; `log_weight` and `log_supplement` do not get it, because `upsertWeightEntry` is a
+  figure the user just said out loud and `setTakenToday` is today by name. Four calls. **Out of
+  band fails the draft rather than clamping** — the opposite of `daysAgoOf`'s silent clamp on a
+  *read*, and deliberately: a model asking to read day 900 means "recently" and failing that turn
+  helps nobody, while one asking to *write* there has misread the sentence, and a row landing on a
+  day the user never named is one they find months later without knowing how. The window is
+  `MAX_HISTORY_DAYS`, because a month is as far back as the coach can read. **The offset becomes an
+  absolute day at the parse**, not at the tap: `parseAction` takes `today` as an argument — which
+  keeps it the pure function `CoachToolsTest` asserts against — so the day the card drew is the day
+  the tap writes to even if the two straddle midnight. Zero stays zero, which is what `FoodEntry`
+  and `ExerciseEntry` already mean by today, so no write path needed a branch. **The card draws one
+  day for the whole card**, as a qualifier on its title rather than a line of its own, and `send()`
+  refuses a draft whose rows disagree (`draftDay()`); a weigh-in and a supplement count as today,
+  so neither can ride along on a backdated card. *"The eggs I had yesterday and a coffee just now"*
+  is the sentence that refuses — nobody types it, and refusing costs a re-ask where mislabelling
+  costs a row on the wrong day. **And water is keyed by day now**: `glassesToAdd()` returns a map,
+  for the reason it was summed in the first place — a water write takes the day's *new total*, and
+  a per-day key is what stops yesterday's glass being folded into today's. `setToday` is gone from
+  `settle` in favour of `observeDay`/`upsertDay`, which is that same pair with today baked in.
 - **Water and supplements widened the same two read tools, and water is the first thing a span
   states on every day.** *Sleep, mood and fasting widened what the two tools answer with* is the
   precedent and this is it applied twice more, with one new rule falling out. A span carried

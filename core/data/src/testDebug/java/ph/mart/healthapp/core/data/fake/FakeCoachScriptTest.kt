@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.coach.MAX_DRAFT_ROWS
 import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
@@ -180,6 +181,18 @@ class FakeCoachScriptTest {
         val action = script.actions.single() as CoachAction.LogSavedMeal
         assertEquals("overnight oats", action.name)
         assertEquals(MealType.Breakfast, action.mealType)
+    }
+
+    /** "Log the eggs I had yesterday" is a draft for yesterday, not a question about it — the
+     * calendar words are read inside the log block, after it has already won. */
+    @Test
+    fun `a logging sentence naming a past day drafts for that day`() {
+        val script = fakeCoachScript("log two eggs for breakfast yesterday") as FakeScript.Propose
+        val action = script.actions.single() as CoachAction.LogFood
+        assertEquals(todayEpochDay() - 1, action.dateEpochDay)
+        assertEquals(0L, (fakeCoachScript("log two eggs") as FakeScript.Propose).let {
+            (it.actions.single() as CoachAction.LogFood).dateEpochDay
+        })
     }
 
     /**

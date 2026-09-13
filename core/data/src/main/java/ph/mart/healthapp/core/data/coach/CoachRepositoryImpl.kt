@@ -31,6 +31,7 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
@@ -155,11 +156,16 @@ internal class CoachRepositoryImpl(
                 // `resolve` is the second half of the boundary and can return several rows for one
                 // call: a saved meal is one row per item, so `flatMap` is what flattens "log my
                 // usual breakfast and a coffee" into one card.
+                val today = todayEpochDay()
                 val actions = writes.flatMap { call ->
-                    parseAction(call.name, call.args)?.resolve(toolbox)
+                    parseAction(call.name, call.args, today)?.resolve(toolbox)
                         ?: return@flow emit(CoachReply.Failed)
                 }
                 if (actions.size > MAX_DRAFT_ROWS) return@flow emit(CoachReply.Failed)
+                // One card, one day. A draft whose rows disagree could only ever be labelled
+                // correctly for some of them, and the card's promise is that what it shows is what
+                // gets written.
+                if (actions.draftDay(today) == null) return@flow emit(CoachReply.Failed)
                 return@flow emit(CoachReply.Proposal(actions))
             }
 
@@ -215,17 +221,21 @@ internal class CoachRepositoryImpl(
         actions.foodEntries().takeIf { it.isNotEmpty() }?.let { foodRepository.addEntries(it) }
 
         // Added to the day, never assigned: a coach that proposes "one glass" must not wipe the
-        // six already there.
-        actions.glassesToAdd()
-            .takeIf { it > 0 }
-            ?.let { waterRepository.setToday(waterRepository.observeToday().first() + it) }
+        // six already there. `observeDay`/`upsertDay` rather than `setToday`, which is that pair
+        // with today baked in — one path now that a draft can name a past day.
+        actions.glassesToAdd().forEach { (date, glasses) ->
+            val day = date.takeIf { it > 0 } ?: todayEpochDay()
+            val current = waterRepository.observeDay(day).first()
+            waterRepository.upsertDay(WaterDay(dateEpochDay = day, glasses = current + glasses))
+        }
 
-        // `dateEpochDay` is left at its default, which the repository reads as today — the coach
-        // cannot log into a past day, and the prompt says so. One call each: `ExerciseRepository`
-        // has no batch write, and two workouts in one draft is not the shape anyone asks for.
+        // `dateEpochDay` rides through at whatever the card drew — zero for today, which is what
+        // `ExerciseRepository.addEntry` already reads it as. One call each: it has no batch write,
+        // and two workouts in one draft is not the shape anyone asks for.
         actions.filterIsInstance<CoachAction.LogExercise>().forEach {
             exerciseRepository.addEntry(
                 ExerciseEntry(
+                    dateEpochDay = it.dateEpochDay,
                     type = it.type,
                     name = it.name,
                     minutes = it.minutes,
@@ -356,9 +366,11 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "never ask them for it, and never state a weight you were not told in this " +
             "conversation. If they say they took one of their own supplements, call get_library " +
             "for its exact name and then log_supplement with it — only ever one they already " +
-            "take, and never as a suggestion. You cannot edit or delete " +
-            "anything, and you cannot log for a past day — point them at the Food tab's diary " +
-            "for that.",
+            "take, and never as a suggestion. To log something for an earlier day, pass days_ago " +
+            "on the same call — 1 for yesterday, up to $MAX_DRAFT_DAYS_AGO — and say which day " +
+            "you are proposing; every row of one draft has to be for the same day, so draft two " +
+            "days as two separate turns. A weigh-in and a supplement are always today. You " +
+            "cannot edit or delete anything — point them at the Food tab's diary for that.",
     )
     appendLine(
         "When they ask what to eat, what to have for a meal or what you would recommend, work " +

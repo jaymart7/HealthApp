@@ -25,13 +25,16 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppCard
+import ph.mart.healthapp.core.designsystem.component.formatDayMonth
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -50,6 +53,10 @@ import ph.mart.healthapp.feature.coach.R
  * Every figure shown is a figure that will be written. The card exists to be read before the tap,
  * so nothing here is summarised away — a user who does not want 320 kcal of it needs to see the
  * 320 before confirming, not after.
+ *
+ * **The day is drawn once for the whole card, and only when it is not today.** A backdated draft
+ * is rare and a mislabelled one is worse than an unlabelled one, so `send()` refuses a draft whose
+ * rows disagree about the day — which is what lets one label speak for all of them.
  *
  * **One row keeps the single-item layout it always had**, because a meal of one thing is not a
  * list; several rows become a list with a `✕` on each. That removal is the reason the confirm
@@ -74,12 +81,16 @@ internal fun ProposalCard(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.tertiaryContainer,
     ) {
+        // One day for the card: every row agrees on it by the time a card exists, so the first
+        // dated row speaks for the rest — and striking a row out cannot change it.
+        val day = dayLabel(actions.firstNotNullOfOrNull { it.draftedOn })
         if (actions.size == 1) {
-            SingleProposal(actions.first())
+            SingleProposal(actions.first(), day)
         } else {
             MultiProposal(
                 actions = actions,
                 kept = kept,
+                day = day,
                 onRemove = { index -> removed = removed + index },
             )
         }
@@ -106,7 +117,7 @@ internal fun ProposalCard(
 /** A meal of one thing is not a list: the single draft keeps the layout it shipped with, where the
  * name is the headline and every figure that will be written is under it. */
 @Composable
-private fun SingleProposal(action: CoachAction) {
+private fun SingleProposal(action: CoachAction, day: String? = null) {
     when (action) {
         is CoachAction.LogFood -> {
             ProposalTitle(
@@ -114,6 +125,7 @@ private fun SingleProposal(action: CoachAction) {
                     R.string.coach_proposal_food_title,
                     stringResource(action.mealType.labelRes),
                 ),
+                day,
             )
             ProposalHeadline(action.name)
             ProposalDetail(
@@ -128,7 +140,7 @@ private fun SingleProposal(action: CoachAction) {
         }
 
         is CoachAction.LogExercise -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_exercise_title))
+            ProposalTitle(stringResource(R.string.coach_proposal_exercise_title), day)
             ProposalHeadline(activityName(action))
             ProposalDetail(
                 stringResource(
@@ -140,18 +152,18 @@ private fun SingleProposal(action: CoachAction) {
         }
 
         is CoachAction.LogWater -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_water_title))
+            ProposalTitle(stringResource(R.string.coach_proposal_water_title), day)
             ProposalHeadline(waterAmount(action.glasses))
         }
 
         is CoachAction.LogWeight -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_weight_title))
+            ProposalTitle(stringResource(R.string.coach_proposal_weight_title), day)
             ProposalHeadline(weightAmount(action))
             weightChange(action)?.let { ProposalDetail(it) }
         }
 
         is CoachAction.LogSupplement -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_supplement_title))
+            ProposalTitle(stringResource(R.string.coach_proposal_supplement_title), day)
             ProposalHeadline(action.name)
             ProposalDetail(supplementDoses(action.doses))
         }
@@ -160,7 +172,7 @@ private fun SingleProposal(action: CoachAction) {
         // only ever reached if that stops being true. It renders the name rather than nothing,
         // which stays honest: the name is the whole of what the model supplied.
         is CoachAction.LogSavedMeal -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_food_title, stringResource(action.mealType.labelRes)))
+            ProposalTitle(stringResource(R.string.coach_proposal_food_title, stringResource(action.mealType.labelRes)), day)
             ProposalHeadline(action.name)
         }
     }
@@ -174,8 +186,13 @@ private fun SingleProposal(action: CoachAction) {
  * original indices in order, so removing the middle row does not renumber the rest.
  */
 @Composable
-private fun MultiProposal(actions: List<CoachAction>, kept: List<Int>, onRemove: (Int) -> Unit) {
-    ProposalTitle(stringResource(R.string.coach_proposal_items_title, kept.size))
+private fun MultiProposal(
+    actions: List<CoachAction>,
+    kept: List<Int>,
+    day: String?,
+    onRemove: (Int) -> Unit,
+) {
+    ProposalTitle(stringResource(R.string.coach_proposal_items_title, kept.size), day)
     kept.forEach { index ->
         val action = actions[index]
         val name = actionName(action)
@@ -229,9 +246,15 @@ private fun MultiProposal(actions: List<CoachAction>, kept: List<Int>, onRemove:
     }
 }
 
+/**
+ * The kind of row, and the day when it is not today — "Add to Breakfast · Yesterday".
+ *
+ * The day goes here rather than on its own line because it is a qualifier on the title, not a
+ * second heading, and a card that grows a line when backdated moves everything under it.
+ */
 @Composable
-private fun ProposalTitle(text: String) = Text(
-    text = text,
+private fun ProposalTitle(text: String, day: String? = null) = Text(
+    text = day?.let { stringResource(R.string.coach_proposal_title_day, text, it) } ?: text,
     style = MaterialTheme.typography.labelMedium,
     color = MaterialTheme.colorScheme.onTertiaryContainer,
 )
@@ -251,6 +274,23 @@ private fun ProposalDetail(text: String) = Text(
     color = MaterialTheme.colorScheme.onTertiaryContainer,
     modifier = Modifier.padding(top = 4.dp),
 )
+
+/**
+ * Null for today, which is almost every draft and needs no label at all.
+ *
+ * "Yesterday" is a resource and the rest is [formatDayMonth] — a month is as far back as a draft
+ * reaches, so the year would be the same word on every card. The diary's own header draws the same
+ * three cases; this cannot call it, because `:feature:*` modules never import each other.
+ */
+@Composable
+private fun dayLabel(epochDay: Long?): String? {
+    val today = todayEpochDay()
+    return when (epochDay) {
+        null, today -> null
+        today - 1 -> stringResource(R.string.coach_proposal_day_yesterday)
+        else -> formatDayMonth(epochDay)
+    }
+}
 
 /** What the row is called — the same words the logged line and the remove button use, so a screen
  * reader and the diary agree with what is on the card. */

@@ -51,6 +51,10 @@
     <!-- What the weigh-in moves by, e.g. "−0.6 kg since your last weigh-in". -->
     <string name="coach_proposal_weight_change">%1$s %2$s since your last weigh-in</string>
     <string name="coach_proposal_supplement_title">Mark as taken</string>
+    <!-- A draft the coach backdated. The title carries the day, e.g. "Add to Breakfast ·
+         Yesterday"; a draft for today says nothing, which is almost every draft. -->
+    <string name="coach_proposal_title_day">%1$s · %2$s</string>
+    <string name="coach_proposal_day_yesterday">Yesterday</string>
     <!-- How many doses the tick adds to today, e.g. "1 dose". Never the day's new total. -->
     <plurals name="coach_proposal_supplement_doses">
         <item quantity="one">%1$d dose</item>

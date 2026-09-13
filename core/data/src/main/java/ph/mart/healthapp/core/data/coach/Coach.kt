@@ -37,11 +37,12 @@ sealed interface CoachAction {
         val fatG: Int,
         val portionAmount: Double,
         val portionUnit: String,
+        val dateEpochDay: Long = 0,
     ) : CoachAction
 
     /** Glasses to *add* to the day, never the day's new total — a model that reads "one glass"
      * and writes `1` must not erase the six already logged. */
-    data class LogWater(val glasses: Int) : CoachAction
+    data class LogWater(val glasses: Int, val dateEpochDay: Long = 0) : CoachAction
 
     /**
      * A meal the user saved, by the name they saved it under — the model supplies the name and
@@ -52,7 +53,11 @@ sealed interface CoachAction {
      * from their own library. That is [LogExercise]'s rule — the app supplies what a model would
      * otherwise invent — applied to a whole meal.
      */
-    data class LogSavedMeal(val name: String, val mealType: MealType) : CoachAction
+    data class LogSavedMeal(
+        val name: String,
+        val mealType: MealType,
+        val dateEpochDay: Long = 0,
+    ) : CoachAction
 
     /**
      * [burnedKcal] is **not** the model's figure — it is `estimateBurnedKcal()`'s, filled in from
@@ -68,6 +73,7 @@ sealed interface CoachAction {
         val name: String,
         val minutes: Int,
         val burnedKcal: Int,
+        val dateEpochDay: Long = 0,
     ) : CoachAction
 
     /**
@@ -114,6 +120,25 @@ sealed interface CoachAction {
         val supplementId: Long = 0,
     ) : CoachAction
 }
+
+/**
+ * Which day a drafted row lands on, or **null for the kinds that are only ever today**: a weigh-in
+ * the user just said out loud, and a supplement tick, whose write call is `setTakenToday`.
+ *
+ * Zero is today, the convention `FoodEntry` and `ExerciseEntry` already keep — so a hand-built
+ * action, a preview and every draft the model did not backdate all mean the same thing by it.
+ *
+ * Public because the proposal card draws the day and `:feature:coach` cannot see this module's
+ * internals; it is also what the agreement check inside one draft is written over.
+ */
+val CoachAction.draftedOn: Long?
+    get() = when (this) {
+        is CoachAction.LogFood -> dateEpochDay
+        is CoachAction.LogWater -> dateEpochDay
+        is CoachAction.LogExercise -> dateEpochDay
+        is CoachAction.LogSavedMeal -> dateEpochDay
+        is CoachAction.LogWeight, is CoachAction.LogSupplement -> null
+    }?.takeIf { it > 0 }
 
 /**
  * What a send emits while it runs. [Partial] is the whole answer *so far*, re-emitted as each

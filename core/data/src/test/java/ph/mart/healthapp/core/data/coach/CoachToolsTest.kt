@@ -39,6 +39,16 @@ import ph.mart.healthapp.core.data.water.WaterDay
  */
 class CoachToolsTest {
 
+    private companion object {
+        const val TODAY = 20_000L
+    }
+
+    /** A fixed "today" for every case that is not about the day, so the parse stays a pure
+     * function of its arguments — which is the whole reason it takes one rather than reading a
+     * clock. This two-argument overload resolves ahead of the real three-argument one. */
+    private fun parseAction(name: String, args: Map<String, JsonElement>): CoachAction? =
+        parseAction(name, args, TODAY)
+
     private fun args(vararg pairs: Pair<String, Any>): Map<String, JsonElement> =
         pairs.associate { (key, value) ->
             key to when (value) {
@@ -418,6 +428,73 @@ class CoachToolsTest {
         assertEquals(emptyMap<Long, Int>(), listOf(logFood("Toast", 180)).supplementDoses())
     }
 
+    /**
+     * The offset becomes an absolute day at the *parse*, which is what makes the card's promise
+     * hold across midnight: the day the card drew is the day the tap writes to.
+     */
+    @Test
+    fun `a draft can be backdated, and today stays zero`() {
+        val yesterday = parseAction(TOOL_LOG_FOOD, foodArgs("days_ago" to 1)) as CoachAction.LogFood
+        assertEquals(TODAY - 1, yesterday.dateEpochDay)
+        // Zero, not today's number: it is what every dated row in this app means by "today", so
+        // nothing downstream needs a special case.
+        assertEquals(0L, (parseAction(TOOL_LOG_FOOD, foodArgs()) as CoachAction.LogFood).dateEpochDay)
+        assertEquals(0L, (parseAction(TOOL_LOG_FOOD, foodArgs("days_ago" to 0)) as CoachAction.LogFood).dateEpochDay)
+    }
+
+    /** Water and an activity take the same offset, on the same rule. */
+    @Test
+    fun `water and exercise can be backdated too`() {
+        val water = parseAction(TOOL_LOG_WATER, args("glasses" to 2, "days_ago" to 3))
+        assertEquals(CoachAction.LogWater(glasses = 2, dateEpochDay = TODAY - 3), water)
+        val run = parseAction(
+            TOOL_LOG_EXERCISE,
+            args("type" to "Run", "minutes" to 30, "days_ago" to 2),
+        ) as CoachAction.LogExercise
+        assertEquals(TODAY - 2, run.dateEpochDay)
+    }
+
+    /**
+     * The opposite call to a read's silent clamp, and deliberately: a model asking to *read* day
+     * 900 means "recently", while one asking to *write* there has misread the sentence, and a row
+     * landing on a day the user never named is one they find months later.
+     */
+    @Test
+    fun `a draft outside the window fails rather than clamping`() {
+        assertNull(parseAction(TOOL_LOG_FOOD, foodArgs("days_ago" to MAX_DRAFT_DAYS_AGO + 1)))
+        assertNull(parseAction(TOOL_LOG_FOOD, foodArgs("days_ago" to -1)))
+        assertNull(parseAction(TOOL_LOG_WATER, args("glasses" to 1, "days_ago" to 900)))
+    }
+
+    /** One card draws one day, so a draft that cannot agree on one is refused before a card
+     * exists — a mislabelled row is worse than a re-ask. */
+    @Test
+    fun `a draft whose rows disagree about the day has no day`() {
+        val today = listOf(logFood("Toast", 180), CoachAction.LogWater(glasses = 1))
+        assertEquals(TODAY, today.draftDay(TODAY))
+
+        val yesterday = listOf(logFood("Toast", 180).copy(dateEpochDay = TODAY - 1))
+        assertEquals(TODAY - 1, yesterday.draftDay(TODAY))
+
+        assertNull((today + yesterday).draftDay(TODAY))
+        // A weigh-in is always today, so it cannot ride along on a backdated draft.
+        assertNull((yesterday + CoachAction.LogWeight(weight = 82.0)).draftDay(TODAY))
+    }
+
+    /** A saved meal's rows land on the day the call named, not on today — the name is the only
+     * thing the model supplies, and the day is the only other thing it may. */
+    @Test
+    fun `a backdated saved meal dates every row it expands to`() {
+        val rows = savedMealRows(
+            name = "Usual breakfast",
+            mealType = MealType.Breakfast,
+            meals = listOf(usualBreakfast),
+            recipes = emptyList(),
+            dateEpochDay = TODAY - 1,
+        )
+        assertTrue(rows.toString(), rows!!.all { it.dateEpochDay == TODAY - 1 })
+    }
+
     /** The figures are the user's own, item for item — nothing on the card was estimated by the
      * model, which is the whole reason this tool takes only a name. */
     @Test
@@ -482,8 +559,17 @@ class CoachToolsTest {
         assertEquals(MealType.Breakfast, entries.first().mealType)
     }
 
+    /** The day rides onto the diary row, where zero already means today — which is why nothing
+     * downstream needed a branch for a backdated draft. */
+    @Test
+    fun `a backdated food row carries its day into the diary`() {
+        val entries = listOf(logFood("Toast", 180).copy(dateEpochDay = TODAY - 1)).foodEntries()
+        assertEquals(TODAY - 1, entries.single().dateEpochDay)
+        assertEquals(0L, listOf(logFood("Toast", 180)).foodEntries().single().dateEpochDay)
+    }
+
     /**
-     * `setToday` takes the day's *new total*, so two water rows applied one after the other would
+     * A water write takes the day's *new total*, so two rows applied one after the other would
      * have the second overwrite the first — a draft of two glasses would land as one.
      */
     @Test
@@ -493,8 +579,16 @@ class CoachToolsTest {
             logFood("Toast", 180),
             CoachAction.LogWater(glasses = 1),
         )
-        assertEquals(3, actions.glassesToAdd())
-        assertEquals(0, listOf(logFood("Toast", 180)).glassesToAdd())
+        assertEquals(mapOf(0L to 3), actions.glassesToAdd())
+        assertEquals(emptyMap<Long, Int>(), listOf(logFood("Toast", 180)).glassesToAdd())
+        // Keyed by day, so yesterday's glass cannot be folded into today's total.
+        assertEquals(
+            mapOf(0L to 1, TODAY - 1 to 2),
+            listOf(
+                CoachAction.LogWater(glasses = 1),
+                CoachAction.LogWater(glasses = 2, dateEpochDay = TODAY - 1),
+            ).glassesToAdd(),
+        )
     }
 
     private fun logFood(name: String, kcal: Int) = CoachAction.LogFood(
