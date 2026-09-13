@@ -12,6 +12,7 @@ import ph.mart.healthapp.feature.progress.ui.fasting.FastingScreen
 import ph.mart.healthapp.feature.progress.ui.heart.HeartScreen
 import ph.mart.healthapp.feature.progress.ui.mood.MoodScreen
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
+import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureScreen
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
@@ -58,6 +59,10 @@ data object ActivityRoute : NavKey
 @Serializable
 data object CycleRoute : NavKey
 
+/** Every cuff reading, charted and listed. Carries nothing: `BloodPressureViewModel` reads them itself. */
+@Serializable
+data object BloodPressureRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -65,7 +70,7 @@ data object CycleRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -83,6 +88,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Fasting -> FastingRoute
     Subject.Activity -> ActivityRoute
     Subject.Cycle -> CycleRoute
+    Subject.BloodPressure -> BloodPressureRoute
     else -> null
 }
 
@@ -192,6 +198,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<CycleRoute> {
         CycleScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<BloodPressureRoute> {
+        BloodPressureScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,

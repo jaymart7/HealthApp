@@ -14,6 +14,7 @@ import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementViewModel
 import ph.mart.healthapp.feature.progress.ui.mood.MoodViewModel
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosViewModel
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureViewModel
+import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureViewModel
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressViewModel
 import ph.mart.healthapp.feature.progress.ui.recap.RecapViewModel
 import ph.mart.healthapp.feature.progress.ui.sleep.SleepViewModel
@@ -27,7 +28,7 @@ val progressModule = module {
     viewModelOf(::LogWeightViewModel)
     viewModelOf(::AddPhotoViewModel)
     viewModelOf(::AddMeasurementViewModel)
-    viewModelOf(::BloodPressureViewModel)
+    viewModelOf(::LogBloodPressureViewModel)
     viewModelOf(::LogCycleViewModel)
     viewModelOf(::EnergyCheckInViewModel)
     // The read-only routes — each owns the data it draws rather than a slice of ProgressUiState.
@@ -42,6 +43,7 @@ val progressModule = module {
     viewModelOf(::FastingViewModel)
     viewModelOf(::ActivityViewModel)
     viewModelOf(::CycleViewModel)
+    viewModelOf(::BloodPressureViewModel)
     viewModelOf(::ComparisonViewModel)
     viewModelOf(::TimelapseViewModel)
     viewModelOf(::RecapViewModel)

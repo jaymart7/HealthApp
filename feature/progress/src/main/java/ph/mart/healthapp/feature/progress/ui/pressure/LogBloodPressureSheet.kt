@@ -31,7 +31,7 @@ import ph.mart.healthapp.feature.progress.R
 @Composable
 fun LogBloodPressureSheet(
     onDismiss: () -> Unit,
-    viewModel: BloodPressureViewModel = koinViewModel(),
+    viewModel: LogBloodPressureViewModel = koinViewModel(),
 ) {
     val state = rememberLogBloodPressureState()
     viewModel.collectSideEffect { effect ->

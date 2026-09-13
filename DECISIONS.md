@@ -2296,6 +2296,22 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   stamped when Save is tapped, and transcribing a paper log is not the workflow a backdated
   weigh-in is.
 
+- **`SelfScrolling` is gone, because a route owns its own column.** Photos left the set when it
+  became a route; Blood pressure was the last member and left the same way, so the exemption and
+  the branch in `SubjectDetail` that read it both go. A `LazyVerticalGrid` or a `LazyColumn`
+  nested in a `verticalScroll` is measured with infinite height and throws — that was always the
+  real constraint, and the set existed only because a swap-in had to live inside the page's own
+  scrolling column. A page that draws the window draws whatever column it likes.
+- **The Blood pressure page reads through one container and writes through another.**
+  `BloodPressureViewModel` is now the page's read-only container and `LogBloodPressureViewModel`
+  keeps the save *and* the delete, which is what the old KDoc's "the tab and its sheet sit under
+  one `ViewModelStoreOwner`" was really claiming — it is true of the route as well, so the list can
+  still delete the row it is showing. Its delete asks first rather than raising an undo snackbar,
+  unchanged: the diary's swipe-and-undo needs a snackbar host Progress doesn't have, and a reading
+  is a number the user typed rather than a row they swiped. `pendingDeleteReadingId` moved to
+  `BloodPressureState` outright, unlike the two sheet flags — only the page has a list to delete
+  from, so there is no second surface to keep a copy for.
+
 - **A supplement carries a dose *label* and a times-per-day *number*.** The dose is free text —
   "2000 IU", "5 g", "one scoop" — and nothing parses it, for the same reason fiber, sugar and
   sodium are reported and never graded: there is no field on the profile a supplement target could

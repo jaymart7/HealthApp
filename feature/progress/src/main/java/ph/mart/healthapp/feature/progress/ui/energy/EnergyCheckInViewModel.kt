@@ -8,7 +8,7 @@ import ph.mart.healthapp.core.data.profile.ProfileRepository
 /**
  * The energy flow's only container, and the one place the Progress tab writes a calorie target.
  *
- * It exists for the same reason `BloodPressureViewModel` does: `ProgressViewModel` is the
+ * It exists for the same reason `LogBloodPressureViewModel` does: `ProgressViewModel` is the
  * read-only container its KDoc says it is, and the check-in's Apply button has to write. The card
  * and the overlay sit under one `ViewModelStoreOwner`, so `koinViewModel()` hands them the same
  * instance.

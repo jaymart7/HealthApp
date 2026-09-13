@@ -7,7 +7,7 @@ import ph.mart.healthapp.core.data.cycle.CycleRepository
 
 /**
  * The cycle sheet's container, and the one place this feature writes a cycle day —
- * `BloodPressureViewModel`'s shape and its reasoning, and it stays the writer now that the page
+ * `LogBloodPressureViewModel`'s shape and its reasoning, and it stays the writer now that the page
  * beside it has become a route with a read-only container of its own (`CycleViewModel`). The sheet
  * has two open sites — the Cycle page, and the overview's empty-card hint — so it is instantiated
  * under two `ViewModelStoreOwner`s, which is harmless: both write through the same repository, and

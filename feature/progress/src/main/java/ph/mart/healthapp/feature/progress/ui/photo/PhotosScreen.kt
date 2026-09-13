@@ -38,7 +38,8 @@ import ph.mart.healthapp.feature.progress.ui.shared.components.SharePhotoStripSh
  * **A route, not a subject page.** The other thirteen subjects are charts and stat rows that
  * `SubjectDetail` swaps in behind the tab's own chrome; this one is a full-bleed grid whose only
  * job is to launch two other routes, and it had already been forced out of that page's scrolling
- * column (`SelfScrolling`) because a `LazyVerticalGrid` cannot nest in one. So it owns its data
+ * column (the since-retired `SelfScrolling` exemption) because a `LazyVerticalGrid` cannot nest
+ * in one. So it owns its data
  * ([PhotosViewModel]), its selection ([PhotosState]) and its toolbar, and it draws the full width
  * of the window with no bottom bar and no FAB over it. See `DECISIONS.md` →
  * **Progress photos & timelapse**.

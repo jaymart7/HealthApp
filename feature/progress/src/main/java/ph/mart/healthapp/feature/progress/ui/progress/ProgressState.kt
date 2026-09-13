@@ -32,7 +32,7 @@ internal sealed interface ProgressDestination {
  * [ProgressScreenState.selectedSubject] and [ProgressScreenState.pendingRoute] all go, and
  * `ProgressOverview` takes a plain `onOpenSubject` instead.
  */
-private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements, Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle)
+private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements, Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure)
 
 /** UI-only — which subject is open, which range its chart is showing, which sheet is up has no
  * business meaning outside this screen; the actual weight/measurement/photo data lives in
@@ -46,7 +46,6 @@ internal class ProgressScreenState(
     activeBloodPressureSheet: Boolean = false,
     activeCycleSheet: Boolean = false,
     activeEnergyCheckIn: Boolean = false,
-    pendingDeleteReadingId: Long? = null,
     activeMealGallery: Boolean = false,
     viewedMealPhotoId: Long? = null,
 ) {
@@ -77,9 +76,6 @@ internal class ProgressScreenState(
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
     var activeCycleSheet: Boolean by mutableStateOf(activeCycleSheet)
     var activeEnergyCheckIn: Boolean by mutableStateOf(activeEnergyCheckIn)
-
-    /** The reading whose delete is waiting on its confirmation dialog. */
-    var pendingDeleteReadingId: Long? by mutableStateOf(pendingDeleteReadingId)
 
     /** The meal-photo gallery, a fifth overlay over this tab. */
     var activeMealGallery: Boolean by mutableStateOf(activeMealGallery)
@@ -174,7 +170,7 @@ internal class ProgressScreenState(
                     it.expandedGroups.map { group -> group.name },
                     it.activeMeasurementSheet, it.measurementSheetPart?.name,
                     it.activeBloodPressureSheet,
-                    it.activeEnergyCheckIn, it.pendingDeleteReadingId, it.activeCycleSheet,
+                    it.activeEnergyCheckIn, it.activeCycleSheet,
                     // Appended, never renumbered: an index that moves restores the wrong field
                     // into the wrong overlay. Twice now it has been renumbered anyway, both halves
                     // in the same commit each time — the recap's period moving into
@@ -199,10 +195,9 @@ internal class ProgressScreenState(
                     measurementSheetPart = (saved[4] as String?)?.let(MeasurementPart::valueOf),
                     activeBloodPressureSheet = saved[5] as Boolean,
                     activeEnergyCheckIn = saved[6] as Boolean,
-                    pendingDeleteReadingId = saved[7] as Long?,
-                    activeCycleSheet = saved[8] as Boolean,
-                    activeMealGallery = saved[9] as Boolean,
-                    viewedMealPhotoId = saved[10] as Long?,
+                    activeCycleSheet = saved[7] as Boolean,
+                    activeMealGallery = saved[8] as Boolean,
+                    viewedMealPhotoId = saved[9] as Long?,
                 )
             },
         )

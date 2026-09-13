@@ -34,20 +34,11 @@ import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.achievement.components.AchievementsDetailBody
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsDetailBody
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionDetailBody
-import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureDetailBody
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progress.summarize
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightDetailBody
-
-/**
- * Blood pressure draws a `LazyColumn`; nesting one in a `verticalScroll` column measures it with
- * infinite height and throws. It owns its scroll, so the page gives it the room and keeps the
- * switcher off the bottom of it. Photos was the other member and left this set entirely when it
- * became a route of its own.
- */
-private val SelfScrolling = setOf(Subject.BloodPressure)
 
 /**
  * One subject's page — the surface behind every card on the overview, for the subjects that have
@@ -67,7 +58,7 @@ private val SelfScrolling = setOf(Subject.BloodPressure)
  * the tab on the next press) and its header draws no arrow. Everything else is identical, so the two
  * widths cannot show different pages.
  *
- * The chrome is fixed for all thirteen and the body varies: hero, chips, a chart card holding its
+ * The chrome is fixed for the ones that are left and the body varies: hero, chips, a chart card holding its
  * own range toggle, the stat rows. A subject with no data yet is still a real page — its
  * `FullScreenState` and the switcher to its siblings, and **no call to action**: Progress reads,
  * and gains no logging entry point. Blood pressure is the single exception, because the sheet it
@@ -110,12 +101,6 @@ internal fun SubjectDetail(
                     cycleTracking = uiState.cycleTrackingOn,
                 )
 
-                subject in SelfScrolling -> Column(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                ) {
-                    Body(subject, uiState, state, checkIn, projection)
-                }
-
                 else -> Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -154,11 +139,10 @@ private fun ColumnScope.Body(
         // page is never asked to draw them. The arms exist for the `when`. When the last subject
         // joins them, this whole file goes.
         Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements,
-        Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle,
+        Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure,
         -> Unit
         Subject.Measurements -> MeasurementsDetailBody(uiState, state)
         Subject.Nutrition -> NutritionDetailBody(uiState, state)
-        Subject.BloodPressure -> BloodPressureDetailBody(uiState, state)
         Subject.Badges -> AchievementsDetailBody(uiState)
     }
 }
