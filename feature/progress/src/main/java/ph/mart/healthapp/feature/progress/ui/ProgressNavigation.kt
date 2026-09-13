@@ -13,6 +13,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
 import ph.mart.healthapp.feature.progress.ui.sleep.SleepScreen
+import ph.mart.healthapp.feature.progress.ui.strength.StrengthScreen
 import ph.mart.healthapp.feature.progress.ui.supplement.SupplementsScreen
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
 
@@ -38,6 +39,10 @@ data object HeartRoute : NavKey
 @Serializable
 data object SupplementsRoute : NavKey
 
+/** Lifting volume and the all-time records. Carries nothing: `StrengthViewModel` reads the entries itself. */
+@Serializable
+data object StrengthRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -45,7 +50,7 @@ data object SupplementsRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -59,6 +64,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Mood -> MoodRoute
     Subject.Heart -> HeartRoute
     Subject.Supplements -> SupplementsRoute
+    Subject.Strength -> StrengthRoute
     else -> null
 }
 
@@ -140,6 +146,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<SupplementsRoute> {
         SupplementsScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<StrengthRoute> {
+        StrengthScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
