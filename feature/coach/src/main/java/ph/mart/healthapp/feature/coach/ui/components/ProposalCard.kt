@@ -138,6 +138,14 @@ private fun SingleProposal(action: CoachAction) {
             ProposalTitle(stringResource(R.string.coach_proposal_water_title))
             ProposalHeadline(waterAmount(action.glasses))
         }
+
+        // `resolve()` turns a saved meal into its own rows before any card is drawn, so this is
+        // only ever reached if that stops being true. It renders the name rather than nothing,
+        // which stays honest: the name is the whole of what the model supplied.
+        is CoachAction.LogSavedMeal -> {
+            ProposalTitle(stringResource(R.string.coach_proposal_food_title, stringResource(action.mealType.labelRes)))
+            ProposalHeadline(action.name)
+        }
     }
 }
 
@@ -234,6 +242,7 @@ private fun actionName(action: CoachAction): String = when (action) {
     is CoachAction.LogFood -> action.name
     is CoachAction.LogWater -> waterAmount(action.glasses)
     is CoachAction.LogExercise -> activityName(action)
+    is CoachAction.LogSavedMeal -> action.name
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -243,6 +252,8 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.LogWater -> null
     is CoachAction.LogExercise ->
         stringResource(R.string.coach_proposal_exercise_body, action.minutes, action.burnedKcal)
+    // No figures to show: a saved meal carries a name until `resolve()` gives it its rows.
+    is CoachAction.LogSavedMeal -> null
 }
 
 /**

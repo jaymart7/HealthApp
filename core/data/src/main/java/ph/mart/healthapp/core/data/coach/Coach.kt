@@ -43,6 +43,17 @@ sealed interface CoachAction {
     data class LogWater(val glasses: Int) : CoachAction
 
     /**
+     * A meal the user saved, by the name they saved it under — the model supplies the name and
+     * nothing else, and [resolve] turns it into the real rows.
+     *
+     * It never reaches the card or a write in this shape: a saved meal becomes one [LogFood] per
+     * item and a recipe one [LogFood] at a serving, so every figure on the card is the user's own
+     * from their own library. That is [LogExercise]'s rule — the app supplies what a model would
+     * otherwise invent — applied to a whole meal.
+     */
+    data class LogSavedMeal(val name: String, val mealType: MealType) : CoachAction
+
+    /**
      * [burnedKcal] is **not** the model's figure — it is `estimateBurnedKcal()`'s, filled in from
      * the user's own latest weigh-in once the call has parsed. A model asked for a calorie burn
      * invents one, and the app already owns the MET arithmetic that the log-exercise sheet uses;

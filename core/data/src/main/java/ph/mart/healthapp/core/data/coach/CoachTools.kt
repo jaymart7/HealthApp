@@ -23,7 +23,13 @@ import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Recipe
+import ph.mart.healthapp.core.data.food.RecipeServing
+import ph.mart.healthapp.core.data.food.SavedMeal
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.food.perServing
+import ph.mart.healthapp.core.data.food.totalKcal
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.health.formatDuration
@@ -79,13 +85,16 @@ internal const val MAX_ACTION_MINUTES = 600
 
 internal const val TOOL_GET_DAY = "get_day"
 internal const val TOOL_GET_HISTORY = "get_history"
+internal const val TOOL_GET_LIBRARY = "get_library"
 internal const val TOOL_LOG_FOOD = "log_food"
 internal const val TOOL_LOG_WATER = "log_water"
 internal const val TOOL_LOG_EXERCISE = "log_exercise"
+internal const val TOOL_LOG_SAVED_MEAL = "log_saved_meal"
 
 /** The two the model may call but the app never executes. Kept as a set rather than a `when` so
  * [CoachRepositoryImpl]'s loop can ask the question without knowing what either one does. */
-internal val WRITE_TOOLS = setOf(TOOL_LOG_FOOD, TOOL_LOG_WATER, TOOL_LOG_EXERCISE)
+internal val WRITE_TOOLS =
+    setOf(TOOL_LOG_FOOD, TOOL_LOG_WATER, TOOL_LOG_EXERCISE, TOOL_LOG_SAVED_MEAL)
 
 /**
  * Days are `days_ago`, never a date string.
@@ -122,6 +131,13 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             ),
         ),
         FunctionDeclaration(
+            name = TOOL_GET_LIBRARY,
+            description = "Read the meals and recipes this user has saved, by name. Call this " +
+                "before answering anything about what they usually eat, what they could make, or " +
+                "before logging a meal they refer to by name.",
+            parameters = emptyMap(),
+        ),
+        FunctionDeclaration(
             name = TOOL_LOG_FOOD,
             description = "Propose adding a food to today's diary. This does NOT log it: the user " +
                 "sees what you proposed and taps to confirm. Estimate the nutrition from what " +
@@ -138,6 +154,22 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 "fat_g" to Schema.integer(description = "Fat in grams."),
                 "portion_amount" to Schema.double(description = "How much, e.g. 2 or 150."),
                 "portion_unit" to Schema.string(description = "The unit, e.g. 'g', 'ml', 'serving'."),
+            ),
+        ),
+        FunctionDeclaration(
+            name = TOOL_LOG_SAVED_MEAL,
+            description = "Propose adding one of the user's own saved meals or recipes to today's " +
+                "diary, by its exact name from get_library. This does NOT log it: the user sees " +
+                "every row and taps to confirm. Do not estimate any of its nutrition — the app " +
+                "uses the figures they saved.",
+            parameters = mapOf(
+                "name" to Schema.string(
+                    description = "The saved meal or recipe's name, exactly as get_library gave it.",
+                ),
+                "meal" to Schema.enumeration(
+                    values = MealType.entries.map { it.name },
+                    description = "Which meal it belongs to.",
+                ),
             ),
         ),
         FunctionDeclaration(
@@ -193,7 +225,19 @@ internal fun parseAction(name: String, args: Map<String, JsonElement>): CoachAct
         ?.takeIf { it in 1..MAX_ACTION_GLASSES }
         ?.let(CoachAction::LogWater)
     TOOL_LOG_EXERCISE -> parseLogExercise(args)
+    TOOL_LOG_SAVED_MEAL -> parseLogSavedMeal(args)
     else -> null
+}
+
+/** Two fields, neither of them a figure: what [resolve] needs to find the meal, and the slot it
+ * goes in. Everything else comes off the user's own saved row. */
+private fun parseLogSavedMeal(args: Map<String, JsonElement>): CoachAction.LogSavedMeal? {
+    val name = args.string("name")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS }
+        ?: return null
+    val meal = args.string("meal")
+        ?.let { raw -> MealType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
+        ?: return null
+    return CoachAction.LogSavedMeal(name = name, mealType = meal)
 }
 
 /**
@@ -428,6 +472,84 @@ private fun weightDeltas(weights: List<WeightEntry>, from: Long, to: Long): Map<
 // endregion
 
 /**
+ * The user's own meals and recipes, by name.
+ *
+ * Names first and figures second, because the names are what the model has to quote back exactly —
+ * `log_saved_meal` matches on them and nothing else. A recipe reports **per serving**, the figure
+ * the diary would get, rather than the whole pot.
+ */
+internal fun formatLibrary(meals: List<SavedMeal>, recipes: List<Recipe>): String = buildString {
+    if (meals.isEmpty() && recipes.isEmpty()) return "They have not saved any meals or recipes."
+    if (meals.isNotEmpty()) {
+        appendLine("Saved meals:")
+        meals.forEach {
+            appendLine("- \"${it.name}\": ${it.items.size} items, ${it.totalKcal()} kcal")
+        }
+    }
+    if (recipes.isNotEmpty()) {
+        appendLine("Recipes:")
+        recipes.forEach {
+            appendLine("- \"${it.name}\": ${it.perServing().calories} kcal per serving")
+        }
+    }
+}
+
+/**
+ * A saved meal or recipe, by name, as the rows that would be written — or null when nothing
+ * matches, which fails the turn.
+ *
+ * **Exact match, case- and space-insensitive; never fuzzy.** `get_library` hands the model the
+ * names verbatim, so a name that matches nothing is a broken call rather than a near miss, and
+ * guessing which meal was meant is the one thing a card one tap from the diary must not do — the
+ * user would be confirming a meal they did not name. Meals before recipes, the order
+ * [formatLibrary] lists them in.
+ *
+ * Every figure on the rows is the user's own. Nothing here is estimated, which is the whole point:
+ * a model that could retype a saved meal's macros would be inventing figures the app already has.
+ */
+internal fun savedMealRows(
+    name: String,
+    mealType: MealType,
+    meals: List<SavedMeal>,
+    recipes: List<Recipe>,
+): List<CoachAction.LogFood>? {
+    val wanted = name.trim()
+    meals.firstOrNull { it.name.equals(wanted, ignoreCase = true) }
+        ?.let { meal -> return meal.items.map { it.toLogFood(it.name, mealType) } }
+    return recipes.firstOrNull { it.name.equals(wanted, ignoreCase = true) }
+        // One row at one serving, named after the recipe — how the app logs a recipe everywhere
+        // else, and the reason `perServing()` exists.
+        ?.let { recipe -> listOf(recipe.perServing().toLogFood(recipe.name, mealType)) }
+}
+
+private fun SavedMealItem.toLogFood(name: String, mealType: MealType) = CoachAction.LogFood(
+    name = name,
+    mealType = mealType,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    portionAmount = portionAmount,
+    portionUnit = portionUnit,
+)
+
+/** A serving is one row of one portion — the recipe's own name, its own figures, nothing
+ * estimated. */
+private fun RecipeServing.toLogFood(name: String, mealType: MealType) = CoachAction.LogFood(
+    name = name,
+    mealType = mealType,
+    calories = calories,
+    proteinG = proteinG,
+    carbsG = carbsG,
+    fatG = fatG,
+    portionAmount = 1.0,
+    portionUnit = SERVING_UNIT,
+)
+
+/** Stays in Kotlin: it is persisted on the row, the rule every portion unit in this app follows. */
+private const val SERVING_UNIT = "serving"
+
+/**
  * The repositories a read tool reaches, behind one call.
  *
  * It sits here rather than in [CoachRepositoryImpl] so that file stays about the conversation and
@@ -457,8 +579,26 @@ internal class CoachToolbox(
     suspend fun runTool(name: String, args: Map<String, JsonElement>): String? = when (name) {
         TOOL_GET_DAY -> getDay(daysAgoOf(args))
         TOOL_GET_HISTORY -> getHistory(historyDaysOf(args))
+        TOOL_GET_LIBRARY -> getLibrary()
         else -> null
     }
+
+    /** The whole library, not the newest five the add-entry panel shows: the model is answering
+     * "what have I saved?", and a truncated list would have it deny a meal the user can see. */
+    private suspend fun getLibrary(): String = formatLibrary(
+        meals = foodRepository.observeAllSavedMeals().first(),
+        recipes = foodRepository.observeAllRecipes().first(),
+    )
+
+    /** The two reads [savedMealRows] needs, and nothing else — the matching itself is pure, so it
+     * is the part a JVM test can reach. */
+    suspend fun savedMealRows(name: String, mealType: MealType): List<CoachAction.LogFood>? =
+        savedMealRows(
+            name = name,
+            mealType = mealType,
+            meals = foodRepository.observeAllSavedMeals().first(),
+            recipes = foodRepository.observeAllRecipes().first(),
+        )
 
     /**
      * What a MET estimate is priced against: the latest weigh-in, else the onboarding weight —
@@ -512,17 +652,23 @@ internal class CoachToolbox(
 }
 
 /**
- * Fills in the one figure the model is not allowed to supply.
+ * Fills in what the model is not allowed to supply, and is the second half of the trust boundary
+ * [parseAction] opens.
  *
- * Everything else on a proposal card is the model's own words checked against a ceiling; a calorie
- * burn is arithmetic the app already owns ([estimateBurnedKcal]), and asking a model for it buys
- * an invented number on the one surface that promises every figure shown is the figure written.
- * Null here fails the turn exactly as a rejected parse does — see [CoachToolbox.weightKg].
+ * Everything else on a proposal card is the model's own words checked against a ceiling. These two
+ * are not. A calorie burn is arithmetic the app already owns ([estimateBurnedKcal]); a saved meal's
+ * nutrition is a figure the *user* already saved. Asking a model for either buys an invented number
+ * on the one surface that promises every figure shown is the figure written.
+ *
+ * It returns a **list** because one action can resolve to several: a saved meal is one row per
+ * item, which is what the multi-row card exists for. Null fails the turn exactly as a rejected
+ * parse does — a weigh-in the app doesn't have, or a name that is in no library.
  */
-internal suspend fun CoachAction.priced(toolbox: CoachToolbox): CoachAction? = when (this) {
+internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachAction>? = when (this) {
     is CoachAction.LogExercise -> toolbox.weightKg()
-        ?.let { copy(burnedKcal = estimateBurnedKcal(type, minutes, it)) }
-    else -> this
+        ?.let { listOf(copy(burnedKcal = estimateBurnedKcal(type, minutes, it))) }
+    is CoachAction.LogSavedMeal -> toolbox.savedMealRows(name, mealType)
+    else -> listOf(this)
 }
 
 /**

@@ -11,6 +11,9 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.Recipe
+import ph.mart.healthapp.core.data.food.SavedMeal
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.progress.WeightEntry
@@ -221,6 +224,87 @@ class CoachToolsTest {
         assertEquals(7, historyDaysOf(emptyMap()))
         assertEquals(1, historyDaysOf(args("days" to 0)))
         assertEquals(MAX_HISTORY_DAYS, historyDaysOf(args("days" to 365)))
+    }
+
+    // endregion
+
+    // region The user's own library
+
+    private fun item(name: String, kcal: Int) = SavedMealItem(
+        name = name,
+        portionAmount = 1.0,
+        portionUnit = "serving",
+        calories = kcal,
+        proteinG = 10,
+        carbsG = 20,
+        fatG = 5,
+    )
+
+    private val usualBreakfast =
+        SavedMeal(id = 1, name = "Usual breakfast", items = listOf(item("Oats", 300), item("Banana", 90)))
+
+    private val chilli = Recipe(id = 1, name = "Chilli", servings = 4, items = listOf(item("Beef", 800)))
+
+    /** Names first: they are what the model has to quote back, because `log_saved_meal` matches on
+     * the name and nothing else. */
+    @Test
+    fun `the library lists meals and recipes by name`() {
+        val text = formatLibrary(listOf(usualBreakfast), listOf(chilli))
+        assertTrue(text, "\"Usual breakfast\": 2 items, 390 kcal" in text)
+        // Per serving, not the whole pot — the figure the diary would actually get.
+        assertTrue(text, "\"Chilli\": 200 kcal per serving" in text)
+    }
+
+    @Test
+    fun `an empty library says so rather than going quiet`() {
+        assertEquals(
+            "They have not saved any meals or recipes.",
+            formatLibrary(emptyList(), emptyList()),
+        )
+    }
+
+    /** The figures are the user's own, item for item — nothing on the card was estimated by the
+     * model, which is the whole reason this tool takes only a name. */
+    @Test
+    fun `a saved meal resolves to its own rows`() {
+        val rows = savedMealRows("usual BREAKFAST", MealType.Breakfast, listOf(usualBreakfast), emptyList())
+        assertEquals(listOf("Oats", "Banana"), rows?.map { it.name })
+        assertEquals(listOf(300, 90), rows?.map { it.calories })
+        assertTrue(rows.toString(), rows!!.all { it.mealType == MealType.Breakfast })
+    }
+
+    /** One row at one serving, named after the recipe — how the app logs a recipe everywhere
+     * else. */
+    @Test
+    fun `a recipe resolves to a single serving`() {
+        val row = savedMealRows("Chilli", MealType.Dinner, emptyList(), listOf(chilli))?.single()
+        assertEquals("Chilli", row?.name)
+        assertEquals(200, row?.calories)
+        assertEquals(1.0, row?.portionAmount ?: 0.0, 0.001)
+    }
+
+    /**
+     * `get_library` hands the model the names verbatim, so a name matching nothing is a broken
+     * call — never a near miss to guess at. The turn fails instead of putting a meal the user did
+     * not name one tap from the diary.
+     */
+    @Test
+    fun `a name in no library fails rather than guessing`() {
+        assertNull(savedMealRows("Usual brekkie", MealType.Breakfast, listOf(usualBreakfast), listOf(chilli)))
+    }
+
+    /** The name is all the model supplies; the meal slot is the only other field, and neither is a
+     * figure. */
+    @Test
+    fun `a saved-meal call parses to a name and a slot`() {
+        val action = parseAction(
+            TOOL_LOG_SAVED_MEAL,
+            args("name" to "Usual breakfast", "meal" to "breakfast"),
+        ) as CoachAction.LogSavedMeal
+        assertEquals("Usual breakfast", action.name)
+        assertEquals(MealType.Breakfast, action.mealType)
+        assertNull(parseAction(TOOL_LOG_SAVED_MEAL, args("name" to "Usual breakfast")))
+        assertNull(parseAction(TOOL_LOG_SAVED_MEAL, args("meal" to "Breakfast")))
     }
 
     // endregion

@@ -137,8 +137,12 @@ internal class CoachRepositoryImpl(
                 // One bad call fails the whole turn, the rule a lone bad call already followed: a
                 // meal missing the row that would not parse is a meal the user logs without
                 // noticing. Same for a draft past the row ceiling — rejected, never truncated.
-                val actions = writes.map { call ->
-                    parseAction(call.name, call.args)?.priced(toolbox)
+                //
+                // `resolve` is the second half of the boundary and can return several rows for one
+                // call: a saved meal is one row per item, so `flatMap` is what flattens "log my
+                // usual breakfast and a coffee" into one card.
+                val actions = writes.flatMap { call ->
+                    parseAction(call.name, call.args)?.resolve(toolbox)
                         ?: return@flow emit(CoachReply.Failed)
                 }
                 if (actions.size > MAX_DRAFT_ROWS) return@flow emit(CoachReply.Failed)
@@ -275,7 +279,8 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
     appendLine(
         "You can read the rest of their diary with tools. Use get_day for any single day — it " +
             "returns every food they logged with its calories and macros, their water and their " +
-            "activity. Use get_history for a week, a month, a trend or an average. Days are given " +
+            "activity. Use get_history for a week, a month, a trend or an average, and " +
+            "get_library for the meals and recipes they have saved. Days are given " +
             "as how many days back from today, where 0 is today and 1 is yesterday; today is day " +
             "number ${todayEpochDay()} internally, so just count backwards. Never state a figure " +
             "you were not given or did not read from a tool — call the tool instead of guessing, " +
@@ -286,13 +291,16 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
             "not track it at all — answer with what is there and do not ask them for it.",
     )
     appendLine(
-        "If the user asks you to log something, call log_food, log_water or log_exercise. These " +
+        "If the user asks you to log something, call log_food, log_water, log_exercise or " +
+            "log_saved_meal. These " +
             "do not log anything themselves: the user sees what you drafted and taps to confirm " +
             "it, so say what you are proposing in the same reply. Call log_food once per food: a " +
             "meal of three things is three calls in the same turn, and they are drafted together " +
             "as one card. Estimate the nutrition of a " +
             "food from their description; do not estimate the calories an activity burned, " +
-            "because the app works that out from their own weight. You cannot edit or delete " +
+            "because the app works that out from their own weight; and if they name one of their " +
+            "own saved meals or recipes, call get_library for its exact name and then " +
+            "log_saved_meal with it rather than retyping what is in it. You cannot edit or delete " +
             "anything, and you cannot log for a past day — point them at the Food tab's diary " +
             "for that.",
     )

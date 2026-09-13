@@ -1666,6 +1666,27 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   write, and `withMessages` retiring the bubbles on a list-size change would take the new question
   with it. The card carries both ways out, which is what a locked bar is for. `log_weight` is
   deliberately absent — kg/lb is a second trap for no new capability.
+- **The coach reads the user's library by name, and drafts from it without retyping a figure.**
+  Two tools, and the split is the point. `get_library` lists the saved meals and recipes *by name*
+  — the whole list, not the newest five the add-entry panel shows, because a truncated one has the
+  coach denying a meal the user can see. `log_saved_meal` then takes **only a name and a meal
+  slot**: the app looks the meal up and builds the rows from what the user saved, so every figure
+  on the card is theirs. That is `log_exercise`'s rule — the app supplies what a model would
+  otherwise invent — applied to a whole meal, and it is why `priced()` became
+  `resolve(): List<CoachAction>?`: filling in a burn and expanding a meal into its rows are the
+  same step of the same boundary, and a saved meal returning several rows is exactly what the
+  multi-row card exists for. **The match is exact, case- and space-insensitive, and never fuzzy.**
+  `get_library` hands the model the names verbatim, so a name matching nothing is a broken call
+  rather than a near miss, and the turn fails: guessing which meal was meant would put a meal the
+  user never named one tap from the diary. That fuzzy-matching cost is what ruled `log_supplement`
+  out last round — a read tool that publishes the names is what makes this one cheap. **A recipe
+  resolves to one row at `perServing()`**, named after the recipe, which is how the app logs a
+  recipe everywhere else; a saved meal resolves to one row per item, which is how `onLogSavedMeal`
+  does it. `formatLibrary` and `savedMealRows` are pure — the toolbox does the two reads and
+  delegates — so the matching rule and the per-serving arithmetic both have JVM tests.
+  `CoachAction.LogSavedMeal` is the one action a card never renders, because `resolve` always
+  replaces it; the card still carries an explicit branch for it rather than an `else`, and draws
+  the name, so the exhaustive `when` stays exhaustive and a future slip degrades to something true.
 - **A draft holds rows, not a row — and every write call is taken, not the first.** *"Log my
   breakfast: two eggs, toast and a coffee"* is three `log_food` calls in one round, and
   `calls.firstOrNull { it.name in WRITE_TOOLS }` took one of them. The other two were dropped in

@@ -7,6 +7,7 @@ import org.junit.Test
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
+import ph.mart.healthapp.core.data.coach.TOOL_GET_LIBRARY
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 
@@ -85,6 +86,14 @@ class FakeCoachScriptTest {
     fun `a meal is only named when the sentence names one`() {
         val script = fakeCoachScript("i ate some rice") as FakeScript.Propose
         assertEquals(MealType.Snacks, (script.actions.single() as CoachAction.LogFood).mealType)
+    }
+
+    /** Before the history words on purpose: "what have I saved recently?" is a library question,
+     * and "recently" is one of theirs. */
+    @Test
+    fun `asking about saved meals reads the library`() {
+        val script = fakeCoachScript("what meals have I saved recently?") as FakeScript.Tool
+        assertEquals(TOOL_GET_LIBRARY, script.name)
     }
 
     @Test

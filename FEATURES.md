@@ -281,14 +281,17 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Daily insight — one line on Home, cached per day, falls back to three local rules.
 - Coach — a chat screen told the day's numbers, which can read the rest of the diary itself:
   `get_day` for any past day's meals, macros, water and activity — plus that day's sleep, mood and
-  completed fast where those are tracked — and `get_history` for a span of up to a month with
-  training, sleep and weigh-ins. History persisted, clearable with a confirm. The answer streams in word
+  completed fast where those are tracked — `get_history` for a span of up to a month with
+  training, sleep and weigh-ins, and `get_library` for the meals and recipes the user has saved.
+  History persisted, clearable with a confirm. The answer streams in word
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
 - Coach proposals — asked to log something, the coach drafts the rows and the user taps to confirm
   them: foods into today's diary, glasses of water, or an activity — whose calorie burn is the
   app's own MET estimate from the user's latest weigh-in, never the model's guess. A whole meal is
-  one card of several rows, each removable before the tap, written to the diary together. It never writes on its own, and nothing —
+  one card of several rows, each removable before the tap, written to the diary together. One of
+  the user's own saved meals or recipes is drafted by name, with the figures they saved and none
+  the model invented. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
   writes nothing.
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a

@@ -12,7 +12,8 @@ import ph.mart.healthapp.core.data.coach.CoachToolbox
 import ph.mart.healthapp.core.data.coach.MAX_DRAFT_ROWS
 import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
-import ph.mart.healthapp.core.data.coach.priced
+import ph.mart.healthapp.core.data.coach.TOOL_GET_LIBRARY
+import ph.mart.healthapp.core.data.coach.resolve
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.ScannedProduct
@@ -52,13 +53,14 @@ internal class FakeCoachRepository(
                 // The prose comes first and the card follows, which is the order the real thing
                 // produces: the model says what it is about to propose, then calls the tool.
                 stream(script.preamble)
-                // Through `priced` for the reason everything else here goes through the real path:
-                // a workout's burn is the app's arithmetic over the user's own weigh-in, and a
-                // faked card showing 0 kcal would hide the one figure worth looking at.
-                val actions = script.actions.map { it.priced(toolbox) }
+                // Through `resolve` for the reason everything else here goes through the real
+                // path: a workout's burn is the app's arithmetic over the user's own weigh-in and
+                // a saved meal's rows are the user's own, so a fake that skipped it would draw a
+                // card the real one never draws.
+                val actions = script.actions.map { it.resolve(toolbox) }
                 emit(
                     if (actions.any { it == null }) CoachReply.Failed
-                    else CoachReply.Proposal(actions.filterNotNull()),
+                    else CoachReply.Proposal(actions.filterNotNull().flatten()),
                 )
             }
 
@@ -178,6 +180,16 @@ internal fun fakeCoachScript(question: String): FakeScript {
         }
     }
 
+    // Before the history words, because "what have I saved recently?" is a library question and
+    // "recently" is one of theirs.
+    if (LIBRARY_WORDS.any { it in asked }) {
+        return FakeScript.Tool(
+            name = TOOL_GET_LIBRARY,
+            args = emptyMap(),
+            preamble = "Here's what you've saved:",
+        )
+    }
+
     HISTORY_WORDS.firstOrNull { it in asked }?.let {
         val days = if ("month" in asked) 30 else 7
         return FakeScript.Tool(
@@ -211,6 +223,7 @@ internal fun fakeCoachScript(question: String): FakeScript {
 private val LOG_WORDS = listOf("log ", "add ", "i ate", "i had", "i drank", "note down")
 private val WATER_WORDS = listOf("water", "glass")
 private val HISTORY_WORDS = listOf("week", "month", "trend", "average", "lately", "recently")
+private val LIBRARY_WORDS = listOf("saved", "recipe", "library", "usual")
 
 /** Only the calendar words, not a general number — "log 2 eggs" must not read as "two days ago". */
 private fun daysAgoIn(asked: String): Int? = when {
