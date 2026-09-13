@@ -7,6 +7,7 @@ import ph.mart.healthapp.feature.progress.ui.comparison.ComparisonViewModel
 import ph.mart.healthapp.feature.progress.ui.cycle.CycleViewModel
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementViewModel
+import ph.mart.healthapp.feature.progress.ui.mood.MoodViewModel
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosViewModel
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureViewModel
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressViewModel
@@ -28,6 +29,7 @@ val progressModule = module {
     // photos & timelapse); the subject pages are following, one per commit.
     viewModelOf(::PhotosViewModel)
     viewModelOf(::SleepViewModel)
+    viewModelOf(::MoodViewModel)
     viewModelOf(::ComparisonViewModel)
     viewModelOf(::TimelapseViewModel)
     viewModelOf(::RecapViewModel)

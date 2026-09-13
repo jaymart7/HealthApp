@@ -37,7 +37,6 @@ import ph.mart.healthapp.feature.progress.ui.cycle.components.CycleDetailBody
 import ph.mart.healthapp.feature.progress.ui.fasting.components.FastingDetailBody
 import ph.mart.healthapp.feature.progress.ui.heart.components.HeartDetailBody
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementsDetailBody
-import ph.mart.healthapp.feature.progress.ui.mood.components.MoodDetailBody
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionDetailBody
 import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureDetailBody
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
@@ -160,14 +159,13 @@ private fun ColumnScope.Body(
         // a route for every subject in its `RoutedSubjects` set rather than selecting it, so this
         // page is never asked to draw them. The arms exist for the `when`. When the last subject
         // joins them, this whole file goes.
-        Subject.Photos, Subject.Sleep -> Unit
+        Subject.Photos, Subject.Sleep, Subject.Mood -> Unit
         Subject.Measurements -> MeasurementsDetailBody(uiState, state)
         Subject.Nutrition -> NutritionDetailBody(uiState, state)
         Subject.Fasting -> FastingDetailBody(uiState, state)
         Subject.Supplements -> SupplementsDetailBody(uiState, state)
         Subject.Activity -> ActivityDetailBody(uiState, state)
         Subject.Strength -> StrengthDetailBody(uiState, state)
-        Subject.Mood -> MoodDetailBody(uiState, state)
         Subject.Cycle -> CycleDetailBody(uiState, state)
         Subject.Heart -> HeartDetailBody(uiState, state)
         Subject.BloodPressure -> BloodPressureDetailBody(uiState, state)
@@ -310,9 +308,9 @@ private fun emptyCopy(subject: Subject): EmptyCopy = when (subject) {
 private fun SubjectDetailEmptyPreview() {
     AppTheme {
         SubjectDetail(
-            subject = Subject.Mood,
+            subject = Subject.Heart,
             uiState = ProgressUiState(),
-            state = ProgressScreenState(selectedSubject = Subject.Mood),
+            state = ProgressScreenState(selectedSubject = Subject.Heart),
             checkIn = null,
             projection = null,
             canShare = false,
