@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,6 +49,30 @@ private val TapTarget = 48.dp
 /** "1M" needs nothing like a `labelLarge` word's worth of pill, and four of them have to share a
  * card header with its title. */
 private val RangePillWidth = 40.dp
+
+/**
+ * The top-bar action that carries this page's question to the coach — **nothing at all** where
+ * [Subject.coachQuestion] is null.
+ *
+ * One composable rather than seven copies, and the absence is the interesting half: the coach's
+ * tools reach food, water, training, sleep, mood, fasting and the weight trend, so a button on
+ * Heart or Measurements would buy a shrug, and a shrug reads as a broken feature. [Subject] is
+ * where that decision lives, so a page cannot disagree with it.
+ *
+ * It fills the coach's field rather than sending — the mic's rule — so a mistap costs nothing.
+ */
+@Composable
+internal fun AskCoachAction(subject: Subject, onAskCoach: (String) -> Unit) {
+    val question = subject.coachQuestion ?: return
+    val text = stringResource(question)
+    IconButton(onClick = { onAskCoach(text) }) {
+        Icon(
+            imageVector = AppIcons.AiSparkle,
+            contentDescription = stringResource(R.string.progress_ask_coach),
+            tint = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
 
 /** The one number the page is about, and what it is. Baseline-aligned so the unit sits on the
  * figure's feet rather than its middle. */

@@ -37,22 +37,33 @@ enum class SubjectAccent { Primary, Secondary }
  * which carries the explanation — except Blood pressure's, the one subject with a logging sheet
  * already on this screen, whose hint opens that sheet instead.
  */
+/**
+ * [coachQuestion] is what this page would ask the coach, and **null means the page carries no
+ * coach action at all**.
+ *
+ * The seven that have one are the seven the coach can answer: its tools reach food and macros,
+ * water, training, sleep, mood, fasting and the weight trend, and nothing else. A button on Heart
+ * or Measurements would buy a shrug, and a shrug reads as a broken feature — the rule the
+ * follow-up chips already follow. This is the one place that decision lives, so a page cannot
+ * disagree with it.
+ */
 enum class Subject(
     @StringRes val label: Int,
     val group: SubjectGroup?,
     val accent: SubjectAccent,
     @StringRes val emptyHint: Int,
+    @StringRes val coachQuestion: Int? = null,
 ) {
-    Weight(R.string.progress_subject_weight, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_weight),
+    Weight(R.string.progress_subject_weight, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_weight, R.string.progress_ask_weight),
     Photos(R.string.progress_subject_photos, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_photos),
     Measurements(R.string.progress_subject_measurements, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_measurements),
-    Nutrition(R.string.progress_subject_nutrition, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_nutrition),
-    Fasting(R.string.progress_subject_fasting, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_fasting),
+    Nutrition(R.string.progress_subject_nutrition, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_nutrition, R.string.progress_ask_nutrition),
+    Fasting(R.string.progress_subject_fasting, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_fasting, R.string.progress_ask_fasting),
     Supplements(R.string.progress_subject_supplements, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_supplements),
-    Activity(R.string.progress_subject_activity, SubjectGroup.Training, SubjectAccent.Secondary, R.string.progress_hint_activity),
-    Strength(R.string.progress_subject_strength, SubjectGroup.Training, SubjectAccent.Primary, R.string.progress_hint_strength),
-    Sleep(R.string.progress_subject_sleep, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_sleep),
-    Mood(R.string.progress_subject_mood, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_mood),
+    Activity(R.string.progress_subject_activity, SubjectGroup.Training, SubjectAccent.Secondary, R.string.progress_hint_activity, R.string.progress_ask_activity),
+    Strength(R.string.progress_subject_strength, SubjectGroup.Training, SubjectAccent.Primary, R.string.progress_hint_strength, R.string.progress_ask_strength),
+    Sleep(R.string.progress_subject_sleep, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_sleep, R.string.progress_ask_sleep),
+    Mood(R.string.progress_subject_mood, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_mood, R.string.progress_ask_mood),
     Cycle(R.string.progress_subject_cycle, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_cycle),
     Heart(R.string.progress_subject_heart, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_heart),
     BloodPressure(R.string.progress_subject_pressure, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_pressure),

@@ -36,6 +36,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.mood.components.MoodTrendChart
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -54,6 +55,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 internal fun MoodScreen(
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MoodViewModel = koinViewModel(),
@@ -64,6 +66,7 @@ internal fun MoodScreen(
         cycleTrackingOn = uiState.cycleTrackingOn,
         onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -75,6 +78,7 @@ private fun MoodContent(
     cycleTrackingOn: Boolean,
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: MoodState = rememberMoodState(),
@@ -88,6 +92,7 @@ private fun MoodContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Mood, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -184,6 +189,7 @@ private fun MoodScreenPreview() {
             cycleTrackingOn = true,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -199,6 +205,7 @@ private fun MoodScreenEmptyPreview() {
             cycleTrackingOn = true,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

@@ -61,6 +61,9 @@ fun EntryProviderScope<NavKey>.foodEntries(
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
+    /** The day's own question, carried to the coach — which lives above this tab, so like
+     * `onOpenStrength` it stays a callback `AppScaffold` resolves. */
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<FoodRoute> {
@@ -74,6 +77,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
             onNewRecipe = onNewRecipe,
             onOpenStrength = onOpenStrength,
             onLogExercise = onLogExercise,
+            onAskCoach = onAskCoach,
         )
     }
     entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }

@@ -58,6 +58,7 @@ import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -83,6 +84,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 internal fun WeightScreen(
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WeightViewModel = koinViewModel(),
@@ -96,6 +98,7 @@ internal fun WeightScreen(
         onApplyTarget = { kcal -> energyViewModel.handleEvent(EnergyCheckInEvent.OnApply(kcal)) },
         onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -109,6 +112,7 @@ private fun WeightContent(
     onApplyTarget: (Int) -> Unit,
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: WeightState = rememberWeightState(),
@@ -138,6 +142,7 @@ private fun WeightContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Weight, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -387,6 +392,7 @@ private fun WeightScreenPreview() {
             onApplyTarget = {},
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -404,6 +410,7 @@ private fun WeightScreenEmptyPreview() {
             onApplyTarget = {},
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

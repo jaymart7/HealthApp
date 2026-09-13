@@ -297,6 +297,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a
   protein gap, room left, water short, a weigh-in to compare) and falling back to diary questions.
   Rule-based, not generated: tapping one sends it exactly as an opener does.
+- Coach doors — the diary's day header and the seven Progress subject pages the coach has tools
+  for (weight, nutrition, fasting, activity, strength, sleep, mood) carry an "ask the coach"
+  action. It opens the chat with that day's or that subject's question **in the field, unsent**.
 - Coach stop — the send button becomes a stop button while an answer is streaming. The turn is
   abandoned, nothing is written, and the question goes back into the field.
 - Coach voice — a mic on the chat bar dictates the question through the system's own speech dialog

@@ -38,6 +38,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -55,6 +56,7 @@ import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 internal fun ActivityScreen(
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ActivityViewModel = koinViewModel(),
@@ -66,6 +68,7 @@ internal fun ActivityScreen(
         stepGoal = uiState.stepGoal,
         onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -78,6 +81,7 @@ private fun ActivityContent(
     stepGoal: Int,
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: ActivityState = rememberActivityState(),
@@ -91,6 +95,7 @@ private fun ActivityContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Activity, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -225,6 +230,7 @@ private fun ActivityScreenPreview() {
             stepGoal = DEFAULT_STEP_GOAL,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -241,6 +247,7 @@ private fun ActivityScreenEmptyPreview() {
             stepGoal = DEFAULT_STEP_GOAL,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

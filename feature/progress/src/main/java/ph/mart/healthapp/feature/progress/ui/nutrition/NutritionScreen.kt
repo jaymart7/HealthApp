@@ -40,6 +40,7 @@ import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionAvera
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionTrendChart
 import ph.mart.healthapp.feature.progress.ui.progress.PREVIEW_POINTS
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -59,6 +60,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 internal fun NutritionScreen(
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NutritionViewModel = koinViewModel(),
@@ -71,6 +73,7 @@ internal fun NutritionScreen(
         nutrientTargets = uiState.nutrientTargets,
         onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -84,6 +87,7 @@ private fun NutritionContent(
     nutrientTargets: Nutrients?,
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: NutritionState = rememberNutritionState(),
@@ -102,6 +106,7 @@ private fun NutritionContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Nutrition, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -237,6 +242,7 @@ private fun NutritionScreenPreview() {
             nutrientTargets = null,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -254,6 +260,7 @@ private fun NutritionScreenEmptyPreview() {
             nutrientTargets = null,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

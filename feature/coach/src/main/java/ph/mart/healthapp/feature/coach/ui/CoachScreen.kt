@@ -36,11 +36,21 @@ import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 
 @Composable
-fun CoachScreen(viewModel: CoachViewModel = koinViewModel()) {
+fun CoachScreen(question: String? = null, viewModel: CoachViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
+    val state = rememberCoachScreenState()
+    // Fills the field and stops — the mic's rule, and for its reason: a send is a model call and a
+    // persisted pair of rows, and a question arrived at by tapping an icon is a starting point.
+    // `prefilled` is saved, so a rotation cannot re-fill a field the user has since cleared.
+    LaunchedEffect(question) {
+        if (question != null && !state.prefilled) {
+            state.draft = question
+            state.prefilled = true
+        }
+    }
     CoachContent(
         uiState = uiState,
-        state = rememberCoachScreenState(),
+        state = state,
         onEvent = viewModel::handleEvent,
     )
 }

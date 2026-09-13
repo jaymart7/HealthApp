@@ -37,6 +37,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -57,6 +58,7 @@ private const val FULL_DAY_MINUTES = 24 * 60
 internal fun FastingScreen(
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FastingViewModel = koinViewModel(),
@@ -67,6 +69,7 @@ internal fun FastingScreen(
         goalHours = uiState.goalHours,
         onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -78,6 +81,7 @@ private fun FastingContent(
     goalHours: Int,
     onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: FastingState = rememberFastingState(),
@@ -91,6 +95,7 @@ private fun FastingContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Fasting, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -203,6 +208,7 @@ private fun FastingScreenPreview() {
             goalHours = 16,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -218,6 +224,7 @@ private fun FastingScreenEmptyPreview() {
             goalHours = 16,
             onSwitchSubject = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

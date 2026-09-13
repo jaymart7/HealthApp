@@ -154,6 +154,10 @@ fun EntryProviderScope<NavKey>.progressEntries(
     onCompare: (Long, Long) -> Unit,
     onOpenTimelapse: () -> Unit,
     onOpenRecap: () -> Unit,
+    /** The subject's own question, carried to the coach — which lives above this tab, so like
+     * every other cross-feature jump it stays a callback `AppScaffold` resolves. Only the seven
+     * subjects the coach has tools for ever call it; see [Subject.coachQuestion]. */
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<ProgressRoute> {
@@ -174,6 +178,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         SleepScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
@@ -181,6 +186,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         MoodScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
@@ -202,6 +208,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         StrengthScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
@@ -209,6 +216,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         FastingScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
@@ -216,6 +224,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         ActivityScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
@@ -244,6 +253,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         WeightScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
@@ -251,6 +261,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
         NutritionScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }

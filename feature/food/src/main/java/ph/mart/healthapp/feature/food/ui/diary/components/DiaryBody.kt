@@ -70,6 +70,7 @@ internal fun DiaryBody(
     onOpenHistory: (Long, String) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
+    onAskCoach: (String) -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
@@ -86,6 +87,7 @@ internal fun DiaryBody(
             selectedDate = uiState.selectedDate,
             today = uiState.today,
             onSelectDate = { date -> onEvent(FoodEvent.OnSelectDate(date)) },
+            onAskCoach = onAskCoach,
             onOpenCalendar = if (twoPane) null else ({ state.calendarOpen = true }),
             filterExpanded = state.filterExpanded,
             onFilterExpandedChange = { open ->
@@ -288,6 +290,7 @@ private fun DiaryBodyPreview() {
             onOpenHistory = { _, _ -> },
             onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
+            onAskCoach = {},
             snackbarHostState = SnackbarHostState(),
         )
     }

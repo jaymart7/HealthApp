@@ -88,7 +88,7 @@ private fun TopLevelDestination.label(): Int = when (this) {
 
 @Composable
 private fun NavKey?.title(): String = when (this) {
-    CoachRoute -> stringResource(R.string.app_title_coach)
+    is CoachRoute -> stringResource(R.string.app_title_coach)
     RecipeBuilderRoute -> stringResource(R.string.app_title_new_recipe)
     is StrengthWorkoutRoute -> stringResource(
         if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
@@ -348,7 +348,7 @@ fun AppScaffold(
                         homeEntries(
                             scrollState = homeScroll,
                             onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
-                            onOpenCoach = { topLevelBackStack.add(CoachRoute) },
+                            onOpenCoach = { topLevelBackStack.add(CoachRoute()) },
                             // Day 0 is today, the convention the FAB's own sheet uses — the plan card
                             // only ever starts today's workout.
                             onStartRoutine = { routineId ->
@@ -371,6 +371,9 @@ fun AppScaffold(
                             onOpenStrength = { date, editingId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
                             },
+                            // The same door Home's mascot card opens, carrying the question the
+                            // day raised. `CoachRoute` fills the field with it and never sends.
+                            onAskCoach = { question -> topLevelBackStack.add(CoachRoute(question)) },
                             onLogExercise = { date, editingId ->
                                 sheetDate = date
                                 sheetEditingId = editingId
@@ -393,6 +396,7 @@ fun AppScaffold(
                             },
                             onOpenTimelapse = { topLevelBackStack.add(TimelapseRoute) },
                             onOpenRecap = { topLevelBackStack.add(RecapRoute) },
+                            onAskCoach = { question -> topLevelBackStack.add(CoachRoute(question)) },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )
                         profileEntries(

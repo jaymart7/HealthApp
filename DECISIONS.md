@@ -1547,6 +1547,25 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   sends the resolved string verbatim, the rule `CoachEmptyState` set — the question the user pressed
   is the question the coach is asked. If the rules ever visibly miss, the model call is one `intent`
   and the chips are already plumbed.
+- **The coach has three doors now, and the two new ones fill the field rather than sending.**
+  The mascot card was the only way in, so every question had to be retyped away from the day or
+  the chart that raised it. `CoachRoute` became `data class CoachRoute(val question: String?)`, the
+  diary's day header carries the day it is showing, and a Progress subject page carries its own
+  subject — `AppScaffold` resolves both into the same route Home already opens. **They prefill and
+  stop**, which is the mic's rule verbatim and for its reason: a send is a model call and a
+  persisted pair of rows, and a question arrived at by tapping an icon is a starting point the user
+  will often narrow first, so a mistap costs nothing. A saved `prefilled` flag on
+  `CoachScreenState` is what stops a rotation re-filling a field the user had cleared — an opening
+  move, not a state the screen returns to. **Only seven of the fourteen subject pages carry the
+  action**, and that is the entry's most important half: the coach's tools reach food and macros,
+  water, training, sleep, mood, fasting and the weight trend, so Heart, Measurements, Supplements,
+  Cycle, Blood pressure, Photos and Badges would buy a shrug — and a shrug reads as a broken
+  feature, the rule the follow-up chips already follow. `Subject.coachQuestion` is nullable and is
+  the one place that decision lives, read by the shared `AskCoachAction` in `DetailChrome`, so a
+  page cannot disagree with it; `SubjectCoachTest` is what stops a new subject arriving with a
+  question no tool answers. The plumbing is `onAskCoach: (String) -> Unit` through each feature's
+  `*Navigation.kt`, the shape `onOpenCoach` and `onOpenStrength` already have — a feature never
+  imports another's route type.
 - **The mascot greeting card is the app's one door to the coach.** The insight card would be the
   more contextual tap and is the wrong one: it is hidden on day one, hidden when the model has
   nothing to say, and gone once dismissed, so a door on it is a door that isn't there most days.

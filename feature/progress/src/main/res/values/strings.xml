@@ -31,6 +31,17 @@
     <string name="progress_group_nutrition">Nutrition</string>
     <string name="progress_group_training">Training</string>
     <string name="progress_group_wellbeing">Wellbeing</string>
+    <!-- What a subject page asks the coach, carried into its field unsent. Only the seven subjects
+         the coach has tools for have one; the rest carry no action — see Subject.kt. -->
+    <string name="progress_ask_coach">Ask the coach</string>
+    <string name="progress_ask_weight">How\'s my weight trending?</string>
+    <string name="progress_ask_nutrition">How has my eating been this week?</string>
+    <string name="progress_ask_fasting">How have my fasts been going?</string>
+    <string name="progress_ask_activity">How has my training been this week?</string>
+    <string name="progress_ask_strength">How has my training been this week?</string>
+    <string name="progress_ask_sleep">Am I sleeping enough?</string>
+    <string name="progress_ask_mood">How has my mood been lately?</string>
+
     <string name="progress_subject_weight">Weight</string>
     <string name="progress_subject_photos">Photos</string>
     <string name="progress_subject_measurements">Measurements</string>

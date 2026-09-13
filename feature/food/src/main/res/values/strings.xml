@@ -48,6 +48,9 @@
 
     <!-- Diary -->
     <string name="food_filter_placeholder">Filter this day\'s foods…</string>
+    <!-- The day's own question, carried to the coach: the label is the day already on screen. -->
+    <string name="food_ask_coach">Ask the coach about this day</string>
+    <string name="food_ask_coach_question">How did I do on %1$s?</string>
     <string name="food_filter_open">Filter this day\'s foods</string>
     <string name="food_filter_close">Close filter</string>
     <string name="food_say_what_you_ate">Say what you ate</string>

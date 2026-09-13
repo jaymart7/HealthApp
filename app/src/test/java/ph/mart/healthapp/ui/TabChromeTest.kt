@@ -46,7 +46,7 @@ class TabChromeTest {
 
     @Test
     fun `a route that is not a Profile detail never earns a pane`() {
-        assertFalse(showsTabChrome(current = CoachRoute, beneath = HomeRoute, twoPane = true))
+        assertFalse(showsTabChrome(current = CoachRoute(), beneath = HomeRoute, twoPane = true))
     }
 
     /** Progress' read-only surfaces stopped being overlays drawn inside the tab and became routes,

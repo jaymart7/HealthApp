@@ -65,6 +65,7 @@ fun FoodScreen(
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
+    onAskCoach: (String) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
     viewModel: FoodViewModel = koinViewModel(),
@@ -82,6 +83,7 @@ fun FoodScreen(
         onNewRecipe = onNewRecipe,
         onOpenStrength = onOpenStrength,
         onLogExercise = onLogExercise,
+        onAskCoach = onAskCoach,
         scrollState = scrollState,
         twoPane = twoPane,
     )
@@ -99,6 +101,7 @@ private fun FoodContent(
     onNewRecipe: () -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
+    onAskCoach: (String) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
 ) {
@@ -155,6 +158,7 @@ private fun FoodContent(
                     onOpenHistory = onOpenHistory,
                     onOpenStrength = onOpenStrength,
                     onLogExercise = onLogExercise,
+                    onAskCoach = onAskCoach,
                     snackbarHostState = snackbarHostState,
                     modifier = modifier,
                     scrollState = scrollState,
@@ -259,6 +263,7 @@ private fun FoodScreenPreview() {
             onNewRecipe = {},
             onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
+            onAskCoach = {},
         )
     }
 }
@@ -280,6 +285,7 @@ private fun FoodScreenTwoPanePreview() {
             onNewRecipe = {},
             onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
+            onAskCoach = {},
             twoPane = true,
         )
     }
