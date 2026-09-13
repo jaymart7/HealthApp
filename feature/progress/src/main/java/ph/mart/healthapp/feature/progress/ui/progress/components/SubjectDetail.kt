@@ -30,7 +30,6 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.achievement.components.AchievementsDetailBody
-import ph.mart.healthapp.feature.progress.ui.nutrition.components.NutritionDetailBody
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -130,9 +129,8 @@ private fun ColumnScope.Body(
         // page is never asked to draw them. The arms exist for the `when`. When the last subject
         // joins them, this whole file goes.
         Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements,
-        Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements, Subject.Weight,
+        Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements, Subject.Weight, Subject.Nutrition,
         -> Unit
-        Subject.Nutrition -> NutritionDetailBody(uiState, state)
         Subject.Badges -> AchievementsDetailBody(uiState)
     }
 }

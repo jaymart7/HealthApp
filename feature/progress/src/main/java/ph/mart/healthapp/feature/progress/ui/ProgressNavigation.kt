@@ -12,6 +12,7 @@ import ph.mart.healthapp.feature.progress.ui.fasting.FastingScreen
 import ph.mart.healthapp.feature.progress.ui.heart.HeartScreen
 import ph.mart.healthapp.feature.progress.ui.measurement.MeasurementsScreen
 import ph.mart.healthapp.feature.progress.ui.mood.MoodScreen
+import ph.mart.healthapp.feature.progress.ui.nutrition.NutritionScreen
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureScreen
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
@@ -73,6 +74,10 @@ data object MeasurementsRoute : NavKey
 @Serializable
 data object WeightRoute : NavKey
 
+/** Calories, macros and the kept plates. Carries nothing: `NutritionViewModel` reads all three flows itself. */
+@Serializable
+data object NutritionRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -80,7 +85,7 @@ data object WeightRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute, WeightRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute, WeightRoute, NutritionRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -101,6 +106,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.BloodPressure -> BloodPressureRoute
     Subject.Measurements -> MeasurementsRoute
     Subject.Weight -> WeightRoute
+    Subject.Nutrition -> NutritionRoute
     else -> null
 }
 
@@ -231,6 +237,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<WeightRoute> {
         WeightScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<NutritionRoute> {
+        NutritionScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,

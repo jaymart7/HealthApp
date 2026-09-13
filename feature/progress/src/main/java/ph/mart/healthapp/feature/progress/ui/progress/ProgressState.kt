@@ -31,27 +31,23 @@ internal sealed interface ProgressDestination {
  * [ProgressScreenState.selectedSubject] and [ProgressScreenState.pendingRoute] all go, and
  * `ProgressOverview` takes a plain `onOpenSubject` instead.
  */
-private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements, Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements, Subject.Weight)
+private val RoutedSubjects = setOf(
+    Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements,
+    Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure,
+    Subject.Measurements, Subject.Weight, Subject.Nutrition,
+)
 
-/** UI-only — which subject is open, which range its chart is showing, which sheet is up has no
- * business meaning outside this screen; the actual weight/measurement/photo data lives in
- * [ProgressUiState]. */
+/** UI-only — which subject is open and which sheet is up has no business meaning outside this
+ * screen; the actual weight/measurement/photo data lives in [ProgressUiState]. */
 internal class ProgressScreenState(
     selectedSubject: Subject? = null,
-    ranges: Map<Subject, ChartRange> = emptyMap(),
     expandedGroups: Set<SubjectGroup> = emptySet(),
     activeBloodPressureSheet: Boolean = false,
     activeCycleSheet: Boolean = false,
-    activeMealGallery: Boolean = false,
-    viewedMealPhotoId: Long? = null,
 ) {
     /** Null is the overview. A detail page is a swap-in inside this tab rather than a route, so it
      * keeps the bottom bar and the FAB and costs no second copy of [ProgressViewModel]. */
     var selectedSubject: Subject? by mutableStateOf(selectedSubject)
-
-    /** Per subject, for the session — the range toggle now lives inside each chart card, so one
-     * shared range would have a tap on the Sleep chart silently re-slice the Weight one. */
-    var ranges: Map<Subject, ChartRange> by mutableStateOf(ranges)
 
     /** A group with nothing tracked collapses to one row; this is the ones the user has opened. */
     var expandedGroups: Set<SubjectGroup> by mutableStateOf(expandedGroups)
@@ -69,19 +65,6 @@ internal class ProgressScreenState(
     var pendingRoute: ProgressDestination? by mutableStateOf(null)
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
     var activeCycleSheet: Boolean by mutableStateOf(activeCycleSheet)
-
-    /** The meal-photo gallery, a fifth overlay over this tab. */
-    var activeMealGallery: Boolean by mutableStateOf(activeMealGallery)
-
-    /** The one plate opened full-frame inside that gallery. Two levels, so back closes the frame
-     * before the gallery — see the gallery's own handler. */
-    var viewedMealPhotoId: Long? by mutableStateOf(viewedMealPhotoId)
-
-    fun rangeFor(subject: Subject): ChartRange = ranges[subject] ?: DEFAULT_CHART_RANGE
-
-    fun setRange(subject: Subject, range: ChartRange) {
-        ranges = ranges + (subject to range)
-    }
 
     /** A subject that has become a route asks for a push; one that has not is still selected in
      * place. Every entry point in this tab — the overview's cards, the empty-card hints, the
@@ -122,54 +105,37 @@ internal class ProgressScreenState(
         pendingRoute = ProgressDestination.Recap
     }
 
-    /** The strip's tiles open the gallery *on* the plate they show, so a tap lands where it was
-     * aimed rather than at the top of a grid. */
-    fun openMealGallery(photoId: Long? = null) {
-        viewedMealPhotoId = photoId
-        activeMealGallery = true
-    }
-
-    fun closeMealGallery() {
-        activeMealGallery = false
-        viewedMealPhotoId = null
-    }
-
     companion object {
         @Suppress("UNCHECKED_CAST")
         fun Saver(): Saver<ProgressScreenState, Any> = listSaver(
+            // Appended, never renumbered: an index that moves restores the wrong field into the
+            // wrong overlay. It has been renumbered anyway on every commit that moved a field out,
+            // both halves together each time — the recap's period into `RecapViewModel`; the recap
+            // and the timelapse becoming routes; the photo selection and its share sheet leaving
+            // with the Photos page; then, as each subject page became a route of its own, the
+            // pending delete to `BloodPressureState`, the add-measurement sheet to
+            // `MeasurementsState`, the energy check-in to `WeightState`, the meal gallery to
+            // `NutritionState`, and finally the per-subject range map, once every page with a
+            // chart owned its own range.
+            //
+            // What is left is the overview's: which subject is selected, which groups are open,
+            // and the two sheets the overview's own empty-card hints can raise.
+            // [pendingRoute] is not here and must not be: the back stack is what restores an open
+            // route.
             save = {
                 listOf(
                     it.selectedSubject?.name,
-                    // Flattened to a String list: the saver's bundle takes primitives, and a
-                    // subject the restoring build doesn't know is dropped rather than crashing.
-                    it.ranges.flatMap { (subject, range) -> listOf(subject.name, range.name) },
                     it.expandedGroups.map { group -> group.name },
                     it.activeBloodPressureSheet,
                     it.activeCycleSheet,
-                    // Appended, never renumbered: an index that moves restores the wrong field
-                    // into the wrong overlay. Twice now it has been renumbered anyway, both halves
-                    // in the same commit each time — the recap's period moving into
-                    // `RecapViewModel`, the recap and the timelapse becoming routes, and the photo
-                    // selection and its share sheet leaving with the Photos page for `PhotosState`.
-                    // [pendingRoute] is not here and must not be: the back stack is what restores
-                    // an open route.
-                    it.activeMealGallery, it.viewedMealPhotoId,
                 )
             },
             restore = { saved ->
-                val flatRanges = (saved[1] as List<String>).chunked(2).filter { it.size == 2 }
                 ProgressScreenState(
                     selectedSubject = (saved[0] as String?)?.let(::subjectOrNull),
-                    ranges = flatRanges
-                        .mapNotNull { (name, range) ->
-                            subjectOrNull(name)?.let { it to ChartRange.valueOf(range) }
-                        }
-                        .toMap(),
-                    expandedGroups = (saved[2] as List<String>).mapNotNull(::groupOrNull).toSet(),
-                    activeBloodPressureSheet = saved[3] as Boolean,
-                    activeCycleSheet = saved[4] as Boolean,
-                    activeMealGallery = saved[5] as Boolean,
-                    viewedMealPhotoId = saved[6] as Long?,
+                    expandedGroups = (saved[1] as List<String>).mapNotNull(::groupOrNull).toSet(),
+                    activeBloodPressureSheet = saved[2] as Boolean,
+                    activeCycleSheet = saved[3] as Boolean,
                 )
             },
         )

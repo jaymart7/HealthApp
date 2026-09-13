@@ -200,7 +200,7 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the group. The range is remembered per subject for the session. Empty subjects get a mascot page
   and no call to action. Subject pages are becoming **routes**, one at a time — a converted one
   draws the full window with no bottom bar and no FAB over its chart, the way Photos already does.
-  Converted so far: Photos, Sleep, Mood, Heart, Supplements, Strength, Fasting, Activity, Cycle, Blood pressure, Measurements, Weight.
+  Converted so far: Photos, Sleep, Mood, Heart, Supplements, Strength, Fasting, Activity, Cycle, Blood pressure, Measurements, Weight, Nutrition — Badges alone is still a swap-in.
 - Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, a BMI chip naming its WHO band, and an insight card carrying the projection and the
   energy check-in — the app's only insight card fed by two sources. Tapping it opens the check-in

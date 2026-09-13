@@ -33,7 +33,6 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
-import ph.mart.healthapp.feature.progress.ui.nutrition.components.MealPhotoGallery
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
@@ -173,18 +172,6 @@ private fun ProgressContent(
                 overview(Modifier)
             } else {
                 detail(subject, Modifier)
-            }
-
-            // The one overlay opened from inside a detail page rather than from the overview —
-            // outside the swap all the same, so at two-pane width it covers both panes rather than
-            // just the one it was opened from.
-            if (state.activeMealGallery) {
-                MealPhotoGallery(
-                    photos = uiState.mealPhotos,
-                    viewedId = state.viewedMealPhotoId,
-                    onView = { state.viewedMealPhotoId = it },
-                    onClose = state::closeMealGallery,
-                )
             }
 
             if (state.activeBloodPressureSheet) {
