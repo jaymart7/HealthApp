@@ -357,7 +357,14 @@ fun AppScaffold(
                             // The same entry Profile's own row opens — Home just makes it findable.
                             onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },
                         )
-                        coachEntries()
+                        // Switching tabs rather than pushing a route: the diary *is* the Food
+                        // tab, and it opens on today — which is why the door is only offered for a
+                        // draft that landed there.
+                        coachEntries(
+                            onOpenDiary = {
+                                topLevelBackStack.addTopLevel(TopLevelDestination.Food.route)
+                            },
+                        )
                         foodEntries(
                             scrollState = foodScroll,
                             twoPane = twoPane,

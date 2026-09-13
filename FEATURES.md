@@ -310,6 +310,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   *and* the foods they log most often, at the portions and figures they log them at, and their
   dietary preference is in its instructions. What it picks is drafted as a proposal card, so a
   suggestion is one tap from the diary.
+- Coach door out — once a confirmed draft has put rows in **today's** diary, a "View it in your
+  diary" line sits under that answer and switches to the Food tab. It lasts until the next
+  question. A weigh-in, a supplement or a backdated draft gets none: the diary opens on today and
+  holds neither of the first two, and a door onto the wrong screen or the wrong day is a shrug.
 - Coach answer menu — long-press an answer to copy it, share it as text, or ask the same question
   again. Ask again appears on the newest answer only, and is a fresh send rather than a repair.
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a

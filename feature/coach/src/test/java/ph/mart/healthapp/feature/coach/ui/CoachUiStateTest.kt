@@ -1,11 +1,15 @@
 package ph.mart.healthapp.feature.coach.ui
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
  * The one rule a Room emission has to get right while a send is in flight: when the streamed
@@ -104,6 +108,47 @@ class CoachUiStateTest {
         assertTrue(next.proposal.isEmpty())
         assertEquals(awaitingTap.messages, next.messages)
     }
+
+    /**
+     * The door out is offered for the rows the diary actually draws, and only for today: the
+     * diary opens on today, so a door from a backdated draft would land on a day that does not
+     * hold what was just logged.
+     */
+    @Test
+    fun `a diary draft earns the door and the other kinds do not`() {
+        assertTrue(listOf(food()).opensTheDiary())
+        assertTrue(listOf(CoachAction.LogWater(glasses = 1)).opensTheDiary())
+        assertTrue(
+            listOf(CoachAction.LogExercise(ExerciseType.Run, "", 30, 300)).opensTheDiary(),
+        )
+        // Progress's and Profile's, not the diary's — a door that opens the wrong screen is the
+        // shrug the coach's subject actions are written against.
+        assertFalse(listOf(CoachAction.LogWeight(weight = 82.0)).opensTheDiary())
+        assertFalse(listOf(CoachAction.LogSupplement("Creatine", 1, 2)).opensTheDiary())
+        assertFalse(emptyList<CoachAction>().opensTheDiary())
+    }
+
+    @Test
+    fun `a backdated draft earns no door`() {
+        assertFalse(listOf(food().copy(dateEpochDay = todayEpochDay() - 1)).opensTheDiary())
+        // A mixed draft never reaches a card — `send()` refuses one whose rows disagree about
+        // the day — so this is this function's own rule rather than a state the screen reaches:
+        // a row that landed today is a row the diary is showing.
+        assertTrue(
+            listOf(food().copy(dateEpochDay = todayEpochDay() - 1), food()).opensTheDiary(),
+        )
+    }
+
+    private fun food() = CoachAction.LogFood(
+        name = "Toast",
+        mealType = MealType.Breakfast,
+        calories = 180,
+        proteinG = 6,
+        carbsG = 30,
+        fatG = 3,
+        portionAmount = 1.0,
+        portionUnit = "slice",
+    )
 
     @Test
     fun `the first emission only marks the conversation loaded`() {

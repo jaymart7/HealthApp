@@ -36,7 +36,11 @@ import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 
 @Composable
-fun CoachScreen(question: String? = null, viewModel: CoachViewModel = koinViewModel()) {
+fun CoachScreen(
+    question: String? = null,
+    onOpenDiary: () -> Unit = {},
+    viewModel: CoachViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
     val state = rememberCoachScreenState()
     // Fills the field and stops — the mic's rule, and for its reason: a send is a model call and a
@@ -52,6 +56,7 @@ fun CoachScreen(question: String? = null, viewModel: CoachViewModel = koinViewMo
         uiState = uiState,
         state = state,
         onEvent = viewModel::handleEvent,
+        onOpenDiary = onOpenDiary,
     )
 }
 
@@ -68,6 +73,7 @@ private fun CoachContent(
     uiState: CoachUiState,
     state: CoachScreenState,
     onEvent: (CoachEvent) -> Unit,
+    onOpenDiary: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     // The newest turn is the one worth reading, so every arrival — a reply, a failure, or the
@@ -77,6 +83,8 @@ private fun CoachContent(
         (if (uiState.pending != null) 2 else 0) +
         (if (uiState.proposal.isNotEmpty()) 1 else 0) +
         (if (uiState.failure != null) 1 else 0) +
+        // The door to the diary, when the last tap put rows in it.
+        (if (uiState.loggedToDiary && uiState.pending == null) 1 else 0) +
         // The follow-up row is an item too, and it is the last one — scrolling to the answer above
         // it would leave the chips off screen, which is the whole of what they are for.
         (if (uiState.messages.isNotEmpty() && uiState.pending == null && uiState.failure == null) 1 else 0)
@@ -139,6 +147,17 @@ private fun CoachContent(
                                 onEvent(CoachEvent.OnConfirmProposal(kept, line))
                             },
                             onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
+                        )
+                    }
+                }
+                // Under the answer that logged them, because that is the answer it is about —
+                // above the chips rather than below, so the way *out* is nearer the thing it
+                // refers to than the questions that would keep the user here.
+                if (uiState.loggedToDiary && uiState.pending == null) {
+                    item(key = "open-diary") {
+                        TextButton(
+                            label = stringResource(R.string.coach_open_diary),
+                            onClick = onOpenDiary,
                         )
                     }
                 }
@@ -231,6 +250,32 @@ private fun CoachScreenPreview() {
                         sentAtMillis = 2,
                     ),
                 ),
+            ),
+            state = CoachScreenState(),
+            onEvent = {},
+        )
+    }
+}
+
+/** The turn after a confirmed draft: the card is gone, the logged line is part of the answer, and
+ * the way out sits between it and the chips. */
+@PreviewLightDark
+@Composable
+private fun CoachScreenLoggedPreview() {
+    AppTheme {
+        CoachContent(
+            uiState = CoachUiState(
+                loaded = true,
+                messages = listOf(
+                    ChatMessage(id = 1, fromUser = true, text = "Log two eggs for breakfast", sentAtMillis = 1),
+                    ChatMessage(
+                        id = 2,
+                        fromUser = false,
+                        text = "Done — two scrambled eggs for breakfast.\nLogged: Scrambled eggs, 220 kcal.",
+                        sentAtMillis = 2,
+                    ),
+                ),
+                loggedToDiary = true,
             ),
             state = CoachScreenState(),
             onEvent = {},

@@ -61,7 +61,7 @@ class CoachViewModel(
             // never touches it, so a chat cleared after a failed send would keep the apology and
             // its Retry button over an empty screen — with the starters hidden behind them.
             CoachEvent.OnClear -> intent {
-                reduce { state.copy(failure = null) }
+                reduce { state.copy(failure = null, loggedToDiary = false) }
                 coachRepository.clear()
             }
             is CoachEvent.OnConfirmProposal -> onSettle(event.kept, event.loggedLine)
@@ -131,7 +131,10 @@ class CoachViewModel(
         // emits, so without this a second tap landing while `settle` is in flight clears the same
         // guard and the meal is written twice. [pending] and [streaming] still stand — retiring
         // *those* is `withMessages`' job, and the bubbles have to outlive the write.
-        reduce { state.copy(proposal = emptyList()) }
+        // The door to the diary goes up in the same reduce the card comes down in: the tap is
+        // what wrote the rows, and `kept` is what the user actually agreed to — a draft whose only
+        // surviving row is a weigh-in has nothing in the diary to go and look at.
+        reduce { state.copy(proposal = emptyList(), loggedToDiary = kept.opensTheDiary()) }
         // [kept] rather than `state.proposal`: the card is where a row was struck out, and what
         // comes back from it is what the user agreed to. A dismissal sends nothing at all.
         coachRepository.settle(question, answer, kept)
@@ -156,7 +159,14 @@ class CoachViewModel(
             val text = question.trim()
             if (text.isEmpty() || state.pending != null) return@intent
             reduce {
-                state.copy(pending = text, streaming = null, failure = null, proposal = emptyList())
+                state.copy(
+                    pending = text,
+                    streaming = null,
+                    failure = null,
+                    proposal = emptyList(),
+                    // The door belongs to the turn that logged something, not to the conversation.
+                    loggedToDiary = false,
+                )
             }
 
             // Read once and reused for the message below: a second recheck could disagree with

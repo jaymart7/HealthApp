@@ -1839,6 +1839,22 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `log_mood` and `log_supplement` stayed out: the energy check-in owns a 1–5 tap and does it better
   than a sentence can, and a supplement needs fuzzy name-to-id matching against the user's own list,
   which is a new trust boundary for one tap. `log_weight` is still out, for the reason below.
+- **The chat has a way out, and it is offered exactly where it lands somewhere true.** A
+  confirmed draft ended with *"Logged: Scrambled eggs, 220 kcal."* appended to the answer and
+  nothing else — the rows were in the diary and the user was still in a chat, with the tab bar
+  hidden because the coach is a route above Home. So `CoachUiState` grew a fourth thing that is
+  not in Room, `loggedToDiary`, set by the tap that confirmed and cleared by the next send: a
+  door belongs to the turn that logged something, not to the conversation. Three calls. **It is a
+  tab switch, not a route** — the diary *is* the Food tab, and its day is `FoodViewModel` state
+  rather than something `FoodRoute` carries; making that route a `data class` to carry a day would
+  put a parameter on a `TopLevelDestination` key, which `TopLevelBackStack.regroup()` matches by
+  equality to find each tab's root. **Which is also why a backdated draft gets no door**: the
+  diary would open on today and not hold what was just promised. `opensTheDiary()` is that rule as
+  a pure function with the JVM test, the shape `askAgainQuestion` and `followUpsFor` set — and it
+  answers false for a weigh-in and a supplement too, because those land on Progress and Profile,
+  and a door onto the wrong screen is the shrug `Subject.coachQuestion` is written against.
+  **And it sits above the follow-up chips**, not below: the way out belongs nearer the answer it
+  is about than the questions that would keep the user here.
 - **A draft can name an earlier day, and one card draws one day.** *"Log the eggs I had
   yesterday"* was answered by pointing at the Food tab's diary — the prompt said so in as many
   words — which is a deflection to a screen the user was already avoiding by talking. `days_ago`

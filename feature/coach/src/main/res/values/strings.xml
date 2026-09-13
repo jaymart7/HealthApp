@@ -9,6 +9,9 @@
     <string name="coach_bubble_share">Share</string>
     <string name="coach_bubble_ask_again">Ask again</string>
     <string name="coach_clear">Clear chat</string>
+    <!-- The way out of the chat, under the answer that logged something. Only ever shown for
+         rows that landed in today's diary, which is the only screen it opens. -->
+    <string name="coach_open_diary">View it in your diary</string>
     <string name="coach_clear_title">Clear this chat?</string>
     <string name="coach_clear_body">The whole conversation goes. Your logged food and weight aren\'t affected.</string>
     <string name="coach_clear_confirm">Clear</string>

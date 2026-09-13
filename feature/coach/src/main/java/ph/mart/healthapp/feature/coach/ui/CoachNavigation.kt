@@ -20,6 +20,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class CoachRoute(val question: String? = null) : NavKey
 
-fun EntryProviderScope<NavKey>.coachEntries() {
-    entry<CoachRoute> { route -> CoachScreen(question = route.question) }
+/**
+ * [onOpenDiary] is the way *out* — shown only after a draft has put rows in today's diary. It is a
+ * callback rather than a route this module names, the shape `onAskCoach` already has in the other
+ * direction: the Food tab is `:core:navigation`'s and switching to it is `AppScaffold`'s job.
+ */
+fun EntryProviderScope<NavKey>.coachEntries(onOpenDiary: () -> Unit) {
+    entry<CoachRoute> { route ->
+        CoachScreen(question = route.question, onOpenDiary = onOpenDiary)
+    }
 }

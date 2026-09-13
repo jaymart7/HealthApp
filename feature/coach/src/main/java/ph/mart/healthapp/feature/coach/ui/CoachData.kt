@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.coach.ui
 import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.feature.coach.R
 
@@ -18,6 +19,10 @@ import ph.mart.healthapp.feature.coach.R
  *
  * [failure] is UI-only and deliberately not persisted: a send that didn't land wrote no rows, so
  * there is nothing in Room for it to describe. It clears on the next successful send.
+ *
+ * [loggedToDiary] is the fourth, and the shortest-lived: it is set by the tap that confirmed a
+ * draft into *today's* diary and cleared by the next send, and all it does is offer a way to go
+ * and look at what was written.
  *
  * [proposal] is the third thing not in Room, and for the same reason as the other two: the coach
  * drafted some rows and the user has not agreed to them, so neither the rows nor the turn that
@@ -38,7 +43,32 @@ data class CoachUiState(
     /** The rows the coach drafted, waiting on a tap — empty when there is no card up. One meal is
      * several of them. [streaming] holds the prose that came with them. */
     val proposal: List<CoachAction> = emptyList(),
+    /** Whether the last confirmed draft put rows in today's diary, which is the one thing on this
+     * screen there is somewhere to go and see. See [opensTheDiary]. */
+    val loggedToDiary: Boolean = false,
 )
+
+/**
+ * Whether a confirmed draft is worth offering a door to the diary for.
+ *
+ * Two conditions, and both are about not offering one that lands in the wrong place. **The kind
+ * has to be a diary row** — food, water and an activity all appear on the day the diary draws,
+ * while a weigh-in is Progress's and a supplement tick is Profile's, and a door that opens the
+ * wrong screen is the shrug the coach's own subject actions are written against. **And it has to
+ * be today**, because the diary opens on today and its day is ViewModel state rather than
+ * something a route carries: a door from a backdated draft would open a day that does not hold the
+ * rows it just promised. A backdated draft therefore gets no door, which is the honest half.
+ */
+internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
+    when (it) {
+        is CoachAction.LogFood,
+        is CoachAction.LogWater,
+        is CoachAction.LogExercise,
+        is CoachAction.LogSavedMeal,
+        -> it.draftedOn == null
+        is CoachAction.LogWeight, is CoachAction.LogSupplement -> false
+    }
+}
 
 /**
  * A Room emission folded in.
