@@ -41,9 +41,10 @@ enum class SubjectAccent { Primary, Secondary }
  * [coachQuestion] is what this page would ask the coach, and **null means the page carries no
  * coach action at all**.
  *
- * The eight that have one are the eight the coach can answer: its tools reach food and macros,
- * water, training, steps, sleep, mood, fasting, the weight trend and — since `get_history` began
- * carrying them — the change in a body measurement. Nothing else. A button on Heart would buy a
+ * The nine that have one are the nine the coach can answer: its tools reach food and macros,
+ * water, training, steps, sleep, mood, fasting, the weight trend, the change in a body
+ * measurement and — since the two read tools began carrying them — the supplements they ticked
+ * off against what was due. Nothing else. A button on Heart would buy a
  * shrug, and a shrug reads as a broken feature — the rule the follow-up chips already follow.
  * This is the one place that decision lives, so a page cannot disagree with it.
  */
@@ -59,7 +60,7 @@ enum class Subject(
     Measurements(R.string.progress_subject_measurements, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_measurements, R.string.progress_ask_measurements),
     Nutrition(R.string.progress_subject_nutrition, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_nutrition, R.string.progress_ask_nutrition),
     Fasting(R.string.progress_subject_fasting, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_fasting, R.string.progress_ask_fasting),
-    Supplements(R.string.progress_subject_supplements, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_supplements),
+    Supplements(R.string.progress_subject_supplements, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_supplements, R.string.progress_ask_supplements),
     Activity(R.string.progress_subject_activity, SubjectGroup.Training, SubjectAccent.Secondary, R.string.progress_hint_activity, R.string.progress_ask_activity),
     Strength(R.string.progress_subject_strength, SubjectGroup.Training, SubjectAccent.Primary, R.string.progress_hint_strength, R.string.progress_ask_strength),
     Sleep(R.string.progress_subject_sleep, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_sleep, R.string.progress_ask_sleep),

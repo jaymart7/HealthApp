@@ -51,9 +51,11 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_TIMES_PER_DAY
+import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
@@ -151,16 +153,16 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             name = TOOL_GET_DAY,
             description = "Read one day of the user's diary in full: every food they logged with " +
                 "its calories and macros, the day's totals against their targets, water, any " +
-                "activity, their steps, and their sleep, mood and fasting where they track " +
-                "those. Call this before answering anything about a specific day.",
+                "activity, their steps, and their sleep, mood, fasting and supplements where " +
+                "they track those. Call this before answering anything about a specific day.",
             parameters = mapOf("days_ago" to daysAgoSchema),
         ),
         FunctionDeclaration(
             name = TOOL_GET_HISTORY,
-            description = "Read a span of recent days: calories and protein per day, any " +
-                "training, any steps, any sleep, any weigh-in and any change in their body " +
-                "measurements. Call this for trends, averages, or anything about a week or a " +
-                "month.",
+            description = "Read a span of recent days: calories and protein per day, their " +
+                "water, any training, any steps, any sleep, any supplements, any weigh-in and " +
+                "any change in their body measurements. Call this for trends, averages, or " +
+                "anything about a week or a month.",
             parameters = mapOf(
                 "days" to Schema.integer(
                     description = "How many days back from today, up to $MAX_HISTORY_DAYS.",
@@ -432,6 +434,7 @@ internal fun formatDay(
     sleepMinutes: Int? = null,
     mood: MoodDay? = null,
     fastedMinutes: Int? = null,
+    supplements: List<Pair<String, SupplementDay>> = emptyList(),
 ): String = buildString {
     appendLine("$label:")
     if (foods.isEmpty()) {
@@ -474,6 +477,16 @@ internal fun formatDay(
     sleepMinutes?.let { appendLine("Slept: ${formatDuration(it)}") }
     mood?.describe()?.let(::appendLine)
     fastedMinutes?.let { appendLine("Fasted: ${formatDuration(it)}") }
+    // One line for the whole checklist, the call a day's training already makes: five supplements
+    // is five lines of an answer with six to spend. Each against that day's own `dueTimes`, never
+    // the supplement's current one — the snapshot rule [SupplementDay] is written around.
+    if (supplements.isNotEmpty()) {
+        appendLine(
+            supplements.joinToString(", ", prefix = "Supplements: ") { (name, day) ->
+                "$name ${day.taken} of ${day.dueTimes}"
+            },
+        )
+    }
 }
 
 /** Null when neither half was tapped, and each half omitted on its own: `mood_day` stores 0 for
@@ -514,6 +527,8 @@ internal fun formatHistory(
     sleep: List<SleepNight> = emptyList(),
     steps: List<StepDay> = emptyList(),
     measurements: Map<MeasurementPart, List<MeasurementEntry>> = emptyMap(),
+    water: List<WaterDay> = emptyList(),
+    supplements: List<SupplementDay> = emptyList(),
 ): String = buildString {
     val from = today - days + 1
     // Weigh-ins and tape measures in one map, because they are one rule — see the doc above.
@@ -525,8 +540,14 @@ internal fun formatHistory(
     val training = exercise.filter { it.dateEpochDay in from..today }.groupBy { it.dateEpochDay }
     val slept = sleep.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
     val walked = steps.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
+    val drank = water.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
+    // Summed per day rather than listed: a span answers "have I been keeping up with them?", and
+    // the denominator is that day's own `dueTimes` for the reason `adherenceByDay()` uses it.
+    val taken = supplements.filter { it.dateEpochDay in from..today }
+        .groupBy { it.dateEpochDay }
+        .mapValues { (_, rows) -> rows.sumOf { it.taken } to rows.sumOf { it.dueTimes } }
     if (byDay.values.none { it.isLogged } && changes.isEmpty() && training.isEmpty() &&
-        slept.isEmpty() && walked.isEmpty()
+        slept.isEmpty() && walked.isEmpty() && drank.none { it.value.glasses > 0 } && taken.isEmpty()
     ) {
         return "Nothing logged in the last $days days."
     }
@@ -552,8 +573,14 @@ internal fun formatHistory(
         }.orEmpty()
         val walk = walked[date]?.let { ", ${formatSteps(it.steps)} steps" }.orEmpty()
         val night = slept[date]?.let { ", slept ${formatDuration(it.minutesAsleep)}" }.orEmpty()
+        // Stated on every day including a zero, unlike the four above it: water belongs to the
+        // dense group — it is something the user does *in this app*, so a missing row is a day
+        // they drank nothing rather than a domain they do not track, and a model left to infer
+        // that averages a week over the days that happen to carry a line.
+        val glasses = ", ${drank[date]?.glasses ?: 0} glasses"
+        val pills = taken[date]?.let { (had, due) -> ", supplements $had of $due" }.orEmpty()
         val change = changes[date].orEmpty().joinToString("")
-        appendLine("- $label: $food$activity$walk$night$change")
+        appendLine("- $label: $food$glasses$activity$walk$night$pills$change")
     }
 }
 
@@ -901,6 +928,7 @@ internal class CoachToolbox(
         // Read once: the calorie target and the step goal come off the same row, and two reads
         // could disagree if the user edits a target while the turn is in flight.
         val profile = profileRepository.observeProfile().first()
+        val names = supplementRepository.allSupplements().associate { it.id to it.name }
         return formatDay(
             label = label,
             foods = foodRepository.observeEntries(date).first(),
@@ -920,6 +948,13 @@ internal class CoachToolbox(
             fastedMinutes = fastingRepository.observeSessions().first()
                 .firstOrNull { !it.isActive && it.dateEpochDay == date }
                 ?.durationMinutes(System.currentTimeMillis()),
+            // Named from the current list, counted off that day's own row: a supplement dropped
+            // since keeps the name its past days point at, which is what the soft delete is for.
+            supplements = supplementRepository.observeDays().first()
+                .filter { it.dateEpochDay == date }
+                .mapNotNull { day ->
+                    names[day.supplementId]?.let { it to day }
+                },
         )
     }
 
@@ -934,6 +969,10 @@ internal class CoachToolbox(
         sleep = sleepRepository.observeNights().first(),
         steps = stepsRepository.observeDays().first(),
         measurements = progressRepository.observeMeasurements().first(),
+        // `allDays()` holds only the days with a glass in them, which is why the line prints a
+        // zero for the rest rather than leaving them out.
+        water = waterRepository.allDays(),
+        supplements = supplementRepository.observeDays().first(),
     )
 }
 

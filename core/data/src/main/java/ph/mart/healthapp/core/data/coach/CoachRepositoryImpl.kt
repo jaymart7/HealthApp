@@ -330,13 +330,16 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "you were not given or did not read from a tool — call the tool instead of guessing, " +
             "and if a tool comes back empty, say plainly that nothing was logged. Do not narrate " +
             "that you are about to look something up: call the tool and answer. A day may also " +
-            "carry their steps against their step goal, their sleep, how they felt, and a " +
-            "completed fast; a span carries their training, their steps, their sleep, and any " +
+            "carry their steps against their step goal, their sleep, how they felt, a " +
+            "completed fast, and the supplements they ticked off against what was due; a span " +
+            "carries their water, their training, their steps, their sleep, their supplements " +
+            "and any " +
             "weigh-in or body measurement as a change since the one before it — you are never " +
             "told what they weigh or what any measurement is, only which way it moved, so answer " +
             "about the direction and never ask for the figure. Where one of those is missing " +
             "from a day, the user does not track it at all — answer with what is there and do " +
-            "not ask them for it.",
+            "not ask them for it. Water is the exception and is given for every day of a span, " +
+            "so a zero there means they logged none that day, not that they do not track it.",
     )
     appendLine(
         "If the user asks you to log something, call log_food, log_water, log_exercise, " +

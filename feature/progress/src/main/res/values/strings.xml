@@ -38,6 +38,7 @@
     <string name="progress_ask_measurements">How are my measurements going?</string>
     <string name="progress_ask_nutrition">How has my eating been this week?</string>
     <string name="progress_ask_fasting">How have my fasts been going?</string>
+    <string name="progress_ask_supplements">Have I been keeping up with my supplements?</string>
     <string name="progress_ask_activity">How has my training been this week?</string>
     <string name="progress_ask_strength">How has my training been this week?</string>
     <string name="progress_ask_sleep">Am I sleeping enough?</string>

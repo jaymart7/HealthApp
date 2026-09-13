@@ -23,7 +23,9 @@ import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementToday
+import ph.mart.healthapp.core.data.water.WaterDay
 
 /**
  * The coach's tool boundary.
@@ -596,10 +598,29 @@ class CoachToolsTest {
      * then nag about a watch the user does not own. A zero-filled "No sleep recorded" every day
      * would do exactly that.
      */
+    /** One line for the whole checklist, the call a day's training already makes — and each
+     * against that day's own `dueTimes`, so a supplement since dropped to once still reads "1 of
+     * 3" on a day it was due three times. */
+    @Test
+    fun `a day carries its supplements against what was due that day`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            supplements = listOf(
+                "Creatine" to SupplementDay(dateEpochDay = 20_000L, supplementId = 2, taken = 1, dueTimes = 3),
+                "Vitamin D" to SupplementDay(dateEpochDay = 20_000L, supplementId = 1, taken = 0, dueTimes = 1),
+            ),
+        )
+        assertTrue(text, "Supplements: Creatine 1 of 3, Vitamin D 0 of 1" in text)
+    }
+
     @Test
     fun `an untracked domain leaves no line at all`() {
         val text = formatDay("Today", emptyList(), null, waterGlasses = 0, exercise = emptyList())
-        listOf("Steps", "Slept", "Felt", "Fasted").forEach {
+        listOf("Steps", "Slept", "Felt", "Fasted", "Supplements").forEach {
             assertTrue("$it appeared for an untracked domain: $text", it !in text)
         }
     }
@@ -652,7 +673,7 @@ class CoachToolsTest {
         )
         assertTrue(text, "- 2 days ago: 1800 kcal, 120g protein" in text)
         assertTrue(text, "- Yesterday: nothing logged" in text)
-        assertTrue(text, "- Today: 900 kcal, 60g protein, weighed in (-0.4 kg since the last)" in text)
+        assertTrue(text, "- Today: 900 kcal, 60g protein, 0 glasses, weighed in (-0.4 kg since the last)" in text)
     }
 
     /**
@@ -734,8 +755,63 @@ class CoachToolsTest {
             ),
             sleep = listOf(SleepNight(dateEpochDay = today - 1, minutesAsleep = 400)),
         )
-        assertTrue(text, "- Today: 1800 kcal, 120g protein, 50 min activity, 360 kcal burned" in text)
-        assertTrue(text, "- Yesterday: 2100 kcal, 140g protein, slept 6h 40m" in text)
+        assertTrue(text, "- Today: 1800 kcal, 120g protein, 0 glasses, 50 min activity, 360 kcal burned" in text)
+        assertTrue(text, "- Yesterday: 2100 kcal, 140g protein, 0 glasses, slept 6h 40m" in text)
+    }
+
+    /**
+     * Water rides every day of a span, a zero included — it is the dense group, the one thing here
+     * the user does *in this app*, so a missing row is a day they drank nothing rather than a
+     * domain they do not track. A model averaging a week over the days that happen to carry a
+     * line is the failure this prevents.
+     */
+    @Test
+    fun `a span carries water on every day, zeroes included`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 2,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            water = listOf(WaterDay(dateEpochDay = today, glasses = 6)),
+        )
+        assertTrue(text, "- Today: nothing logged, 6 glasses" in text)
+        assertTrue(text, "- Yesterday: nothing logged, 0 glasses" in text)
+    }
+
+    /** A span of water alone is a span with something in it — the early return has to know that,
+     * or "how much have I drunk this week?" answers "nothing logged". */
+    @Test
+    fun `water alone is not an empty span`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 1,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            water = listOf(WaterDay(dateEpochDay = today, glasses = 3)),
+        )
+        assertTrue(text, "3 glasses" in text)
+    }
+
+    /** Summed per day rather than listed: a span answers "have I kept up with them?", and the
+     * denominator is that day's own `dueTimes` — the snapshot, never the current setting. */
+    @Test
+    fun `a span carries what was taken against what was due`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 2,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            supplements = listOf(
+                SupplementDay(dateEpochDay = today, supplementId = 1, taken = 1, dueTimes = 1),
+                SupplementDay(dateEpochDay = today, supplementId = 2, taken = 1, dueTimes = 2),
+                SupplementDay(dateEpochDay = today - 1, supplementId = 2, taken = 3, dueTimes = 3),
+            ),
+        )
+        assertTrue(text, "- Today: nothing logged, 0 glasses, supplements 2 of 3" in text)
+        assertTrue(text, "- Yesterday: nothing logged, 0 glasses, supplements 3 of 3" in text)
     }
 
     /** Walking that never reached a workout. It sits on the day's line beside the training it is
@@ -750,7 +826,7 @@ class CoachToolsTest {
             today = today,
             steps = listOf(StepDay(dateEpochDay = today, steps = 14_204, burnedKcal = 480)),
         )
-        assertTrue(text, "- Today: nothing logged, 14,204 steps" in text)
+        assertTrue(text, "- Today: nothing logged, 0 glasses, 14,204 steps" in text)
     }
 
     /**
@@ -835,7 +911,7 @@ class CoachToolsTest {
                 ExerciseEntry(dateEpochDay = today, type = ExerciseType.Walk, minutes = 45, burnedKcal = 150),
             ),
         )
-        assertTrue(text, "- Today: nothing logged, 45 min activity, 150 kcal burned" in text)
+        assertTrue(text, "- Today: nothing logged, 0 glasses, 45 min activity, 150 kcal burned" in text)
     }
 
     /** The window is what bounds the answer, not the series handed in — a year of dense rows must

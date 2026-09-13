@@ -1839,6 +1839,26 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `log_mood` and `log_supplement` stayed out: the energy check-in owns a 1–5 tap and does it better
   than a sentence can, and a supplement needs fuzzy name-to-id matching against the user's own list,
   which is a new trust boundary for one tap. `log_weight` is still out, for the reason below.
+- **Water and supplements widened the same two read tools, and water is the first thing a span
+  states on every day.** *Sleep, mood and fasting widened what the two tools answer with* is the
+  precedent and this is it applied twice more, with one new rule falling out. A span carried
+  calories, protein, training, steps, sleep and the two body deltas — never water, which is
+  precisely why *"how much water have I had this week?"* was ruled out as a follow-up chip: a chip
+  needing a tool the coach lacks buys a shrug. It has one now. **Water is stated on every day of a
+  span including a zero**, unlike everything else added to that line, and the split is the same one
+  `formatDay` already draws: food, water and activity are things the user does *in this app*, so a
+  missing row is a day they drank nothing, while sleep and steps come off a watch and supplements
+  are opt-in. Omitting a zero would have the model average a week over the days that happen to
+  carry a line, which is `formatHistory`'s original *unlogged days are named, not dropped* bug
+  wearing a different hat — and the prompt carries the other half, because omission alone is what
+  a model fills in. **A day's supplements are one line, not one per supplement**, the call a day's
+  training already makes, and a span sums them into `2 of 3`: each against that day's own
+  `dueTimes`, never the supplement's current setting, which is the snapshot rule `SupplementDay`
+  is written around reaching the model intact. **And `Subject.Supplements` finally earns its coach
+  door** — the closed list is nine, and it only moved because something answers it, which is
+  exactly what `SubjectCoachTest` exists to force. No follow-up chip was added: the row is three
+  wide, the day's own gaps come first and the filler already fills it, so a fourth filler would
+  never render. The question is answerable when asked, which is what the constraint was about.
 - **`log_supplement` is the sixth draft, and the tool that ruled it out is the one that let it
   in.** It was declined twice above, both times on one sentence — *a supplement needs fuzzy
   name-to-id matching against the user's own list, which is a new trust boundary for one tap* — and
