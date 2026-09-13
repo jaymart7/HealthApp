@@ -1,35 +1,27 @@
 package ph.mart.healthapp.feature.progress.ui.cycle
 
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.map
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.cycle.CycleRepository
 
 /**
- * The cycle flow's only container, and the one place this feature writes a cycle day —
- * `BloodPressureViewModel`'s shape and its reasoning: the tab and its sheet sit under one
- * `ViewModelStoreOwner`, so `koinViewModel()` hands them the same instance, and `ProgressViewModel`
- * stays the read-only container its KDoc says it is.
- *
- * No state of its own: the days are already on `ProgressUiState`, and a second copy here would
- * give the page and its sheet two sources that could disagree.
+ * The Cycle page's container — read-only, one flow, `SupplementsViewModel`'s shape. The writing
+ * stays with [LogCycleViewModel], which the sheet this page opens brings with it: the page and the
+ * sheet sit under one `ViewModelStoreOwner` on this route, so neither has to know about the other.
  */
 class CycleViewModel(
-    private val repository: CycleRepository,
-) : ViewModel(), OrbitContainerHost<Unit, Unit, CycleSideEffect> {
+    repository: CycleRepository,
+) : ViewModel(), OrbitContainerHost<CycleUiState, CycleUiState, Nothing> {
 
-    override val container = orbitContainer<Unit, CycleSideEffect>(Unit)
-
-    fun handleEvent(event: CycleEvent) {
-        when (event) {
-            is CycleEvent.OnSave -> onSave(event.form)
-        }
+    override val container = orbitContainer<CycleUiState, Nothing>(CycleUiState()) {
+        observeDays(repository)
     }
 
-    /** A whole-row write, unlike Home's flow tap: this sheet holds both halves of the day, so
-     * saving it can't blank a value it never showed. */
-    private fun onSave(form: CycleLogForm) = intent {
-        repository.upsertDay(form.toDay())
-        postSideEffect(CycleSideEffect.Saved)
+    private fun observeDays(repository: CycleRepository) = intent {
+        repository.observeDays()
+            .map { days -> CycleUiState(days = days) }
+            .collect { newState -> reduce { newState } }
     }
 }

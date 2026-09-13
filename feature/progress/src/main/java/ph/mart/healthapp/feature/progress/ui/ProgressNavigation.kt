@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.progress.ui.activity.ActivityScreen
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
+import ph.mart.healthapp.feature.progress.ui.cycle.CycleScreen
 import ph.mart.healthapp.feature.progress.ui.fasting.FastingScreen
 import ph.mart.healthapp.feature.progress.ui.heart.HeartScreen
 import ph.mart.healthapp.feature.progress.ui.mood.MoodScreen
@@ -53,6 +54,10 @@ data object FastingRoute : NavKey
 @Serializable
 data object ActivityRoute : NavKey
 
+/** Where the cycle is now and every period behind it. Carries nothing: `CycleViewModel` reads the days itself. */
+@Serializable
+data object CycleRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -60,7 +65,7 @@ data object ActivityRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -77,6 +82,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Strength -> StrengthRoute
     Subject.Fasting -> FastingRoute
     Subject.Activity -> ActivityRoute
+    Subject.Cycle -> CycleRoute
     else -> null
 }
 
@@ -179,6 +185,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<ActivityRoute> {
         ActivityScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<CycleRoute> {
+        CycleScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,

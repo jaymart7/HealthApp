@@ -48,7 +48,7 @@ private val NOT_LOGGED = R.string.progress_cycle_not_logged
 fun LogCycleSheet(
     days: List<CycleDay>,
     onDismiss: () -> Unit,
-    viewModel: CycleViewModel = koinViewModel(),
+    viewModel: LogCycleViewModel = koinViewModel(),
 ) {
     val state = rememberLogCycleState()
     viewModel.collectSideEffect { effect ->

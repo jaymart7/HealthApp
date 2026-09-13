@@ -6,6 +6,7 @@ import ph.mart.healthapp.feature.progress.ui.activity.ActivityViewModel
 import ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoViewModel
 import ph.mart.healthapp.feature.progress.ui.comparison.ComparisonViewModel
 import ph.mart.healthapp.feature.progress.ui.cycle.CycleViewModel
+import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleViewModel
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.fasting.FastingViewModel
 import ph.mart.healthapp.feature.progress.ui.heart.HeartViewModel
@@ -27,7 +28,7 @@ val progressModule = module {
     viewModelOf(::AddPhotoViewModel)
     viewModelOf(::AddMeasurementViewModel)
     viewModelOf(::BloodPressureViewModel)
-    viewModelOf(::CycleViewModel)
+    viewModelOf(::LogCycleViewModel)
     viewModelOf(::EnergyCheckInViewModel)
     // The read-only routes — each owns the data it draws rather than a slice of ProgressUiState.
     // The Photos page and the three photo/recap screens came first (DECISIONS.md -> Progress
@@ -40,6 +41,7 @@ val progressModule = module {
     viewModelOf(::StrengthViewModel)
     viewModelOf(::FastingViewModel)
     viewModelOf(::ActivityViewModel)
+    viewModelOf(::CycleViewModel)
     viewModelOf(::ComparisonViewModel)
     viewModelOf(::TimelapseViewModel)
     viewModelOf(::RecapViewModel)

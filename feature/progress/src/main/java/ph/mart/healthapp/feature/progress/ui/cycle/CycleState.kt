@@ -7,42 +7,34 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import ph.mart.healthapp.core.data.cycle.CycleSymptom
-import ph.mart.healthapp.core.data.cycle.cycleSymptoms
-import ph.mart.healthapp.core.data.cycle.encodeCycleSymptoms
-import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.data.progress.ChartRange
+import ph.mart.healthapp.feature.progress.ui.progress.DEFAULT_CHART_RANGE
 
 @Composable
-internal fun rememberLogCycleState(): LogCycleState =
-    rememberSaveable(saver = LogCycleState.Saver()) { LogCycleState() }
+internal fun rememberCycleState(): CycleState =
+    rememberSaveable(saver = CycleState.Saver()) { CycleState() }
 
-/** UI-only: the half-filled day and whether the calendar is swapped in, neither of which means
- * anything outside the sheet holding it. */
-internal class LogCycleState(
-    form: CycleLogForm = CycleLogForm(todayEpochDay()),
-    showingCalendar: Boolean = false,
+/**
+ * UI-only: the range this page's chart is showing and whether its log sheet is up.
+ *
+ * The sheet flag is the page's own. `ProgressScreenState.activeCycleSheet` survives beside it and
+ * is **not** the same flag: the overview's empty-card hint opens the sheet too, from a surface this
+ * page cannot see, so that one stays where it is rather than moving here. Two flags, two surfaces,
+ * one sheet.
+ */
+internal class CycleState(
+    range: ChartRange = DEFAULT_CHART_RANGE,
+    sheetOpen: Boolean = false,
 ) {
-    var form: CycleLogForm by mutableStateOf(form)
-    var showingCalendar: Boolean by mutableStateOf(showingCalendar)
+    var range: ChartRange by mutableStateOf(range)
+    var sheetOpen: Boolean by mutableStateOf(sheetOpen)
 
     companion object {
-        /** The symptom set rides the saver as its stored string — the format Room holds it in, so
-         * a rotation can't produce a set the table couldn't. */
-        fun Saver(): Saver<LogCycleState, Any> = listSaver(
-            save = { listOf(it.form.dateEpochDay, it.form.flow, encodeCycleSymptoms(it.form.symptoms), it.showingCalendar) },
-            restore = { saved ->
-                LogCycleState(
-                    form = CycleLogForm(
-                        dateEpochDay = saved[0] as Long,
-                        flow = saved[1] as Int,
-                        symptoms = cycleSymptoms(saved[2] as String),
-                    ),
-                    showingCalendar = saved[3] as Boolean,
-                )
-            },
+        @Suppress("UNCHECKED_CAST")
+        fun Saver(): Saver<CycleState, Any> = listSaver(
+            // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
+            save = { listOf(it.range.name, it.sheetOpen) },
+            restore = { saved -> CycleState(ChartRange.valueOf(saved[0] as String), saved[1] as Boolean) },
         )
     }
 }
-
-/** Declaration order, so the chips never reshuffle under a finger. */
-internal val SymptomChips: List<CycleSymptom> = CycleSymptom.entries
