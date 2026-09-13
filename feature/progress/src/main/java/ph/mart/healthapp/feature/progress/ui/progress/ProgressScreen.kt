@@ -39,7 +39,6 @@ import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInEvent
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInScreen
 import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
-import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementSheet
 import ph.mart.healthapp.feature.progress.ui.nutrition.components.MealPhotoGallery
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
@@ -233,15 +232,6 @@ private fun ProgressContent(
             // does, so opening a day twice shows what it says rather than a blank form.
             if (state.activeCycleSheet) {
                 LogCycleSheet(days = uiState.cycleDays, onDismiss = state::closeCycleSheet)
-            }
-
-            if (state.activeMeasurementSheet) {
-                AddMeasurementSheet(
-                    trackedParts = uiState.measurements.keys,
-                    preselectedPart = state.measurementSheetPart,
-                    unit = uiState.preferredUnit,
-                    onDismiss = state::closeMeasurementSheet,
-                )
             }
         }
     }

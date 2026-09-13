@@ -11,6 +11,7 @@ import ph.mart.healthapp.feature.progress.ui.energy.EnergyCheckInViewModel
 import ph.mart.healthapp.feature.progress.ui.fasting.FastingViewModel
 import ph.mart.healthapp.feature.progress.ui.heart.HeartViewModel
 import ph.mart.healthapp.feature.progress.ui.measurement.AddMeasurementViewModel
+import ph.mart.healthapp.feature.progress.ui.measurement.MeasurementsViewModel
 import ph.mart.healthapp.feature.progress.ui.mood.MoodViewModel
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosViewModel
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureViewModel
@@ -44,6 +45,7 @@ val progressModule = module {
     viewModelOf(::ActivityViewModel)
     viewModelOf(::CycleViewModel)
     viewModelOf(::BloodPressureViewModel)
+    viewModelOf(::MeasurementsViewModel)
     viewModelOf(::ComparisonViewModel)
     viewModelOf(::TimelapseViewModel)
     viewModelOf(::RecapViewModel)

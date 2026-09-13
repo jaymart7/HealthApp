@@ -8,7 +8,6 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import ph.mart.healthapp.core.data.progress.ChartRange
-import ph.mart.healthapp.core.data.progress.MeasurementPart
 
 @Composable
 internal fun rememberProgressScreenState(): ProgressScreenState =
@@ -32,7 +31,7 @@ internal sealed interface ProgressDestination {
  * [ProgressScreenState.selectedSubject] and [ProgressScreenState.pendingRoute] all go, and
  * `ProgressOverview` takes a plain `onOpenSubject` instead.
  */
-private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements, Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure)
+private val RoutedSubjects = setOf(Subject.Photos, Subject.Sleep, Subject.Mood, Subject.Heart, Subject.Supplements, Subject.Strength, Subject.Fasting, Subject.Activity, Subject.Cycle, Subject.BloodPressure, Subject.Measurements)
 
 /** UI-only — which subject is open, which range its chart is showing, which sheet is up has no
  * business meaning outside this screen; the actual weight/measurement/photo data lives in
@@ -41,8 +40,6 @@ internal class ProgressScreenState(
     selectedSubject: Subject? = null,
     ranges: Map<Subject, ChartRange> = emptyMap(),
     expandedGroups: Set<SubjectGroup> = emptySet(),
-    activeMeasurementSheet: Boolean = false,
-    measurementSheetPart: MeasurementPart? = null,
     activeBloodPressureSheet: Boolean = false,
     activeCycleSheet: Boolean = false,
     activeEnergyCheckIn: Boolean = false,
@@ -71,8 +68,6 @@ internal class ProgressScreenState(
      * of it on top.
      */
     var pendingRoute: ProgressDestination? by mutableStateOf(null)
-    var activeMeasurementSheet: Boolean by mutableStateOf(activeMeasurementSheet)
-    var measurementSheetPart: MeasurementPart? by mutableStateOf(measurementSheetPart)
     var activeBloodPressureSheet: Boolean by mutableStateOf(activeBloodPressureSheet)
     var activeCycleSheet: Boolean by mutableStateOf(activeCycleSheet)
     var activeEnergyCheckIn: Boolean by mutableStateOf(activeEnergyCheckIn)
@@ -107,15 +102,6 @@ internal class ProgressScreenState(
 
     fun toggleGroup(group: SubjectGroup) {
         expandedGroups = if (group in expandedGroups) expandedGroups - group else expandedGroups + group
-    }
-
-    fun openMeasurementSheet(part: MeasurementPart?) {
-        measurementSheetPart = part
-        activeMeasurementSheet = true
-    }
-
-    fun closeMeasurementSheet() {
-        activeMeasurementSheet = false
     }
 
     fun openBloodPressureSheet() {
@@ -168,7 +154,6 @@ internal class ProgressScreenState(
                     // subject the restoring build doesn't know is dropped rather than crashing.
                     it.ranges.flatMap { (subject, range) -> listOf(subject.name, range.name) },
                     it.expandedGroups.map { group -> group.name },
-                    it.activeMeasurementSheet, it.measurementSheetPart?.name,
                     it.activeBloodPressureSheet,
                     it.activeEnergyCheckIn, it.activeCycleSheet,
                     // Appended, never renumbered: an index that moves restores the wrong field
@@ -191,13 +176,11 @@ internal class ProgressScreenState(
                         }
                         .toMap(),
                     expandedGroups = (saved[2] as List<String>).mapNotNull(::groupOrNull).toSet(),
-                    activeMeasurementSheet = saved[3] as Boolean,
-                    measurementSheetPart = (saved[4] as String?)?.let(MeasurementPart::valueOf),
-                    activeBloodPressureSheet = saved[5] as Boolean,
-                    activeEnergyCheckIn = saved[6] as Boolean,
-                    activeCycleSheet = saved[7] as Boolean,
-                    activeMealGallery = saved[8] as Boolean,
-                    viewedMealPhotoId = saved[9] as Long?,
+                    activeBloodPressureSheet = saved[3] as Boolean,
+                    activeEnergyCheckIn = saved[4] as Boolean,
+                    activeCycleSheet = saved[5] as Boolean,
+                    activeMealGallery = saved[6] as Boolean,
+                    viewedMealPhotoId = saved[7] as Long?,
                 )
             },
         )

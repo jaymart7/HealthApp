@@ -10,6 +10,7 @@ import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.cycle.CycleScreen
 import ph.mart.healthapp.feature.progress.ui.fasting.FastingScreen
 import ph.mart.healthapp.feature.progress.ui.heart.HeartScreen
+import ph.mart.healthapp.feature.progress.ui.measurement.MeasurementsScreen
 import ph.mart.healthapp.feature.progress.ui.mood.MoodScreen
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureScreen
@@ -63,6 +64,10 @@ data object CycleRoute : NavKey
 @Serializable
 data object BloodPressureRoute : NavKey
 
+/** Six tape-measure histories and the two figures derived from them. Carries nothing: `MeasurementsViewModel` reads them itself. */
+@Serializable
+data object MeasurementsRoute : NavKey
+
 /**
  * The subject pages that are routes rather than `SubjectDetail` swap-ins.
  *
@@ -70,7 +75,7 @@ data object BloodPressureRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute)
 
 /**
  * A subject to the route that draws it, or null while it is still a swap-in.
@@ -89,6 +94,7 @@ fun Subject.route(): NavKey? = when (this) {
     Subject.Activity -> ActivityRoute
     Subject.Cycle -> CycleRoute
     Subject.BloodPressure -> BloodPressureRoute
+    Subject.Measurements -> MeasurementsRoute
     else -> null
 }
 
@@ -205,6 +211,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<BloodPressureRoute> {
         BloodPressureScreen(
+            onSwitchSubject = onSwitchSubject,
+            onOpenRecap = onOpenRecap,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<MeasurementsRoute> {
+        MeasurementsScreen(
             onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
