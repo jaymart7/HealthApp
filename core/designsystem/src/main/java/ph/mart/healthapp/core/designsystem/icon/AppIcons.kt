@@ -2,10 +2,15 @@ package ph.mart.healthapp.core.designsystem.icon
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.automirrored.outlined.DirectionsWalk
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
@@ -16,15 +21,12 @@ import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsRun
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -48,7 +50,6 @@ import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Chair
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.DirectionsWalk
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EggAlt
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -58,7 +59,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Medication
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.MonitorWeight
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
@@ -93,7 +93,7 @@ object AppIcons {
     val Barcode: ImageVector = Icons.Filled.QrCodeScanner
     /** Notifications, wherever reminders are the subject rather than a single alert. */
     val Bell: ImageVector = Icons.Outlined.Notifications
-    val Book: ImageVector = Icons.Outlined.MenuBook
+    val Book: ImageVector = Icons.AutoMirrored.Outlined.MenuBook
     val Bookmark: ImageVector = Icons.Filled.BookmarkAdd
     val Camera: ImageVector = Icons.Filled.PhotoCamera
     val Chair: ImageVector = Icons.Outlined.Chair
@@ -106,8 +106,8 @@ object AppIcons {
     val CloudOff: ImageVector = Icons.Outlined.CloudOff
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
-    val ChevronLeft: ImageVector = Icons.Filled.KeyboardArrowLeft
-    val ChevronRight: ImageVector = Icons.Filled.KeyboardArrowRight
+    val ChevronLeft: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft
+    val ChevronRight: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight
     val Close: ImageVector = Icons.Filled.Close
     val Compare: ImageVector = Icons.Filled.SwapHoriz
     val Delete: ImageVector = Icons.Outlined.Delete
@@ -142,12 +142,12 @@ object AppIcons {
     val SearchOff: ImageVector = Icons.Outlined.SearchOff
     val Settings: ImageVector = Icons.Outlined.Settings
     val Smartphone: ImageVector = Icons.Outlined.Smartphone
-    val Steps: ImageVector = Icons.Outlined.DirectionsWalk
+    val Steps: ImageVector = Icons.AutoMirrored.Outlined.DirectionsWalk
     val Supplement: ImageVector = Icons.Outlined.Medication
     val Timer: ImageVector = Icons.Outlined.Timer
     val Undo: ImageVector = Icons.AutoMirrored.Filled.Undo
     /** Exercise, wherever it has to read as its own kind of thing rather than a fifth meal. */
-    val Run: ImageVector = Icons.Filled.DirectionsRun
+    val Run: ImageVector = Icons.AutoMirrored.Filled.DirectionsRun
     val Send: ImageVector = Icons.AutoMirrored.Filled.Send
     val Share: ImageVector = Icons.Filled.Share
     /** Abandon something already running — the coach's answer mid-stream. Not [Close], which
