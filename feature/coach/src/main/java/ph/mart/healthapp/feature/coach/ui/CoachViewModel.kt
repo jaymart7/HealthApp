@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.OrbitContainer
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.CoachReply
 import ph.mart.healthapp.core.data.coach.CoachRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
@@ -57,8 +58,8 @@ class CoachViewModel(
             CoachEvent.OnStop -> onStop()
             CoachEvent.OnRetry -> onRetry()
             CoachEvent.OnClear -> intent { coachRepository.clear() }
-            is CoachEvent.OnConfirmProposal -> onSettle(event.loggedLine)
-            CoachEvent.OnDismissProposal -> onSettle(null)
+            is CoachEvent.OnConfirmProposal -> onSettle(event.kept, event.loggedLine)
+            CoachEvent.OnDismissProposal -> onSettle(emptyList(), null)
         }
     }
 
@@ -103,22 +104,24 @@ class CoachViewModel(
 
     /**
      * Ends a turn that stopped on a proposal. [loggedLine] non-null is a confirmation: the
-     * repository commits the drafted row and the line is appended to what gets persisted, so
-     * reopening the chat still shows that something was logged. Null is a dismissal.
+     * repository commits [kept] and the line is appended to what gets persisted, so reopening the
+     * chat still shows that something was logged. Null is a dismissal.
      *
      * Nothing is cleared here on success, for the reason [onSend] gives — `withMessages` is what
      * knows when Room has the rows. The one case that needs clearing is a dismissal of a proposal
      * that came with no prose: there is no answer to persist, so no write happens, so no emission
      * arrives to retire the bubbles.
      */
-    private fun onSettle(loggedLine: String?) = intent {
-        val action = state.proposal ?: return@intent
+    private fun onSettle(kept: List<CoachAction>, loggedLine: String?) = intent {
+        if (state.proposal.isEmpty()) return@intent
         val question = state.pending ?: return@intent
         val answer = listOfNotNull(state.streaming, loggedLine).joinToString("\n")
         if (answer.isEmpty()) {
             return@intent reduce { state.withTurnAbandoned() }
         }
-        coachRepository.settle(question, answer, action.takeIf { loggedLine != null })
+        // [kept] rather than `state.proposal`: the card is where a row was struck out, and what
+        // comes back from it is what the user agreed to. A dismissal sends nothing at all.
+        coachRepository.settle(question, answer, kept)
     }
 
     /**
@@ -139,7 +142,9 @@ class CoachViewModel(
         sendJob = intent {
             val text = question.trim()
             if (text.isEmpty() || state.pending != null) return@intent
-            reduce { state.copy(pending = text, streaming = null, failure = null, proposal = null) }
+            reduce {
+                state.copy(pending = text, streaming = null, failure = null, proposal = emptyList())
+            }
 
             // Read once and reused for the message below: a second recheck could disagree with
             // the one that decided whether to call, and then an offline send would report a model
@@ -157,11 +162,11 @@ class CoachViewModel(
                         is CoachReply.Partial -> state.copy(streaming = reply.text.takeIf(String::isNotEmpty))
                         // Nothing is written and nothing is cleared: the turn stays in flight, on
                         // screen, until the user's tap ends it through `onSettle`.
-                        is CoachReply.Proposal -> state.copy(proposal = reply.action)
+                        is CoachReply.Proposal -> state.copy(proposal = reply.actions)
                         CoachReply.Failed -> state.copy(
                             pending = null,
                             streaming = null,
-                            proposal = null,
+                            proposal = emptyList(),
                             failure = CoachFailure(
                                 reason = if (online) FAILED_REASON else OFFLINE_REASON,
                                 insight = state.request?.let(::insightFor),

@@ -9,11 +9,13 @@ import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.CoachReply
 import ph.mart.healthapp.core.data.coach.CoachRepository
 import ph.mart.healthapp.core.data.coach.CoachToolbox
+import ph.mart.healthapp.core.data.coach.MAX_DRAFT_ROWS
 import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
 import ph.mart.healthapp.core.data.coach.priced
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
 
@@ -53,19 +55,22 @@ internal class FakeCoachRepository(
                 // Through `priced` for the reason everything else here goes through the real path:
                 // a workout's burn is the app's arithmetic over the user's own weigh-in, and a
                 // faked card showing 0 kcal would hide the one figure worth looking at.
-                val action = script.action.priced(toolbox)
-                emit(if (action == null) CoachReply.Failed else CoachReply.Proposal(action))
+                val actions = script.actions.map { it.priced(toolbox) }
+                emit(
+                    if (actions.any { it == null }) CoachReply.Failed
+                    else CoachReply.Proposal(actions.filterNotNull()),
+                )
             }
 
             is FakeScript.Tool -> {
                 val result = toolbox.runTool(script.name, script.args).orEmpty()
                 val answer = stream(script.preamble + "\n" + result)
-                real.settle(question, answer, null)
+                real.settle(question, answer, emptyList())
             }
 
             is FakeScript.Say -> {
                 val answer = stream(script.text(request))
-                real.settle(question, answer, null)
+                real.settle(question, answer, emptyList())
             }
         }
     }
@@ -101,7 +106,10 @@ internal sealed interface FakeScript {
      * without turning the radio off, which also disables the tools. */
     data object Fail : FakeScript
 
-    data class Propose(val action: CoachAction, val preamble: String) : FakeScript
+    /** A list, because one meal is several rows — [fakeCoachScript] drafts more than one for a
+     * sentence naming more than one food, which is the only way a debug build reaches the multi-row
+     * card. */
+    data class Propose(val actions: List<CoachAction>, val preamble: String) : FakeScript
 
     data class Tool(val name: String, val args: Map<String, JsonElement>, val preamble: String) : FakeScript
 
@@ -129,34 +137,42 @@ internal fun fakeCoachScript(question: String): FakeScript {
     if (LOG_WORDS.any { it in asked }) {
         if (WATER_WORDS.any { it in asked }) {
             return FakeScript.Propose(
-                action = CoachAction.LogWater(glasses = 1),
+                actions = listOf(CoachAction.LogWater(glasses = 1)),
                 preamble = "Sure — here's a glass of water to add:",
             )
         }
         matchedExercise(asked)?.let { type ->
             return FakeScript.Propose(
-                action = CoachAction.LogExercise(
-                    type = type,
-                    name = "",
-                    minutes = minutesIn(asked),
-                    // Zero, exactly as `parseAction` leaves it: `priced` is what fills it in.
-                    burnedKcal = 0,
+                actions = listOf(
+                    CoachAction.LogExercise(
+                        type = type,
+                        name = "",
+                        minutes = minutesIn(asked),
+                        // Zero, exactly as `parseAction` leaves it: `priced` fills it in.
+                        burnedKcal = 0,
+                    ),
                 ),
                 preamble = "Here's the session I'd add — the burn is worked out from your weight:",
             )
         }
-        matchedFood(asked)?.let { food ->
+        // Every food named in the sentence, not the longest one: "log eggs, toast and coffee" is
+        // the sentence the multi-row card exists for, and a fake that could only ever draft one row
+        // would leave it unreachable in a debug build.
+        matchedFoods(asked).takeIf { it.isNotEmpty() }?.let { foods ->
+            val meal = mealFor(asked)
             return FakeScript.Propose(
-                action = CoachAction.LogFood(
-                    name = food.name,
-                    mealType = mealFor(asked),
-                    calories = food.calories,
-                    proteinG = food.proteinG,
-                    carbsG = food.carbsG,
-                    fatG = food.fatG,
-                    portionAmount = food.portionAmount,
-                    portionUnit = food.portionUnit,
-                ),
+                actions = foods.map { food ->
+                    CoachAction.LogFood(
+                        name = food.name,
+                        mealType = meal,
+                        calories = food.calories,
+                        proteinG = food.proteinG,
+                        carbsG = food.carbsG,
+                        fatG = food.fatG,
+                        portionAmount = food.portionAmount,
+                        portionUnit = food.portionUnit,
+                    )
+                },
                 preamble = "Here's what I'd log for that — check the numbers before you tap:",
             )
         }
@@ -205,12 +221,30 @@ private fun daysAgoIn(asked: String): Int? = when {
 
 private val DAYS_AGO = Regex("""(\d+)\s+days?\s+ago""")
 
-/** The longest word in the sentence that names something in `COMMON_FOODS`, so "eggs" beats a
- * three-letter accident. [commonFoodFor] is what handles the plural. */
-private fun matchedFood(asked: String) = asked
+/**
+ * Every word in the sentence that names something in `COMMON_FOODS`, in the order they were said,
+ * one row each. [commonFoodFor] is what handles the plural.
+ *
+ * **The word has to start a word of the food's name**, which longest-word-wins used to hide:
+ * `searchCommonFoods` is a plain substring match, so "i ate some rice" finds "ate" inside *Water*
+ * as well as the rice — and one row per match turns that near-miss into a phantom row on a card
+ * whose whole promise is that what it shows is what gets written. A whole-word prefix keeps
+ * "rice" → *Brown rice, cooked* and drops "ate" → *Water*.
+ *
+ * Distinct by name, so "eggs and more eggs" is one row rather than two identical ones, and capped
+ * the way a real draft is.
+ */
+private fun matchedFoods(asked: String) = asked
     .split(' ', ',', '.')
-    .sortedByDescending { it.length }
-    .firstNotNullOfOrNull { word -> commonFoodFor(word) }
+    .mapNotNull { word ->
+        val stem = word.trim().removeSuffix("s")
+        commonFoodFor(word)?.takeIf { it.namesWord(stem) }
+    }
+    .distinctBy { it.name }
+    .take(MAX_DRAFT_ROWS)
+
+private fun ScannedProduct.namesWord(stem: String): Boolean =
+    stem.isNotEmpty() && name.split(' ', ',', '(', '-').any { it.startsWith(stem, ignoreCase = true) }
 
 /**
  * Checked before the food match, so "log a 30 minute run" drafts a workout — "run" names no food,

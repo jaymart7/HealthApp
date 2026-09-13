@@ -1666,6 +1666,31 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   write, and `withMessages` retiring the bubbles on a list-size change would take the new question
   with it. The card carries both ways out, which is what a locked bar is for. `log_weight` is
   deliberately absent — kg/lb is a second trap for no new capability.
+- **A draft holds rows, not a row — and every write call is taken, not the first.** *"Log my
+  breakfast: two eggs, toast and a coffee"* is three `log_food` calls in one round, and
+  `calls.firstOrNull { it.name in WRITE_TOOLS }` took one of them. The other two were dropped in
+  silence, under an answer that said all three had been drafted — so the user tapped Log, believed
+  the meal was in, and two rows never existed. That is the worst shape a bug can have on this
+  surface, because the half that vanished is the half nobody counts. `CoachReply.Proposal` now
+  carries a `List<CoachAction>`, `settle` takes the list, and `parseAction`/`priced` are untouched:
+  each call clears exactly the boundary it always did, one at a time. What follows. **One bad call
+  fails the whole turn**, the rule a lone bad call already had — a meal missing the row that would
+  not parse is the original bug wearing a different hat — and `MAX_DRAFT_ROWS` (10) rejects rather
+  than truncates for the same reason. **The writes go by kind, not row by row**: the foods are one
+  `addEntries()` so a drafted meal lands in the diary at once (`FoodViewModel.onLogSavedMeal`'s
+  call, for its reason), and the glasses are *summed* into a single `setToday` because that call
+  takes the day's new total — applied one after another, the second would overwrite the first and
+  two glasses would land as one. `foodEntries()` and `glassesToAdd()` are pure and hold the JVM
+  test, the shape `parseAction` set. **The card keeps its single-row layout for a single row**, a
+  meal of one thing not being a list, and becomes a list with a `✕` per row otherwise: a removed
+  row is *gone* rather than greyed, because a struck-through row still on screen is a row the eye
+  counts, and the confirm hands its surviving rows back rather than the ViewModel reading them off
+  the state — striking out the coffee is a decision made on the card. Removal is saved by index,
+  so a rotation mid-decision cannot restore it and a draft holding the same food twice loses only
+  the one that was tapped. **The footer totals the foods alone**: a workout's calories are burned
+  and a glass of water has none, so one "kcal" figure across the kinds would be true of nothing.
+  No undo on a confirmed batch — `addEntries` hands back no ids, which is the same reason
+  `FoodData.kt` already declines one for a copied day.
 - **`log_exercise` is the third draft, and the one figure on its card is not the model's.**
   Everything else a proposal shows is the model's own output checked against a ceiling. A calorie
   burn is not: `estimateBurnedKcal()` is arithmetic this app already owns, the log-exercise sheet

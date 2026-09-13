@@ -79,13 +79,18 @@ sealed interface CoachReply {
 
     /**
      * The model asked to write something, so the stream stops here and *nothing* is persisted —
-     * neither the row it drafted nor the turn that drafted it. [CoachRepository.settle] is what
+     * neither the rows it drafted nor the turn that drafted them. [CoachRepository.settle] is what
      * ends this turn, once the user has confirmed or dismissed.
      *
-     * It carries no text: whatever prose came with the call already reached the screen as
+     * A **list**, because one meal is several rows: "two eggs, toast and a coffee" is three
+     * `log_food` calls in one round, and taking the first of them silently dropped the other two
+     * under an answer that said all three were drafted. Never empty — a turn with nothing to
+     * propose is a turn that answers.
+     *
+     * It carries no text: whatever prose came with the calls already reached the screen as
      * [Partial]s, sanitized, and that is the copy the turn is eventually persisted with.
      */
-    data class Proposal(val action: CoachAction) : CoachReply
+    data class Proposal(val actions: List<CoachAction>) : CoachReply
 
     data object Failed : CoachReply
 }
@@ -112,14 +117,17 @@ interface CoachRepository {
     fun send(question: String, request: InsightRequest?): Flow<CoachReply>
 
     /**
-     * Ends a turn that stopped on a proposal: commits [action] when the user confirmed it, then
-     * writes the question/answer pair exactly as [send] does on its last chunk. A null [action] is
-     * a dismissal — the turn is still history, because the user read the answer either way.
+     * Ends a turn that stopped on a proposal: commits [actions] when the user confirmed them, then
+     * writes the question/answer pair exactly as [send] does on its last chunk. An empty [actions]
+     * is a dismissal — the turn is still history, because the user read the answer either way.
      *
-     * The write goes through the ordinary repository the add-entry sheet uses, so a coach-drafted
+     * It is the *surviving* rows, not the drafted ones: the card lets a row be struck out before
+     * the tap, so what arrives here is what the user agreed to and all of it is written.
+     *
+     * The writes go through the ordinary repositories the add-entry sheet uses, so a coach-drafted
      * row is indistinguishable from a hand-typed one once it lands.
      */
-    suspend fun settle(question: String, answer: String, action: CoachAction?)
+    suspend fun settle(question: String, answer: String, actions: List<CoachAction>)
 
     /** Soft-deletes the whole conversation. Room's rows stay, like every other domain's. */
     suspend fun clear()
@@ -143,6 +151,16 @@ internal const val MAX_REPLY_CHARS = 1400
  * near the context window. Price it in tokens if the coach ever grows attachments.
  */
 internal const val MAX_HISTORY_MESSAGES = 20
+
+/**
+ * How many rows one draft may hold.
+ *
+ * A meal is three or four things and a big one is six; past ten the model is looping rather than
+ * listening, and a card that long is scrolled past rather than read. Rejecting the whole turn
+ * rather than truncating it, for [MAX_REPLY_CHARS]' reason — half a meal one tap from the diary is
+ * worse than none, because the half that vanished is the half nobody notices.
+ */
+internal const val MAX_DRAFT_ROWS = 10
 
 private val WHITESPACE = Regex("[ \\t]+")
 

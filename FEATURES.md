@@ -285,9 +285,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   training, sleep and weigh-ins. History persisted, clearable with a confirm. The answer streams in word
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
-- Coach proposals — asked to log something, the coach drafts the row and the user taps to confirm
-  it: a food into today's diary, glasses of water, or an activity — whose calorie burn is the app's
-  own MET estimate from the user's latest weigh-in, never the model's guess. It never writes on its own, and nothing —
+- Coach proposals — asked to log something, the coach drafts the rows and the user taps to confirm
+  them: foods into today's diary, glasses of water, or an activity — whose calorie burn is the
+  app's own MET estimate from the user's latest weigh-in, never the model's guess. A whole meal is
+  one card of several rows, each removable before the tap, written to the diary together. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
   writes nothing.
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a

@@ -30,7 +30,7 @@ class FakeCoachScriptTest {
     @Test
     fun `asking to log water proposes one glass`() {
         val script = fakeCoachScript("log a glass of water") as FakeScript.Propose
-        assertEquals(CoachAction.LogWater(glasses = 1), script.action)
+        assertEquals(listOf(CoachAction.LogWater(glasses = 1)), script.actions)
     }
 
     /** The burn stays 0 here, the way `parseAction` leaves it — `priced()` is what fills it in,
@@ -38,7 +38,7 @@ class FakeCoachScriptTest {
     @Test
     fun `asking to log a workout proposes it with its duration`() {
         val script = fakeCoachScript("log a 45 minute run") as FakeScript.Propose
-        val action = script.action as CoachAction.LogExercise
+        val action = script.actions.single() as CoachAction.LogExercise
         assertEquals(ExerciseType.Run, action.type)
         assertEquals(45, action.minutes)
         assertEquals(0, action.burnedKcal)
@@ -52,24 +52,39 @@ class FakeCoachScriptTest {
         assertEquals(30, (fakeCoachScript("log yoga") as FakeScript.Propose).minutes())
     }
 
-    private fun FakeScript.Propose.minutes() = (action as CoachAction.LogExercise).minutes
+    private fun FakeScript.Propose.minutes() =
+        (actions.single() as CoachAction.LogExercise).minutes
 
     /** The proposal card is meant to be read before it is tapped, so the figures on it have to be
      * real ones — they come off `COMMON_FOODS`, not out of thin air. */
     @Test
     fun `asking to log a food proposes it with real macros`() {
         val script = fakeCoachScript("log two eggs for breakfast") as FakeScript.Propose
-        val action = script.action as CoachAction.LogFood
+        val action = script.actions.single() as CoachAction.LogFood
         assertTrue(action.name, "egg" in action.name.lowercase())
         assertEquals(MealType.Breakfast, action.mealType)
         assertTrue("calories should be real: ${action.calories}", action.calories > 0)
         assertTrue("protein should be real: ${action.proteinG}", action.proteinG > 0)
     }
 
+    /**
+     * The sentence the multi-row card exists for. One meal slot for the batch, a row per food, and
+     * the order they were said — a fake that could only draft one row would leave the card
+     * unreachable in a debug build.
+     */
+    @Test
+    fun `a sentence naming three foods drafts three rows`() {
+        val script = fakeCoachScript("log eggs, rice and an apple for lunch") as FakeScript.Propose
+        val foods = script.actions.filterIsInstance<CoachAction.LogFood>()
+        assertEquals(3, foods.size)
+        assertTrue(foods.toString(), foods.all { it.mealType == MealType.Lunch })
+        assertEquals(foods.map { it.name }, foods.map { it.name }.distinct())
+    }
+
     @Test
     fun `a meal is only named when the sentence names one`() {
         val script = fakeCoachScript("i ate some rice") as FakeScript.Propose
-        assertEquals(MealType.Snacks, (script.action as CoachAction.LogFood).mealType)
+        assertEquals(MealType.Snacks, (script.actions.single() as CoachAction.LogFood).mealType)
     }
 
     @Test

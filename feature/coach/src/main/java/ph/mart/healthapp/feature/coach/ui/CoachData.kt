@@ -20,8 +20,8 @@ import ph.mart.healthapp.feature.coach.R
  * there is nothing in Room for it to describe. It clears on the next successful send.
  *
  * [proposal] is the third thing not in Room, and for the same reason as the other two: the coach
- * drafted a row and the user has not agreed to it, so neither the row nor the turn that drafted it
- * exists yet. It is retired the way [pending] and [streaming] are — by the Room emission that the
+ * drafted some rows and the user has not agreed to them, so neither the rows nor the turn that
+ * drafted them exist yet. It is retired the way [pending] and [streaming] are — by the Room emission that the
  * user's own tap eventually causes.
  */
 data class CoachUiState(
@@ -35,8 +35,9 @@ data class CoachUiState(
     /** The answer so far, null until the first chunk lands. */
     val streaming: String? = null,
     val failure: CoachFailure? = null,
-    /** A row the coach drafted, waiting on a tap. [streaming] holds the prose that came with it. */
-    val proposal: CoachAction? = null,
+    /** The rows the coach drafted, waiting on a tap — empty when there is no card up. One meal is
+     * several of them. [streaming] holds the prose that came with them. */
+    val proposal: List<CoachAction> = emptyList(),
 )
 
 /**
@@ -59,7 +60,7 @@ internal fun CoachUiState.withMessages(
         request = request,
         pending = pending.takeUnless { landed },
         streaming = streaming.takeUnless { landed },
-        proposal = proposal.takeUnless { landed },
+        proposal = if (landed) emptyList() else proposal,
     )
 }
 
@@ -73,7 +74,7 @@ internal fun CoachUiState.withMessages(
  * missing a field in one of them strands the input bar.
  */
 internal fun CoachUiState.withTurnAbandoned(): CoachUiState =
-    copy(pending = null, streaming = null, proposal = null)
+    copy(pending = null, streaming = null, proposal = emptyList())
 
 /**
  * What to show when a send didn't produce an answer. [reason] says why in one line; [insight] is
@@ -105,7 +106,10 @@ sealed interface CoachEvent {
     data object OnStop : CoachEvent
     data object OnRetry : CoachEvent
     data object OnClear : CoachEvent
-    data class OnConfirmProposal(val loggedLine: String) : CoachEvent
+    /** [kept] is what survived the card's per-row `✕`, which is why the screen sends the rows back
+     * rather than the ViewModel reading them off the state: striking a row out is a decision the
+     * user made on the card, and only what is left was agreed to. */
+    data class OnConfirmProposal(val kept: List<CoachAction>, val loggedLine: String) : CoachEvent
     data object OnDismissProposal : CoachEvent
 }
 

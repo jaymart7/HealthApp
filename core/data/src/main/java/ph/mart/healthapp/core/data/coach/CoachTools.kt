@@ -525,6 +525,37 @@ internal suspend fun CoachAction.priced(toolbox: CoachToolbox): CoachAction? = w
     else -> this
 }
 
+/**
+ * The food rows of a settled draft, as the diary stores them — one [FoodEntry] each, in the order
+ * they were drafted, for a single batched write.
+ *
+ * Pure, and here rather than inline in `settle`, for the reason [parseAction] is: it is the part a
+ * JVM test can reach, and "what gets written" is exactly the part worth pinning.
+ */
+internal fun List<CoachAction>.foodEntries(): List<FoodEntry> =
+    filterIsInstance<CoachAction.LogFood>().map {
+        FoodEntry(
+            name = it.name,
+            mealType = it.mealType,
+            portionAmount = it.portionAmount,
+            portionUnit = it.portionUnit,
+            calories = it.calories,
+            proteinG = it.proteinG,
+            carbsG = it.carbsG,
+            fatG = it.fatG,
+        )
+    }
+
+/**
+ * Glasses to **add** to the day, summed across the draft.
+ *
+ * Summed rather than applied one at a time, and that is the load-bearing half: `setToday` takes the
+ * day's *new total*, so two water rows written in sequence would have the second overwrite the
+ * first and a draft of two glasses would land as one.
+ */
+internal fun List<CoachAction>.glassesToAdd(): Int =
+    filterIsInstance<CoachAction.LogWater>().sumOf { it.glasses }
+
 /** The envelope the SDK requires around a [String] result. One key, because the result is prose
  * and prose has no fields. */
 internal fun toolResponse(result: String): JsonObject =

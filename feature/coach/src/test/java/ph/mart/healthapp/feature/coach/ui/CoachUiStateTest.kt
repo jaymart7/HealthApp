@@ -55,7 +55,7 @@ class CoachUiStateTest {
     private val awaitingTap = inFlight.copy(
         pending = "Log a glass of water",
         streaming = "Sure — here it is:",
-        proposal = CoachAction.LogWater(glasses = 1),
+        proposal = listOf(CoachAction.LogWater(glasses = 1)),
     )
 
     /**
@@ -69,7 +69,7 @@ class CoachUiStateTest {
             awaitingTap.messages + listOf(message(3, true), message(4, false)),
             request = null,
         )
-        assertNull(next.proposal)
+        assertTrue(next.proposal.isEmpty())
         assertNull(next.pending)
         assertNull(next.streaming)
     }
@@ -79,7 +79,7 @@ class CoachUiStateTest {
     @Test
     fun `an unchanged list leaves the proposal standing`() {
         val next = awaitingTap.withMessages(awaitingTap.messages, request = null)
-        assertEquals(CoachAction.LogWater(glasses = 1), next.proposal)
+        assertEquals(listOf(CoachAction.LogWater(glasses = 1)), next.proposal)
     }
 
     /** A clear while the card is up shrinks the list. It takes the card with it, or the input bar
@@ -87,7 +87,7 @@ class CoachUiStateTest {
     @Test
     fun `a clear mid-proposal retires it as well`() {
         val next = awaitingTap.withMessages(emptyList(), request = null)
-        assertNull(next.proposal)
+        assertTrue(next.proposal.isEmpty())
         assertNull(next.pending)
     }
 
@@ -101,7 +101,7 @@ class CoachUiStateTest {
         val next = awaitingTap.withTurnAbandoned()
         assertNull(next.pending)
         assertNull(next.streaming)
-        assertNull(next.proposal)
+        assertTrue(next.proposal.isEmpty())
         assertEquals(awaitingTap.messages, next.messages)
     }
 
@@ -111,6 +111,6 @@ class CoachUiStateTest {
         assertTrue(next.loaded)
         assertNull(next.pending)
         assertNull(next.streaming)
-        assertNull(next.proposal)
+        assertTrue(next.proposal.isEmpty())
     }
 }

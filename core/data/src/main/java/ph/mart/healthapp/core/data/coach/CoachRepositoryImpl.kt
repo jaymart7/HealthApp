@@ -22,7 +22,6 @@ import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
-import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
@@ -128,15 +127,22 @@ internal class CoachRepositoryImpl(
 
             // A write call ends the turn here, unpersisted. It is a draft, and the user is the one
             // who decides whether it becomes a row — so `settle` is what writes, not this.
-            calls.firstOrNull { it.name in WRITE_TOOLS }?.let { call ->
-                // `priced` fills in the one figure the model may not supply — a workout's calorie
-                // burn, which is the app's own MET arithmetic over the user's latest weigh-in. It
-                // runs here rather than at `settle`, because the card's promise is that every
-                // figure shown is the figure written, and it fails the turn the way a rejected
-                // parse does.
-                val action = parseAction(call.name, call.args)?.priced(toolbox)
-                    ?: return@flow emit(CoachReply.Failed)
-                return@flow emit(CoachReply.Proposal(action))
+            //
+            // *Every* write call, not the first: one meal is several `log_food` calls in one
+            // round, and taking one of them left the other two out of a card sitting under an
+            // answer that said all three were drafted. `parseAction` and `priced` are unchanged —
+            // each call clears the same boundary it always did, one at a time.
+            val writes = calls.filter { it.name in WRITE_TOOLS }
+            if (writes.isNotEmpty()) {
+                // One bad call fails the whole turn, the rule a lone bad call already followed: a
+                // meal missing the row that would not parse is a meal the user logs without
+                // noticing. Same for a draft past the row ceiling — rejected, never truncated.
+                val actions = writes.map { call ->
+                    parseAction(call.name, call.args)?.priced(toolbox)
+                        ?: return@flow emit(CoachReply.Failed)
+                }
+                if (actions.size > MAX_DRAFT_ROWS) return@flow emit(CoachReply.Failed)
+                return@flow emit(CoachReply.Proposal(actions))
             }
 
             // Whatever prose came with a *read* call is "let me check yesterday", not an answer,
@@ -180,37 +186,36 @@ internal class CoachRepositoryImpl(
         writeExchange(question, answer)
     }
 
-    override suspend fun settle(question: String, answer: String, action: CoachAction?) {
-        when (action) {
-            is CoachAction.LogFood -> foodRepository.addEntry(
-                FoodEntry(
-                    name = action.name,
-                    mealType = action.mealType,
-                    portionAmount = action.portionAmount,
-                    portionUnit = action.portionUnit,
-                    calories = action.calories,
-                    proteinG = action.proteinG,
-                    carbsG = action.carbsG,
-                    fatG = action.fatG,
-                ),
-            )
-            // Added to the day, never assigned: `setToday` takes the new total, and a coach that
-            // proposes "one glass" must not wipe the six already there.
-            is CoachAction.LogWater -> waterRepository.setToday(
-                waterRepository.observeToday().first() + action.glasses,
-            )
-            // `dateEpochDay` is left at its default, which the repository reads as today — the
-            // coach cannot log into a past day, and the prompt says so.
-            is CoachAction.LogExercise -> exerciseRepository.addEntry(
+    /**
+     * By kind, not row by row. The foods go down as **one** `addEntries`, so a drafted meal appears
+     * in the diary at once rather than as four rows arriving in sequence — the same call, for the
+     * same reason, that `FoodViewModel.onLogSavedMeal` makes. The glasses are summed into a single
+     * `setToday` for a stronger reason: it takes the day's *new total*, so two proposals applied
+     * one after the other would have the second overwrite the first.
+     */
+    override suspend fun settle(question: String, answer: String, actions: List<CoachAction>) {
+        actions.foodEntries().takeIf { it.isNotEmpty() }?.let { foodRepository.addEntries(it) }
+
+        // Added to the day, never assigned: a coach that proposes "one glass" must not wipe the
+        // six already there.
+        actions.glassesToAdd()
+            .takeIf { it > 0 }
+            ?.let { waterRepository.setToday(waterRepository.observeToday().first() + it) }
+
+        // `dateEpochDay` is left at its default, which the repository reads as today — the coach
+        // cannot log into a past day, and the prompt says so. One call each: `ExerciseRepository`
+        // has no batch write, and two workouts in one draft is not the shape anyone asks for.
+        actions.filterIsInstance<CoachAction.LogExercise>().forEach {
+            exerciseRepository.addEntry(
                 ExerciseEntry(
-                    type = action.type,
-                    name = action.name,
-                    minutes = action.minutes,
-                    burnedKcal = action.burnedKcal,
+                    type = it.type,
+                    name = it.name,
+                    minutes = it.minutes,
+                    burnedKcal = it.burnedKcal,
                 ),
             )
-            null -> Unit
         }
+
         writeExchange(question, answer)
     }
 
@@ -283,7 +288,9 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
     appendLine(
         "If the user asks you to log something, call log_food, log_water or log_exercise. These " +
             "do not log anything themselves: the user sees what you drafted and taps to confirm " +
-            "it, so say what you are proposing in the same reply. Estimate the nutrition of a " +
+            "it, so say what you are proposing in the same reply. Call log_food once per food: a " +
+            "meal of three things is three calls in the same turn, and they are drafted together " +
+            "as one card. Estimate the nutrition of a " +
             "food from their description; do not estimate the calories an activity burned, " +
             "because the app works that out from their own weight. You cannot edit or delete " +
             "anything, and you cannot log for a past day — point them at the Food tab's diary " +

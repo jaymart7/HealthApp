@@ -225,6 +225,52 @@ class CoachToolsTest {
 
     // endregion
 
+    // region What a settled draft writes
+
+    /**
+     * The rule the whole multi-row card rests on: the foods go down together, in the order they
+     * were drafted, as the diary's own rows.
+     */
+    @Test
+    fun `a settled draft becomes one batch of diary rows`() {
+        val entries = listOf(
+            logFood("Scrambled eggs", 220),
+            CoachAction.LogWater(glasses = 2),
+            logFood("Toast", 180),
+        ).foodEntries()
+        assertEquals(listOf("Scrambled eggs", "Toast"), entries.map { it.name })
+        assertEquals(listOf(220, 180), entries.map { it.calories })
+        assertEquals(MealType.Breakfast, entries.first().mealType)
+    }
+
+    /**
+     * `setToday` takes the day's *new total*, so two water rows applied one after the other would
+     * have the second overwrite the first — a draft of two glasses would land as one.
+     */
+    @Test
+    fun `water in a draft is summed, not applied twice`() {
+        val actions = listOf(
+            CoachAction.LogWater(glasses = 2),
+            logFood("Toast", 180),
+            CoachAction.LogWater(glasses = 1),
+        )
+        assertEquals(3, actions.glassesToAdd())
+        assertEquals(0, listOf(logFood("Toast", 180)).glassesToAdd())
+    }
+
+    private fun logFood(name: String, kcal: Int) = CoachAction.LogFood(
+        name = name,
+        mealType = MealType.Breakfast,
+        calories = kcal,
+        proteinG = 10,
+        carbsG = 20,
+        fatG = 5,
+        portionAmount = 1.0,
+        portionUnit = "serving",
+    )
+
+    // endregion
+
     // region What the model reads back
 
     private fun food(name: String, meal: MealType, kcal: Int) = FoodEntry(

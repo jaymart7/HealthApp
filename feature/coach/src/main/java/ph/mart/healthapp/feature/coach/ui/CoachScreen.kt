@@ -65,7 +65,7 @@ private fun CoachContent(
     // answer filling in under it.
     val itemCount = uiState.messages.size +
         (if (uiState.pending != null) 2 else 0) +
-        (if (uiState.proposal != null) 1 else 0) +
+        (if (uiState.proposal.isNotEmpty()) 1 else 0) +
         (if (uiState.failure != null) 1 else 0) +
         // The follow-up row is an item too, and it is the last one — scrolling to the answer above
         // it would leave the chips off screen, which is the whole of what they are for.
@@ -112,11 +112,13 @@ private fun CoachContent(
                 // Under the answer that introduced it, and inside the list rather than over it:
                 // a proposal is part of the conversation, so it scrolls with the conversation and
                 // ignoring it is as valid an answer as tapping it.
-                uiState.proposal?.let { action ->
+                if (uiState.proposal.isNotEmpty()) {
                     item(key = "proposal") {
                         ProposalCard(
-                            action = action,
-                            onConfirm = { onEvent(CoachEvent.OnConfirmProposal(it)) },
+                            actions = uiState.proposal,
+                            onConfirm = { kept, line ->
+                                onEvent(CoachEvent.OnConfirmProposal(kept, line))
+                            },
                             onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
                         )
                     }
