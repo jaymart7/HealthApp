@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
@@ -47,6 +48,8 @@ internal fun ProposalCard(
             stringResource(R.string.coach_proposal_logged_food, action.name, action.calories)
         is CoachAction.LogWater ->
             stringResource(R.string.coach_proposal_logged_water, waterAmount(action.glasses))
+        is CoachAction.LogExercise ->
+            stringResource(R.string.coach_proposal_logged_exercise, activityName(action), action.minutes)
     }
 
     AppCard(
@@ -83,6 +86,30 @@ internal fun ProposalCard(
                 )
             }
 
+            is CoachAction.LogExercise -> {
+                Text(
+                    text = stringResource(R.string.coach_proposal_exercise_title),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    text = activityName(action),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Text(
+                    text = stringResource(
+                        R.string.coach_proposal_exercise_body,
+                        action.minutes,
+                        action.burnedKcal,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+
             is CoachAction.LogWater -> {
                 Text(
                     text = stringResource(R.string.coach_proposal_water_title),
@@ -111,6 +138,12 @@ internal fun ProposalCard(
     }
 }
 
+/** An unnamed activity is called after its type — what [ph.mart.healthapp.core.data.exercise.ExerciseEntry]
+ * means by an empty name, resolved here because only a composable can read the enum's label. */
+@Composable
+private fun activityName(action: CoachAction.LogExercise): String =
+    action.name.ifEmpty { stringResource(action.type.label) }
+
 /** One glass reads as "1 glass", not "1 glasses" — the only place the coach counts something the
  * user can have exactly one of. */
 @Composable
@@ -135,6 +168,26 @@ private fun ProposalCardFoodPreview() {
                     fatG = 23,
                     portionAmount = 1.0,
                     portionUnit = "serving",
+                ),
+                onConfirm = {},
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ProposalCardExercisePreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                action = CoachAction.LogExercise(
+                    type = ExerciseType.Run,
+                    name = "Morning run",
+                    minutes = 30,
+                    burnedKcal = 343,
                 ),
                 onConfirm = {},
                 onDismiss = {},

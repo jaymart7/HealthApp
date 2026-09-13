@@ -28,6 +28,9 @@
     <string name="coach_proposal_water_body">%1$d glasses</string>
     <string name="coach_proposal_water_body_one">1 glass</string>
     <string name="coach_proposal_macros">%1$d kcal · %2$dg protein · %3$dg carbs · %4$dg fat</string>
+    <string name="coach_proposal_exercise_title">Add activity</string>
+    <!-- The burn is the app's own MET estimate from the user's weight, never the model's figure. -->
+    <string name="coach_proposal_exercise_body">%1$d min · %2$d kcal burned</string>
     <string name="coach_proposal_confirm">Log it</string>
     <string name="coach_proposal_dismiss">No thanks</string>
 
@@ -35,4 +38,5 @@
          that something was logged. Resolved on the screen, never in the ViewModel. -->
     <string name="coach_proposal_logged_food">Logged: %1$s, %2$d kcal.</string>
     <string name="coach_proposal_logged_water">Logged: %1$s.</string>
+    <string name="coach_proposal_logged_exercise">Logged: %1$s, %2$d min.</string>
 </resources>

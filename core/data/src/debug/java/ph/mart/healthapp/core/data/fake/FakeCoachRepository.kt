@@ -11,6 +11,8 @@ import ph.mart.healthapp.core.data.coach.CoachRepository
 import ph.mart.healthapp.core.data.coach.CoachToolbox
 import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
+import ph.mart.healthapp.core.data.coach.priced
+import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
@@ -48,7 +50,11 @@ internal class FakeCoachRepository(
                 // The prose comes first and the card follows, which is the order the real thing
                 // produces: the model says what it is about to propose, then calls the tool.
                 stream(script.preamble)
-                emit(CoachReply.Proposal(script.action))
+                // Through `priced` for the reason everything else here goes through the real path:
+                // a workout's burn is the app's arithmetic over the user's own weigh-in, and a
+                // faked card showing 0 kcal would hide the one figure worth looking at.
+                val action = script.action.priced(toolbox)
+                emit(if (action == null) CoachReply.Failed else CoachReply.Proposal(action))
             }
 
             is FakeScript.Tool -> {
@@ -127,6 +133,18 @@ internal fun fakeCoachScript(question: String): FakeScript {
                 preamble = "Sure — here's a glass of water to add:",
             )
         }
+        matchedExercise(asked)?.let { type ->
+            return FakeScript.Propose(
+                action = CoachAction.LogExercise(
+                    type = type,
+                    name = "",
+                    minutes = minutesIn(asked),
+                    // Zero, exactly as `parseAction` leaves it: `priced` is what fills it in.
+                    burnedKcal = 0,
+                ),
+                preamble = "Here's the session I'd add — the burn is worked out from your weight:",
+            )
+        }
         matchedFood(asked)?.let { food ->
             return FakeScript.Propose(
                 action = CoachAction.LogFood(
@@ -193,6 +211,40 @@ private fun matchedFood(asked: String) = asked
     .split(' ', ',', '.')
     .sortedByDescending { it.length }
     .firstNotNullOfOrNull { word -> commonFoodFor(word) }
+
+/**
+ * Checked before the food match, so "log a 30 minute run" drafts a workout — "run" names no food,
+ * but "i had a swim" would otherwise fall through to the generic answer.
+ */
+private fun matchedExercise(asked: String): ExerciseType? =
+    EXERCISE_WORDS.entries.firstOrNull { (word, _) -> word in asked }?.value
+
+private val EXERCISE_WORDS = linkedMapOf(
+    "ran" to ExerciseType.Run,
+    "run" to ExerciseType.Run,
+    "jog" to ExerciseType.Run,
+    "walk" to ExerciseType.Walk,
+    "cycl" to ExerciseType.Cycle,
+    "bike" to ExerciseType.Cycle,
+    "swim" to ExerciseType.Swim,
+    "swam" to ExerciseType.Swim,
+    "lift" to ExerciseType.Strength,
+    "gym" to ExerciseType.Strength,
+    "weights" to ExerciseType.Strength,
+    "yoga" to ExerciseType.Yoga,
+    "hiit" to ExerciseType.Hiit,
+    "workout" to ExerciseType.Other,
+)
+
+/** Half an hour when the sentence names no length — a real model asks or assumes too, and the
+ * card is there to be corrected by dismissing it. */
+private fun minutesIn(asked: String): Int =
+    MINUTES.find(asked)?.groupValues?.get(1)?.toIntOrNull()
+        ?: HOURS.find(asked)?.groupValues?.get(1)?.toIntOrNull()?.times(60)
+        ?: 30
+
+private val MINUTES = Regex("""(\d+)\s*(?:min|minute)""")
+private val HOURS = Regex("""(\d+)\s*(?:hour|hr|h\b)""")
 
 private fun mealFor(asked: String): MealType =
     MealType.entries.firstOrNull { it.name.lowercase() in asked } ?: MealType.Snacks

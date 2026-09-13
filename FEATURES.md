@@ -286,7 +286,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
 - Coach proposals — asked to log something, the coach drafts the row and the user taps to confirm
-  it: a food into today's diary, or glasses of water. It never writes on its own, and nothing —
+  it: a food into today's diary, glasses of water, or an activity — whose calorie burn is the app's
+  own MET estimate from the user's latest weigh-in, never the model's guess. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
   writes nothing.
 - Coach stop — the send button becomes a stop button while an answer is streaming. The turn is

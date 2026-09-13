@@ -12,16 +12,18 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
+import ph.mart.healthapp.core.data.fasting.FastingRepository
+import ph.mart.healthapp.core.data.fasting.dateEpochDay
+import ph.mart.healthapp.core.data.fasting.durationMinutes
+import ph.mart.healthapp.core.data.fasting.isActive
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.dailyTotals
-import ph.mart.healthapp.core.data.fasting.FastingRepository
-import ph.mart.healthapp.core.data.fasting.dateEpochDay
-import ph.mart.healthapp.core.data.fasting.durationMinutes
-import ph.mart.healthapp.core.data.fasting.isActive
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.health.formatDuration
@@ -71,14 +73,19 @@ internal const val MAX_ACTION_CALORIES = 5000
 internal const val MAX_ACTION_MACRO_G = 1000
 internal const val MAX_ACTION_GLASSES = 20
 
+/** Ten hours. Past it the model has read "a 90 minute run" as 900, which is the same dropped
+ * decimal [MAX_ACTION_CALORIES] guards against at the other end of the same card. */
+internal const val MAX_ACTION_MINUTES = 600
+
 internal const val TOOL_GET_DAY = "get_day"
 internal const val TOOL_GET_HISTORY = "get_history"
 internal const val TOOL_LOG_FOOD = "log_food"
 internal const val TOOL_LOG_WATER = "log_water"
+internal const val TOOL_LOG_EXERCISE = "log_exercise"
 
 /** The two the model may call but the app never executes. Kept as a set rather than a `when` so
  * [CoachRepositoryImpl]'s loop can ask the question without knowing what either one does. */
-internal val WRITE_TOOLS = setOf(TOOL_LOG_FOOD, TOOL_LOG_WATER)
+internal val WRITE_TOOLS = setOf(TOOL_LOG_FOOD, TOOL_LOG_WATER, TOOL_LOG_EXERCISE)
 
 /**
  * Days are `days_ago`, never a date string.
@@ -134,6 +141,25 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             ),
         ),
         FunctionDeclaration(
+            name = TOOL_LOG_EXERCISE,
+            description = "Propose adding an activity to today's diary. This does NOT log it: the " +
+                "user sees what you proposed and taps to confirm. Do not estimate the calories " +
+                "burned — the app works that out from their own weight.",
+            parameters = mapOf(
+                "type" to Schema.enumeration(
+                    values = ExerciseType.entries.map { it.name },
+                    description = "The kind of activity. Use Other when none of the rest fit.",
+                ),
+                "minutes" to Schema.integer(
+                    description = "How long it lasted, in minutes. Maximum $MAX_ACTION_MINUTES.",
+                ),
+                "name" to Schema.string(
+                    description = "What to call it, e.g. 'Morning run'. Optional — leave it out " +
+                        "and it is named after its type.",
+                ),
+            ),
+        ),
+        FunctionDeclaration(
             name = TOOL_LOG_WATER,
             description = "Propose adding glasses of water to today's total. This does NOT log " +
                 "it: the user taps to confirm.",
@@ -166,7 +192,22 @@ internal fun parseAction(name: String, args: Map<String, JsonElement>): CoachAct
     TOOL_LOG_WATER -> args.int("glasses")
         ?.takeIf { it in 1..MAX_ACTION_GLASSES }
         ?.let(CoachAction::LogWater)
+    TOOL_LOG_EXERCISE -> parseLogExercise(args)
     else -> null
+}
+
+/**
+ * The burn is left at zero here and priced afterwards by [CoachToolbox.weightKg] — this function
+ * stays pure, and the figure on the card is the app's MET arithmetic rather than the model's
+ * guess. A name is optional: empty is what [ExerciseEntry] means by "call it by its type".
+ */
+private fun parseLogExercise(args: Map<String, JsonElement>): CoachAction.LogExercise? {
+    val type = args.string("type")
+        ?.let { raw -> ExerciseType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
+        ?: return null
+    val minutes = args.int("minutes")?.takeIf { it in 1..MAX_ACTION_MINUTES } ?: return null
+    val name = args.string("name")?.trim()?.takeIf { it.length <= MAX_NAME_CHARS }.orEmpty()
+    return CoachAction.LogExercise(type = type, name = name, minutes = minutes, burnedKcal = 0)
 }
 
 private fun parseLogFood(args: Map<String, JsonElement>): CoachAction.LogFood? {
@@ -419,6 +460,19 @@ internal class CoachToolbox(
         else -> null
     }
 
+    /**
+     * What a MET estimate is priced against: the latest weigh-in, else the onboarding weight —
+     * `:feature:training`'s own rule, so a coach-drafted workout and a hand-logged one of the same
+     * length come out at the same number.
+     *
+     * Null when the user has neither, which fails the draft rather than inventing a body: a
+     * default weight is a made-up figure on a card whose whole promise is that every figure shown
+     * is the figure that gets written.
+     */
+    suspend fun weightKg(): Double? =
+        progressRepository.observeWeightEntries().first().maxByOrNull { it.dateEpochDay }?.weightKg
+            ?: profileRepository.observeProfile().first()?.weightKg
+
     private suspend fun getDay(daysAgo: Int): String {
         val today = todayEpochDay()
         val date = today - daysAgo
@@ -455,6 +509,20 @@ internal class CoachToolbox(
         exercise = exerciseRepository.observeRecentEntries().first(),
         sleep = sleepRepository.observeNights().first(),
     )
+}
+
+/**
+ * Fills in the one figure the model is not allowed to supply.
+ *
+ * Everything else on a proposal card is the model's own words checked against a ceiling; a calorie
+ * burn is arithmetic the app already owns ([estimateBurnedKcal]), and asking a model for it buys
+ * an invented number on the one surface that promises every figure shown is the figure written.
+ * Null here fails the turn exactly as a rejected parse does — see [CoachToolbox.weightKg].
+ */
+internal suspend fun CoachAction.priced(toolbox: CoachToolbox): CoachAction? = when (this) {
+    is CoachAction.LogExercise -> toolbox.weightKg()
+        ?.let { copy(burnedKcal = estimateBurnedKcal(type, minutes, it)) }
+    else -> this
 }
 
 /** The envelope the SDK requires around a [String] result. One key, because the result is prose

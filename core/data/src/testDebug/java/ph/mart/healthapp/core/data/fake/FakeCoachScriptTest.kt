@@ -7,6 +7,7 @@ import org.junit.Test
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
+import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 
 /**
@@ -31,6 +32,27 @@ class FakeCoachScriptTest {
         val script = fakeCoachScript("log a glass of water") as FakeScript.Propose
         assertEquals(CoachAction.LogWater(glasses = 1), script.action)
     }
+
+    /** The burn stays 0 here, the way `parseAction` leaves it — `priced()` is what fills it in,
+     * and the fake goes through that same call so a debug card shows a real number. */
+    @Test
+    fun `asking to log a workout proposes it with its duration`() {
+        val script = fakeCoachScript("log a 45 minute run") as FakeScript.Propose
+        val action = script.action as CoachAction.LogExercise
+        assertEquals(ExerciseType.Run, action.type)
+        assertEquals(45, action.minutes)
+        assertEquals(0, action.burnedKcal)
+    }
+
+    /** An hour is a duration too, and a sentence with no length at all still drafts something —
+     * the card is corrected by dismissing it, not by refusing to draw it. */
+    @Test
+    fun `a workout's length falls back to half an hour`() {
+        assertEquals(60, (fakeCoachScript("log a 1 hour swim") as FakeScript.Propose).minutes())
+        assertEquals(30, (fakeCoachScript("log yoga") as FakeScript.Propose).minutes())
+    }
+
+    private fun FakeScript.Propose.minutes() = (action as CoachAction.LogExercise).minutes
 
     /** The proposal card is meant to be read before it is tapped, so the figures on it have to be
      * real ones — they come off `COMMON_FOODS`, not out of thin air. */

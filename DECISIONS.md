@@ -1648,6 +1648,25 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   write, and `withMessages` retiring the bubbles on a list-size change would take the new question
   with it. The card carries both ways out, which is what a locked bar is for. `log_weight` is
   deliberately absent — kg/lb is a second trap for no new capability.
+- **`log_exercise` is the third draft, and the one figure on its card is not the model's.**
+  Everything else a proposal shows is the model's own output checked against a ceiling. A calorie
+  burn is not: `estimateBurnedKcal()` is arithmetic this app already owns, the log-exercise sheet
+  already prices a hand-logged workout with it, and a model asked for the number invents one — on
+  the single surface whose promise is that *every figure shown is the figure written*. So
+  `parseAction` stays pure and leaves `burnedKcal` at zero, and `priced()` fills it in from
+  `CoachToolbox.weightKg()` — the latest weigh-in, else the onboarding weight, which is
+  `:feature:training`'s own rule, so a coach-drafted run and a hand-logged one of the same length
+  come out identical. It runs at the *proposal*, not at `settle`, because the card has to show what
+  the tap will write; null fails the turn exactly as a rejected parse does, since a default body
+  weight is a made-up figure and the draft is better refused. The prompt says the same thing to the
+  model in one clause — *do not estimate the calories an activity burned*. Nothing else in the loop
+  changed: `log_exercise` joins `WRITE_TOOLS` and the existing stream-stops-and-waits path carries
+  it. Minutes are capped at 600, the dropped decimal at the other end of the same card from
+  `MAX_ACTION_CALORIES`. A name is optional, because an empty one is what `ExerciseEntry` already
+  means by "call it by its type" — unlike a nameless food, which would have nothing to show.
+  `log_mood` and `log_supplement` stayed out: the energy check-in owns a 1–5 tap and does it better
+  than a sentence can, and a supplement needs fuzzy name-to-id matching against the user's own list,
+  which is a new trust boundary for one tap. `log_weight` is still out, for the reason below.
 - **The coach is the first call site to leave `AI_THINKING`, and it moved both halves of the
   budget.** `ThinkingLevel.LOW` and `maxOutputTokens` 300 → 700, together, in
   `CoachRepositoryImpl`. That constant's own entry names this case and its condition — *"If a call

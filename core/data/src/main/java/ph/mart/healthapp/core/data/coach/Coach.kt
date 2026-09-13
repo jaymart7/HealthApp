@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.data.coach
 
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.insight.InsightRequest
 
@@ -40,6 +41,22 @@ sealed interface CoachAction {
     /** Glasses to *add* to the day, never the day's new total — a model that reads "one glass"
      * and writes `1` must not erase the six already logged. */
     data class LogWater(val glasses: Int) : CoachAction
+
+    /**
+     * [burnedKcal] is **not** the model's figure — it is `estimateBurnedKcal()`'s, filled in from
+     * the user's own latest weigh-in once the call has parsed. A model asked for a calorie burn
+     * invents one, and the app already owns the MET arithmetic that the log-exercise sheet uses;
+     * this way a coach-drafted run and a hand-logged one of the same length price identically,
+     * and the weight that priced it never leaves the device.
+     *
+     * [name] may be empty, which is what [ExerciseEntry] means by "call it by its type".
+     */
+    data class LogExercise(
+        val type: ExerciseType,
+        val name: String,
+        val minutes: Int,
+        val burnedKcal: Int,
+    ) : CoachAction
 }
 
 /**

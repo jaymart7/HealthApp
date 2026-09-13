@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
@@ -85,6 +87,7 @@ internal class CoachRepositoryImpl(
     // *same* one — a faked answer then reads the same Room rows the real one would.
     private val foodRepository: FoodRepository,
     private val waterRepository: WaterRepository,
+    private val exerciseRepository: ExerciseRepository,
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
@@ -126,7 +129,13 @@ internal class CoachRepositoryImpl(
             // A write call ends the turn here, unpersisted. It is a draft, and the user is the one
             // who decides whether it becomes a row — so `settle` is what writes, not this.
             calls.firstOrNull { it.name in WRITE_TOOLS }?.let { call ->
-                val action = parseAction(call.name, call.args) ?: return@flow emit(CoachReply.Failed)
+                // `priced` fills in the one figure the model may not supply — a workout's calorie
+                // burn, which is the app's own MET arithmetic over the user's latest weigh-in. It
+                // runs here rather than at `settle`, because the card's promise is that every
+                // figure shown is the figure written, and it fails the turn the way a rejected
+                // parse does.
+                val action = parseAction(call.name, call.args)?.priced(toolbox)
+                    ?: return@flow emit(CoachReply.Failed)
                 return@flow emit(CoachReply.Proposal(action))
             }
 
@@ -189,6 +198,16 @@ internal class CoachRepositoryImpl(
             // proposes "one glass" must not wipe the six already there.
             is CoachAction.LogWater -> waterRepository.setToday(
                 waterRepository.observeToday().first() + action.glasses,
+            )
+            // `dateEpochDay` is left at its default, which the repository reads as today — the
+            // coach cannot log into a past day, and the prompt says so.
+            is CoachAction.LogExercise -> exerciseRepository.addEntry(
+                ExerciseEntry(
+                    type = action.type,
+                    name = action.name,
+                    minutes = action.minutes,
+                    burnedKcal = action.burnedKcal,
+                ),
             )
             null -> Unit
         }
@@ -262,11 +281,13 @@ private fun systemPromptFor(request: InsightRequest?): String = buildString {
             "not track it at all — answer with what is there and do not ask them for it.",
     )
     appendLine(
-        "If the user asks you to log something, call log_food or log_water. These do not log " +
-            "anything themselves: the user sees what you drafted and taps to confirm it, so say " +
-            "what you are proposing in the same reply. Estimate the nutrition from their " +
-            "description. You cannot edit or delete anything, and you cannot log for a past day — " +
-            "point them at the Food tab's diary for that.",
+        "If the user asks you to log something, call log_food, log_water or log_exercise. These " +
+            "do not log anything themselves: the user sees what you drafted and taps to confirm " +
+            "it, so say what you are proposing in the same reply. Estimate the nutrition of a " +
+            "food from their description; do not estimate the calories an activity burned, " +
+            "because the app works that out from their own weight. You cannot edit or delete " +
+            "anything, and you cannot log for a past day — point them at the Food tab's diary " +
+            "for that.",
     )
     appendLine(
         "Reply in plain conversational text, in the second person. Keep it to three short " +

@@ -102,6 +102,47 @@ class CoachToolsTest {
 
     // region The parse rejects what it should
 
+    /**
+     * The burn is deliberately zero here: [parseAction] is pure, and `priced()` is what fills it
+     * in from the user's own latest weigh-in. A model asked for a calorie figure invents one, and
+     * the app already owns the MET arithmetic the log-exercise sheet uses.
+     */
+    @Test
+    fun `an exercise call becomes an action the app will price itself`() {
+        val action = parseAction(
+            TOOL_LOG_EXERCISE,
+            args("type" to "Run", "minutes" to 30, "name" to "Morning run"),
+        ) as CoachAction.LogExercise
+        assertEquals(ExerciseType.Run, action.type)
+        assertEquals(30, action.minutes)
+        assertEquals("Morning run", action.name)
+        assertEquals(0, action.burnedKcal)
+    }
+
+    /** An empty name is what `ExerciseEntry` means by "call it by its type", so a nameless call is
+     * a draft rather than a rejection — unlike a nameless food, which has nothing to show. */
+    @Test
+    fun `an exercise call needs no name`() {
+        val action = parseAction(TOOL_LOG_EXERCISE, args("type" to "yoga", "minutes" to 45))
+            as CoachAction.LogExercise
+        assertEquals(ExerciseType.Yoga, action.type)
+        assertEquals("", action.name)
+    }
+
+    @Test
+    fun `an unknown activity type fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_EXERCISE, args("type" to "Parkour", "minutes" to 20)))
+    }
+
+    /** The dropped decimal, at the other end of the same card from [MAX_ACTION_CALORIES]: "a 90
+     * minute run" read as 900 is a day and a half of running. */
+    @Test
+    fun `an absurd or missing duration fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_EXERCISE, args("type" to "Run", "minutes" to 900)))
+        assertNull(parseAction(TOOL_LOG_EXERCISE, args("type" to "Run", "minutes" to 0)))
+        assertNull(parseAction(TOOL_LOG_EXERCISE, args("type" to "Run")))
+    }
+
     @Test
     fun `an unknown tool is not an action`() {
         assertNull(parseAction("log_weight", args("weight_kg" to 70.0)))
