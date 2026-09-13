@@ -14,5 +14,5 @@ build/
 .cxx
 local.properties
 /app/release/
-/.kotlin/sessions/
+/.kotlin/
 /.idea/
