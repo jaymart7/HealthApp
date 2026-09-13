@@ -92,6 +92,27 @@ sealed interface CoachAction {
         val unit: UnitSystem = UnitSystem.Metric,
         val previousKg: Double? = null,
     ) : CoachAction
+
+    /**
+     * Doses of one of the user's own supplements, ticked onto today.
+     *
+     * [doses] is what to **add** to today's count, never the new total — [LogWater]'s rule, and
+     * the reason `supplementDoses()` sums before anything is written.
+     *
+     * [supplementId] is the user's own row, stamped by [resolve] from an exact name match, exactly
+     * as [LogWeight.unit] is stamped from the profile: a model asked for an id would invent one,
+     * and the whole reason this tool waited was that matching a name loosely is not something a
+     * card one tap from the log may do. It is 0 until then, which never reaches a write — a name
+     * that matches nothing fails the turn instead.
+     *
+     * The coach may record a supplement they already take. It may not add one, and it may not
+     * suggest one: that is the prompt's medical clause, untouched.
+     */
+    data class LogSupplement(
+        val name: String,
+        val doses: Int,
+        val supplementId: Long = 0,
+    ) : CoachAction
 }
 
 /**

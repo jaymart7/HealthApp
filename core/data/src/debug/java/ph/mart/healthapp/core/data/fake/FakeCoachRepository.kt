@@ -58,6 +58,8 @@ import ph.mart.healthapp.core.data.insight.insightFor
  * | `log two eggs for breakfast` | the single-row card, food |
  * | `log eggs, rice and an apple for lunch` | the multi-row card, its per-row `✕` and a partial confirm |
  * | `log my usual Overnight oats for breakfast` | a saved meal expanded into one row per item |
+ * | `log my creatine` | the supplement card, ticked off against the user's own row |
+ * | `took my Nothing At All supplement` | prose, then the failure bubble — no such supplement |
  * | `log my saved Nothing At All` | prose, then the failure bubble — the draft resolved to nothing |
  * | `quietly log a glass of water`, then Dismiss | a card with no prose above it: the turn is abandoned, not persisted |
  * | `log egg rice bacon salmon chicken bread milk cheese apple banana potato pasta` | a draft past [MAX_DRAFT_ROWS], rejected whole |
@@ -206,6 +208,15 @@ internal fun fakeCoachScript(question: String): FakeScript {
                 preamble = preamble(asked, "Pulling that one out of your library:"),
             )
         }
+        // After the library match and before the food one: a supplement is named by the user, so
+        // it has a saved meal's problem rather than a common food's — "log my magnesium" would
+        // otherwise fall through to `COMMON_FOODS` and find nothing at all.
+        supplementNameIn(asked)?.let { name ->
+            return FakeScript.Propose(
+                actions = listOf(CoachAction.LogSupplement(name = name, doses = 1)),
+                preamble = preamble(asked, "Ticking that one off for today:"),
+            )
+        }
         matchedExercise(asked)?.let { type ->
             return FakeScript.Propose(
                 actions = listOf(
@@ -286,10 +297,17 @@ internal fun fakeCoachScript(question: String): FakeScript {
     }
 }
 
-private val LOG_WORDS = listOf("log ", "add ", "i ate", "i had", "i drank", "i weigh", "note down")
+private val LOG_WORDS = listOf("log ", "add ", "i ate", "i had", "i drank", "i weigh", "took ", "note down")
 private val WATER_WORDS = listOf("water", "glass")
 private val HISTORY_WORDS = listOf("week", "month", "trend", "average", "lately", "recently")
 private val LIBRARY_WORDS = listOf("saved", "recipe", "library", "usual")
+
+/**
+ * What makes a sentence about a supplement. The seed's three names are in here so the common case
+ * — "log my creatine" — names no category word at all and still routes, which is the sentence
+ * anyone actually types.
+ */
+private val SUPPLEMENT_WORDS = listOf("supplement", "vitamin", "creatine", "magnesium")
 
 /**
  * The second magic word, in [FakeScript.Fail]'s shape and for its reason.
@@ -332,6 +350,29 @@ private fun savedMealNameIn(asked: String): String? =
     LIBRARY_WORDS.firstOrNull { it in asked }
         ?.let { word -> asked.substringAfter(word).substringBefore(" for ").trim(' ', '.', ',', '?') }
         ?.takeIf { it.isNotEmpty() }
+
+/**
+ * The supplement named in the sentence, when there is one — [savedMealNameIn]'s shape and for its
+ * reason.
+ *
+ * A category word ("supplement") takes what precedes it, because that is where the name sits in
+ * "took my Nothing At All supplement"; a name word is itself the name. Either way it goes to
+ * `supplementDose` unchanged and is matched `equals(ignoreCase = true)`, so a name the user does
+ * not take resolves to null — which is how a debug build reaches the failed-draft ending here.
+ */
+private fun supplementNameIn(asked: String): String? {
+    val word = SUPPLEMENT_WORDS.firstOrNull { it in asked } ?: return null
+    if (word != "supplement") {
+        // From the name word to the end of the phrase, so "vitamin d" survives and "creatine
+        // today" does not — the match downstream is exact, and a trailing word is a miss.
+        return (word + asked.substringAfter(word).substringBefore(" for ").substringBefore(" today"))
+            .trim(' ', '.', ',', '?')
+    }
+    return asked.substringBefore(word)
+        .substringAfterLast(" my ")
+        .trim(' ', '.', ',', '?')
+        .takeIf { it.isNotEmpty() }
+}
 
 /** Only the calendar words, not a general number — "log 2 eggs" must not read as "two days ago". */
 private fun daysAgoIn(asked: String): Int? = when {

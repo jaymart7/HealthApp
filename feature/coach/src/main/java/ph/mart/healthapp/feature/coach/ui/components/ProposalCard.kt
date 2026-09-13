@@ -150,6 +150,12 @@ private fun SingleProposal(action: CoachAction) {
             weightChange(action)?.let { ProposalDetail(it) }
         }
 
+        is CoachAction.LogSupplement -> {
+            ProposalTitle(stringResource(R.string.coach_proposal_supplement_title))
+            ProposalHeadline(action.name)
+            ProposalDetail(supplementDoses(action.doses))
+        }
+
         // `resolve()` turns a saved meal into its own rows before any card is drawn, so this is
         // only ever reached if that stops being true. It renders the name rather than nothing,
         // which stays honest: the name is the whole of what the model supplied.
@@ -255,6 +261,7 @@ private fun actionName(action: CoachAction): String = when (action) {
     is CoachAction.LogExercise -> activityName(action)
     is CoachAction.LogSavedMeal -> action.name
     is CoachAction.LogWeight -> weightAmount(action)
+    is CoachAction.LogSupplement -> action.name
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -267,6 +274,7 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     // No figures to show: a saved meal carries a name until `resolve()` gives it its rows.
     is CoachAction.LogSavedMeal -> null
     is CoachAction.LogWeight -> weightChange(action)
+    is CoachAction.LogSupplement -> supplementDoses(action.doses)
 }
 
 /**
@@ -287,6 +295,8 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
             stringResource(R.string.coach_proposal_logged_exercise, activityName(single), single.minutes)
         single is CoachAction.LogWeight ->
             stringResource(R.string.coach_proposal_logged_weight, weightAmount(single))
+        single is CoachAction.LogSupplement ->
+            stringResource(R.string.coach_proposal_logged_supplement, single.name)
         else -> pluralStringResource(
             R.plurals.coach_proposal_logged_items,
             actions.size,
@@ -454,6 +464,27 @@ private fun ProposalCardWeightPreview() {
                         previousKg = 83.0,
                     ),
                 ),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** The doses this tick adds, never the day's new total — [CoachAction.LogSupplement]'s own rule,
+ * and the reason it reads "1 dose" rather than "1 of 2". */
+@Composable
+private fun supplementDoses(doses: Int): String =
+    pluralStringResource(R.plurals.coach_proposal_supplement_doses, doses, doses)
+
+@PreviewLightDark
+@Composable
+private fun ProposalCardSupplementPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(CoachAction.LogSupplement(name = "Creatine", doses = 1, supplementId = 2)),
                 onConfirm = { _, _ -> },
                 onDismiss = {},
                 modifier = Modifier.padding(16.dp),

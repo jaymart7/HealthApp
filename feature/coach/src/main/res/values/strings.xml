@@ -50,6 +50,12 @@
     <string name="coach_proposal_weight_body">%1$s %2$s</string>
     <!-- What the weigh-in moves by, e.g. "−0.6 kg since your last weigh-in". -->
     <string name="coach_proposal_weight_change">%1$s %2$s since your last weigh-in</string>
+    <string name="coach_proposal_supplement_title">Mark as taken</string>
+    <!-- How many doses the tick adds to today, e.g. "1 dose". Never the day's new total. -->
+    <plurals name="coach_proposal_supplement_doses">
+        <item quantity="one">%1$d dose</item>
+        <item quantity="other">%1$d doses</item>
+    </plurals>
     <!-- A draft holding more than one row: one title for the card, and one footer totalling what
          is still on it after any removals. -->
     <string name="coach_proposal_items_title">Add %1$d items</string>
@@ -65,6 +71,7 @@
     <string name="coach_proposal_logged_water">Logged: %1$s.</string>
     <string name="coach_proposal_logged_exercise">Logged: %1$s, %2$d min.</string>
     <string name="coach_proposal_logged_weight">Logged: %1$s.</string>
+    <string name="coach_proposal_logged_supplement">Logged: %1$s.</string>
     <plurals name="coach_proposal_logged_items">
         <item quantity="one">Logged: %1$d item, %2$d kcal.</item>
         <item quantity="other">Logged: %1$d items, %2$d kcal.</item>

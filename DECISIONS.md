@@ -1839,6 +1839,30 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `log_mood` and `log_supplement` stayed out: the energy check-in owns a 1–5 tap and does it better
   than a sentence can, and a supplement needs fuzzy name-to-id matching against the user's own list,
   which is a new trust boundary for one tap. `log_weight` is still out, for the reason below.
+- **`log_supplement` is the sixth draft, and the tool that ruled it out is the one that let it
+  in.** It was declined twice above, both times on one sentence — *a supplement needs fuzzy
+  name-to-id matching against the user's own list, which is a new trust boundary for one tap* — and
+  the `log_saved_meal` entry answered that without meaning to: *a read tool that publishes the
+  names is what makes this one cheap.* So nothing new was invented. `get_library` gained a fourth
+  section, `supplementDose()` is `savedMealRows()`' exact, case-insensitive, never-fuzzy match
+  against a second list, and `resolve()` stamps the id on the way past exactly as it stamps a
+  weigh-in's unit. A name they do not take fails the turn: *"vitamin"* is not *Vitamin D*, and
+  ticking the nearest thing is the one move a card one tap from the log may not make. Four calls
+  worth keeping. **The section carries today's count, not just the name** — `- "Creatine" (5 g): 1
+  of 2 taken today` — because a coach that cannot see a tick drafts one already taken, and the dose
+  rides along as the label it is, since the app does no arithmetic on "5 g" and the alternative is
+  a model inventing one. **Doses are summed per id before anything is written**, which is
+  `glassesToAdd()`'s lesson on a second table for its exact reason: `setTakenToday` takes the day's
+  *new count*, so two doses applied one after the other would land as one. **A dose past the row's
+  own `timesPerDay` is clamped by the repository and lands as a no-op** — deliberately not
+  `nextTaken()`, which wraps back to zero: that is the *tap's* rule, and *"I took it"* must never
+  untick a completed day. **And the medical clause is untouched and is what bounds the whole
+  tool**: the coach may record a supplement they already take, it cannot add one, and it still must
+  never suggest one — the prompt says all three in a clause. `Subject.Supplements` still earns
+  **no** coach door, and `SubjectCoachTest`'s list is still eight: `get_day` and `get_history` say
+  nothing about supplements, so a subject page's question is about a trend nothing answers, and a
+  shrug reads as a broken feature. `log_mood` stays out for the reason it always did — the energy
+  check-in owns a 1–5 tap and does it better than a sentence can.
 - **"What should I eat?" is answered from their own food, and that widened `get_library` rather
   than adding a tool.** The starter chip `coach_starter_dinner` asks this, and the follow-up row
   asks it again on every day with calories left — and the coach answered it with invented food,

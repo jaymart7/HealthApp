@@ -50,11 +50,14 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.unitLabel
+import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_TIMES_PER_DAY
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
+import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
- * The coach's tools: three the app *runs*, five it only ever *drafts*.
+ * The coach's tools: three the app *runs*, six it only ever *drafts*.
  *
  * The split is the whole design. A read is a local Room query with no user-visible effect, so it
  * executes the moment the model asks for it and the answer goes straight back into the same turn.
@@ -89,6 +92,10 @@ internal const val MAX_ACTION_CALORIES = 5000
 internal const val MAX_ACTION_MACRO_G = 1000
 internal const val MAX_ACTION_GLASSES = 20
 
+/** A supplement's own ceiling, not a second opinion on one: [SUPPLEMENT_TIMES_PER_DAY] is what the
+ * edit sheet allows, and `setTakenToday` clamps to the row's own figure anyway. */
+internal val MAX_ACTION_DOSES = SUPPLEMENT_TIMES_PER_DAY.last
+
 /** Ten hours. Past it the model has read "a 90 minute run" as 900, which is the same dropped
  * decimal [MAX_ACTION_CALORIES] guards against at the other end of the same card. */
 internal const val MAX_ACTION_MINUTES = 600
@@ -112,6 +119,7 @@ internal const val TOOL_LOG_WATER = "log_water"
 internal const val TOOL_LOG_EXERCISE = "log_exercise"
 internal const val TOOL_LOG_SAVED_MEAL = "log_saved_meal"
 internal const val TOOL_LOG_WEIGHT = "log_weight"
+internal const val TOOL_LOG_SUPPLEMENT = "log_supplement"
 
 /** The ones the model may call but the app never executes. Kept as a set rather than a `when` so
  * [CoachRepositoryImpl]'s loop can ask the question without knowing what any of them does. */
@@ -121,6 +129,7 @@ internal val WRITE_TOOLS = setOf(
     TOOL_LOG_EXERCISE,
     TOOL_LOG_SAVED_MEAL,
     TOOL_LOG_WEIGHT,
+    TOOL_LOG_SUPPLEMENT,
 )
 
 /**
@@ -160,10 +169,11 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
         ),
         FunctionDeclaration(
             name = TOOL_GET_LIBRARY,
-            description = "Read the meals and recipes this user has saved and the foods they log " +
-                "most often, by name, with the figures they are logged at. Call this before " +
-                "answering anything about what they usually eat, before suggesting what they " +
-                "could eat, and before logging a meal they refer to by name.",
+            description = "Read the meals and recipes this user has saved, the foods they log " +
+                "most often, and the supplements they take, all by name and with the figures " +
+                "they are logged at. Call this before answering anything about what they " +
+                "usually eat, before suggesting what they could eat, and before logging a meal " +
+                "or a supplement they refer to by name.",
             parameters = emptyMap(),
         ),
         FunctionDeclaration(
@@ -243,6 +253,22 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 ),
             ),
         ),
+        FunctionDeclaration(
+            name = TOOL_LOG_SUPPLEMENT,
+            description = "Propose ticking off one of the user's own supplements for today, by " +
+                "its exact name from get_library. This does NOT log it: the user sees what you " +
+                "proposed and taps to confirm. Only ever one they already take — you cannot add " +
+                "a new supplement and must never suggest one.",
+            parameters = mapOf(
+                "name" to Schema.string(
+                    description = "The supplement's name, exactly as get_library gave it.",
+                ),
+                "doses" to Schema.integer(
+                    description = "How many doses to ADD to today's count, not the new total. " +
+                        "Usually 1. Maximum $MAX_ACTION_DOSES.",
+                ),
+            ),
+        ),
     ),
 )
 
@@ -271,7 +297,24 @@ internal fun parseAction(name: String, args: Map<String, JsonElement>): CoachAct
     TOOL_LOG_WEIGHT -> args.double("weight")
         ?.takeIf { it in MIN_ACTION_WEIGHT..MAX_ACTION_WEIGHT }
         ?.let { CoachAction.LogWeight(weight = round1(it)) }
+    TOOL_LOG_SUPPLEMENT -> parseLogSupplement(args)
     else -> null
+}
+
+/**
+ * A name and a count, neither of them a figure the app will do arithmetic on — [resolve] finds the
+ * user's own row from the name, and the count is doses to *add*, the reading [CoachAction.LogWater]
+ * already gives one.
+ *
+ * A missing count is one dose rather than a failed draft: "I took my creatine" names no number, and
+ * one is what that sentence means. Zero is not — a draft that writes nothing is a draft with a
+ * Confirm button that does nothing.
+ */
+private fun parseLogSupplement(args: Map<String, JsonElement>): CoachAction.LogSupplement? {
+    val name = args.string("name")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS }
+        ?: return null
+    val doses = (args.int("doses") ?: 1).takeIf { it in 1..MAX_ACTION_DOSES } ?: return null
+    return CoachAction.LogSupplement(name = name, doses = doses)
 }
 
 /** Two fields, neither of them a figure: what [resolve] needs to find the meal, and the slot it
@@ -603,6 +646,11 @@ private fun Map<Long, List<String>>.mergedWith(
  * `log_saved_meal` matches on them and nothing else. A recipe reports **per serving**, the figure
  * the diary would get, rather than the whole pot.
  *
+ * [supplements] is the user's own list with today's count on each, because `log_supplement`
+ * matches on the name the same way and because a coach that cannot see a tick drafts one that has
+ * already been taken. The dose rides along as the label it is — the app does no arithmetic on
+ * "5 g", and the alternative is a model inventing one.
+ *
  * [foods] is `observeSuggestions()` — the user's starred favorites and recently logged foods, the
  * same short list the add-entry sheet offers for a one-tap re-log. It is here so that *"what should
  * I eat tonight?"* can be answered with food this user demonstrably eats, at the portion and the
@@ -614,9 +662,11 @@ internal fun formatLibrary(
     meals: List<SavedMeal>,
     recipes: List<Recipe>,
     foods: List<FoodSuggestion>,
+    supplements: List<SupplementToday> = emptyList(),
 ): String = buildString {
-    if (meals.isEmpty() && recipes.isEmpty() && foods.isEmpty()) {
-        return "They have not saved any meals or recipes, and have not logged any food yet."
+    if (meals.isEmpty() && recipes.isEmpty() && foods.isEmpty() && supplements.isEmpty()) {
+        return "They have not saved any meals or recipes, have not logged any food yet, and take " +
+            "no supplements."
     }
     if (meals.isNotEmpty()) {
         appendLine("Saved meals:")
@@ -636,6 +686,16 @@ internal fun formatLibrary(
             appendLine(
                 "- \"${it.name}\": ${it.portionAmount.formatPortion()} ${it.portionUnit}, " +
                     "${it.calories} kcal, ${it.proteinG}P/${it.carbsG}C/${it.fatG}F",
+            )
+        }
+    }
+    if (supplements.isNotEmpty()) {
+        appendLine("Supplements they take:")
+        supplements.forEach {
+            val dose = it.supplement.dose.takeIf(String::isNotBlank)?.let { d -> " ($d)" }.orEmpty()
+            appendLine(
+                "- \"${it.supplement.name}\"$dose: ${it.taken} of ${it.supplement.timesPerDay} " +
+                    "taken today",
             )
         }
     }
@@ -672,6 +732,32 @@ internal fun savedMealRows(
         // One row at one serving, named after the recipe — how the app logs a recipe everywhere
         // else, and the reason `perServing()` exists.
         ?.let { recipe -> listOf(recipe.perServing().toLogFood(recipe.name, mealType)) }
+}
+
+/**
+ * One of the user's own supplements, by the name they gave it — or null when nothing matches, which
+ * fails the turn.
+ *
+ * [savedMealRows]' rule applied to a second list, for its reason: `get_library` hands the model the
+ * names verbatim, so a name matching nothing is a broken call rather than a near miss. Guessing
+ * that "vitamin" meant *Vitamin D* would put a tick the user never asked for one tap from their
+ * log — and a supplement is the one domain where the fuzzy match was what kept this tool out.
+ */
+internal fun supplementDose(
+    name: String,
+    doses: Int,
+    supplements: List<SupplementToday>,
+): CoachAction.LogSupplement? {
+    val wanted = name.trim()
+    val match = supplements.firstOrNull { it.supplement.name.equals(wanted, ignoreCase = true) }
+        ?: return null
+    // The stored name, not the model's spelling of it: the card, the logged line and the
+    // Supplements screen all have to read the same.
+    return CoachAction.LogSupplement(
+        name = match.supplement.name,
+        doses = doses,
+        supplementId = match.supplement.id,
+    )
 }
 
 private fun SavedMealItem.toLogFood(name: String, mealType: MealType) = CoachAction.LogFood(
@@ -727,6 +813,10 @@ internal class CoachToolbox(
     private val moodRepository: MoodRepository,
     private val fastingRepository: FastingRepository,
     private val stepsRepository: StepsRepository,
+    // The user's own list, read for the same reason the saved meals are: `log_supplement` matches
+    // on a name this publishes, and today's count is what stops the coach drafting a dose that has
+    // already been taken.
+    private val supplementRepository: SupplementRepository,
 ) {
     /** Null for a tool this does not run — which is every write tool, and is how the caller's loop
      * tells a question from an instruction without a second lookup. */
@@ -749,6 +839,7 @@ internal class CoachToolbox(
         meals = foodRepository.observeAllSavedMeals().first(),
         recipes = foodRepository.observeAllRecipes().first(),
         foods = foodRepository.observeSuggestions().first(),
+        supplements = supplementRepository.observeToday().first(),
     )
 
     /**
@@ -771,6 +862,10 @@ internal class CoachToolbox(
             meals = foodRepository.observeAllSavedMeals().first(),
             recipes = foodRepository.observeAllRecipes().first(),
         )
+
+    /** The one read [supplementDose] needs — the matching itself is pure, [savedMealRows]' shape. */
+    suspend fun supplementDose(name: String, doses: Int): CoachAction.LogSupplement? =
+        supplementDose(name, doses, supplementRepository.observeToday().first())
 
     /**
      * What a MET estimate is priced against: the latest weigh-in, else the onboarding weight —
@@ -864,6 +959,9 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
     is CoachAction.LogWeight -> listOf(
         copy(unit = toolbox.unitSystem(), previousKg = toolbox.latestWeighInKg()),
     )
+    // Where the model's spelling becomes the user's own row. Null when it names nothing they take,
+    // which fails the turn rather than ticking the nearest thing.
+    is CoachAction.LogSupplement -> toolbox.supplementDose(name, doses)?.let(::listOf)
     else -> listOf(this)
 }
 
@@ -897,6 +995,18 @@ internal fun List<CoachAction>.foodEntries(): List<FoodEntry> =
  */
 internal fun List<CoachAction>.glassesToAdd(): Int =
     filterIsInstance<CoachAction.LogWater>().sumOf { it.glasses }
+
+/**
+ * Doses to **add** today, summed per supplement.
+ *
+ * [glassesToAdd]'s lesson on a second table: `setTakenToday` takes the day's *new count*, so two
+ * doses of the same supplement written one after the other would have the second overwrite the
+ * first and land as one. Two *different* supplements are two entries, because they are two rows.
+ */
+internal fun List<CoachAction>.supplementDoses(): Map<Long, Int> =
+    filterIsInstance<CoachAction.LogSupplement>()
+        .groupBy { it.supplementId }
+        .mapValues { (_, actions) -> actions.sumOf { it.doses } }
 
 /** The envelope the SDK requires around a [String] result. One key, because the result is prose
  * and prose has no fields. */

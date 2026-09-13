@@ -22,6 +22,8 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.SupplementToday
 
 /**
  * The coach's tool boundary.
@@ -333,9 +335,85 @@ class CoachToolsTest {
     @Test
     fun `an empty library says so rather than going quiet`() {
         assertEquals(
-            "They have not saved any meals or recipes, and have not logged any food yet.",
+            "They have not saved any meals or recipes, have not logged any food yet, and take " +
+                "no supplements.",
             formatLibrary(emptyList(), emptyList(), emptyList()),
         )
+    }
+
+    private val creatine = SupplementToday(
+        supplement = Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2),
+        taken = 1,
+    )
+
+    private val vitaminD = SupplementToday(
+        supplement = Supplement(id = 1, name = "Vitamin D", dose = "2000 IU", timesPerDay = 1),
+        taken = 0,
+    )
+
+    /** Names and today's count: the first is what `log_supplement` matches on, the second is what
+     * stops the coach drafting a dose that has already been taken. */
+    @Test
+    fun `the library lists supplements with their dose and today's count`() {
+        val text = formatLibrary(emptyList(), emptyList(), emptyList(), listOf(creatine, vitaminD))
+        assertTrue(text, "\"Creatine\" (5 g): 1 of 2 taken today" in text)
+        assertTrue(text, "\"Vitamin D\" (2000 IU): 0 of 1 taken today" in text)
+    }
+
+    @Test
+    fun `a supplement call becomes an action the app will match itself`() {
+        val action = parseAction(TOOL_LOG_SUPPLEMENT, args("name" to "Creatine", "doses" to 2))
+        assertEquals(CoachAction.LogSupplement(name = "Creatine", doses = 2), action)
+        // The id is `resolve`'s to stamp on, exactly as a weigh-in's unit is.
+        assertEquals(0L, (action as CoachAction.LogSupplement).supplementId)
+    }
+
+    /** "I took my creatine" names no number, and one is what it means. Zero does not — a draft
+     * whose Confirm button writes nothing is worse than no draft. */
+    @Test
+    fun `a missing dose count is one, and zero or seven fails the draft`() {
+        assertEquals(1, (parseAction(TOOL_LOG_SUPPLEMENT, args("name" to "Creatine")) as CoachAction.LogSupplement).doses)
+        assertNull(parseAction(TOOL_LOG_SUPPLEMENT, args("name" to "Creatine", "doses" to 0)))
+        assertNull(parseAction(TOOL_LOG_SUPPLEMENT, args("name" to "Creatine", "doses" to MAX_ACTION_DOSES + 1)))
+    }
+
+    @Test
+    fun `a blank or non-string supplement name fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_SUPPLEMENT, args("name" to "  ", "doses" to 1)))
+        assertNull(parseAction(TOOL_LOG_SUPPLEMENT, args("name" to true, "doses" to 1)))
+        assertNull(parseAction(TOOL_LOG_SUPPLEMENT, args("doses" to 1)))
+    }
+
+    /** The stored spelling, not the model's: the card, the logged line and the Supplements screen
+     * all have to read the same. */
+    @Test
+    fun `a supplement resolves by exact name, case-insensitively`() {
+        val action = supplementDose("  cREATINE ", 1, listOf(vitaminD, creatine))
+        assertEquals(CoachAction.LogSupplement(name = "Creatine", doses = 1, supplementId = 2), action)
+    }
+
+    /** The fuzzy match is what kept this tool out, and it is still out: "vitamin" is not
+     * *Vitamin D*, and ticking the nearest thing is what a card one tap from the log must not do. */
+    @Test
+    fun `a supplement they do not take fails rather than guessing`() {
+        assertNull(supplementDose("vitamin", 1, listOf(vitaminD, creatine)))
+        assertNull(supplementDose("Creatine", 1, emptyList()))
+    }
+
+    /**
+     * `setTakenToday` takes the day's *new count*, so two doses of one supplement applied one after
+     * the other would land as one — [glassesToAdd]'s lesson on a second table.
+     */
+    @Test
+    fun `doses of one supplement are summed, not applied twice`() {
+        val actions = listOf(
+            CoachAction.LogSupplement(name = "Creatine", doses = 1, supplementId = 2),
+            logFood("Toast", 180),
+            CoachAction.LogSupplement(name = "Creatine", doses = 1, supplementId = 2),
+            CoachAction.LogSupplement(name = "Vitamin D", doses = 1, supplementId = 1),
+        )
+        assertEquals(mapOf(2L to 2, 1L to 1), actions.supplementDoses())
+        assertEquals(emptyMap<Long, Int>(), listOf(logFood("Toast", 180)).supplementDoses())
     }
 
     /** The figures are the user's own, item for item — nothing on the card was estimated by the

@@ -284,7 +284,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the step goal, and its sleep, mood and completed fast where those are tracked — `get_history`
   for a span of up to a month with training, steps, sleep, weigh-ins and body measurements (both
   of the last two as a change since the reading before, never as a figure), and `get_library` for
-  the meals and recipes the user has saved.
+  the meals and recipes the user has saved, the foods they log most often and the supplements they
+  take with today's count on each.
   History persisted, clearable with a confirm. The answer streams in word
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
@@ -292,7 +293,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   them: foods into today's diary, glasses of water, an activity — whose calorie burn is the
   app's own MET estimate from the user's latest weigh-in, never the model's guess — or today's
   weigh-in, drawn in the unit their profile uses with what it moves by under it, and only ever
-  from a figure they volunteered: the coach never asks what they weigh and is never told. A whole meal is
+  from a figure they volunteered: the coach never asks what they weigh and is never told — or a
+  dose of one of their own supplements, matched by exact name and ticked onto today, never one the
+  coach suggested. A whole meal is
   one card of several rows, each removable before the tap, written to the diary together. One of
   the user's own saved meals or recipes is drafted by name, with the figures they saved and none
   the model invented. It never writes on its own, and nothing —

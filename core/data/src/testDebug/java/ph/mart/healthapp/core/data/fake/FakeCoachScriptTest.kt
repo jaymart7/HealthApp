@@ -182,6 +182,31 @@ class FakeCoachScriptTest {
         assertEquals(MealType.Breakfast, action.mealType)
     }
 
+    /**
+     * A supplement is named by the user too, and for the saved meal's reason it is checked before
+     * the food match — "log my magnesium" names nothing in `COMMON_FOODS` and would otherwise fall
+     * through to a plain answer.
+     */
+    @Test
+    fun `a named supplement is drafted`() {
+        val script = fakeCoachScript("log my creatine") as FakeScript.Propose
+        assertEquals(
+            CoachAction.LogSupplement(name = "creatine", doses = 1),
+            script.actions.single(),
+        )
+        // Two words, because the match downstream is exact and "vitamin" is not "Vitamin D".
+        val two = fakeCoachScript("took my vitamin d today") as FakeScript.Propose
+        assertEquals("vitamin d", (two.actions.single() as CoachAction.LogSupplement).name)
+    }
+
+    /** The category word puts the name in front of it. A name they do not take resolves to null
+     * downstream, which is how a debug build reaches the failed-draft ending here. */
+    @Test
+    fun `a supplement named before the category word is drafted too`() {
+        val script = fakeCoachScript("took my Nothing At All supplement") as FakeScript.Propose
+        assertEquals("nothing at all", (script.actions.single() as CoachAction.LogSupplement).name)
+    }
+
     /** The other half of that rule: with no name after the library word there is nothing to draft,
      * so the question stays a question. */
     @Test

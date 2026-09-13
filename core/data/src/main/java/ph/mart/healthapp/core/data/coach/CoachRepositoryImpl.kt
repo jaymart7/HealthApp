@@ -28,6 +28,7 @@ import ph.mart.healthapp.core.data.insight.dayNumbersBlock
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -94,6 +95,9 @@ internal class CoachRepositoryImpl(
     // the ordinary repository the matching sheet uses, which is what makes a coach-drafted row
     // indistinguishable from a hand-typed one.
     private val progressRepository: ProgressRepository,
+    // The fifth, and the second whose write call takes a day's *total* rather than a delta — which
+    // is why `supplementDoses()` sums before anything reaches it.
+    private val supplementRepository: SupplementRepository,
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
@@ -243,6 +247,19 @@ internal class CoachRepositoryImpl(
             )
         }
 
+        // Read once for the whole draft: `setTakenToday` takes the day's new count, so each id
+        // needs what is already there. A dose past the supplement's own `timesPerDay` is clamped by
+        // the repository and lands as a no-op — deliberately not `nextTaken()`, which wraps back to
+        // zero: "I took it" must never untick a completed day.
+        val doses = actions.supplementDoses()
+        if (doses.isNotEmpty()) {
+            val today = supplementRepository.observeToday().first()
+            doses.forEach { (id, added) ->
+                val taken = today.firstOrNull { it.supplement.id == id }?.taken ?: 0
+                supplementRepository.setTakenToday(id, taken + added)
+            }
+        }
+
         writeExchange(question, answer)
     }
 
@@ -323,7 +340,7 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
     )
     appendLine(
         "If the user asks you to log something, call log_food, log_water, log_exercise, " +
-            "log_saved_meal or log_weight. These " +
+            "log_saved_meal, log_weight or log_supplement. These " +
             "do not log anything themselves: the user sees what you drafted and taps to confirm " +
             "it, so say what you are proposing in the same reply. Call log_food once per food: a " +
             "meal of three things is three calls in the same turn, and they are drafted together " +
@@ -334,7 +351,9 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "log_saved_meal with it rather than retyping what is in it. If the user tells you " +
             "what they weigh, call log_weight with the number exactly as they said it — but " +
             "never ask them for it, and never state a weight you were not told in this " +
-            "conversation. You cannot edit or delete " +
+            "conversation. If they say they took one of their own supplements, call get_library " +
+            "for its exact name and then log_supplement with it — only ever one they already " +
+            "take, and never as a suggestion. You cannot edit or delete " +
             "anything, and you cannot log for a past day — point them at the Food tab's diary " +
             "for that.",
     )

@@ -8,7 +8,7 @@ import ph.mart.healthapp.core.data.coach.CoachToolbox
 import ph.mart.healthapp.core.data.debugCoach
 
 /**
- * The nine repositories are the coach's tools: eight that a read tool queries, plus the profile,
+ * The ten repositories are the coach's tools: nine that a read tool queries, plus the profile,
  * which supplies the targets a day is priced against. They are resolved by type from their own domain modules,
  * which is the same reach `insight/` already has — the coach is the second thing in `:core:data` that
  * spans domains, and neither crosses a module boundary to do it.
@@ -31,6 +31,7 @@ val coachDataModule = module {
             moodRepository = get(),
             fastingRepository = get(),
             stepsRepository = get(),
+            supplementRepository = get(),
         )
     }
     single<CoachRepository> {
@@ -40,6 +41,7 @@ val coachDataModule = module {
             waterRepository = get(),
             exerciseRepository = get(),
             progressRepository = get(),
+            supplementRepository = get(),
             toolbox = get(),
         )
         debugCoach(real, get()) ?: real
