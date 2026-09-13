@@ -5,6 +5,7 @@ import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import kotlinx.coroutines.CancellationException
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
@@ -44,6 +45,11 @@ internal class InsightRepositoryImpl : InsightRepository {
 
         val insight = try {
             sanitizeInsight(model.generateContent(content { text(promptFor(request)) }).text)
+        } catch (e: CancellationException) {
+            // Backing out of the screen cancels the scope, and that is not an AI failure: without
+            // this the catch below swallows the cancellation and logs a request the user withdrew.
+            // The rule `CameraCaptureController` and `CoachRepositoryImpl` already follow.
+            throw e
         } catch (e: Exception) {
             logAiFailure("dailyInsight", e)
             // Offline, throttled, App Check refused — all the same to the caller, which falls

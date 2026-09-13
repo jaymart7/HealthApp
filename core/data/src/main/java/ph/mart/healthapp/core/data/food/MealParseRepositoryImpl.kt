@@ -6,6 +6,7 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.AI_THINKING
@@ -62,6 +63,11 @@ internal class MealParseRepositoryImpl : MealParseRepository {
         // An empty list means the sentence named nothing edible — a real answer with its own
         // screen, not a failure to retry.
         if (foods.isEmpty()) MealParseResult.NoFoodFound else MealParseResult.Success(foods)
+    } catch (e: CancellationException) {
+        // Backing out of the screen cancels the scope, and that is not an AI failure: without
+        // this the catch below swallows the cancellation and logs a request the user withdrew.
+        // The rule `CameraCaptureController` and `CoachRepositoryImpl` already follow.
+        throw e
     } catch (e: Exception) {
         logAiFailure("meal parse", e)
         // Offline, throttled, App Check refused — all the same to the caller.

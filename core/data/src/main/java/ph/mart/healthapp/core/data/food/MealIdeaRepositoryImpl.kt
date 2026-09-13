@@ -6,6 +6,7 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.AI_THINKING
@@ -60,6 +61,11 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
         // An empty list is a failure, not an answer: the screen's fallback — the user's own foods —
         // is better than a heading over nothing.
         if (ideas.isEmpty()) MealIdeaResult.Failed else MealIdeaResult.Success(ideas)
+    } catch (e: CancellationException) {
+        // Backing out of the screen cancels the scope, and that is not an AI failure: without
+        // this the catch below swallows the cancellation and logs a request the user withdrew.
+        // The rule `CameraCaptureController` and `CoachRepositoryImpl` already follow.
+        throw e
     } catch (e: Exception) {
         logAiFailure("meal ideas", e)
         // Offline, throttled, App Check refused — all the same to the caller.

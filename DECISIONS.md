@@ -2004,6 +2004,16 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   its shutdown here. The fallbacks stay exactly as they were — this adds a bound exception and a
   `Log.w` above each, nothing else. Remote Config is the upgrade path if the name needs changing
   without a release; one constant is enough while a release is cheap.
+- **A cancellation is not a failure, and all six AI call sites now say so.** `catch (e: Exception)`
+  around a suspending `generateContent` also catches `CancellationException`, so leaving a screen
+  mid-request reported the request the user withdrew as a dead model or an App Check refusal —
+  exactly the logcat ambiguity the entry above exists to end, reintroduced from the other side.
+  `CameraCaptureController` had always rethrown it and `CoachRepository.send()` uses `.catch` over
+  a `try` for the same reason, both with the argument written at the call site; the other four —
+  the daily insight, photo recognition, meal parse and meal ideas — were the ones the rule had
+  missed. Each now rethrows in a `catch (e: CancellationException)` ahead of its existing catch.
+  Four lines, no shared helper: `logAiFailure` is already the shared half, and a wrapper around
+  four call sites would be an abstraction bought to avoid repeating one keyword.
 - **Thinking is off at all five call sites, and that is a property of the model, not of the coach.**
   `AI_THINKING` sits beside `AI_MODEL_NAME` in `:core:data/Ai.kt` for the identical reason: it
   describes the model, so five copies would go stale together. Gemini 2.5 and newer reason before
