@@ -34,8 +34,10 @@ private val ButtonTouchSize = 48.dp
 private val ButtonVisualSize = 40.dp
 
 /**
- * The compact row form of a stepper: an optional leading tile, a label with a derived sublabel, the
- * value and its unit, and the two nudge buttons — all inside one 64dp row.
+ * The compact row form of a stepper: an optional leading tile with the label beneath it, then the
+ * value and its unit with the derived sublabel beneath *them* — the sublabel qualifies the figure
+ * ("8 glasses" → "1.6 L a day"), so it reads under the figure — then the two nudge buttons. 64dp is
+ * the row's minimum, not its height; a row carrying a tile is taller.
  *
  * Deliberately *not*
  * [ph.mart.healthapp.core.designsystem.component.NumericStepperField], which stays exactly where it
@@ -62,36 +64,49 @@ internal fun StepperRow(
     leading: @Composable (() -> Unit)? = null,
 ) {
     Row(
-        modifier = modifier.fillMaxWidth().heightIn(min = 64.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = 64.dp).padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        leading?.invoke()
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            leading?.invoke()
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+        }
+        // The label column sizes to its own content and this one takes the rest, so the sublabel
+        // wraps inside what is left over rather than widening the column and squeezing the label.
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleMedium.tabularNums,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = unit,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (sublabel != null) {
                 Text(
                     text = sublabel,
                     style = MaterialTheme.typography.bodySmall.tabularNums,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End,
                 )
             }
         }
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium.tabularNums,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.End,
-        )
-        Text(
-            text = unit,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         StepperButton(symbol = "−", label = stringResource(DesignSystemR.string.ds_decrease, label), onClick = onDecrement)
         StepperButton(symbol = "+", label = stringResource(DesignSystemR.string.ds_increase, label), onClick = onIncrement)
     }

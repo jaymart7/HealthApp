@@ -2,10 +2,13 @@ package ph.mart.healthapp.feature.profile.ui.profile
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -172,14 +175,20 @@ private fun AboutYouContent(
             }
 
             SectionHeader(label = stringResource(R.string.profile_about_goal_title))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            // Three cards whose subtitles wrap to different line counts. IntrinsicSize.Min sizes
+            // the row to the tallest of them and each card fills it, so the three read as one
+            // control rather than a ragged bottom edge.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            ) {
                 Goal.entries.forEach { goal ->
                     SelectableCard(
                         title = stringResource(goal.label()),
                         subtitle = stringResource(goal.sublabel()),
                         selected = profile.goal == goal,
                         onClick = { onSetGoal(goal) },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
                     )
                 }
             }

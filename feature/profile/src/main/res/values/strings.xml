@@ -101,7 +101,7 @@
     <string name="profile_daytargets_fasting_sub">%1$dh eating window</string>
     <string name="profile_fasting_unit">hours</string>
     <string name="profile_daytargets_steps">Steps</string>
-    <string name="profile_daytargets_steps_sub">Pphone or watch</string>
+    <string name="profile_daytargets_steps_sub">Phone or watch</string>
     <string name="profile_step_unit">steps</string>
     <string name="profile_add_exercise">Add exercise calories</string>
     <string name="profile_add_exercise_sub">Logged workouts raise the day\'s budget. Turn off if your activity level already covers them.</string>
