@@ -31,13 +31,15 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.camera.CameraCaptureController
 import ph.mart.healthapp.core.camera.decodeRotatedBitmap
+import ph.mart.healthapp.core.camera.openAppSettings
+import ph.mart.healthapp.core.camera.permissionPermanentlyDenied
 import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.food.RecognitionResult
+import ph.mart.healthapp.core.designsystem.component.CameraPermissionScreen
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.photo.components.AnalyzingScreen
-import ph.mart.healthapp.feature.food.ui.photo.components.CameraPermissionScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.PhotoOfflineScreen
@@ -45,8 +47,6 @@ import ph.mart.healthapp.feature.food.ui.photo.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.photo.components.RetryScreen
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
-import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
-import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
@@ -252,6 +252,8 @@ fun PhotoCaptureScreen(
                     // Once the prompt is spent, launching it again does nothing at all and the
                     // screen becomes a dead end — Settings is the only door left.
                     settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA),
+                    grantBody = stringResource(R.string.food_photo_permission_grant),
+                    settingsBody = stringResource(R.string.food_photo_permission_settings),
                     onGrant = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                     onOpenSettings = { context.openAppSettings() },
                     onBack = onExit,

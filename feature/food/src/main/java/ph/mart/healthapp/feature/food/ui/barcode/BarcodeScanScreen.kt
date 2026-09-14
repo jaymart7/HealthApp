@@ -37,9 +37,12 @@ import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.camera.openAppSettings
+import ph.mart.healthapp.core.camera.permissionPermanentlyDenied
 import ph.mart.healthapp.core.camera.rememberBarcodeScanController
 import ph.mart.healthapp.core.camera.scanBarcode
 import ph.mart.healthapp.core.data.food.BarcodeLookupResult
+import ph.mart.healthapp.core.designsystem.component.CameraPermissionScreen
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
@@ -51,8 +54,6 @@ import ph.mart.healthapp.feature.food.ui.barcode.components.ScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
-import ph.mart.healthapp.feature.food.ui.shared.openAppSettings
-import ph.mart.healthapp.feature.food.ui.shared.permissionPermanentlyDenied
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
@@ -275,34 +276,16 @@ fun BarcodeScanScreen(
                     },
                 )
 
-                ScanFlow.PermissionDenied -> {
-                    // Same dead end the photo flow had: a spent prompt never shows again, so
-                    // "Grant access" was a button that could not work.
-                    val settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA)
-                    FullScreenState(
-                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                        heading = stringResource(R.string.food_camera_needed),
-                        body = if (settingsOnly) {
-                            stringResource(R.string.food_scan_permission_settings)
-                        } else {
-                            stringResource(R.string.food_scan_permission_grant)
-                        },
-                        actions = {
-                            PrimaryButton(
-                                label = stringResource(if (settingsOnly) R.string.food_open_settings else R.string.food_grant_access),
-                                onClick = {
-                                    if (settingsOnly) {
-                                        context.openAppSettings()
-                                    } else {
-                                        permissionLauncher.launch(Manifest.permission.CAMERA)
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                            SecondaryButton(label = stringResource(R.string.food_back), onClick = onExit, modifier = Modifier.fillMaxWidth())
-                        },
-                    )
-                }
+                // Same dead end the photo flow had: a spent prompt never shows again, so
+                // "Grant access" was a button that could not work.
+                ScanFlow.PermissionDenied -> CameraPermissionScreen(
+                    settingsOnly = context.permissionPermanentlyDenied(Manifest.permission.CAMERA),
+                    grantBody = stringResource(R.string.food_scan_permission_grant),
+                    settingsBody = stringResource(R.string.food_scan_permission_settings),
+                    onGrant = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                    onOpenSettings = { context.openAppSettings() },
+                    onBack = onExit,
+                )
             }
 
             state.pendingDiscard?.let { discard ->

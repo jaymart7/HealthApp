@@ -8,7 +8,6 @@
     <string name="food_keep_editing">Keep editing</string>
     <string name="food_try_again">Try again</string>
     <string name="food_close">Close</string>
-    <string name="food_back">Back</string>
     <string name="food_undo">Undo</string>
     <string name="food_macros">Macros</string>
     <string name="food_portion_label">Portion</string>
@@ -22,9 +21,6 @@
     <string name="food_calories_follows_portion">Follows the portion.</string>
     <string name="food_calories_edit">Edit calories</string>
     <string name="food_no_connection">No connection</string>
-    <string name="food_camera_needed">Camera access needed</string>
-    <string name="food_open_settings">Open settings</string>
-    <string name="food_grant_access">Grant access</string>
     <string name="food_discard_meal_title">Discard this meal?</string>
     <string name="food_unsaved_edits">You\'ve made edits that haven\'t been logged yet.</string>
     <string name="food_deleted">Deleted %1$s</string>

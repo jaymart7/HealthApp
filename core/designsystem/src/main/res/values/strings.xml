@@ -11,6 +11,11 @@
     <string name="ds_ruler_range">%1$s–%2$s %3$s</string>
     <string name="ds_ruler_done">Done</string>
 
+    <!-- Camera permission -->
+    <string name="ds_camera_needed">Camera access needed</string>
+    <string name="ds_grant_access">Grant access</string>
+    <string name="ds_open_settings">Open settings</string>
+
     <!-- AI insight card -->
     <string name="ds_insight">Insight</string>
     <string name="ds_insight_dismiss">Dismiss insight</string>

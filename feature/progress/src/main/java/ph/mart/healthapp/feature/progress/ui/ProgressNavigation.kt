@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.progress.ui.achievement.AchievementsScreen
 import ph.mart.healthapp.feature.progress.ui.activity.ActivityScreen
+import ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoScreen
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.cycle.CycleScreen
 import ph.mart.healthapp.feature.progress.ui.fasting.FastingScreen
@@ -134,13 +135,22 @@ data object TimelapseRoute : NavKey
 @Serializable
 data object RecapRoute : NavKey
 
+/** A body progress shot, from the viewfinder to the saved row. A route rather than the bottom sheet
+ * it used to be, because its first step is a full-window camera — the argument `FoodCaptureRoute`
+ * and `BarcodeScanRoute` already settled. Carries nothing: the shot is today's unless the date
+ * field moves it. */
+@Serializable
+data object AddPhotoRoute : NavKey
+
 /**
  * [scrollState] is hoisted for the usual reason: the FAB's scroll-collapse lives in AppScaffold,
  * which can't see a ScrollState created inside the screen. There is no `twoPane` flag any more:
  * every subject page is a route, so this tab draws one column at every width.
  *
  * Every surface but [ProgressRoute] itself is a route rather than an overlay drawn inside it, so
- * none of them wears the bottom bar or the FAB and none wires a back handler of its own.
+ * none of them wears the bottom bar or the FAB and none wires a back handler to leave itself with.
+ * [AddPhotoRoute] is the one holding a handler at all, and it is for stepping *within* the flow —
+ * a retake is one back press, leaving is the next.
  *
  * [onOpenSubject] **pushes** a subject page and [onSwitchSubject] **replaces** the one showing —
  * the sibling switcher's promise that Sleep -> Mood -> Heart leaves one back step, not three. The
@@ -273,4 +283,5 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<TimelapseRoute> { TimelapseScreen() }
     entry<RecapRoute> { RecapScreen(onExitFlow = onExitFlow) }
+    entry<AddPhotoRoute> { AddPhotoScreen(onExitFlow = onExitFlow) }
 }

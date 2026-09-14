@@ -2711,6 +2711,34 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   is a number the user typed rather than a row they swiped. `pendingDeleteReadingId` moved to
   `BloodPressureState` outright, unlike the two sheet flags — only the page has a list to delete
   from, so there is no second surface to keep a copy for.
+- **The add-photo flow is a route, and the viewfinder is the reason.** It was an `AppBottomSheet`
+  hosted by `AppScaffold` as `ActiveSheet.AddPhoto`, and its camera step drew a full-screen `Box`
+  *inside* that sheet — a viewfinder in a modal container that is, by construction, as tall as the
+  content above it. Everything else in the app that points a camera at something
+  (`FoodCaptureRoute`, `BarcodeScanRoute`) is already a route for exactly that reason, so this one
+  joins them: `AddPhotoRoute` in `ProgressNavigation.kt`, and `fullBleed` in `AppScaffold` gains a
+  third clause. That one clause is the entire chrome change — `ownsTopBar` is already
+  `fullBleed || …`, `contentWindowInsets` already collapses for it, and `showsTabChrome` names
+  neither the tabs' siblings nor this, so the bar and the FAB stay down at every width with no
+  edit. The step enum lost `Pick` and the route opens on the camera, because a full window holding
+  two buttons is a chooser that has been given a screen it has no use for; the gallery is a control
+  on the viewfinder instead, where `CaptureScreen` already puts it. **What it costs** is that the
+  flow no longer floats over the screen it was opened from — leaving it is a back, not a dismiss —
+  and `AddPhotoState` now keeps a step that can be reached with no photo behind it, so the preview
+  branch reads `state.photo?.let`. Back inside the flow steps one level, as everywhere else: off
+  the preview is a retake, off the viewfinder is out.
+- **Camera permission is asked for here at last, and the screen that asks moved up.** This flow
+  requested nothing: refuse the camera and the preview was a black rectangle with a shutter over
+  it, because `rememberCameraCaptureController` binds whether or not it may. It now runs the same
+  launcher-plus-denied-state the other two do — which made `CameraPermissionScreen` its third
+  caller, and a feature never imports another feature's types. So the screen is
+  `:core:designsystem`'s and `permissionPermanentlyDenied`/`openAppSettings` are `:core:camera`'s,
+  where both are simply public rather than copied. Only the body differs between the three flows
+  (what the camera was *for*), so both bodies arrive resolved from the caller; the heading and the
+  two buttons are `ds_` strings now. `BarcodeScanScreen` had hand-built the same `FullScreenState`
+  and calls the shared one instead, so the move deletes more than it adds. The one parameter the
+  shared screen grew is `extraAction`: the photo picker needs no permission, so a refusal here
+  costs the live viewfinder and not the flow, and that door stays on the denied screen.
 
 - **A supplement carries a dose *label* and a times-per-day *number*.** The dose is free text —
   "2000 IU", "5 g", "one scoop" — and nothing parses it, for the same reason fiber, sugar and

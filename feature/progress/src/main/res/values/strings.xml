@@ -335,6 +335,8 @@
     <string name="progress_photo_take">Take photo</string>
     <string name="progress_photo_gallery">Choose from gallery</string>
     <string name="progress_photo_weight">Weight (optional)</string>
+    <string name="progress_camera_permission_grant">Grant camera access to take a progress photo, or choose one you already have.</string>
+    <string name="progress_camera_permission_settings">Camera access is off for FitPulse. Turn it on in Settings to take a progress photo, or choose one you already have.</string>
 
     <!-- Achievements -->
     <string name="progress_badges_earned">%1$d of %2$d</string>

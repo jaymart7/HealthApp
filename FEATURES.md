@@ -163,7 +163,7 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   unit toggle and the per-100 g caveat against the number it is about, and every value reprices
   with it. Macros and micronutrients are tiles below, printing a dash where nobody has supplied a
   figure. Log and Discard are docked.
-- Camera permission screen; predictive back branches per flow state.
+- Camera permission screen (shared by all three camera flows); predictive back branches per flow state.
 - Progress photo capture with a date-stamped file.
 
 ## Exercise & strength
@@ -273,7 +273,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Energy check-in: maintenance calories measured from 28 days of logged intake against the real
   weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
   opening a full overlay that shows its working).
-- Logging sheets: weigh-in (backdatable), measurements, progress photo, blood pressure, cycle day.
+- Logging sheets: weigh-in (backdatable), measurements, blood pressure, cycle day.
+- Add photo: a full-screen route opening on the viewfinder, with the gallery beside the shutter and
+  a date and optional weight on the shot before it is saved.
 
 ## AI (Firebase AI Logic / Gemini)
 

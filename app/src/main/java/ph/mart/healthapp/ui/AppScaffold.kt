@@ -62,11 +62,11 @@ import ph.mart.healthapp.feature.profile.ui.RoutinesRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
+import ph.mart.healthapp.feature.progress.ui.AddPhotoRoute
 import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
 import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
 import ph.mart.healthapp.feature.progress.ui.RecapRoute
 import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
-import ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoSheet
 import ph.mart.healthapp.feature.progress.ui.progressEntries
 import ph.mart.healthapp.feature.progress.ui.route
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
@@ -145,10 +145,12 @@ private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
     TopLevelDestination.Profile -> AppIcons.Profile
 }
 
-/** The FAB's overlay sheet — Log exercise/Log weight/Add photo are real [ph.mart.healthapp.core.designsystem.component.AppBottomSheet]s
+/** The FAB's overlay sheet — Log exercise and Log weight are real [ph.mart.healthapp.core.designsystem.component.AppBottomSheet]s
  * shown here (same shape as [QuickActionSheet] itself), not [androidx.navigation3.runtime.NavKey]
- * routes: predictive back needs to close the sheet without replacing the screen underneath it. */
-private enum class ActiveSheet { None, QuickAction, LogExercise, LogWeight, AddPhoto }
+ * routes: predictive back needs to close the sheet without replacing the screen underneath it.
+ * Add photo used to be the third and is [AddPhotoRoute] now — a flow that opens on a viewfinder
+ * wants the window, which is the one thing a sheet cannot hand it. */
+private enum class ActiveSheet { None, QuickAction, LogExercise, LogWeight }
 
 /**
  * Tab navigation (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
@@ -272,7 +274,7 @@ fun AppScaffold(
 
     // The camera flows are the one exemption: full-bleed surfaces that draw under both system bars
     // (appScaffold.js) and dispatch back per capture state, so a generic toolbar would break both.
-    val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute
+    val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute || current is AddPhotoRoute
 
     // Routes that draw their own `AppTopBar`. The camera flows do it full-bleed, under the system
     // bars; every Progress subject page keeps the window's insets and wants the bar's `actions`
@@ -347,7 +349,7 @@ fun AppScaffold(
                     entryProvider = entryProvider {
                         homeEntries(
                             scrollState = homeScroll,
-                            onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
+                            onAddPhoto = { topLevelBackStack.add(AddPhotoRoute) },
                             onOpenCoach = { topLevelBackStack.add(CoachRoute()) },
                             // Day 0 is today, the convention the FAB's own sheet uses — the plan card
                             // only ever starts today's workout.
@@ -449,7 +451,10 @@ fun AppScaffold(
                     activeSheet = ActiveSheet.LogExercise
                 },
                 onLogWeight = { activeSheet = ActiveSheet.LogWeight },
-                onAddPhoto = { activeSheet = ActiveSheet.AddPhoto },
+                onAddPhoto = {
+                    activeSheet = ActiveSheet.None
+                    topLevelBackStack.add(AddPhotoRoute)
+                },
             )
             ActiveSheet.LogExercise -> LogExerciseSheet(
                 onDismiss = {
@@ -471,7 +476,6 @@ fun AppScaffold(
                 editingId = sheetEditingId,
             )
             ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
-            ActiveSheet.AddPhoto -> AddPhotoSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.None -> Unit
         }
     }

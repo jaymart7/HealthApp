@@ -16,7 +16,7 @@ internal fun rememberAddPhotoState(): AddPhotoState = remember { AddPhotoState()
  * ponytail: process death loses the in-progress capture; add a Saver-backed byte[] snapshot if
  * that's ever reported as a real problem. */
 internal class AddPhotoState(
-    step: AddPhotoStep = AddPhotoStep.Pick,
+    step: AddPhotoStep = AddPhotoStep.Capture,
     photo: Bitmap? = null,
     form: AddPhotoForm = AddPhotoForm(),
     showingCalendar: Boolean = false,
