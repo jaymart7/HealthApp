@@ -10,6 +10,10 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
+/** Wide enough to hold every real body weight, narrow enough that a slipped finger cannot write a
+ * 3kg weigh-in that then owns the chart's whole y-axis. */
+private val WEIGHT_KG = 20.0..400.0
+
 class LogWeightViewModel(
     private val progressRepository: ProgressRepository,
     private val profileRepository: ProfileRepository,
@@ -39,8 +43,12 @@ class LogWeightViewModel(
         postSideEffect(LogWeightSideEffect.Loaded(latest.weightKg))
     }
 
+    /** The typed field is deliberately unclamped so a figure can be retyped digit by digit, so the
+     * clamp lands here — the same band and the same clamp-at-the-edges-rather-than-validate-after
+     * the profile's weight setters use. */
     private fun onSave(form: LogWeightForm) = intent {
-        progressRepository.upsertWeightEntry(WeightEntry(dateEpochDay = form.dateEpochDay, weightKg = form.weightKg, note = form.note))
+        val weightKg = form.weightKg.coerceIn(WEIGHT_KG)
+        progressRepository.upsertWeightEntry(WeightEntry(dateEpochDay = form.dateEpochDay, weightKg = weightKg, note = form.note))
         postSideEffect(LogWeightSideEffect.Saved)
     }
 }

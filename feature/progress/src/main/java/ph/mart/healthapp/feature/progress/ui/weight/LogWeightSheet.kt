@@ -91,6 +91,11 @@ private fun LogWeightContent(
                         unitSuffix = unit.weightUnitLabel(),
                         onIncrement = { state.form = state.form.copy(weightKg = state.form.weightKg + step) },
                         onDecrement = { state.form = state.form.copy(weightKg = (state.form.weightKg - step).coerceAtLeast(20.0)) },
+                        // Typed figures are not clamped: a half-typed "7" on the way to "75" would
+                        // snap to the floor and make the field impossible to retype. The save
+                        // clamps instead.
+                        onValueChange = { state.form = state.form.copy(weightKg = (it.toDoubleOrNull() ?: 0.0).displayUnitToKg(unit)) },
+                        decimal = true,
                     )
                     AppTextField(
                         label = stringResource(R.string.progress_weight_note),

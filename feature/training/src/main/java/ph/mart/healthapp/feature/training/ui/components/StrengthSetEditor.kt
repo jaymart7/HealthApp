@@ -107,6 +107,7 @@ internal fun StrengthSetEditor(
                         draft.copy(weightKg = (displayLoad - step).coerceAtLeast(0.0).displayUnitToKg(unit)),
                     )
                 },
+                decimal = true,
                 modifier = Modifier.weight(1f),
             )
         }

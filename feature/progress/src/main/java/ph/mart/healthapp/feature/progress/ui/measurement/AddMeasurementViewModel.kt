@@ -5,6 +5,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.progress.range
 
 class AddMeasurementViewModel(
     private val progressRepository: ProgressRepository,
@@ -24,9 +25,12 @@ class AddMeasurementViewModel(
         repo.observeMeasurements().collect { entriesByPart -> reduce { state.copy(entriesByPart = entriesByPart) } }
     }
 
+    /** The typed field is unclamped so a figure can be retyped digit by digit; the part's own range
+     * is applied here instead. */
     private fun onSave(form: AddMeasurementForm) = intent {
         val part = form.part ?: return@intent
-        progressRepository.upsertMeasurementEntry(MeasurementEntry(part = part, dateEpochDay = form.dateEpochDay, value = form.value))
+        val value = form.value.coerceIn(part.range())
+        progressRepository.upsertMeasurementEntry(MeasurementEntry(part = part, dateEpochDay = form.dateEpochDay, value = value))
         postSideEffect(AddMeasurementSideEffect.Saved)
     }
 }

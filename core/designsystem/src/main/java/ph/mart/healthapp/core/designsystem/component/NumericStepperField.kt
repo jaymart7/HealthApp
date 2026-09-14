@@ -49,6 +49,9 @@ private const val MAX_VALUE_DIGITS = 6
  * already about right; typing is how a figure gets *entered*, and without it a 320 kcal quick add
  * costs 32 taps. Callers that genuinely only nudge (a water goal, a servings count) leave it null
  * and keep the read-only value.
+ *
+ * [decimal] admits one decimal point, for the figures that are 76.5 kg or 82.5 cm rather than a
+ * whole number of kcal.
  */
 @Composable
 fun NumericStepperField(
@@ -60,6 +63,7 @@ fun NumericStepperField(
     modifier: Modifier = Modifier,
     error: String? = null,
     onValueChange: ((String) -> Unit)? = null,
+    decimal: Boolean = false,
 ) {
     Column(modifier = modifier) {
         Text(
@@ -91,6 +95,7 @@ fun NumericStepperField(
                     onValueChange = onValueChange,
                     contentDescription = label,
                     modifier = Modifier.weight(1f),
+                    decimal = decimal,
                 )
             }
             Text(

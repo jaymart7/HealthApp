@@ -348,6 +348,9 @@ private fun WeightField(form: AddPhotoForm, unit: UnitSystem, onFormChange: (Add
         unitSuffix = unit.weightUnitLabel(),
         onIncrement = { onFormChange(form.copy(weightKg = ((form.weightKg ?: 0.0) + step.displayUnitToKg(unit)))) },
         onDecrement = { onFormChange(form.copy(weightKg = (((form.weightKg ?: step) - step.displayUnitToKg(unit)).coerceAtLeast(20.0)))) },
+        // An emptied field is no weight recorded, not a weight of zero — this one is optional.
+        onValueChange = { onFormChange(form.copy(weightKg = it.toDoubleOrNull()?.displayUnitToKg(unit))) },
+        decimal = true,
         modifier = modifier,
     )
 }

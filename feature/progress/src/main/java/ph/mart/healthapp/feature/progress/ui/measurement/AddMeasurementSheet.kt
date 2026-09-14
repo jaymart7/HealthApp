@@ -142,6 +142,10 @@ private fun AddMeasurementContent(
                         unitSuffix = kind.unitLabel(unit),
                         onIncrement = { state.form = state.form.copy(value = (state.form.value + step).coerceIn(kind.range())) },
                         onDecrement = { state.form = state.form.copy(value = (state.form.value - step).coerceIn(kind.range())) },
+                        // Unclamped while typing, for the reason the weight sheet is: the save
+                        // coerces into the part's range.
+                        onValueChange = { state.form = state.form.copy(value = kind.fromDisplay(it.toDoubleOrNull() ?: 0.0, unit)) },
+                        decimal = true,
                     )
                 }
             }
