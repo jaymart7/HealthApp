@@ -141,11 +141,27 @@ fun List<FoodEntry>.withPhotoOnFirst(path: String?): List<FoodEntry> =
 const val MEAL_PHOTO_EDGE = 768
 
 /**
- * How many rows the diary's history search hands back. A cap rather than the whole table, the rule
- * every read in `FoodEntryDao` follows — and high enough that the list is a history rather than a
- * window, since nothing above it counts.
+ * How many rows one page of the diary's history search hands back.
+ *
+ * A page rather than a ceiling: the read is still bounded, which is the rule every read in
+ * `FoodEntryDao` follows, but reaching the bottom of the list asks for the next one rather than
+ * finding the history simply stopped. Fifty because the first screenful is about ten rows, so a
+ * page outlasts a flick and the append lands before the bottom is reached again.
+ *
+ * ponytail: `LIMIT`/`OFFSET` over a local table, not Paging3 — see `DECISIONS.md` →
+ * *Food search, the diary filter & history*. `FoodSearchViewModel`'s `FOOD_PAGE_SIZE` window is
+ * the precedent this follows.
  */
-const val MAX_HISTORY_RESULTS = 200
+const val HISTORY_PAGE_SIZE = 50
+
+/**
+ * How much the history search found in total — the two figures its count line carries, neither of
+ * which a single page can supply.
+ *
+ * Public where `DayTotal` is internal, because this one is handed to the screen as it is rather
+ * than mapped into something else on the way out.
+ */
+data class SearchCount(val matches: Int, val days: Int)
 
 /**
  * Wraps a search term as a LIKE "contains" pattern, escaping the three characters SQLite reads as
@@ -198,17 +214,28 @@ interface FoodRepository {
     suspend fun allEntries(): List<FoodEntry>
 
     /**
-     * Logged entries whose name contains [query], newest first and capped at
-     * [MAX_HISTORY_RESULTS] — the diary's history search, which is the one read in this app that
-     * looks across days. A blank [query] is the newest rows, not an error: the screen opens on it.
+     * One page of the logged entries whose name contains [query], newest first and
+     * [HISTORY_PAGE_SIZE] long — the diary's history search, which is the one read in this app
+     * that looks across days. A blank [query] is the newest rows, not an error: the screen opens
+     * on it.
      *
      * A suspend one-shot, unlike every other read here, because its input is a text field — see
      * `FoodEntryDao.searchByName`.
      *
      * [mealType] narrows the read to one meal slot; `null` is every slot, which is what the
-     * screen's filter opens on.
+     * screen's filter opens on. [offset] is how many rows the screen already holds; a page shorter
+     * than [HISTORY_PAGE_SIZE] is the end, which is the only signal the caller gets.
      */
-    suspend fun searchEntries(query: String, mealType: MealType? = null): List<FoodEntry>
+    suspend fun searchEntries(query: String, mealType: MealType? = null, offset: Int = 0): List<FoodEntry>
+
+    /**
+     * How many rows [searchEntries] has to page through, and across how many days.
+     *
+     * A read of its own for [dayTotals]'s reason: a figure about the whole match set cannot be
+     * counted off one page of it, and a count line reporting the page size as an answer is the
+     * same kind of untruth as a day header reporting what one word matched.
+     */
+    suspend fun searchCount(query: String, mealType: MealType? = null): SearchCount
 
     /**
      * What each of [dates] came to across the whole day — the history list's day headers, which

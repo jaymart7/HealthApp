@@ -90,9 +90,12 @@ internal class FoodRepositoryImpl(
 
     override suspend fun allEntries(): List<FoodEntry> = dao.allActive().map { it.toFoodEntry() }
 
-    override suspend fun searchEntries(query: String, mealType: MealType?): List<FoodEntry> =
-        dao.searchByName(likeContains(query), mealType?.name, MAX_HISTORY_RESULTS)
+    override suspend fun searchEntries(query: String, mealType: MealType?, offset: Int): List<FoodEntry> =
+        dao.searchByName(likeContains(query), mealType?.name, HISTORY_PAGE_SIZE, offset)
             .map { it.toFoodEntry() }
+
+    override suspend fun searchCount(query: String, mealType: MealType?): SearchCount =
+        dao.searchCount(likeContains(query), mealType?.name)
 
     override suspend fun dayTotals(dates: List<Long>): Map<Long, Int> =
         dao.dayTotals(dates).associate { it.date to it.kcal }

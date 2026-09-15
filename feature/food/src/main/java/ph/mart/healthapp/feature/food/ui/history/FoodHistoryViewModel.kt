@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.food.HISTORY_PAGE_SIZE
 import ph.mart.healthapp.core.data.food.MealType
 
 /** Three chips is what fits on one line beside the "Recent" label without an overflow row. */
@@ -17,6 +18,10 @@ private const val RECENT_QUERIES = 3
  * elsewhere while this is open therefore doesn't appear until the next keystroke, and that is the
  * right behaviour for a search — a list that reorders itself under a reading finger is worse than
  * a slightly stale one.
+ *
+ * The answer arrives a page at a time: [search] reads the first, [loadMore] appends the rest as
+ * the list is scrolled. The same one-shot rule holds across them — a page is the table as it was
+ * when it was asked for, and the rows above it are not re-read.
  *
  * The query is seeded by the screen rather than injected, because it arrives on the route: see
  * [FoodHistoryScreen].
@@ -33,6 +38,7 @@ class FoodHistoryViewModel(
         when (event) {
             is FoodHistoryEvent.OnQueryChange -> search(event.query)
             is FoodHistoryEvent.OnMealFilterChange -> filter(event.mealType)
+            FoodHistoryEvent.OnLoadMore -> loadMore()
             FoodHistoryEvent.OnQueryUsed -> recordQuery()
             is FoodHistoryEvent.OnLog -> log(event)
         }
@@ -52,9 +58,53 @@ class FoodHistoryViewModel(
         val results = foodRepository.searchEntries(query.trim(), mealFilter)
         // The day headers' figures, read after the rows because the rows are what name the days.
         val totals = foodRepository.dayTotals(results.map { it.dateEpochDay }.distinct())
+        // What the count line says. A third read rather than a count over `results`, which is one
+        // page and not an answer — the reason `dayTotals` is its own read, one level up.
+        val counts = foodRepository.searchCount(query.trim(), mealFilter)
         reduce {
             if (state.query != query || state.mealFilter != mealFilter) state else {
-                state.copy(results = results, dayTotals = totals, searching = false, searched = true)
+                state.copy(
+                    results = results,
+                    dayTotals = totals,
+                    matchCount = counts.matches,
+                    dayCount = counts.days,
+                    searching = false,
+                    searched = true,
+                    // A fresh question, so the list starts at the top of its answer again.
+                    appending = false,
+                    endReached = results.size < HISTORY_PAGE_SIZE,
+                )
+            }
+        }
+    }
+
+    /**
+     * The next page, appended.
+     *
+     * The guard is the whole of the paging: Orbit serialises intents, so two pages can't be in
+     * flight at once, and [FoodHistoryUiState.endReached] is what stops the list asking Room for
+     * page after empty page once it has run out. [FoodHistoryUiState.searched] is in there because
+     * a list that hasn't had its first answer yet has no offset to ask from.
+     *
+     * Only the days this page *introduced* are re-totalled — the ones already on screen have their
+     * figures, and re-reading them would be a growing query on every flick.
+     */
+    private fun loadMore() = intent {
+        if (state.appending || state.endReached || state.searching || !state.searched) return@intent
+        reduce { state.copy(appending = true) }
+        val query = state.query
+        val mealFilter = state.mealFilter
+        val page = foodRepository.searchEntries(query.trim(), mealFilter, offset = state.results.size)
+        val newDates = page.map { it.dateEpochDay }.distinct().filterNot { it in state.dayTotals }
+        val totals = if (newDates.isEmpty()) emptyMap() else foodRepository.dayTotals(newDates)
+        reduce {
+            // Dropped if the question changed underneath it — [search]'s rule. The rows go, the
+            // flag still has to be cleared, or an abandoned page leaves the list unable to ask for
+            // another one.
+            if (state.query != query || state.mealFilter != mealFilter) {
+                state.copy(appending = false)
+            } else {
+                state.withPage(page, totals)
             }
         }
     }

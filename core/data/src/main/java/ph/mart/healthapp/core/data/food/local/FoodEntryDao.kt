@@ -5,6 +5,7 @@ import androidx.room3.Insert
 import androidx.room3.Query
 import androidx.room3.Transaction
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.food.SearchCount
 
 @Dao
 internal interface FoodEntryDao {
@@ -25,29 +26,48 @@ internal interface FoodEntryDao {
     fun observeRecent(limit: Int, exclude: String): Flow<List<FoodEntryEntity>>
 
     /**
-     * Every logged row whose name matches, newest first — the diary's history search.
+     * One page of the logged rows whose name matches, newest first — the diary's history search.
      *
-     * Capped for the reason every other read in here is: the whole table is only ever read by
-     * export. [pattern] arrives already wrapped and escaped — see
-     * [likeContains][ph.mart.healthapp.core.data.food.likeContains], which is the other half of
-     * the `ESCAPE` clause below.
+     * Bounded for the reason every other read in here is: the whole table is only ever read by
+     * export. It is a *page* rather than a ceiling, though — [offset] is where the last page ended,
+     * and the screen appends rather than stopping at a cap. [pattern] arrives already wrapped and
+     * escaped — see [likeContains][ph.mart.healthapp.core.data.food.likeContains], which is the
+     * other half of the `ESCAPE` clause below.
      *
      * Suspend rather than a [Flow]: the screen re-asks on every keystroke, and a flow would tear
      * down and re-subscribe a query each time instead of just running it.
      *
      * [meal] is the screen's meal filter, `null` for "All". It is applied **here** rather than over
-     * the returned list, so the cap counts rows the user asked for: filtering after `LIMIT` would
-     * hand back whatever survived of the newest two hundred, which is not the newest two hundred
-     * lunches.
+     * the returned list, so a page counts rows the user asked for: filtering after `LIMIT` would
+     * hand back whatever survived the newest page, which is not the newest page of lunches.
+     *
+     * The `WHERE` clause is repeated character for character by [searchCount], which counts what
+     * this pages through. Change one and change the other, or the count and the rows disagree.
      */
     // ponytail: no debounce — one query per keystroke over a local table of a few thousand rows.
     // Debounce the caller if a diary ever gets big enough to feel it.
     @Query(
         "SELECT * FROM food_entry WHERE isDeleted = 0 AND name LIKE :pattern ESCAPE '\\' " +
             "AND (:meal IS NULL OR mealType = :meal) " +
-            "ORDER BY date DESC, loggedAt DESC LIMIT :limit",
+            "ORDER BY date DESC, loggedAt DESC LIMIT :limit OFFSET :offset",
     )
-    suspend fun searchByName(pattern: String, meal: String?, limit: Int): List<FoodEntryEntity>
+    suspend fun searchByName(pattern: String, meal: String?, limit: Int, offset: Int): List<FoodEntryEntity>
+
+    /**
+     * How much there is to page through — the two figures the history's count line carries.
+     *
+     * A second read rather than a count over the rows, for [dayTotals]'s reason one level up: a
+     * page cannot say how big the thing it is a page *of* is, and "50 matches" when there are two
+     * hundred is the page size reported as an answer.
+     *
+     * The `WHERE` clause is [searchByName]'s, repeated — see the note there.
+     */
+    @Query(
+        "SELECT COUNT(*) AS matches, COUNT(DISTINCT date) AS days FROM food_entry " +
+            "WHERE isDeleted = 0 AND name LIKE :pattern ESCAPE '\\' " +
+            "AND (:meal IS NULL OR mealType = :meal)",
+    )
+    suspend fun searchCount(pattern: String, meal: String?): SearchCount
 
     /**
      * What each of [dates] came to across the **whole** day, matched rows and unmatched alike —

@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.food.ui.history
 
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.food.HISTORY_PAGE_SIZE
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.formatMonthYear
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
@@ -9,10 +10,11 @@ import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 /**
  * The diary's history search: one query, and whatever it matched.
  *
- * [results] arrive from Room already ordered newest-first and capped, so there is nothing to sort
- * and nothing to page here. No status type beyond [searching]: the query is a local one that
- * cannot be offline and cannot fail, and the only other answer the screen has to draw is "nothing
- * matched" — the shape `FoodSearchUiState` settled on for the same reasons.
+ * [results] arrive from Room already ordered newest-first, so there is nothing to sort — but they
+ * arrive one [HISTORY_PAGE_SIZE] page at a time, and reaching the bottom appends the next. No
+ * status type beyond [searching] and [appending]: the query is a local one that cannot be offline
+ * and cannot fail, and the only other answer the screen has to draw is "nothing matched" — the
+ * shape `FoodSearchUiState` settled on for the same reasons.
  *
  * [searched] is what separates "nothing matched" from "the first query hasn't come back yet", so
  * the empty page never flashes over a list that is about to arrive.
@@ -22,6 +24,15 @@ data class FoodHistoryUiState(
     val results: List<FoodEntry> = emptyList(),
     val searching: Boolean = false,
     val searched: Boolean = false,
+    /**
+     * A page is in flight. Separate from [searching] on purpose: that one lights the field's
+     * progress line and turns the count line into "Searching…", and an append is neither — the
+     * list on screen is still the answer to the question that was asked. All it draws is the tail
+     * skeletons the two share.
+     */
+    val appending: Boolean = false,
+    /** The last page came back short, so there is nothing left to ask for. */
+    val endReached: Boolean = false,
     /** The meal slot the list is narrowed to; `null` is every slot, which is what it opens on. */
     val mealFilter: MealType? = null,
     /** Queries that have found something before, newest first — offered under a blank field. */
@@ -34,10 +45,32 @@ data class FoodHistoryUiState(
      * which is why the header treats a missing key as nothing to draw rather than as zero.
      */
     val dayTotals: Map<Long, Int> = emptyMap(),
-) {
-    /** How many days the matches are spread across — the second figure in the count line. */
-    val dayCount: Int get() = results.distinctBy { it.dateEpochDay }.size
-}
+    /**
+     * How many rows matched in total, and across how many days — the count line's two figures.
+     *
+     * Read rather than derived, for the reason [dayTotals] is: with the rows arriving a page at a
+     * time, `results.size` is the page size and not an answer.
+     */
+    val matchCount: Int = 0,
+    val dayCount: Int = 0,
+)
+
+/**
+ * The next page folded onto the ones already held.
+ *
+ * Pure, like `FoodSearchUiState.withMore()` and for the same reason — `FoodHistoryTest` is what
+ * holds the end rule, which is the one piece of paging that has no second chance: get it wrong in
+ * the lenient direction and the list asks Room for page after empty page.
+ */
+internal fun FoodHistoryUiState.withPage(
+    page: List<FoodEntry>,
+    totals: Map<Long, Int>,
+): FoodHistoryUiState = copy(
+    results = results + page,
+    dayTotals = dayTotals + totals,
+    endReached = page.size < HISTORY_PAGE_SIZE,
+    appending = false,
+)
 
 /**
  * The results cut into one group per day, newest day first — which is the order they arrive in, so
@@ -151,6 +184,13 @@ sealed interface FoodHistoryEvent {
      * on a keystroke instead, the recent list fills with "c", "ch", "chi".
      */
     data object OnQueryUsed : FoodHistoryEvent
+
+    /**
+     * The bottom of the list was reached, so the next page is wanted. Asked rather than told: the
+     * screen knows it ran out of rows, and only the ViewModel knows whether there are more. The
+     * name `FoodSearchEvent` already uses for the same gesture.
+     */
+    data object OnLoadMore : FoodHistoryEvent
 
     /**
      * Writes the reviewed row. The screen hands over the finished [FoodEntry] — `form.toFoodEntry(

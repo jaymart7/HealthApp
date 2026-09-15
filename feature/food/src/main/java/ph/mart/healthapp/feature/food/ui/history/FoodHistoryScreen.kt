@@ -27,6 +27,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
@@ -224,7 +226,7 @@ private fun FoodHistoryContent(
                     }
                 } else {
                     HistoryCountLine(
-                        matches = uiState.results.size,
+                        matches = uiState.matchCount,
                         days = uiState.dayCount,
                         query = uiState.query,
                         searching = uiState.searching,
@@ -233,6 +235,7 @@ private fun FoodHistoryContent(
                     HistoryList(
                         uiState = uiState,
                         listState = listState,
+                        onLoadMore = { onEvent(FoodHistoryEvent.OnLoadMore) },
                         onSelect = { entry ->
                             // The word that found this row is the one worth keeping.
                             onEvent(FoodHistoryEvent.OnQueryUsed)
@@ -335,6 +338,7 @@ private fun MealFilterRow(
 private fun HistoryList(
     uiState: FoodHistoryUiState,
     listState: LazyListState,
+    onLoadMore: () -> Unit,
     onSelect: (FoodEntry) -> Unit,
 ) {
     val today = todayEpochDay()
@@ -364,10 +368,23 @@ private fun HistoryList(
                 }
             }
         }
-        // At the tail, never over the list — see HistorySkeletonRow.
-        if (uiState.searching) {
+        // At the tail, never over the list — see HistorySkeletonRow. The same two rows stand for
+        // a new search and for the next page: both are rows about to arrive at the bottom.
+        if (uiState.searching || uiState.appending) {
             items(items = listOf(0, 1), key = { "skeleton-$it" }) { HistorySkeletonRow() }
         }
+    }
+    // Reaching the bottom asks for the next page. The flag falls back to false as the page lands
+    // and re-arms; at the end of the list the state stops changing and the ask is dropped, and
+    // `endReached` drops it again in the ViewModel. The shape FoodSearchScreen uses over its own
+    // scroll state.
+    // ponytail: fires at the literal bottom, so the skeletons are seen for a frame. Trigger on
+    // `layoutInfo.visibleItemsInfo.last().index >= totalItemsCount - 5` if that ever reads as a
+    // stall rather than as loading.
+    LaunchedEffect(listState) {
+        snapshotFlow { !listState.canScrollForward }
+            .distinctUntilChanged()
+            .collect { atBottom -> if (atBottom) onLoadMore() }
     }
 }
 
@@ -410,11 +427,15 @@ private val previewEntries = listOf(
     FoodEntry(id = 5, name = "Chicken caesar salad", dateEpochDay = 19_970L, mealType = MealType.Lunch, portionAmount = 1.0, portionUnit = "bowl", calories = 385, proteinG = 29, carbsG = 12, fatG = 24),
 )
 
+// The counts are set rather than derived, because they are: a page's rows say nothing about how
+// many matched in total, which is the whole point of the count line's own read.
 private fun previewState(vararg entries: FoodEntry) = FoodHistoryUiState(
     query = "chick",
     searched = true,
     results = entries.toList(),
     dayTotals = mapOf(20_000L to 1_806, 19_998L to 2_104, 19_970L to 1_952),
+    matchCount = entries.size,
+    dayCount = entries.distinctBy { it.dateEpochDay }.size,
 )
 
 @PreviewLightDark
@@ -454,6 +475,24 @@ private fun FoodHistorySearchingPreview() {
     AppTheme {
         FoodHistoryContent(
             uiState = previewState(previewEntries[0], previewEntries[1]).copy(searching = true),
+            dateEpochDay = 20_000L,
+            onEvent = {},
+            onExit = {},
+        )
+    }
+}
+
+/**
+ * Appending: the same two skeletons, but the field's progress line is dark and the count line
+ * still reports the total rather than "Searching…". That difference is the whole reason
+ * `appending` is not `searching`.
+ */
+@PreviewLightDark
+@Composable
+private fun FoodHistoryAppendingPreview() {
+    AppTheme {
+        FoodHistoryContent(
+            uiState = previewState(*previewEntries.toTypedArray()).copy(appending = true, matchCount = 47, dayCount = 12),
             dateEpochDay = 20_000L,
             onEvent = {},
             onExit = {},

@@ -410,6 +410,31 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   elsewhere while the screen is open doesn't appear until the next keystroke, because a result list
   that reorders itself under a reading finger is worse than a slightly stale one. A late answer to
   a superseded query is dropped by comparing `state.query` in the second `reduce`.
+- **The history's 200-row cap became a 50-row page.** A cap is a lie at the bottom of a list: the
+  rows simply stopped, with nothing saying whether that was the diary's end or the query's. The
+  read is still bounded — `FoodEntryDao`'s rule, and the whole table is still only ever read by
+  export — but `HISTORY_PAGE_SIZE` is an `OFFSET` step now, and reaching the bottom appends the
+  next page. **Not Paging3**, for `FoodSearchPanel`'s reason plus a second one: a `PagingSource`
+  and `LazyPagingItems` are an idiom to keep in step forever, for one screen, against a precedent
+  already in this module — `FoodSearchViewModel`'s `FOOD_PAGE_SIZE` window and its
+  `snapshotFlow`-at-the-bottom trigger, which is copied here onto `LazyListState.canScrollForward`.
+  The end is a page that comes back **short**, not a count compared against: an exact multiple of
+  the page size costs one empty read and stops, where a count read once and trusted goes stale the
+  moment a row is logged. Three consequences worth naming. `appending` is a separate flag from
+  `searching`, because an append must not light the field's progress line or turn the count line
+  into "Searching…" — the list on screen is still the answer to the question that was asked; only
+  the tail skeletons are shared. A day split across a page boundary stays **one** group, which is
+  what `groupedByDay`'s adjacent-only fold already guaranteed and what `FoodHistoryTest` now pins
+  at the boundary. And only the days a page *introduced* are re-totalled — re-reading `dayTotals`
+  for the whole list would be a query that grows with every flick.
+- **The count line reads its figures, it does not count the rows.** "9 matches in 4 days" came off
+  `results.size`, which was already wrong at the old cap — 201 matches reported 200 — and would be
+  wrong on every first read once that became a page. `searchCount` is a
+  `COUNT(*) / COUNT(DISTINCT date)` over `searchByName`'s `WHERE` clause repeated character for
+  character, the `dayTotals` argument one level up: a figure about the whole match set cannot be
+  counted off one page of it, the way a day header's total cannot be summed from one word's hits.
+  The repetition is the cost, and both queries carry a comment pointing at the other — the shape
+  `likeContains` and the `ESCAPE` clause already use.
 - **`likeContains()` escapes; `FoodEntryDao.searchByName` declares `ESCAPE '\'`.** They are two
   halves of one decision and `LikeContainsTest` is what keeps them in step — without it a food
   named "100% oats" turns its own name into a wildcard and the search quietly returns the table.
@@ -479,12 +504,12 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   redesign asked for a 200–250 ms debounce and it was declined: `FoodEntryDao.searchByName` already
   carries the argument that one query per keystroke over a local table of a few thousand rows costs
   nothing, and `FoodHistoryViewModel` already drops a late answer by comparing against the reduced
-  query. The skeletons ride the existing `searching` flag; they are static, because the progress
-  line is already the thing that moves.
+  query. The skeletons ride `searching` **or** `appending` — both are rows about to arrive at the
+  bottom; they are static, because the progress line is already the thing that moves.
 - **The meal filter runs inside the query, and it is a `SegmentedToggle`.** `mealType` is a
   parameter of `searchByName`, not a filter over its result, so narrowing to Lunch reaches back
-  through the whole diary rather than through whatever survived the 200-row cap — filtering after
-  `LIMIT` hands back the newest two hundred *rows*, which is not the newest two hundred lunches.
+  through the whole diary rather than through whatever survived the page — filtering after `LIMIT`
+  hands back the newest page of *rows*, which is not the newest page of lunches.
   The chips the design drew are not chips: this app has no chip idiom anywhere, and `SegmentedToggle`
   is already the single-select row that scrolls rather than squeezing when its options outgrow the
   width, which five of them do. It costs 52dp of the most expensive space on the screen and that is

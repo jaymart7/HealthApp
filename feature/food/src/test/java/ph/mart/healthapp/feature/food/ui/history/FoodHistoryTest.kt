@@ -1,11 +1,13 @@
 package ph.mart.healthapp.feature.food.ui.history
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import java.util.Calendar
 import org.junit.Test
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.food.HISTORY_PAGE_SIZE
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
@@ -71,6 +73,74 @@ class FoodHistoryTest {
         val grouped = listOf(entry("a", 20_000), entry("b", 19_999), entry("c", 20_000)).groupedByDay()
 
         assertEquals(listOf(20_000L, 19_999L, 20_000L), grouped.map { it.first })
+    }
+
+    // ---- Paging ----
+
+    /**
+     * The page boundary is the one new way the adjacent-only fold can be made to lie: a day split
+     * across two reads must stay one group, or the list grows a second header for a date it is
+     * already under.
+     */
+    @Test
+    fun `a day split across a page boundary stays one group`() {
+        val firstPage = listOf(entry("a", 20_000), entry("b", 19_999))
+        val nextPage = listOf(entry("c", 19_999), entry("d", 19_998))
+
+        val grouped = (firstPage + nextPage).groupedByDay()
+
+        assertEquals(listOf(20_000L, 19_999L, 19_998L), grouped.map { it.first })
+        assertEquals(listOf("b", "c"), grouped[1].second.map { it.name })
+    }
+
+    /** And the bands over them, since that fold is adjacent-only for the same reason. */
+    @Test
+    fun `a band split across a page boundary stays one band`() {
+        val today = epochDayOf(2026, 9, 16)
+        val firstPage = listOf(entry("a", today), entry("b", today - 1))
+        val nextPage = listOf(entry("c", today - 2), entry("d", epochDayOf(2026, 7, 4)))
+
+        val bands = (firstPage + nextPage).bandedGroups(today)
+
+        assertEquals(listOf("This week", "July"), bands.map { it.label })
+        assertEquals(3, bands[0].days.size)
+    }
+
+    @Test
+    fun `a short page is the end of the list`() {
+        val state = FoodHistoryUiState(results = List(HISTORY_PAGE_SIZE) { entry("a", 20_000) })
+
+        val appended = state.withPage(page = listOf(entry("b", 19_999)), totals = emptyMap())
+
+        assertTrue(appended.endReached)
+        assertEquals(HISTORY_PAGE_SIZE + 1, appended.results.size)
+        assertFalse(appended.appending)
+    }
+
+    @Test
+    fun `a full page leaves more to ask for`() {
+        val state = FoodHistoryUiState(results = List(HISTORY_PAGE_SIZE) { entry("a", 20_000) }, appending = true)
+
+        val appended = state.withPage(page = List(HISTORY_PAGE_SIZE) { entry("b", 19_999) }, totals = emptyMap())
+
+        assertFalse(appended.endReached)
+        assertEquals(2 * HISTORY_PAGE_SIZE, appended.results.size)
+    }
+
+    /** An empty page is short, so the list stops asking rather than looping on an empty answer. */
+    @Test
+    fun `an empty page is the end of the list`() {
+        assertTrue(FoodHistoryUiState().withPage(page = emptyList(), totals = emptyMap()).endReached)
+    }
+
+    /** The days already on screen keep their figures — only the ones a page introduced are read. */
+    @Test
+    fun `an appended page adds its day totals without dropping the ones held`() {
+        val state = FoodHistoryUiState(results = listOf(entry("a", 20_000)), dayTotals = mapOf(20_000L to 1_806))
+
+        val appended = state.withPage(page = listOf(entry("b", 19_999)), totals = mapOf(19_999L to 2_104))
+
+        assertEquals(mapOf(20_000L to 1_806, 19_999L to 2_104), appended.dayTotals)
     }
 
     @Test
