@@ -49,8 +49,13 @@ private val TrackHeight = 8.dp
  * be the screen grading a meal.
  */
 @Composable
-fun MacroSummaryCard(consumed: DiaryTotals, targets: DailyTargets, modifier: Modifier = Modifier) {
-    AppCard(modifier = modifier) {
+fun MacroSummaryCard(
+    consumed: DiaryTotals,
+    targets: DailyTargets,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
+    AppCard(modifier = modifier, onClick = onClick) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = stringResource(R.string.home_macros_title),

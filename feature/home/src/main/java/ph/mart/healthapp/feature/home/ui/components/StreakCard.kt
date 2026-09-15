@@ -37,7 +37,12 @@ private val PairedBadgeSize = 22.dp
  * failure the app should be marking in `error` at breakfast.
  */
 @Composable
-fun StreakCard(streak: StreakStats, wide: Boolean, modifier: Modifier = Modifier) {
+fun StreakCard(
+    streak: StreakStats,
+    wide: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
     val earned = streak.earnedBadges()
     MetricCard(
         label = stringResource(R.string.home_streak_title),
@@ -46,6 +51,7 @@ fun StreakCard(streak: StreakStats, wide: Boolean, modifier: Modifier = Modifier
         wide = wide,
         status = if (streak.current > 0) StatusMark.OnTrack else StatusMark.None,
         modifier = modifier,
+        onClick = onClick,
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             StreakBadge.entries.forEach { badge ->

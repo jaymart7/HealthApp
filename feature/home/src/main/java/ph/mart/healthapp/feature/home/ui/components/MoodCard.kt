@@ -73,13 +73,14 @@ fun MoodCard(
     onSetMood: (Int) -> Unit,
     onSetEnergy: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     // Resolved here rather than in the `describe` lambdas: those are plain lambdas, and an
     // @StringRes Int interpolated into a string template renders as its number.
     val levelLabels = MoodLevel.entries.map { stringResource(it.label) }
     val moodDescriptions = levelLabels.map { stringResource(R.string.home_mood_set_mood, it) }
     val energyDescriptions = levelLabels.map { stringResource(R.string.home_mood_set_energy, it) }
-    AppCard(modifier = modifier) {
+    AppCard(modifier = modifier, onClick = onClick) {
         Text(
             text = stringResource(R.string.home_mood_title),
             style = MaterialTheme.typography.labelMedium,

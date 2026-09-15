@@ -66,6 +66,7 @@ fun FastingCard(
     onDiscard: () -> Unit,
     wide: Boolean,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
     /** Fixed in previews, which have no coroutine clock to tick against. */
     nowMillisOverride: Long? = null,
 ) {
@@ -75,6 +76,7 @@ fun FastingCard(
             value = stringResource(R.string.home_fasting_none),
             wide = wide,
             modifier = modifier,
+            onClick = onClick,
         ) {
             MetaButton(label = stringResource(R.string.home_fasting_start), onClick = onStart)
         }
@@ -84,6 +86,7 @@ fun FastingCard(
             onEnd = onEnd,
             onDiscard = onDiscard,
             nowMillisOverride = nowMillisOverride,
+            onClick = onClick,
             modifier = modifier,
         )
     }
@@ -95,6 +98,7 @@ private fun ActiveCard(
     onEnd: () -> Unit,
     onDiscard: () -> Unit,
     nowMillisOverride: Long?,
+    onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     // Ticks only while a fast is open — the composable isn't reached otherwise, so there is no
@@ -108,7 +112,7 @@ private fun ActiveCard(
     val now = nowMillisOverride ?: ticked
     val reached = now >= fast.goalReachedMillis
 
-    AppCard(modifier = modifier) {
+    AppCard(modifier = modifier, onClick = onClick) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -85,6 +85,7 @@ internal fun HomeCards(
     onOpenCoach: () -> Unit,
     onStartRoutine: (Long) -> Unit,
     onOpenHomeLayout: () -> Unit,
+    onOpenCard: (HomeCard) -> Unit,
     onEvent: (HomeEvent) -> Unit,
 ) {
     // ponytail: the greeting is fixed for the life of the composition — it won't re-read the
@@ -170,6 +171,7 @@ internal fun HomeCards(
                             targets = targets,
                             onAddPhoto = onAddPhoto,
                             onStartRoutine = onStartRoutine,
+                            onOpenCard = onOpenCard,
                             onEvent = onEvent,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
                         )
@@ -234,14 +236,21 @@ private fun HomeCardContent(
     targets: DailyTargets?,
     onAddPhoto: () -> Unit,
     onStartRoutine: (Long) -> Unit,
+    onOpenCard: (HomeCard) -> Unit,
     onEvent: (HomeEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // The card's body is a door to its Progress subject page. Water is the one card without one,
+    // so its branch below takes no `onClick` — a ripple that navigates nowhere is worse than none.
+    // Every branch that does pass it keeps its own controls: a tap on a mood pill, a supplement
+    // row, the Start button or a flow step is consumed there and never reaches the card.
+    val open = { onOpenCard(card) }
     when (card) {
         HomeCard.Calories -> CalorieRingCard(
             consumedKcal = uiState.totals.calories,
             goalKcal = budget,
             burnedKcal = if (uiState.addExerciseToBudget) uiState.burnedKcal else 0,
+            onClick = open,
             modifier = modifier,
         )
 
@@ -254,10 +263,10 @@ private fun HomeCardContent(
         )
 
         HomeCard.Macros -> targets?.let {
-            MacroSummaryCard(consumed = uiState.totals, targets = it, modifier = modifier)
+            MacroSummaryCard(consumed = uiState.totals, targets = it, modifier = modifier, onClick = open)
         }
 
-        HomeCard.Streak -> StreakCard(streak = uiState.streak, wide = wide, modifier = modifier)
+        HomeCard.Streak -> StreakCard(streak = uiState.streak, wide = wide, modifier = modifier, onClick = open)
 
         HomeCard.Weight -> WeightMetricCard(
             trend = trend,
@@ -265,6 +274,7 @@ private fun HomeCardContent(
             unit = unit,
             projection = projection,
             wide = wide,
+            onClick = open,
             modifier = modifier,
         )
 
@@ -274,16 +284,17 @@ private fun HomeCardContent(
                 goal = uiState.stepGoal,
                 creditKcal = if (uiState.addExerciseToBudget) uiState.stepsCreditKcal else 0,
                 wide = wide,
+                onClick = open,
                 modifier = modifier,
             )
         }
 
         HomeCard.Sleep -> uiState.lastNight?.let { night ->
-            SleepCard(night = night, wide = wide, modifier = modifier)
+            SleepCard(night = night, wide = wide, modifier = modifier, onClick = open)
         }
 
         HomeCard.Heart -> uiState.heart?.let { heart ->
-            HeartCard(heart = heart, wide = wide, modifier = modifier)
+            HeartCard(heart = heart, wide = wide, modifier = modifier, onClick = open)
         }
 
         HomeCard.BloodPressure -> uiState.latestBloodPressure?.let { reading ->
@@ -291,6 +302,7 @@ private fun HomeCardContent(
                 reading = reading,
                 todayEpochDay = todayEpochDay(),
                 wide = wide,
+                onClick = open,
                 modifier = modifier,
             )
         }
@@ -302,6 +314,7 @@ private fun HomeCardContent(
             onEnd = { onEvent(HomeEvent.OnEndFast) },
             onDiscard = { onEvent(HomeEvent.OnDiscardFast) },
             wide = wide,
+            onClick = open,
             modifier = modifier,
         )
 
@@ -310,12 +323,14 @@ private fun HomeCardContent(
             energy = uiState.energyLevel,
             onSetMood = { level -> onEvent(HomeEvent.OnSetMood(level)) },
             onSetEnergy = { level -> onEvent(HomeEvent.OnSetEnergy(level)) },
+            onClick = open,
             modifier = modifier,
         )
 
         HomeCard.Supplements -> SupplementsCard(
             supplements = uiState.supplements,
             onSetTaken = { id, taken -> onEvent(HomeEvent.OnSetSupplementTaken(id, taken)) },
+            onClick = open,
             modifier = modifier,
         )
 
@@ -330,6 +345,7 @@ private fun HomeCardContent(
                 todayEpochDay = today,
                 flow = uiState.cycleDays.firstOrNull { it.dateEpochDay == today }?.flow ?: 0,
                 onSetFlow = { flow -> onEvent(HomeEvent.OnSetCycleFlow(flow)) },
+                onClick = open,
                 modifier = modifier,
             )
         }
@@ -339,6 +355,7 @@ private fun HomeCardContent(
             week = uiState.trainingWeek,
             trained = uiState.trainingWeek.any { it.isToday && it.trained },
             onStart = onStartRoutine,
+            onClick = open,
             modifier = modifier,
         )
 
@@ -349,6 +366,7 @@ private fun HomeCardContent(
             unit = unit,
             onTakePhoto = onAddPhoto,
             wide = wide,
+            onClick = open,
             modifier = modifier,
         )
     }

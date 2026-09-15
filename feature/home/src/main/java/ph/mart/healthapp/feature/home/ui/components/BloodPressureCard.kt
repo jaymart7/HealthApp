@@ -42,12 +42,14 @@ fun BloodPressureCard(
     todayEpochDay: Long,
     wide: Boolean,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     MetricCard(
         label = stringResource(R.string.home_bp_title),
         value = formatBloodPressure(reading.systolic, reading.diastolic),
         wide = wide,
         modifier = modifier,
+        onClick = onClick,
     ) {
         MetaText(
             text = stringResource(reading.category.label),

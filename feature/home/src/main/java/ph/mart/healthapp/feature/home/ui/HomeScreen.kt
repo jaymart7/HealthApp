@@ -36,6 +36,7 @@ import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
+import ph.mart.healthapp.core.designsystem.component.HomeCard
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -49,6 +50,7 @@ fun HomeScreen(
     onOpenCoach: () -> Unit,
     onStartRoutine: (Long) -> Unit,
     onOpenHomeLayout: () -> Unit,
+    onOpenCard: (HomeCard) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
     viewModel: HomeViewModel = koinViewModel(),
 ) {
@@ -62,6 +64,7 @@ fun HomeScreen(
         onOpenCoach = onOpenCoach,
         onStartRoutine = onStartRoutine,
         onOpenHomeLayout = onOpenHomeLayout,
+        onOpenCard = onOpenCard,
         onEvent = viewModel::handleEvent,
     )
 }
@@ -74,6 +77,7 @@ private fun HomeContent(
     onOpenCoach: () -> Unit,
     onStartRoutine: (Long) -> Unit,
     onOpenHomeLayout: () -> Unit,
+    onOpenCard: (HomeCard) -> Unit,
     onEvent: (HomeEvent) -> Unit,
     scrollState: ScrollState = rememberScrollState(),
 ) {
@@ -104,6 +108,7 @@ private fun HomeContent(
                     onOpenCoach = onOpenCoach,
                     onStartRoutine = onStartRoutine,
                     onOpenHomeLayout = onOpenHomeLayout,
+                    onOpenCard = onOpenCard,
                     onEvent = onEvent,
                 )
             }
@@ -163,6 +168,7 @@ private fun HomeScreenPreview() {
             onOpenCoach = {},
             onStartRoutine = {},
             onOpenHomeLayout = {},
+            onOpenCard = {},
             onEvent = {},
         )
     }
@@ -195,6 +201,7 @@ private fun HomeScreenGatedPreview() {
             onOpenCoach = {},
             onStartRoutine = {},
             onOpenHomeLayout = {},
+            onOpenCard = {},
             onEvent = {},
         )
     }
@@ -211,6 +218,7 @@ private fun HomeScreenDayOnePreview() {
             onOpenCoach = {},
             onStartRoutine = {},
             onOpenHomeLayout = {},
+            onOpenCard = {},
             onEvent = {},
         )
     }

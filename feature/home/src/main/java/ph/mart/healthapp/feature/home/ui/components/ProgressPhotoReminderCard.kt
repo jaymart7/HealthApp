@@ -49,6 +49,7 @@ fun ProgressPhotoReminderCard(
     onTakePhoto: () -> Unit,
     wide: Boolean,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     MetricCard(
         label = stringResource(R.string.home_photo_title),
@@ -62,6 +63,7 @@ fun ProgressPhotoReminderCard(
         },
         wide = wide,
         modifier = modifier,
+        onClick = onClick,
     ) {
         // Nothing shot yet: "None yet" over the button is the whole card, and a "0 shots" line
         // under it would only repeat the value in smaller type.

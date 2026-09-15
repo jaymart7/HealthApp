@@ -32,12 +32,20 @@ import ph.mart.healthapp.feature.home.R
  * for no visible reason reads as a bug.
  */
 @Composable
-fun StepsCard(steps: StepDay, goal: Int, creditKcal: Int, wide: Boolean, modifier: Modifier = Modifier) {
+fun StepsCard(
+    steps: StepDay,
+    goal: Int,
+    creditKcal: Int,
+    wide: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
     MetricCard(
         label = stringResource(R.string.home_steps_title),
         value = steps.formatSteps(),
         wide = wide,
         modifier = modifier,
+        onClick = onClick,
     ) {
         MetaBar(
             progress = { if (goal > 0) steps.steps.toFloat() / goal else 0f },

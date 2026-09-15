@@ -63,6 +63,9 @@ internal enum class StatusMark { None, OnTrack, OffTrack }
  * position — every one of them has to read correctly both ways, and the same content is used for
  * both.
  *
+ * [onClick] opens the card's Progress subject page, and is null for the one card with none. It sits
+ * *under* the meta slot's own controls — a Start button or a mood pill consumes its tap first.
+ *
  * [meta] is a `ColumnScope` slot rather than a typed parameter because its four shapes ([MetaText],
  * [MetaBar], [MetaButton], and the streak's badge row) have nothing in common but their placement.
  * The card gives it its width and alignment; the content just fills.
@@ -75,9 +78,10 @@ internal fun MetricCard(
     modifier: Modifier = Modifier,
     unit: String? = null,
     status: StatusMark = StatusMark.None,
+    onClick: (() -> Unit)? = null,
     meta: @Composable ColumnScope.() -> Unit = {},
 ) {
-    AppCard(modifier = modifier) {
+    AppCard(modifier = modifier, onClick = onClick) {
         if (wide) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

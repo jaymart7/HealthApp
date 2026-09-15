@@ -26,13 +26,19 @@ import ph.mart.healthapp.feature.home.R
  * verdict to give.
  */
 @Composable
-fun HeartCard(heart: HeartDay, wide: Boolean, modifier: Modifier = Modifier) {
+fun HeartCard(
+    heart: HeartDay,
+    wide: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
     MetricCard(
         label = stringResource(R.string.home_heart_title),
         value = "${heart.averageBpm}",
         unit = " " + stringResource(R.string.home_heart_bpm),
         wide = wide,
         modifier = modifier,
+        onClick = onClick,
     ) {
         MetaText(
             text = stringResource(R.string.home_heart_average),

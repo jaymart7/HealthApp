@@ -61,8 +61,9 @@ fun CycleCard(
     flow: Int,
     onSetFlow: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
-    AppCard(modifier = modifier) {
+    AppCard(modifier = modifier, onClick = onClick) {
         Text(
             text = stringResource(R.string.home_cycle_title),
             style = MaterialTheme.typography.labelMedium,

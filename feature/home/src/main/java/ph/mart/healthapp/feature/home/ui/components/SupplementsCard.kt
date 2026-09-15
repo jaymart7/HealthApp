@@ -49,9 +49,10 @@ fun SupplementsCard(
     supplements: List<SupplementToday>,
     onSetTaken: (Long, Int) -> Unit,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     if (supplements.isEmpty()) return
-    AppCard(modifier = modifier) {
+    AppCard(modifier = modifier, onClick = onClick) {
         Row(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,

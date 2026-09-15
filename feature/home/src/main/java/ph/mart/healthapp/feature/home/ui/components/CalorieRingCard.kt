@@ -61,6 +61,7 @@ fun CalorieRingCard(
     goalKcal: Int,
     modifier: Modifier = Modifier,
     burnedKcal: Int = 0,
+    onClick: (() -> Unit)? = null,
 ) {
     val target = if (goalKcal > 0) (consumedKcal.toFloat() / goalKcal).coerceIn(0f, 1f) else 0f
     val progress = animateFloatAsState(
@@ -68,7 +69,7 @@ fun CalorieRingCard(
         animationSpec = tween(durationMillis = Motion.Settle, easing = Motion.EmphasizedDecelerate),
         label = "calorieRingProgress",
     )
-    AppCard(modifier = modifier) {
+    AppCard(modifier = modifier, onClick = onClick) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,

@@ -37,6 +37,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavItem
 import ph.mart.healthapp.core.designsystem.component.DockedFab
+import ph.mart.healthapp.core.designsystem.component.HomeCard
 import ph.mart.healthapp.core.designsystem.component.NavRail
 import ph.mart.healthapp.core.designsystem.component.rememberFabExpanded
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -67,6 +68,7 @@ import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
 import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
 import ph.mart.healthapp.feature.progress.ui.RecapRoute
 import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
+import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progressEntries
 import ph.mart.healthapp.feature.progress.ui.route
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet
@@ -107,6 +109,37 @@ private fun NavKey?.title(): String = when (this) {
     TimelapseRoute -> stringResource(R.string.app_title_timelapse)
     RecapRoute -> stringResource(R.string.app_title_recap)
     else -> ""
+}
+
+/**
+ * The Progress subject a Home card is a door to — tapping a card's body opens that subject's page.
+ *
+ * It maps to [Subject] rather than to fourteen route types because [Subject.route] is already the
+ * one place a subject becomes a `NavKey`, and a second table naming the same routes is a second
+ * thing to keep in step. It lives here for the reason [ProfileDetailRoutes] and `title()` do:
+ * `:feature:home` cannot import `:feature:progress`, and this is the one file that sees both.
+ *
+ * Water is the only null: it is the one card with no subject page behind it, so its card takes no
+ * tap at all — `HomeCardContent` never hands it an `onClick`, and this returns null for the same
+ * reason. The `when` is exhaustive, so a card added later has to answer the question here.
+ */
+internal fun HomeCard.subject(): Subject? = when (this) {
+    // Both nutrition cards open the same page rather than switching to the Food tab: the card
+    // reports the day, and the page is where the day sits in a series. One rule for all fourteen.
+    HomeCard.Calories, HomeCard.Macros -> Subject.Nutrition
+    HomeCard.Water -> null
+    HomeCard.Streak -> Subject.Badges
+    HomeCard.Weight -> Subject.Weight
+    HomeCard.Steps -> Subject.Activity
+    HomeCard.Sleep -> Subject.Sleep
+    HomeCard.Heart -> Subject.Heart
+    HomeCard.BloodPressure -> Subject.BloodPressure
+    HomeCard.Fasting -> Subject.Fasting
+    HomeCard.Mood -> Subject.Mood
+    HomeCard.Supplements -> Subject.Supplements
+    HomeCard.Cycle -> Subject.Cycle
+    HomeCard.Workout -> Subject.Strength
+    HomeCard.ProgressPhoto -> Subject.Photos
 }
 
 /**
@@ -358,6 +391,13 @@ fun AppScaffold(
                             },
                             // The same entry Profile's own row opens — Home just makes it findable.
                             onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },
+                            // Pushed onto the *Home* tab's stack, not the Progress tab's: back
+                            // returns to the card that was tapped, which is the whole point of
+                            // the tap. The page draws its own top bar either way — `ownsTopBar`
+                            // reads the route, not the tab it was reached from.
+                            onOpenCard = { card ->
+                                card.subject()?.let { topLevelBackStack.add(it.route()) }
+                            },
                         )
                         // Switching tabs rather than pushing a route: the diary *is* the Food
                         // tab, and it opens on today — which is why the door is only offered for a

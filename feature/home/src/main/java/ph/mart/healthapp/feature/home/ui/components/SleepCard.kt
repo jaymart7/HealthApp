@@ -28,12 +28,18 @@ import ph.mart.healthapp.feature.home.R
  * app knows, so one number is what it says.
  */
 @Composable
-fun SleepCard(night: SleepNight, wide: Boolean, modifier: Modifier = Modifier) {
+fun SleepCard(
+    night: SleepNight,
+    wide: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
     MetricCard(
         label = stringResource(R.string.home_sleep_title),
         value = night.formatDuration(),
         wide = wide,
         modifier = modifier,
+        onClick = onClick,
     ) {
         MetaText(text = stringResource(R.string.home_from_google_health))
     }

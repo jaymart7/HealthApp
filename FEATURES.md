@@ -75,6 +75,10 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   rules-based offline fallback).
 - Half-width cards pair with an adjacent half; an unpaired half falls back to full width. Gated
   cards are removed before pairing, so survivors close up rather than leaving holes.
+- Tapping a card's body opens that card's Progress subject page (photo card → the photo set,
+  Streak → Badges, Steps → Activity, Workout → Strength, Calories/Macros → Nutrition); back returns
+  to Home. The card's own controls keep their taps, and Water — the one card with no page — is not
+  tappable.
 - An 8dp status dot on the four cards where on-track is a fact the app measures (calories, streak,
   fasting goal, weight direction) and nowhere else.
 - Card order and visibility edited in Profile → Home layout (drag handle + move up/down a11y

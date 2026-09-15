@@ -52,6 +52,7 @@ fun WeightMetricCard(
     projection: GoalProjection?,
     wide: Boolean,
     modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
 ) {
     val direction = goalRelativeTrend(goal, trend.deltaKg)
     val color = when (direction) {
@@ -71,6 +72,7 @@ fun WeightMetricCard(
             TrendDirection.Neutral -> StatusMark.None
         },
         modifier = modifier,
+        onClick = onClick,
     ) {
         MetaText(
             text = if (trend.hasPrior) {

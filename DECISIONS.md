@@ -894,6 +894,28 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `HomeUiState.weightProgressKg` (Progress keeps its own). `BadgeDot` gained a `size` parameter for
   this one caller: five 32dp dots do not fit inside a paired card's 126dp of content on a 360dp
   screen.
+- **A card's body is a door to its Progress subject page, and its own controls still win the tap.**
+  Fourteen of the fifteen cards now push the subject they report on — the photo card opens the photo
+  set, Sleep opens the sleep chart, Streak opens Badges, Steps opens Activity, Workout opens
+  Strength. `HomeCard.subject()` in `AppScaffold.kt` is the map, and it answers with a `Subject`
+  rather than a route because `Subject.route()` is already the one place a subject becomes a
+  `NavKey`; a second table naming the same fourteen routes is a second thing to keep in step. It
+  lives in `:app` for the reason `title()` does — `:feature:home` cannot import `:feature:progress`,
+  so the card rides up as a `HomeCard`, the `:core:designsystem` type both sides already speak.
+  The tap is `AppCard`'s existing `onClick`, so the ripple is clipped to the 20dp corners and sits
+  *under* the card's own controls: a mood pill, a supplement row, a cycle flow step, Start and Take
+  photo all consume the tap before it reaches the card, which is what lets an input card be a door
+  without stopping being an input. **Water is the one card with no destination** — there is no water
+  subject — so it is handed no `onClick` at all rather than a ripple that goes nowhere, and
+  `HomeCard.subject()` returns null for it; `HomeCardDestinationTest` holds both ends. Calories and
+  Macros open Progress ▸ Nutrition rather than switching to the Food tab: the diary is where you
+  *edit* the day, the subject page is where the day sits in a series, and one rule for all fourteen
+  reads as a rule rather than as fourteen guesses. The push lands on the **Home** tab's stack, so
+  back returns to the card that was tapped; the page draws its own `AppTopBar` either way, since
+  `ownsTopBar` reads the route and not the tab it was reached from. This is the counterpart to the
+  header block's decision above, not a reversal of it: the strip and the insight sit in one card
+  answering two questions, so there the `AIChip` is the tap target — a metric card asks one
+  question and can afford to be one target.
 - **"Rearrange your Home" is a link, not a second editor.** It navigates to the same
   `HomeLayoutRoute` Profile's own row opens, via an `onOpenHomeLayout` callback of the shape
   `onOpenCoach` already has (`:feature:home` cannot import `:feature:profile`). It adds no drag
