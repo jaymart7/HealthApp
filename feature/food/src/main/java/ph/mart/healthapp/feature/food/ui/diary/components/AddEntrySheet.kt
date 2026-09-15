@@ -1,17 +1,28 @@
 package ph.mart.healthapp.feature.food.ui.diary.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Recipe
@@ -26,12 +37,14 @@ import ph.mart.healthapp.core.designsystem.component.MealThumbnail
 import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
+import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.recipe.components.RecipePanel
 import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
+import ph.mart.healthapp.feature.food.ui.shared.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.isValid
 import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
@@ -86,7 +99,39 @@ internal fun AddEntrySheet(
             // photo survives the supersede, and a form that never mentioned it looked like it
             // wouldn't.
             form.photoPath?.let { path ->
-                MealThumbnail(path = path, size = 64.dp)
+                // A view toggle over a path the form is already holding, so it stays here rather
+                // than in FoodScreenState — whose saver is a positional list, and this survives a
+                // rotation on its own.
+                var viewingPhoto by rememberSaveable { mutableStateOf(false) }
+                val viewLabel = stringResource(R.string.food_photo_view)
+                MealThumbnail(
+                    path = path,
+                    size = 64.dp,
+                    // A 64dp centre-crop is the worst look at the plate, so it opens — the same
+                    // call the confirmation screen's identical crop makes. Clipped to
+                    // MealThumbnail's own corner so the ripple matches what is drawn, and
+                    // described because a tap target is not decorative even when its image is.
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { viewingPhoto = true }
+                        .semantics { contentDescription = viewLabel },
+                )
+                if (viewingPhoto) {
+                    // Its own window, because the sheet's content column scrolls with unbounded
+                    // height and clips: a full-bleed viewer cannot live inside it, and anything
+                    // drawn outside it lands behind the sheet. decorFitsSystemWindows leaves the
+                    // viewer's close button the real insets to carry. Back is this window's own —
+                    // it closes the viewer and leaves the form as it was.
+                    Dialog(
+                        onDismissRequest = { viewingPhoto = false },
+                        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+                    ) {
+                        PhotoViewerOverlay(
+                            photo = rememberBitmapFromFile(path),
+                            onClose = { viewingPhoto = false },
+                        )
+                    }
+                }
             }
             if (!editing) {
                 // Above the panels, because it answers a different question: they are faster

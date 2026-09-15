@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.photo.components
+package ph.mart.healthapp.feature.food.ui.shared.components
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -39,18 +40,24 @@ import ph.mart.healthapp.feature.food.R
 private const val MAX_SCALE = 4f
 
 /**
- * The captured plate, full-bleed on black, pinch-zoomable and pannable — the second level inside
- * [ph.mart.healthapp.feature.food.ui.photo.CaptureFlow.Confirmation], drawn over the review form so
- * the photo the numbers were read off can actually be looked at before they are committed.
+ * A plate, full-bleed on black, pinch-zoomable and pannable. Two callers, both showing the picture
+ * an estimate is about to be committed against: the camera flow's
+ * [ph.mart.healthapp.feature.food.ui.photo.CaptureFlow.Confirmation], where it is a second level
+ * over the review form, and the diary's edit sheet, where it is a dialog window over the sheet.
  *
- * Full-bleed on purpose: the rest of the flow's non-camera states are inset by the caller's
+ * Full-bleed on purpose: the rest of the camera flow's non-camera states are inset by the caller's
  * `safeDrawingPadding`, but a viewer that letterboxes itself inside the system bars is showing
  * less of the picture than the camera did. The close button carries the inset instead.
  *
- * Back closes it — the flow's one always-mounted handler does that, not a second handler here.
+ * Back closes it, and each caller owns how: the camera flow's one always-mounted handler dispatches
+ * to it, and the sheet's dialog window dismisses itself. Never a handler in here.
+ *
+ * [photo] is null while a stored file is still decoding, and stays null if the file is gone — the
+ * frame and the close button draw either way, because a viewer you can't get out of is worse than
+ * an empty one.
  */
 @Composable
-internal fun PhotoViewerOverlay(photo: Bitmap, onClose: () -> Unit, modifier: Modifier = Modifier) {
+internal fun PhotoViewerOverlay(photo: ImageBitmap?, onClose: () -> Unit, modifier: Modifier = Modifier) {
     var scale by remember { mutableFloatStateOf(1f) }
     var pan by remember { mutableStateOf(Offset.Zero) }
     var frame by remember { mutableStateOf(IntSize.Zero) }
@@ -61,36 +68,38 @@ internal fun PhotoViewerOverlay(photo: Bitmap, onClose: () -> Unit, modifier: Mo
             .background(Color.Black)
             .onSizeChanged { frame = it },
     ) {
-        Image(
-            bitmap = photo.asImageBitmap(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    translationX = pan.x
-                    translationY = pan.y
-                }
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, panChange, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(1f, MAX_SCALE)
-                        // Zoomed all the way back out there is nothing left to pan to, and a photo
-                        // left sitting off-centre at 1x is the state you can't get out of.
-                        pan = if (scale == 1f) {
-                            Offset.Zero
-                        } else {
-                            // The layer's translation sits outside its scale, so the drag tracks
-                            // the finger 1:1 and only the clamp has to know about the zoom.
-                            val next = pan + panChange
-                            val limitX = maxPan(scale, frame.width.toFloat())
-                            val limitY = maxPan(scale, frame.height.toFloat())
-                            Offset(next.x.coerceIn(-limitX, limitX), next.y.coerceIn(-limitY, limitY))
-                        }
+        photo?.let {
+            Image(
+                bitmap = it,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = pan.x
+                        translationY = pan.y
                     }
-                },
-        )
+                    .pointerInput(Unit) {
+                        detectTransformGestures { _, panChange, zoom, _ ->
+                            scale = (scale * zoom).coerceIn(1f, MAX_SCALE)
+                            // Zoomed all the way back out there is nothing left to pan to, and a
+                            // photo left sitting off-centre at 1x is the state you can't get out of.
+                            pan = if (scale == 1f) {
+                                Offset.Zero
+                            } else {
+                                // The layer's translation sits outside its scale, so the drag tracks
+                                // the finger 1:1 and only the clamp has to know about the zoom.
+                                val next = pan + panChange
+                                val limitX = maxPan(scale, frame.width.toFloat())
+                                val limitY = maxPan(scale, frame.height.toFloat())
+                                Offset(next.x.coerceIn(-limitX, limitX), next.y.coerceIn(-limitY, limitY))
+                            }
+                        }
+                    },
+            )
+        }
 
         IconButton(
             onClick = onClose,
@@ -124,6 +133,6 @@ internal fun maxPan(scale: Float, extent: Float): Float = (extent * (scale - 1f)
 @Composable
 private fun PhotoViewerOverlayPreview() {
     AppTheme {
-        PhotoViewerOverlay(photo = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888), onClose = {})
+        PhotoViewerOverlay(photo = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888).asImageBitmap(), onClose = {})
     }
 }

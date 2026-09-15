@@ -103,7 +103,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Quick add — a bare calorie figure with no name.
 - Every numeric field is typable and steppable; changing a portion reprices the whole entry.
 - Edit a logged row (supersedes it: soft-delete + insert, keeps its place in the day) — a row
-  logged from the camera wears a 40dp thumbnail, shown again on the edit sheet and kept by the edit.
+  logged from the camera wears a 40dp thumbnail, shown again on the edit sheet — where it opens
+  full-screen, pinch-zoomable — and kept by the edit.
 - Swipe to delete with Undo snackbar.
 - Local text filter over the day's logged entries.
 - Search your diary — a route above the tab searching every food ever logged, by name, newest

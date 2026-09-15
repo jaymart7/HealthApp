@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
@@ -43,9 +44,9 @@ import ph.mart.healthapp.feature.food.ui.photo.components.AnalyzingScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.PhotoOfflineScreen
-import ph.mart.healthapp.feature.food.ui.photo.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.photo.components.RetryScreen
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen
+import ph.mart.healthapp.feature.food.ui.shared.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
@@ -277,7 +278,10 @@ fun PhotoCaptureScreen(
         // carries the safe-area padding instead.
         if (state.viewingPhoto && state.flow == CaptureFlow.Confirmation) {
             state.photo?.let { photo ->
-                PhotoViewerOverlay(photo = photo, onClose = { state.viewingPhoto = false })
+                PhotoViewerOverlay(
+                    photo = remember(photo) { photo.asImageBitmap() },
+                    onClose = { state.viewingPhoto = false },
+                )
             }
         }
     }

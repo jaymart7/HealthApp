@@ -1,8 +1,8 @@
-package ph.mart.healthapp.feature.food.ui.photo
+package ph.mart.healthapp.feature.food.ui.shared
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import ph.mart.healthapp.feature.food.ui.photo.components.maxPan
+import ph.mart.healthapp.feature.food.ui.shared.components.maxPan
 
 class PhotoViewerZoomTest {
 

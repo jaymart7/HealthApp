@@ -290,10 +290,33 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **The viewer is full-bleed, and it lives in `:feature:food`.** Every non-camera state in the flow
   is inset by the screen's `safeDrawingPadding`; the viewer is drawn outside that box, because one
   that letterboxes itself inside the system bars shows less of the plate than the camera did — its
-  close button carries the inset instead. It stays in `ui/photo/components/` rather than moving to
-  `:core:designsystem` because one screen draws it: the diary rows and the edit sheet keep their
-  inert thumbnails, and the second caller is what would earn the move. `maxPan` is a pure Float
-  function with `PhotoViewerZoomTest` over it, which is the only real arithmetic in the thing.
+  close button carries the inset instead. `maxPan` is a pure Float function with
+  `PhotoViewerZoomTest` over it, which is the only real arithmetic in the thing.
+- **The second caller arrived, so the viewer moved to `ui/shared/components/`** — not to
+  `:core:designsystem`, which is what the entry above used to promise, because it never left the
+  module: two *flows* draw it (`photo` and `diary`), and that is exactly what this repo's
+  shared-package rule is for. It also took an `ImageBitmap?` on the way: the camera flow holds a
+  decoded `Bitmap` in memory and the edit sheet holds a *path* that `rememberBitmapFromFile` — the
+  app's one decoder — hands back asynchronously, so nullable serves both, and the black frame and
+  the close button draw while it is null. A file deleted underneath the row is the same case as a
+  decode in flight, and a viewer you cannot get out of would be worse than an empty one.
+- **The edit sheet's plate opens, and it opens in its own window.** The 64dp thumbnail was inert on
+  the argument that the confirmation screen is where you look at a photo — but a correction is
+  precisely where you would want to check what you are correcting, and the sheet was the one place
+  showing a plate you could not open. It is a `Dialog` rather than a swap-in sub-view, unlike the
+  calendar in `SheetDatePicker`, because `AppBottomSheet`'s content column scrolls with unbounded
+  height and clips: a `fillMaxSize` viewer cannot live inside it, and anything the screen draws
+  outside the sheet lands *behind* the sheet's own window. `usePlatformDefaultWidth = false` with
+  `decorFitsSystemWindows = false` is what makes that window full-bleed and leaves the viewer's
+  close button real insets to carry. Back is the dialog window's own (`dismissOnBackPress`), which
+  is why this is the one sub-level in the app with no `NavigationBackHandler`: the rule that
+  handler exists to satisfy is about not falling through to the *Activity*, and a dialog window
+  never does. The flag is a local `rememberSaveable` rather than a `FoodScreenState` field — it is
+  a view toggle over a path the form already holds, it survives rotation on its own, and that
+  saver is a positional list every index of which carries a warning about appending to it.
+  The diary *row's* 40dp thumbnail stays inert: tapping the row already opens this sheet, so the
+  photo is two taps away there either way, and `MealThumbnail` in `:core:designsystem` needed no
+  change at all.
 - **`rememberBitmapFromFile` moved to `:core:designsystem`.** Two features draw stored photos now,
   and a second decoder is a second downsampling rule to keep in step. Nothing about it changed but
   its package and one more size constant (`THUMB_PX`, for the diary row's 40dp tile).
