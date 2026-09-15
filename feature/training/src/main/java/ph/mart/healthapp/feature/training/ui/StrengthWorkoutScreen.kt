@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -183,6 +184,9 @@ private fun StrengthWorkoutContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
                     .fillMaxSize()
+                    // Before the scroll, so the set editor's weight and reps fields lift clear of the
+                    // keyboard instead of sitting behind it.
+                    .imePadding()
                     .verticalScroll(rememberScrollState())
                     // No docked FAB over this route, so no clearance to reserve for one.
                     .padding(horizontal = 16.dp)

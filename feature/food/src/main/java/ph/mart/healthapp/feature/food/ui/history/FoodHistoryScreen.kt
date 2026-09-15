@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
@@ -89,7 +90,9 @@ private fun FoodHistoryContent(
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+            // The field arrives focused, so the keyboard is up before the first result is: without
+            // this the list runs on behind it.
+            Column(modifier = Modifier.fillMaxSize().imePadding().padding(horizontal = 16.dp)) {
                 AppTextField(
                     value = uiState.query,
                     onValueChange = { onEvent(FoodHistoryEvent.OnQueryChange(it)) },
