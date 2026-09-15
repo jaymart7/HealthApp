@@ -42,7 +42,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 
@@ -61,7 +60,6 @@ private const val FULL_NIGHT_MINUTES = 480
  */
 @Composable
 internal fun SleepScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -71,8 +69,6 @@ internal fun SleepScreen(
     val uiState by viewModel.collectAsState()
     SleepContent(
         nights = uiState.nights,
-        cycleTrackingOn = uiState.cycleTrackingOn,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -83,8 +79,6 @@ internal fun SleepScreen(
 @Composable
 private fun SleepContent(
     nights: List<SleepNight>,
-    cycleTrackingOn: Boolean,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -117,19 +111,11 @@ private fun SleepContent(
                 },
             )
             if (nights.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_sleep_heading),
-                            body = stringResource(R.string.progress_empty_sleep_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Sleep,
-                        cycleTracking = cycleTrackingOn,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_sleep_heading),
+                        body = stringResource(R.string.progress_empty_sleep_body),
                     )
                 }
             } else {
@@ -142,11 +128,6 @@ private fun SleepContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     SleepBody(nights = nights, state = state)
-                    SubjectSwitcher(
-                        subject = Subject.Sleep,
-                        cycleTracking = cycleTrackingOn,
-                        onSelect = onSwitchSubject,
-                    )
                 }
             }
         }
@@ -198,8 +179,6 @@ private fun SleepScreenPreview() {
             nights = listOf(432, 401, 512, 388, 447).mapIndexed { index, minutes ->
                 SleepNight(today - 4 + index, minutes)
             },
-            cycleTrackingOn = true,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -214,8 +193,6 @@ private fun SleepScreenEmptyPreview() {
     AppTheme {
         SleepContent(
             nights = emptyList(),
-            cycleTrackingOn = true,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},

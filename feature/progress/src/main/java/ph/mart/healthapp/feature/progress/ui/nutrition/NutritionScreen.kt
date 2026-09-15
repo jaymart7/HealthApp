@@ -46,7 +46,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 
 /**
  * Calories and macros over the picked window, then the plates — a route of its own,
@@ -58,7 +57,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
  */
 @Composable
 internal fun NutritionScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -71,7 +69,6 @@ internal fun NutritionScreen(
         mealPhotos = uiState.mealPhotos,
         targets = uiState.targets,
         nutrientTargets = uiState.nutrientTargets,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -85,7 +82,6 @@ private fun NutritionContent(
     mealPhotos: List<FoodEntry>,
     targets: DailyTargets?,
     nutrientTargets: Nutrients?,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -117,18 +113,11 @@ private fun NutritionContent(
                 },
             )
             if (!anythingLogged) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_nutrition_heading),
-                            body = stringResource(R.string.progress_empty_nutrition_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Nutrition,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_nutrition_heading),
+                        body = stringResource(R.string.progress_empty_nutrition_body),
                     )
                 }
             } else {
@@ -147,7 +136,6 @@ private fun NutritionContent(
                         nutrientTargets = nutrientTargets,
                         state = state,
                     )
-                    SubjectSwitcher(subject = Subject.Nutrition, onSelect = onSwitchSubject)
                 }
             }
         }
@@ -240,7 +228,6 @@ private fun NutritionScreenPreview() {
             mealPhotos = emptyList(),
             targets = targetsPreview(),
             nutrientTargets = null,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -258,7 +245,6 @@ private fun NutritionScreenEmptyPreview() {
             mealPhotos = emptyList(),
             targets = targetsPreview(),
             nutrientTargets = null,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},

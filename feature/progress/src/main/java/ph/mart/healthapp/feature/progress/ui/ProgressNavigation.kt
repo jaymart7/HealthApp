@@ -152,15 +152,12 @@ data object AddPhotoRoute : NavKey
  * [AddPhotoRoute] is the one holding a handler at all, and it is for stepping *within* the flow —
  * a retake is one back press, leaving is the next.
  *
- * [onOpenSubject] **pushes** a subject page and [onSwitchSubject] **replaces** the one showing —
- * the sibling switcher's promise that Sleep -> Mood -> Heart leaves one back step, not three. The
- * comparison and the timelapse are reached from the Photos page rather than from the tab, which is
- * why those callbacks land on a different entry.
+ * [onOpenSubject] pushes a subject page. The comparison and the timelapse are reached from the
+ * Photos page rather than from the tab, which is why those callbacks land on a different entry.
  */
 fun EntryProviderScope<NavKey>.progressEntries(
     scrollState: ScrollState,
     onOpenSubject: (Subject) -> Unit,
-    onSwitchSubject: (Subject) -> Unit,
     onCompare: (Long, Long) -> Unit,
     onOpenTimelapse: () -> Unit,
     onOpenRecap: () -> Unit,
@@ -186,7 +183,6 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<SleepRoute> {
         SleepScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
@@ -194,7 +190,6 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<MoodRoute> {
         MoodScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
@@ -202,21 +197,18 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<HeartRoute> {
         HeartScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
         )
     }
     entry<SupplementsRoute> {
         SupplementsScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
         )
     }
     entry<StrengthRoute> {
         StrengthScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
@@ -224,7 +216,6 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<FastingRoute> {
         FastingScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
@@ -232,7 +223,6 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<ActivityRoute> {
         ActivityScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
@@ -240,27 +230,23 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<CycleRoute> {
         CycleScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
         )
     }
     entry<BloodPressureRoute> {
         BloodPressureScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
         )
     }
     entry<MeasurementsRoute> {
         MeasurementsScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onExitFlow = onExitFlow,
         )
     }
     entry<WeightRoute> {
-        // No `onSwitchSubject`: Weight's foot is its own records, not the group switcher.
         WeightScreen(
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
@@ -269,7 +255,6 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<NutritionRoute> {
         NutritionScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,

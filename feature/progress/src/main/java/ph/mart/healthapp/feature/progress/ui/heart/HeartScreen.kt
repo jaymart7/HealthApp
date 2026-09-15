@@ -41,13 +41,11 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 
 /** Imported heart-rate days, charted — a route of its own, `SleepScreen`'s shape. Import-only,
  * so there is no sheet and no call to action on the empty state. */
 @Composable
 internal fun HeartScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -56,8 +54,6 @@ internal fun HeartScreen(
     val uiState by viewModel.collectAsState()
     HeartContent(
         days = uiState.days,
-        cycleTrackingOn = uiState.cycleTrackingOn,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onExitFlow = onExitFlow,
         modifier = modifier,
@@ -67,8 +63,6 @@ internal fun HeartScreen(
 @Composable
 private fun HeartContent(
     days: List<HeartDay>,
-    cycleTrackingOn: Boolean,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -93,19 +87,11 @@ private fun HeartContent(
                 },
             )
             if (days.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_heart_heading),
-                            body = stringResource(R.string.progress_empty_heart_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Heart,
-                        cycleTracking = cycleTrackingOn,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_heart_heading),
+                        body = stringResource(R.string.progress_empty_heart_body),
                     )
                 }
             } else {
@@ -118,11 +104,6 @@ private fun HeartContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     HeartBody(days = days, state = state)
-                    SubjectSwitcher(
-                        subject = Subject.Heart,
-                        cycleTracking = cycleTrackingOn,
-                        onSelect = onSwitchSubject,
-                    )
                 }
             }
         }
@@ -173,8 +154,6 @@ private fun HeartScreenPreview() {
             days = listOf(68 to 52, 71 to 55, 66 to 49, 74 to 58).mapIndexed { index, (average, low) ->
                 HeartDay(today - 3 + index, averageBpm = average, minBpm = low)
             },
-            cycleTrackingOn = true,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )
@@ -188,8 +167,6 @@ private fun HeartScreenEmptyPreview() {
     AppTheme {
         HeartContent(
             days = emptyList(),
-            cycleTrackingOn = true,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )

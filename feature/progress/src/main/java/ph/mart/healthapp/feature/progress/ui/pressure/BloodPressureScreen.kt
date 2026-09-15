@@ -45,7 +45,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.shared.components.RangeBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.RangeBarChart
 
@@ -63,7 +62,6 @@ private const val AXIS_PAD_MMHG = 10
  */
 @Composable
 internal fun BloodPressureScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -73,9 +71,7 @@ internal fun BloodPressureScreen(
     val uiState by viewModel.collectAsState()
     BloodPressureContent(
         readings = uiState.readings,
-        cycleTrackingOn = uiState.cycleTrackingOn,
         onEvent = logViewModel::handleEvent,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onExitFlow = onExitFlow,
         modifier = modifier,
@@ -85,9 +81,7 @@ internal fun BloodPressureScreen(
 @Composable
 private fun BloodPressureContent(
     readings: List<BloodPressureReading>,
-    cycleTrackingOn: Boolean,
     onEvent: (BloodPressureEvent) -> Unit,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -112,36 +106,26 @@ private fun BloodPressureContent(
                 },
             )
             if (readings.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_pressure_heading),
-                            body = stringResource(R.string.progress_empty_pressure_body),
-                            // The other empty page with a button, beside Cycle's: the sheet it
-                            // opens is already on this screen, so it adds no entry point.
-                            actions = {
-                                PrimaryButton(
-                                    label = stringResource(R.string.progress_hint_pressure),
-                                    onClick = { state.sheetOpen = true },
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                            },
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.BloodPressure,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
-                        cycleTracking = cycleTrackingOn,
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_pressure_heading),
+                        body = stringResource(R.string.progress_empty_pressure_body),
+                        // The other empty page with a button, beside Cycle's: the sheet it
+                        // opens is already on this screen, so it adds no entry point.
+                        actions = {
+                            PrimaryButton(
+                                label = stringResource(R.string.progress_hint_pressure),
+                                onClick = { state.sheetOpen = true },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        },
                     )
                 }
             } else {
                 BloodPressureList(
                     readings = readings,
-                    cycleTrackingOn = cycleTrackingOn,
                     state = state,
-                    onSwitchSubject = onSwitchSubject,
                 )
             }
         }
@@ -179,9 +163,7 @@ private fun BloodPressureContent(
 @Composable
 private fun BloodPressureList(
     readings: List<BloodPressureReading>,
-    cycleTrackingOn: Boolean,
     state: BloodPressureState,
-    onSwitchSubject: (Subject) -> Unit,
 ) {
     val today = todayEpochDay()
     val range = state.range
@@ -247,13 +229,6 @@ private fun BloodPressureList(
                 onDelete = { state.pendingDeleteReadingId = reading.id },
             )
         }
-        item {
-            SubjectSwitcher(
-                subject = Subject.BloodPressure,
-                onSelect = onSwitchSubject,
-                cycleTracking = cycleTrackingOn,
-            )
-        }
     }
 }
 
@@ -278,9 +253,7 @@ private fun BloodPressureScreenPreview() {
     AppTheme {
         BloodPressureContent(
             readings = readingsPreview(),
-            cycleTrackingOn = true,
             onEvent = {},
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )
@@ -294,9 +267,7 @@ private fun BloodPressureScreenEmptyPreview() {
     AppTheme {
         BloodPressureContent(
             readings = emptyList(),
-            cycleTrackingOn = true,
             onEvent = {},
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )

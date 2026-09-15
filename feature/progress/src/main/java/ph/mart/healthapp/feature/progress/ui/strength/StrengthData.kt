@@ -8,8 +8,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
  * container, so an empty list here is "nothing lifted" rather than "nothing logged", which is the
  * question the page's empty state actually asks.
  *
- * [unit] is the profile's, for the volume figures and the records. No `cycleTrackingOn` beside it:
- * Strength sits in Training, so its switcher never has to decide whether to draw Cycle.
+ * [unit] is the profile's, for the volume figures and the records.
  */
 data class StrengthUiState(
     val entries: List<ExerciseEntry> = emptyList(),

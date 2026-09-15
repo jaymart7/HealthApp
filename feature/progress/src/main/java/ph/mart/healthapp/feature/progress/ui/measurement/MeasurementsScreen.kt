@@ -40,7 +40,6 @@ import ph.mart.healthapp.feature.progress.ui.measurement.components.BodyComposit
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementRow
 import ph.mart.healthapp.feature.progress.ui.measurement.components.WaistToHeightCard
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 
 /**
  * A list, not a chart — six readings each with their own sparse history, which is a table of rows
@@ -52,7 +51,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
  */
 @Composable
 internal fun MeasurementsScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -64,7 +62,6 @@ internal fun MeasurementsScreen(
         latestWeightKg = uiState.latestWeightKg,
         heightCm = uiState.heightCm,
         unit = uiState.unit,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onExitFlow = onExitFlow,
         modifier = modifier,
@@ -77,7 +74,6 @@ private fun MeasurementsContent(
     latestWeightKg: Double?,
     heightCm: Double?,
     unit: UnitSystem,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -104,27 +100,20 @@ private fun MeasurementsContent(
                 },
             )
             if (tracked.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_measurements_heading),
-                            body = stringResource(R.string.progress_empty_measurements_body),
-                            // A button here for the reason Cycle's and Blood pressure's have one:
-                            // the sheet it opens is already on this page.
-                            actions = {
-                                PrimaryButton(
-                                    label = stringResource(R.string.progress_measurement_add),
-                                    onClick = { state.openSheet(null) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                            },
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Measurements,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_measurements_heading),
+                        body = stringResource(R.string.progress_empty_measurements_body),
+                        // A button here for the reason Cycle's and Blood pressure's have one:
+                        // the sheet it opens is already on this page.
+                        actions = {
+                            PrimaryButton(
+                                label = stringResource(R.string.progress_measurement_add),
+                                onClick = { state.openSheet(null) },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        },
                     )
                 }
             } else {
@@ -143,7 +132,6 @@ private fun MeasurementsContent(
                         unit = unit,
                         state = state,
                     )
-                    SubjectSwitcher(subject = Subject.Measurements, onSelect = onSwitchSubject)
                 }
             }
         }
@@ -222,7 +210,6 @@ private fun MeasurementsScreenPreview() {
             latestWeightKg = 82.0,
             heightCm = 178.0,
             unit = UnitSystem.Metric,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )
@@ -239,7 +226,6 @@ private fun MeasurementsScreenEmptyPreview() {
             latestWeightKg = null,
             heightCm = null,
             unit = UnitSystem.Metric,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )

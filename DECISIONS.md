@@ -1200,13 +1200,12 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   switch and the screen it lives on and changes nothing itself — the warn-and-point shape
   `HomeCard.note` uses. *ponytail: no Home card, no coach field, no reminder and no history of past
   adjustments — nothing is stored, so there is nothing to chart.*
-- **Weight's foot is its own records, not the group switcher — and it is the only page where that
-  is true.** The page charted every weigh-in and listed none, so the one way to correct a number
-  was the FAB's sheet, which opens on today. It now lists the window's entries newest-first under a
-  "Records" heading, and `SubjectSwitcher` comes off *this* page only: the switcher's promise that
-  every subject page draws one at its foot now has exactly one exception, and it is the page whose
-  own subject has something to say down there. Photos and Measurements are still one tap away
-  through the overview. The list is windowed by the chart's own 1M/3M/6M/1Y range rather than the
+- **Weight's foot is its own records, not the group switcher.** The page charted every weigh-in and
+  listed none, so the one way to correct a number was the FAB's sheet, which opens on today. It now
+  lists the window's entries newest-first under a "Records" heading, and `SubjectSwitcher` came off
+  *this* page first — the page whose own subject had something to say down there. It came off the
+  other twelve shortly after (see **Progress, recap & the energy check-in**), so this is no longer
+  an exception, just the first one. The list is windowed by the chart's own 1M/3M/6M/1Y range rather than the
   full history, so the rows can never disagree with the chips, the chart and "Readings logged"
   above them — and that window is also why the page is a `LazyColumn` now, `BloodPressureScreen`'s
   argument at a year's worth of rows. Within that window the list pages: twenty rows, another twenty
@@ -1235,6 +1234,20 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   it into a read-only container. *ponytail: someone who types "Google Health" as their own note
   loses the delete on that row; a `health_link` lookup is the upgrade if that ever happens to
   anyone.*
+- **The sibling switcher comes off every page, and the two entries above it are superseded.** The
+  "More in <Group>" row at the foot of eleven subject pages is gone, along with `SiblingSwitcher`,
+  `SubjectSwitcher`, the `onSwitchSubject` callback `AppScaffold` threaded through `progressEntries`
+  into all eleven, and the `removeLast()`-then-`add()` replace idiom that callback existed for. Two
+  entries argued it into its final shape — names-not-values, and replace-not-push — and both were
+  arguments about how to keep a control that had already lost the thing that made it worth drawing:
+  once it could no longer quote a sibling's figure, it was a list of words the overview grid already
+  shows, one back press away, with a preview and a trend beside each. A page now ends at its own
+  content. What falls out with it is the tell: `cycleTrackingOn` on the Sleep, Mood, Heart and
+  Blood-pressure states existed *only* to stop the switcher offering a door to a hidden Cycle, so
+  those four containers stop injecting `ProfileRepository` and their `combine` collapses to a plain
+  `collect` — four pages that read the profile for one boolean they never displayed. The empty-state
+  `Column { Box(weight(1f)) { … } }` on each page collapses back to the `Box` it was before the
+  switcher needed a sibling beneath the mascot.
 
 ### Saved meals, recipes & the food library
 
@@ -2698,8 +2711,8 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   a subject out of the Progress grid** rather than dashing it: every other empty subject is empty
   for want of data, while this one may be permanently irrelevant to whoever is holding the phone,
   and a card that can never say anything is worse than no card. So `subjectsIn(group, cycleTracking)`
-  takes the flag, and both the grid *and* the detail page's sibling switcher read it — a page
-  offering a door to a subject the overview has removed is the failure that pairing prevents. The
+  takes the flag, and the overview grid is the one caller — a subject page can no longer offer a
+  door to a subject the overview has removed, because it offers no doors at all. The
   Home card is gated the same way, inside its own `when` branch like every other data gate there.
 
 ### Cycle

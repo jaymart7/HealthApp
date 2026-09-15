@@ -45,7 +45,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 
@@ -53,7 +52,6 @@ import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
  * imported and workouts are logged elsewhere, so this page only reads. */
 @Composable
 internal fun ActivityScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -65,7 +63,6 @@ internal fun ActivityScreen(
         stepDays = uiState.stepDays,
         exerciseEntries = uiState.exerciseEntries,
         stepGoal = uiState.stepGoal,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -78,7 +75,6 @@ private fun ActivityContent(
     stepDays: List<StepDay>,
     exerciseEntries: List<ExerciseEntry>,
     stepGoal: Int,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -108,18 +104,11 @@ private fun ActivityContent(
             // logged workouts alone is the Strength page's story told worse. The empty card on the
             // overview says the same thing, off the same field.
             if (stepDays.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_activity_heading),
-                            body = stringResource(R.string.progress_empty_activity_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Activity,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_activity_heading),
+                        body = stringResource(R.string.progress_empty_activity_body),
                     )
                 }
             } else {
@@ -137,7 +126,6 @@ private fun ActivityContent(
                         stepGoal = stepGoal,
                         state = state,
                     )
-                    SubjectSwitcher(subject = Subject.Activity, onSelect = onSwitchSubject)
                 }
             }
         }
@@ -227,7 +215,6 @@ private fun ActivityScreenPreview() {
             stepDays = stepDaysPreview(todayEpochDay()),
             exerciseEntries = emptyList(),
             stepGoal = DEFAULT_STEP_GOAL,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -244,7 +231,6 @@ private fun ActivityScreenEmptyPreview() {
             stepDays = emptyList(),
             exerciseEntries = emptyList(),
             stepGoal = DEFAULT_STEP_GOAL,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},

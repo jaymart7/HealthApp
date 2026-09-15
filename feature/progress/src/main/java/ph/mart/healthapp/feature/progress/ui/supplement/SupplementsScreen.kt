@@ -42,14 +42,12 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementAdherenceChart
 
 /** Adherence over the picked window — a route of its own, `SleepScreen`'s shape. The ticking is
  * Home's row and the authoring is Profile's list, so this page only reads. */
 @Composable
 internal fun SupplementsScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -58,7 +56,6 @@ internal fun SupplementsScreen(
     val uiState by viewModel.collectAsState()
     SupplementsContent(
         days = uiState.days,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onExitFlow = onExitFlow,
         modifier = modifier,
@@ -68,7 +65,6 @@ internal fun SupplementsScreen(
 @Composable
 private fun SupplementsContent(
     days: List<SupplementDay>,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -93,18 +89,11 @@ private fun SupplementsContent(
                 },
             )
             if (days.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_supplements_heading),
-                            body = stringResource(R.string.progress_empty_supplements_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Supplements,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_supplements_heading),
+                        body = stringResource(R.string.progress_empty_supplements_body),
                     )
                 }
             } else {
@@ -117,7 +106,6 @@ private fun SupplementsContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     SupplementsBody(days = days, state = state)
-                    SubjectSwitcher(subject = Subject.Supplements, onSelect = onSwitchSubject)
                 }
             }
         }
@@ -168,7 +156,6 @@ private fun SupplementsScreenPreview() {
             days = listOf(2 to 2, 1 to 2, 2 to 2, 0 to 2, 2 to 2).mapIndexed { index, (taken, due) ->
                 SupplementDay(today - 4 + index, supplementId = 1, taken = taken, dueTimes = due)
             },
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )
@@ -182,7 +169,6 @@ private fun SupplementsScreenEmptyPreview() {
     AppTheme {
         SupplementsContent(
             days = emptyList(),
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )

@@ -50,7 +50,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 import ph.mart.healthapp.feature.progress.ui.strength.components.LiftRecordRow
@@ -59,7 +58,6 @@ import ph.mart.healthapp.feature.progress.ui.strength.components.LiftRecordRow
  * workouts themselves are logged in `:feature:training`, so this page only reads. */
 @Composable
 internal fun StrengthScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -70,7 +68,6 @@ internal fun StrengthScreen(
     StrengthContent(
         entries = uiState.entries,
         unit = uiState.unit,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -82,7 +79,6 @@ internal fun StrengthScreen(
 private fun StrengthContent(
     entries: List<ExerciseEntry>,
     unit: UnitSystem,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -109,18 +105,11 @@ private fun StrengthContent(
                 },
             )
             if (entries.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_strength_heading),
-                            body = stringResource(R.string.progress_empty_strength_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Strength,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_strength_heading),
+                        body = stringResource(R.string.progress_empty_strength_body),
                     )
                 }
             } else {
@@ -133,7 +122,6 @@ private fun StrengthContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     StrengthBody(entries = entries, unit = unit, state = state)
-                    SubjectSwitcher(subject = Subject.Strength, onSelect = onSwitchSubject)
                 }
             }
         }
@@ -233,7 +221,6 @@ private fun StrengthScreenPreview() {
         StrengthContent(
             entries = entriesPreview(todayEpochDay()),
             unit = UnitSystem.Metric,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -249,7 +236,6 @@ private fun StrengthScreenEmptyPreview() {
         StrengthContent(
             entries = emptyList(),
             unit = UnitSystem.Metric,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},

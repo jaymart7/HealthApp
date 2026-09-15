@@ -1,6 +1,5 @@
 package ph.mart.healthapp.feature.progress.ui.progress.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,10 +40,6 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
-import ph.mart.healthapp.feature.progress.ui.progress.subjectsIn
-
-/** Every tap target on a subject page clears this. */
-private val TapTarget = 48.dp
 
 /** "1M" needs nothing like a `labelLarge` word's worth of pill, and four of them have to share a
  * card header with its title. */
@@ -303,118 +298,6 @@ internal fun StatRowsCard(rows: List<StatRow>, modifier: Modifier = Modifier) {
     }
 }
 
-/**
- * The rest of the group, at the foot of a subject page — the one new navigation affordance, and
- * what replaces browsing by tab strip without bringing a strip back. It **replaces** the current
- * page rather than pushing onto it, so hopping Sleep → Mood → Heart leaves one back step, not
- * three.
- *
- * Three siblings or fewer draw as pills; four draw as rows, because four pills on a 360dp screen
- * are four clipped words.
- *
- * **Names, no values.** Each row used to quote the sibling's current figure — "Mood · 4.2 / 5" —
- * folded out of `summarizeAll()`, which reads the whole `ProgressUiState`. A subject page owning
- * its own container sees one series and cannot fold that, and the alternative was a second
- * container per page purely to caption a navigation row. It costs exactly one group: the pill
- * branch below never showed a value, and Body, Nutrition and Training all have three siblings or
- * fewer. See `DECISIONS.md` -> **Progress, recap & the energy check-in**.
- */
-@Composable
-internal fun SiblingSwitcher(
-    groupLabel: String,
-    siblings: List<Subject>,
-    onSelect: (Subject) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    if (siblings.isEmpty()) return
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.progress_more_in, groupLabel),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 12.dp),
-        )
-        if (siblings.size <= 3) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                siblings.forEach { subject ->
-                    Surface(
-                        onClick = { onSelect(subject) },
-                        shape = RoundedCornerShape(999.dp),
-                        color = Color.Transparent,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.weight(1f).heightIn(min = TapTarget),
-                    ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
-                            Text(
-                                text = stringResource(subject.label),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                }
-            }
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                siblings.forEach { subject ->
-                    Surface(
-                        onClick = { onSelect(subject) },
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .heightIn(min = 56.dp)
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = stringResource(subject.label),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Icon(
-                                imageVector = AppIcons.ChevronRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(start = 8.dp).size(20.dp),
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * [SiblingSwitcher] with the group worked out — what every subject page draws at its foot, so
- * thirteen screens do not each repeat the filter.
- *
- * [cycleTracking] is `Profile.cycleTrackingOn`: off drops Cycle from the row, or a page would offer
- * a door to the one subject the overview has taken away. It defaults to true because Cycle lives in
- * Wellbeing, so it is only the five Wellbeing pages that have to read the profile to pass it — the
- * other eight would be passing a constant. Badges has no group and draws nothing.
- */
-@Composable
-internal fun SubjectSwitcher(
-    subject: Subject,
-    onSelect: (Subject) -> Unit,
-    modifier: Modifier = Modifier,
-    cycleTracking: Boolean = true,
-) {
-    val group = subject.group ?: return
-    SiblingSwitcher(
-        groupLabel = stringResource(group.label),
-        siblings = subjectsIn(group, cycleTracking).filter { it != subject },
-        onSelect = onSelect,
-        modifier = modifier,
-    )
-}
-
 @PreviewLightDark
 @Composable
 private fun DetailChromePreview() {
@@ -438,11 +321,6 @@ private fun DetailChromePreview() {
                             StatRow("Weekly average", "0.4 kg"),
                             StatRow("Readings logged", "86 of 92 days"),
                         ),
-                    )
-                    SiblingSwitcher(
-                        groupLabel = "Body",
-                        siblings = listOf(Subject.Photos, Subject.Measurements),
-                        onSelect = {},
                     )
                 }
             }

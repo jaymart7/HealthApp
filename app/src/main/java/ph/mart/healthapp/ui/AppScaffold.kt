@@ -434,12 +434,6 @@ fun AppScaffold(
                         progressEntries(
                             scrollState = progressScroll,
                             onOpenSubject = { subject -> topLevelBackStack.add(subject.route()) },
-                            // A sibling hop replaces rather than pushes, so Sleep -> Mood -> Heart
-                            // leaves one back step rather than three — the switcher's own promise.
-                            onSwitchSubject = { subject ->
-                                topLevelBackStack.removeLast()
-                                topLevelBackStack.add(subject.route())
-                            },
                             onCompare = { first, second ->
                                 topLevelBackStack.add(PhotoComparisonRoute(first, second))
                             },

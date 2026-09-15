@@ -50,7 +50,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 
@@ -62,7 +61,6 @@ import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
  */
 @Composable
 internal fun CycleScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -71,7 +69,6 @@ internal fun CycleScreen(
     val uiState by viewModel.collectAsState()
     CycleContent(
         days = uiState.days,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onExitFlow = onExitFlow,
         modifier = modifier,
@@ -81,7 +78,6 @@ internal fun CycleScreen(
 @Composable
 private fun CycleContent(
     days: List<CycleDay>,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
@@ -111,27 +107,20 @@ private fun CycleContent(
                 },
             )
             if (cycleDay == null) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_cycle_heading),
-                            body = stringResource(R.string.progress_empty_cycle_body),
-                            // The one kind of empty page that gets a button: the sheet it opens is
-                            // already on this screen, so pointing at it adds no entry point.
-                            actions = {
-                                PrimaryButton(
-                                    label = stringResource(R.string.progress_hint_cycle),
-                                    onClick = { state.sheetOpen = true },
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                            },
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Cycle,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Idle, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_cycle_heading),
+                        body = stringResource(R.string.progress_empty_cycle_body),
+                        // The one kind of empty page that gets a button: the sheet it opens is
+                        // already on this screen, so pointing at it adds no entry point.
+                        actions = {
+                            PrimaryButton(
+                                label = stringResource(R.string.progress_hint_cycle),
+                                onClick = { state.sheetOpen = true },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        },
                     )
                 }
             } else {
@@ -144,7 +133,6 @@ private fun CycleContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     CycleBody(days = days, cycleDay = cycleDay, today = today, state = state)
-                    SubjectSwitcher(subject = Subject.Cycle, onSelect = onSwitchSubject)
                 }
             }
         }
@@ -245,7 +233,6 @@ private fun CycleScreenPreview() {
     AppTheme {
         CycleContent(
             days = daysPreview(todayEpochDay()),
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )
@@ -259,7 +246,6 @@ private fun CycleScreenEmptyPreview() {
     AppTheme {
         CycleContent(
             days = emptyList(),
-            onSwitchSubject = {},
             onOpenRecap = {},
             onExitFlow = {},
         )

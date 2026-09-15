@@ -44,7 +44,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
 import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 
@@ -55,7 +54,6 @@ private const val FULL_DAY_MINUTES = 24 * 60
  * and ending a fast is Home's card, so this page only reads. */
 @Composable
 internal fun FastingScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -66,7 +64,6 @@ internal fun FastingScreen(
     FastingContent(
         sessions = uiState.sessions,
         goalHours = uiState.goalHours,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -78,7 +75,6 @@ internal fun FastingScreen(
 private fun FastingContent(
     sessions: List<FastSession>,
     goalHours: Int,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -105,18 +101,11 @@ private fun FastingContent(
                 },
             )
             if (sessions.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_fasting_heading),
-                            body = stringResource(R.string.progress_empty_fasting_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Fasting,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_fasting_heading),
+                        body = stringResource(R.string.progress_empty_fasting_body),
                     )
                 }
             } else {
@@ -129,7 +118,6 @@ private fun FastingContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     FastingBody(sessions = sessions, goalHours = goalHours, state = state)
-                    SubjectSwitcher(subject = Subject.Fasting, onSelect = onSwitchSubject)
                 }
             }
         }
@@ -205,7 +193,6 @@ private fun FastingScreenPreview() {
         FastingContent(
             sessions = sessionsPreview(todayEpochDay()),
             goalHours = 16,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -221,7 +208,6 @@ private fun FastingScreenEmptyPreview() {
         FastingContent(
             sessions = emptyList(),
             goalHours = 16,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},

@@ -42,7 +42,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 
 /**
  * Mood and energy over the picked window — a route of its own, `SleepScreen`'s shape.
@@ -52,7 +51,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
  */
 @Composable
 internal fun MoodScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -62,8 +60,6 @@ internal fun MoodScreen(
     val uiState by viewModel.collectAsState()
     MoodContent(
         days = uiState.days,
-        cycleTrackingOn = uiState.cycleTrackingOn,
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -74,8 +70,6 @@ internal fun MoodScreen(
 @Composable
 private fun MoodContent(
     days: List<MoodDay>,
-    cycleTrackingOn: Boolean,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -102,19 +96,11 @@ private fun MoodContent(
                 },
             )
             if (days.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_mood_heading),
-                            body = stringResource(R.string.progress_empty_mood_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Mood,
-                        cycleTracking = cycleTrackingOn,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_mood_heading),
+                        body = stringResource(R.string.progress_empty_mood_body),
                     )
                 }
             } else {
@@ -127,11 +113,6 @@ private fun MoodContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     MoodBody(days = days, state = state)
-                    SubjectSwitcher(
-                        subject = Subject.Mood,
-                        cycleTracking = cycleTrackingOn,
-                        onSelect = onSwitchSubject,
-                    )
                 }
             }
         }
@@ -185,8 +166,6 @@ private fun MoodScreenPreview() {
             days = listOf(4 to 3, 5 to 4, 3 to 2, 4 to 4).mapIndexed { index, (mood, energy) ->
                 MoodDay(today - 3 + index, mood, energy)
             },
-            cycleTrackingOn = true,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -194,15 +173,13 @@ private fun MoodScreenPreview() {
     }
 }
 
-/** Nothing tapped yet — the page is still a real page, with the way on to its siblings. */
+/** Nothing tapped yet — the page is still a real page. */
 @PreviewLightDark
 @Composable
 private fun MoodScreenEmptyPreview() {
     AppTheme {
         MoodContent(
             days = emptyList(),
-            cycleTrackingOn = true,
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
