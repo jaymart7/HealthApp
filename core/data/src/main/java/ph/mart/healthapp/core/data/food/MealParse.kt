@@ -41,16 +41,29 @@ const val MAX_PARSED_FOODS = 8
 const val MAX_PARSE_CHARS = 300
 
 /**
+ * One identification the app is willing to act on.
+ *
+ * An item with no name or no calories is not a shorter item, it is not one: a named food priced at
+ * zero is the model declining while appearing to answer, and seeding a form with it writes a claim
+ * the app has no basis for — the argument `AddEntryForm`'s nullable figures already make.
+ *
+ * It is a property rather than a line inside [loggable] because both estimating paths need it and
+ * only one of them has a list: `FoodRecognitionRepositoryImpl` judges the single food it read off
+ * a photo, and a second copy of the rule there is a second rule to keep in step.
+ */
+val RecognizedFood.isLoggable: Boolean get() = name.isNotBlank() && calories > 0
+
+/**
  * The whole of the trust boundary on the model's parse — everything the review screen renders
  * passes through here.
  *
  * A pure function for [fitting]'s reason: the [org.json.JSONArray] parse around it is stubbed in
  * JVM unit tests, so the judgement is kept on this side of it where a test can reach it.
  *
- * Filtering rather than truncating: an item with no name or no calories is not a shorter item, it
- * is not one. There is deliberately no per-item calorie *ceiling* — unlike a meal idea, which is
- * offered against a budget the header has just quoted, a parse is a claim about what the user
- * already ate, and the review screen shows every figure before anything is written.
+ * Filtering rather than truncating, on [isLoggable]'s argument. There is deliberately no per-item
+ * calorie *ceiling* — unlike a meal idea, which is offered against a budget the header has just
+ * quoted, a parse is a claim about what the user already ate, and the review screen shows every
+ * figure before anything is written.
  */
 fun List<RecognizedFood>.loggable(): List<RecognizedFood> =
-    filter { it.name.isNotBlank() && it.calories > 0 }.take(MAX_PARSED_FOODS)
+    filter { it.isLoggable }.take(MAX_PARSED_FOODS)

@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.food
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MealParseTest {
@@ -15,6 +17,23 @@ class MealParseTest {
         fatG = 0,
         confidence = RecognitionConfidence.High,
     )
+
+    /** The photo flow judges one food rather than a list, so it reads [isLoggable] directly —
+     * these three are what stop a named plate priced at zero seeding the confirmation form. */
+    @Test
+    fun `a named food with calories is loggable`() {
+        assertTrue(food("Scrambled eggs", 156).isLoggable)
+    }
+
+    @Test
+    fun `a named food priced at zero is not loggable`() {
+        assertFalse(food("Chicken adobo", 0).isLoggable)
+    }
+
+    @Test
+    fun `a nameless food is not loggable`() {
+        assertFalse(food("  ", 156).isLoggable)
+    }
 
     @Test
     fun `drops a nameless item and keeps the order of the rest`() {
