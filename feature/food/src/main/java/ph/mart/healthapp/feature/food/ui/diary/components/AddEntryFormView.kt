@@ -75,7 +75,7 @@ internal fun AddEntryFormView(
     seededFromProduct: Boolean,
     scrolledPastTitle: Boolean,
     onFormChange: (AddEntryForm) -> Unit,
-    onBack: () -> Unit,
+    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     loggedAt: Long? = null,
 ) {
@@ -87,7 +87,7 @@ internal fun AddEntryFormView(
             name = form.name,
             handedOver = handedOver,
             loggedAt = loggedAt,
-            onBack = onBack,
+            onClose = onClose,
         )
         Column(
             modifier = Modifier.padding(top = 12.dp),
@@ -147,8 +147,11 @@ internal fun AddEntryFormView(
 internal fun scrolledPastTitle(scrollPx: Int): Boolean = scrollPx > TITLE_HANDOVER_PX
 
 /**
- * Back out, and the title — which becomes the food's name once the card carrying it has scrolled
- * away, so the bar is never the only thing on screen that has forgotten what is being edited.
+ * The title — which becomes the food's name once the card carrying it has scrolled away, so the bar
+ * is never the only thing on screen that has forgotten what is being edited — and, at its right, the
+ * ✕ every other sheet in the app closes with. It was a leading back arrow, which is the one
+ * affordance this state does not need drawn: system back already steps Form → Browse, and the icon
+ * in the corner is the sheet's escape, not a level.
  */
 @Composable
 private fun FormTopBar(
@@ -157,20 +160,13 @@ private fun FormTopBar(
     name: String,
     handedOver: Boolean,
     loggedAt: Long?,
-    onBack: () -> Unit,
+    onClose: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(end = 16.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 16.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                Icon(
-                    imageVector = AppIcons.Back,
-                    contentDescription = stringResource(R.string.food_cancel),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
             Text(
                 text = when {
                     handedOver -> name
@@ -185,9 +181,17 @@ private fun FormTopBar(
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
+            // 48dp, the size `AppBottomSheet` draws its own close at, for the same reason.
+            IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    imageVector = AppIcons.Close,
+                    contentDescription = stringResource(R.string.food_close),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
-        // Which row is being corrected — the meal it sits in and when it was logged. Indented under
-        // the title rather than the back arrow, because it belongs to the title.
+        // Which row is being corrected — the meal it sits in and when it was logged. Aligned with
+        // the title, because it belongs to it.
         if (editing && loggedAt != null && !handedOver) {
             Text(
                 text = stringResource(
@@ -197,7 +201,7 @@ private fun FormTopBar(
                 ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 56.dp, end = 16.dp, bottom = 4.dp),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
             )
         }
         // Only once something has scrolled under it: a rule over an unscrolled page separates a
@@ -333,7 +337,7 @@ private fun AddEntryFormViewPreview() {
                     seededFromProduct = true,
                     scrolledPastTitle = false,
                     onFormChange = {},
-                    onBack = {},
+                    onClose = {},
                 )
                 SaveMyFoodRow(checked = false, enabled = true, onCheckedChange = {})
             }
@@ -364,7 +368,7 @@ private fun AddEntryFormViewEditPreview() {
                 scrolledPastTitle = false,
                 loggedAt = 1_757_925_720_000,
                 onFormChange = {},
-                onBack = {},
+                onClose = {},
             )
         }
     }
@@ -384,7 +388,7 @@ private fun AddEntryFormViewBlankPreview() {
                     seededFromProduct = false,
                     scrolledPastTitle = false,
                     onFormChange = {},
-                    onBack = {},
+                    onClose = {},
                 )
                 SaveMyFoodRow(checked = false, enabled = false, onCheckedChange = {})
             }

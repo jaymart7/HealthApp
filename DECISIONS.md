@@ -522,8 +522,14 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   the 44 the Backlog tracks — a sheet's one explicit escape is not where to undershoot.
   `showClose = false` has exactly one caller, the add-entry sheet: each of its three states already
   draws its own chrome (the form's top bar, the search's bar, Browse's deliberate absence of
-  either), and its docked Cancel stays for the reason the entry below it gives — it leaves while
-  the keyboard is up, where a full-width discard under the IME would be a mis-swipe's landing spot.
+  either). That chrome now agrees with the rest of the app — `FormTopBar` drew a **leading back
+  arrow**, and it draws a **trailing ✕** instead, at the same 48dp, calling `onDismiss`. Back is not
+  an affordance this state has to spend a corner on: the sheet's `NavigationBackHandler` still steps
+  Form → Browse on a system back, and what the corner is for is the escape. Its docked Cancel went
+  with the other ten. That button was kept once on the argument that it hides while the keyboard is
+  up — a full-width discard under the IME is where a mis-swipe at the suggestion bar lands — but an
+  ✕ pinned in the corner is the answer to that argument, not an exception to it: it is out of the
+  mis-swipe's path at every keyboard state, so the case for a second dismiss control went.
 
 ### The add-entry form & the review screen
 

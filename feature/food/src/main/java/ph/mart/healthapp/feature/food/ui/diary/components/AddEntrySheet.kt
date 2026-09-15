@@ -3,11 +3,9 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.HorizontalDivider
@@ -17,7 +15,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -32,7 +29,6 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.component.TonalButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
@@ -136,7 +132,6 @@ internal fun AddEntrySheet(
                     saveMyFood = saveMyFood,
                     onSaveMyFoodChange = onSaveMyFoodChange,
                     onAdd = onAdd,
-                    onCancel = onDismiss,
                 )
                 // The search draws its own count-and-escape bar at the foot of its list.
                 AddEntryView.Search -> Unit
@@ -185,7 +180,9 @@ internal fun AddEntrySheet(
                 scrolledPastTitle = pastTitle,
                 loggedAt = loggedAt,
                 onFormChange = onFormChange,
-                onBack = onBack,
+                // The ✕ in its corner closes the sheet, the way every other sheet's does. Stepping
+                // Form → Browse is what system back is for, and the handler above still does it.
+                onClose = onDismiss,
             )
         }
     }
@@ -213,9 +210,9 @@ private fun BrowseActionBar(onAddYourself: () -> Unit) {
 /**
  * The form's commit, with the keep-this-food switch pinned above it.
  *
- * **Cancel leaves while the keyboard is up** — the review screen's rule, for the same reason: a
- * full-width discard directly under the IME is a button standing where a mis-swipe at the
- * suggestion bar lands. Back still closes the sheet.
+ * **One button, and it is the commit.** The docked Cancel went when the form's bar grew the ✕ every
+ * other sheet closes with — the same trade the app made ten times over, a control for a decision
+ * nobody is making when the corner, the drag handle, the scrim and back all dismiss.
  */
 @Composable
 private fun FormActionBar(
@@ -224,9 +221,7 @@ private fun FormActionBar(
     saveMyFood: Boolean,
     onSaveMyFoodChange: (Boolean) -> Unit,
     onAdd: () -> Unit,
-    onCancel: () -> Unit,
 ) {
-    val imeOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(modifier = Modifier.fillMaxWidth()) {
         // Absent while correcting a row, for the reason Browse is: it keeps a *new* food.
         if (!editing) {
@@ -249,13 +244,6 @@ private fun FormActionBar(
                 enabled = form.isValid(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             )
-            if (!imeOpen) {
-                TextButton(
-                    label = stringResource(R.string.food_cancel),
-                    onClick = onCancel,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
         }
     }
 }
