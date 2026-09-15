@@ -1162,7 +1162,13 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   through the overview. The list is windowed by the chart's own 1M/3M/6M/1Y range rather than the
   full history, so the rows can never disagree with the chips, the chart and "Readings logged"
   above them — and that window is also why the page is a `LazyColumn` now, `BloodPressureScreen`'s
-  argument at a year's worth of rows.
+  argument at a year's worth of rows. Within that window the list pages: twenty rows, another twenty
+  each time the last one reaches the foot of the page. It is `FoodSearchUiState`'s counter moved to a
+  page's own state class, not Paging 3 — every weigh-in is already in memory on one Room flow, so
+  what a page saves is composition, never a query, and a dependency that exists to stream a table
+  off disk would be earning nothing. The clamp is what makes it safe: at the end of the list the
+  count stops moving, so a page whose last row is on screen can keep asking. It never falls below
+  one page either, or three weigh-ins in a month would strand the year's list at three rows.
 - **A record row opens the log sheet on its date; the sheet is the one place a weigh-in is changed
   or removed.** `LogWeightSheet` takes an optional `WeightEntry` and seeds its form from it — the
   repository upserts by date, so saving *is* the edit, with no second write path to keep in step.

@@ -10,19 +10,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DayNutrition
@@ -159,10 +163,15 @@ private fun WeightContent(
                     )
                 }
             } else {
+                // The window the chart, the chips and the readings stat all use, newest first —
+                // the weigh-in someone just logged is the one they want to check or correct.
+                val records = entries.inRange(state.range).asReversed()
+                val listState = rememberLazyListState()
                 // A LazyColumn rather than the scrolling column the other pages use, for
                 // `BloodPressureScreen`'s reason: the records below are one row per weigh-in, and a
                 // year's window is a few hundred of them.
                 LazyColumn(
+                    state = listState,
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(bottom = 16.dp),
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
@@ -189,15 +198,27 @@ private fun WeightContent(
                             modifier = Modifier.padding(top = 12.dp),
                         )
                     }
-                    // The window the chart, the chips and the readings stat all use, newest first —
-                    // the weigh-in someone just logged is the one they want to check or correct.
-                    items(entries.inRange(state.range).asReversed(), key = { it.dateEpochDay }) { entry ->
+                    items(records.take(state.shownRecords), key = { it.dateEpochDay }) { entry ->
                         WeightRecordRow(
                             entry = entry,
                             unit = unit,
                             onTap = { state.editDateEpochDay = entry.dateEpochDay },
                         )
                     }
+                }
+                // Reaching the last row appends the next page. `totalItemsCount` grows with each
+                // one, so the flag falls back to false and re-arms; at the end the window stops
+                // growing and the ask is dropped. `FoodSearchPanel`'s shape, over a lazy list's
+                // layout info rather than a `ScrollState`. Keyed on the count so a weigh-in logged
+                // or deleted while the page is open can't leave it clamping against a stale total.
+                LaunchedEffect(listState, records.size) {
+                    snapshotFlow {
+                        val info = listState.layoutInfo
+                        info.totalItemsCount > 0 &&
+                            info.visibleItemsInfo.lastOrNull()?.index == info.totalItemsCount - 1
+                    }
+                        .distinctUntilChanged()
+                        .collect { atBottom -> if (atBottom) state.showMoreRecords(records.size) }
                 }
             }
         }

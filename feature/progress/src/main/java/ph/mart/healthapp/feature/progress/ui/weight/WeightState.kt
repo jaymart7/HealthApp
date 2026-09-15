@@ -14,6 +14,14 @@ import ph.mart.healthapp.feature.progress.ui.progress.DEFAULT_CHART_RANGE
  * `listSaver` over `Any`, which has nowhere to put one. */
 internal const val NO_EDIT = -1L
 
+/**
+ * How many more records reaching the foot of the page appends, and where the window opens.
+ *
+ * ponytail: a counter over a list already in memory rather than Paging3 — every weigh-in arrives on
+ * one Room flow, so what this saves is composition, not a query. `FOOD_PAGE_SIZE` is the precedent.
+ */
+internal const val RECORDS_PAGE_SIZE = 20
+
 @Composable
 internal fun rememberWeightState(): WeightState =
     rememberSaveable(saver = WeightState.Saver()) { WeightState() }
@@ -24,6 +32,7 @@ internal class WeightState(
     range: ChartRange = DEFAULT_CHART_RANGE,
     checkInOpen: Boolean = false,
     editDateEpochDay: Long = NO_EDIT,
+    shownRecords: Int = RECORDS_PAGE_SIZE,
 ) {
     var range: ChartRange by mutableStateOf(range)
 
@@ -36,13 +45,31 @@ internal class WeightState(
      * the whole identity. [NO_EDIT] when the sheet is closed. */
     var editDateEpochDay: Long by mutableStateOf(editDateEpochDay)
 
+    /** How many of the window's weigh-ins the records list has rendered so far. */
+    var shownRecords: Int by mutableStateOf(shownRecords)
+
+    /**
+     * Clamped for `FoodSearchUiState.withMore()`'s reason: at the end of the list this leaves the
+     * count where it is, so a page already scrolled to its foot can keep asking without looping.
+     * Never below one page, or switching the chart to a shorter range would strand the window at
+     * however few rows that range holds.
+     */
+    fun showMoreRecords(total: Int) {
+        shownRecords = (shownRecords + RECORDS_PAGE_SIZE).coerceAtMost(maxOf(total, RECORDS_PAGE_SIZE))
+    }
+
     companion object {
         @Suppress("UNCHECKED_CAST")
         fun Saver(): Saver<WeightState, Any> = listSaver(
             // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
-            save = { listOf(it.range.name, it.checkInOpen, it.editDateEpochDay) },
+            save = { listOf(it.range.name, it.checkInOpen, it.editDateEpochDay, it.shownRecords) },
             restore = { saved ->
-                WeightState(ChartRange.valueOf(saved[0] as String), saved[1] as Boolean, saved[2] as Long)
+                WeightState(
+                    range = ChartRange.valueOf(saved[0] as String),
+                    checkInOpen = saved[1] as Boolean,
+                    editDateEpochDay = saved[2] as Long,
+                    shownRecords = saved[3] as Int,
+                )
             },
         )
     }

@@ -225,7 +225,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   energy check-in — the app's only insight card fed by two sources. Tapping it opens the check-in
   over the page. Under it, **Records**: every weigh-in in the chart's window, newest first, each row
   opening the log sheet on its date to edit the figure or delete it — an imported row shows where it
-  came from instead of a delete. The one detail page with no group switcher at its foot.
+  came from instead of a delete, and the list pages twenty at a time as you scroll. The one detail
+  page with no group switcher at its foot.
 - Food: calories + macros against target over the window, the seven nutrients averaged against
   their targets, then the meal-photo strip — the newest
   twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.
