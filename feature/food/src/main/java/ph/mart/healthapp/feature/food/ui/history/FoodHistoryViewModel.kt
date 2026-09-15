@@ -26,7 +26,7 @@ class FoodHistoryViewModel(
     fun handleEvent(event: FoodHistoryEvent) {
         when (event) {
             is FoodHistoryEvent.OnQueryChange -> search(event.query)
-            is FoodHistoryEvent.OnLogAgain -> logAgain(event)
+            is FoodHistoryEvent.OnLog -> log(event)
         }
     }
 
@@ -49,19 +49,14 @@ class FoodHistoryViewModel(
     }
 
     /**
-     * A copy, never the row itself. Two things are dropped deliberately:
+     * The write, and nothing else: the row arrives finished from the review screen, and what makes
+     * it a copy rather than an edit of a past day's row is stated at [toReviewForm], where the form
+     * is seeded.
      *
-     * - `id`, so this is a new row rather than an edit of a past day's.
-     * - [ph.mart.healthapp.core.data.food.FoodEntry.photoPath], because `addEntry` keeps a path it
-     *   is handed and two rows pointing at one file would break the meal-photo prune, which counts
-     *   paths and would reclaim the file out from under the row that earned it.
-     *
-     * The meal slot is the source row's, not the clock's: unlike the photo and barcode flows that
-     * `defaultMealTypeForNow()` exists for, this one already knows where the food belongs.
+     * No side effect and nothing reduced — the screen raises its own confirmation, the shape the
+     * diary's own rows use for a delete.
      */
-    private fun logAgain(event: FoodHistoryEvent.OnLogAgain) = intent {
-        foodRepository.addEntry(
-            event.entry.copy(id = 0, dateEpochDay = event.dateEpochDay, photoPath = null),
-        )
+    private fun log(event: FoodHistoryEvent.OnLog) = intent {
+        foodRepository.addEntry(event.entry)
     }
 }

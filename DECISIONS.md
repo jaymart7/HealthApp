@@ -418,8 +418,28 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   paths — it would reclaim the file out from under the row that earned it. The source row keeps its
   plate; the copy has none. The copy keeps the **source row's** meal slot rather than
   `defaultMealTypeForNow()`: unlike the photo and barcode flows that helper exists for, this one
-  already knows where the food belongs. And no Undo on the confirmation — `addEntry` returns no id
-  to undo with, and the row it wrote is a swipe away in the diary it just landed in.
+  already knows where the food belongs. Both rules live in `FoodEntry.toReviewForm()`, where the
+  review form is seeded, rather than in the ViewModel that writes — it is a pure function now, and
+  `FoodHistoryTest` holds it. And no Undo on the confirmation — `addEntry` returns no id to undo
+  with, and the row it wrote is a swipe away in the diary it just landed in.
+- **A history row is reviewed before it is written, and the whole card is the tap.** It used to be
+  a 44dp `+` in the card's corner that logged the row the moment it was touched — the one card in
+  the app whose body was dead, and the one write in the app with no confirmation in front of it and
+  no Undo behind it. The card's body is the target now, and it opens the row in the shared
+  `ScanConfirmationScreen` — the barcode flow's review step and the photo flow's, third caller — so
+  the meal, the portion and the figures are all corrigible before anything lands. That is the
+  opposite trade from the add-entry sheet one screen over, where tapping a row *opens* it and the
+  `+` beside it writes: there, the two verbs are both real, because a recent has a form to open;
+  here a history hit has no page of its own, so the card has one verb and it is the safe one. It
+  passes `manualEntry = true` for the reason an edit of a logged row does — the portion shown is the
+  one that was eaten, not a per-100 g database row — which hides the gram presets and swaps the
+  caveat. The review is the Undo; the snackbar still has none.
+- **The history route draws its own `AppTopBar`.** It is in `ownsTopBar` beside the camera flows and
+  the Progress subject pages, and for a third reason: the review screen brings a bar of its own, so
+  one drawn from `AppScaffold` would stack on top of it. The screen keeps the window's insets — it
+  is not `fullBleed` — and consumes the status bar once at its root rather than passing
+  `WindowInsets(0)` down to two different bars, because the second of them is shared with two
+  full-bleed flows that do apply it themselves.
 - **History dates are absolute, always.** No "Today"/"Yesterday" here, unlike `diaryDateLabel()`
   two files over. A list spanning months is scanned by date rather than read top-down, and two
   relative labels among forty absolute ones are the two that have to be decoded. It also leaves

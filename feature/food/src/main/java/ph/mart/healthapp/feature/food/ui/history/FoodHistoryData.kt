@@ -1,6 +1,8 @@
 package ph.mart.healthapp.feature.food.ui.history
 
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
 /**
  * The diary's history search: one query, and whatever it matched.
@@ -38,15 +40,33 @@ internal fun List<FoodEntry>.groupedByDay(): List<Pair<Long, List<FoodEntry>>> =
         groups
     }
 
+/**
+ * A past row seeded into the review form the card's tap opens — a copy, never the row itself.
+ *
+ * Two things are dropped deliberately:
+ *
+ * - `id`, so what is eventually written is a new row rather than an edit of a past day's.
+ *   [AddEntryForm] carries none, so this is simply what the form cannot say.
+ * - [FoodEntry.photoPath], because `addEntry` keeps a path it is handed and two rows pointing at one
+ *   file would break the meal-photo prune, which counts paths and would reclaim the file out from
+ *   under the row that earned it.
+ *
+ * The meal slot is the source row's, not the clock's: unlike the photo and barcode flows that
+ * `defaultMealTypeForNow()` exists for, this one already knows where the food belongs — and unlike
+ * those, the chips on the review screen are there to say otherwise.
+ */
+internal fun FoodEntry.toReviewForm(): AddEntryForm = toAddEntryForm().copy(photoPath = null)
+
 sealed interface FoodHistoryEvent {
     data class OnQueryChange(val query: String) : FoodHistoryEvent
 
     /**
-     * Logs a copy of a past row onto [dateEpochDay] — the day the diary was showing when this
-     * screen was opened, which is the rule its microphone, barcode and camera doors already
-     * follow.
+     * Writes the reviewed row. The screen hands over the finished [FoodEntry] — `form.toFoodEntry(
+     * dateEpochDay)`, stamped with the day the diary was showing when this screen was opened, which
+     * is the rule its microphone, barcode and camera doors already follow — so there is nothing left
+     * here to decide. The shape `BarcodeScanEvent.OnLogEntry` uses, for the same reason.
      */
-    data class OnLogAgain(val entry: FoodEntry, val dateEpochDay: Long) : FoodHistoryEvent
+    data class OnLog(val entry: FoodEntry) : FoodHistoryEvent
 }
 
 /** No side effects: the confirmation is raised by the screen, the shape the diary's own rows use

@@ -126,9 +126,11 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Swipe to delete with Undo snackbar.
 - Local text filter over the day's logged entries.
 - Search your diary — a route above the tab searching every food ever logged, by name, newest
-  first under absolute per-day headings, with a one-tap re-log onto the day the diary was
-  showing. Reached from a link at the foot of the diary, which carries the day's filter query
-  with it. Capped at 200 hits; the copy never inherits the source row's meal photo.
+  first under absolute per-day headings. Tapping a result opens it for review — meal, portion,
+  calories, macros and micronutrients, all corrigible — and logging it from there writes a copy
+  onto the day the diary was showing. Reached from a link at the foot of the diary, which carries
+  the day's filter query with it. Capped at 200 hits; the copy never inherits the source row's
+  meal photo.
 - Copy a day — a link at the foot of the diary opens a calendar, then a sheet listing what that
   day held: each meal section with its item count and calories, water, and the day's workouts.
   Tick what to bring over and it lands on the day being shown. Copied plates leave their photos

@@ -1,13 +1,15 @@
 package ph.mart.healthapp.feature.food.ui.history
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
- * The one piece of the history search that isn't Room or Compose. Get the fold wrong and the list
+ * The two pieces of the history search that aren't Room or Compose. Get the fold wrong and the list
  * either re-sorts itself — putting a March row above an August one because a map decided so — or
  * opens a second heading for a day that already has one.
  */
@@ -59,5 +61,29 @@ class FoodHistoryTest {
     @Test
     fun `no results is no groups`() {
         assertTrue(emptyList<FoodEntry>().groupedByDay().isEmpty())
+    }
+
+    /**
+     * What the review screen is seeded with, and what it writes: a copy on the day the diary was
+     * showing, keeping the meal the food was eaten in and nothing that would tie it to the row it
+     * came from. The plate is the one that matters — two rows pointing at one file break the
+     * meal-photo prune.
+     */
+    @Test
+    fun `a reviewed row writes a copy on the diary's day, without the source row's plate`() {
+        val source = entry("Chicken curry", 19_994).copy(
+            id = 7,
+            mealType = MealType.Dinner,
+            photoPath = "/photos/meal-7.jpg",
+        )
+
+        val written = source.toReviewForm().toFoodEntry(dateEpochDay = 20_000)
+
+        assertEquals(0L, written.id)
+        assertNull(written.photoPath)
+        assertEquals(MealType.Dinner, written.mealType)
+        assertEquals(20_000L, written.dateEpochDay)
+        assertEquals("Chicken curry", written.name)
+        assertEquals(200, written.calories)
     }
 }

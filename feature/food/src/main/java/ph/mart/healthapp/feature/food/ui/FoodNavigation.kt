@@ -48,6 +48,10 @@ data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
  * dependency of its own. It reaches the diary and nothing else: the camera flows are full-bleed at
  * every width, and the recipe screen is a form.
  *
+ * [onExitFlow] is the toolbar arrow for the five routes that draw their own: the three camera-side
+ * flows, the recipe builder, and the history search, which took its bar over when the review screen
+ * behind a result brought one of its own.
+ *
  * [onOpenStrength] and [onLogExercise] leave this module entirely — the strength screen and the
  * log-exercise sheet are `:feature:training`'s, and a feature never imports another's types, so
  * both stay callbacks resolved in `AppScaffold`. The shape `onOpenCoach` already has. */
@@ -84,5 +88,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
     entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<VoiceLogRoute> { key -> VoiceLogScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
-    entry<FoodHistoryRoute> { key -> FoodHistoryScreen(dateEpochDay = key.dateEpochDay, query = key.query) }
+    entry<FoodHistoryRoute> { key ->
+        FoodHistoryScreen(dateEpochDay = key.dateEpochDay, query = key.query, onExit = onExitFlow)
+    }
 }

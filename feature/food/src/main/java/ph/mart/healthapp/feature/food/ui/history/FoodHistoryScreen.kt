@@ -4,10 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
@@ -27,18 +30,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.history.components.HistoryDayGroup
+import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
+import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
  * Search everything ever logged, by name — the one screen that reads the diary across days, where
@@ -54,13 +64,19 @@ import ph.mart.healthapp.feature.food.ui.history.components.HistoryDayGroup
  * seeds the field once; the search that follows is also what loads the opening list, since a blank
  * query is simply the newest rows.
  *
- * No back handler: there is one level here and nothing of its own to dismiss, so the toolbar's
- * arrow and system back are already the whole answer.
+ * **Two levels, and back walks them.** Tapping a result opens it for review rather than logging it
+ * — the meal, the portion and the figures are all wrong sometimes, and this screen's confirmation
+ * carries no Undo — so back closes the review and returns to the list. On the list there is nothing
+ * of its own to dismiss and no handler is registered at all, which leaves system back to pop the
+ * route: the rule `FoodScreen` follows for a past day. [onExit] is the toolbar arrow's twin, and
+ * exists because this route draws its own `AppTopBar` — the review screen behind the tap brings one
+ * of its own, and two stacked bars is what `AppScaffold` drawing it for us would mean.
  */
 @Composable
 fun FoodHistoryScreen(
     dateEpochDay: Long,
     query: String,
+    onExit: () -> Unit,
     viewModel: FoodHistoryViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
@@ -69,6 +85,7 @@ fun FoodHistoryScreen(
         uiState = uiState,
         dateEpochDay = dateEpochDay,
         onEvent = viewModel::handleEvent,
+        onExit = onExit,
     )
 }
 
@@ -77,6 +94,8 @@ private fun FoodHistoryContent(
     uiState: FoodHistoryUiState,
     dateEpochDay: Long,
     onEvent: (FoodHistoryEvent) -> Unit,
+    onExit: () -> Unit,
+    state: FoodHistoryScreenState = rememberFoodHistoryScreen(),
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -88,18 +107,70 @@ private fun FoodHistoryContent(
     // handover the diary's filter icon makes.
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxSize()) {
+    // Back closes the review and returns to the list. On the list nothing is registered at all, so
+    // back pops the route — the conditional shape `FoodScreen` uses for a past day.
+    if (state.form != null) {
+        val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+        NavigationBackHandler(state = navigationState, onBackCompleted = state::dismiss)
+    }
+
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        // This route owns its top bar, so `AppScaffold` draws none and pads the window's top inset
+        // instead. Consumed here, once, rather than passed as `WindowInsets(0)` to two bars: the
+        // review screen is shared with the barcode and photo flows, which are full-bleed and do
+        // apply it themselves.
+        modifier = Modifier.fillMaxSize().consumeWindowInsets(WindowInsets.statusBars),
+    ) {
+        val form = state.form
+        if (form != null) ScanConfirmationScreen(
+            form = form,
+            // A logged row's portion is the one that was eaten, not a per-100 g database row —
+            // the value `PortionControl` names an edit of a logged meal as passing. It hides
+            // the gram presets and drops the per-100 g caveat, both of which would be claims
+            // about arithmetic nobody did.
+            manualEntry = true,
+            onFormChange = { state.form = it },
+            onMealTypeSelect = state::selectMealType,
+            onLogEntry = {
+                // The diary's day, not today — the rule this screen's route carries the date for.
+                val logged = form.toFoodEntry(dateEpochDay)
+                onEvent(FoodHistoryEvent.OnLog(logged))
+                state.dismiss()
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(
+                            R.string.food_history_logged,
+                            logged.name,
+                            context.getString(logged.mealType.labelRes),
+                        ),
+                        duration = SnackbarDuration.Short,
+                    )
+                }
+            },
+            // Nothing to confirm: the edits are seconds old and the row they came from is one
+            // tap away in the list behind this.
+            onDiscard = state::dismiss,
+        ) else Box(modifier = Modifier.fillMaxSize()) {
             // The field arrives focused, so the keyboard is up before the first result is: without
             // this the list runs on behind it.
-            Column(modifier = Modifier.fillMaxSize().imePadding().padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.fillMaxSize().imePadding()) {
+                AppTopBar(
+                    title = stringResource(R.string.food_history_title),
+                    onBack = onExit,
+                    // The window's top inset is consumed above; applying it again would gap the bar.
+                    windowInsets = WindowInsets(0),
+                )
                 AppTextField(
                     value = uiState.query,
                     onValueChange = { onEvent(FoodHistoryEvent.OnQueryChange(it)) },
                     // No label: the placeholder says it, and AppTextField hands the placeholder to
                     // the screen reader when there is none.
                     placeholder = stringResource(R.string.food_history_placeholder),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).focusRequester(focusRequester),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .focusRequester(focusRequester),
                 )
                 // Nothing is drawn until the first read comes back, or the empty page flashes over
                 // a list that is one frame away.
@@ -107,7 +178,7 @@ private fun FoodHistoryContent(
                     if (uiState.searched && !uiState.searching) EmptyHistory(uiState.query)
                 } else {
                     LazyColumn(
-                        contentPadding = PaddingValues(vertical = 12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
@@ -120,19 +191,7 @@ private fun FoodHistoryContent(
                                 HistoryDayGroup(
                                     dateEpochDay = day,
                                     entries = entries,
-                                    onLogAgain = { entry ->
-                                        onEvent(FoodHistoryEvent.OnLogAgain(entry, dateEpochDay))
-                                        scope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                message = context.getString(
-                                                    R.string.food_history_logged,
-                                                    entry.name,
-                                                    context.getString(entry.mealType.labelRes),
-                                                ),
-                                                duration = SnackbarDuration.Short,
-                                            )
-                                        }
-                                    },
+                                    onSelect = state::review,
                                 )
                             }
                         }
@@ -175,6 +234,23 @@ private fun FoodHistoryScreenPreview() {
             ),
             dateEpochDay = 20_000L,
             onEvent = {},
+            onExit = {},
+        )
+    }
+}
+
+/** The second level: a row picked out of the list, ready to be corrected before it is written. */
+@PreviewLightDark
+@Composable
+private fun FoodHistoryReviewPreview() {
+    val entry = FoodEntry(id = 1, name = "Grilled chicken breast", dateEpochDay = 19_994L, mealType = MealType.Lunch, portionAmount = 150.0, portionUnit = "g", calories = 210, proteinG = 32, carbsG = 2, fatG = 8)
+    AppTheme {
+        FoodHistoryContent(
+            uiState = FoodHistoryUiState(query = "chicken", searched = true, results = listOf(entry)),
+            dateEpochDay = 20_000L,
+            onEvent = {},
+            onExit = {},
+            state = remember { FoodHistoryScreenState().apply { review(entry) } },
         )
     }
 }
@@ -188,6 +264,7 @@ private fun FoodHistoryEmptyPreview() {
             uiState = FoodHistoryUiState(query = "quinoa", searched = true),
             dateEpochDay = 20_000L,
             onEvent = {},
+            onExit = {},
         )
     }
 }

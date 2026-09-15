@@ -287,7 +287,11 @@
     <string name="food_copy_empty">Nothing was logged that day, so there is nothing to bring over.</string>
     <!-- Diary history search -->
     <string name="food_history_link">Search your diary</string>
+    <!-- The screen's own toolbar; it draws it rather than AppScaffold, so the title lives here. -->
+    <string name="food_history_title">Search your diary</string>
     <string name="food_history_placeholder">Search everything you\'ve logged</string>
+    <!-- The whole card's click label: tapping a past row opens it for review, it does not log it. -->
+    <string name="food_history_review">Review %1$s</string>
     <!-- %1$s the food, %2$s the meal it landed in. -->
     <string name="food_history_logged">%1$s added to %2$s</string>
     <string name="food_history_empty_query">No match for \u201c%1$s\u201d</string>

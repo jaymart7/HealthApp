@@ -96,7 +96,6 @@ private fun NavKey?.title(): String = when (this) {
         if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
     )
     is VoiceLogRoute -> stringResource(R.string.app_title_voice_log)
-    is FoodHistoryRoute -> stringResource(R.string.app_title_food_history)
     HealthConnectionRoute -> stringResource(R.string.app_title_google_health)
     FoodLibraryRoute -> stringResource(R.string.app_title_food_library)
     RoutinesRoute -> stringResource(R.string.app_title_routines)
@@ -314,8 +313,11 @@ fun AppScaffold(
     // slot, which the call below cannot fill — a page's share needs its own data, and all this has
     // is a `NavKey`. Deliberately not folded into [fullBleed]: the two want opposite insets.
     //
+    // The history search is here for a third reason: tapping a result opens the shared review
+    // screen, which brings its own bar, and a bar drawn from out here would stack on top of it.
+    //
     // A route in here never reaches `title()`, which is why none of them has a branch there.
-    val ownsTopBar = fullBleed || current in ProgressSubjectRoutes
+    val ownsTopBar = fullBleed || current is FoodHistoryRoute || current in ProgressSubjectRoutes
 
     // Tapping the arrow has to run the same handler chain system back runs — the recipe builder
     // asks before discarding, and popping the stack here would walk straight past that question.
