@@ -94,17 +94,31 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Diary by meal section (breakfast/lunch/dinner/snack), any past day, never forward past today.
 - Day picked by stepping a day at a time or from a calendar — a bottom sheet on a phone, and at
   ≥840dp a permanent pane beside the day, where the date header stops being a door onto it.
-- Add-entry sheet: name, calories, protein/carbs/fat, fiber/sugar/sodium, portion + unit.
+- Add-entry sheet — **two states and a docked action bar under both**, plus a third that owns the
+  sheet's full height. *Browse* answers "which food?": a search bar, a quick-add pill, and one
+  tabbed list (Recents / Recipes / Saved meals) replacing four stacked panels, with a one-line
+  legend per tab saying what tapping a row does and the filled `+` logging it straight away.
+  *Form* answers "how much?": name, portion + unit, calories, protein/carbs/fat and
+  fiber/sugar/sodium behind a disclosure. *Search* takes the whole sheet and hands it to one list.
+  Back walks the levels one at a time; the tabs and the disclosure are controls, not levels.
+- "Save as my food" is a switch pinned above the form's action bar, mounted from the moment the
+  form opens and dimmed until there is something worth keeping — Add then does both.
 - Seven nutrients per entry — fiber, sugar, sodium plus the Nutrition Facts panel's four (vitamin
   D, calcium, iron, potassium). The four are filled by a barcode scan or a picked food, never typed;
   all seven reprice with the portion. The day's summary bar carries them as one quiet line that
   opens into rows graded against a target, with sodium and sugar as limits rather than goals, and a
   line naming how many of the day's foods actually carried figures.
-- Quick add — a bare calorie figure with no name.
-- Every numeric field is typable and steppable; changing a portion reprices the whole entry.
+- Quick add — a bare calorie figure with no name, from a pill at the top of the sheet that logs
+  and closes without reaching the form at all.
+- Every numeric field is typable and steppable; changing a portion reprices the whole entry. An
+  empty figure prints an em dash, never `0` — a typed zero prints as `0`. Portion presets (50 g,
+  150 g, and the package's own serving where one is declared) show only on a form seeded from a
+  per-100 g database row, which is the only thing they would be presetting against.
 - Edit a logged row (supersedes it: soft-delete + insert, keeps its place in the day) — a row
-  logged from the camera wears a 40dp thumbnail, shown again on the edit sheet — where it opens
-  full-screen, pinch-zoomable — and kept by the edit.
+  logged from the camera wears a 40dp thumbnail, shown again on the edit sheet as a labelled row
+  that says the photo survives the correction — and opens full-screen, pinch-zoomable. The edit
+  sheet opens straight into the form, subtitled with the meal and the time the row was logged,
+  and drops every door that would write a *new* log.
 - Swipe to delete with Undo snackbar.
 - Local text filter over the day's logged entries.
 - Search your diary — a route above the tab searching every food ever logged, by name, newest
@@ -117,9 +131,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   behind, a copied workout re-estimates its own steps, and water is set rather than added.
 - Recent-food suggestions with one-tap re-log.
 - Favorites — starring a food is also how you author one: it becomes yours.
-- Your own foods — save what's in the add-entry form as a food ("Save as my food") without
-  logging it first, and it leads every later food search ahead of the built-in list, replacing
-  the built-in row of the same name.
+- Your own foods — keep what's in the add-entry form as a food ("Save as my food"), and it leads
+  every later food search ahead of the built-in list, replacing the built-in row of the same name.
 - Saved meals — snapshot a diary section, re-log as separate rows.
 - Recipes — a saved meal with servings; logs as one priced row.
 - Food search — the user's own foods first, then a built-in list of ~120 common foods, offline

@@ -13,6 +13,21 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
+/**
+ * Which of the add-entry sheet's three states is showing.
+ *
+ * They are levels, not tabs: back walks Search → Browse → closed and Form → Browse → closed, which
+ * is what [FoodScreenState.backFromSheet] returns. An edit opens straight into [Form] and back from
+ * there closes the sheet — there is no browse state behind a correction to return to.
+ */
+internal enum class AddEntryView { Browse, Search, Form }
+
+/**
+ * Which list the browse state is showing. A filter, **not** a level — back does not step through it,
+ * which is the whole reason it is here and not in [AddEntryView].
+ */
+internal enum class BrowseTab { Recents, Recipes, Saved }
+
 @Composable
 internal fun rememberFoodScreenState(): FoodScreenState =
     rememberSaveable(saver = FoodScreenState.Saver()) { FoodScreenState() }
@@ -34,6 +49,11 @@ internal class FoodScreenState(
     ideasFor: MealType? = null,
     shareOpen: Boolean = false,
     copyPickerOpen: Boolean = false,
+    sheetView: AddEntryView = AddEntryView.Browse,
+    browseTab: BrowseTab = BrowseTab.Recents,
+    quickAddKcal: Int? = null,
+    seededFromProduct: Boolean = false,
+    saveMyFood: Boolean = false,
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -77,22 +97,88 @@ internal class FoodScreenState(
     var saveMealFor: MealType? by mutableStateOf(saveMealFor)
     var savedMealName: String by mutableStateOf(savedMealName)
 
+    /** Which of the add-entry sheet's three states is showing. */
+    var sheetView: AddEntryView by mutableStateOf(sheetView)
+
+    /** Which list the browse state is showing. Survives a close-and-reopen on purpose: somebody who
+     * logs out of their saved meals twice a day should not retap the chip every time. */
+    var browseTab: BrowseTab by mutableStateOf(browseTab)
+
+    /** The bare calorie figure typed into the browse state's quick-add pill. Null is "nobody has
+     * said", which is the em dash — the same rule the form's four figures follow. It never seeds
+     * [addForm]: the pill logs and closes, or it does nothing. */
+    var quickAddKcal: Int? by mutableStateOf(quickAddKcal)
+
+    /**
+     * Whether [addForm] was seeded from a per-100 g database row — a search hit or a barcode match.
+     *
+     * It drives two things that are only true of such a row: the portion control's preset chips
+     * (50 g / 150 g / the package's own serving are amounts to preset *against* per-100 g figures)
+     * and the "Database values are per 100 g." caveat. A recipe, a recent and a meal idea all seed
+     * figures that are already for the portion shown, so they leave it false and get the caveat that
+     * says so.
+     */
+    var seededFromProduct: Boolean by mutableStateOf(seededFromProduct)
+
+    /** Whether the form's "Save as my food" switch is on. Held here rather than committed on the
+     * spot because a switch states an intention and [FoodEvent.OnSaveMyFood] acts on it when Add
+     * does — which is what a switch beside a button means. */
+    var saveMyFood: Boolean by mutableStateOf(saveMyFood)
+
     fun openSheet(mealType: MealType) {
         addForm = AddEntryForm(mealType = mealType)
         editingEntryId = null
+        sheetView = AddEntryView.Browse
+        quickAddKcal = null
+        seededFromProduct = false
+        saveMyFood = false
         activeMealSheet = mealType
     }
 
-    /** The same sheet, seeded from a row that already exists — it saves over that row. */
+    /** The same sheet, seeded from a row that already exists — it saves over that row. Straight into
+     * the form: there is nothing to browse for, the food has already been picked. */
     fun openEditSheet(entry: FoodEntry) {
         addForm = entry.toAddEntryForm()
         editingEntryId = entry.id
+        sheetView = AddEntryView.Form
+        quickAddKcal = null
+        seededFromProduct = false
+        saveMyFood = false
         activeMealSheet = entry.mealType
+    }
+
+    /**
+     * A pick, from any of the four doors that seed rather than log.
+     *
+     * [fromProduct] is true only for a search hit or a barcode match — see [seededFromProduct].
+     */
+    fun seedForm(form: AddEntryForm, fromProduct: Boolean) {
+        addForm = form
+        seededFromProduct = fromProduct
+        sheetView = AddEntryView.Form
+    }
+
+    /**
+     * One back press inside the sheet. Returns false when there is no level left to step back to,
+     * which is the caller's cue to close the sheet.
+     *
+     * The tab chips and the micronutrient disclosure are deliberately absent: they are controls, not
+     * levels, and undoing a filter is not what anyone means by back.
+     */
+    fun backFromSheet(): Boolean = when (sheetView) {
+        AddEntryView.Search -> { sheetView = AddEntryView.Browse; true }
+        // A correction opened straight into the form, so there is no browse state behind it.
+        AddEntryView.Form -> if (editingEntryId != null) false else { sheetView = AddEntryView.Browse; true }
+        AddEntryView.Browse -> false
     }
 
     fun closeSheet() {
         activeMealSheet = null
         editingEntryId = null
+        sheetView = AddEntryView.Browse
+        quickAddKcal = null
+        seededFromProduct = false
+        saveMyFood = false
     }
 
     /** Straight from the add-entry sheet, which closes behind it — the handover "New recipe" and
@@ -115,9 +201,11 @@ internal class FoodScreenState(
     fun selectIdea(idea: MealIdea) {
         val mealType = ideasFor ?: return
         ideasFor = null
-        addForm = idea.toAddEntryForm(mealType)
         editingEntryId = null
         activeMealSheet = mealType
+        // An idea's figures are for the serving it describes, not per 100 g — so it seeds like a
+        // recipe, not like a search hit.
+        seedForm(idea.toAddEntryForm(mealType), fromProduct = false)
     }
 
     fun openSaveMealSheet(mealType: MealType) {
@@ -156,6 +244,11 @@ internal class FoodScreenState(
                         it.filterExpanded,
                         it.shareOpen,
                         it.copyPickerOpen,
+                        it.sheetView.name,
+                        it.browseTab.name,
+                        it.quickAddKcal,
+                        it.seededFromProduct,
+                        it.saveMyFood,
                     )
             },
             restore = { saved ->
@@ -182,6 +275,11 @@ internal class FoodScreenState(
                     filterExpanded = saved[16 + MealType.entries.size] as Boolean,
                     shareOpen = saved[17 + MealType.entries.size] as Boolean,
                     copyPickerOpen = saved[18 + MealType.entries.size] as Boolean,
+                    sheetView = AddEntryView.valueOf(saved[19 + MealType.entries.size] as String),
+                    browseTab = BrowseTab.valueOf(saved[20 + MealType.entries.size] as String),
+                    quickAddKcal = saved[21 + MealType.entries.size] as Int?,
+                    seededFromProduct = saved[22 + MealType.entries.size] as Boolean,
+                    saveMyFood = saved[23 + MealType.entries.size] as Boolean,
                 )
             },
         )

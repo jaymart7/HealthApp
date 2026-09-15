@@ -140,8 +140,34 @@ internal fun JsonObject.toScannedProduct(): ScannedProduct? {
             ironUg = reported.nutrient(NUTRIENT_IRON)?.times(UG_PER_MG)?.roundToInt() ?: 0,
             potassiumMg = reported.nutrient(NUTRIENT_POTASSIUM)?.roundToInt() ?: 0,
         ),
+        servingSize = householdServing(),
     )
 }
+
+/**
+ * FDC's serving, preferring the words on the package.
+ *
+ * `householdServingFullText` is the label's own phrase ("1 bar", "2 cookies") and is what a preset
+ * chip wants to say; it is Branded-only, so a Foundation or SR Legacy row falls back to the numeric
+ * pair, and a row with neither gets no chip. The two are joined rather than chosen between when
+ * both exist, because the household text routinely carries no weight of its own and
+ * [servingGrams][ph.mart.healthapp.core.data.food.servingGrams] needs one to work from.
+ */
+private fun JsonObject.householdServing(): String? {
+    val household = this["householdServingFullText"]?.jsonPrimitive?.contentOrNull
+        ?.trim()?.takeIf { it.isNotEmpty() }
+    val amount = this["servingSize"]?.jsonPrimitive?.let { it.doubleOrNull ?: it.contentOrNull?.toDoubleOrNull() }
+    val unit = this["servingSizeUnit"]?.jsonPrimitive?.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }
+    // Not copy: a figure and a unit symbol off a third-party API, in the source's own words.
+    val measured = if (amount != null && unit != null) "${amount.trimZero()} $unit" else null
+    return when {
+        household != null && measured != null -> "$household ($measured)"
+        else -> household ?: measured
+    }
+}
+
+private fun Double.trimZero(): String =
+    if (this == toLong().toDouble()) toLong().toString() else toString()
 
 /** The brand-leads rule and the all-caps recasing both live in [brandedName], which the Open Food
  * Facts mapper shares — a scanned package reads the same however it was resolved. */

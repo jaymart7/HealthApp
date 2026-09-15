@@ -44,7 +44,7 @@ private const val SEARCH_URL = "https://search.openfoodfacts.org/search"
 
 /** Trimming the response matters more here than it does at FDC: an untrimmed OFF product is a
  * couple of hundred kilobytes of tags, scores and ingredient trees. */
-private const val FIELDS = "product_name,product_name_en,brands,nutriments"
+private const val FIELDS = "product_name,product_name_en,brands,nutriments,serving_size"
 
 /** The panel pages at eight; twenty is enough to fill a few pages behind the local list without
  * making the request something you wait for. */
@@ -160,6 +160,9 @@ internal fun JsonObject.toOffProduct(): ScannedProduct? {
             ironUg = reported.value("iron_100g")?.times(UG_PER_G)?.roundToInt() ?: 0,
             potassiumMg = reported.value("potassium_100g")?.times(MG_PER_G)?.roundToInt() ?: 0,
         ),
+        // The label's own serving, carried through untouched — the sheet's third preset chip is the
+        // only reader, and `servingGrams` is what decides whether there is one.
+        servingSize = string("serving_size"),
     )
 }
 

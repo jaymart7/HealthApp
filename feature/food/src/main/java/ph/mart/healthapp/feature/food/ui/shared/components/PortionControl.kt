@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -27,17 +28,21 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import ph.mart.healthapp.core.data.food.servingGrams
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
+import ph.mart.healthapp.core.designsystem.component.portionStep
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.food.R
+import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
@@ -46,17 +51,16 @@ import kotlin.math.roundToLong
 private const val REPEAT_DELAY_MS = 400L
 private const val REPEAT_INTERVAL_MS = 80L
 
-/** The units this control offers. Compared, not shown — `portionStep` switches on them and a
- * recipe row is priced in them, so a translated "cup" would take the grams branch. */
-private val PORTION_UNITS = listOf("g", "oz", "cup")
-
-/** The two amounts worth one tap. Grams only: half a cup is already one tap of the stepper, and
- * "50 oz" of anything is not a portion.
+/** The units this control offers. Compared, not shown — [portionStep] switches on them and a
+ * recipe row is priced in them, so a translated "cup" would take the grams branch.
  *
- * ponytail: two fixed presets, not a per-product serving ("1 bar", "1 breast") — `ScannedProduct`
- * carries no serving description and neither Open Food Facts mapper reads one. Add a third preset
- * off a `servingDescription` field if a product's own serving turns out to be what people reach for.
- */
+ * `serving` is the fourth because a seeded recipe arrives priced in one, and a control that cannot
+ * show the unit its own value is in leaves no pill selected at all. */
+private val PORTION_UNITS = listOf("g", "oz", "cup", SERVING_UNIT)
+
+/** The two amounts worth one tap. Grams only: a quarter-cup is already one tap of the stepper, and
+ * "50 oz" of anything is not a portion. The product's own serving joins them as a third when it
+ * declares one — see [PortionControl]. */
 private val GRAM_PRESETS = listOf(50.0, 150.0)
 
 /**
@@ -76,6 +80,18 @@ private val GRAM_PRESETS = listOf(50.0, 150.0)
  * number and names the factor currently being applied, so "×1.5" is visible at the moment it starts
  * being true. [manualEntry] swaps it for the opposite instruction, because a form nobody seeded has
  * no per-100 g values to scale.
+ *
+ * **[manualEntry] also hides the presets**, and that is the same fact stated once rather than a
+ * second flag: a form nobody seeded from a per-100 g row has nothing to preset, and so does an edit
+ * of a logged meal, whose portion is already the one the user ate. Both pass `true`.
+ *
+ * [servingSize] is the package's own serving as the source declared it, which becomes a third chip
+ * when [servingGrams] can find a weight in it — "1 bar (25 g)" sets 25 g. Absent otherwise, which
+ * is the two-chip row this control has always drawn.
+ *
+ * [controlColor] is the tone step for the two steppers and the segmented track: they sit *inside* a
+ * card, so they are one step above whatever the card is. The default suits a card on `surface`; the
+ * add-entry sheet passes `surfaceContainerHighest`.
  */
 @Composable
 internal fun PortionControl(
@@ -85,6 +101,8 @@ internal fun PortionControl(
     onAmountChange: (Double) -> Unit,
     onUnitChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    servingSize: String? = null,
+    controlColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         CardLabel(stringResource(R.string.food_portion_label))
@@ -97,7 +115,8 @@ internal fun PortionControl(
             RoundIconButton(
                 icon = AppIcons.Minus,
                 contentDescription = stringResource(R.string.food_portion_decrease),
-                onStep = { onAmountChange((amount - portionStepFor(unit)).coerceAtLeast(0.0)) },
+                containerColor = controlColor,
+                onStep = { onAmountChange((amount - portionStep(unit)).coerceAtLeast(0.0)) },
             )
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp),
@@ -119,7 +138,8 @@ internal fun PortionControl(
             RoundIconButton(
                 icon = AppIcons.Add,
                 contentDescription = stringResource(R.string.food_portion_increase),
-                onStep = { onAmountChange(amount + portionStepFor(unit)) },
+                containerColor = controlColor,
+                onStep = { onAmountChange(amount + portionStep(unit)) },
             )
         }
 
@@ -127,16 +147,28 @@ internal fun PortionControl(
             options = PORTION_UNITS,
             selectedIndex = PORTION_UNITS.indexOf(unit).coerceAtLeast(0),
             onSelect = { onUnitChange(PORTION_UNITS[it]) },
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            trackColor = controlColor,
         )
 
-        if (unit == "g") {
+        // Grams only, and only where there is a per-100 g row behind the numbers to preset against.
+        if (unit == "g" && !manualEntry) {
+            val serving = servingGrams(servingSize)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                 GRAM_PRESETS.forEach { preset ->
                     PresetChip(
-                        amount = preset,
+                        // Not copy: a gram figure and its symbol.
+                        label = "${preset.formatPortion()} g",
                         selected = abs(amount - preset) < 0.5,
                         onClick = { onAmountChange(preset) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (serving != null) {
+                    PresetChip(
+                        // The label's own words, off the product data — never authored here.
+                        label = servingSize.orEmpty(),
+                        selected = abs(amount - serving) < 0.5,
+                        onClick = { onAmountChange(serving) },
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -168,11 +200,11 @@ private fun caveatFor(manualEntry: Boolean, amount: Double, unit: String): Strin
 }
 
 @Composable
-private fun PresetChip(amount: Double, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun PresetChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(24.dp),
-        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
         contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
         // The same two border weights the meal chips use: this app has exactly two.
         border = BorderStroke(
@@ -186,11 +218,13 @@ private fun PresetChip(amount: Double, selected: Boolean, onClick: () -> Unit, m
                 this.selected = selected
             },
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
             Text(
-                // Not copy: a gram figure and its symbol.
-                text = "${amount.formatPortion()} g",
+                text = label,
                 style = MaterialTheme.typography.labelLarge.tabularNums,
+                // A declared serving can be a sentence ("2 cookies (30 g)") in a third of a row.
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -204,10 +238,15 @@ private fun PresetChip(amount: Double, selected: Boolean, onClick: () -> Unit, m
  * ticker is cancelled by the release, so a plain tap is exactly one step.
  */
 @Composable
-private fun RoundIconButton(icon: ImageVector, contentDescription: String, onStep: () -> Unit) {
+private fun RoundIconButton(
+    icon: ImageVector,
+    contentDescription: String,
+    containerColor: Color,
+    onStep: () -> Unit,
+) {
     Surface(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = containerColor,
         contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
             .size(48.dp)
@@ -249,11 +288,6 @@ internal fun CardLabel(text: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** Ten grams is a sensible nudge; ten cups is not. The same split
- * [portionStep][ph.mart.healthapp.core.designsystem.component.FoodItemRow] makes, which is internal
- * to its module. */
-private fun portionStepFor(unit: String): Double = if (unit == "cup") 0.5 else 10.0
-
 internal fun Double.formatPortion(): String =
     if (this == toLong().toDouble()) toLong().toString() else toString()
 
@@ -274,6 +308,25 @@ private fun PortionControlPreview() {
                 manualEntry = false,
                 onAmountChange = {},
                 onUnitChange = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** A product that declares its own serving: three chips, the third in the label's own words. */
+@PreviewLightDark
+@Composable
+private fun PortionControlServingPreview() {
+    AppTheme {
+        Surface {
+            PortionControl(
+                amount = 100.0,
+                unit = "g",
+                manualEntry = false,
+                onAmountChange = {},
+                onUnitChange = {},
+                servingSize = "1 bar (25 g)",
                 modifier = Modifier.padding(16.dp),
             )
         }

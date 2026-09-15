@@ -29,6 +29,8 @@ import ph.mart.healthapp.feature.food.ui.diary.rememberFoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.diary.toSavedMealItem
 import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasScreen
+import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
 /**
@@ -59,13 +61,37 @@ internal fun DiarySheets(
 
     val activeMealSheet = state.activeMealSheet
     if (activeMealSheet != null) {
+        val editingId = state.editingEntryId
         AddEntrySheet(
             mealType = activeMealSheet,
             form = state.addForm,
+            view = state.sheetView,
+            browseTab = state.browseTab,
+            quickAddKcal = state.quickAddKcal,
+            seededFromProduct = state.seededFromProduct,
+            saveMyFood = state.saveMyFood,
             suggestions = uiState.suggestions,
             savedMeals = uiState.savedMeals,
             recipes = uiState.recipes,
-            onSelectRecipe = { recipe -> state.addForm = recipe.toAddEntryForm(activeMealSheet) },
+            onViewChange = { state.sheetView = it },
+            onTabChange = { state.browseTab = it },
+            onQuickAddChange = { state.quickAddKcal = it },
+            // A bare calorie figure, logged without reaching the form at all. `toFoodEntry()` fills
+            // the blank name with QUICK_ADD_NAME and collapses the portion to one serving, which is
+            // the same path the form's own blank-name commit takes — the pill is a shortcut to it,
+            // not a second way of writing a row.
+            onQuickAdd = {
+                state.quickAddKcal?.let { kcal ->
+                    onEvent(FoodEvent.OnAddEntry(AddEntryForm(mealType = activeMealSheet, calories = kcal)))
+                    state.closeSheet()
+                }
+            },
+            onSaveMyFoodChange = { state.saveMyFood = it },
+            // A recipe is priced per serving, not per 100 g, so it seeds without claiming to be a
+            // database row — see `FoodScreenState.seededFromProduct`.
+            onSelectRecipe = { recipe ->
+                state.seedForm(recipe.toAddEntryForm(activeMealSheet), fromProduct = false)
+            },
             onDeleteRecipe = { recipe -> pendingDeleteRecipe = recipe },
             // The builder is a screen, not a sub-view of this sheet: an ingredient list
             // doesn't fit above a keyboard. Closing first means back from it lands on the
@@ -80,8 +106,9 @@ internal fun DiarySheets(
             },
             onDeleteSavedMeal = { meal -> pendingDeleteSavedMeal = meal },
             onFormChange = { state.addForm = it },
-            onSelectProduct = { state.addForm = it.toAddEntryForm(activeMealSheet) },
-            onSelectSuggestion = { state.addForm = it.toAddEntryForm(activeMealSheet) },
+            // The one seed that really is a per-100 g row: a search hit or a barcode match.
+            onSelectProduct = { state.seedForm(it.toAddEntryForm(activeMealSheet), fromProduct = true) },
+            onSelectSuggestion = { state.seedForm(it.toAddEntryForm(activeMealSheet), fromProduct = false) },
             onLogAgain = { suggestion ->
                 onEvent(FoodEvent.OnAddEntry(suggestion.toAddEntryForm(activeMealSheet)))
                 state.closeSheet()
@@ -89,20 +116,23 @@ internal fun DiarySheets(
             onToggleFavorite = { suggestion, favorite ->
                 onEvent(FoodEvent.OnToggleFavorite(suggestion, favorite))
             },
-            // The sheet stays open and the form is left alone: keeping a food and logging it are
-            // two different intentions, and the user may well want both. No toast — the saved
-            // meal's rule — because the food appears starred in the suggestion panel just above
-            // the moment Room emits, which is the same "the badge lighting up is the reward"
-            // answer the streak gives.
-            onSaveMyFood = { onEvent(FoodEvent.OnSaveMyFood(state.addForm)) },
-            onGetIdeas = if (state.editingEntryId == null && uiState.mealIdeaRequest(activeMealSheet) != null) {
+            onGetIdeas = if (editingId == null && uiState.mealIdeaRequest(activeMealSheet) != null) {
                 { state.openIdeas(activeMealSheet) }
             } else {
                 null
             },
+            // One level at a time — Search → Browse, Form → Browse — and the sheet only closes once
+            // there is no level left. `backFromSheet` owns that ladder so the arrow in the form's
+            // top bar and the system gesture cannot disagree about it.
+            onBack = { if (!state.backFromSheet()) state.closeSheet() },
             onDismiss = state::closeSheet,
             onAdd = {
-                val editingId = state.editingEntryId
+                // Keeping the food is a separate write and goes first, so a food the user asked to
+                // keep is kept even though the two are one press. No toast — the saved meal's rule —
+                // because it appears starred at the top of Recents the moment Room emits.
+                if (editingId == null && state.saveMyFood && state.addForm.isSaveableFood()) {
+                    onEvent(FoodEvent.OnSaveMyFood(state.addForm))
+                }
                 onEvent(
                     if (editingId == null) {
                         FoodEvent.OnAddEntry(state.addForm)
@@ -112,7 +142,8 @@ internal fun DiarySheets(
                 )
                 state.closeSheet()
             },
-            editing = state.editingEntryId != null,
+            editing = editingId != null,
+            loggedAt = editingId?.let { id -> uiState.entries.firstOrNull { it.id == id }?.loggedAt },
         )
     }
 

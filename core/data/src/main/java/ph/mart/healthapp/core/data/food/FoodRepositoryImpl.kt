@@ -294,6 +294,7 @@ private fun FoodEntryEntity.toFoodEntry() = FoodEntry(
     fatG = fatG,
     nutrients = nutrients,
     photoPath = photoPath,
+    loggedAt = loggedAt,
 )
 
 private fun FoodEntryEntity.toSuggestion() = FoodSuggestion(

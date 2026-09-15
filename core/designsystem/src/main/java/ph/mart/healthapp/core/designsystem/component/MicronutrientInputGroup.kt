@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -66,6 +67,7 @@ fun MicronutrientInputGroup(
     onSugarChange: (Int?) -> Unit,
     onSodiumChange: (Int?) -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
 ) {
     val seeded = fiberG != null || sugarG != null || sodiumMg != null
     // Seeded once, at first composition: the section must not slam shut again the moment the user
@@ -115,6 +117,7 @@ fun MicronutrientInputGroup(
                     value = fiberG,
                     unit = "g",
                     onValueChange = onFiberChange,
+                    containerColor = containerColor,
                     modifier = Modifier.weight(1f),
                 )
                 MacroFieldCell(
@@ -122,6 +125,7 @@ fun MicronutrientInputGroup(
                     value = sugarG,
                     unit = "g",
                     onValueChange = onSugarChange,
+                    containerColor = containerColor,
                     modifier = Modifier.weight(1f),
                 )
                 MacroFieldCell(
@@ -129,6 +133,7 @@ fun MicronutrientInputGroup(
                     value = sodiumMg,
                     unit = "mg",
                     onValueChange = onSodiumChange,
+                    containerColor = containerColor,
                     modifier = Modifier.weight(1f),
                 )
             }

@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.WindowInsetsRulers
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
@@ -65,6 +66,12 @@ import ph.mart.healthapp.feature.food.ui.search.components.SearchViewBar
  * The three source tiers still draw as one list with no badge and no divider between them — the
  * order *is* the ranking — and the last row still sits cut in half at the bottom edge, which is the
  * only thing that says there is more.
+ *
+ * **It is also the add-entry sheet's search state**, which is what [containerColor] and [imeAware]
+ * are for. The sheet is `surfaceContainerLow` rather than `surface`, and `ModalBottomSheet` already
+ * applies the IME inset — applying it again here would lift the docked bar twice by the height of
+ * the keyboard. Two defaulted parameters rather than a second screen: the sheet wanted this screen,
+ * not something that looks like it.
  */
 @Composable
 internal fun FoodSearchScreen(
@@ -72,16 +79,24 @@ internal fun FoodSearchScreen(
     onEnterManually: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    imeAware: Boolean = true,
     viewModel: FoodSearchViewModel = koinViewModel(),
 ) {
     // koinViewModel() has no graph to resolve against under @Preview — the same trick the panel
     // plays, so every state below still previews.
     if (LocalInspectionMode.current) {
-        FoodSearchContent(FoodSearchUiState(), {}, onSelectProduct, onEnterManually, onBack, modifier)
+        FoodSearchContent(
+            FoodSearchUiState(), {}, onSelectProduct, onEnterManually, onBack,
+            modifier, containerColor, imeAware,
+        )
         return
     }
     val uiState by viewModel.collectAsState()
-    FoodSearchContent(uiState, viewModel::handleEvent, onSelectProduct, onEnterManually, onBack, modifier)
+    FoodSearchContent(
+        uiState, viewModel::handleEvent, onSelectProduct, onEnterManually, onBack,
+        modifier, containerColor, imeAware,
+    )
 }
 
 @Composable
@@ -92,18 +107,21 @@ private fun FoodSearchContent(
     onEnterManually: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    imeAware: Boolean = true,
 ) {
     // Nothing matched only once the online tier has stopped having something to say — while it is
     // in flight the honest answer is that we are still looking.
     val nothingMatched = uiState.results.isEmpty() && uiState.onlineStatus == OnlineSearch.Idle
 
-    Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
+    Surface(color = containerColor, modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 // The whole screen sits above the keyboard, which is what keeps the docked bar
                 // docked: the bar is at the bottom of the space that is left, not under the IME.
-                .fitInside(WindowInsetsRulers.Ime.current)
+                // Skipped inside the sheet, where ModalBottomSheet has already applied it.
+                .then(if (imeAware) Modifier.fitInside(WindowInsetsRulers.Ime.current) else Modifier)
                 .padding(vertical = 8.dp),
         ) {
             SearchViewBar(

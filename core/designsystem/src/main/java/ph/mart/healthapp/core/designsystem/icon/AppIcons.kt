@@ -55,6 +55,7 @@ import androidx.compose.material.icons.outlined.EggAlt
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Grass
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
@@ -121,6 +122,8 @@ object AppIcons {
     val Formula: ImageVector = Icons.Filled.Functions
     val Flash: ImageVector = Icons.Filled.FlashOn
     val Heart: ImageVector = Icons.Outlined.FavoriteBorder
+    /** Nothing logged yet — the recents list's own empty state. */
+    val History: ImageVector = Icons.Outlined.History
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
     val Info: ImageVector = Icons.Outlined.Info
     /** An outbound connection to another service — Google Health, and whatever follows it. */

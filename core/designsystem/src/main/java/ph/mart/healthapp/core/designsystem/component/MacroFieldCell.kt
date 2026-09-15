@@ -61,6 +61,12 @@ private val CellShape = RoundedCornerShape(16.dp)
  * [dotColor] carries the fixed macro mapping (protein = `primary`, carbs = `tertiary`,
  * fat = `secondary`); pass null for the micronutrients, which appear in no bar and so may not
  * borrow a colour that would claim they did.
+ *
+ * [containerColor] is the tone step, not a colour choice. A cell is always one step above whatever
+ * it is drawn on: the default suits a screen sitting on `surface` (the review screen), and the
+ * add-entry sheet — itself `surfaceContainerLow` — passes `surfaceContainerHigh` so the ladder
+ * still reads. A parameter rather than a second component, because everything else about the cell
+ * is identical and a fork would be two places to keep the em-dash rule in.
  */
 @Composable
 fun MacroFieldCell(
@@ -70,6 +76,7 @@ fun MacroFieldCell(
     onValueChange: (Int?) -> Unit,
     modifier: Modifier = Modifier,
     dotColor: Color? = null,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
 ) {
     val focusRequester = remember { FocusRequester() }
     val editLabel = stringResource(R.string.ds_macro_field, label, unit)
@@ -77,7 +84,7 @@ fun MacroFieldCell(
         modifier = modifier
             .heightIn(min = 72.dp)
             .clip(CellShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(containerColor)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CellShape)
             // The whole tile is the target, which is what lets the field stay the width of its own
             // digits. Before the padding, so the ripple covers the border rather than insetting.
@@ -162,6 +169,7 @@ fun MacroFieldGroup(
     onCarbsChange: (Int?) -> Unit,
     onFatChange: (Int?) -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
 ) {
     // Unit symbols are not copy — g, mg, kcal read the same in every language.
     val grams = "g"
@@ -172,6 +180,7 @@ fun MacroFieldGroup(
             unit = grams,
             onValueChange = onProteinChange,
             dotColor = MaterialTheme.colorScheme.primary,
+            containerColor = containerColor,
             modifier = Modifier.weight(1f),
         )
         MacroFieldCell(
@@ -180,6 +189,7 @@ fun MacroFieldGroup(
             unit = grams,
             onValueChange = onCarbsChange,
             dotColor = MaterialTheme.colorScheme.tertiary,
+            containerColor = containerColor,
             modifier = Modifier.weight(1f),
         )
         MacroFieldCell(
@@ -188,6 +198,7 @@ fun MacroFieldGroup(
             unit = grams,
             onValueChange = onFatChange,
             dotColor = MaterialTheme.colorScheme.secondary,
+            containerColor = containerColor,
             modifier = Modifier.weight(1f),
         )
     }

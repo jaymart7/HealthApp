@@ -140,6 +140,7 @@ private fun ScannedProductEntity.toProduct() = ScannedProduct(
     carbsG = carbsG,
     fatG = fatG,
     nutrients = nutrients,
+    servingSize = servingSize,
 )
 
 private fun ScannedProduct.toEntity(barcode: String) = ScannedProductEntity(
@@ -152,4 +153,5 @@ private fun ScannedProduct.toEntity(barcode: String) = ScannedProductEntity(
     carbsG = carbsG,
     fatG = fatG,
     nutrients = nutrients,
+    servingSize = servingSize,
 )

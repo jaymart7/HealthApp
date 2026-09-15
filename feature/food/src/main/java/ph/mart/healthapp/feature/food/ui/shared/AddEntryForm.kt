@@ -39,6 +39,10 @@ data class AddEntryForm(
      * non-null on a form seeded from an already-logged entry — the camera flow hands its bitmap to
      * the repository, not to this form. */
     val photoPath: String? = null,
+    /** The package's own serving as the source declared it, carried from the [ScannedProduct] that
+     * seeded this form. Drives the portion control's third preset chip and nothing else — it is not
+     * written to the diary, and a form nobody seeded from a product has none. */
+    val servingSize: String? = null,
 )
 
 /** A bare calorie figure is enough — that is the quick add. The guard is deliberately shared with
@@ -149,6 +153,7 @@ fun ScannedProduct.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     carbsG = carbsG,
     fatG = fatG,
     nutrients = nutrients,
+    servingSize = servingSize,
 )
 
 /**

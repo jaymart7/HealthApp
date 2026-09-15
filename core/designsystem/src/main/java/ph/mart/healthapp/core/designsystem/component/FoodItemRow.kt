@@ -118,9 +118,16 @@ fun MealThumbnail(path: String, size: Dp, modifier: Modifier = Modifier) {
  * How far one tap of the portion stepper moves, per unit. Ten grams is a sensible nudge; ten cups
  * is not, and ten servings is nonsense — a stepper that steps in the wrong unit is why a seeded
  * recipe row could never be turned into half a portion.
+ *
+ * **One rule, both steppers.** `PortionControl` kept a second copy that claimed to be this one and
+ * wasn't: it stepped ounces by 10 and servings by 10 too. Public rather than internal so there is
+ * nowhere left for a third copy to appear. Ounces moved to a half — nobody nudges a portion by ten
+ * ounces — and a cup to a quarter, which is a measure people actually own a scoop for.
  */
-internal fun portionStep(unit: String): Double = when (unit) {
-    "g", "oz" -> 10.0
+fun portionStep(unit: String): Double = when (unit) {
+    "g" -> 10.0
+    "cup" -> 0.25
+    // Ounces, servings, and anything a food was logged in that this app does not offer.
     else -> 0.5
 }
 

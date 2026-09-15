@@ -442,6 +442,70 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   The add sheet is unchanged and still a sheet — its panels and form are built for a sheet's
   scroll, and nothing about a wider window changes that.
 
+### The add-entry sheet
+
+- **Three states, not one column.** The sheet was five same-weight blocks — recipes, saved meals,
+  recents, a search, then the form — with Add underneath all of it, which put the commit two screens
+  down and said nothing about where to look. It is now **Browse** ("which food?"), **Form** ("how
+  much?") and **Search**, with a docked action bar under the first two. Nothing was removed: every
+  door the old column had is still there, one question at a time.
+- **Search had to become a full-height state, and that is the structural change.** `FoodSearchPanel`
+  drew a 280dp scrolling results box inside a sheet that was itself scrolling, so the two fought
+  over the same drag. The state reuses `FoodSearchScreen` — the same screen the photo flow's
+  fallback opens — behind two defaulted parameters, `containerColor` (the sheet is
+  `surfaceContainerLow`, not `surface`) and `imeAware` (`ModalBottomSheet` has already applied the
+  IME inset, and applying it twice lifts the docked bar by two keyboards). Two parameters rather
+  than a second screen: the sheet wanted *this* search, not something that resembles it. The panel
+  itself **stays** — the recipe ingredient editor is its other host and is a bounded one, which is
+  the shape it was always for.
+- **Four panels became one tabbed list, and the tabs are a filter rather than a level.** Back does
+  not step through them, which is why `browseTab` sits beside `sheetView` and not inside it — the
+  same call the micronutrient disclosure gets. What each row *does* is now stated once per tab in a
+  one-line legend, instead of by giving three rows three different treatments and hoping the
+  difference reads. The one thing left to the row is the presence of the filled `+`: a recipe has
+  none, because a recipe only ever seeds.
+- **Recents keeps its chip when empty; only Saved meals hides.** The handoff said both hide *and*
+  specified a first-run empty state for Recents, which cannot both be true. The empty state is the
+  only thing on a first run that explains what the three doors above it are for, so it wins. First
+  run still shows two chips rather than three, and the default tab is still Recents — what changed
+  is which of the two is dropped. Recipes never hides at all: its "New recipe" row is the only way
+  into the builder, so an empty Recipes tab is still a door.
+- **The quick add got a control instead of an instruction.** It has always been supported —
+  `toFoodEntry()` fills a blank name with `QUICK_ADD_NAME` — but reaching it meant scrolling past
+  four panels to a form and leaving its name empty, which you had to already know. The pill at the
+  top says it out loud, and its `+` writes and closes on the same "logs it now" contract every row's
+  filled button has. **It never seeds the form**: a shortcut that dropped you into the form would be
+  the long way round with extra steps. `food_blank_name_hint` went with it — the pill's own label is
+  the hint now.
+- **Back is one always-mounted handler over `sheetView`, and the ladder is `backFromSheet()`.**
+  Search → Browse, Form → Browse, Browse → closed, and an edit closes from the form in one step
+  because it opened straight into it and has no browse state behind it. It is a pure function on the
+  state, which is what lets `AddEntryBackTest` hold it without composing anything — and what stops
+  the form's own back arrow and the system gesture disagreeing.
+- **"Save as my food" became a switch, mounted from the start and dimmed until valid.** As a button
+  it appeared only once the form turned valid, mid-column, shoving the action row down under the
+  user's thumb. As a switch pinned above the bar it is always in the same place. This reverses half
+  of the old entry below: keeping and logging are still two intentions, but a switch *states* one
+  without committing it, so Add now does both — `OnSaveMyFood` first, then the log. The reward is
+  still the food appearing starred at the top of Recents, not a toast.
+- **The tone ladder is a parameter on each shared component, never a fork.** The sheet is
+  `surfaceContainerLow`, so a card on it must be `surfaceContainerHigh` and a control inside that
+  card `surfaceContainerHighest` — one rung higher than the review screen, which sits on plain
+  `surface`. `SubjectCard`, `PortionControl`, `MacroFieldCell`/`MacroFieldGroup` and
+  `MicronutrientInputGroup` each took a defaulted colour parameter rather than a second copy: a fork
+  is two places to keep the em-dash rule, the macro mapping and the repricing in step.
+- **Rows are 48dp targets, against the handoff's 40 × 48.** The handoff's own binding constraints
+  say targets are ≥ 48dp and then draws the star, the delete and the chevron at 40 wide; a row with
+  three targets in its last 150dp is exactly where undershooting gets noticed. This also retires six
+  of the fourteen 44dp sites the Backlog tracks — the three panels they lived in are gone.
+- **`AppBottomSheet` grew a docked slot, a height flag and a scroll, all defaulted.** `bottomBar`
+  draws outside the scrolling column so the commit is not the last thing in a scroll; `expanded`
+  asks for the full screen; `scrollable = false` hands the height to a child that scrolls itself;
+  `scrollState` lets the caller read the scroll, which is how the form's top bar takes over the
+  food's name. `expanded` is a `Boolean` and **not** a hoisted `SheetState`: that type is
+  experimental, and putting it in this signature would push an `@OptIn` onto every sheet in the app
+  to answer a question one caller asks — the same refusal `AppTopBar`'s `titleStyle` makes.
+
 ### The add-entry form & the review screen
 
 - **The form's four figures are nullable; the store's are not, and that split is the point.** A
@@ -468,7 +532,15 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   then moving to 150 g leaves the corrected number behind, in the direction that under-counts.
   Scaling off the current pair means a correction is still correct at the next portion, so the
   screen shows the big figure and the edit affordance the handoff drew and keeps the arithmetic it
-  already had. The hint reads "Follows the portion." with no override clause.
+  already had.
+
+  **The hint now reads "Follows the portion. Tap to override." and the arithmetic still did not
+  change.** The add-entry sheet's handoff asked for that clause again; it is true as written —
+  tapping the figure does let you type your own — and it names the affordance beside it, which the
+  bare sentence did not. What it does not promise is *detachment*, and that is still refused for the
+  reason above. An unset figure swaps the line for "Type it, or leave it and name the food.": there
+  is no portion to follow yet, and neither line is an error, because a named entry with no calories
+  is a valid thing to log.
 - **The per-100 g caveat moved to the number it is about.** It was the review screen's subtitle, a
   card away from the portion; it now sits under the portion control and names the factor currently
   applied ("Scaled ×1.5.") so the arithmetic is visible at the moment it starts being true. The
@@ -510,6 +582,26 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   row — what a picker actually aims at. `Display` (the diary) is untouched, the detail line is the
   same `macroLine()` both variants draw, and all three panel hosts get the new row: one search, one
   row, wherever it appears.
+- **Preset chips need something to preset *against*, so they follow the per-100 g row.**
+  `seededFromProduct` is true only for a search hit or a barcode match; a recipe, a recent and a meal
+  idea all seed figures that are already for the portion shown, so they get the caveat that says so
+  and no chips. The third chip is the package's own serving, which needed a field:
+  `ScannedProduct.servingSize` carries the source's raw words ("1 bar (25 g)") and `servingGrams()`
+  finds the weight in it — **the last** gram figure, because the parenthesised one is the weight and
+  the leading one is the count. A serving declared only in millilitres or only as a count gets no
+  chip: guessing that a cup is 240 g is the kind of invented number the nullable figures exist to
+  avoid. It stays a raw `String` rather than a resource because it is third-party product data,
+  never authored here — which is also why `COMMON_FOODS` leaves it null, where a serving label
+  *would* be app copy needing a resource per food.
+- **One portion-step rule, because there were two and they disagreed.** `PortionControl` kept a copy
+  that claimed to be `FoodItemRow`'s and stepped ounces by ten and servings by ten — the second of
+  which is the exact bug the original rule was written to prevent. `portionStep` is now public, is
+  the only copy, and takes the handoff's values: grams 10, a cup a quarter, everything else a half.
+  `PortionStepTest` is what stops a third copy appearing.
+- **`FoodEntry` exposes `loggedAt`.** The column has always been on the entity; the domain type did
+  not carry it, so the edit sheet had no way to say *which* row it was correcting. The repository
+  still owns it entirely — it stamps it on insert and preserves it through an edit — and the form
+  writes it back unchanged.
 - **Macro tiles replace the stepper rows for foods, and only for foods.** `MacroFieldGroup` draws
   three typable cells in one row's height where `MacroInputGroup` stacked three rows, each spending
   its width on steppers for a two-digit number that was already typable. It is used by all five

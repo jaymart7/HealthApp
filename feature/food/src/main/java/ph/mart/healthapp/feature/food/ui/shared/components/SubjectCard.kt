@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +59,12 @@ private val CardShape = RoundedCornerShape(24.dp)
  * anything: the macros are a tap away in the same scroll, the micronutrients one tap further.
  *
  * It is a card and not a section rule because it is the subject, and a subject wants an edge.
+ *
+ * [containerColor] and [controlColor] are the two rungs of the tone ladder this card occupies, not
+ * colour choices. A card is one step above the surface it sits on and the controls inside it are one
+ * step above the card. The defaults suit a screen on `surface` — the review screen — while the
+ * add-entry sheet is itself `surfaceContainerLow` and passes the pair one rung higher. Parameters
+ * rather than a second card: everything else about it is the same card.
  */
 @Composable
 internal fun SubjectCard(
@@ -65,12 +72,14 @@ internal fun SubjectCard(
     manualEntry: Boolean,
     onFormChange: (AddEntryForm) -> Unit,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    controlColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(CardShape)
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .background(containerColor)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CardShape)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -87,11 +96,14 @@ internal fun SubjectCard(
             // 100 g figure against 30 g of food, in the direction that inflates the day.
             onAmountChange = { onFormChange(form.withPortionAmount(it)) },
             onUnitChange = { onFormChange(form.copy(portionUnit = it)) },
+            servingSize = form.servingSize,
+            controlColor = controlColor,
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         CaloriesRow(
             calories = form.calories,
             onCaloriesChange = { onFormChange(form.copy(calories = it)) },
+            controlColor = controlColor,
         )
     }
 }
@@ -159,7 +171,7 @@ private fun InlineTitleField(name: String, onNameChange: (String) -> Unit) {
  * named entry with no calories is a valid quick add and not an error.
  */
 @Composable
-private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit) {
+private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit, controlColor: Color) {
     val focusRequester = remember { FocusRequester() }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -204,7 +216,16 @@ private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit) {
                 )
             }
             Text(
-                text = stringResource(R.string.food_calories_follows_portion),
+                // Nothing to follow yet, so the hint says what to do instead of describing a
+                // relationship that does not exist. Neither line is an error: a named entry with no
+                // calories is a valid thing to log, which is why there is no "Required" anywhere.
+                text = stringResource(
+                    if (calories == null) {
+                        R.string.food_calories_unset_hint
+                    } else {
+                        R.string.food_calories_follows_portion
+                    },
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -214,7 +235,7 @@ private fun CaloriesRow(calories: Int?, onCaloriesChange: (Int?) -> Unit) {
         Surface(
             onClick = { focusRequester.requestFocus() },
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            color = controlColor,
             contentColor = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.size(48.dp),
         ) {

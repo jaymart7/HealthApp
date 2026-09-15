@@ -30,4 +30,5 @@ internal data class ScannedProductEntity(
     val carbsG: Int,
     val fatG: Int,
     @Embedded val nutrients: Nutrients = Nutrients(),
+    val servingSize: String? = null,
 )

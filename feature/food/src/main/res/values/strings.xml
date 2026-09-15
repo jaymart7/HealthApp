@@ -18,7 +18,7 @@
     <string name="food_portion_caveat_manual">Enter the values for this portion, not per 100 g.</string>
     <string name="food_name_placeholder">Name this food</string>
     <string name="food_calories_label">Calories</string>
-    <string name="food_calories_follows_portion">Follows the portion.</string>
+    <string name="food_calories_follows_portion">Follows the portion. Tap to override.</string>
     <string name="food_calories_edit">Edit calories</string>
     <string name="food_no_connection">No connection</string>
     <string name="food_discard_meal_title">Discard this meal?</string>
@@ -81,7 +81,7 @@
     <string name="food_saved_meals">Saved meals</string>
     <string name="food_recipes">Recipes</string>
     <string name="food_new_recipe">New recipe</string>
-    <string name="food_recents">Recent &amp; favorites</string>
+    <string name="food_recents">Recents</string>
     <plurals name="food_items">
         <item quantity="one">%1$d item</item>
         <item quantity="other">%1$d items</item>
@@ -99,12 +99,32 @@
     <!-- Add-entry sheet -->
     <string name="food_add_to">Add to %1$s</string>
     <string name="food_edit_meal_entry">Edit %1$s entry</string>
-    <string name="food_get_ideas">Get meal ideas</string>
-    <string name="food_add_yourself">Or add it yourself</string>
-    <string name="food_blank_name_hint">Leave the name blank to log calories only.</string>
+    <string name="food_get_ideas">Meal ideas</string>
+    <string name="food_add_yourself">Add it yourself</string>
     <string name="food_save_as_my_food">Save as my food</string>
+    <string name="food_save_as_my_food_caption">Reuse it without searching next time</string>
     <string name="food_quick_add">Quick add</string>
     <string name="food_add">Add</string>
+
+    <!-- Add-entry sheet: browse state -->
+    <!-- The one line per tab that explains what tapping a row does, instead of three different row
+         treatments sitting next to each other saying it by shape. -->
+    <string name="food_sheet_legend_recents">Tap to adjust first · + logs it straight away</string>
+    <string name="food_sheet_legend_recipes">Tap to load one serving into the form</string>
+    <string name="food_sheet_legend_saved">Tap to log every item at once</string>
+    <string name="food_sheet_search_open">Search foods</string>
+    <string name="food_sheet_quick_add_edit">Enter a calorie figure</string>
+    <string name="food_sheet_quick_add_log">Log %1$d kcal</string>
+    <string name="food_sheet_empty_title">Nothing logged yet</string>
+    <string name="food_sheet_empty_body">Foods you log show up here, newest first — star one to keep it at the top. Until then, search above, quick-add a calorie figure, or add it yourself below.</string>
+
+    <!-- Add-entry sheet: form state -->
+    <!-- The unset-calories hint. Not an error: a named entry with no calories is still valid. -->
+    <string name="food_calories_unset_hint">Type it, or leave it and name the food.</string>
+    <string name="food_photo_logged_title">Logged from a photo</string>
+    <string name="food_photo_logged_body">The photo stays with this entry whatever you change here.</string>
+    <!-- Which row an edit is correcting: the meal it sits in, and the time it was logged. -->
+    <string name="food_edit_subtitle">In %1$s · logged %2$s</string>
 
     <!-- Save-meal sheet -->
     <string name="food_save_meal_title">Save %1$s as a meal</string>

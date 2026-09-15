@@ -65,3 +65,18 @@ fun formatWeekday(epochDay: Long): String =
  * share the width of a phone. */
 fun formatMonth(epochDay: Long): String =
     SimpleDateFormat("MMM", Locale.getDefault()).format(epochDayToDate(epochDay))
+
+/**
+ * "8:42" — a time of day, for the one place the app prints one: the add-entry sheet's subtitle
+ * while correcting a logged row, which has to say *which* row.
+ *
+ * Takes epoch millis rather than an epoch day, because this is the only figure in the app that is
+ * not a date. `java.text` gives the locale's own short form, so 24-hour locales get 08:42.
+ *
+ * ponytail: the locale's convention, not the device's 12/24-hour *setting* —
+ * `android.text.format.DateFormat.getTimeFormat` reads that, and needs a Context this file
+ * deliberately has none of. Swap it in at the call site if someone notices.
+ */
+fun formatTimeOfDay(epochMillis: Long): String =
+    java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT, Locale.getDefault())
+        .format(java.util.Date(epochMillis))

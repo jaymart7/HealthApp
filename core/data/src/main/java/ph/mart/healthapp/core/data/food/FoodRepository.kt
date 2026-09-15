@@ -35,6 +35,12 @@ data class FoodEntry(
     /** The plate, on disk. Set by [FoodRepository.addEntry] when the camera flow hands it a
      * bitmap, carried through an edit, and never written by any other logging path. */
     val photoPath: String? = null,
+    /** When the row was written, in epoch millis — 0 for an entry that has not been stored yet.
+     * The repository stamps it on insert and *preserves* it through an edit (see `updateEntry`),
+     * which is what makes it the time the food was logged rather than the time it was last
+     * corrected. Read-only as far as any form is concerned: the add-entry sheet prints it in the
+     * subtitle of an edit and writes it back unchanged. */
+    val loggedAt: Long = 0,
 )
 
 /** A one-tap re-log candidate in the add-entry sheet: either a recently logged food (derived

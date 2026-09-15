@@ -1,28 +1,29 @@
 package ph.mart.healthapp.feature.food.ui.diary.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Recipe
@@ -30,40 +31,57 @@ import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
-import ph.mart.healthapp.core.designsystem.component.FoodItemRow
-import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.MacroFieldGroup
-import ph.mart.healthapp.core.designsystem.component.MealThumbnail
-import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
-import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
+import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.component.TonalButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.recipe.components.RecipePanel
-import ph.mart.healthapp.feature.food.ui.search.components.FoodSearchPanel
+import ph.mart.healthapp.feature.food.ui.diary.AddEntryView
+import ph.mart.healthapp.feature.food.ui.diary.BrowseTab
+import ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
-import ph.mart.healthapp.feature.food.ui.shared.SERVING_UNIT
-import ph.mart.healthapp.feature.food.ui.shared.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.isValid
-import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
 
 /**
- * The diary's log-a-food sheet: four shortcut panels that seed the form, then the form itself —
- * and, above them all, the one door in the app to a food the user hasn't decided on yet.
+ * The diary's log-a-food sheet: **two questions and a docked answer**, plus the search that owns
+ * the sheet's whole height while it is showing.
  *
- * [editing] turns the same sheet into the correct-a-logged-row sheet. The panels go with it: they
- * all seed a *new* log, and two of them ([onLogSavedMeal], [onLogAgain]) write rows the moment
- * they're tapped, which is not something that can happen while one row is being corrected.
+ * It used to be one column of five same-weight blocks — recipes, saved meals, recents, a search
+ * with its own 280dp scroller inside this scrolling sheet, and then the form — with the commit
+ * underneath all of it. That put Add two screens down, said nothing about where to look, and put
+ * two scrollers on screen at once fighting over the same drag.
+ *
+ * Now: [AddEntryView.Browse] answers "which food?" with three doors above the fold and one tabbed
+ * list, [AddEntryView.Form] answers "how much?", and [AddEntryView.Search] takes the full height so
+ * the nested scroller is gone — the two lists are never on screen together any more.
+ *
+ * **Back walks the levels, one at a time.** Search → Browse, Form → Browse, Browse → closed. A
+ * correction opens straight into the form and so closes from there: there is no browse state behind
+ * it to return to. The tab chips and the micronutrient disclosure are controls, not levels, and back
+ * leaves both alone.
+ *
+ * [editing] turns the same sheet into the correct-a-logged-row sheet. Browse goes with it, because
+ * every door on it seeds or writes a *new* log, and two of them write the moment they are tapped —
+ * which is not something that can happen while one row is being corrected.
  */
 @Composable
 internal fun AddEntrySheet(
     mealType: MealType,
     form: AddEntryForm,
+    view: AddEntryView,
+    browseTab: BrowseTab,
+    quickAddKcal: Int?,
+    seededFromProduct: Boolean,
+    saveMyFood: Boolean,
     suggestions: List<FoodSuggestion>,
     savedMeals: List<SavedMeal>,
     recipes: List<Recipe>,
+    onViewChange: (AddEntryView) -> Unit,
+    onTabChange: (BrowseTab) -> Unit,
+    onQuickAddChange: (Int?) -> Unit,
+    onQuickAdd: () -> Unit,
+    onSaveMyFoodChange: (Boolean) -> Unit,
     onSelectRecipe: (Recipe) -> Unit,
     onDeleteRecipe: (Recipe) -> Unit,
     onNewRecipe: () -> Unit,
@@ -74,182 +92,212 @@ internal fun AddEntrySheet(
     onSelectSuggestion: (FoodSuggestion) -> Unit,
     onLogAgain: (FoodSuggestion) -> Unit,
     onToggleFavorite: (FoodSuggestion, Boolean) -> Unit,
+    onBack: () -> Unit,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
-    /** Keeps the form as a food the user owns, without logging it. */
-    onSaveMyFood: () -> Unit = {},
     /** Null when there is no day to suggest against — no profile yet, or nothing left in the
      * budget. Hidden rather than disabled: a control that can't answer shouldn't be there. */
     onGetIdeas: (() -> Unit)? = null,
     editing: Boolean = false,
+    /** When the row being corrected was logged, for the subtitle that says which row it is. */
+    loggedAt: Long? = null,
 ) {
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(
-                if (editing) R.string.food_edit_meal_entry else R.string.food_add_to,
-                stringResource(mealType.labelRes),
-            ),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
+    // One handler, always mounted, dispatching on the state — the shape the photo and voice flows
+    // use. `onBack` steps a level and falls through to `onDismiss` when there is none left.
+    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+    NavigationBackHandler(state = navigationState, onBackCompleted = onBack)
+
+    val scroll = rememberScrollState()
+    // Derived so the sheet re-composes when the *answer* changes rather than on every scrolled
+    // pixel. `form.name` is deliberately outside it: a derivedStateOf captures a non-state value at
+    // the composition it was remembered in, which would freeze the handover on whatever the name
+    // was when the sheet opened.
+    val pastTitle by remember { derivedStateOf { scrolledPastTitle(scroll.value) } }
+
+    AppBottomSheet(
+        onDismiss = onDismiss,
+        // Rows run the sheet's full width so their pressed state does too; every other block pads
+        // itself by the same 16dp the gutter would have applied.
+        horizontalPadding = 0.dp,
+        expanded = view == AddEntryView.Search,
+        // The search state brings its own scroller and wants the height handed to it, which is the
+        // whole point of it being a state rather than a panel.
+        scrollable = view != AddEntryView.Search,
+        scrollState = scroll,
+        bottomBar = {
+            when (view) {
+                AddEntryView.Browse -> BrowseActionBar(onAddYourself = { onViewChange(AddEntryView.Form) })
+                AddEntryView.Form -> FormActionBar(
+                    form = form,
+                    editing = editing,
+                    saveMyFood = saveMyFood,
+                    onSaveMyFoodChange = onSaveMyFoodChange,
+                    onAdd = onAdd,
+                    onCancel = onDismiss,
+                )
+                // The search draws its own count-and-escape bar at the foot of its list.
+                AddEntryView.Search -> Unit
+            }
+        },
+    ) {
+        when (view) {
+            AddEntryView.Browse -> AddEntryBrowse(
+                mealType = mealType,
+                tab = browseTab,
+                suggestions = suggestions,
+                savedMeals = savedMeals,
+                recipes = recipes,
+                quickAddKcal = quickAddKcal,
+                onTabChange = onTabChange,
+                onQuickAddChange = onQuickAddChange,
+                onQuickAdd = onQuickAdd,
+                onOpenSearch = { onViewChange(AddEntryView.Search) },
+                onSelectSuggestion = onSelectSuggestion,
+                onLogAgain = onLogAgain,
+                onToggleFavorite = onToggleFavorite,
+                onSelectRecipe = onSelectRecipe,
+                onDeleteRecipe = onDeleteRecipe,
+                onNewRecipe = onNewRecipe,
+                onLogSavedMeal = onLogSavedMeal,
+                onDeleteSavedMeal = onDeleteSavedMeal,
+                onGetIdeas = onGetIdeas,
+            )
+            AddEntryView.Search -> FoodSearchScreen(
+                onSelectProduct = onSelectProduct,
+                // Giving up on the search is the same door "Add it yourself" is, so it lands in
+                // the same place: a form with whatever is in it, ready to be typed into.
+                onEnterManually = { onViewChange(AddEntryView.Form) },
+                onBack = onBack,
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                // ModalBottomSheet has already applied the IME inset; applying it again would lift
+                // the docked bar twice by the height of the keyboard.
+                imeAware = false,
+                modifier = Modifier.fillMaxSize(),
+            )
+            AddEntryView.Form -> AddEntryFormView(
+                form = form,
+                mealType = mealType,
+                editing = editing,
+                seededFromProduct = seededFromProduct,
+                scrolledPastTitle = pastTitle,
+                loggedAt = loggedAt,
+                onFormChange = onFormChange,
+                onBack = onBack,
+            )
+        }
+    }
+}
+
+/**
+ * Browse's one action: the door to typing it in yourself.
+ *
+ * **Tonal, not filled.** Nothing has been picked at this point, so this is a way through rather
+ * than a commit — a filled button here would be the sheet's loudest control sitting on the option
+ * fewest people want. No Cancel beside it either: the drag handle and the scrim both dismiss, and a
+ * cancel button under a list of things to pick is a button for a decision nobody is making.
+ */
+@Composable
+private fun BrowseActionBar(onAddYourself: () -> Unit) {
+    SheetActionBar {
+        TonalButton(
+            label = stringResource(R.string.food_add_yourself),
+            onClick = onAddYourself,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
         )
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Only an edit can carry one — the camera flow's own confirmation screen already shows
-            // the plate at full bleed. It is here so a correction shows what it is keeping: the
-            // photo survives the supersede, and a form that never mentioned it looked like it
-            // wouldn't.
-            form.photoPath?.let { path ->
-                // A view toggle over a path the form is already holding, so it stays here rather
-                // than in FoodScreenState — whose saver is a positional list, and this survives a
-                // rotation on its own.
-                var viewingPhoto by rememberSaveable { mutableStateOf(false) }
-                val viewLabel = stringResource(R.string.food_photo_view)
-                MealThumbnail(
-                    path = path,
-                    size = 64.dp,
-                    // A 64dp centre-crop is the worst look at the plate, so it opens — the same
-                    // call the confirmation screen's identical crop makes. Clipped to
-                    // MealThumbnail's own corner so the ripple matches what is drawn, and
-                    // described because a tap target is not decorative even when its image is.
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { viewingPhoto = true }
-                        .semantics { contentDescription = viewLabel },
-                )
-                if (viewingPhoto) {
-                    // Its own window, because the sheet's content column scrolls with unbounded
-                    // height and clips: a full-bleed viewer cannot live inside it, and anything
-                    // drawn outside it lands behind the sheet. decorFitsSystemWindows leaves the
-                    // viewer's close button the real insets to carry. Back is this window's own —
-                    // it closes the viewer and leaves the form as it was.
-                    Dialog(
-                        onDismissRequest = { viewingPhoto = false },
-                        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-                    ) {
-                        PhotoViewerOverlay(
-                            photo = rememberBitmapFromFile(path),
-                            onClose = { viewingPhoto = false },
-                        )
-                    }
-                }
-            }
-            if (!editing) {
-                // Above the panels, because it answers a different question: they are faster
-                // ways to log something already decided on, this is what to decide.
-                onGetIdeas?.let { SecondaryButton(label = stringResource(R.string.food_get_ideas), onClick = it) }
-                // Both panels seed the fields below; they stay editable either way, so this is a
-                // shortcut past typing rather than a separate entry mode. Already-logged foods come
-                // first — they cost no network round-trip and are the likelier match.
-                RecipePanel(
-                    recipes = recipes,
-                    onSelect = onSelectRecipe,
-                    onDelete = onDeleteRecipe,
-                    onNewRecipe = onNewRecipe,
-                )
-                SavedMealPanel(
-                    savedMeals = savedMeals,
-                    onLog = onLogSavedMeal,
-                    onDelete = onDeleteSavedMeal,
-                )
-                FoodSuggestionPanel(
-                    suggestions = suggestions,
-                    onSelect = onSelectSuggestion,
-                    onLogAgain = onLogAgain,
-                    onToggleFavorite = onToggleFavorite,
-                )
-                FoodSearchPanel(onSelect = onSelectProduct)
-                // ponytail: on a diary with recipes and recents, a quick add is still a scroll to
-                // the bottom of the sheet. A compact kcal-only row at the top is the upgrade if
-                // that friction shows up.
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = stringResource(R.string.food_add_yourself),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = stringResource(R.string.food_blank_name_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            FoodItemRow(
-                variant = FoodItemRowVariant.Editable,
-                name = form.name,
-                portionAmount = form.portionAmount,
-                portionUnit = form.portionUnit,
-                calories = form.calories ?: 0,
-                proteinG = form.proteinG ?: 0,
-                carbsG = form.carbsG ?: 0,
-                fatG = form.fatG ?: 0,
-                onNameChange = { onFormChange(form.copy(name = it)) },
-                onPortionAmountChange = { onFormChange(form.withPortionAmount(it)) },
-                onPortionUnitChange = { onFormChange(form.copy(portionUnit = it)) },
-                onCaloriesChange = { onFormChange(form.copy(calories = it)) },
-                // Stays in Kotlin: these are compared, not shown — `portionStep` switches on
-                // them, and SERVING_UNIT is the value a recipe row is priced in.
-                portionUnitOptions = listOf("g", "oz", "cup", SERVING_UNIT),
+    }
+}
+
+/**
+ * The form's commit, with the keep-this-food switch pinned above it.
+ *
+ * **Cancel leaves while the keyboard is up** — the review screen's rule, for the same reason: a
+ * full-width discard directly under the IME is a button standing where a mis-swipe at the
+ * suggestion bar lands. Back still closes the sheet.
+ */
+@Composable
+private fun FormActionBar(
+    form: AddEntryForm,
+    editing: Boolean,
+    saveMyFood: Boolean,
+    onSaveMyFoodChange: (Boolean) -> Unit,
+    onAdd: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val imeOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Absent while correcting a row, for the reason Browse is: it keeps a *new* food.
+        if (!editing) {
+            SaveMyFoodRow(
+                checked = saveMyFood && form.isSaveableFood(),
+                enabled = form.isSaveableFood(),
+                onCheckedChange = onSaveMyFoodChange,
             )
-            MacroFieldGroup(
-                proteinG = form.proteinG,
-                carbsG = form.carbsG,
-                fatG = form.fatG,
-                onProteinChange = { onFormChange(form.copy(proteinG = it)) },
-                onCarbsChange = { onFormChange(form.copy(carbsG = it)) },
-                onFatChange = { onFormChange(form.copy(fatG = it)) },
+        }
+        SheetActionBar {
+            PrimaryButton(
+                // The label is the only thing telling the user a nameless entry will be accepted;
+                // the button itself is enabled the moment there are calories.
+                label = when {
+                    editing -> stringResource(R.string.food_save)
+                    form.name.isBlank() -> stringResource(R.string.food_quick_add)
+                    else -> stringResource(R.string.food_add)
+                },
+                onClick = onAdd,
+                enabled = form.isValid(),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             )
-            MicronutrientInputGroup(
-                fiberG = form.nutrients.fiberG.takeIf { it > 0 },
-                sugarG = form.nutrients.sugarG.takeIf { it > 0 },
-                sodiumMg = form.nutrients.sodiumMg.takeIf { it > 0 },
-                onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it ?: 0))) },
-                onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it ?: 0))) },
-                onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it ?: 0))) },
-            )
-            // The authoring door, and the whole of it: the form above already holds every field a
-            // food has, so keeping one is one more button rather than a second screen. Hidden
-            // until there is something worth keeping — the rule the meal-ideas button follows —
-            // and absent while correcting a logged row, where the panels are gone for the same
-            // reason. Saving the same name twice edits it, which is how a food is corrected later.
-            if (!editing && form.isSaveableFood()) {
-                SecondaryButton(
-                    label = stringResource(R.string.food_save_as_my_food),
-                    onClick = onSaveMyFood,
+            if (!imeOpen) {
+                TextButton(
+                    label = stringResource(R.string.food_cancel),
+                    onClick = onCancel,
                     modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.food_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(
-                    // The label is the only thing telling the user a nameless entry will be
-                    // accepted; the button itself is enabled the moment there are calories.
-                    label = when {
-                        editing -> stringResource(R.string.food_save)
-                        form.name.isBlank() -> stringResource(R.string.food_quick_add)
-                        else -> stringResource(R.string.food_add)
-                    },
-                    onClick = onAdd,
-                    enabled = form.isValid(),
-                    modifier = Modifier.weight(1f),
                 )
             }
         }
     }
 }
 
+/** The docked bar's chrome. Ruled off rather than floated: the content behind it is a scroll with
+ * an edge, and a shadow would only blur that edge. */
+@Composable
+private fun SheetActionBar(content: @Composable ColumnScope.() -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            content = content,
+        )
+    }
+}
+
 @PreviewLightDark
 @Composable
-private fun AddEntrySheetPreview() {
+private fun AddEntrySheetBrowsePreview() {
     AppTheme {
         AddEntrySheet(
             mealType = MealType.Breakfast,
-            form = AddEntryForm(name = "Greek yogurt", portionAmount = 1.0, portionUnit = "cup", calories = 150, proteinG = 20, carbsG = 8, fatG = 4),
-            suggestions = listOf(FoodSuggestion("Greek yogurt", 1.0, "cup", 150, 20, 8, 4, isFavorite = true)),
+            form = AddEntryForm(),
+            view = AddEntryView.Browse,
+            browseTab = BrowseTab.Recents,
+            quickAddKcal = null,
+            seededFromProduct = false,
+            saveMyFood = false,
+            suggestions = listOf(
+                FoodSuggestion("Greek yogurt", 170.0, "g", 100, 17, 6, 0, isFavorite = true),
+                FoodSuggestion("Grilled chicken breast", 150.0, "g", 210, 32, 2, 8, isFavorite = false),
+            ),
             savedMeals = listOf(
-                SavedMeal(id = 1, name = "Usual breakfast", items = listOf(SavedMealItem("Greek yogurt", 1.0, "cup", 150, 20, 8, 4))),
+                SavedMeal(1, "Usual breakfast", listOf(SavedMealItem("Oats", 60.0, "g", 230, 8, 40, 4))),
             ),
             recipes = emptyList(),
+            onViewChange = {},
+            onTabChange = {},
+            onQuickAddChange = {},
+            onQuickAdd = {},
+            onSaveMyFoodChange = {},
             onSelectRecipe = {},
             onDeleteRecipe = {},
             onNewRecipe = {},
@@ -260,51 +308,43 @@ private fun AddEntrySheetPreview() {
             onSelectSuggestion = {},
             onLogAgain = {},
             onToggleFavorite = { _, _ -> },
+            onBack = {},
             onDismiss = {},
             onAdd = {},
+            onGetIdeas = {},
         )
     }
 }
 
-/** Correcting a logged row: no shortcut panels, and the button commits over the row it opened. */
 @PreviewLightDark
 @Composable
-private fun AddEntrySheetEditingPreview() {
-    AppTheme {
-        AddEntrySheet(
-            mealType = MealType.Lunch,
-            form = AddEntryForm(name = "Grilled chicken breast", portionAmount = 150.0, portionUnit = "g", calories = 210, proteinG = 32, carbsG = 2, fatG = 8),
-            suggestions = emptyList(),
-            savedMeals = emptyList(),
-            recipes = emptyList(),
-            onSelectRecipe = {},
-            onDeleteRecipe = {},
-            onNewRecipe = {},
-            onLogSavedMeal = {},
-            onDeleteSavedMeal = {},
-            onFormChange = {},
-            onSelectProduct = {},
-            onSelectSuggestion = {},
-            onLogAgain = {},
-            onToggleFavorite = { _, _ -> },
-            onDismiss = {},
-            onAdd = {},
-            editing = true,
-        )
-    }
-}
-
-/** The quick-add shape: a blank name, so the button reads "Quick add" rather than "Add". */
-@PreviewLightDark
-@Composable
-private fun AddEntrySheetQuickAddPreview() {
+private fun AddEntrySheetFormPreview() {
     AppTheme {
         AddEntrySheet(
             mealType = MealType.Snacks,
-            form = AddEntryForm(name = "", calories = 320),
+            form = AddEntryForm(
+                name = "Nutella",
+                portionAmount = 150.0,
+                portionUnit = "g",
+                calories = 809,
+                proteinG = 9,
+                carbsG = 87,
+                fatG = 47,
+                servingSize = "1 tbsp (15 g)",
+            ),
+            view = AddEntryView.Form,
+            browseTab = BrowseTab.Recents,
+            quickAddKcal = null,
+            seededFromProduct = true,
+            saveMyFood = false,
             suggestions = emptyList(),
             savedMeals = emptyList(),
             recipes = emptyList(),
+            onViewChange = {},
+            onTabChange = {},
+            onQuickAddChange = {},
+            onQuickAdd = {},
+            onSaveMyFoodChange = {},
             onSelectRecipe = {},
             onDeleteRecipe = {},
             onNewRecipe = {},
@@ -315,8 +355,96 @@ private fun AddEntrySheetQuickAddPreview() {
             onSelectSuggestion = {},
             onLogAgain = {},
             onToggleFavorite = { _, _ -> },
+            onBack = {},
             onDismiss = {},
             onAdd = {},
+        )
+    }
+}
+
+/** The search, with the sheet's whole height and one list in it — the state that removed the
+ * 280dp scroller inside a scrolling sheet. */
+@PreviewLightDark
+@Composable
+private fun AddEntrySheetSearchPreview() {
+    AppTheme {
+        AddEntrySheet(
+            mealType = MealType.Breakfast,
+            form = AddEntryForm(),
+            view = AddEntryView.Search,
+            browseTab = BrowseTab.Recents,
+            quickAddKcal = null,
+            seededFromProduct = false,
+            saveMyFood = false,
+            suggestions = emptyList(),
+            savedMeals = emptyList(),
+            recipes = emptyList(),
+            onViewChange = {},
+            onTabChange = {},
+            onQuickAddChange = {},
+            onQuickAdd = {},
+            onSaveMyFoodChange = {},
+            onSelectRecipe = {},
+            onDeleteRecipe = {},
+            onNewRecipe = {},
+            onLogSavedMeal = {},
+            onDeleteSavedMeal = {},
+            onFormChange = {},
+            onSelectProduct = {},
+            onSelectSuggestion = {},
+            onLogAgain = {},
+            onToggleFavorite = { _, _ -> },
+            onBack = {},
+            onDismiss = {},
+            onAdd = {},
+        )
+    }
+}
+
+/** Correcting a logged row: no browse state behind it, no keeping a food from here. */
+@PreviewLightDark
+@Composable
+private fun AddEntrySheetEditPreview() {
+    AppTheme {
+        AddEntrySheet(
+            mealType = MealType.Lunch,
+            form = AddEntryForm(
+                name = "Grilled chicken breast",
+                portionAmount = 150.0,
+                portionUnit = "g",
+                calories = 210,
+                proteinG = 32,
+                carbsG = 2,
+                fatG = 8,
+            ),
+            view = AddEntryView.Form,
+            browseTab = BrowseTab.Recents,
+            quickAddKcal = null,
+            seededFromProduct = false,
+            saveMyFood = false,
+            suggestions = emptyList(),
+            savedMeals = emptyList(),
+            recipes = emptyList(),
+            onViewChange = {},
+            onTabChange = {},
+            onQuickAddChange = {},
+            onQuickAdd = {},
+            onSaveMyFoodChange = {},
+            onSelectRecipe = {},
+            onDeleteRecipe = {},
+            onNewRecipe = {},
+            onLogSavedMeal = {},
+            onDeleteSavedMeal = {},
+            onFormChange = {},
+            onSelectProduct = {},
+            onSelectSuggestion = {},
+            onLogAgain = {},
+            onToggleFavorite = { _, _ -> },
+            onBack = {},
+            onDismiss = {},
+            onAdd = {},
+            editing = true,
+            loggedAt = 1_757_925_720_000,
         )
     }
 }
