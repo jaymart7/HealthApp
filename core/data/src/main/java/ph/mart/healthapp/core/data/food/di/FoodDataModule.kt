@@ -25,7 +25,8 @@ val foodDataModule = module {
     single { get<AppDatabase>().favoriteFoodDao() }
     single { get<AppDatabase>().savedMealDao() }
     single { get<AppDatabase>().scannedProductDao() }
-    single<FoodRepository> { FoodRepositoryImpl(androidContext(), get(), get(), get()) }
+    single { get<AppDatabase>().searchQueryDao() }
+    single<FoodRepository> { FoodRepositoryImpl(androidContext(), get(), get(), get(), get()) }
     single<FoodRecognitionRepository> { debugRecognition() ?: FoodRecognitionRepositoryImpl() }
     single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl(get()) }
     single<MealIdeaRepository> { debugMealIdeas() ?: MealIdeaRepositoryImpl() }

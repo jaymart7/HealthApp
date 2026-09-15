@@ -4,6 +4,10 @@ import androidx.lifecycle.ViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.food.MealType
+
+/** Three chips is what fits on one line beside the "Recent" label without an overflow row. */
+private const val RECENT_QUERIES = 3
 
 /**
  * Backs [FoodHistoryScreen] — the one screen in this app that reads the diary across days.
@@ -21,11 +25,15 @@ class FoodHistoryViewModel(
     private val foodRepository: FoodRepository,
 ) : ViewModel(), OrbitContainerHost<FoodHistoryUiState, FoodHistoryUiState, FoodHistorySideEffect> {
 
-    override val container = orbitContainer<FoodHistoryUiState, FoodHistorySideEffect>(FoodHistoryUiState())
+    override val container = orbitContainer<FoodHistoryUiState, FoodHistorySideEffect>(FoodHistoryUiState()) {
+        observeRecentQueries()
+    }
 
     fun handleEvent(event: FoodHistoryEvent) {
         when (event) {
             is FoodHistoryEvent.OnQueryChange -> search(event.query)
+            is FoodHistoryEvent.OnMealFilterChange -> filter(event.mealType)
+            FoodHistoryEvent.OnQueryUsed -> recordQuery()
             is FoodHistoryEvent.OnLog -> log(event)
         }
     }
@@ -40,11 +48,36 @@ class FoodHistoryViewModel(
      */
     private fun search(query: String) = intent {
         reduce { state.copy(query = query, searching = true) }
-        val results = foodRepository.searchEntries(query.trim())
+        val mealFilter = state.mealFilter
+        val results = foodRepository.searchEntries(query.trim(), mealFilter)
+        // The day headers' figures, read after the rows because the rows are what name the days.
+        val totals = foodRepository.dayTotals(results.map { it.dateEpochDay }.distinct())
         reduce {
-            if (state.query != query) state else {
-                state.copy(results = results, searching = false, searched = true)
+            if (state.query != query || state.mealFilter != mealFilter) state else {
+                state.copy(results = results, dayTotals = totals, searching = false, searched = true)
             }
+        }
+    }
+
+    /**
+     * The filter re-runs the query it narrows. Reduced before the read, like the query itself, so
+     * the chip moves on the tap rather than when the answer lands — and [search] compares against
+     * the reduced filter as well as the reduced query, so switching twice quickly cannot leave the
+     * slower first answer on screen.
+     */
+    private fun filter(mealType: MealType?) = intent {
+        reduce { state.copy(mealFilter = mealType) }
+        search(state.query)
+    }
+
+    /** See [FoodHistoryEvent.OnQueryUsed] for why this is a row tap and not a keystroke. */
+    private fun recordQuery() = intent {
+        foodRepository.recordQuery(state.query)
+    }
+
+    private fun observeRecentQueries() = intent {
+        foodRepository.observeRecentQueries(RECENT_QUERIES).collect { queries ->
+            reduce { state.copy(recentQueries = queries) }
         }
     }
 

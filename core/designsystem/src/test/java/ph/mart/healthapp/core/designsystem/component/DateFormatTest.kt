@@ -6,6 +6,8 @@ import java.util.Locale
 import java.util.TimeZone
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -79,6 +81,22 @@ class DateFormatTest {
             (-400L..400 step 37).forEach { offset ->
                 assertEquals("$id offset $offset", today + offset, epochDayToCalendar(today + offset).toEpochDay())
             }
+        }
+    }
+
+    /**
+     * The year appears exactly when it says something. Checked in every zone the rest of this file
+     * checks, because "which year is that epoch day in" is the same question the round-trip test
+     * exists for and has the same trap in it.
+     */
+    @Test
+    fun `formatMonthYear names the year only for a day outside this one`() {
+        zones.forEach { id ->
+            TimeZone.setDefault(TimeZone.getTimeZone(id))
+            val today = todayEpochDay()
+
+            assertFalse("$id", formatMonthYear(today).any { it.isDigit() })
+            assertTrue("$id", formatMonthYear(today - 400).any { it.isDigit() })
         }
     }
 }

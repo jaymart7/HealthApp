@@ -17,6 +17,8 @@ import ph.mart.healthapp.core.data.food.local.FoodEntryEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealDao
 import ph.mart.healthapp.core.data.food.local.SavedMealEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealItemEntity
+import ph.mart.healthapp.core.data.food.local.SearchQueryDao
+import ph.mart.healthapp.core.data.food.local.SearchQueryEntity
 import ph.mart.healthapp.core.data.forToday
 import ph.mart.healthapp.core.data.todayEpochDay
 
@@ -41,6 +43,7 @@ internal class FoodRepositoryImpl(
     private val dao: FoodEntryDao,
     private val favoriteDao: FavoriteFoodDao,
     private val savedMealDao: SavedMealDao,
+    private val searchQueryDao: SearchQueryDao,
 ) : FoodRepository {
 
     override fun observeTodayEntries(): Flow<List<FoodEntry>> = forToday(::observeEntries)
@@ -87,8 +90,21 @@ internal class FoodRepositoryImpl(
 
     override suspend fun allEntries(): List<FoodEntry> = dao.allActive().map { it.toFoodEntry() }
 
-    override suspend fun searchEntries(query: String): List<FoodEntry> =
-        dao.searchByName(likeContains(query), MAX_HISTORY_RESULTS).map { it.toFoodEntry() }
+    override suspend fun searchEntries(query: String, mealType: MealType?): List<FoodEntry> =
+        dao.searchByName(likeContains(query), mealType?.name, MAX_HISTORY_RESULTS)
+            .map { it.toFoodEntry() }
+
+    override suspend fun dayTotals(dates: List<Long>): Map<Long, Int> =
+        dao.dayTotals(dates).associate { it.date to it.kcal }
+
+    override fun observeRecentQueries(limit: Int): Flow<List<String>> =
+        searchQueryDao.observeRecent(limit).map { rows -> rows.map { it.query } }
+
+    override suspend fun recordQuery(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) return
+        searchQueryDao.record(SearchQueryEntity(query = trimmed, lastUsedAt = System.currentTimeMillis()))
+    }
 
     override suspend fun deleteAllEntries() {
         dao.softDeleteAll()

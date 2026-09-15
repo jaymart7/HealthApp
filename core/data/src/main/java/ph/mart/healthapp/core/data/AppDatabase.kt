@@ -21,6 +21,8 @@ import ph.mart.healthapp.core.data.food.local.SavedMealEntity
 import ph.mart.healthapp.core.data.food.local.SavedMealItemEntity
 import ph.mart.healthapp.core.data.food.local.ScannedProductDao
 import ph.mart.healthapp.core.data.food.local.ScannedProductEntity
+import ph.mart.healthapp.core.data.food.local.SearchQueryDao
+import ph.mart.healthapp.core.data.food.local.SearchQueryEntity
 import ph.mart.healthapp.core.data.fasting.local.FastSessionDao
 import ph.mart.healthapp.core.data.fasting.local.FastSessionEntity
 import ph.mart.healthapp.core.data.health.local.HealthLinkDao
@@ -76,8 +78,9 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         SupplementDayEntity::class,
         BloodPressureReadingEntity::class,
         ChatMessageEntity::class,
+        SearchQueryEntity::class,
     ],
-    version = 32,
+    version = 33,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {
@@ -102,4 +105,5 @@ internal abstract class AppDatabase : RoomDatabase() {
     abstract fun supplementDao(): SupplementDao
     abstract fun bloodPressureReadingDao(): BloodPressureReadingDao
     abstract fun chatMessageDao(): ChatMessageDao
+    abstract fun searchQueryDao(): SearchQueryDao
 }

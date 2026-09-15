@@ -294,7 +294,30 @@
     <string name="food_history_review">Review %1$s</string>
     <!-- %1$s the food, %2$s the meal it landed in. -->
     <string name="food_history_logged">%1$s added to %2$s</string>
+    <string name="food_history_clear">Clear search</string>
+    <string name="food_history_recent">Recent</string>
+    <!-- Every meal slot at once - the meal filter's default. -->
+    <string name="food_history_filter_all">All</string>
+    <!-- The whole day, not just what the query matched. Grouped, so 1,806 reads as one figure. -->
+    <string name="food_history_day_total">%1$,d kcal</string>
+    <!-- %1$s the matches, %2$s the days they are spread across - both already pluralised below. -->
+    <string name="food_history_count">%1$s in %2$s</string>
+    <plurals name="food_history_count_matches">
+        <item quantity="one">%1$d match</item>
+        <item quantity="other">%1$d matches</item>
+    </plurals>
+    <plurals name="food_history_count_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="food_history_count_newest">Everything you\u2019ve logged, newest first</string>
+    <string name="food_history_searching">Searching\u2026</string>
+    <!-- Says what a tap does before the first one is made. The long form goes over the opening
+         list, where there is no count line competing for the row. -->
+    <string name="food_history_hint">Tap a row to review</string>
+    <string name="food_history_hint_long">Tap a row to review before it\u2019s logged</string>
     <string name="food_history_empty_query">No match for \u201c%1$s\u201d</string>
+    <string name="food_history_empty_query_body">Nothing in your diary matches that. Search looks at food names only \u2014 a shorter word finds more.</string>
     <string name="food_history_empty_diary">Nothing logged yet</string>
-    <string name="food_history_empty_body">This searches every food you have ever logged, on any day.</string>
+    <string name="food_history_empty_body">Every food you log lands here, ready to re-log onto any day without typing it again.</string>
 </resources>

@@ -34,14 +34,33 @@ internal interface FoodEntryDao {
      *
      * Suspend rather than a [Flow]: the screen re-asks on every keystroke, and a flow would tear
      * down and re-subscribe a query each time instead of just running it.
+     *
+     * [meal] is the screen's meal filter, `null` for "All". It is applied **here** rather than over
+     * the returned list, so the cap counts rows the user asked for: filtering after `LIMIT` would
+     * hand back whatever survived of the newest two hundred, which is not the newest two hundred
+     * lunches.
      */
     // ponytail: no debounce — one query per keystroke over a local table of a few thousand rows.
     // Debounce the caller if a diary ever gets big enough to feel it.
     @Query(
         "SELECT * FROM food_entry WHERE isDeleted = 0 AND name LIKE :pattern ESCAPE '\\' " +
+            "AND (:meal IS NULL OR mealType = :meal) " +
             "ORDER BY date DESC, loggedAt DESC LIMIT :limit",
     )
-    suspend fun searchByName(pattern: String, limit: Int): List<FoodEntryEntity>
+    suspend fun searchByName(pattern: String, meal: String?, limit: Int): List<FoodEntryEntity>
+
+    /**
+     * What each of [dates] came to across the **whole** day, matched rows and unmatched alike —
+     * the figure the history list's day header carries.
+     *
+     * A second read rather than a sum over the results: a day header saying "412 kcal" because
+     * that is what the word "chicken" matched would be a claim about the day that isn't true.
+     */
+    @Query(
+        "SELECT date, SUM(calories) AS kcal FROM food_entry " +
+            "WHERE date IN (:dates) AND isDeleted = 0 GROUP BY date",
+    )
+    suspend fun dayTotals(dates: List<Long>): List<DayTotal>
 
     /** Bounded history for the Nutrition trend — the whole table is only ever read by export. */
     @Query("SELECT * FROM food_entry WHERE date >= :from AND isDeleted = 0 ORDER BY date ASC, loggedAt ASC")
@@ -101,3 +120,7 @@ internal interface FoodEntryDao {
     @Query("UPDATE food_entry SET isDeleted = 1")
     suspend fun softDeleteAll()
 }
+
+/** One row of [FoodEntryDao.dayTotals] — a day and what it came to. A projection rather than a
+ * `Map` return, because Room reads a `Map` by grouping a cursor it has to be told how to key. */
+internal data class DayTotal(val date: Long, val kcal: Int)

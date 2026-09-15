@@ -204,8 +204,34 @@ interface FoodRepository {
      *
      * A suspend one-shot, unlike every other read here, because its input is a text field — see
      * `FoodEntryDao.searchByName`.
+     *
+     * [mealType] narrows the read to one meal slot; `null` is every slot, which is what the
+     * screen's filter opens on.
      */
-    suspend fun searchEntries(query: String): List<FoodEntry>
+    suspend fun searchEntries(query: String, mealType: MealType? = null): List<FoodEntry>
+
+    /**
+     * What each of [dates] came to across the whole day — the history list's day headers, which
+     * report the day rather than the part of it a query matched.
+     */
+    suspend fun dayTotals(dates: List<Long>): Map<Long, Int>
+
+    /**
+     * The queries the history search has been used with, newest first, capped at [limit].
+     *
+     * A flow because the screen shows them beside a field that is writing to them, so the row has
+     * to re-draw the moment one is recorded.
+     */
+    fun observeRecentQueries(limit: Int): Flow<List<String>>
+
+    /**
+     * Remembers a query that found something.
+     *
+     * Called when a result is opened for review, not on every keystroke: recording as the user
+     * types fills the list with "c", "ch", "chi". Opening a row is the proof the word worked.
+     * A blank query records nothing.
+     */
+    suspend fun recordQuery(query: String)
 
     /** Soft-deletes every entry, for import's replace-in-full semantics. */
     suspend fun deleteAllEntries()

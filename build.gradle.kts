@@ -44,6 +44,7 @@ val literalExceptions = listOf(
     "BadgeGroupCard.kt",
     "HomeData.kt",
     "DiaryDateHeader.kt",
+    "FoodHistoryData.kt",
     "GoalProjectionLine.kt",
     "MascotAvatar.kt",
 )

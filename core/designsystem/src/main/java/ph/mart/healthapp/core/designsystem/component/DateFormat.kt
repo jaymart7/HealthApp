@@ -80,3 +80,21 @@ fun formatMonth(epochDay: Long): String =
 fun formatTimeOfDay(epochMillis: Long): String =
     java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT, Locale.getDefault())
         .format(java.util.Date(epochMillis))
+
+/**
+ * "August", or "August 2024" when the day is not in the current year — the heading over a run of
+ * days in a list that scrolls back through months.
+ *
+ * Long-form where [formatMonth] is short, because this one has a whole row to itself rather than
+ * four of it sharing an axis. The year appears only when it has something to say: in a list that
+ * mostly spans weeks, "August 2025" on every band is a year repeated for nothing, and in one that
+ * spans years, two bands both saying "August" is the ambiguity this exists to close.
+ */
+fun formatMonthYear(epochDay: Long): String {
+    val pattern = if (epochDayToCalendar(epochDay).get(Calendar.YEAR) == midnightToday().get(Calendar.YEAR)) {
+        "MMMM"
+    } else {
+        "MMMM yyyy"
+    }
+    return SimpleDateFormat(pattern, Locale.getDefault()).format(epochDayToDate(epochDay))
+}

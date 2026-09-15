@@ -440,10 +440,83 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   is not `fullBleed` — and consumes the status bar once at its root rather than passing
   `WindowInsets(0)` down to two different bars, because the second of them is shared with two
   full-bleed flows that do apply it themselves.
-- **History dates are absolute, always.** No "Today"/"Yesterday" here, unlike `diaryDateLabel()`
-  two files over. A list spanning months is scanned by date rather than read top-down, and two
-  relative labels among forty absolute ones are the two that have to be decoded. It also leaves
-  that helper `internal` to `ui/diary/components/` where its test already lives.
+- **History dates are absolute, always — and now carry their age beside them.** No
+  "Today"/"Yesterday" *as the date*, unlike `diaryDateLabel()` two files over: a list spanning
+  months is scanned by date rather than read top-down, and two relative labels among forty absolute
+  ones are the two that have to be decoded. That left the weakest element on the screen carrying
+  the most, so the date now sits beside a chip that says how old it is — "Yesterday", "12 days
+  ago", "8 weeks ago" — and the two are drawn together because neither does the other's job. It
+  still leaves `diaryDateLabel` `internal` to `ui/diary/components/` where its test lives;
+  `relativeAgeLabel` and `ageBandFor` are this flow's own, in `FoodHistoryData.kt`, and
+  `FoodHistoryTest` holds their wording. Every tier of both starts at **two** of its unit — 7 days,
+  then 2 weeks, then 2 months — which is what keeps "1 weeks ago" out of a string that has no
+  plural form to switch on. `FoodHistoryData.kt` is in the root build's `literalExceptions` for the
+  reason `DiaryDateHeader.kt` is.
+- **The history list is rules, not cards, and the row is its own variant.** Forty rows in forty
+  `surfaceContainerHighest` cards is forty containers to look past, and the cards were doing the
+  separating the day headings should have been. The rows now sit on 1dp rules under three levels of
+  heading — age band, day header, row — and the card fill is gone, which is also what finally makes
+  *pressed* legible: the state layer is the only thing that ever tints a row. The row itself is a
+  fourth `FoodItemRowVariant`, `SearchResult`, added beside `Display`/`Result`/`Editable` rather
+  than grown onto `Display`: that variant is drawn by the diary, meal ideas, the recipe builder and
+  the review card, none of which were in scope, and all four still render exactly what they did.
+  What the new one carries is what a day heading would otherwise have supplied — the meal slot, the
+  matched word marked in `primaryContainer`, and a chevron saying a tap *opens* rather than ends.
+  It reserves the 40dp photo column even when empty, which is the one place it contradicts
+  `DisplayRow`'s documented rule: that rule is about a meal section of mostly-typed rows, and this
+  is a list scanned down for a name, where a name starting in a different place every fourth row is
+  what breaks the scan.
+- **A day header reports the day, not the query.** The total beside the date is the whole day's
+  calories, read by a second `dayTotals` query rather than summed over the matched rows — a header
+  saying "412 kcal" because that is what "chicken" matched would be a claim about Tuesday that
+  isn't true. It is absent, not zero, while a search is in flight. The headers stick, and which one
+  is *pinned* is worked out from a running item index rather than asked of the list, because a
+  `stickyHeader` is not told; pinned draws on `surfaceContainer` so the rows can't be seen through
+  it.
+- **The in-flight state never blanks the list, and there is still no debounce.** The previous rows
+  stay fully painted, an indeterminate line appears under the field, and two skeleton rows appear
+  at the *tail* — a list that blanks on every keystroke is a list nobody can read while typing. The
+  redesign asked for a 200–250 ms debounce and it was declined: `FoodEntryDao.searchByName` already
+  carries the argument that one query per keystroke over a local table of a few thousand rows costs
+  nothing, and `FoodHistoryViewModel` already drops a late answer by comparing against the reduced
+  query. The skeletons ride the existing `searching` flag; they are static, because the progress
+  line is already the thing that moves.
+- **The meal filter runs inside the query, and it is a `SegmentedToggle`.** `mealType` is a
+  parameter of `searchByName`, not a filter over its result, so narrowing to Lunch reaches back
+  through the whole diary rather than through whatever survived the 200-row cap — filtering after
+  `LIMIT` hands back the newest two hundred *rows*, which is not the newest two hundred lunches.
+  The chips the design drew are not chips: this app has no chip idiom anywhere, and `SegmentedToggle`
+  is already the single-select row that scrolls rather than squeezing when its options outgrow the
+  width, which five of them do. It costs 52dp of the most expensive space on the screen and that is
+  what buys it.
+- **A recent query is recorded when a row is opened, not when a key is pressed.** Recording on the
+  keystroke fills the list with "c", "ch", "chi"; opening a result is the proof the word worked.
+  They live in a `food_search_query` table keyed by the text itself, so asking twice moves one row
+  rather than adding a second — which is also why it is the one table in `:core:data` with no
+  `isDeleted` column. Nothing in it is the user's data: it is a list of words they typed,
+  reconstructible by typing them again, and a row that stops being offered is one that fell past
+  the `LIMIT`. The app has no DataStore and no `SharedPreferences`, and this was not the feature to
+  give it one.
+- **The search field is this screen's, not `AppTextField`'s.** `AppTextField` is the app's *form*
+  field — bordered, 48dp, square-ish, drawn in every sheet in the product — and growing a pill
+  radius, a leading magnifier, a clear button and a progress line onto it to serve one screen would
+  push all of that into every form. `HistorySearchField` lives in this flow's `components/` because
+  one screen draws it, and moves to `:core:designsystem` the day `FoodSearchPanel` wants the same
+  box. Not before: that is the rule for every component in this app.
+- **The top bar collapses to the query.** Once the list has scrolled, the title is a word already
+  visible in the field below it and the field is what the user scrolled past, so the bar becomes
+  the live query with a clear button and a rule under it. It is still `AppTopBar`, with a different
+  title slot and one action — the parameters that component already has — rather than a second bar
+  of this screen's own.
+- **Two empty pages, and only one has a way forward.** "No match for 'quinoa'" and "Nothing logged
+  yet" are different facts and were drawing the same page. The first now says that search looks at
+  names only and offers **Clear search**, which clears the query and the meal filter together — a
+  filter that emptied the list has to be reachable to be widened, which is also why the filter row
+  stays visible on that page. The second offers nothing, because there is nothing to clear and
+  nowhere to go but back, and it is the one state where the field's focus is **taken away**: the
+  keyboard would otherwise cover the sentence explaining why the screen is empty. Taken away rather
+  than never given, because "the diary is empty" is only knowable once the first read is back, and
+  the alternative is a frame with no focus at all on every other run.
 - **The diary's calendar is a pane at ≥840dp, and the same calendar either way.** It was declined
   once — the diary has no list to put beside its day — and reopened on the condition recorded with
   it: the swap-in `FoodScreenState.calendarOpen` opens is the list, so at expanded width

@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,10 +37,11 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.R
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
-enum class FoodItemRowVariant { Display, Result, Editable }
+enum class FoodItemRowVariant { Display, Result, SearchResult, Editable }
 
 /**
  * One component, mode-switched, per the prototype's [FoodItemRowVariant.Display] (food diary
@@ -51,6 +54,13 @@ enum class FoodItemRowVariant { Display, Result, Editable }
  * separates its rows with rules reads as one list, where a stack of cards reads as a stack of
  * things. [proteinG]/[carbsG]/[fatG] are always display-only here; macro editing is a
  * separately-composed [MacroFieldGroup], per the prototype's Confirmation screen layout.
+ *
+ * [FoodItemRowVariant.SearchResult] is the fourth and the diary-history one: a row that *is* a
+ * record of something eaten, like [FoodItemRowVariant.Display], but listed among rows from other
+ * days rather than under the meal it belongs to. That is the whole of the difference — it carries
+ * the meal slot it was logged in, it marks what the query matched, and it says with a chevron that
+ * a tap opens it rather than logging it. [FoodItemRowVariant.Display] is untouched by it: the
+ * diary, meal ideas, the recipe builder and the review card are all still the row they were.
  */
 @Composable
 fun FoodItemRow(
@@ -67,6 +77,13 @@ fun FoodItemRow(
      * [FoodItemRowVariant.Display] row, and nothing at all in the editable one, where the photo is
      * shown once above the whole form instead of beside one field of it. */
     photoPath: String? = null,
+    /** The meal this row was logged in, already resolved — this module never sees `MealType`.
+     * [FoodItemRowVariant.SearchResult] only; every other variant sits under a heading that
+     * already says it. */
+    mealLabel: String? = null,
+    /** The query that found this row, marked in [name] where it matched, case-insensitively.
+     * [FoodItemRowVariant.SearchResult] only. Blank or absent marks nothing. */
+    highlight: String? = null,
     onNameChange: (String) -> Unit = {},
     onPortionAmountChange: (Double) -> Unit = {},
     onPortionUnitChange: (String) -> Unit = {},
@@ -78,6 +95,9 @@ fun FoodItemRow(
     when (variant) {
         FoodItemRowVariant.Display -> DisplayRow(name, portionAmount, portionUnit, calories, proteinG, carbsG, fatG, photoPath, modifier)
         FoodItemRowVariant.Result -> ResultRow(name, portionAmount, portionUnit, calories, proteinG, carbsG, fatG, modifier)
+        FoodItemRowVariant.SearchResult -> SearchResultRow(
+            name, portionAmount, portionUnit, calories, proteinG, carbsG, fatG, photoPath, mealLabel, highlight, modifier,
+        )
         FoodItemRowVariant.Editable -> EditableRow(
             name, portionAmount, portionUnit, calories, portionUnitOptions,
             onNameChange, onPortionAmountChange, onPortionUnitChange, onCaloriesChange, modifier,
@@ -307,6 +327,145 @@ private fun ResultRow(
 }
 
 /**
+ * A logged row seen from the history search — the diary's own row, read a long way from the day it
+ * belongs to.
+ *
+ * Three things it carries that [DisplayRow] does not, and each is a fact the diary's own heading
+ * would otherwise have supplied: the meal slot, because there is no meal section above it here;
+ * the match mark, because the user is scanning for a word rather than reading a day; and the
+ * chevron, because a tap here *opens* the row rather than being the end of it.
+ *
+ * **The photo column is reserved even when empty**, which is the one place this contradicts
+ * [DisplayRow]'s rule. That rule is about a day's meal section, where most rows are typed and the
+ * whole list would indent for the one that isn't. Here the list is scanned down for a name, and a
+ * name that starts in a different place on every fourth row is what breaks that.
+ *
+ * No container and no radius: the rule beneath each row is what makes a list of them one list. The
+ * caller owns the tap, so the state layer lands on the whole row rather than on a card inside it.
+ */
+@Composable
+private fun SearchResultRow(
+    name: String,
+    portionAmount: Double,
+    portionUnit: String,
+    calories: Int,
+    proteinG: Int,
+    carbsG: Int,
+    fatG: Int,
+    photoPath: String?,
+    mealLabel: String?,
+    highlight: String?,
+    modifier: Modifier,
+) {
+    val caloriesSpoken = stringResource(R.string.ds_food_calories_value, calories)
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 72.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // Drawn when there is one, reserved when there isn't — see this function's KDoc.
+            if (photoPath != null) MealThumbnail(path = photoPath, size = 40.dp) else Spacer(modifier = Modifier.size(40.dp))
+            Spacer(modifier = Modifier.size(12.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = highlighted(name, highlight),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (mealLabel != null) {
+                        MealChip(label = mealLabel)
+                        Spacer(modifier = Modifier.size(8.dp))
+                    }
+                    Text(
+                        // The app's one macro line, not a second dialect of it — see [macroLine].
+                        text = macroLine(portionAmount, portionUnit, proteinG, carbsG, fatG),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            // Two texts drawn, one thing said — [ResultRow]'s rule, for the same figure.
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .clearAndSetSemantics { contentDescription = caloriesSpoken },
+            ) {
+                Text(
+                    text = calories.toString(),
+                    style = MaterialTheme.typography.titleLarge.tabularNums.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    // Not copy: kcal is kcal in every language this app could ship in.
+                    text = "kcal",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+                )
+            }
+            Icon(
+                imageVector = AppIcons.ChevronRight,
+                // Decorative: the row already announces what activating it does.
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(start = 4.dp).size(20.dp),
+            )
+        }
+        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+/** The meal slot a history row was logged in. Quiet by construction — it is context, not the row. */
+@Composable
+private fun MealChip(label: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = RoundedCornerShape(4.dp),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/**
+ * [name] with the first occurrence of [query] marked.
+ *
+ * The first only, not every one: "Chicken with chicken rice" marked twice is a row that looks like
+ * it matched twice as hard. Case-insensitive, because the query is typed and the name was typed by
+ * someone else. `primaryContainer` rather than a bold weight — the name is already the heaviest
+ * thing on its line, so emphasis has to come from somewhere the line is not already spending.
+ */
+@Composable
+private fun highlighted(name: String, query: String?): AnnotatedString {
+    val term = query?.trim().orEmpty()
+    val start = if (term.isEmpty()) -1 else name.indexOf(term, ignoreCase = true)
+    if (start < 0) return AnnotatedString(name)
+    return buildAnnotatedString {
+        append(name.substring(0, start))
+        withStyle(
+            SpanStyle(
+                background = MaterialTheme.colorScheme.primaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            ),
+        ) { append(name.substring(start, start + term.length)) }
+        append(name.substring(start + term.length))
+    }
+}
+
+/**
  * "150 g · P 32g · C 2g · F 8g", with each macro's initial in that macro's own colour.
  *
  * The app has a fixed colour for protein, carbs and fat and spends it on bars and charts, while
@@ -354,6 +513,45 @@ private fun FoodItemRowDisplayPreview() {
                 fatG = 8,
                 modifier = Modifier.padding(16.dp),
             )
+        }
+    }
+}
+
+/**
+ * The history row: two of them, so the reserved photo column is visible as the thing that keeps
+ * the two names starting in the same place. The query is "chick", marked in both.
+ */
+@PreviewLightDark
+@Composable
+private fun FoodItemRowSearchResultPreview() {
+    AppTheme {
+        Surface {
+            Column {
+                FoodItemRow(
+                    variant = FoodItemRowVariant.SearchResult,
+                    name = "Grilled chicken breast",
+                    portionAmount = 150.0,
+                    portionUnit = "g",
+                    calories = 412,
+                    proteinG = 38,
+                    carbsG = 0,
+                    fatG = 9,
+                    mealLabel = "Lunch",
+                    highlight = "chick",
+                )
+                FoodItemRow(
+                    variant = FoodItemRowVariant.SearchResult,
+                    name = "Chicken & rice bowl",
+                    portionAmount = 1.0,
+                    portionUnit = "bowl",
+                    calories = 520,
+                    proteinG = 34,
+                    carbsG = 61,
+                    fatG = 14,
+                    mealLabel = "Dinner",
+                    highlight = "chick",
+                )
+            }
         }
     }
 }
