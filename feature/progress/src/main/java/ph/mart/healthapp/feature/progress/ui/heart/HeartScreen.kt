@@ -34,6 +34,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.heart.components.HeartTrendChart
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -47,6 +48,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
 @Composable
 internal fun HeartScreen(
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HeartViewModel = koinViewModel(),
@@ -55,6 +57,7 @@ internal fun HeartScreen(
     HeartContent(
         days = uiState.days,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -64,6 +67,7 @@ internal fun HeartScreen(
 private fun HeartContent(
     days: List<HeartDay>,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: HeartState = rememberHeartState(),
@@ -77,6 +81,7 @@ private fun HeartContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Heart, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -155,6 +160,7 @@ private fun HeartScreenPreview() {
                 HeartDay(today - 3 + index, averageBpm = average, minBpm = low)
             },
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -168,6 +174,7 @@ private fun HeartScreenEmptyPreview() {
         HeartContent(
             days = emptyList(),
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

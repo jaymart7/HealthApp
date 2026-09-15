@@ -35,6 +35,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -49,6 +50,7 @@ import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementAdh
 @Composable
 internal fun SupplementsScreen(
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SupplementsViewModel = koinViewModel(),
@@ -57,6 +59,7 @@ internal fun SupplementsScreen(
     SupplementsContent(
         days = uiState.days,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -66,6 +69,7 @@ internal fun SupplementsScreen(
 private fun SupplementsContent(
     days: List<SupplementDay>,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: SupplementsState = rememberSupplementsState(),
@@ -79,6 +83,7 @@ private fun SupplementsContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Supplements, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -157,6 +162,7 @@ private fun SupplementsScreenPreview() {
                 SupplementDay(today - 4 + index, supplementId = 1, taken = taken, dueTimes = due)
             },
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -170,6 +176,7 @@ private fun SupplementsScreenEmptyPreview() {
         SupplementsContent(
             days = emptyList(),
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

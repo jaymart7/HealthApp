@@ -41,12 +41,17 @@ enum class SubjectAccent { Primary, Secondary }
  * [coachQuestion] is what this page would ask the coach, and **null means the page carries no
  * coach action at all**.
  *
- * The nine that have one are the nine the coach can answer: its tools reach food and macros,
+ * The eleven that have one are the eleven the coach can answer: its tools reach food and macros,
  * water, training, steps, sleep, mood, fasting, the weight trend, the change in a body
  * measurement and — since the two read tools began carrying them — the supplements they ticked
- * off against what was due. Nothing else. A button on Heart would buy a
- * shrug, and a shrug reads as a broken feature — the rule the follow-up chips already follow.
- * This is the one place that decision lives, so a page cannot disagree with it.
+ * off against what was due, their heart rate and their blood-pressure readings. Nothing else. A
+ * button on Photos would buy a shrug, and a shrug reads as a broken feature — the rule the
+ * follow-up chips already follow. This is the one place that decision lives, so a page cannot
+ * disagree with it.
+ *
+ * The three without one are Photos, Cycle and Badges, and each is a different kind of no: a
+ * gallery is not a series, cycle data never enters an AI payload at all, and a badge list records
+ * no date to trend.
  */
 enum class Subject(
     @StringRes val label: Int,
@@ -66,8 +71,8 @@ enum class Subject(
     Sleep(R.string.progress_subject_sleep, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_sleep, R.string.progress_ask_sleep),
     Mood(R.string.progress_subject_mood, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_mood, R.string.progress_ask_mood),
     Cycle(R.string.progress_subject_cycle, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_cycle),
-    Heart(R.string.progress_subject_heart, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_heart),
-    BloodPressure(R.string.progress_subject_pressure, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_pressure),
+    Heart(R.string.progress_subject_heart, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_heart, R.string.progress_ask_heart),
+    BloodPressure(R.string.progress_subject_pressure, SubjectGroup.Wellbeing, SubjectAccent.Secondary, R.string.progress_hint_pressure, R.string.progress_ask_pressure),
     Badges(R.string.progress_subject_badges, group = null, accent = SubjectAccent.Primary, emptyHint = R.string.progress_hint_none),
 }
 

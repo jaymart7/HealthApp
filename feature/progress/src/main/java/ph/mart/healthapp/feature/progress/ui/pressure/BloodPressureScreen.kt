@@ -38,6 +38,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.pressure.components.BloodPressureRow
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 import ph.mart.healthapp.feature.progress.ui.progress.components.ChartCard
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChip
 import ph.mart.healthapp.feature.progress.ui.progress.components.FactChipRow
@@ -63,6 +64,7 @@ private const val AXIS_PAD_MMHG = 10
 @Composable
 internal fun BloodPressureScreen(
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BloodPressureViewModel = koinViewModel(),
@@ -73,6 +75,7 @@ internal fun BloodPressureScreen(
         readings = uiState.readings,
         onEvent = logViewModel::handleEvent,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -83,6 +86,7 @@ private fun BloodPressureContent(
     readings: List<BloodPressureReading>,
     onEvent: (BloodPressureEvent) -> Unit,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: BloodPressureState = rememberBloodPressureState(),
@@ -96,6 +100,7 @@ private fun BloodPressureContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.BloodPressure, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -255,6 +260,7 @@ private fun BloodPressureScreenPreview() {
             readings = readingsPreview(),
             onEvent = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -269,6 +275,7 @@ private fun BloodPressureScreenEmptyPreview() {
             readings = emptyList(),
             onEvent = {},
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

@@ -162,7 +162,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
     onOpenTimelapse: () -> Unit,
     onOpenRecap: () -> Unit,
     /** The subject's own question, carried to the coach — which lives above this tab, so like
-     * every other cross-feature jump it stays a callback `AppScaffold` resolves. Only the seven
+     * every other cross-feature jump it stays a callback `AppScaffold` resolves. Only the eleven
      * subjects the coach has tools for ever call it; see [Subject.coachQuestion]. */
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -198,12 +198,14 @@ fun EntryProviderScope<NavKey>.progressEntries(
     entry<HeartRoute> {
         HeartScreen(
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
     entry<SupplementsRoute> {
         SupplementsScreen(
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
@@ -237,12 +239,14 @@ fun EntryProviderScope<NavKey>.progressEntries(
     entry<BloodPressureRoute> {
         BloodPressureScreen(
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }
     entry<MeasurementsRoute> {
         MeasurementsScreen(
             onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,
         )
     }

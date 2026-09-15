@@ -2301,6 +2301,37 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   exactly what `SubjectCoachTest` exists to force. No follow-up chip was added: the row is three
   wide, the day's own gaps come first and the filler already fills it, so a fourth filler would
   never render. The question is answerable when asked, which is what the constraint was about.
+- **Heart rate and blood pressure widened the same two tools again, and a reading goes whole with
+  the band the app already put it in.** The precedent is *Sleep, mood and fasting widened what the
+  two tools answer with*, applied to the last two subjects the coach could not see; no third tool,
+  because a question about a heartbeat is still a question about one day or one span. Three things
+  are worth writing down. **A figure, not a delta.** `formatHistory` reports a weigh-in and a tape
+  measure as a change and never as a number, and that rule was tested against this one: it exists
+  because an absolute *body* figure is what `InsightRequest` has never sent, and it holds because a
+  delta answers "is this going the right way?" in full. Neither is true of a cuff. `+4/+2 since the
+  last` is unreadable without the base, nobody asks which way their blood pressure moved without
+  also meaning what it is now, and steps, sleep and mood already travel whole. So `128/82` goes
+  whole. **The band is handed over, never derived.** `categoryOf()` is worst-first and
+  load-bearing — 185/70 is a crisis, and a normal-first chain reads its diastolic and calls the
+  same reading elevated — so the tool result carries the app's own answer and the prompt's medical
+  clause grew a sentence forbidding the model to work one out, to call a reading good or bad, or to
+  say what it or a heart rate means for anyone's health. A model that can see 185/70 and has no
+  band will invent one; the cheapest fix is to not leave the gap. `BloodPressureCategory.promptName()`
+  is `MeasurementPart.promptName()`'s shape one domain over, and exists for the same reason: the
+  enum's `label` is a `@StringRes` and `:core:data` has no `Context`. **A day lists every reading;
+  a span reports the day's mean.** The table is keyed per reading precisely because a morning and
+  an evening are the thing being measured, so `formatDay` joins them all and `formatHistory` folds
+  through the existing `byDay()` — which means a span's band is the *mean's*, and 130/80 with
+  120/70 reads `125/75 (Elevated)` rather than either reading's own grade. That is the right answer
+  for a line carrying one figure, and it is why the day tool does not fold. Both series join the
+  omitted-when-absent group, sleep's and steps' rule rather than water's, and both had to join the
+  *nothing logged at all* guard or a week of nothing but cuff readings reported an empty week.
+  **`Subject.Heart` and `Subject.BloodPressure` earn their coach doors, and the closed list is
+  eleven** — the same move `Subject.Supplements` made above, for the same reason, forced by the
+  same test. Wiring them turned up that **`Measurements` and `Supplements` had a `coachQuestion`
+  and no button**: `SubjectCoachTest` only reads the enum, and neither screen ever called
+  `AskCoachAction`. They were wired in this pass rather than left, because the defect is one thing
+  in four places and fixing two of them is how it survives.
 - **`log_supplement` is the sixth draft, and the tool that ruled it out is the one that let it
   in.** It was declined twice above, both times on one sentence — *a supplement needs fuzzy
   name-to-id matching against the user's own list, which is a new trust boundary for one tap* — and

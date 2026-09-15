@@ -40,6 +40,7 @@ import ph.mart.healthapp.feature.progress.ui.measurement.components.BodyComposit
 import ph.mart.healthapp.feature.progress.ui.measurement.components.MeasurementRow
 import ph.mart.healthapp.feature.progress.ui.measurement.components.WaistToHeightCard
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
+import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 
 /**
  * A list, not a chart — six readings each with their own sparse history, which is a table of rows
@@ -52,6 +53,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.Subject
 @Composable
 internal fun MeasurementsScreen(
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MeasurementsViewModel = koinViewModel(),
@@ -63,6 +65,7 @@ internal fun MeasurementsScreen(
         heightCm = uiState.heightCm,
         unit = uiState.unit,
         onOpenRecap = onOpenRecap,
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -75,6 +78,7 @@ private fun MeasurementsContent(
     heightCm: Double?,
     unit: UnitSystem,
     onOpenRecap: () -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: MeasurementsState = rememberMeasurementsState(),
@@ -90,6 +94,7 @@ private fun MeasurementsContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
+                    AskCoachAction(subject = Subject.Measurements, onAskCoach = onAskCoach)
                     IconButton(onClick = onOpenRecap) {
                         Icon(
                             imageVector = AppIcons.Share,
@@ -211,6 +216,7 @@ private fun MeasurementsScreenPreview() {
             heightCm = 178.0,
             unit = UnitSystem.Metric,
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -227,6 +233,7 @@ private fun MeasurementsScreenEmptyPreview() {
             heightCm = null,
             unit = UnitSystem.Metric,
             onOpenRecap = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }

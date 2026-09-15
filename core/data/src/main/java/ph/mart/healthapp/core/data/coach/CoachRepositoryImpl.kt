@@ -308,7 +308,9 @@ private fun List<ChatMessageEntity>.asHistory(): List<Content> =
  *
  * Two constraints survive the rewrite untouched:
  * - **No medical advice.** A coach that reaches further is a coach a user trusts further, so this
- *   matters more than it did, not less.
+ *   matters more than it did, not less — and it grew a clause when the tools began carrying blood
+ *   pressure: the band on a reading is the app's, handed over by `categoryOf()`, and the model may
+ *   repeat it but never derive one and never say what a reading means.
  * - **No numbers block at all** when [request] is null: with no profile there is no target to be
  *   over or under, and a coach that admits it beats one improvising one. The tools still work —
  *   a diary can be read without a profile.
@@ -341,9 +343,10 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "and if a tool comes back empty, say plainly that nothing was logged. Do not narrate " +
             "that you are about to look something up: call the tool and answer. A day may also " +
             "carry their steps against their step goal, their sleep, how they felt, a " +
-            "completed fast, and the supplements they ticked off against what was due; a span " +
-            "carries their water, their training, their steps, their sleep, their supplements " +
-            "and any " +
+            "completed fast, the supplements they ticked off against what was due, their heart " +
+            "rate, and any blood-pressure readings they took; a span " +
+            "carries their water, their training, their steps, their sleep, their supplements, " +
+            "their heart rate, their blood pressure and any " +
             "weigh-in or body measurement as a change since the one before it — you are never " +
             "told what they weigh or what any measurement is, only which way it moved, so answer " +
             "about the direction and never ask for the figure. Where one of those is missing " +
@@ -388,7 +391,11 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "better — one item per line, starting with \"- \". No markdown, no headings, no bold, " +
             "no emoji. Give no medical advice, no diagnosis, and no supplement or medication " +
             "suggestions; if you are asked for any of those, say that is a question for a doctor " +
-            "or dietitian and offer what their logged numbers can tell them instead.",
+            "or dietitian and offer what their logged numbers can tell them instead. A blood " +
+            "pressure reading comes with the band the app has already put it in — you may repeat " +
+            "that band, but never work one out yourself, never call a reading good or bad, and " +
+            "never say what it or a heart rate means for their health. Those are questions for a " +
+            "doctor, and you can still tell them which way the numbers have moved.",
     )
 }
 

@@ -10,6 +10,12 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureCategory
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
+import ph.mart.healthapp.core.data.bloodpressure.byDay
+import ph.mart.healthapp.core.data.bloodpressure.categoryOf
+import ph.mart.healthapp.core.data.bloodpressure.formatBloodPressure
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -32,10 +38,13 @@ import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.food.dietLine
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.food.totalKcal
+import ph.mart.healthapp.core.data.health.HeartDay
+import ph.mart.healthapp.core.data.health.HeartRepository
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.health.StepsRepository
+import ph.mart.healthapp.core.data.health.formatBpm
 import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.data.health.formatSteps
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
@@ -178,14 +187,16 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             name = TOOL_GET_DAY,
             description = "Read one day of the user's diary in full: every food they logged with " +
                 "its calories and macros, the day's totals against their targets, water, any " +
-                "activity, their steps, and their sleep, mood, fasting and supplements where " +
-                "they track those. Call this before answering anything about a specific day.",
+                "activity, their steps, and their sleep, mood, fasting, supplements, heart rate " +
+                "and blood-pressure readings where they track those. Call this before answering " +
+                "anything about a specific day.",
             parameters = mapOf("days_ago" to daysAgoSchema),
         ),
         FunctionDeclaration(
             name = TOOL_GET_HISTORY,
             description = "Read a span of recent days: calories and protein per day, their " +
-                "water, any training, any steps, any sleep, any supplements, any weigh-in and " +
+                "water, any training, any steps, any sleep, any supplements, any heart rate, " +
+                "any blood-pressure reading, any weigh-in and " +
                 "any change in their body measurements. Call this for trends, averages, or " +
                 "anything about a week or a month.",
             parameters = mapOf(
@@ -497,6 +508,8 @@ internal fun formatDay(
     mood: MoodDay? = null,
     fastedMinutes: Int? = null,
     supplements: List<Pair<String, SupplementDay>> = emptyList(),
+    heart: HeartDay? = null,
+    bloodPressure: List<BloodPressureReading> = emptyList(),
 ): String = buildString {
     appendLine("$label:")
     if (foods.isEmpty()) {
@@ -549,6 +562,25 @@ internal fun formatDay(
             },
         )
     }
+    // The sixth and seventh of the omitted-when-absent group, for the same reason steps and sleep
+    // are in it: one comes off a watch and the other off a cuff, and a daily "No readings" would
+    // have the coach asking about hardware the user does not own.
+    //
+    // The lowest reading is never called a resting rate — [HeartDay]'s own rule, and the prompt
+    // repeats it for the same reason the app does.
+    heart?.let { appendLine("Heart: ${formatBpm(it.averageBpm)} average, ${it.minBpm} lowest") }
+    // Every reading of the day, not the day's mean: `blood_pressure_reading` is keyed per reading
+    // precisely because a morning and an evening are the thing being measured, and folding them
+    // here would throw away the half the user asked about. Each carries the band **the app**
+    // assigned it — [categoryOf] is worst-first and the prompt forbids the model deriving one.
+    if (bloodPressure.isNotEmpty()) {
+        appendLine(
+            bloodPressure.joinToString(", ", prefix = "Blood pressure: ") {
+                "${formatBloodPressure(it.systolic, it.diastolic)} " +
+                    "(${categoryOf(it.systolic, it.diastolic).promptName()})"
+            },
+        )
+    }
 }
 
 /** Null when neither half was tapped, and each half omitted on its own: `mood_day` stores 0 for
@@ -591,6 +623,8 @@ internal fun formatHistory(
     measurements: Map<MeasurementPart, List<MeasurementEntry>> = emptyMap(),
     water: List<WaterDay> = emptyList(),
     supplements: List<SupplementDay> = emptyList(),
+    heart: List<HeartDay> = emptyList(),
+    bloodPressure: List<BloodPressureReading> = emptyList(),
 ): String = buildString {
     val from = today - days + 1
     // Weigh-ins and tape measures in one map, because they are one rule — see the doc above.
@@ -608,8 +642,14 @@ internal fun formatHistory(
     val taken = supplements.filter { it.dateEpochDay in from..today }
         .groupBy { it.dateEpochDay }
         .mapValues { (_, rows) -> rows.sumOf { it.taken } to rows.sumOf { it.dueTimes } }
+    val beats = heart.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
+    // `byDay()` rather than a second fold here: a day someone measured four times is not four
+    // days, and that arithmetic already has one implementation the Progress chart draws from.
+    val cuff = bloodPressure.byDay().filter { it.dateEpochDay in from..today }
+        .associateBy { it.dateEpochDay }
     if (byDay.values.none { it.isLogged } && changes.isEmpty() && training.isEmpty() &&
-        slept.isEmpty() && walked.isEmpty() && drank.none { it.value.glasses > 0 } && taken.isEmpty()
+        slept.isEmpty() && walked.isEmpty() && drank.none { it.value.glasses > 0 } &&
+        taken.isEmpty() && beats.isEmpty() && cuff.isEmpty()
     ) {
         return "Nothing logged in the last $days days."
     }
@@ -641,8 +681,15 @@ internal fun formatHistory(
         // that averages a week over the days that happen to carry a line.
         val glasses = ", ${drank[date]?.glasses ?: 0} glasses"
         val pills = taken[date]?.let { (had, due) -> ", supplements $had of $due" }.orEmpty()
+        val bpm = beats[date]?.let { ", ${formatBpm(it.averageBpm)} average" }.orEmpty()
+        // The day's mean, with the band that mean falls in — the same grade the day tool puts on
+        // each reading, so a span and a day cannot describe the same Tuesday two different ways.
+        val pressure = cuff[date]?.let {
+            ", blood pressure ${formatBloodPressure(it.systolic, it.diastolic)} " +
+                "(${categoryOf(it.systolic, it.diastolic).promptName()})"
+        }.orEmpty()
         val change = changes[date].orEmpty().joinToString("")
-        appendLine("- $label: $food$glasses$activity$walk$night$pills$change")
+        appendLine("- $label: $food$glasses$activity$walk$night$pills$bpm$pressure$change")
     }
 }
 
@@ -717,6 +764,23 @@ private fun measurementClauses(
  * `label` is the user-facing name and needs a `Context` this file never has. */
 private fun MeasurementPart.promptName(): String =
     if (this == MeasurementPart.BodyFat) "body fat" else name.lowercase()
+
+/**
+ * The same call for a blood-pressure band, and the reason it exists at all: the band on a reading
+ * is **the app's**, not the model's. [categoryOf] is worst-first and load-bearing — 185/70 is a
+ * crisis and a normal-first chain would read its diastolic and call it elevated — so handing the
+ * model the answer is what keeps it from deriving a different one. The prompt forbids it deriving
+ * one either way.
+ *
+ * Prompt text, in Kotlin for [MeasurementPart.promptName]'s reason: the enum's own `label` is a
+ * `@StringRes` and this file has no `Context` to resolve it with. Only the two staged bands need
+ * anything done to them; the rest read correctly as they are declared.
+ */
+private fun BloodPressureCategory.promptName(): String = when (this) {
+    BloodPressureCategory.Stage1 -> "Stage 1"
+    BloodPressureCategory.Stage2 -> "Stage 2"
+    else -> name
+}
 
 /** One merge rule for the clause maps, so two series landing on the same day cannot lose one. */
 private fun Map<Long, List<String>>.mergedWith(
@@ -911,6 +975,11 @@ internal class CoachToolbox(
     // on a name this publishes, and today's count is what stops the coach drafting a dose that has
     // already been taken.
     private val supplementRepository: SupplementRepository,
+    // The last two the coach could not see, and the two Progress pages that carried no question
+    // because of it. They widen the same two tools for the same reason the four above did — a
+    // question about a heartbeat is still a question about one day or one span.
+    private val heartRepository: HeartRepository,
+    private val bloodPressureRepository: BloodPressureRepository,
 ) {
     /** Null for a tool this does not run — which is every write tool, and is how the caller's loop
      * tells a question from an instruction without a second lookup. */
@@ -1027,6 +1096,13 @@ internal class CoachToolbox(
                 .mapNotNull { day ->
                     names[day.supplementId]?.let { it to day }
                 },
+            // `observeDays()` rather than `observeToday()`: a day tool reads any day, and the
+            // null for a day nothing was imported for is what leaves the line out.
+            heart = heartRepository.observeDays().first().firstOrNull { it.dateEpochDay == date },
+            // Every reading taken that day, in the order they were taken — the table is keyed per
+            // reading, and a morning and an evening are two answers, not one.
+            bloodPressure = bloodPressureRepository.observeReadings().first()
+                .filter { it.dateEpochDay == date },
         )
     }
 
@@ -1045,6 +1121,8 @@ internal class CoachToolbox(
         // zero for the rest rather than leaving them out.
         water = waterRepository.allDays(),
         supplements = supplementRepository.observeDays().first(),
+        heart = heartRepository.observeDays().first(),
+        bloodPressure = bloodPressureRepository.observeReadings().first(),
     )
 }
 

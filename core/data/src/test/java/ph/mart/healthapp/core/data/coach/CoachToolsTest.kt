@@ -6,6 +6,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.DayNutrition
@@ -15,6 +17,7 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
+import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.mood.MoodDay
@@ -25,6 +28,7 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementToday
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterDay
 
 /**
@@ -1023,6 +1027,126 @@ class CoachToolsTest {
         )
         assertEquals(2, text.lines().count { it.startsWith("- ") })
     }
+
+    /**
+     * The last two the coach was blind to, and the pair that gave Heart and Blood pressure their
+     * coach doors. Like sleep and steps they ride the day tool rather than a tool of their own.
+     *
+     * Every reading, not the day's mean: the table is keyed per reading because a morning and an
+     * evening are two answers, and folding them here would throw away the half that was asked
+     * about.
+     */
+    @Test
+    fun `a day carries its heart rate and every blood-pressure reading with its band`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            heart = HeartDay(dateEpochDay = TODAY, averageBpm = 68, minBpm = 54),
+            bloodPressure = listOf(
+                reading(systolic = 128, diastolic = 82),
+                reading(systolic = 119, diastolic = 76),
+            ),
+        )
+        assertTrue(text, "Heart: 68 bpm average, 54 lowest" in text)
+        assertTrue(text, "Blood pressure: 128/82 (Stage 1), 119/76 (Normal)" in text)
+    }
+
+    /** Absent means *untracked*, the rule sleep and steps already follow: a daily "No readings"
+     * would have the coach asking about a cuff and a watch the user does not own. */
+    @Test
+    fun `a day with no heart rate and no cuff reading omits both lines`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+        )
+        assertTrue(text, "Heart" !in text)
+        assertTrue(text, "Blood pressure" !in text)
+    }
+
+    /**
+     * The band is handed over, never derived — and `categoryOf`'s worst-first order is what makes
+     * 185/70 a crisis rather than the Elevated a normal-first chain would read off its diastolic.
+     * A model told "Elevated" about that reading is a model the prompt's medical clause cannot
+     * save.
+     */
+    @Test
+    fun `a staged band is spaced and the worst number names the reading`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            bloodPressure = listOf(
+                reading(systolic = 145, diastolic = 88),
+                reading(systolic = 185, diastolic = 70),
+            ),
+        )
+        assertTrue(text, "145/88 (Stage 2)" in text)
+        assertTrue(text, "185/70 (Crisis)" in text)
+    }
+
+    /**
+     * A span reports the day's *mean*, through `byDay()` rather than a second fold: a morning
+     * someone measured four times is not four mornings.
+     *
+     * And the band is the **mean's**, not either reading's — 130/80 alone is Stage 1, and the
+     * 125/75 the two average to is Elevated. That is the right answer for a line that reports one
+     * figure for the day, and it is why the day tool lists every reading separately instead.
+     */
+    @Test
+    fun `a span carries a heart average and a day's mean blood pressure`() {
+        val today = todayEpochDay()
+        val text = formatHistory(
+            days = 2,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            heart = listOf(HeartDay(dateEpochDay = today, averageBpm = 71, minBpm = 58)),
+            bloodPressure = listOf(
+                reading(systolic = 130, diastolic = 80, day = today),
+                reading(systolic = 120, diastolic = 70, day = today),
+            ),
+        )
+        assertTrue(text, "71 bpm average" in text)
+        assertTrue(text, "blood pressure 125/75 (Elevated)" in text)
+    }
+
+    /** A day carrying only a cuff reading is still a day that was logged — the guard has to know
+     * about both series or a week of nothing but blood pressure reads as an empty week. */
+    @Test
+    fun `a span holding only a cuff reading is not nothing logged`() {
+        val today = todayEpochDay()
+        val text = formatHistory(
+            days = 3,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            bloodPressure = listOf(reading(systolic = 118, diastolic = 74, day = today - 1)),
+        )
+        assertTrue(text, "Nothing logged" !in text)
+        assertTrue(text, "118/74 (Normal)" in text)
+    }
+
+    /**
+     * `BloodPressureReading` carries no date column on purpose — `dateEpochDay` derives the local
+     * day from the timestamp — so a fixture has to go through [epochDayStartMillis], which is
+     * anchored to the real today. That is why the two span tests below count off
+     * [todayEpochDay] rather than the fixture constant the rest of this file uses: a flat
+     * `day * 86_400_000` is UTC midnight and lands on the day before in any zone behind it.
+     */
+    private fun reading(systolic: Int, diastolic: Int, day: Long = todayEpochDay()) =
+        BloodPressureReading(
+            takenAtMillis = epochDayStartMillis(day) + 9 * 3_600_000L,
+            systolic = systolic,
+            diastolic = diastolic,
+        )
 
     // endregion
 }

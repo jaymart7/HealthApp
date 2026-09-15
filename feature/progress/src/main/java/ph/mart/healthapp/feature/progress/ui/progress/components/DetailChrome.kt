@@ -49,10 +49,11 @@ private val RangePillWidth = 40.dp
  * The top-bar action that carries this page's question to the coach — **nothing at all** where
  * [Subject.coachQuestion] is null.
  *
- * One composable rather than seven copies, and the absence is the interesting half: the coach's
- * tools reach food, water, training, sleep, mood, fasting and the weight trend, so a button on
- * Heart or Measurements would buy a shrug, and a shrug reads as a broken feature. [Subject] is
- * where that decision lives, so a page cannot disagree with it.
+ * One composable rather than eleven copies, and the absence is the interesting half: the coach's
+ * tools reach food, water, training, steps, sleep, mood, fasting, supplements, the heart rate and
+ * the blood-pressure readings, the weight trend and the change in a measurement — so a button on
+ * Photos would buy a shrug, and a shrug reads as a broken feature. [Subject] is where that
+ * decision lives, so a page cannot disagree with it.
  *
  * It fills the coach's field rather than sending — the mic's rule — so a mistap costs nothing.
  */

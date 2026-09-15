@@ -315,9 +315,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Daily insight — one line on Home, cached per day, falls back to three local rules.
 - Coach — a chat screen told the day's numbers, which can read the rest of the diary itself:
   `get_day` for any past day's meals, macros, water and activity — plus that day's steps against
-  the step goal, and its sleep, mood, completed fast and supplements against what was due where
-  those are tracked — `get_history`
-  for a span of up to a month with water, training, steps, sleep, supplements, weigh-ins and body
+  the step goal, and its sleep, mood, completed fast, supplements against what was due, heart rate
+  and every blood-pressure reading it holds, where those are tracked — `get_history`
+  for a span of up to a month with water, training, steps, sleep, supplements, heart rate, the
+  day's mean blood pressure, weigh-ins and body
   measurements (the last two as a change since the reading before, never as a figure), and `get_library` for
   the meals and recipes the user has saved, the foods they log most often and the supplements they
   take with today's count on each.
@@ -339,6 +340,11 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the model invented. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
   writes nothing.
+- Coach bands, not coach verdicts — a blood-pressure reading reaches the model **with the AHA band
+  `categoryOf()` put it in**, the same label the Blood pressure card shows. The prompt lets it
+  repeat that band and forbids it deriving one, calling a reading good or bad, or saying what a
+  reading or a heart rate means for anyone's health. That is a doctor's question; the direction
+  the numbers moved in is not.
 - Coach recommendations — "what should I eat?" is answered from what is left of the day and from
   food that is already theirs: the library tool hands the coach their saved meals, their recipes
   *and* the foods they log most often, at the portions and figures they log them at, and their
@@ -353,8 +359,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a
   protein gap, room left, water short, a weigh-in to compare) and falling back to diary questions.
   Rule-based, not generated: tapping one sends it exactly as an opener does.
-- Coach doors — the diary's day header and the nine Progress subject pages the coach has tools
-  for (weight, measurements, nutrition, fasting, supplements, activity, strength, sleep, mood) carry an
+- Coach doors — the diary's day header and the eleven Progress subject pages the coach has tools
+  for (weight, measurements, nutrition, fasting, supplements, activity, strength, sleep, mood,
+  heart, blood pressure) carry an
   "ask the coach" action. It opens the chat with that day's or that subject's question **in the field, unsent**.
 - Coach stop — the send button becomes a stop button while an answer is streaming. The turn is
   abandoned, nothing is written, and the question goes back into the field.
