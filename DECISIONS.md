@@ -113,6 +113,16 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   first is a permanent pane and the second is still a sheet. The day being shown is drawn selected
   in the picker and is the one day that is not a source — copying a day onto itself only doubles
   it, so the ViewModel ignores it and the tap does nothing.
+- **`CalendarPanel` is a grid and nothing else — no heading, no back arrow.** It used to draw its
+  own "Select date" title with an optional ← beside it, which put a second title under the sheet's
+  own and an arrow beside a ✕ that did the same thing. Both diary calendars open as bare sheets, so
+  the arrow *was* the close; in `SheetDatePicker` it was one of three ways back out of a swap-in
+  that already has a `NavigationBackHandler` and returns the moment a day is tapped. The heading now
+  belongs to whoever draws the grid: a sheet passes it to `AppBottomSheet(title = …)`, where it sits
+  on the close's row at the same 16dp gutter as every other sheet's; the expanded-width pane draws
+  its own `Text` above the grid, since a pane beside its own content has no header row to use. The
+  string moved with it — `ds_select_date` left `:core:designsystem`, whose component no longer has a
+  word to say, for `food_diary_calendar_title` in the one feature that shows it.
 - **The loaded source day rides the diary's own combine.** `observeDiary` ends in
   `reduce { newState }`, which replaces state wholesale, so a day held beside it would be wiped the
   next time Room spoke. It reads through the three dated flows the diary already uses

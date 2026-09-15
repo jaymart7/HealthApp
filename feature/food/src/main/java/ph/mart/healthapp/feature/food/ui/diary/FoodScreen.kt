@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +25,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -41,6 +43,7 @@ import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.CalendarPanel
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.components.DiaryBody
 import ph.mart.healthapp.feature.food.ui.diary.components.DiarySheets
 
@@ -214,6 +217,13 @@ private fun CalendarPane(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
+        // The pane's own heading, where a sheet would put its title beside the close.
+        Text(
+            text = stringResource(R.string.food_diary_calendar_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
         CalendarPanel(
             selectedDate = selectedDate,
             // No dots, for the reason the sheet gives: which days have entries would cost a query
@@ -221,8 +231,6 @@ private fun CalendarPane(
             markedDates = emptySet(),
             maxDate = today,
             onSelectDate = onSelectDate,
-            // Beside the day rather than over it — nothing to go back to.
-            onBack = null,
         )
     }
 }

@@ -30,7 +30,6 @@
 
     <!-- Date picker and calendar -->
     <string name="ds_date">Date</string>
-    <string name="ds_select_date">Select date</string>
     <string name="ds_previous_month">Previous month</string>
     <string name="ds_next_month">Next month</string>
     <string name="ds_weekday_initials">S,M,T,W,T,F,S</string>

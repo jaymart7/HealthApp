@@ -39,12 +39,13 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
  * The calendar half of [SheetDatePicker], public because the food diary shows the same grid on its
- * own — tapping the date header opens it in a sheet, with [onBack] closing that sheet.
+ * own — tapping the date header opens it in a sheet.
  *
- * A null [onBack] is the embedded case: the grid drawn as the diary's own pane at expanded width,
- * where it is beside the day it picks rather than over it. Same call `SubjectDetail(embedded = …)`
- * makes, for the same reason — a pane beside its own content is not a level, so there is nothing
- * for a back arrow to point at. The title stays: it is then the pane's heading.
+ * Grid only: no heading and no back arrow. Whatever draws it already has a header — a sheet's
+ * title and its close, the diary pane's own heading — and a second title under the first, with an
+ * arrow doing what the ✕ beside it does, was two chromes for one level. A sheet's caller passes
+ * the heading to `AppBottomSheet(title = …)`, where it sits on the close's row; leaving the sheet
+ * is the ✕, and returning to [SheetDatePicker]'s fields is system back or picking a day.
  */
 @Composable
 fun CalendarPanel(
@@ -52,7 +53,6 @@ fun CalendarPanel(
     markedDates: Set<Long>,
     maxDate: Long,
     onSelectDate: (Long) -> Unit,
-    onBack: (() -> Unit)?,
 ) {
     var visibleMonth by remember { mutableStateOf(epochDayToCalendar(selectedDate)) }
     val maxMonthCal = epochDayToCalendar(maxDate)
@@ -60,22 +60,8 @@ fun CalendarPanel(
         visibleMonth.get(Calendar.MONTH) == maxMonthCal.get(Calendar.MONTH)
 
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            if (onBack != null) {
-                IconButton(onClick = onBack) {
-                    Icon(AppIcons.Back, contentDescription = stringResource(R.string.ds_back))
-                }
-            }
-            Text(
-                text = stringResource(R.string.ds_select_date),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                // Where the arrow was, so the title sits in the same place in both presentations.
-                modifier = Modifier.padding(start = if (onBack != null) 4.dp else 12.dp),
-            )
-        }
         Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -182,10 +168,9 @@ private fun DayCell(
     }
 }
 
-/** The embedded variant: no back arrow, because nothing is above it. */
 @PreviewLightDark
 @Composable
-private fun CalendarPanelEmbeddedPreview() {
+private fun CalendarPanelPreview() {
     AppTheme {
         Surface {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -195,7 +180,6 @@ private fun CalendarPanelEmbeddedPreview() {
                     markedDates = emptySet(),
                     maxDate = today,
                     onSelectDate = {},
-                    onBack = null,
                 )
             }
         }

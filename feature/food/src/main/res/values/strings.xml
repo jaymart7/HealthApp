@@ -271,6 +271,7 @@
     <!-- Copy a day -->
     <string name="food_copy_link">Copy a day</string>
     <string name="food_copy_pick_title">Copy from which day?</string>
+    <string name="food_diary_calendar_title">Select date</string>
     <!-- %1$s the day being copied from, e.g. "Yesterday" or "12 Sep". -->
     <string name="food_copy_title">Copy from %1$s</string>
     <string name="food_copy_body">Everything you tick lands on the day you\'re looking at.</string>

@@ -199,7 +199,6 @@ internal fun DiarySheets(
                     onEvent(FoodEvent.OnPickCopySource(date))
                     state.copyPickerOpen = false
                 },
-                onBack = { state.copyPickerOpen = false },
             )
         }
     }
@@ -217,7 +216,10 @@ internal fun DiarySheets(
     }
 
     if (state.calendarOpen) {
-        AppBottomSheet(onDismiss = { state.calendarOpen = false }) {
+        AppBottomSheet(
+            title = stringResource(R.string.food_diary_calendar_title),
+            onDismiss = { state.calendarOpen = false },
+        ) {
             CalendarPanel(
                 selectedDate = uiState.selectedDate,
                 // No dots: which days have entries would cost a query the diary otherwise
@@ -228,7 +230,6 @@ internal fun DiarySheets(
                     onEvent(FoodEvent.OnSelectDate(date))
                     state.calendarOpen = false
                 },
-                onBack = { state.calendarOpen = false },
             )
         }
     }

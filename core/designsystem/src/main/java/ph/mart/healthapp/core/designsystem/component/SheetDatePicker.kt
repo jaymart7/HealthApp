@@ -31,7 +31,8 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * The date row + swap-in-place calendar, shared by LogWeightSheet/AddPhotoSheet/AddMeasurementSheet.
  * [AnimatedContent] handles the height/slide animation natively — no manual pixel-height hack.
  * System back while the calendar is showing returns to [fields] one level, without closing the
- * whole sheet (registers its own [NavigationBackHandler] on top of [AppBottomSheet]'s).
+ * whole sheet (registers its own [NavigationBackHandler] on top of [AppBottomSheet]'s) — that and
+ * picking a day are the whole way back, the grid drawing no chrome of its own under the sheet's.
  */
 @Composable
 fun SheetDatePicker(
@@ -68,7 +69,6 @@ fun SheetDatePicker(
                 markedDates = markedDates,
                 maxDate = maxDate,
                 onSelectDate = onSelectDate,
-                onBack = onBackToFields,
             )
         } else {
             Column {
