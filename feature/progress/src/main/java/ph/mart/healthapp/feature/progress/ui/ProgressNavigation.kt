@@ -260,8 +260,8 @@ fun EntryProviderScope<NavKey>.progressEntries(
         )
     }
     entry<WeightRoute> {
+        // No `onSwitchSubject`: Weight's foot is its own records, not the group switcher.
         WeightScreen(
-            onSwitchSubject = onSwitchSubject,
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,

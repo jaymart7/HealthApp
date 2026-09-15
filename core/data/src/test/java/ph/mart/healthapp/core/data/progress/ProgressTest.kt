@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.progress
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProgressTest {
@@ -34,6 +36,16 @@ class ProgressTest {
             WeightEntry(dateEpochDay = 5, weightKg = 76.0),
         ).withMovingAverage()
         assertEquals(77.0, afterBackdate.last().movingAverageKg, 0.001)
+    }
+
+    /** The note is the provenance, so the log sheet can tell a provider's copy from a typed one
+     * without reaching for the sync's link table — and only the typed one offers a delete. */
+    @Test
+    fun `an entry is imported when its note is one of the two providers`() {
+        assertTrue(WeightEntry(dateEpochDay = 1, weightKg = 80.0, note = NOTE_HEALTH_CONNECT).isImported())
+        assertTrue(WeightEntry(dateEpochDay = 1, weightKg = 80.0, note = NOTE_GOOGLE_HEALTH).isImported())
+        assertFalse(WeightEntry(dateEpochDay = 1, weightKg = 80.0).isImported())
+        assertFalse(WeightEntry(dateEpochDay = 1, weightKg = 80.0, note = "After the gym").isImported())
     }
 
     @Test

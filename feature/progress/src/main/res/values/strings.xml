@@ -403,6 +403,10 @@
     <string name="progress_weight_replacing">Replacing your entry for this date.</string>
     <string name="progress_weight_label">Weight</string>
     <string name="progress_weight_note">Note (optional)</string>
+    <string name="progress_weight_records">Records</string>
+    <string name="progress_weight_imported">Imported from %1$s — delete it there.</string>
+    <string name="progress_weight_delete_title">Delete this weigh-in?</string>
+    <string name="progress_weight_delete_body">It disappears from the chart, the trend and the averages.</string>
     <!-- Empty subject pages -->
     <string name="progress_empty_weight_heading">No weight logged yet</string>
     <string name="progress_empty_weight_body">Log your weight from the button on any tab and your trend shows up here.</string>

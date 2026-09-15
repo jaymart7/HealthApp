@@ -22,6 +22,8 @@ import ph.mart.healthapp.core.data.health.local.StepDayDao
 import ph.mart.healthapp.core.data.health.local.StepDayEntity
 import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.progress.NOTE_GOOGLE_HEALTH
+import ph.mart.healthapp.core.data.progress.NOTE_HEALTH_CONNECT
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
@@ -247,7 +249,7 @@ internal class HealthSyncRepositoryImpl(
             records.weight,
             HealthMetric.Weight.connectDataType,
             WEIGHT_TABLE,
-            weightWriter(note = "Health Connect"),
+            weightWriter(note = NOTE_HEALTH_CONNECT),
         )
         written += store(records.sleep, HealthMetric.Sleep.connectDataType, SLEEP_TABLE) { writeSleepNight(it) }
         written += store(
@@ -309,7 +311,7 @@ internal class HealthSyncRepositoryImpl(
         token = token,
         localTable = WEIGHT_TABLE,
         parse = ::parseWeightPage,
-        write = weightWriter(note = "Google Health"),
+        write = weightWriter(note = NOTE_GOOGLE_HEALTH),
     )
 
     /**

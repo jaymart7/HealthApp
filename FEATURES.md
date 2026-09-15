@@ -217,13 +217,15 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   card that still opens its page; a group with nothing tracked collapses to one expandable row.
 - Detail page: a toolbar with back and the recap share, hero figure, fact chips, one chart card
   holding its own 1M/3M/6M/1Y range toggle and legend, stat rows, and a switcher naming the rest of
-  the group. The range is remembered per subject for the session. Empty subjects get a mascot page
+  the group (every page but Weight, which lists its own records there instead). The range is remembered per subject for the session. Empty subjects get a mascot page
   and no call to action — except Cycle, Blood pressure and Measurements, whose log sheets are on
   the page itself.
 - Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, a BMI chip naming its WHO band, and an insight card carrying the projection and the
   energy check-in — the app's only insight card fed by two sources. Tapping it opens the check-in
-  over the page.
+  over the page. Under it, **Records**: every weigh-in in the chart's window, newest first, each row
+  opening the log sheet on its date to edit the figure or delete it — an imported row shows where it
+  came from instead of a delete. The one detail page with no group switcher at its foot.
 - Food: calories + macros against target over the window, the seven nutrients averaged against
   their targets, then the meal-photo strip — the newest
   twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.

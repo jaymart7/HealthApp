@@ -1153,6 +1153,35 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   switch and the screen it lives on and changes nothing itself — the warn-and-point shape
   `HomeCard.note` uses. *ponytail: no Home card, no coach field, no reminder and no history of past
   adjustments — nothing is stored, so there is nothing to chart.*
+- **Weight's foot is its own records, not the group switcher — and it is the only page where that
+  is true.** The page charted every weigh-in and listed none, so the one way to correct a number
+  was the FAB's sheet, which opens on today. It now lists the window's entries newest-first under a
+  "Records" heading, and `SubjectSwitcher` comes off *this* page only: the switcher's promise that
+  every subject page draws one at its foot now has exactly one exception, and it is the page whose
+  own subject has something to say down there. Photos and Measurements are still one tap away
+  through the overview. The list is windowed by the chart's own 1M/3M/6M/1Y range rather than the
+  full history, so the rows can never disagree with the chips, the chart and "Readings logged"
+  above them — and that window is also why the page is a `LazyColumn` now, `BloodPressureScreen`'s
+  argument at a year's worth of rows.
+- **A record row opens the log sheet on its date; the sheet is the one place a weigh-in is changed
+  or removed.** `LogWeightSheet` takes an optional `WeightEntry` and seeds its form from it — the
+  repository upserts by date, so saving *is* the edit, with no second write path to keep in step.
+  The delete beside it is a **hard** delete, against the module's soft-delete rule and deliberately:
+  `weight_entry` is keyed by its date and nothing points at a row, so there is no referent to keep
+  alive the way a deleted food's name or a supplement's label has to be — and every figure over the
+  series (the moving average, the projection, the check-in) is derived live from the list, so a row
+  that leaves simply stops counting. It reuses `deleteWeightEntry`, which the Google Health
+  disconnect already called, and asks first through `DiscardConfirmDialog` for the reason the
+  blood-pressure row does: an undo wants a snackbar host Progress hasn't got.
+- **An imported weigh-in has no delete — it has a caption saying where it came from.** Deleting a
+  provider's copy locally only invites the next sync to bring it back, since the `health_link` row
+  still claims that day. Provenance is read off the entry's own note, which is what
+  `weightWriter(note = …)` has always stamped it for; the two literals moved to `Progress.kt` as
+  `NOTE_HEALTH_CONNECT`/`NOTE_GOOGLE_HEALTH` with `isImported()` over them, so the Weight page
+  answers the question without injecting `HealthSyncRepository` and the whole sync surface behind
+  it into a read-only container. *ponytail: someone who types "Google Health" as their own note
+  loses the delete on that row; a `health_link` lookup is the upgrade if that ever happens to
+  anyone.*
 
 ### Saved meals, recipes & the food library
 

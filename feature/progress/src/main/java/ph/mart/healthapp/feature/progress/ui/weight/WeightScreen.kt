@@ -4,15 +4,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -65,9 +67,9 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.progress.components.SubjectSwitcher
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightInsightCard
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightProgressChart
+import ph.mart.healthapp.feature.progress.ui.weight.components.WeightRecordRow
 import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
 /**
@@ -81,7 +83,6 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
  */
 @Composable
 internal fun WeightScreen(
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -95,7 +96,6 @@ internal fun WeightScreen(
         dailyNutrition = uiState.dailyNutrition,
         profile = uiState.profile,
         onApplyTarget = { kcal -> energyViewModel.handleEvent(EnergyCheckInEvent.OnApply(kcal)) },
-        onSwitchSubject = onSwitchSubject,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -109,7 +109,6 @@ private fun WeightContent(
     dailyNutrition: List<DayNutrition>,
     profile: Profile?,
     onApplyTarget: (Int) -> Unit,
-    onSwitchSubject: (Subject) -> Unit,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -152,43 +151,65 @@ private fun WeightContent(
                 },
             )
             if (entries.isEmpty()) {
-                Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        FullScreenState(
-                            icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                            heading = stringResource(R.string.progress_empty_weight_heading),
-                            body = stringResource(R.string.progress_empty_weight_body),
-                        )
-                    }
-                    SubjectSwitcher(
-                        subject = Subject.Weight,
-                        onSelect = onSwitchSubject,
-                        modifier = Modifier.padding(bottom = 16.dp),
+                Box(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    FullScreenState(
+                        icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
+                        heading = stringResource(R.string.progress_empty_weight_heading),
+                        body = stringResource(R.string.progress_empty_weight_body),
                     )
                 }
             } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 16.dp),
+                // A LazyColumn rather than the scrolling column the other pages use, for
+                // `BloodPressureScreen`'s reason: the records below are one row per weigh-in, and a
+                // year's window is a few hundred of them.
+                LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                 ) {
-                    WeightBody(
-                        entries = entries,
-                        goal = profile?.goal,
-                        goalWeightKg = profile?.targetWeightKg,
-                        heightCm = profile?.heightCm,
-                        unit = unit,
-                        checkIn = checkIn,
-                        projection = projection,
-                        state = state,
-                    )
-                    SubjectSwitcher(subject = Subject.Weight, onSelect = onSwitchSubject)
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            WeightBody(
+                                entries = entries,
+                                goal = profile?.goal,
+                                goalWeightKg = profile?.targetWeightKg,
+                                heightCm = profile?.heightCm,
+                                unit = unit,
+                                checkIn = checkIn,
+                                projection = projection,
+                                state = state,
+                            )
+                        }
+                    }
+                    item {
+                        Text(
+                            text = stringResource(R.string.progress_weight_records),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(top = 12.dp),
+                        )
+                    }
+                    // The window the chart, the chips and the readings stat all use, newest first —
+                    // the weigh-in someone just logged is the one they want to check or correct.
+                    items(entries.inRange(state.range).asReversed(), key = { it.dateEpochDay }) { entry ->
+                        WeightRecordRow(
+                            entry = entry,
+                            unit = unit,
+                            onTap = { state.editDateEpochDay = entry.dateEpochDay },
+                        )
+                    }
                 }
             }
         }
+    }
+
+    if (state.editDateEpochDay != NO_EDIT) {
+        // Captured when the sheet opens, not read on every recomposition: deleting the record makes
+        // it vanish from `entries`, and a sheet that re-seeded from that would blink back to a blank
+        // today's-date form on its way out.
+        val editDate = state.editDateEpochDay
+        val editing = remember(editDate) { entries.find { it.dateEpochDay == editDate } }
+        LogWeightSheet(entry = editing, onDismiss = { state.editDateEpochDay = NO_EDIT })
     }
 
     if (state.checkInOpen && checkIn != null) {
@@ -388,7 +409,6 @@ private fun WeightScreenPreview() {
             dailyNutrition = emptyList(),
             profile = profilePreview(),
             onApplyTarget = {},
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -406,7 +426,6 @@ private fun WeightScreenEmptyPreview() {
             dailyNutrition = emptyList(),
             profile = profilePreview(),
             onApplyTarget = {},
-            onSwitchSubject = {},
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},

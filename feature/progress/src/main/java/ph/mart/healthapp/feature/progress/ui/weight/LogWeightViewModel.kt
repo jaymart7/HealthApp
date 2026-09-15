@@ -27,6 +27,7 @@ class LogWeightViewModel(
     fun handleEvent(event: LogWeightEvent) {
         when (event) {
             is LogWeightEvent.OnSave -> onSave(event.form)
+            is LogWeightEvent.OnDelete -> onDelete(event.dateEpochDay)
         }
     }
 
@@ -49,6 +50,13 @@ class LogWeightViewModel(
     private fun onSave(form: LogWeightForm) = intent {
         val weightKg = form.weightKg.coerceIn(WEIGHT_KG)
         progressRepository.upsertWeightEntry(WeightEntry(dateEpochDay = form.dateEpochDay, weightKg = weightKg, note = form.note))
+        postSideEffect(LogWeightSideEffect.Saved)
+    }
+
+    /** A hard delete, and the one in this app that is: the row is keyed by its date and nothing
+     * points at it, so there is no referent a soft delete would be keeping alive. */
+    private fun onDelete(dateEpochDay: Long) = intent {
+        progressRepository.deleteWeightEntry(dateEpochDay)
         postSideEffect(LogWeightSideEffect.Saved)
     }
 }

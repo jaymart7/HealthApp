@@ -14,9 +14,15 @@ data class LogWeightForm(
 
 sealed interface LogWeightEvent {
     data class OnSave(val form: LogWeightForm) : LogWeightEvent
+
+    /** The day's whole weigh-in, gone. Only a hand-typed row offers it — see
+     *  [isImported][ph.mart.healthapp.core.data.progress.isImported]. */
+    data class OnDelete(val dateEpochDay: Long) : LogWeightEvent
 }
 
 sealed interface LogWeightSideEffect {
     data class Loaded(val weightKg: Double) : LogWeightSideEffect
+
+    /** Written or removed — either way the sheet is done and closes. */
     data object Saved : LogWeightSideEffect
 }

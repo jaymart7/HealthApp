@@ -46,6 +46,22 @@ fun MeasurementPart.range(): ClosedFloatingPointRange<Double> = if (percent) 1.0
 
 data class WeightEntry(val dateEpochDay: Long, val weightKg: Double, val note: String = "")
 
+/** The note `HealthSyncRepositoryImpl.weightWriter` stamps on a row Health Connect brought in. */
+const val NOTE_HEALTH_CONNECT = "Health Connect"
+
+/** The same, for the Google Health leg. Both are stored, so both stay Kotlin. */
+const val NOTE_GOOGLE_HEALTH = "Google Health"
+
+/**
+ * Imported rather than typed. The note is the provenance — `weightWriter`'s own contract is that
+ * it "tells them apart on the row" — which is why the Weight page can ask this without reaching
+ * for `health_link` and the sync repository behind it.
+ *
+ * Ceiling: someone who types "Google Health" as their own note reads as imported, and loses the
+ * delete that only a hand-typed row gets. A link-table lookup is the upgrade if that ever matters.
+ */
+fun WeightEntry.isImported(): Boolean = note == NOTE_HEALTH_CONNECT || note == NOTE_GOOGLE_HEALTH
+
 /** [value] is centimetres for a circumference and percent for [MeasurementPart.BodyFat] — the part
  * is what says which. The Room column and the export key are both still named `valueCm`: renaming
  * a column is a migration, and renaming a wire field is a schema version, neither bought by a name. */
@@ -114,8 +130,12 @@ interface ProgressRepository {
     fun observeWeightEntries(): Flow<List<WeightEntry>>
     suspend fun upsertWeightEntry(entry: WeightEntry)
 
-    /** Removes one day's weigh-in. Only the Google Health disconnect calls this, to take back
-     * exactly the entries it imported. */
+    /**
+     * Removes one day's weigh-in, for good — the table has no `isDeleted` column and needs none:
+     * a weigh-in is keyed by its date and nothing points at it, so there is no referent the
+     * module's soft-delete rule would be protecting. Two callers: the Google Health disconnect,
+     * taking back exactly the entries it imported, and the log sheet's own delete.
+     */
     suspend fun deleteWeightEntry(dateEpochDay: Long)
 
     fun observeMeasurements(): Flow<Map<MeasurementPart, List<MeasurementEntry>>>

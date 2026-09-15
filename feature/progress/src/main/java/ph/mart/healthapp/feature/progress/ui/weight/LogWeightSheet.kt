@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -20,21 +21,38 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.progress.NOTE_GOOGLE_HEALTH
+import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.progress.isImported
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
+import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.shared.components.Note
 
+/**
+ * Logging a weigh-in, and — when [entry] is one of the Weight page's records — editing or deleting
+ * it. The repository upserts by date, so saving an [entry] replaces it rather than adding a second
+ * row for the day; that is the whole of the edit.
+ */
 @Composable
-fun LogWeightSheet(onDismiss: () -> Unit, viewModel: LogWeightViewModel = koinViewModel()) {
+fun LogWeightSheet(
+    onDismiss: () -> Unit,
+    entry: WeightEntry? = null,
+    viewModel: LogWeightViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
-    val state = rememberLogWeightState()
+    val state = rememberLogWeightState(
+        entry?.let { LogWeightForm(dateEpochDay = it.dateEpochDay, weightKg = it.weightKg, note = it.note) }
+            ?: LogWeightForm(),
+    )
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is LogWeightSideEffect.Loaded -> if (state.form.dateEpochDay == todayEpochDay()) {
@@ -114,8 +132,41 @@ private fun LogWeightContent(
                     modifier = Modifier.weight(1f),
                 )
                 }
+                // Follows the date picker rather than the row the sheet opened on: whatever day is
+                // selected is the day this deletes.
+                existingForDate?.let { existing ->
+                    if (existing.isImported()) {
+                        // No delete on a provider's copy — the next sync would simply bring it back.
+                        Text(
+                            text = stringResource(R.string.progress_weight_imported, existing.note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
+                    } else {
+                        TextButton(
+                            label = stringResource(R.string.progress_delete),
+                            onClick = { state.confirmingDelete = true },
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
+                    }
+                }
             }
         }
+    }
+
+    if (state.confirmingDelete) {
+        DiscardConfirmDialog(
+            title = stringResource(R.string.progress_weight_delete_title),
+            body = stringResource(R.string.progress_weight_delete_body),
+            confirmLabel = stringResource(R.string.progress_delete),
+            dismissLabel = stringResource(R.string.progress_cancel),
+            onConfirm = {
+                state.confirmingDelete = false
+                onEvent(LogWeightEvent.OnDelete(state.form.dateEpochDay))
+            },
+            onDismiss = { state.confirmingDelete = false },
+        )
     }
 }
 
@@ -129,6 +180,37 @@ private fun LogWeightSheetPreview() {
         LogWeightContent(
             uiState = LogWeightUiState(),
             state = LogWeightState(form = LogWeightForm(weightKg = 76.5)),
+            onDismiss = {},
+            onEvent = {},
+        )
+    }
+}
+
+/** Opened on one of the Weight page's records: the day already has an entry, so the sheet says it
+ * is replacing it and offers the delete. */
+@PreviewLightDark
+@Composable
+private fun LogWeightSheetEditPreview() {
+    val entry = WeightEntry(dateEpochDay = 20_700L, weightKg = 76.5, note = "After the gym")
+    AppTheme {
+        LogWeightContent(
+            uiState = LogWeightUiState(entries = listOf(entry)),
+            state = LogWeightState(form = LogWeightForm(entry.dateEpochDay, entry.weightKg, entry.note)),
+            onDismiss = {},
+            onEvent = {},
+        )
+    }
+}
+
+/** The same day, imported: a caption where the delete would be. */
+@PreviewLightDark
+@Composable
+private fun LogWeightSheetImportedPreview() {
+    val entry = WeightEntry(dateEpochDay = 20_700L, weightKg = 76.5, note = NOTE_GOOGLE_HEALTH)
+    AppTheme {
+        LogWeightContent(
+            uiState = LogWeightUiState(entries = listOf(entry)),
+            state = LogWeightState(form = LogWeightForm(entry.dateEpochDay, entry.weightKg, entry.note)),
             onDismiss = {},
             onEvent = {},
         )
