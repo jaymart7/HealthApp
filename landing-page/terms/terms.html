@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#F7FBF2">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#F7FBF2"/>
+    <rect x="30" y="20" width="12" height="12" rx="3" fill="#37693D"/>
+    <rect x="30" y="42" width="40" height="4" rx="2" fill="#37693D"/>
+    <rect x="30" y="52" width="40" height="4" rx="2" fill="#B8C7B4"/>
+    <rect x="30" y="62" width="40" height="4" rx="2" fill="#B8C7B4"/>
+    <rect x="30" y="72" width="26" height="4" rx="2" fill="#B8C7B4"/>
+  </svg>
+</template>
+<x-dc>
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: #F7FBF2; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #37693D; text-decoration: none; }
+    a:hover { color: #1E5027; text-decoration: underline; }
+    :target { scroll-margin-top: 96px; }
+  </style>
+</helmet>
+
+<div style="background:#F7FBF2;color:#181D18;min-height:100vh;">
+
+  <header style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px clamp(16px,4vw,48px);background:rgba(247,251,242,0.86);backdrop-filter:blur(14px);border-bottom:1px solid #DEE5D9;">
+    <a href="Landing Page.dc.html" style="display:flex;align-items:center;gap:10px;color:#181D18;" style-hover="text-decoration:none;color:#181D18;">
+      <span style="position:relative;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:#37693D;">
+        <span style="position:absolute;top:10px;left:8px;width:4px;height:4px;border-radius:50%;background:#B8F1B9;"></span>
+        <span style="position:absolute;top:10px;right:8px;width:4px;height:4px;border-radius:50%;background:#B8F1B9;"></span>
+        <span style="position:absolute;bottom:9px;width:11px;height:2px;border-radius:2px;background:#B8F1B9;"></span>
+      </span>
+      <span style="font-family:'Poppins',sans-serif;font-size:19px;font-weight:600;letter-spacing:-0.3px;">FitPulse</span>
+    </a>
+    <span style="font-size:13px;font-weight:500;color:#424940;letter-spacing:0.2px;">Terms and Conditions</span>
+  </header>
+
+  <div style="max-width:1120px;margin:0 auto;padding:clamp(36px,6vw,72px) clamp(16px,4vw,48px) clamp(64px,8vw,110px);">
+
+    <div style="max-width:720px;margin-bottom:clamp(28px,4vw,44px);">
+      <span style="font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#37693D;">FitPulse</span>
+      <h1 style="margin:12px 0 0;font-family:'Poppins',sans-serif;font-size:clamp(34px,5vw,52px);line-height:1.08;font-weight:600;letter-spacing:-1.4px;color:#181D18;text-wrap:pretty;">Terms and Conditions</h1>
+      <p style="margin:16px 0 0;font-size:15px;color:#424940;">Effective {{ effectiveDate }} · Last updated {{ effectiveDate }}</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:clamp(28px,4vw,56px);" data-layout="1">
+
+      <nav data-toc="1" style="position:sticky;top:88px;align-self:start;display:flex;flex-direction:column;gap:2px;padding:20px;border:1px solid #DEE5D9;border-radius:18px;background:#F1F5EC;">
+        <span style="font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:#727970;margin-bottom:10px;">Contents</span>
+        <a href="#acceptance" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Acceptance of terms</a>
+        <a href="#eligibility" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Eligibility and accounts</a>
+        <a href="#use" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Acceptable use</a>
+        <a href="#health-disclaimer" style="padding:7px 0;font-size:14px;font-weight:600;color:#37693D;" style-hover="color:#1E5027;text-decoration:none;">Health and fitness disclaimer</a>
+        <a href="#subscriptions" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Subscriptions and billing</a>
+        <a href="#ip" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Intellectual property</a>
+        <a href="#termination" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Termination</a>
+        <a href="#liability" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Disclaimers and liability</a>
+        <a href="#changes" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Changes to these terms</a>
+        <a href="#law" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Governing law</a>
+        <a href="#contact" style="padding:7px 0;font-size:14px;font-weight:500;color:#424940;" style-hover="color:#37693D;text-decoration:none;">Contact</a>
+      </nav>
+
+      <main style="min-width:0;max-width:720px;display:flex;flex-direction:column;gap:clamp(36px,4.5vw,56px);">
+
+        <section id="acceptance" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Acceptance of Terms</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">These Terms and Conditions govern your use of FitPulse, a nutrition and fitness tracking app. By downloading, installing or using FitPulse, you agree to be bound by these terms. If you do not agree, please do not use the app.</p>
+        </section>
+
+        <section id="eligibility" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Eligibility and Accounts</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">You must be at least 13 years old to use FitPulse. FitPulse's core features do not require an account. Where you choose to connect optional services, such as Google Health, you are responsible for maintaining the confidentiality of any credentials involved and for all activity that occurs through your connection.</p>
+        </section>
+
+        <section id="use" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Acceptable Use</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">You agree not to:</p>
+          <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:17px;line-height:1.7;color:#2D322C;">
+            <li>Reverse engineer, decompile or attempt to extract the source code of the app, except where permitted by law.</li>
+            <li>Use FitPulse for any unlawful purpose or in a way that could damage, disable or impair the app.</li>
+            <li>Attempt to gain unauthorized access to any part of the app or its underlying systems.</li>
+            <li>Use automated means to scrape, copy or redistribute app content without our consent.</li>
+          </ul>
+        </section>
+
+        <section id="health-disclaimer" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Health and Fitness Disclaimer</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">FitPulse provides general nutrition and fitness tracking tools for informational purposes only. It is not a medical device and does not provide medical advice, diagnosis or treatment.</p>
+          <ul style="margin:0;padding-left:22px;display:flex;flex-direction:column;gap:10px;font-size:17px;line-height:1.7;color:#2D322C;">
+            <li>Consult a qualified physician before starting any diet, exercise or fasting program, especially if you have an existing medical condition.</li>
+            <li>Calorie, macro and activity estimates are approximations based on the data you provide and may not be accurate for your individual circumstances.</li>
+            <li>Data synced from Health Connect or Google Health, such as heart rate or sleep readings, is sourced from third-party devices and sensors we do not control and cannot guarantee the accuracy of.</li>
+            <li>You are solely responsible for decisions you make based on information in the app.</li>
+          </ul>
+        </section>
+
+        <section id="subscriptions" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Subscriptions and Billing</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">Some features of FitPulse are offered through an optional paid subscription, billed through the Google Play Store. Subscriptions renew automatically until cancelled, and payment is charged to your Play Store account at the start of each billing period. You can manage or cancel your subscription at any time through your Play Store account settings. Refunds are handled according to Google Play's refund policies.</p>
+        </section>
+
+        <section id="ip" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Intellectual Property</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">FitPulse, its logo, design and underlying software are owned by us and protected by copyright, trademark and other intellectual property laws. Content you create in the app, such as food entries and progress photos, remains yours. We claim no ownership over it, but process it as described in our <a href="Privacy Policy.dc.html">Privacy Policy</a> to operate the app.</p>
+        </section>
+
+        <section id="termination" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Termination</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">You may stop using FitPulse and uninstall it at any time. We may suspend or terminate access to the app for anyone who violates these terms. Uninstalling the app removes data stored locally on your device; data you have shared with third-party services, such as Google Health, remains subject to those services' own terms.</p>
+        </section>
+
+        <section id="liability" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Disclaimers and Limitation of Liability</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">FitPulse is provided "as is" and "as available," without warranties of any kind, express or implied, including fitness for a particular purpose or non-infringement. We do not warrant that the app will be uninterrupted, error-free or accurate.</p>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">To the fullest extent permitted by law, we are not liable for any indirect, incidental or consequential damages arising from your use of, or inability to use, FitPulse, including any health outcomes related to decisions made using information in the app.</p>
+        </section>
+
+        <section id="changes" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Changes to These Terms</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">We may update these terms as FitPulse changes. The effective date at the top of the page always reflects the current version, and material changes will be announced in the app before they take effect. Continued use of the app after changes take effect constitutes acceptance of the updated terms.</p>
+        </section>
+
+        <section id="law" style="display:flex;flex-direction:column;gap:16px;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Governing Law</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">These terms are governed by the laws of the jurisdiction in which we operate, without regard to conflict-of-law principles.</p>
+        </section>
+
+        <section id="contact" style="display:flex;flex-direction:column;gap:16px;padding:clamp(24px,3vw,32px);border:1px solid #C1C9BE;border-radius:20px;background:#F1F5EC;">
+          <h2 style="margin:0;font-family:'Poppins',sans-serif;font-size:clamp(22px,2.6vw,29px);line-height:1.2;font-weight:600;letter-spacing:-0.6px;color:#181D18;">Contact</h2>
+          <p style="margin:0;font-size:17px;line-height:1.7;color:#2D322C;text-wrap:pretty;">Questions about these terms? Write to us and we will respond within 30 days.</p>
+          <a href="mailto:{{ contactEmail }}" style="align-self:flex-start;display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:999px;background:#37693D;color:#FFFFFF;font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;transition:background .18s ease, transform .18s ease;" style-hover="background:#2B5531;color:#FFFFFF;text-decoration:none;transform:translateY(-1px);">{{ contactEmail }}</a>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <footer style="border-top:1px solid #DEE5D9;padding:28px clamp(16px,4vw,48px);">
+    <div style="max-width:1120px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;font-size:14px;color:#424940;">
+      <span>© 2026 FitPulse</span>
+      <a href="Landing Page.dc.html" style="font-weight:500;">Back to FitPulse</a>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;effectiveDate&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;11 September 2026&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;contactEmail&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;jaymart.b.araga@gmail.com&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showToc&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { wide: false };
+  componentDidMount() {
+    this.mq = window.matchMedia('(min-width: 900px)');
+    this.onChange = () => this.setState({ wide: this.mq.matches });
+    this.onChange();
+    this.mq.addEventListener('change', this.onChange);
+  }
+  componentWillUnmount() {
+    if (this.mq) this.mq.removeEventListener('change', this.onChange);
+  }
+  componentDidUpdate() { this.applyLayout(); }
+  applyLayout() {
+    const root = this.el || document;
+    const grid = root.querySelector('[data-layout="1"]');
+    const toc = root.querySelector('[data-toc="1"]');
+    const showToc = this.props.showToc ?? true;
+    const wide = this.state.wide;
+    if (grid) grid.style.gridTemplateColumns = (wide && showToc) ? '210px minmax(0,1fr)' : 'minmax(0,1fr)';
+    if (toc) {
+      toc.style.display = showToc ? 'flex' : 'none';
+      toc.style.position = wide ? 'sticky' : 'static';
+    }
+  }
+  renderVals() {
+    Promise.resolve().then(() => this.applyLayout());
+    return {
+      effectiveDate: this.props.effectiveDate ?? '11 September 2026',
+      contactEmail: this.props.contactEmail ?? 'jaymart.b.araga@gmail.com',
+    };
+  }
+}
+</script>
+</body>
+</html>
