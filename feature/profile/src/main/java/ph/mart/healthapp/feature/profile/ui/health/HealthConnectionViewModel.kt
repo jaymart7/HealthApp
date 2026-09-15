@@ -34,6 +34,8 @@ private val OFFLINE = HealthMessage.Text(R.string.profile_health_offline)
 
 private val CONNECT_DECLINED = HealthMessage.Text(R.string.profile_health_connect_declined)
 
+private val NOT_LINKED = HealthMessage.Text(R.string.profile_health_not_linked)
+
 /** What one sync produced, already turned into something the screen can render. */
 private data class SyncOutcome(
     val connection: HealthConnection,
@@ -214,6 +216,7 @@ class HealthConnectionViewModel(
 
                 HealthSyncResult.Offline -> OFFLINE
                 is HealthSyncResult.NeedsConsent -> CONSENT_DECLINED
+                HealthSyncResult.NotLinked -> NOT_LINKED
                 HealthSyncResult.Failed -> SYNC_FAILED
             },
             isError = result !is HealthSyncResult.Imported,

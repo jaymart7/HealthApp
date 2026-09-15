@@ -25,6 +25,17 @@ sealed interface HealthSyncResult {
 
     /** The grant went away mid-session — the user revoked it from their Google account. */
     data class NeedsConsent(val pendingIntent: PendingIntent?) : HealthSyncResult
+
+    /**
+     * The OAuth grant is real but the Google account behind it was never signed up for Google
+     * Health, so every call it makes answers `400 ACCOUNT_NOT_LINKED` — see
+     * [HealthResponse.AccountNotLinked].
+     *
+     * Distinct from [Failed] because it is the only outcome the user can do something about, and
+     * what they do is not in this app: they link the account at fitbit.google.com. Reporting it as
+     * "couldn't reach Google Health" sent them to check their connection instead.
+     */
+    data object NotLinked : HealthSyncResult
     data object Failed : HealthSyncResult
 }
 

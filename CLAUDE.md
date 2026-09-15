@@ -212,6 +212,14 @@ degrade-gracefully rule, not a secret to work around. There is no CI; see Backlo
 
 ## Backlog
 
+**Google Health — the account has to be linked, and no test account is.** Separate from the
+verification below and cheaper to hit: the emulator's signed-in Google account holds a valid
+grant but was never signed up for Google Health, so every v4 call answers `400 ACCOUNT_NOT_LINKED` and the
+Connections screen now says so and stops. **Nothing about the cloud leg can be exercised end to end
+until an account is signed up at fitbit.google.com** — which also means the four hedged parsers
+below cannot be pinned against a live response yet. Health Connect is unaffected and covers every
+type it is granted.
+
 **Google Health — verification.** Not done. The Cloud project is settled
 (`app/google-services.json` points at `fitpulse-8d951`, the same project Firebase AI Logic runs
 in) and the Android OAuth clients now exist — two `client_type: 1` entries carrying the debug

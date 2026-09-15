@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.health
 
 import android.content.Intent
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.epochDayStartMillis
@@ -44,6 +45,34 @@ private const val MAX_PAGES = 20
 
 /** Skip signal from a per-type writer: the data point is fine, we just don't want to store it. */
 private const val SKIPPED = -1L
+
+/**
+ * How long one sync may take before it is abandoned and reported as a failure.
+ *
+ * It exists because `busy` on the Connections screen has exactly one exit — this function
+ * returning — and three of the waits below cannot be bounded any other way: `Tasks.await` in
+ * [GoogleHealthAuth.authorize] is a *blocking* call, and Health Connect's reads are binder round
+ * trips into another process. Without a deadline a wedged provider leaves "Syncing…" on screen
+ * with nothing to do but navigate away.
+ *
+ * Cutting a sync short is safe here and needs no bookkeeping: every write commits on its own and
+ * every cursor is derived from rows actually written ([windowStart], [stepsWindowStart],
+ * [heartWindowStart]), so the next sync resumes from wherever this one reached. The cancel lands at
+ * the next suspension point rather than instantly — up to one request's [TIMEOUT_MS] late, which is
+ * the difference between bounded and immediate.
+ */
+private const val SYNC_DEADLINE_MILLIS = 90_000L
+
+/**
+ * How many data points one sync sends out.
+ *
+ * The push leg is one sequential request per unsent row, so a diary with a year of meals in reach
+ * of [BACKFILL_DAYS] would otherwise make the *first* sync minutes long. A cap drains the backlog
+ * across several syncs instead, and — unlike letting [SYNC_DEADLINE_MILLIS] cut it off — each of
+ * those syncs finishes cleanly and reports what it sent. Every send records a `health_link` row, so
+ * the next sync picks up exactly where this one stopped.
+ */
+private const val MAX_PUSH_PER_SYNC = 50
 
 internal class HealthSyncRepositoryImpl(
     private val auth: GoogleHealthAuth,
@@ -98,7 +127,15 @@ internal class HealthSyncRepositoryImpl(
         return cachedToken != null
     }
 
-    override suspend fun sync(): HealthSyncResult {
+    /**
+     * Bounded, always — see [SYNC_DEADLINE_MILLIS]. `withTimeoutOrNull` rather than a `try`, because
+     * the outer cancellation (the user leaving the screen) has to keep propagating; only *this*
+     * deadline turns into a return value.
+     */
+    override suspend fun sync(): HealthSyncResult =
+        withTimeoutOrNull(SYNC_DEADLINE_MILLIS) { performSync() } ?: HealthSyncResult.Failed
+
+    private suspend fun performSync(): HealthSyncResult {
         // The local leg first. Not only because Health Connect is the preferred provider: which
         // types it is granted is what decides which cloud legs run at all — see `cloudMetrics`,
         // where that precedence is decided once so the two legs can never both write a table.
@@ -134,6 +171,7 @@ internal class HealthSyncRepositoryImpl(
             when (val result = importExercise(token)) {
                 is Outcome.Wrote -> imported += result.items
                 Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.NotLinked -> return HealthSyncResult.NotLinked
                 Outcome.Failed -> failed = true
             }
         }
@@ -141,6 +179,7 @@ internal class HealthSyncRepositoryImpl(
             when (val result = importWeight(token)) {
                 is Outcome.Wrote -> imported += result.items
                 Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.NotLinked -> return HealthSyncResult.NotLinked
                 Outcome.Failed -> failed = true
             }
         }
@@ -148,6 +187,7 @@ internal class HealthSyncRepositoryImpl(
             when (val result = importSleep(token)) {
                 is Outcome.Wrote -> imported += result.items
                 Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.NotLinked -> return HealthSyncResult.NotLinked
                 Outcome.Failed -> failed = true
             }
         }
@@ -155,6 +195,7 @@ internal class HealthSyncRepositoryImpl(
             when (val result = importSteps(token)) {
                 is Outcome.Wrote -> imported += result.items
                 Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.NotLinked -> return HealthSyncResult.NotLinked
                 Outcome.Failed -> failed = true
             }
         }
@@ -167,7 +208,11 @@ internal class HealthSyncRepositoryImpl(
         // Push last: an import that worked is worth reporting even if the outbound leg didn't.
         // Cloud-only whatever Health Connect is granted — FitPulse writes nothing to Health
         // Connect, so there is no second push path to keep in step with this one.
-        if (!pushNutrition(token)) failed = true
+        when (pushNutrition(token)) {
+            Push.Ok -> Unit
+            Push.Failed -> failed = true
+            Push.NotLinked -> return HealthSyncResult.NotLinked
+        }
 
         return if (failed && imported == 0) HealthSyncResult.Failed else HealthSyncResult.Imported(imported)
     }
@@ -294,8 +339,14 @@ internal class HealthSyncRepositoryImpl(
 
         /** The scope was revoked from myaccount.google.com while we held a token. */
         data object Revoked : Outcome
+
+        /** The account was never signed up for Google Health — [HealthResponse.AccountNotLinked]. */
+        data object NotLinked : Outcome
         data object Failed : Outcome
     }
+
+    /** What one push leg produced. [NotLinked] abandons the whole sync, wherever it is met. */
+    private enum class Push { Ok, Failed, NotLinked }
 
     private suspend fun importExercise(token: String) = importAll(
         dataType = HealthDataType.Exercise,
@@ -390,7 +441,9 @@ internal class HealthSyncRepositoryImpl(
                     return Outcome.Revoked
                 }
 
-                HealthResponse.Unauthorized, HealthResponse.Failed -> return Outcome.Failed
+                HealthResponse.AccountNotLinked -> return Outcome.NotLinked
+                HealthResponse.Unauthorized, HealthResponse.Rejected, HealthResponse.Failed ->
+                    return Outcome.Failed
             }
 
             totals = stepTotals(page.items, into = totals)
@@ -469,8 +522,13 @@ internal class HealthSyncRepositoryImpl(
             val url = dataPointsUrl(HealthDataType.Heart, sinceMillis = since, pageToken = pageToken)
             val page = when (val response = fetch(url, token)) {
                 is HealthResponse.Ok -> parseHeartPage(response.body)
-                HealthResponse.Forbidden, HealthResponse.Unauthorized, HealthResponse.Failed ->
-                    return Outcome.Failed
+                // An unlinked account is the one answer heart rate does not get to swallow: it is
+                // true of every type, so letting it read as "no heart data" would hide the reason
+                // the other four failed too.
+                HealthResponse.AccountNotLinked -> return Outcome.NotLinked
+                HealthResponse.Forbidden, HealthResponse.Unauthorized,
+                HealthResponse.Rejected, HealthResponse.Failed,
+                -> return Outcome.Failed
             }
 
             samples += page.items
@@ -505,29 +563,42 @@ internal class HealthSyncRepositoryImpl(
      * sent would otherwise live on in their Google Health profile forever, which is not what
      * "delete" means to anyone.
      *
-     * Returns false if anything failed, so the caller can report it without losing an import
-     * that did work.
+     * Returns the worst of the three legs, so the caller can report a failure without losing an
+     * import that did work — and stops at the first [Push.NotLinked], which is the answer every
+     * later request would have got too.
      */
-    private suspend fun pushNutrition(token: String): Boolean {
+    private suspend fun pushNutrition(token: String): Push {
         val entries = foodRepository.allEntries()
-        var ok = pushDeletions(token, entries.mapTo(mutableSetOf()) { it.id })
-        ok = pushMeals(token, entries) && ok
-        return pushHydration(token) && ok
+        var worst = pushDeletions(token, entries.mapTo(mutableSetOf()) { it.id })
+        if (worst == Push.NotLinked) return worst
+        worst = pushMeals(token, entries).worseOf(worst)
+        if (worst == Push.NotLinked) return worst
+        return pushHydration(token).worseOf(worst)
+    }
+
+    /** `Ok` only when nothing went wrong, and `NotLinked` outranks everything — it ends the sync. */
+    private fun Push.worseOf(other: Push): Push = when {
+        this == Push.NotLinked || other == Push.NotLinked -> Push.NotLinked
+        this == Push.Failed || other == Push.Failed -> Push.Failed
+        else -> Push.Ok
     }
 
     /** Data points whose diary row is gone. Chunked, because batchDelete caps per request. */
-    private suspend fun pushDeletions(token: String, liveEntryIds: Set<Long>): Boolean {
+    private suspend fun pushDeletions(token: String, liveEntryIds: Set<Long>): Push {
         val orphans = links.links(pushed = true)
             .filter { it.localTable == FOOD_TABLE && it.localId !in liveEntryIds }
-        if (orphans.isEmpty()) return true
+        if (orphans.isEmpty()) return Push.Ok
 
-        var ok = true
+        var result = Push.Ok
         orphans.chunked(BATCH_DELETE_SIZE).forEach { chunk ->
             val names = chunk.map { it.remoteName }
-            val response = healthPost(batchDeleteUrl(NUTRITION_LOG), token, batchDeleteBody(names))
-            if (response is HealthResponse.Ok) links.delete(names) else ok = false
+            when (healthPost(batchDeleteUrl(NUTRITION_LOG), token, batchDeleteBody(names))) {
+                is HealthResponse.Ok -> links.delete(names)
+                HealthResponse.AccountNotLinked -> return Push.NotLinked
+                else -> result = Push.Failed
+            }
         }
-        return ok
+        return result
     }
 
     /**
@@ -540,34 +611,47 @@ internal class HealthSyncRepositoryImpl(
      * Older entries are simply never sent. They are not marked as sent either, so raising the
      * window later picks them up rather than stranding them.
      */
-    private suspend fun pushMeals(token: String, entries: List<FoodEntry>): Boolean {
+    private suspend fun pushMeals(token: String, entries: List<FoodEntry>): Push {
         val alreadySent = links.pushedLocalIds(FOOD_TABLE).toSet()
         val since = todayEpochDay() - BACKFILL_DAYS
-        var ok = true
-        entries.filter { it.dateEpochDay >= since && it.id !in alreadySent }.forEach { entry ->
-            val dayStart = epochDayStartMillis(entry.dateEpochDay)
-            // A rejected body would otherwise strand the meal forever: no link is recorded, so
-            // every later sync retries it and fails again. The second attempt drops the three
-            // unverified nutrient names — see `nutritionLogBody`. `?:` keeps it unbuilt when the
-            // first lands, and a transient failure only costs a request that was already lost.
-            val created = create(token, NUTRITION_LOG, nutritionLogBody(entry, dayStart))
-                ?: create(token, NUTRITION_LOG, nutritionLogBody(entry, dayStart, micronutrients = false))
-            if (created == null) {
-                ok = false
-            } else {
-                links.upsert(
-                    HealthLinkEntity(
-                        remoteName = created,
-                        dataType = NUTRITION_LOG,
-                        localTable = FOOD_TABLE,
-                        localId = entry.id,
-                        remoteTimeMillis = dayStart,
-                        pushed = true,
-                    ),
-                )
+        var result = Push.Ok
+        entries.filter { it.dateEpochDay >= since && it.id !in alreadySent }
+            .take(MAX_PUSH_PER_SYNC)
+            .forEach { entry ->
+                val dayStart = epochDayStartMillis(entry.dateEpochDay)
+                // A rejected body would otherwise strand the meal forever: no link is recorded, so
+                // every later sync retries it and fails again. The second attempt drops the three
+                // unverified nutrient names — see `nutritionLogBody`.
+                //
+                // Only [HealthResponse.Rejected] earns it. It used to fire on *every* null, which
+                // meant a timeout cost two round trips instead of one and an unlinked account cost
+                // two per meal, all the way down the diary.
+                var response = create(token, NUTRITION_LOG, nutritionLogBody(entry, dayStart))
+                if (response == HealthResponse.Rejected) {
+                    response = create(
+                        token,
+                        NUTRITION_LOG,
+                        nutritionLogBody(entry, dayStart, micronutrients = false),
+                    )
+                }
+                if (response == HealthResponse.AccountNotLinked) return Push.NotLinked
+                val created = (response as? HealthResponse.Ok)?.let { parseCreatedName(it.body) }
+                if (created == null) {
+                    result = Push.Failed
+                } else {
+                    links.upsert(
+                        HealthLinkEntity(
+                            remoteName = created,
+                            dataType = NUTRITION_LOG,
+                            localTable = FOOD_TABLE,
+                            localId = entry.id,
+                            remoteTimeMillis = dayStart,
+                            pushed = true,
+                        ),
+                    )
+                }
             }
-        }
-        return ok
+        return result
     }
 
     /**
@@ -578,10 +662,10 @@ internal class HealthSyncRepositoryImpl(
      * ponytail: the alternative is patching the data point every time a glass is tapped. Settled
      * days only is a fraction of the code and the user still ends up with the right total.
      */
-    private suspend fun pushHydration(token: String): Boolean {
+    private suspend fun pushHydration(token: String): Push {
         val alreadySent = links.pushedLocalIds(WATER_TABLE).toSet()
         val today = todayEpochDay()
-        var ok = true
+        var result = Push.Ok
         waterRepository.allDays()
             .filter {
                 // Windowed like pushMeals, and for the same reason.
@@ -590,11 +674,14 @@ internal class HealthSyncRepositoryImpl(
                     it.dateEpochDay !in alreadySent &&
                     it.glasses > 0
             }
+            .take(MAX_PUSH_PER_SYNC)
             .forEach { day ->
                 val dayStart = epochDayStartMillis(day.dateEpochDay)
-                val created = create(token, HYDRATION_LOG, hydrationLogBody(day.glasses * GLASS_ML, dayStart))
+                val response = create(token, HYDRATION_LOG, hydrationLogBody(day.glasses * GLASS_ML, dayStart))
+                if (response == HealthResponse.AccountNotLinked) return Push.NotLinked
+                val created = (response as? HealthResponse.Ok)?.let { parseCreatedName(it.body) }
                 if (created == null) {
-                    ok = false
+                    result = Push.Failed
                 } else {
                     links.upsert(
                         HealthLinkEntity(
@@ -608,21 +695,24 @@ internal class HealthSyncRepositoryImpl(
                     )
                 }
             }
-        return ok
+        return result
     }
 
-    /** One `dataPoints.create`, with the same single 401 retry the reads get. */
-    private suspend fun create(token: String, dataType: String, body: String): String? {
+    /**
+     * One `dataPoints.create`, with the same single 401 retry the reads get.
+     *
+     * It hands back the response rather than a name-or-null: the callers need to tell a body the
+     * API refused from an account it refused from a round trip that never landed, and collapsing
+     * all three into `null` is what made every failure cost two requests instead of one.
+     */
+    private suspend fun create(token: String, dataType: String, body: String): HealthResponse {
         val url = createDataPointUrl(dataType)
         val first = healthPost(url, token, body)
-        val response = if (first == HealthResponse.Unauthorized) {
-            val refreshed = (auth.authorize() as? HealthAuthResult.Granted)?.accessToken ?: return null
-            cachedToken = refreshed
-            healthPost(url, refreshed, body)
-        } else {
-            first
-        }
-        return (response as? HealthResponse.Ok)?.let { parseCreatedName(it.body) }
+        if (first != HealthResponse.Unauthorized) return first
+        val refreshed = (auth.authorize() as? HealthAuthResult.Granted)?.accessToken
+            ?: return HealthResponse.Unauthorized
+        cachedToken = refreshed
+        return healthPost(url, refreshed, body)
     }
 
     /**
@@ -650,7 +740,8 @@ internal class HealthSyncRepositoryImpl(
                     return Outcome.Revoked
                 }
 
-                HealthResponse.Unauthorized, HealthResponse.Failed ->
+                HealthResponse.AccountNotLinked -> return Outcome.NotLinked
+                HealthResponse.Unauthorized, HealthResponse.Rejected, HealthResponse.Failed ->
                     return if (imported > 0) Outcome.Wrote(imported) else Outcome.Failed
             }
 

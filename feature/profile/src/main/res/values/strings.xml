@@ -241,6 +241,7 @@
     <string name="profile_health_consent_declined">Not connected — nothing was shared.</string>
     <string name="profile_health_sync_failed">Couldn\'t reach Google Health. Try again.</string>
     <string name="profile_health_offline">You\'re offline. Connect and try again.</string>
+    <string name="profile_health_not_linked">This Google account isn\'t set up for Google Health yet. Sign up at fitbit.google.com, then sync again.</string>
     <string name="profile_health_connect_declined">Health Connect isn\'t sharing anything yet.</string>
     <string name="profile_health_disconnected">Disconnected.</string>
     <string name="profile_health_deleted_imported">" Imported data was deleted from this device."</string>

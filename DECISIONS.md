@@ -3415,6 +3415,37 @@ Connect.
   like sleep and mood, and its chart is the one in the app whose bars are **not zero-based**:
   nobody's heart visits 0–45 bpm, so a zero-based axis would squash the beats that actually
   differ. Each bar spans that day's lowest reading up to its average.
+- **An unlinked account ends the sync at the first refusal, and is its own message.** A Google
+  account that has never been signed up for Google Health holds a perfectly valid OAuth grant and
+  answers `400 FAILED_PRECONDITION / ACCOUNT_NOT_LINKED` to *every* call it makes. Folded into
+  `Failed` it read as one more transient error, so one tap on Sync now fired **278 identical doomed
+  requests over 64 seconds** — a 133-meal diary at two POSTs each, plus water — and said "Couldn't
+  reach Google Health", which sends the user to check their connection instead of to
+  fitbit.google.com. So `HealthResponse.AccountNotLinked` is matched on the `ErrorInfo` reason (a
+  reserved token; matching the raw body beats parsing a shape the v4 reference doesn't pin down),
+  every leg returns it rather than swallowing it — **including heart rate**, whose whole exemption
+  above is about a scope guess and has nothing to say about an account — and `sync()` returns
+  `HealthSyncResult.NotLinked` on the first one. It outranks a Health Connect count that already
+  landed, unlike the consent branches beside it: the count is on the panel regardless, and burying
+  the one thing the user can act on is how this cost a minute a tap in the first place.
+- **One sync is bounded twice: a 90s deadline and a 50-point push cap.** `busy` on the Connections
+  screen has exactly one exit — `sync()` returning — and three of its waits can't be bounded any
+  other way (`Tasks.await` is *blocking*, and Health Connect's reads are binder calls into another
+  process), so `withTimeoutOrNull` is what makes "stuck at Syncing…" structurally impossible rather
+  than unlikely. Cutting a sync short needs no bookkeeping, which is the whole reason it is
+  affordable: every write commits on its own and every cursor derives from rows actually written,
+  so the next sync resumes where this one reached. The cap is the same argument applied to the push
+  leg, which is one sequential request per unsent row: it drains a backlog across several syncs that
+  each *finish*, rather than letting the deadline cut one off and report a failure.
+- **The micronutrient retry fires only on a rejection a smaller body could fix.** `create()` used to
+  collapse a 403, a 404, a timeout and a rejected body all into `null`, so the second attempt (which
+  exists to drop the three unverified nutrient names) doubled the cost of every failure it could not
+  possibly help. It returns the `HealthResponse` now, and only `Rejected` earns the retry.
+- **Every response is drained and nothing calls `disconnect()`.** `HttpURLConnection` only returns a
+  socket to its keep-alive pool once the stream is read to the end, and `disconnect()` closes the
+  socket outright. Leaving error bodies unread and disconnecting meant a fresh TLS handshake per
+  request — a process growing a Conscrypt thread per call, ~90 of them across one push leg. The one
+  place `disconnect()` survives is the `IOException` catch, where the connection is unusable anyway.
 - **Every window is re-queried one day behind the cursor.** Watches sync hours late; the primary
   key makes the overlap free. First sync backfills 30 days — asking for only what's needed is
   the data-minimisation answer on the verification form, not a performance tweak.

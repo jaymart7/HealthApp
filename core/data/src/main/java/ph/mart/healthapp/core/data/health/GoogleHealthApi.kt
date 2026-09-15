@@ -75,7 +75,40 @@ internal sealed interface HealthResponse {
 
     /** Scope revoked from myaccount.google.com. Not retryable: drop to disconnected. */
     data object Forbidden : HealthResponse
+
+    /**
+     * The grant is real but the Google account behind it was never signed up for Google Health,
+     * so *every* call this account makes answers `400 FAILED_PRECONDITION / ACCOUNT_NOT_LINKED`.
+     *
+     * It is its own case rather than a [Failed] because it is the one answer that is true of the
+     * account rather than of the request: nothing about retrying, waiting, or sending less will
+     * change it, and treating it as an ordinary failure is what had `sync` fire 278 identical
+     * doomed requests per tap. [HealthSyncRepository.sync] abandons the whole leg on the first one.
+     */
+    data object AccountNotLinked : HealthResponse
+
+    /**
+     * A 4xx the request itself is responsible for. Distinct from [Failed] because only this one
+     * makes a second attempt with a smaller body worth the round trip — see `pushMeals`.
+     */
+    data object Rejected : HealthResponse
+
+    /** No usable answer: a timeout, a dropped connection, a 5xx. Only a later sync can help. */
     data object Failed : HealthResponse
+}
+
+/**
+ * `ACCOUNT_NOT_LINKED` is a `google.rpc.ErrorInfo` reason — a reserved token that appears in a
+ * response for exactly one reason, which is why matching the raw body beats parsing a shape the v4
+ * reference does not pin down (the `Nutrient` names in this file hedge for the same reason).
+ */
+private const val ACCOUNT_NOT_LINKED = "ACCOUNT_NOT_LINKED"
+
+/** Which kind of refusal a non-2xx answer is. Split out so a JVM test can reach the decision. */
+internal fun errorResponse(code: Int, body: String): HealthResponse = when {
+    body.contains(ACCOUNT_NOT_LINKED) -> HealthResponse.AccountNotLinked
+    code in 400..499 -> HealthResponse.Rejected
+    else -> HealthResponse.Failed
 }
 
 internal suspend fun healthGet(url: String, token: String): HealthResponse =
@@ -119,23 +152,37 @@ private fun blockingRequest(url: String, method: String, token: String?, body: S
     }
     return try {
         if (body != null) connection.outputStream.use { it.write(body.toByteArray()) }
-        when (connection.responseCode) {
-            HttpURLConnection.HTTP_OK -> HealthResponse.Ok(
-                connection.inputStream.bufferedReader().use { it.readText() },
-            )
-
+        val code = connection.responseCode
+        // A 2xx with no body (revoke answers 200 with an empty one) is still a success; it is read
+        // and discarded rather than skipped, because an undrained stream is a socket off the pool.
+        if (code in 200..299) return HealthResponse.Ok(connection.readBody())
+        val error = connection.readError()
+        when (code) {
             HttpURLConnection.HTTP_UNAUTHORIZED -> HealthResponse.Unauthorized
             HttpURLConnection.HTTP_FORBIDDEN -> HealthResponse.Forbidden
-            // A 2xx with no body (revoke answers 200 with an empty one) is still a success.
-            in 200..299 -> HealthResponse.Ok("")
-            else -> HealthResponse.Failed
+            else -> errorResponse(code, error)
         }
     } catch (_: IOException) {
-        HealthResponse.Failed
-    } finally {
+        // Only here: the connection is unusable, so it is dropped rather than returned to the pool.
         connection.disconnect()
+        HealthResponse.Failed
     }
 }
+
+/**
+ * Every response is read to the end and closed, **including the error ones**, and nothing calls
+ * `disconnect()` on a connection that answered.
+ *
+ * Both halves of that are one rule: `HttpURLConnection` only returns a socket to its keep-alive
+ * pool once the stream is drained, and `disconnect()` closes the socket outright. Leaving an error
+ * body unread and disconnecting meant a fresh TLS handshake per request — visible as a process
+ * growing a Conscrypt thread per call across a push leg that makes hundreds of them.
+ */
+private fun HttpURLConnection.readBody(): String =
+    inputStream.bufferedReader().use { it.readText() }
+
+private fun HttpURLConnection.readError(): String =
+    runCatching { errorStream?.bufferedReader()?.use { it.readText() } }.getOrNull().orEmpty()
 
 internal val healthJson = Json { ignoreUnknownKeys = true }
 

@@ -384,6 +384,34 @@ class GoogleHealthApiTest {
         assertEquals(emptyMap<Long, HeartDay>(), aggregateHeartByDay(emptyList()))
     }
 
+    /**
+     * The live 400 that had one tap fire 278 identical doomed requests. Pinned verbatim, because
+     * the whole breaker turns on recognising it — see [HealthResponse.AccountNotLinked].
+     */
+    @Test
+    fun `an unlinked account is told apart from a rejected body and from a server failure`() {
+        val notLinked = """
+            {"error":{"code":400,"message":"The account is not linked to Google Health.",
+            "status":"FAILED_PRECONDITION","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo",
+            "reason":"ACCOUNT_NOT_LINKED","domain":"health.googleapis.com"}]}}
+        """.trimIndent()
+        assertEquals(HealthResponse.AccountNotLinked, errorResponse(400, notLinked))
+
+        // A 4xx the body is responsible for: the one case worth a second, smaller attempt.
+        assertEquals(
+            HealthResponse.Rejected,
+            errorResponse(400, """{"error":{"message":"Invalid value at nutrients[3].name"}}"""),
+        )
+        assertEquals(HealthResponse.Rejected, errorResponse(404, ""))
+
+        // A 5xx or an answerless response is neither: only a later sync can help.
+        assertEquals(HealthResponse.Failed, errorResponse(500, ""))
+        assertEquals(HealthResponse.Failed, errorResponse(503, """{"error":{"message":"overloaded"}}"""))
+
+        // The reason outranks the status code — the account is unlinked however it is reported.
+        assertEquals(HealthResponse.AccountNotLinked, errorResponse(503, """{"reason":"ACCOUNT_NOT_LINKED"}"""))
+    }
+
     @Test
     fun `remote activity names fall back to Other instead of being dropped`() {
         assertEquals(ExerciseType.Run, exerciseTypeOf("TRAIL_RUNNING"))
