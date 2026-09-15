@@ -35,6 +35,15 @@ class MealParseTest {
         assertFalse(food("  ", 156).isLoggable)
     }
 
+    /** The name is the model's prose and becomes a diary row's title, so it clears the markdown
+     * boundary here — `MarkdownTest` has the rules. */
+    @Test
+    fun `markdown is stripped out of a name`() {
+        val parsed = listOf(food("**Scrambled eggs**", 156))
+
+        assertEquals(listOf("Scrambled eggs"), parsed.loggable().map { it.name })
+    }
+
     @Test
     fun `drops a nameless item and keeps the order of the rest`() {
         val parsed = listOf(food("Scrambled eggs", 156), food("  ", 90), food("Toast", 80))

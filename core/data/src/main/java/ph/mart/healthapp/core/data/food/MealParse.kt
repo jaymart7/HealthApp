@@ -1,5 +1,7 @@
 package ph.mart.healthapp.core.data.food
 
+import ph.mart.healthapp.core.data.stripMarkdown
+
 /**
  * The fourth Gemini-backed feature, and the third payload type that leaves the device — the
  * narrowest of the three.
@@ -70,4 +72,8 @@ val RecognizedFood.isLoggable: Boolean get() = name.isNotBlank() && calories > 0
  * [FoodRecognitionRepository]. An empty result is each one's "nothing edible" answer.
  */
 fun List<RecognizedFood>.loggable(): List<RecognizedFood> =
-    filter { it.isLoggable }.take(MAX_PARSED_FOODS)
+    // [fitting]'s reason, for the same field: the name is the model's prose and becomes a diary
+    // row's title, and this side of the parse is the side a test can reach.
+    map { it.copy(name = stripMarkdown(it.name).trim()) }
+        .filter { it.isLoggable }
+        .take(MAX_PARSED_FOODS)

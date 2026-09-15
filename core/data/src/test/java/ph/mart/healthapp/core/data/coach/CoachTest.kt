@@ -31,6 +31,25 @@ class CoachTest {
         )
     }
 
+    /** The prompt forbids markdown and the model writes it anyway — `MarkdownTest` has the rules,
+     * this checks the reply is run through them. */
+    @Test
+    fun `markdown is stripped out of an answer`() {
+        assertEquals(
+            "You're at 62 g of 150 g.\n- Chicken bowl\n- Greek yoghurt",
+            sanitizeReply("You're at **62 g** of 150 g.\n* Chicken bowl\n* Greek yoghurt"),
+        )
+    }
+
+    /** The cap measures the answer the user reads, so it is applied after the markup is gone —
+     * otherwise an answer only over the limit because of asterisks is rejected for nothing. */
+    @Test
+    fun `the cap counts the stripped answer, not its markup`() {
+        val bolded = "**" + "a".repeat(MAX_REPLY_CHARS) + "**"
+
+        assertEquals("a".repeat(MAX_REPLY_CHARS), sanitizeReply(bolded))
+    }
+
     @Test
     fun `nothing at all is no reply`() {
         assertNull(sanitizeReply(null))

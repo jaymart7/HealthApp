@@ -47,6 +47,15 @@ class MealIdeaTest {
         ),
     )
 
+    /** `loggable`'s twin: the name is the model's prose and becomes a diary row's title, so it
+     * clears the markdown boundary here — `MarkdownTest` has the rules. */
+    @Test
+    fun `markdown is stripped out of a name`() {
+        val kept = listOf(idea("**Yogurt bowl**", 250)).fitting(remainingKcal = 640)
+
+        assertEquals(listOf("Yogurt bowl"), kept.map { it.name })
+    }
+
     @Test
     fun `an idea with no name or no calories is not a shorter idea`() {
         val kept = listOf(idea("", 300), idea("Omelette", 0), idea("Yogurt bowl", 250))

@@ -13,6 +13,16 @@ private val TARGETS = DailyTargets(calories = 2000, proteinG = 150, carbsG = 200
  * verbatim, so every way it can be wrong is checked here. */
 class InsightTest {
 
+    /** The same leak the coach's reply has, on a card that is one line: `MarkdownTest` has the
+     * rules, and the bullet goes entirely rather than becoming a list of one. */
+    @Test
+    fun `markdown is stripped, and a converted bullet with it`() {
+        assertEquals(
+            "You're 88 g short on protein today.",
+            sanitizeInsight("* **You're 88 g short** on protein today."),
+        )
+    }
+
     @Test
     fun `a plain sentence passes through`() {
         assertEquals(

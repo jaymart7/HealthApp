@@ -1908,6 +1908,30 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   its own answer. `sanitizeReply` is the whole trust boundary and keeps line breaks where
   `sanitizeInsight` collapses them (an answer legitimately spans a short paragraph), and rejects
   past `MAX_REPLY_CHARS` rather than truncating, for the reason the insight cap gives.
+- **Markdown is stripped at the trust boundary, not rendered.** Every prose prompt in this app
+  already says "no markdown, no headings, no bold" and the model writes `**62 g**` and `* item`
+  anyway — a prompt is a request, not a guarantee, so `stripMarkdown()` (`:core:data/Markdown.kt`)
+  is the enforcement and the four sanitizers run everything through it: `sanitizeReply`,
+  `sanitizeInsight`, and the two name-carrying halves `fitting()` and `loggable()`, whose `name` is
+  the model's own prose and becomes a diary row's title. **Stripping beat rendering** because what
+  comes out of a sanitizer is what Room persists, what the bubble draws, and what Copy and Share
+  hand out: an `AnnotatedString` path through `MascotSpeechBubble` — shared with onboarding and
+  Home — would have left raw markup in the database, asterisks in every copied answer, and two
+  representations of one reply that have to agree. It also needed no `:feature:*` change at all.
+  Order matters twice: it runs **before** `MAX_REPLY_CHARS`, so the cap measures the answer the
+  user reads rather than counting asterisks; and **before** `sanitizeInsight`'s whitespace collapse,
+  because a heading or a bullet is only recognisable while its line still starts where it started —
+  after which the leading `- ` a converted bullet leaves goes too, a list of one not being a list
+  on a one-line card. Every marker needs a closing partner hugging a non-space character, which is
+  what leaves `2 * 3` and `chicken_breast_100g` alone and what makes a half-streamed `**Prot` read
+  as itself until its closer lands instead of flickering mid-answer. The prompts keep their "no
+  markdown" clauses — they cost nothing and leave the stripper less to do. Its own file rather than
+  `Ai.kt`, because that one's `AI_THINKING` is a top-level `val` built from a Firebase type and
+  every JVM test beside it would run that construction; `MarkdownTest` holds the rules, and the
+  four sanitizer tests each check only that they are wired to it. **The debug fake cannot show
+  this**: `FakeCoachRepository.stream()` emits its text verbatim and never passes through
+  `sanitizeReply`, which is why the `MAX_REPLY_CHARS` rejection is documented there as
+  real-AI-only too.
 - **An answer can be copied, shared and asked again; a question can be none of those.** A long
   press on the coach's side opens Copy / Share / Ask again, and the user's own bubble has no menu
   at all — their question is already theirs, and the one thing worth doing to it is what the

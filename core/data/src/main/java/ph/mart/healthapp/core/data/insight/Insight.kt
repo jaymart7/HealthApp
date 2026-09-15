@@ -6,6 +6,7 @@ import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
+import ph.mart.healthapp.core.data.stripMarkdown
 
 /**
  * Everything the model is told about the day — and deliberately nothing else.
@@ -67,7 +68,17 @@ private val WHITESPACE = Regex("\\s+")
  * sentence needs no JSON, so this one is testable.
  */
 internal fun sanitizeInsight(raw: String?): String? {
-    val line = raw?.replace(WHITESPACE, " ")?.trim()?.trim('"', '“', '”')?.trim()
+    // Stripped before the whitespace collapse, not after: that collapse folds the whole answer
+    // onto one line, and a heading or a bullet is only recognisable while its line still starts
+    // where it started. The leading `- ` a converted bullet leaves goes too — Home's card is one
+    // line, and a list of one is not a list.
+    val line = raw
+        ?.let(::stripMarkdown)
+        ?.replace(WHITESPACE, " ")
+        ?.trim()
+        ?.trim('"', '“', '”')
+        ?.removePrefix("- ")
+        ?.trim()
     if (line.isNullOrEmpty()) return null
     // The prompt asks for this word when the day holds nothing worth saying — a model with no
     // opinion must not displace the rules, which always have one.

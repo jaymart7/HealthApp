@@ -5,6 +5,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.insight.InsightRequest
+import ph.mart.healthapp.core.data.stripMarkdown
 
 /**
  * One turn of the conversation. [fromUser] rather than a role string because there are exactly
@@ -252,12 +253,19 @@ private val WHITESPACE = Regex("[ \\t]+")
  * A pure function for the same reason `sanitizeInsight` is one: it is the part a JVM test can
  * reach. Unlike that one it keeps line breaks, because an answer to "what should I eat tonight?"
  * legitimately spans a short paragraph; only runs of spaces and tabs collapse.
+ *
+ * [stripMarkdown] is the fourth thing it rejects, and the reason it is here rather than in the
+ * prompt is that the prompt already forbids markdown and the model writes it anyway.
  */
 internal fun sanitizeReply(raw: String?): String? {
     val text = raw
         ?.replace(WHITESPACE, " ")
         ?.lines()
         ?.joinToString("\n") { it.trim() }
+        // After the per-line trim, because its line-level rules anchor on a clean line start; and
+        // before the cap below, so MAX_REPLY_CHARS measures the answer the user reads rather than
+        // counting asterisks.
+        ?.let(::stripMarkdown)
         ?.trim()
         ?.trim('"', '“', '”')
         ?.trim()

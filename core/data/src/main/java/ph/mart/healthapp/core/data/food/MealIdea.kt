@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.food
 
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 import ph.mart.healthapp.core.data.profile.Goal
+import ph.mart.healthapp.core.data.stripMarkdown
 
 /**
  * What the model is told when the user asks what fits in the rest of the day — and, again,
@@ -115,7 +116,11 @@ private const val MEAL_IDEA_KCAL_TOLERANCE = 1.2
  */
 fun List<MealIdea>.fitting(remainingKcal: Int): List<MealIdea> {
     val ceiling = remainingKcal * MEAL_IDEA_KCAL_TOLERANCE
-    return filter { it.name.isNotBlank() && it.calories > 0 && it.calories <= ceiling }
+    // The name is the model's own prose and lands in the diary as a row title, so it clears the
+    // markdown boundary here rather than in the `org.json` parse above it, where no JVM test can
+    // reach it. Before the filter, so a name that was nothing but markup is judged blank.
+    return map { it.copy(name = stripMarkdown(it.name).trim()) }
+        .filter { it.name.isNotBlank() && it.calories > 0 && it.calories <= ceiling }
         .take(MAX_MEAL_IDEAS)
 }
 
