@@ -24,8 +24,16 @@ data class RecognizedFood(
     val confidence: RecognitionConfidence,
 )
 
+/**
+ * [NoFoodDetected] is its own state rather than an empty [Success], the call [MealParseResult]
+ * makes: "there is nothing edible in that photo" and "the call didn't work" are different answers,
+ * and the flow shows a different screen for each.
+ */
 sealed interface RecognitionResult {
-    data class Success(val food: RecognizedFood) : RecognitionResult
+    /** Every distinct food on the plate, most prominent first — a plate is rice *and* chicken
+     * *and* greens, and a single-food result is simply a list of one. Already through
+     * [loggable], so it is non-empty and every item is worth acting on. */
+    data class Success(val foods: List<RecognizedFood>) : RecognitionResult
     data object NoFoodDetected : RecognitionResult
     data object Failed : RecognitionResult
 }

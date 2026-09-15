@@ -38,9 +38,21 @@ internal class PhotoCaptureScreenState(
 ) {
     var flow: CaptureFlow by mutableStateOf(flow)
     var photo: Bitmap? by mutableStateOf(photo)
+    /** The search/manual path's single form, edited on [CaptureFlow.SearchConfirmation]. The
+     * recognized path uses [items] instead — a plate is several foods, a search hit is one. */
     var form: AddEntryForm by mutableStateOf(form)
     var originalForm: AddEntryForm by mutableStateOf(originalForm)
     var confidence: RecognitionConfidence by mutableStateOf(confidence)
+
+    /** The recognized rows as they stand — edited, repriced, some removed. */
+    var items: List<AddEntryForm> by mutableStateOf(emptyList())
+
+    /** The estimate as it arrived, so [itemsDirty] can tell an untouched plate from a corrected
+     * one. */
+    private var recognized: List<AddEntryForm> by mutableStateOf(emptyList())
+
+    /** Which row is open for editing — one at a time, so the list stays scannable. */
+    var expandedIndex: Int? by mutableStateOf(null)
 
     /** The captured plate open full-screen over the review form. A flag inside
      * [CaptureFlow.Confirmation] rather than a ninth [CaptureFlow]: nothing about the flow changes
@@ -54,14 +66,46 @@ internal class PhotoCaptureScreenState(
      * gesture does rather than acting without one. */
     var pendingDiscard: (() -> Unit)? by mutableStateOf(null)
 
+    /** [CaptureFlow.SearchConfirmation]'s unsaved-edits question. */
     val isDirty: Boolean get() = form != originalForm
 
-    fun applyRecognized(food: RecognizedFood) {
-        val seeded = food.toAddEntryForm(form.mealType)
-        form = seeded
-        originalForm = seeded
-        confidence = food.confidence
+    /** [CaptureFlow.Confirmation]'s. Separate because the two states edit different things and the
+     * back handler already dispatches per flow. */
+    val itemsDirty: Boolean get() = items != recognized
+
+    /**
+     * What the camera saw, as rows to review.
+     *
+     * A single-food plate opens with its one row **expanded**: the list is there so a plate of
+     * several foods is scannable, and collapsing the only row there is would put a tap in front of
+     * the form this screen has always opened on.
+     */
+    fun applyRecognized(foods: List<RecognizedFood>) {
+        val seeded = foods.map { it.toAddEntryForm(form.mealType) }
+        items = seeded
+        recognized = seeded
+        expandedIndex = 0.takeIf { seeded.size == 1 }
+        // The notice is about the plate, not one row: one uncertain portion is a reason to read
+        // all of them.
+        confidence = if (foods.any { it.confidence == RecognitionConfidence.Low }) {
+            RecognitionConfidence.Low
+        } else {
+            RecognitionConfidence.High
+        }
         flow = CaptureFlow.Confirmation
+    }
+
+    fun updateItem(index: Int, form: AddEntryForm) {
+        items = items.mapIndexed { i, existing -> if (i == index) form else existing }
+    }
+
+    fun removeItem(index: Int) {
+        items = items.filterIndexed { i, _ -> i != index }
+        expandedIndex = null
+    }
+
+    fun toggleExpanded(index: Int) {
+        expandedIndex = if (expandedIndex == index) null else index
     }
 
     /** A hit picked from the food search: no photo, no AI estimate, so no confidence notice. */
@@ -80,8 +124,11 @@ internal class PhotoCaptureScreenState(
         flow = CaptureFlow.SearchConfirmation
     }
 
+    /** Everything moves together, so changing the slot is never an edit to discard. */
     fun selectMealType(mealType: MealType) {
         form = form.copy(mealType = mealType)
         originalForm = originalForm.copy(mealType = mealType)
+        items = items.map { it.copy(mealType = mealType) }
+        recognized = recognized.map { it.copy(mealType = mealType) }
     }
 }

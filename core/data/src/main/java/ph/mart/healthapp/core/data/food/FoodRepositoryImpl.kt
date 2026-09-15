@@ -61,13 +61,16 @@ internal class FoodRepositoryImpl(
         if (path != null) prunePhotos()
     }
 
-    override suspend fun addEntries(entries: List<FoodEntry>) {
+    override suspend fun addEntries(entries: List<FoodEntry>, photo: Bitmap?) {
         val loggedAt = System.currentTimeMillis()
+        val path = photo?.let { writePhoto(it) }
         dao.insertAll(
-            entries.map { entry ->
+            entries.withPhotoOnFirst(path).map { entry ->
                 entry.toEntity(date = entry.dateEpochDay.takeIf { it > 0 } ?: todayEpochDay(), loggedAt = loggedAt)
             },
         )
+        // After the insert, so the row being written is itself the newest one the cap counts.
+        if (path != null) prunePhotos()
     }
 
     override suspend fun updateEntry(entry: FoodEntry) {

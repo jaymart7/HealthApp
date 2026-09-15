@@ -59,6 +59,10 @@ internal class FakeInsightRepository : InsightRepository {
  * always [RecognitionConfidence.Low], because that is the branch worth seeing: it is the one that
  * puts a warning in front of the user, and a fake that always returns High would leave it untested.
  *
+ * **One to three foods**, off the same seed. A real plate is several foods and the confirmation
+ * screen is a list because of it; a fake that always answered with one would leave the multi-row
+ * review — and the single-row case that auto-expands — reachable only against the real model.
+ *
  * Every seventh distinct photo answers [RecognitionResult.NoFoodDetected] so that branch is
  * reachable without pointing the camera at a wall.
  */
@@ -67,8 +71,11 @@ internal class FakeRecognitionRepository : FoodRecognitionRepository {
         delay(FAKE_LATENCY_MS)
         val seed = photo.width * 31 + photo.height
         if (seed % 7 == 0) return RecognitionResult.NoFoodDetected
-        val food = COMMON_FOODS[seed.mod(COMMON_FOODS.size)]
-        return RecognitionResult.Success(food.toRecognized())
+        val count = seed.mod(3) + 1
+        val foods = (0 until count).map { offset ->
+            COMMON_FOODS[(seed + offset).mod(COMMON_FOODS.size)].toRecognized()
+        }
+        return RecognitionResult.Success(foods)
     }
 }
 

@@ -7,36 +7,16 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
-import org.json.JSONArray
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
 
-/** [MAX_PARSED_FOODS] foods with eleven fields each. [loggable] rejects whatever gets past it, but
- * capping here is cheaper than paying for a list that will be thrown away. */
-private const val MAX_OUTPUT_TOKENS = 1200
-
-/** [FoodRecognitionRepositoryImpl]'s schema minus `foodDetected` — an empty array says that here,
- * and a per-item flag on a list would need answering item by item. */
-private val PARSED_FOOD_SCHEMA = Schema.obj(
-    mapOf(
-        "name" to Schema.string(description = "the food, as a person would say it"),
-        "portionAmount" to Schema.double(),
-        "portionUnit" to Schema.string(description = "e.g. g, oz, cup, serving"),
-        "calories" to Schema.integer(),
-        "proteinG" to Schema.integer(),
-        "carbsG" to Schema.integer(),
-        "fatG" to Schema.integer(),
-        "fiberG" to Schema.integer(),
-        "sugarG" to Schema.integer(),
-        "sodiumMg" to Schema.integer(description = "milligrams, not grams"),
-        "confidence" to Schema.enumeration(listOf("high", "low")),
-    ),
-)
-
 /**
  * JSON out and [org.json.JSONArray] in, the call [MealIdeaRepositoryImpl] makes for the same
- * reason: eleven flat fields per item need no kotlinx-serialization dependency.
+ * reason: eleven flat fields per item need no kotlinx-serialization dependency. The schema and the
+ * read-back are [RECOGNIZED_FOOD_SCHEMA] and [parseRecognizedFoods], shared with the photo flow:
+ * a sentence and a plate are both "identify the food and price it", and the two stopped differing
+ * at all when a photographed plate stopped being a single food.
  *
  * The model is built once and held — nothing about this configuration carries anything about the
  * user, and the only thing that varies per call is the sentence itself.
@@ -50,16 +30,16 @@ internal class MealParseRepositoryImpl : MealParseRepository {
         modelName = AI_MODEL_NAME,
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
-            maxOutputTokens = MAX_OUTPUT_TOKENS
+            maxOutputTokens = MAX_FOOD_LIST_TOKENS
             responseMimeType = "application/json"
-            responseSchema = Schema.array(PARSED_FOOD_SCHEMA)
+            responseSchema = Schema.array(RECOGNIZED_FOOD_SCHEMA)
         },
     )
 
     override suspend fun parse(text: String): MealParseResult = try {
         val prompt = promptFor(text.take(MAX_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
-        val foods = parseFoods(response.text).loggable()
+        val foods = parseRecognizedFoods(response.text).loggable()
         // An empty list means the sentence named nothing edible — a real answer with its own
         // screen, not a failure to retry.
         if (foods.isEmpty()) MealParseResult.NoFoodFound else MealParseResult.Success(foods)
@@ -72,37 +52,6 @@ internal class MealParseRepositoryImpl : MealParseRepository {
         logAiFailure("meal parse", e)
         // Offline, throttled, App Check refused — all the same to the caller.
         MealParseResult.Failed
-    }
-
-    private fun parseFoods(json: String?): List<RecognizedFood> {
-        if (json == null) return emptyList()
-        val array = JSONArray(json)
-        return (0 until array.length()).map { index ->
-            val body = array.getJSONObject(index)
-            RecognizedFood(
-                name = body.optString("name"),
-                portionAmount = body.optDouble("portionAmount", 1.0),
-                portionUnit = body.optString("portionUnit").ifBlank { "serving" },
-                calories = body.optInt("calories"),
-                proteinG = body.optInt("proteinG"),
-                carbsG = body.optInt("carbsG"),
-                fatG = body.optInt("fatG"),
-                // Only the three the model is asked for. Vitamin D, calcium, iron and potassium
-                // are deliberately absent from the schema: a model asked to estimate the calcium
-                // in a photographed plate will produce a number, and a fabricated micronutrient is
-                // exactly what the coverage count exists to expose.
-                nutrients = Nutrients(
-                    fiberG = body.optInt("fiberG"),
-                    sugarG = body.optInt("sugarG"),
-                    sodiumMg = body.optInt("sodiumMg"),
-                ),
-                confidence = if (body.optString("confidence") == "low") {
-                    RecognitionConfidence.Low
-                } else {
-                    RecognitionConfidence.High
-                },
-            )
-        }
     }
 }
 

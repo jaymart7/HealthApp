@@ -10,43 +10,47 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.thinkingConfig
 import kotlinx.coroutines.CancellationException
-import org.json.JSONObject
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.logAiFailure
 
-private const val PROMPT = """
-You are a nutrition-estimation assistant for a food-logging app. Look at the photo and identify
-the single most prominent food item.
+/**
+ * A plate in, the foods on it out.
+ *
+ * The two constraints that matter are the ones a list makes possible and a list makes dangerous.
+ * **Every distinct food**, because a meal is rice *and* chicken *and* greens and the old prompt's
+ * "single most prominent item" threw two thirds of a lunch away. But **only what is actually
+ * visible**, the rule `MealParseRepositoryImpl`'s prompt already carries and which matters more
+ * here: a model listing a plate will otherwise reach for the cooking oil it assumes and the
+ * garnish it expects, and every invention is a row the user has to notice and delete.
+ */
+private val PROMPT = """
+You are a nutrition-estimation assistant for a food-logging app. Look at the photo and list every
+distinct food you can see, most prominent first, at most $MAX_PARSED_FOODS of them.
 
-Respond with the food's name, its estimated portion, and its estimated calories and macros for
-that portion, plus its fiber and sugar in grams and its sodium in milligrams for that same
-portion. If you are not confident about the identification or the portion estimate, set
-confidence to "low"; otherwise "high".
+Give each one its name, its estimated portion as it appears in the photo, and its estimated
+calories and macros for that portion, plus its fiber and sugar in grams and its sodium in
+milligrams for that same portion.
 
-If no food is visible in the photo, set foodDetected to false. Otherwise every number must be
-your best estimate for the portion you state — never zero, and never a placeholder. Estimate
-rather than decline: the user reviews and corrects every figure before it is logged.
+List only food you can actually see. Do not add sides, drinks, condiments, garnishes or cooking
+fat you cannot see in the photo. Foods that are plainly one dish stay one entry — a sandwich is a
+sandwich, not bread plus filling.
+
+Set confidence to "low" for any item whose identity or portion you are unsure of, otherwise
+"high". If there is no food in the photo at all, return an empty array. Otherwise every number
+must be your best estimate for the portion you state — never zero, and never a placeholder.
+Estimate rather than decline: the user reviews and corrects every figure before it is logged.
 """
 
-private val RESPONSE_SCHEMA = Schema.obj(
-    mapOf(
-        "foodDetected" to Schema.boolean(),
-        "name" to Schema.string(),
-        "portionAmount" to Schema.double(),
-        "portionUnit" to Schema.string(description = "e.g. g, oz, cup"),
-        "calories" to Schema.integer(),
-        "proteinG" to Schema.integer(),
-        "carbsG" to Schema.integer(),
-        "fatG" to Schema.integer(),
-        "fiberG" to Schema.integer(),
-        "sugarG" to Schema.integer(),
-        "sodiumMg" to Schema.integer(description = "milligrams, not grams"),
-        "confidence" to Schema.enumeration(listOf("high", "low")),
-    ),
-)
+/**
+ * [MAX_FOOD_LIST_TOKENS] plus headroom, and the headroom is not optional. This is the one call site
+ * in the app on [ThinkingLevel.LOW] rather than `AI_THINKING`, and `Ai.kt` documents what that
+ * costs: thinking tokens are spent from `maxOutputTokens`, so a budget sized for the answer alone
+ * finishes on `MAX_TOKENS` with nothing in it and `validate()` discards the lot.
+ */
+private const val MAX_OUTPUT_TOKENS = 1600
 
-/** [org.json.JSONObject] parses the flat 12-field response — no kotlinx-serialization dependency
- * needed for this. */
+/** [org.json.JSONArray] parses the response — see [parseRecognizedFoods], which the meal parse
+ * shares. */
 internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
 
     private val model = Firebase.ai(
@@ -59,17 +63,31 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
             // states something already known — a figure off the diary, a line of encouragement —
             // while this one estimates: identify the food, judge how much of it is on the plate,
             // recall its figures per unit and scale them. At the floor the model answered often
-            // enough with a name and twelve zeroes, which `isLoggable` now catches and this stops
-            // producing. Nothing caps output here, so there is no budget to raise alongside it.
+            // enough with a name and twelve zeroes, which `loggable()` now catches and this stops
+            // producing. Doing it several times over a plate is more of the same work, not
+            // different work, so the level holds and the budget above is what moved.
             thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.LOW }
+            maxOutputTokens = MAX_OUTPUT_TOKENS
             responseMimeType = "application/json"
-            responseSchema = RESPONSE_SCHEMA
+            responseSchema = Schema.array(RECOGNIZED_FOOD_SCHEMA)
         },
     )
 
     override suspend fun recognize(photo: Bitmap): RecognitionResult = try {
         val response = model.generateContent(content { image(photo); text(PROMPT) })
-        parse(response.text)
+        val json = response.text
+        val foods = parseRecognizedFoods(json).loggable()
+        if (foods.isEmpty()) {
+            // A plate the model named and then priced at zero is not an estimate, and it is not
+            // "no food" either — it is the model declining while appearing to answer. Both land on
+            // the search screen, so this is the only thing that tells them apart afterwards.
+            if (!json.isNullOrBlank() && json.trim() != "[]") {
+                logAiFailure("photo recognize", IllegalStateException("no loggable estimate: $json"))
+            }
+            RecognitionResult.NoFoodDetected
+        } else {
+            RecognitionResult.Success(foods)
+        }
     } catch (e: CancellationException) {
         // Backing out of the screen cancels the scope, and that is not an AI failure: without
         // this the catch below swallows the cancellation and logs a request the user withdrew.
@@ -78,44 +96,5 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     } catch (e: Exception) {
         logAiFailure("photo recognize", e)
         RecognitionResult.Failed
-    }
-
-    private fun parse(json: String?): RecognitionResult {
-        if (json == null) return RecognitionResult.Failed
-        val body = JSONObject(json)
-        if (!body.optBoolean("foodDetected", false)) return RecognitionResult.NoFoodDetected
-        val confidence = if (body.optString("confidence") == "low") {
-            RecognitionConfidence.Low
-        } else {
-            RecognitionConfidence.High
-        }
-        val food = RecognizedFood(
-            name = body.getString("name"),
-            portionAmount = body.getDouble("portionAmount"),
-            portionUnit = body.getString("portionUnit"),
-            calories = body.getInt("calories"),
-            proteinG = body.getInt("proteinG"),
-            carbsG = body.getInt("carbsG"),
-            fatG = body.getInt("fatG"),
-            // optInt, not getInt: a response that predates these three fields, or omits them
-            // for a food the model has nothing to say about, still parses as an estimate.
-            //
-            // Three, not seven. The four panel nutrients are deliberately absent from the
-            // schema: a model asked what calcium is in a photographed plate will produce a
-            // number, and a fabricated micronutrient is what the coverage count exists to
-            // expose.
-            nutrients = Nutrients(
-                fiberG = body.optInt("fiberG"),
-                sugarG = body.optInt("sugarG"),
-                sodiumMg = body.optInt("sodiumMg"),
-            ),
-            confidence = confidence,
-        )
-        // A food the model named and then priced at zero is not an estimate — the same judgement
-        // the voice parse makes with `loggable()`. Thrown rather than returned so the response
-        // that produced it reaches logcat with every other AI failure, instead of a Retry screen
-        // that says nothing about why.
-        check(food.isLoggable) { "zero-calorie photo estimate: $json" }
-        return RecognitionResult.Success(food)
     }
 }

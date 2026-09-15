@@ -142,7 +142,7 @@
     <!-- Photo flow -->
     <string name="food_photo_close">Close</string>
     <string name="food_photo_view">View photo full screen</string>
-    <string name="food_photo_center">Center one food item</string>
+    <string name="food_photo_center">Fit the whole meal in frame</string>
     <string name="food_photo_take">Take photo</string>
     <string name="food_photo_analyzing">Looking at your photo…</string>
     <string name="food_photo_retry_heading">We couldn\'t analyze that photo</string>
@@ -157,8 +157,12 @@
     <string name="food_photo_enter_manually">Enter it manually</string>
     <string name="food_photo_chip">AI detected</string>
     <string name="food_photo_review">Review your meal</string>
-    <string name="food_photo_log_meal">Log meal</string>
-    <string name="food_photo_low_confidence">Not fully sure about this one — double-check the portion.</string>
+    <string name="food_photo_review_body">Tap a row to adjust it, or remove anything that isn\'t on the plate.</string>
+    <plurals name="food_photo_log_items">
+        <item quantity="one">Log %1$d item</item>
+        <item quantity="other">Log %1$d items</item>
+    </plurals>
+    <string name="food_photo_low_confidence">Not fully sure about some of these — double-check the portions.</string>
     <string name="food_photo_search_instead">Search instead</string>
     <string name="food_photo_db_subtitle">From the food database — adjust the portion to match what you ate.</string>
 

@@ -233,18 +233,59 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   reads the same however it was resolved — and "Nutella" branded "Nutella, Ferrero, Yum yum" stays
   "Nutella" rather than becoming "Nutella · Nutella". `brands` is a comma-string on the product
   endpoint and an **array** on the search one; the first entry is the one on the package.
+- **A photographed plate is every food on it, and the photo flow now runs on the meal parse's
+  machinery.** The prompt asked for "the single most prominent food item", which meant a plate of
+  rice, chicken and greens logged as rice: the user either wrote down a third of their lunch or
+  left the flow and typed the rest. The fix was almost entirely *deletion*, because talk-to-log had
+  already answered this question — a `List<RecognizedFood>`, `loggable()` filtering it on
+  `isLoggable`, `MAX_PARSED_FOODS` capping it, a review screen of collapsible rows, one batched
+  write. So the two paths converged rather than the photo one growing a second copy:
+  `RECOGNIZED_FOOD_SCHEMA`, `parseRecognizedFoods()` and `MAX_FOOD_LIST_TOKENS` moved into
+  `RecognizedFoodJson.kt` and both impls read them, `ReviewItemCard` moved from `ui/voice/` to
+  `ui/shared/`, and `check(food.isLoggable)` went because `loggable()` *is* that rule. What is left
+  of the difference is a prompt and a photo. **`foodDetected` went with the object schema** — an
+  empty array says it, and a per-item flag on a list would need answering item by item, which is
+  the call `MealParseRepositoryImpl` made first. The thing worth keeping from the old `check()` was
+  its logcat line, not its throw: a model that names a food and prices it at zero is declining while
+  appearing to answer, which now lands on the same search screen as a genuine "no food", so
+  `logAiFailure` is the only thing left that tells the two apart afterwards.
+- **`maxOutputTokens` rose to 1600 when the answer became a list, and `ThinkingLevel.LOW` is why it
+  had to.** The photo call capped nothing before, which was survivable for twelve fields. It is the
+  one call site in the app above `AI_THINKING`, and `Ai.kt` documents what that means: thinking
+  tokens come out of the same budget, so a cap sized for eight items' worth of JSON alone finishes
+  on `MAX_TOKENS` with nothing in it and `validate()` throws the whole thing away. `LOW` itself
+  stands — reading a plate is estimation, not recall, and doing it three times over is more of the
+  same work rather than different work.
+- **Confirmation is always a list, never a `when (size == 1)`.** One code path, and a single-food
+  plate seeds `expandedIndex = 0` so it opens exactly as the old single-form screen did. The screen
+  keeps the "search instead" door in its low-confidence notice that the voice twin has no use for —
+  there is no sentence here to go back and fix — and the notice is about the *plate*, since one
+  uncertain portion is a reason to read all of them. `SearchConfirmation` is untouched and still
+  edits one `AddEntryForm` through `ScanConfirmationScreen`, which is why the state carries both
+  `isDirty` (that form) and `itemsDirty` (the list): the two states edit different things and the
+  back handler already dispatches per flow.
+- **The plate attaches to the first row of the batch and no other**, which is what
+  `withPhotoOnFirst` exists to say and what its test guards. The obvious thing — the same path on
+  every row — breaks the prune, and quietly: it counts *rows* with a photo against
+  `MAX_MEAL_PHOTOS` and deletes the file of each row past the cap, so a shared path is a file
+  deleted while three rows still point at it, and a four-item lunch spends four of the five hundred
+  on one image. The Progress tab's photo strip agrees — a plate photographed once should appear
+  once. `addEntries(entries, photo)` takes the bitmap with a default of null, so saved meals,
+  recipes and talk-to-log pass through unchanged.
 - **The analyzed plate is kept, and the rule for which meals get one is "whatever the flow is
   holding".** The photo used to be thrown away at the moment of logging, which left the app's
   headline feature — point the camera and it logs — with a text row to show for it. It is now
-  written by `FoodRepositoryImpl.addEntry(entry, photo)`, and *every* exit from the camera flow
-  passes what it has: the recognized plate, the gallery pick, and the meal the analyzer missed that
-  was searched or typed by hand. That last one matters — the numbers being hand-entered does not
-  make the picture less a picture of the meal — and it is one branch (`state.photo`) rather than a
-  policy per state. Nothing outside that flow attaches one: a barcode viewfinder is a picture of a
-  package, a saved meal is a re-log of something already photographed once, and the add-entry sheet
-  gets **no** new camera door. The bitmap goes down to the repository rather than a path coming up
-  from the UI, because where a plate lives, what it is scaled to and how many are kept are all
-  `:core:data`'s to know — the same division `ProgressRepository.addPhoto` already draws.
+  written by `FoodRepositoryImpl.addEntries(entries, photo)` — the camera flow's exits all batch
+  now that a plate is several rows, and `addEntry` keeps the same parameter for every other caller
+  — and *every* exit from the camera flow passes what it has: the recognized plate, the gallery
+  pick, and the meal the analyzer missed that was searched or typed by hand. That last one matters
+  — the numbers being hand-entered does not make the picture less a picture of the meal — and it
+  is one branch (`state.photo`) rather than a policy per state. Nothing outside that flow attaches
+  one: a barcode viewfinder is a picture of a package, a saved meal is a re-log of something
+  already photographed once, and the add-entry sheet gets **no** new camera door. The bitmap goes
+  down to the repository rather than a path coming up from the UI, because where a plate lives,
+  what it is scaled to and how many are kept are all `:core:data`'s to know — the same division
+  `ProgressRepository.addPhoto` already draws.
 
 ### Meal photos
 

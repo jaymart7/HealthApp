@@ -3,24 +3,18 @@ package ph.mart.healthapp.feature.food.ui.voice.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -28,19 +22,13 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.AIChip
 import ph.mart.healthapp.core.designsystem.component.AIChipVariant
-import ph.mart.healthapp.core.designsystem.component.AppCard
-import ph.mart.healthapp.core.designsystem.component.FoodItemRow
-import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
-import ph.mart.healthapp.core.designsystem.component.MacroFieldGroup
-import ph.mart.healthapp.core.designsystem.component.MicronutrientInputGroup
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
-import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
-import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
+import ph.mart.healthapp.feature.food.ui.shared.components.ReviewItemCard
 
 /**
  * What the sentence became, before any of it is written.
@@ -49,7 +37,8 @@ import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
  * questions to log one breakfast. Rows are collapsed by default and open one at a time — the list
  * is the thing being checked, and a screen of five expanded forms is not a list. Every open row is
  * the same [FoodItemRow] and [MacroFieldGroup] pair the photo confirmation uses, so a
- * portion change reprices through the existing `withPortionAmount()`.
+ * portion change reprices through the existing `withPortionAmount()`. The card itself is
+ * [ReviewItemCard], in `shared/` because the photo flow reviews a list of estimates too.
  *
  * This screen *is* the trust boundary on the numbers: every figure is shown and adjustable before
  * "Log" writes anything, which is why the parse itself needs no per-item calorie ceiling the way a
@@ -118,84 +107,8 @@ internal fun VoiceReviewScreen(
     }
 }
 
-@Composable
-private fun ReviewItemCard(
-    item: AddEntryForm,
-    expanded: Boolean,
-    onToggleExpanded: () -> Unit,
-    onChange: (AddEntryForm) -> Unit,
-    onRemove: () -> Unit,
-) {
-    AppCard {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(
-                onClick = onToggleExpanded,
-                color = Color.Transparent,
-                modifier = Modifier.weight(1f),
-            ) {
-                FoodItemRow(
-                    variant = FoodItemRowVariant.Display,
-                    name = item.name,
-                    portionAmount = item.portionAmount,
-                    portionUnit = item.portionUnit,
-                    calories = item.calories ?: 0,
-                    proteinG = item.proteinG ?: 0,
-                    carbsG = item.carbsG ?: 0,
-                    fatG = item.fatG ?: 0,
-                    modifier = Modifier.padding(vertical = 4.dp),
-                )
-            }
-            IconButton(onClick = onRemove, modifier = Modifier.size(40.dp)) {
-                Icon(
-                    imageVector = AppIcons.Close,
-                    contentDescription = stringResource(R.string.food_remove, item.name),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        if (expanded) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(top = 12.dp),
-            ) {
-                FoodItemRow(
-                    variant = FoodItemRowVariant.Editable,
-                    name = item.name,
-                    portionAmount = item.portionAmount,
-                    portionUnit = item.portionUnit,
-                    calories = item.calories ?: 0,
-                    proteinG = item.proteinG ?: 0,
-                    carbsG = item.carbsG ?: 0,
-                    fatG = item.fatG ?: 0,
-                    onNameChange = { onChange(item.copy(name = it)) },
-                    onPortionAmountChange = { onChange(item.withPortionAmount(it)) },
-                    onPortionUnitChange = { onChange(item.copy(portionUnit = it)) },
-                    onCaloriesChange = { onChange(item.copy(calories = it)) },
-                )
-                MacroFieldGroup(
-                    proteinG = item.proteinG,
-                    carbsG = item.carbsG,
-                    fatG = item.fatG,
-                    onProteinChange = { onChange(item.copy(proteinG = it)) },
-                    onCarbsChange = { onChange(item.copy(carbsG = it)) },
-                    onFatChange = { onChange(item.copy(fatG = it)) },
-                )
-                MicronutrientInputGroup(
-                    fiberG = item.nutrients.fiberG.takeIf { it > 0 },
-                    sugarG = item.nutrients.sugarG.takeIf { it > 0 },
-                    sodiumMg = item.nutrients.sodiumMg.takeIf { it > 0 },
-                    onFiberChange = { onChange(item.copy(nutrients = item.nutrients.copy(fiberG = it ?: 0))) },
-                    onSugarChange = { onChange(item.copy(nutrients = item.nutrients.copy(sugarG = it ?: 0))) },
-                    onSodiumChange = { onChange(item.copy(nutrients = item.nutrients.copy(sodiumMg = it ?: 0))) },
-                )
-            }
-        }
-    }
-}
-
-/** The photo flow's notice, about the batch rather than one plate — one uncertain portion is a
- * reason to read all of them. No "search instead" door: the sentence is still one tap back. */
+/** The batch's notice — one uncertain portion is a reason to read all of them. No "search instead"
+ * door, unlike the photo flow's: the sentence is still one tap back. */
 @Composable
 private fun LowConfidenceNotice() {
     Text(

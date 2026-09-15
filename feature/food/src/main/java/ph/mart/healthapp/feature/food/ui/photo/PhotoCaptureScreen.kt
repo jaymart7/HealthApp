@@ -93,7 +93,7 @@ fun PhotoCaptureScreen(
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is PhotoCaptureSideEffect.RecognitionFinished -> when (val result = effect.result) {
-                is RecognitionResult.Success -> state.applyRecognized(result.food)
+                is RecognitionResult.Success -> state.applyRecognized(result.foods)
                 RecognitionResult.NoFoodDetected -> state.flow = CaptureFlow.NoFood
                 RecognitionResult.Failed -> state.flow = CaptureFlow.Retry
             }
@@ -121,7 +121,7 @@ fun PhotoCaptureScreen(
                 // as the meal-photo gallery's frame-over-grid on the Progress tab.
                 CaptureFlow.Confirmation -> if (state.viewingPhoto) {
                     state.viewingPhoto = false
-                } else if (state.isDirty) {
+                } else if (state.itemsDirty) {
                     state.pendingDiscard = { state.flow = CaptureFlow.Capture }
                 } else {
                     state.flow = CaptureFlow.Capture
@@ -180,22 +180,30 @@ fun PhotoCaptureScreen(
                 CaptureFlow.Confirmation -> state.photo?.let { photo ->
                     ConfirmationScreen(
                         photo = photo,
-                        form = state.form,
+                        items = state.items,
+                        mealType = state.form.mealType,
+                        expandedIndex = state.expandedIndex,
                         confidence = state.confidence,
-                        onFormChange = { state.form = it },
+                        onItemChange = state::updateItem,
+                        onRemoveItem = state::removeItem,
+                        onToggleExpanded = state::toggleExpanded,
                         onViewPhoto = { state.viewingPhoto = true },
                         onMealTypeSelect = state::selectMealType,
                         onSearchInstead = { state.flow = CaptureFlow.NoFood },
                         // The diary's day, not today — a plate photographed while reviewing
-                        // Tuesday belongs to Tuesday.
+                        // Tuesday belongs to Tuesday. One event for the whole plate, so the diary
+                        // shows the meal appear at once rather than a row at a time.
                         onLogMeal = {
                             viewModel.handleEvent(
-                                PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay), photo),
+                                PhotoCaptureEvent.OnLogMeal(
+                                    state.items.map { it.toFoodEntry(dateEpochDay) },
+                                    photo,
+                                ),
                             )
                         },
                         // Back already asks before throwing away edits; the button that means the
                         // same thing asked nothing at all.
-                        onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
+                        onDiscard = { if (state.itemsDirty) state.pendingDiscard = { onExit() } else onExit() },
                     )
                 }
 
@@ -230,7 +238,10 @@ fun PhotoCaptureScreen(
                     // the analyzer missed keeps its photo like any other.
                     onLogEntry = {
                         viewModel.handleEvent(
-                            PhotoCaptureEvent.OnLogMeal(state.form.toFoodEntry(dateEpochDay), state.photo),
+                            PhotoCaptureEvent.OnLogMeal(
+                                listOf(state.form.toFoodEntry(dateEpochDay)),
+                                state.photo,
+                            ),
                         )
                     },
                     onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },

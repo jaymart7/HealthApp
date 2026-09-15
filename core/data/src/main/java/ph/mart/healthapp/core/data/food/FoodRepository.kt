@@ -113,6 +113,22 @@ fun List<FoodEntry>.dailyTotals(): DiaryTotals = fold(DiaryTotals(0, 0, 0, 0)) {
  */
 const val MAX_MEAL_PHOTOS = 500
 
+/**
+ * The plate onto the first row of a batch, and only the first.
+ *
+ * One photographed plate is now several diary rows, and the obvious thing — the same path on all of
+ * them — breaks the prune: it counts *rows* with a photo against [MAX_MEAL_PHOTOS] and deletes the
+ * file of every row past the cap, so a shared path is a file deleted while three rows still point
+ * at it, and a four-item lunch spends four of the five hundred on one image. The Progress tab's
+ * photo strip agrees: a plate photographed once should appear once.
+ *
+ * Pure, and tested, because it is the whole of that rule.
+ */
+fun List<FoodEntry>.withPhotoOnFirst(path: String?): List<FoodEntry> =
+    if (path == null || isEmpty()) this else mapIndexed { index, entry ->
+        if (index == 0) entry.copy(photoPath = path) else entry
+    }
+
 /** What a meal photo is stored at, on its long edge. A capture arrives at 1280 (see
  * `MAX_CAPTURE_EDGE`), which is the right size for one bitmap on screen and the wrong size for five
  * hundred on disk; 768 still fills the gallery's full-frame viewer without upscaling. */
@@ -152,9 +168,14 @@ interface FoodRepository {
      */
     suspend fun addEntry(entry: FoodEntry, photo: Bitmap? = null)
 
-    /** Logs several foods as one write, so a saved meal lands in the diary in a single emission
-     * instead of appearing item by item. */
-    suspend fun addEntries(entries: List<FoodEntry>)
+    /**
+     * Logs several foods as one write, so a saved meal — or a photographed plate — lands in the
+     * diary in a single emission instead of appearing item by item.
+     *
+     * [photo] follows [addEntry]'s rule and is written once, onto the first entry only; see
+     * [withPhotoOnFirst]. Every caller but the camera flow omits it.
+     */
+    suspend fun addEntries(entries: List<FoodEntry>, photo: Bitmap? = null)
     /**
      * Corrects a logged entry. The corrected row *supersedes* the old one — soft delete plus a
      * fresh insert in one transaction — so [FoodEntry.id] changes while the row's place in the

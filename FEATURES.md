@@ -146,10 +146,15 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 ## Camera & barcode
 
 - AI photo food logging: capture → analyze → confirm, with retry, offline and manual-search paths.
-  The confirm screen's 64dp plate opens full-screen on a tap — pinch to 4x, pan, X or back to close.
+  **A plate is every food on it** — rice, chicken and greens come back as three rows, up to eight,
+  each collapsible, editable and repriceable before anything is written, and the whole plate logs
+  under one meal slot in a single diary emission. A plate that is one food opens with its row
+  already open. The confirm screen's 64dp plate opens full-screen on a tap — pinch to 4x, pan, X or
+  back to close.
 - The plate is kept. Every exit from the camera flow attaches its photo to the entry — recognized,
   gallery-picked, or hand-entered after a failed analyze — scaled to 768px, newest 500 retained.
-  No other logging path attaches one.
+  A plate that became several rows attaches to the first of them only. No other logging path
+  attaches one.
 - Barcode scanning (ML Kit) → **Open Food Facts first, FoodData Central second**. OFF is keyless,
   is a real barcode lookup and is stocked internationally, so a locally-packaged product resolves
   where FDC's US database has nothing; FDC's `foods/search` with its `gtinUpc` match check is the

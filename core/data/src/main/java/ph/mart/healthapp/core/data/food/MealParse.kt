@@ -28,8 +28,9 @@ sealed interface MealParseResult {
 }
 
 /**
- * How many foods one sentence may become. Nobody names nine things they ate in one breath, and the
- * cap is what stops a model that has started listing side dishes from filling a diary section.
+ * How many foods one sentence — or one plate — may become. Nobody names nine things they ate in one
+ * breath and nobody photographs nine, and the cap is what stops a model that has started listing
+ * side dishes from filling a diary section.
  */
 const val MAX_PARSED_FOODS = 8
 
@@ -47,9 +48,9 @@ const val MAX_PARSE_CHARS = 300
  * zero is the model declining while appearing to answer, and seeding a form with it writes a claim
  * the app has no basis for — the argument `AddEntryForm`'s nullable figures already make.
  *
- * It is a property rather than a line inside [loggable] because both estimating paths need it and
- * only one of them has a list: `FoodRecognitionRepositoryImpl` judges the single food it read off
- * a photo, and a second copy of the rule there is a second rule to keep in step.
+ * It is a property rather than a line inside [loggable] because it is worth naming on its own —
+ * both estimating paths run their list through [loggable], and this is the sentence that says what
+ * the filter is actually deciding.
  */
 val RecognizedFood.isLoggable: Boolean get() = name.isNotBlank() && calories > 0
 
@@ -62,8 +63,11 @@ val RecognizedFood.isLoggable: Boolean get() = name.isNotBlank() && calories > 0
  *
  * Filtering rather than truncating, on [isLoggable]'s argument. There is deliberately no per-item
  * calorie *ceiling* — unlike a meal idea, which is offered against a budget the header has just
- * quoted, a parse is a claim about what the user already ate, and the review screen shows every
+ * quoted, an estimate is a claim about what the user already ate, and the review screen shows every
  * figure before anything is written.
+ *
+ * Both estimating paths end here: a sentence through [MealParseRepository] and a plate through
+ * [FoodRecognitionRepository]. An empty result is each one's "nothing edible" answer.
  */
 fun List<RecognizedFood>.loggable(): List<RecognizedFood> =
     filter { it.isLoggable }.take(MAX_PARSED_FOODS)

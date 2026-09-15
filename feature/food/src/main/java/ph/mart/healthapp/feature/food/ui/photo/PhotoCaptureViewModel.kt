@@ -30,7 +30,7 @@ class PhotoCaptureViewModel(
         when (event) {
             is PhotoCaptureEvent.OnCapture -> analyze(event.photo)
             PhotoCaptureEvent.OnCancelAnalysis -> analysisJob?.cancel()
-            is PhotoCaptureEvent.OnLogMeal -> logMeal(event.entry, event.photo)
+            is PhotoCaptureEvent.OnLogMeal -> logMeal(event.entries, event.photo)
         }
     }
 
@@ -41,10 +41,12 @@ class PhotoCaptureViewModel(
         }
     }
 
-    private fun logMeal(entry: FoodEntry, photo: Bitmap?) = intent {
+    /** One batched write, so a plate that became four rows lands in the diary in one emission. */
+    private fun logMeal(entries: List<FoodEntry>, photo: Bitmap?) = intent {
         // The bitmap goes down to the repository, not a file path up from here: where a kept plate
-        // lives, what it is scaled to and how many are kept are all `:core:data`'s to know.
-        foodRepository.addEntry(entry, photo)
+        // lives, what it is scaled to, how many are kept and which row carries it are all
+        // `:core:data`'s to know.
+        foodRepository.addEntries(entries, photo)
         postSideEffect(PhotoCaptureSideEffect.MealLogged)
     }
 }
