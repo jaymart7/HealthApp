@@ -2,7 +2,6 @@ package ph.mart.healthapp.feature.progress.ui.weight
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +29,6 @@ import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -75,13 +73,7 @@ private fun LogWeightContent(
     val step = 0.5.let { if (unit == UnitSystem.Imperial) 1.0.displayUnitToKg(unit) else it }
     val existingForDate = uiState.entries.find { it.dateEpochDay == state.form.dateEpochDay }
 
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(R.string.progress_weight_log),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    AppBottomSheet(title = stringResource(R.string.progress_weight_log), onDismiss = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SheetDatePicker(
                 showingCalendar = state.showingCalendar,
@@ -124,14 +116,11 @@ private fun LogWeightContent(
             }
 
             if (!state.showingCalendar) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                    PrimaryButton(
+                PrimaryButton(
                     label = stringResource(R.string.progress_save),
                     onClick = { onEvent(LogWeightEvent.OnSave(state.form)) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                }
                 // Follows the date picker rather than the row the sheet opened on: whatever day is
                 // selected is the day this deletes.
                 existingForDate?.let { existing ->

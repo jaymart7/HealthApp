@@ -116,6 +116,9 @@ internal fun AddEntrySheet(
 
     AppBottomSheet(
         onDismiss = onDismiss,
+        // The one sheet with no shared header: each of the three states draws its own chrome — the
+        // form's top bar, the search's bar, and Browse's deliberate absence of either.
+        showClose = false,
         // Rows run the sheet's full width so their pressed state does too; every other block pads
         // itself by the same 16dp the gutter would have applied.
         horizontalPadding = 0.dp,

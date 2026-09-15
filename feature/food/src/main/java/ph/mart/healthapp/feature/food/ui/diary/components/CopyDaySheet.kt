@@ -54,15 +54,12 @@ internal fun CopyDaySheet(
     onDismiss: () -> Unit,
     onCopy: (meals: Set<MealType>, water: Boolean, exercise: Boolean) -> Unit,
 ) {
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            // Relative where the diary's own header is — "Copy from Yesterday" is the sentence
-            // someone would say. Absolute past that, which is what diaryDateLabel already does.
-            text = stringResource(R.string.food_copy_title, diaryDateLabel(source.dateEpochDay, today)),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
+    AppBottomSheet(
+        // Relative where the diary's own header is — "Copy from Yesterday" is the sentence someone
+        // would say. Absolute past that, which is what diaryDateLabel already does.
+        title = stringResource(R.string.food_copy_title, diaryDateLabel(source.dateEpochDay, today)),
+        onDismiss = onDismiss,
+    ) {
 
         if (source.isEmpty) {
             Text(
@@ -136,24 +133,14 @@ internal fun CopyDaySheet(
                 onToggle = { exercise = it },
             )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            PrimaryButton(
+                label = stringResource(R.string.food_copy_confirm),
+                onClick = { onCopy(meals, water, exercise) },
+                // Nothing ticked is a copy with nothing in it — the same "a control that can't
+                // answer stays out of the way" rule the rest of the app follows.
+                enabled = meals.isNotEmpty() || water || exercise,
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            ) {
-                SecondaryButton(
-                    label = stringResource(R.string.food_cancel),
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                )
-                PrimaryButton(
-                    label = stringResource(R.string.food_copy_confirm),
-                    onClick = { onCopy(meals, water, exercise) },
-                    // Nothing ticked is a copy with nothing in it — the same "a control that
-                    // can't answer stays out of the way" rule the rest of the app follows.
-                    enabled = meals.isNotEmpty() || water || exercise,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            )
         }
     }
 }

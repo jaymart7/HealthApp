@@ -1,6 +1,7 @@
 <resources>
     <!-- Shared chrome -->
     <string name="ds_back">Back</string>
+    <string name="ds_sheet_close">Close</string>
     <string name="ds_fab_log">Log</string>
     <string name="ds_discard">Discard</string>
     <string name="ds_keep_editing">Keep editing</string>

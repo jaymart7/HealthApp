@@ -2,11 +2,7 @@ package ph.mart.healthapp.feature.profile.ui.supplement.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -26,7 +22,6 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 
@@ -53,15 +48,12 @@ internal fun SupplementEditSheet(
     var dose by remember(supplement) { mutableStateOf(supplement.dose) }
     var timesPerDay by remember(supplement) { mutableIntStateOf(supplement.timesPerDay) }
 
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(
-                if (supplement.id == 0L) R.string.profile_supplements_add else R.string.profile_supplements_edit,
-            ),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    AppBottomSheet(
+        title = stringResource(
+            if (supplement.id == 0L) R.string.profile_supplements_add else R.string.profile_supplements_edit,
+        ),
+        onDismiss = onDismiss,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppTextField(
                 value = name,
@@ -86,19 +78,16 @@ internal fun SupplementEditSheet(
                     timesPerDay = (timesPerDay - 1).coerceAtLeast(SUPPLEMENT_TIMES_PER_DAY.first)
                 },
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.profile_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(
-                    label = stringResource(R.string.profile_save),
-                    onClick = {
-                        onSave(supplement.copy(name = name, dose = dose, timesPerDay = timesPerDay))
-                    },
-                    // A nameless supplement is unidentifiable, and unlike a diary entry it has no
-                    // calorie figure to stand in for one — the same guard `RenameSheet` applies.
-                    enabled = name.isNotBlank(),
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            PrimaryButton(
+                label = stringResource(R.string.profile_save),
+                onClick = {
+                    onSave(supplement.copy(name = name, dose = dose, timesPerDay = timesPerDay))
+                },
+                // A nameless supplement is unidentifiable, and unlike a diary entry it has no
+                // calorie figure to stand in for one — the same guard `RenameSheet` applies.
+                enabled = name.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

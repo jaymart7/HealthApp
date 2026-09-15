@@ -3,7 +3,6 @@ package ph.mart.healthapp.feature.progress.ui.measurement
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,7 +28,6 @@ import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -76,17 +74,14 @@ private fun AddMeasurementContent(
     val kind = part ?: MeasurementPart.Chest
     val step = kind.fromDisplay(0.5, unit)
 
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = if (part != null && part !in untrackedParts) {
-                stringResource(R.string.progress_measurement_log, stringResource(part.label))
-            } else {
-                stringResource(R.string.progress_measurement_add_title)
-            },
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    AppBottomSheet(
+        title = if (part != null && part !in untrackedParts) {
+            stringResource(R.string.progress_measurement_log, stringResource(part.label))
+        } else {
+            stringResource(R.string.progress_measurement_add_title)
+        },
+        onDismiss = onDismiss,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (part == null || part in untrackedParts) {
                 // Wraps, because six chips do not fit one phone-width line and the day nothing is
@@ -151,15 +146,12 @@ private fun AddMeasurementContent(
             }
 
             if (!state.showingCalendar) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                    PrimaryButton(
-                        label = stringResource(R.string.progress_save),
-                        onClick = { onEvent(AddMeasurementEvent.OnSave(state.form)) },
-                        enabled = state.form.part != null,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                PrimaryButton(
+                    label = stringResource(R.string.progress_save),
+                    onClick = { onEvent(AddMeasurementEvent.OnSave(state.form)) },
+                    enabled = state.form.part != null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

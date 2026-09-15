@@ -2,7 +2,6 @@ package ph.mart.healthapp.feature.training.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -16,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.training.R
 
@@ -36,13 +34,7 @@ internal fun SaveRoutineSheet(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(R.string.training_routine_sheet_title),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
+    AppBottomSheet(title = stringResource(R.string.training_routine_sheet_title), onDismiss = onDismiss) {
         Text(
             text = stringResource(
                 R.string.training_routine_sheet_body,
@@ -55,10 +47,7 @@ internal fun SaveRoutineSheet(
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppTextField(value = name, onValueChange = onNameChange, placeholder = stringResource(R.string.training_routine_placeholder))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.training_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(label = stringResource(R.string.training_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
-            }
+            PrimaryButton(label = stringResource(R.string.training_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth())
         }
     }
 }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +23,6 @@ import ph.mart.healthapp.core.data.bloodpressure.categoryOf
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 
@@ -58,13 +56,7 @@ private fun LogBloodPressureContent(
     onEvent: (BloodPressureEvent) -> Unit,
 ) {
     val form = state.form
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(R.string.progress_bp_title),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    AppBottomSheet(title = stringResource(R.string.progress_bp_title), onDismiss = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NumericStepperField(
                 label = stringResource(R.string.progress_bp_systolic),
@@ -101,15 +93,12 @@ private fun LogBloodPressureContent(
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(
-                    label = stringResource(R.string.progress_save),
-                    onClick = { onEvent(BloodPressureEvent.OnSave(form)) },
-                    enabled = form.isValid,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            PrimaryButton(
+                label = stringResource(R.string.progress_save),
+                onClick = { onEvent(BloodPressureEvent.OnSave(form)) },
+                enabled = form.isValid,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

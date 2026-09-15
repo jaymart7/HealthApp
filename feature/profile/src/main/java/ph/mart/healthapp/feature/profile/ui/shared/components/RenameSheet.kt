@@ -2,11 +2,7 @@ package ph.mart.healthapp.feature.profile.ui.shared.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 
@@ -37,26 +32,17 @@ internal fun RenameSheet(
     onRename: (String) -> Unit,
 ) {
     var name by remember(currentName) { mutableStateOf(currentName) }
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(R.string.profile_rename),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    AppBottomSheet(title = stringResource(R.string.profile_rename), onDismiss = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppTextField(value = name, onValueChange = { name = it }, placeholder = stringResource(R.string.profile_name))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.profile_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(
-                    label = stringResource(R.string.profile_save),
-                    onClick = { onRename(name) },
-                    // Same guard as SaveMealSheet: a nameless saved meal is unidentifiable, and
-                    // unlike a diary entry it has no calorie figure to stand in for one.
-                    enabled = name.isNotBlank(),
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            PrimaryButton(
+                label = stringResource(R.string.profile_save),
+                onClick = { onRename(name) },
+                // Same guard as SaveMealSheet: a nameless saved meal is unidentifiable, and
+                // unlike a diary entry it has no calorie figure to stand in for one.
+                enabled = name.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

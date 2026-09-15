@@ -2,7 +2,6 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,6 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 
@@ -32,15 +30,12 @@ internal fun SaveMealSheet(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            // Word-for-word the header button's own accessible name, so the sheet confirms the
-            // thing that was tapped. "Save this Snacks" also read as a grammatical slip.
-            text = stringResource(R.string.food_save_meal_title, stringResource(mealType.labelRes)),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
+    AppBottomSheet(
+        // Word-for-word the header button's own accessible name, so the sheet confirms the thing
+        // that was tapped. "Save this Snacks" also read as a grammatical slip.
+        title = stringResource(R.string.food_save_meal_title, stringResource(mealType.labelRes)),
+        onDismiss = onDismiss,
+    ) {
         Text(
             text = stringResource(
                 R.string.food_save_meal_body,
@@ -52,10 +47,7 @@ internal fun SaveMealSheet(
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppTextField(value = name, onValueChange = onNameChange, placeholder = stringResource(R.string.food_save_meal_placeholder))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.food_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(label = stringResource(R.string.food_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.weight(1f))
-            }
+            PrimaryButton(label = stringResource(R.string.food_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth())
         }
     }
 }

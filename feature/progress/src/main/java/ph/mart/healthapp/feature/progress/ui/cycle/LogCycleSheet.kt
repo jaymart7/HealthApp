@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,7 +27,6 @@ import ph.mart.healthapp.core.data.cycle.FlowLevel
 import ph.mart.healthapp.core.data.cycle.TAPPABLE_FLOW
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -78,13 +76,7 @@ private fun LogCycleContent(
         if (value == 0) stringResource(NOT_LOGGED) else stringResource(FlowLevel.entries.first { it.value == value }.label)
     }
 
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(R.string.progress_cycle_sheet_title),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    AppBottomSheet(title = stringResource(R.string.progress_cycle_sheet_title), onDismiss = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SheetDatePicker(
                 showingCalendar = state.showingCalendar,
@@ -127,14 +119,11 @@ private fun LogCycleContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        SecondaryButton(label = stringResource(R.string.progress_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                        PrimaryButton(
-                            label = stringResource(R.string.progress_save),
-                            onClick = { onEvent(CycleEvent.OnSave(form)) },
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+                    PrimaryButton(
+                        label = stringResource(R.string.progress_save),
+                        onClick = { onEvent(CycleEvent.OnSave(form)) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }

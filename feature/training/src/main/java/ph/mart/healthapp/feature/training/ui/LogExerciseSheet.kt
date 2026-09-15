@@ -4,9 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -86,13 +83,10 @@ private fun LogExerciseContent(
     // form is the single source, and `withEstimate` is a no-op once the user takes the field over.
     val form = state.form.withEstimate(uiState.weightKg)
 
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(if (editingId == null) R.string.training_exercise_log else R.string.training_exercise_edit),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 12.dp),
-        )
+    AppBottomSheet(
+        title = stringResource(if (editingId == null) R.string.training_exercise_log else R.string.training_exercise_edit),
+        onDismiss = onDismiss,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             ExerciseFormFields(
                 form = form,
@@ -108,15 +102,12 @@ private fun LogExerciseContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                SecondaryButton(label = stringResource(R.string.training_cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-                PrimaryButton(
-                    label = stringResource(R.string.training_save),
-                    onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
-                    enabled = form.isValid(),
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            PrimaryButton(
+                label = stringResource(R.string.training_save),
+                onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
+                enabled = form.isValid(),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

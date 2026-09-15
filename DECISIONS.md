@@ -505,6 +505,25 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   food's name. `expanded` is a `Boolean` and **not** a hoisted `SheetState`: that type is
   experimental, and putting it in this signature would push an `@OptIn` onto every sheet in the app
   to answer a question one caller asks — the same refusal `AppTopBar`'s `titleStyle` makes.
+- **Every sheet closes with a ✕, and the ten Cancel buttons are gone.** `AppBottomSheet` grew
+  `title` and `showClose` and now draws the heading row itself: the title at the left, a 48dp close
+  at the right. What it replaced was a `SecondaryButton` Cancel taking `weight(1f)` beside the
+  commit — half the row spent on a decision nobody is making, when the drag handle, the scrim and
+  back all already dismiss. `BrowseActionBar` had made that argument for its own bar; this is the
+  rest of the app agreeing. Each sheet's leading `Text` moved into `title`, so the heading style is
+  one place rather than fifteen (`DisconnectSheet`'s `titleMedium` became `titleLarge` in the move,
+  which is the point), and every Primary action took the full width it was sharing.
+  Three things follow from where the row is drawn. It sits **outside** `SheetBody`'s scrolling
+  column, because a sheet tall enough to scroll must not be able to scroll its own escape off the
+  top — and because `ShareImageSheet` captures its content to a `Picture`, so a header inside that
+  column would print the ✕ into the shared PNG. Its gutter is a fixed 16dp and does **not** follow
+  `horizontalPadding`: the quick-action sheet passes `0.dp` there so its rows' pressed state runs
+  full width, and a close icon flush against the screen edge is not a target. And it is 48dp, not
+  the 44 the Backlog tracks — a sheet's one explicit escape is not where to undershoot.
+  `showClose = false` has exactly one caller, the add-entry sheet: each of its three states already
+  draws its own chrome (the form's top bar, the search's bar, Browse's deliberate absence of
+  either), and its docked Cancel stays for the reason the entry below it gives — it leaves while
+  the keyboard is up, where a full-width discard under the IME would be a mis-swipe's landing spot.
 
 ### The add-entry form & the review screen
 

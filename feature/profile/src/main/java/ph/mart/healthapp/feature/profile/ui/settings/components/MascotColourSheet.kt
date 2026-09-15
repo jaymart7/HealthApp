@@ -57,17 +57,12 @@ internal fun MascotColourSheet(
     onSelect: (MascotPalette) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AppBottomSheet(onDismiss = onDismiss) {
-        Text(
-            text = stringResource(R.string.profile_colour),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+    AppBottomSheet(title = stringResource(R.string.profile_colour), onDismiss = onDismiss) {
         Text(
             text = stringResource(R.string.profile_colour_sub),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
+            modifier = Modifier.padding(bottom = 16.dp),
         )
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),

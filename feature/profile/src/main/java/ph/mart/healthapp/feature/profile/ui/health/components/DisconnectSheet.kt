@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 
@@ -29,13 +28,8 @@ internal fun DisconnectSheet(onDismiss: () -> Unit, onConfirm: (Boolean, Boolean
     var deleteImported by remember { mutableStateOf(true) }
     var deleteSent by remember { mutableStateOf(true) }
 
-    AppBottomSheet(onDismiss = onDismiss) {
+    AppBottomSheet(title = stringResource(R.string.profile_health_disconnect_title), onDismiss = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text(
-                text = stringResource(R.string.profile_health_disconnect_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
             Text(
                 text = stringResource(R.string.profile_health_disconnect_body),
                 style = MaterialTheme.typography.bodySmall,
@@ -56,7 +50,6 @@ internal fun DisconnectSheet(onDismiss: () -> Unit, onConfirm: (Boolean, Boolean
                 onClick = { onConfirm(deleteImported, deleteSent) },
                 modifier = Modifier.fillMaxWidth(),
             )
-            SecondaryButton(label = stringResource(R.string.profile_cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
     }
 }
