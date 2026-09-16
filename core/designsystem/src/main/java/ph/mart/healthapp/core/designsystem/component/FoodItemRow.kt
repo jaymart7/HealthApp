@@ -474,9 +474,13 @@ private fun highlighted(name: String, query: String?): AnnotatedString {
  * label the Fixed Macro Rule requires beside every macro colour, so the colour lands exactly on
  * the glyph that already carries the meaning, and the figures stay one uniform weight to scan
  * down. SemiBold because sage and moss are neighbours at 12sp, and a marker has to read as chosen.
+ *
+ * Public because the review card draws the same line on a row this file does not own: a
+ * collapsed estimate, whose calories sit at the end in their own type. A second copy of the
+ * separator and the three colour assignments is a second place for the Fixed Macro Rule to drift.
  */
 @Composable
-private fun macroLine(
+fun macroLine(
     portionAmount: Double,
     portionUnit: String,
     proteinG: Int,

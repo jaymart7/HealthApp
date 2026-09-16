@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Functions
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -107,6 +108,7 @@ object AppIcons {
     val CloudOff: ImageVector = Icons.Outlined.CloudOff
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
+    val ChevronUp: ImageVector = Icons.Filled.KeyboardArrowUp
     val ChevronLeft: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft
     val ChevronRight: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight
     val Close: ImageVector = Icons.Filled.Close

@@ -22,6 +22,12 @@ data class RecognizedFood(
     val fatG: Int,
     val nutrients: Nutrients = Nutrients(),
     val confidence: RecognitionConfidence,
+    /** The words the model was unsure about, its own, when [confidence] is [RecognitionConfidence.Low]
+     * — "a slice", "a handful". Quoted back on the row so the doubt names itself instead of
+     * flagging the whole batch and leaving the user to guess which figure it meant. Null on a
+     * confident item, and null on a low one the model declined to explain: the batch notice is
+     * still there, so an absent phrase costs nothing. */
+    val uncertainAbout: String? = null,
 )
 
 /**

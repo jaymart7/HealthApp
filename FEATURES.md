@@ -169,11 +169,21 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at
   once, every parsed row editable and repriceable before anything is written. Speech is the
   system's own dialog; typing is the same path.
-  The field takes the full width and wraps to four lines, so a dictated meal can be read and
-  corrected in place; the mic **adds** a second phrase to what is there rather than replacing it,
-  and Clear empties the field. Under an empty field, the three sentences that have already become
-  meals, newest first — tapping one fills the field and stops there, leaving it editable and the
-  estimate a tap away. Recorded when the meal is logged, never when it merely parses.
+  A filled speak card leads the screen, saying what to say — and, once there are words in the box,
+  that a second tap replaces them. Under it the field takes the full width and wraps to four lines,
+  so a dictated meal can be read and corrected in place, with Clear inside the field's own end.
+  Under an empty field, the three sentences that have already become meals, newest first, each on
+  two lines behind a clock — tapping one fills the field and stops there, leaving it editable and
+  the estimate a tap away. Recorded when the meal is logged, never when it merely parses. Estimate
+  is docked below the scroll and rides above the keyboard.
+  While the call is in flight the sentence is on screen, quoted with its slot, and both Edit and
+  Cancel step back to it with the words intact. "No food in that one", "That didn't work" and the
+  offline screen quote it too.
+  The review screen opens on what the meal costs — calories, a macro bar and a legend, summed from
+  the rows and quoted again on the Log button. A row the model was unsure of says so on itself, and
+  where the model named the words it could not pin down ("a slice"), the opened row quotes them
+  back; a notice above counts how many. Remove lives in the opened row, Discard is a word beside
+  Log in the docked bar, and a one-row parse offers "Say it again" back to the sentence.
 - Water row in the diary; water goal and glass size configurable.
 - Share the day — a PNG card of the day's summary bar and its per-meal totals, from a link at
   the foot of the diary. Absolute date, no food names.

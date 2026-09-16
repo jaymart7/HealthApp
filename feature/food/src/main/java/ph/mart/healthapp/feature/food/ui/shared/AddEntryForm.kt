@@ -6,6 +6,7 @@ import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
+import ph.mart.healthapp.core.data.food.RecognitionConfidence
 import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
@@ -43,6 +44,14 @@ data class AddEntryForm(
      * seeded this form. Drives the portion control's third preset chip and nothing else — it is not
      * written to the diary, and a form nobody seeded from a product has none. */
     val servingSize: String? = null,
+    /** How sure the model was about this row, carried from the [RecognizedFood] that seeded it.
+     * [RecognitionConfidence.High] for every form nobody estimated — a barcode, a search hit, a
+     * hand-typed row — which is why it defaults rather than being asked for. */
+    val confidence: RecognitionConfidence = RecognitionConfidence.High,
+    /** The words the model could not pin down, quoted on the row so the doubt says what it is
+     * about. Null unless [confidence] is [RecognitionConfidence.Low], and null on plenty of those
+     * too — the model is asked for it, not required to have one. */
+    val uncertainAbout: String? = null,
 )
 
 /** A bare calorie figure is enough — that is the quick add. The guard is deliberately shared with
@@ -135,6 +144,8 @@ fun RecognizedFood.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     carbsG = carbsG,
     fatG = fatG,
     nutrients = nutrients,
+    confidence = confidence,
+    uncertainAbout = uncertainAbout,
 )
 
 /**

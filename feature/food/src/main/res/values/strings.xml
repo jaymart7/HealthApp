@@ -216,7 +216,6 @@
     <string name="food_voice_prompt">What did you eat?</string>
     <string name="food_voice_example">e.g. \"two scrambled eggs, a slice of toast and a black coffee\"</string>
     <string name="food_voice_placeholder">Say or type your meal…</string>
-    <string name="food_voice_speak">Speak your meal</string>
     <string name="food_voice_clear">Clear what you said</string>
     <string name="food_voice_estimate">Estimate</string>
     <string name="food_voice_recent">Recent</string>
@@ -229,12 +228,33 @@
     <string name="food_voice_offline">Reading a meal out of a sentence needs a connection. The diary\'s own add button works offline, as does everything else.</string>
     <string name="food_voice_chip">AI estimated</string>
     <string name="food_voice_review">Review what you ate</string>
-    <string name="food_voice_review_body">Tap a row to adjust it, or remove anything you didn\'t eat.</string>
     <plurals name="food_voice_log_items">
-        <item quantity="one">Log %1$d item</item>
-        <item quantity="other">Log %1$d items</item>
+        <item quantity="one">Log %1$d item · %2$d kcal</item>
+        <item quantity="other">Log %1$d items · %2$d kcal</item>
     </plurals>
-    <string name="food_voice_low_confidence">Not fully sure about some of these — double-check the portions.</string>
+    <plurals name="food_voice_low_confidence">
+        <item quantity="one">%1$d of these is a rough guess — the row says which.</item>
+        <item quantity="other">%1$d of these are rough guesses — the rows say which.</item>
+    </plurals>
+    <string name="food_voice_say_again">Say it again</string>
+    <string name="food_voice_speak_title">Say what you ate</string>
+    <string name="food_voice_speak_body">Name the food and roughly how much.</string>
+    <string name="food_voice_speak_again">Say it again</string>
+    <string name="food_voice_speak_again_body">This replaces what\'s in the box below.</string>
+    <string name="food_voice_you_said">You said · %1$s</string>
+    <string name="food_voice_edit_short">Edit</string>
+    <string name="food_voice_parsing_caveat">Wrong word? Fix it now — this doesn\'t have to finish.</string>
+    <string name="food_voice_parsing_body">Working out the portions and the macros behind them.</string>
+    <string name="food_voice_cancel">Cancel</string>
+
+    <!-- Reviewing an estimated meal, shared by talk-to-log and the photo flow -->
+    <string name="food_review_this_meal">This meal</string>
+    <string name="food_review_kcal_unit">kcal</string>
+    <string name="food_review_grams">%1$dg</string>
+    <string name="food_review_unnamed">Unnamed item</string>
+    <string name="food_review_remove">Remove</string>
+    <string name="food_review_check_this">Check this</string>
+    <string name="food_review_rough_guess">Unsure: %1$s</string>
 
     <!-- Recipe builder -->
     <string name="food_recipe_label">Recipe</string>

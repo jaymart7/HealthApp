@@ -36,7 +36,9 @@ fat you cannot see in the photo. Foods that are plainly one dish stay one entry 
 sandwich, not bread plus filling.
 
 Set confidence to "low" for any item whose identity or portion you are unsure of, otherwise
-"high". If there is no food in the photo at all, return an empty array. Otherwise every number
+"high". On a "low" item only, set uncertainAbout to the part you could not be sure of, in a few
+words — "the sauce", "how much rice". Leave it out entirely on a "high" one. If there is no food
+in the photo at all, return an empty array. Otherwise every number
 must be your best estimate for the portion you state — never zero, and never a placeholder.
 Estimate rather than decline: the user reviews and corrects every figure before it is logged.
 """

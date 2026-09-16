@@ -1,13 +1,17 @@
 package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -16,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -77,13 +82,20 @@ fun TonalButton(
     }
 }
 
-/** Pill button, [MaterialTheme.colorScheme.outline] border, transparent fill, primary text. */
+/**
+ * Pill button, [MaterialTheme.colorScheme.outline] border, transparent fill, primary text.
+ *
+ * [icon] leads the label at 20dp where the word alone under-sells what the tap does — talk-to-log's
+ * "Say it again", which opens the speech dialog rather than moving the form along. It defaults to
+ * what every existing caller already drew.
+ */
 @Composable
 fun SecondaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    icon: ImageVector? = null,
 ) {
     Surface(
         onClick = onClick,
@@ -96,31 +108,58 @@ fun SecondaryButton(
             .graphicsLayer(alpha = if (enabled) 1f else 0.4f)
             .heightIn(min = 48.dp),
     ) {
-        Box(modifier = Modifier.padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        ) {
+            if (icon != null) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            }
             Text(text = label, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
         }
     }
 }
 
-/** No container, primary text, compact height. */
+/**
+ * No container, text-coloured label, compact height.
+ *
+ * [color] is the one thing about it that is ever not `primary`: a destructive text button reads as
+ * `error`, which is the review row's Remove and nothing else so far. [icon] leads the label at
+ * 18dp where the word alone is doing too much work — again Remove, sitting in a footer beside a
+ * chip. Both default to what every existing caller already drew.
+ *
+ * 48dp, not the 44 it shipped at: the app's own rule is 48, this is a bare word with no container
+ * to aim at, and every caller stacks it in a column with explicit spacing, so the four dp land as
+ * touch target rather than as layout.
+ */
 @Composable
 fun TextButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    color: Color = MaterialTheme.colorScheme.primary,
+    icon: ImageVector? = null,
 ) {
     Surface(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
         color = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.primary,
+        contentColor = color,
         modifier = modifier
             .graphicsLayer(alpha = if (enabled) 1f else 0.4f)
-            .heightIn(min = 44.dp),
+            .heightIn(min = 48.dp),
     ) {
-        Box(modifier = Modifier.padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        ) {
+            if (icon != null) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
             Text(text = label, style = MaterialTheme.typography.labelLarge)
         }
     }

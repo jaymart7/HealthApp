@@ -18,9 +18,15 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
- * Mascot/icon + heading + optional body + up to two actions. Used by every empty/status state:
- * Home day-one, empty diary, empty progress photos, and the photo flow's Retry/NoFood/Offline
- * states (which pass a photo or search field in [icon]/[actions] instead of the mascot default).
+ * Mascot/icon + heading + optional body + optional [content] + up to two actions. Used by every
+ * empty/status state: Home day-one, empty diary, empty progress photos, and the photo flow's
+ * Retry/NoFood/Offline states (which pass a photo or search field in [icon]/[actions] instead of
+ * the mascot default).
+ *
+ * [content] is a full-width slot between the body and the actions, for a state that has something
+ * to *show* as well as something to say — talk-to-log's dead ends, which quote the sentence back so
+ * the words the screen is about are the words on it. A caller that passes none gets exactly the
+ * column it always had.
  */
 @Composable
 fun FullScreenState(
@@ -28,6 +34,7 @@ fun FullScreenState(
     heading: String,
     modifier: Modifier = Modifier,
     body: String? = null,
+    content: (@Composable ColumnScope.() -> Unit)? = null,
     actions: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     Column(
@@ -50,6 +57,13 @@ fun FullScreenState(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
+            )
+        }
+        if (content != null) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = content,
             )
         }
         if (actions != null) {

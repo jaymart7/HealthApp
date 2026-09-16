@@ -80,7 +80,10 @@ private fun promptFor(sentence: String): String = buildString {
             "none) and its calories and macros for that portion. Include only foods they actually " +
             "named — do not add sides, drinks, condiments or cooking fat they did not mention. " +
             "Set confidence to \"low\" for any item whose portion or identity you are unsure of, " +
-            "otherwise \"high\". If they named nothing edible, return an empty array. Give no " +
+            "otherwise \"high\". On a \"low\" item only, set uncertainAbout to the words of " +
+            "theirs you could not pin down, quoted as they said them — \"a slice\", \"a " +
+            "handful\". Leave it out entirely on a \"high\" one. " +
+            "If they named nothing edible, return an empty array. Give no " +
             "medical advice, no diagnosis, and no supplement or medication suggestions.",
     )
 }

@@ -4,9 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -44,6 +46,13 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * wrap lands nothing in a caller that doesn't ask. The height is a floor rather than a fixture as
  * of that change, so a one-line field is still exactly 48dp and no longer clips its own text at the
  * largest font scales.
+ *
+ * [trailing] is the second, and it earns its place the same way: a 48dp slot at the end of the box,
+ * laid out only when a caller passes one, top-aligned so it stays put as a wrapping field grows.
+ * Talk-to-log's Clear is the one user — it lived in a row beneath the field, where it and the mic
+ * were two identical grey glyphs doing different jobs, and inside the box it is unmistakably about
+ * the text. The slot reserves its width, so a glyph that appears with the first keystroke never
+ * reflows the sentence being typed.
  */
 @Composable
 fun AppTextField(
@@ -56,6 +65,7 @@ fun AppTextField(
     imeAction: ImeAction = ImeAction.Default,
     onImeAction: (() -> Unit)? = null,
     maxLines: Int = 1,
+    trailing: @Composable (() -> Unit)? = null,
 ) {
     Column(modifier = modifier) {
         if (label != null) {
@@ -79,44 +89,30 @@ fun AppTextField(
                     ),
                     RoundedCornerShape(12.dp),
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(start = 16.dp, end = if (trailing != null) 0.dp else 16.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
-            if (value.isEmpty() && placeholder != null) {
-                Text(
-                    text = placeholder,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Row(verticalAlignment = Alignment.Top, modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    FieldContent(
+                        value = value,
+                        onValueChange = onValueChange,
+                        label = label,
+                        placeholder = placeholder,
+                        imeAction = imeAction,
+                        onImeAction = onImeAction,
+                        maxLines = maxLines,
+                    )
+                }
+                if (trailing != null) {
+                    Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) { trailing() }
+                }
             }
-            BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
-                // Not `singleLine = true` beside a maxLines above 1 — BasicTextField rejects the pair.
-                singleLine = maxLines == 1,
-                maxLines = maxLines,
-                keyboardOptions = KeyboardOptions(imeAction = imeAction),
-                // One handler for all of them: the key the IME shows is `imeAction`'s, so whichever
-                // callback fires is the one the caller asked for.
-                keyboardActions = KeyboardActions(
-                    onSend = { onImeAction?.invoke() },
-                    onDone = { onImeAction?.invoke() },
-                    onSearch = { onImeAction?.invoke() },
-                    onGo = { onImeAction?.invoke() },
-                ),
-                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                // The label and placeholder are siblings, not part of the field, so without this a
-                // screen reader announces every field in the app as a bare edit box. The
-                // placeholder stands in where a field has no visible label — the diary's filter
-                // and the food search both rely on it.
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics {
-                        val name = label ?: placeholder
-                        if (name != null) contentDescription = name
-                    },
-            )
         }
         if (error != null) {
             Text(
@@ -125,6 +121,57 @@ fun AppTextField(
                 color = MaterialTheme.colorScheme.error,
             )
         }
+    }
+}
+
+/** The placeholder and the field itself, split out only so the box above stays readable once the
+ * trailing slot sits beside them. */
+@Composable
+private fun FieldContent(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String?,
+    placeholder: String?,
+    imeAction: ImeAction,
+    onImeAction: (() -> Unit)?,
+    maxLines: Int,
+) {
+    Box(contentAlignment = Alignment.CenterStart) {
+        if (value.isEmpty() && placeholder != null) {
+            Text(
+                text = placeholder,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            // Not `singleLine = true` beside a maxLines above 1 — BasicTextField rejects the pair.
+            singleLine = maxLines == 1,
+            maxLines = maxLines,
+            keyboardOptions = KeyboardOptions(imeAction = imeAction),
+            // One handler for all of them: the key the IME shows is `imeAction`'s, so whichever
+            // callback fires is the one the caller asked for.
+            keyboardActions = KeyboardActions(
+                onSend = { onImeAction?.invoke() },
+                onDone = { onImeAction?.invoke() },
+                onSearch = { onImeAction?.invoke() },
+                onGo = { onImeAction?.invoke() },
+            ),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            // The label and placeholder are siblings, not part of the field, so without this a
+            // screen reader announces every field in the app as a bare edit box. The
+            // placeholder stands in where a field has no visible label — the diary's filter
+            // and the food search both rely on it.
+            modifier = Modifier
+                .fillMaxWidth()
+                .semantics {
+                    val name = label ?: placeholder
+                    if (name != null) contentDescription = name
+                },
+        )
     }
 }
 

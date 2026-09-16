@@ -5,16 +5,14 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +20,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -34,8 +31,8 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
+import ph.mart.healthapp.feature.food.ui.shared.components.DockedActionBar
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
-import ph.mart.healthapp.feature.food.ui.voice.withSpoken
 
 private val EXAMPLE = R.string.food_voice_example
 
@@ -51,19 +48,28 @@ private const val SENTENCE_LINES = 4
  * screen to write and nothing to deny, and the transcript lands in a field that stays editable.
  * Typing is the same path — the mic only fills the field in.
  *
- * The field takes the whole width and wraps to [SENTENCE_LINES], because on this one screen the
- * content is a sentence rather than a value and a 48dp box scrolls it out of sight. The mic and
- * Clear sit in a row beneath it rather than beside it for the same reason — they were costing the
- * sentence 112dp of the width it is read in. Clear is drawn only over text, the mic only where
- * there is a recognizer, and the row is right-aligned so neither moves when the other appears.
+ * **The mic is the screen, not a glyph on it.** It used to be a 48dp grey icon button in a
+ * right-aligned row beside an identical grey Clear, which is the wrong weight for the fastest path
+ * into the flow. [SpeakCard] is the first thing on the screen, and the field under it is where
+ * typing and correcting happen. Clear went *into* the field as [AppTextField]'s trailing slot,
+ * where it is unmistakably about the text rather than a sibling of the mic.
+ *
+ * **Speech replaces the field rather than appending to it.** The append rule and its join belonged
+ * to a mic that was the only way to add a second phrase; with the card saying what a second tap
+ * does, the transcript is simply the new sentence, and an unwanted replacement is one undo away in
+ * a field the user is already looking at. That retires `withSpoken` and its test with it.
  *
  * Under the field, the sentences that have become meals before — tapping one fills the field and
  * stops there. It does not estimate: a parse is a network call, and half the value of a remembered
  * sentence is correcting it before one is spent.
  *
- * The mic is *hidden* where no recognizer is installed rather than shown and failing on tap, the
- * rule Home's supplements card follows: a control that can't answer shouldn't be there. That check
- * is what the manifest's `<queries>` entry exists for.
+ * Estimate is docked ([DockedActionBar]) rather than being the last item in the column: with the
+ * keyboard up, a wrapped sentence, a recents strip and the chip row above it, it was reliably below
+ * the fold on a short phone.
+ *
+ * The card is *not composed at all* where no recognizer is installed, the rule Home's supplements
+ * card follows: a control that can't answer shouldn't be there. That check is what the manifest's
+ * `<queries>` entry exists for.
  */
 @Composable
 internal fun VoiceInputScreen(
@@ -83,88 +89,79 @@ internal fun VoiceInputScreen(
         result.data
             ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             ?.firstOrNull()
-            ?.let { onTextChange(withSpoken(text, it)) }
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(onTextChange)
     }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
-        Column(
-            // The estimate button sits under the field, which is where the keyboard lands — and it
-            // scrolls to stay reachable, since the field, the recent strip and the keyboard can
-            // between them be taller than a short phone. `VoiceReviewScreen` scrolls for the same
-            // reason.
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = stringResource(R.string.food_voice_prompt),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = stringResource(EXAMPLE),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            AppTextField(
-                value = text,
-                onValueChange = onTextChange,
-                placeholder = stringResource(R.string.food_voice_placeholder),
-                maxLines = SENTENCE_LINES,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                if (text.isNotBlank()) {
-                    // No confirm, `HistorySearchField`'s clear button's call — and the strip below
-                    // holds the last three sentences, so a cleared one is rarely gone for good.
-                    IconButton(
-                        onClick = { onTextChange("") },
-                        modifier = Modifier.size(48.dp),
-                    ) {
-                        Icon(
-                            imageVector = AppIcons.Close,
-                            contentDescription = stringResource(R.string.food_voice_clear),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = stringResource(R.string.food_voice_prompt),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = stringResource(EXAMPLE),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
+
                 if (speechAvailable) {
-                    IconButton(
+                    SpeakCard(
+                        hasText = text.isNotBlank(),
                         onClick = { speech.launch(speechIntent(prompt)) },
-                        modifier = Modifier.size(48.dp),
-                    ) {
-                        Icon(
-                            imageVector = AppIcons.Mic,
-                            contentDescription = stringResource(R.string.food_voice_speak),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    )
                 }
+
+                AppTextField(
+                    value = text,
+                    onValueChange = onTextChange,
+                    placeholder = stringResource(R.string.food_voice_placeholder),
+                    maxLines = SENTENCE_LINES,
+                    modifier = Modifier.fillMaxWidth(),
+                    trailing = if (text.isNotBlank()) {
+                        {
+                            // No confirm, `HistorySearchField`'s clear button's call — and the strip
+                            // below holds the last three sentences, so a cleared one is rarely gone
+                            // for good.
+                            IconButton(onClick = { onTextChange("") }, modifier = Modifier.size(48.dp)) {
+                                Icon(
+                                    imageVector = AppIcons.Close,
+                                    contentDescription = stringResource(R.string.food_voice_clear),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    } else {
+                        null
+                    },
+                )
+
+                if (text.isBlank() && recentSentences.isNotEmpty()) {
+                    VoiceRecentSentences(sentences = recentSentences, onSelect = onTextChange)
+                }
+
+                MealTypeChipRow(selected = mealType, onSelect = onMealTypeSelect)
             }
 
-            if (text.isBlank() && recentSentences.isNotEmpty()) {
-                VoiceRecentSentences(sentences = recentSentences, onSelect = onTextChange)
+            DockedActionBar {
+                PrimaryButton(
+                    label = stringResource(R.string.food_voice_estimate),
+                    onClick = onEstimate,
+                    enabled = text.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
-
-            MealTypeChipRow(selected = mealType, onSelect = onMealTypeSelect)
-
-            PrimaryButton(
-                label = stringResource(R.string.food_voice_estimate),
-                onClick = onEstimate,
-                enabled = text.isNotBlank(),
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 }
@@ -191,7 +188,7 @@ private fun VoiceInputScreenPreview() {
 }
 
 /** Two dictations' worth, which is what the field has to be able to show: it wraps to
- * [SENTENCE_LINES] and Clear appears beside the mic. */
+ * [SENTENCE_LINES] and Clear stays pinned to the top of the box as it grows. */
 @PreviewLightDark
 @Composable
 private fun VoiceInputScreenLongSentencePreview() {
@@ -208,8 +205,8 @@ private fun VoiceInputScreenLongSentencePreview() {
     }
 }
 
-/** Nothing typed yet and nothing logged before — the button is off, and the example carries the
- * whole instruction. */
+/** Nothing typed yet and nothing logged before — the button is off, and the card carries the whole
+ * instruction. */
 @PreviewLightDark
 @Composable
 private fun VoiceInputScreenEmptyPreview() {

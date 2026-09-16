@@ -20,12 +20,12 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.food.MealParseResult
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.shared.components.ThinkingState
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.voice.components.NoFoodHeardScreen
 import ph.mart.healthapp.feature.food.ui.voice.components.VoiceFailedScreen
 import ph.mart.healthapp.feature.food.ui.voice.components.VoiceInputScreen
 import ph.mart.healthapp.feature.food.ui.voice.components.VoiceOfflineScreen
+import ph.mart.healthapp.feature.food.ui.voice.components.VoiceParsingScreen
 import ph.mart.healthapp.feature.food.ui.voice.components.VoiceReviewScreen
 
 /**
@@ -71,10 +71,7 @@ fun VoiceLogScreen(
         onBackCompleted = {
             when (state.flow) {
                 VoiceFlow.Input -> onExit()
-                VoiceFlow.Parsing -> {
-                    viewModel.handleEvent(VoiceLogEvent.OnCancelParse)
-                    state.flow = VoiceFlow.Input
-                }
+                VoiceFlow.Parsing -> cancelParse(viewModel, state)
 
                 VoiceFlow.Review -> if (state.isDirty) {
                     state.pendingDiscard = state::backToInput
@@ -100,13 +97,20 @@ fun VoiceLogScreen(
                     onEstimate = { startParse(viewModel, state) },
                 )
 
-                VoiceFlow.Parsing -> ThinkingState(line = stringResource(R.string.food_voice_parsing))
+                // The wait is spent on the sentence rather than on a spinner: a mis-dictated word
+                // is cheapest to catch while the call is still in flight, and both doors out of it
+                // do what back already did — cancel the call, keep the words.
+                VoiceFlow.Parsing -> VoiceParsingScreen(
+                    sentence = state.text,
+                    mealType = state.mealType,
+                    onEdit = { cancelParse(viewModel, state) },
+                    onCancel = { cancelParse(viewModel, state) },
+                )
 
                 VoiceFlow.Review -> VoiceReviewScreen(
                     items = state.items,
                     mealType = state.mealType,
                     expandedIndex = state.expandedIndex,
-                    lowConfidence = state.anyLowConfidence,
                     onMealTypeSelect = state::selectMealType,
                     onItemChange = state::updateItem,
                     onRemoveItem = state::removeItem,
@@ -126,13 +130,29 @@ fun VoiceLogScreen(
                     onDiscard = {
                         if (state.isDirty) state.pendingDiscard = { onExit() } else onExit()
                     },
+                    // The same step back the gesture takes, offered as a control — a one-row parse
+                    // usually means the sentence was the problem, and the fix is upstream of this
+                    // screen. Nothing typed is lost: `backToInput` keeps the words.
+                    onSayAgain = {
+                        if (state.isDirty) state.pendingDiscard = state::backToInput else state.backToInput()
+                    },
                 )
 
-                VoiceFlow.NothingHeard -> NoFoodHeardScreen(onEdit = { state.flow = VoiceFlow.Input })
+                VoiceFlow.NothingHeard -> NoFoodHeardScreen(
+                    sentence = state.text,
+                    mealType = state.mealType,
+                    onEdit = { state.flow = VoiceFlow.Input },
+                )
 
-                VoiceFlow.Failed -> VoiceFailedScreen(onRetry = { startParse(viewModel, state) })
+                VoiceFlow.Failed -> VoiceFailedScreen(
+                    sentence = state.text,
+                    mealType = state.mealType,
+                    onRetry = { startParse(viewModel, state) },
+                )
 
                 VoiceFlow.Offline -> VoiceOfflineScreen(
+                    sentence = state.text,
+                    mealType = state.mealType,
                     retried = retriedWhileOffline,
                     onRetry = {
                         if (viewModel.isOnline()) {
@@ -173,4 +193,12 @@ private fun startParse(viewModel: VoiceLogViewModel, state: VoiceLogScreenState)
     }
     state.flow = VoiceFlow.Parsing
     viewModel.handleEvent(VoiceLogEvent.OnParse(state.text))
+}
+
+/** The one way out of [VoiceFlow.Parsing] that isn't the parse finishing: the in-flight call is
+ * cancelled and the sentence and the slot are exactly as they were. Back, the parsing screen's
+ * Edit and its Cancel all land here, because all three mean the same thing. */
+private fun cancelParse(viewModel: VoiceLogViewModel, state: VoiceLogScreenState) {
+    viewModel.handleEvent(VoiceLogEvent.OnCancelParse)
+    state.flow = VoiceFlow.Input
 }

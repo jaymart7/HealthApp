@@ -8,7 +8,6 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import ph.mart.healthapp.core.data.food.MealType
-import ph.mart.healthapp.core.data.food.RecognitionConfidence
 import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
@@ -47,10 +46,6 @@ internal class VoiceLogScreenState(
     /** Which row is open for editing — one at a time, so the list stays scannable. */
     var expandedIndex: Int? by mutableStateOf(null)
 
-    /** True when the model flagged any item; the notice is about the batch, since one uncertain
-     * portion is a reason to read all of them. */
-    var anyLowConfidence: Boolean by mutableStateOf(false)
-
     /** Non-null exactly while the discard dialog is up — `PhotoCaptureScreenState`'s lambda, for
      * its reason: the Discard *button* leaves the flow, and back steps to the sentence. */
     var pendingDiscard: (() -> Unit)? by mutableStateOf(null)
@@ -61,7 +56,8 @@ internal class VoiceLogScreenState(
         val seeded = foods.map { it.toAddEntryForm(mealType) }
         items = seeded
         parsed = seeded
-        anyLowConfidence = foods.any { it.confidence == RecognitionConfidence.Low }
+        // No batch flag held here: the rows carry their own confidence now, and the notice counts
+        // them. A second copy of "any of these" is a second thing that can disagree with the rows.
         expandedIndex = null
         flow = VoiceFlow.Review
     }

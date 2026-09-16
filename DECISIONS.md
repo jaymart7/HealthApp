@@ -3095,28 +3095,92 @@ rather than needing a counter patched.
   padding, which is the same 48dp for one line of `bodyLarge` and stops every one of those fifteen
   fields clipping its own text at the largest font scales. The clear button — the part that really
   is a feature — stayed on this screen, where it belongs.
-- **The mic adds to the sentence; it does not replace it.** `ChatInputBar.withSpoken` already made
-  this call for the coach's question ("a mic that ate it would be a worse mistake than one that
-  needs a space deleted") and talk-to-log, the screen with a whole meal to eat rather than a
-  half-typed question, was the one still replacing. It joins with a **comma** where the coach joins
-  with a space, which is the only place the two differ: a question continues, a meal is a list, and
-  "two eggs a black coffee" is a worse thing to hand the parser than "two eggs, a black coffee". Not
-  shared across the two modules — a feature never imports another's types, which is why
-  `speechIntent` is already duplicated in both files; this is one more line under the same rule,
-  and `VoiceSentenceTest` is what earns its separator the stay-in-Kotlin exemption.
-- **The mic and Clear moved under the field, and the column scrolls.** Beside the field the two
-  buttons cost the sentence 112dp of the width it is read in, which is most of a line on a phone.
-  Right-aligned in a row beneath it, Clear drawn only over text and the mic only where a recognizer
-  exists, so neither moves when the other appears. The scroll is the fix for what the recent strip
-  made reachable: field, strip, chips and button under a raised keyboard are taller than a short
-  phone, and a `Column` that cannot scroll simply puts Estimate past the bottom edge.
-  `VoiceReviewScreen`, one screen along in the same flow, already scrolled.
+- **The mic is the screen, and it replaces the sentence rather than appending to it.** Both halves
+  of this reverse an earlier entry, and the reversal is one decision. The mic and Clear used to sit
+  in a right-aligned row under the field as two identical 48dp grey glyphs doing opposite jobs —
+  which is the wrong weight for the fastest path into the flow, and reads as one control with two
+  options. `SpeakCard` is a filled `primary` block at 88dp, the first thing on the screen and the
+  obvious first move; typing is still one tap away in the field below it, and `onPrimary` carries
+  both its lines at full opacity because a subtitle dimmed with alpha on a filled container is the
+  first thing to fail the high-contrast scheme. Clear went *into* the field, as `AppTextField`'s
+  new `trailing` slot, where it is unmistakably about the text.
+  Appending was `ChatInputBar.withSpoken`'s call, taken on the argument that "a mic that ate it
+  would be a worse mistake than one that needs a comma deleted". That argument assumed a mic with
+  nothing to say for itself. The card's second label pair says exactly what a second tap does
+  ("Say it again · This replaces what's in the box below"), the words land in a field the user is
+  already looking at, and an unwanted replacement is one undo away — so the join, its comma rule and
+  `VoiceSentenceTest` are all gone, and the coach keeps its own `withSpoken` unchanged. It was never
+  shared: a feature never imports another's types, which is why `speechIntent` is duplicated too.
+- **Estimate and Log are docked, not the last item in a column.** `DockedActionBar` in
+  `:feature:food/ui/shared/components/` is a 1dp `outlineVariant` rule over a `surface` fill with
+  `imePadding` — no elevation, because the app separates surfaces with rules everywhere else. Both
+  long talk-to-log screens ended in a full-width button at the bottom of a scroller: with the
+  keyboard up, a wrapped sentence, a recents strip and a chip row above it, Estimate was reliably
+  below the fold on a short phone, and the scroll added for that only made it *reachable*. Docked,
+  the commitment is where the thumb already is at every height. Not in `:core:designsystem` —
+  two screens in one feature draw it, which is this app's rule for `ui/shared/` exactly.
 - **Rows, where the search screen draws pills.** `VoiceRecentSentences` matches
   `HistoryRecentQueries` on colour, border and the uppercase label and departs from it on shape,
   which is the one thing the content decides: a pill is sized for "chicken", and "two scrambled
   eggs, a slice of toast and a black coffee" needs the width of the field it is going into. Shared
   in `:core:designsystem` neither would be — one screen draws each, which is this app's rule for
-  every component. The rows are 48dp, not the 44 the nine sites in the backlog are stuck at.
+  every component. The rows are 56dp, not the 44 the nine sites in the backlog are stuck at.
+  They since stopped matching on colour and border too, and for the chip row a few dp below them:
+  three outlined rounded rectangles above four outlined rounded rectangles read as one control with
+  seven options, so the recents took a `surfaceContainerLow` fill and a leading clock — "something
+  you did before" against the chips' "pick one". And they wrap to **two lines** rather than
+  ellipsising at one, because a sentence cut at "two scrambled eggs, a slice of…" is exactly the
+  sentence you cannot tell from the other one that starts the same way, which is the row's whole job.
+
+- **The wait is spent on the sentence, not on a spinner.** `VoiceParsingScreen` replaced a bare
+  centred `ThinkingState` over words the user could no longer see. Two to six seconds is long
+  enough to proofread a dictation, and a mis-heard word is cheapest to catch *while the call is
+  still in flight* — the parse does not have to finish for the fix to be free. So `SentenceCard`
+  quotes the sentence back with the slot beside it, and both its Edit and the screen's Cancel route
+  through the same `cancelParse` the back gesture always did: cancel the call, keep the words, keep
+  the slot. Cancel was previously reachable only by a gesture, which is not an affordance.
+- **The dead ends quote the sentence too, and one of them deliberately doesn't offer to fix it.**
+  "No food in that one" and "That didn't work" are both claims about specific words, and neither
+  screen had those words on it. `FullScreenState` grew a `content` slot between the body and the
+  actions — a caller that passes none draws exactly the column it always did — and all three states
+  put `SentenceCard` in it. Bare, with no edit footer: on the two retry screens the button below is
+  already that door, and on the offline screen the words are not what is wrong, so offering to fix
+  them would say they were.
+- **Doubt is a property of a row, not of a batch.** The old notice said *some* of these are guesses
+  and left the user to find which, which costs a reading of every row to act on one. `RecognizedFood`
+  now carries `uncertainAbout` — the model's own words for the part it could not pin down, "a slice",
+  "how much rice" — and `AddEntryForm` carries it and `confidence` through to the row. A low row wears
+  a `tertiaryContainer` chip closed, and quotes the phrase in its footer open. It is the **one
+  optional property** in `RECOGNIZED_FOOD_SCHEMA`: required, a model with nothing to say here says
+  something anyway, and an invented doubt on a confident item is worse than no chip at all. The
+  batch notice survives as a *count* ("2 of these are rough guesses — the rows say which"), which is
+  the summary rather than the whole signal.
+- **The review screen leads with what the meal costs.** Four rows of calories never answered the
+  question the user actually has. `MealTotalCard` sits above the rows with the app's existing
+  `MacroBar` and the fixed macro assignment, and `MealTotal.of()` is the **one** derivation behind
+  both it and the Log button's label — one function, so the headline figure and the button cannot
+  disagree, which is the failure mode that makes a total worse than none. `MealTotalTest` is what
+  holds it, including that a field the user cleared is zero toward the total rather than a row to
+  skip. The three stacked text styles above it became one row: the title, and the `AIChip` at the
+  end saying where the numbers came from. The body line said neither and is gone — the rows are the
+  instruction.
+- **Remove moved into the expansion, and Discard became a word.** A 40dp delete button sat at the
+  collapsed row's end, where the eye goes for the figure, for the most destructive thing on the
+  screen; opening a row first is one tap and it is the row you were going to read anyway. In the
+  footer it is `TextButton` in `error` with a 18dp leading glyph, which is what `TextButton` grew a
+  `color` and an `icon` for. Discard had the same width and weight as Log below it; in the docked
+  bar it is a text button at the start with Log taking the rest. Neither change touches the confirm
+  — back already asked before throwing away edits, and the caller still does.
+- **The collapsed row draws `:core:designsystem`'s own `macroLine`.** It wants the same
+  `{portion} · P 13 · C 2 · F 14` every diary row draws, with its calories in their own type at the
+  end instead of inside the line, so the row is local but the line is not: `macroLine` went from
+  private to public rather than being copied. A second copy of the separator and the three colour
+  assignments is a second place for the Fixed Macro Rule to drift.
+- **One "Say it again", and only where the parse found one thing.** Four rows is a plate and the
+  sentence worked; one row after a whole meal was described usually means it didn't, and the fix is
+  upstream of this screen. At four it would just be a fifth thing to read. It is the same step back
+  the gesture takes — `backToInput`, asking first if the rows have been touched — landing on the
+  screen where `SpeakCard` now is.
 
 - **The button is hidden, never disabled, when there is no day to ask about.** No profile means no
   target and no gap; under `MIN_IDEA_KCAL` (100) there is no meal left in the day, only a mint. Same

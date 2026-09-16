@@ -6,7 +6,7 @@ import org.json.JSONArray
 /**
  * The wire shape of a [RecognizedFood], and the one place that reads it back.
  *
- * Two features ask a model to identify food and both want the same eleven flat fields: the photo
+ * Two features ask a model to identify food and both want the same twelve flat fields: the photo
  * flow, which reads a plate, and talk-to-log, which reads a sentence. They used to declare a schema
  * and a parser each — the photo one a single object, the parse one an array of them — which was a
  * real difference right up until a photographed plate stopped being one food. It isn't, so this is
@@ -29,14 +29,21 @@ internal val RECOGNIZED_FOOD_SCHEMA = Schema.obj(
         "sugarG" to Schema.integer(),
         "sodiumMg" to Schema.integer(description = "milligrams, not grams"),
         "confidence" to Schema.enumeration(listOf("high", "low")),
+        "uncertainAbout" to Schema.string(
+            description = "only when confidence is low: the words from the input you were unsure " +
+                "about, quoted as they appeared",
+        ),
     ),
+    // The one optional property. Required, a model with nothing to say here says something
+    // anyway — and an invented doubt on a confident item is worse than no chip at all.
+    optionalProperties = listOf("uncertainAbout"),
 )
 
 /**
- * [MAX_PARSED_FOODS] foods with eleven fields each. [loggable] rejects whatever gets past it, but
+ * [MAX_PARSED_FOODS] foods with twelve fields each. [loggable] rejects whatever gets past it, but
  * capping here is cheaper than paying for a list that will be thrown away.
  */
-internal const val MAX_FOOD_LIST_TOKENS = 1200
+internal const val MAX_FOOD_LIST_TOKENS = 1400
 
 /**
  * The array in, foods out. Every read is an `opt*` with a default: a response missing a field is a
@@ -74,6 +81,9 @@ internal fun parseRecognizedFoods(json: String?): List<RecognizedFood> {
             } else {
                 RecognitionConfidence.High
             },
+            // Optional in the schema, so absent is the ordinary case and not a short answer:
+            // blank and missing are the same thing, which is no phrase to quote.
+            uncertainAbout = body.optString("uncertainAbout").ifBlank { null },
         )
     }
 }
