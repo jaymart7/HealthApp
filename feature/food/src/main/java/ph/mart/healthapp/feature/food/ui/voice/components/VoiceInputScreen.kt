@@ -44,6 +44,10 @@ private val EXAMPLE = R.string.food_voice_example
  * screen to write and nothing to deny, and the transcript lands in a field that stays editable.
  * Typing is the same path — the mic only fills the field in.
  *
+ * Under the field, the sentences that have become meals before — tapping one fills the field and
+ * stops there. It does not estimate: a parse is a network call, and half the value of a remembered
+ * sentence is correcting it before one is spent.
+ *
  * The mic is *hidden* where no recognizer is installed rather than shown and failing on tap, the
  * rule Home's supplements card follows: a control that can't answer shouldn't be there. That check
  * is what the manifest's `<queries>` entry exists for.
@@ -52,6 +56,7 @@ private val EXAMPLE = R.string.food_voice_example
 internal fun VoiceInputScreen(
     text: String,
     mealType: MealType,
+    recentSentences: List<String>,
     onTextChange: (String) -> Unit,
     onMealTypeSelect: (MealType) -> Unit,
     onEstimate: () -> Unit,
@@ -111,6 +116,10 @@ internal fun VoiceInputScreen(
                 }
             }
 
+            if (text.isBlank() && recentSentences.isNotEmpty()) {
+                VoiceRecentSentences(sentences = recentSentences, onSelect = onTextChange)
+            }
+
             MealTypeChipRow(selected = mealType, onSelect = onMealTypeSelect)
 
             PrimaryButton(
@@ -136,6 +145,7 @@ private fun VoiceInputScreenPreview() {
         VoiceInputScreen(
             text = "two scrambled eggs, a slice of toast and a black coffee",
             mealType = MealType.Breakfast,
+            recentSentences = emptyList(),
             onTextChange = {},
             onMealTypeSelect = {},
             onEstimate = {},
@@ -143,7 +153,8 @@ private fun VoiceInputScreenPreview() {
     }
 }
 
-/** Nothing typed yet — the button is off, and the example carries the whole instruction. */
+/** Nothing typed yet and nothing logged before — the button is off, and the example carries the
+ * whole instruction. */
 @PreviewLightDark
 @Composable
 private fun VoiceInputScreenEmptyPreview() {
@@ -151,6 +162,28 @@ private fun VoiceInputScreenEmptyPreview() {
         VoiceInputScreen(
             text = "",
             mealType = MealType.Dinner,
+            recentSentences = emptyList(),
+            onTextChange = {},
+            onMealTypeSelect = {},
+            onEstimate = {},
+        )
+    }
+}
+
+/** An empty field with meals behind it: the strip is the whole difference from the preview above,
+ * and it is gone the moment a key is pressed. */
+@PreviewLightDark
+@Composable
+private fun VoiceInputScreenRecentPreview() {
+    AppTheme {
+        VoiceInputScreen(
+            text = "",
+            mealType = MealType.Breakfast,
+            recentSentences = listOf(
+                "two scrambled eggs, a slice of toast and a black coffee",
+                "chicken breast, rice and steamed broccoli",
+                "a banana",
+            ),
             onTextChange = {},
             onMealTypeSelect = {},
             onEstimate = {},

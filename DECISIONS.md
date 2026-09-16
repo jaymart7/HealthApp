@@ -620,9 +620,10 @@ rather than needing a counter patched.
   what buys it.
 - **A recent query is recorded when a row is opened, not when a key is pressed.** Recording on the
   keystroke fills the list with "c", "ch", "chi"; opening a result is the proof the word worked.
-  They live in a `food_search_query` table keyed by the text itself, so asking twice moves one row
-  rather than adding a second — which is also why it is the one table in `:core:data` with no
-  `isDeleted` column. Nothing in it is the user's data: it is a list of words they typed,
+  They live in a `food_search_query` table keyed by the text itself — now under a `kind`, since
+  talk-to-log's remembered sentences are the same row with the same rules and went in beside them
+  (**Meal ideas & talk-to-log**) — so asking twice moves one row rather than adding a second, which
+  is also why it is the one table in `:core:data` with no `isDeleted` column. Nothing in it is the user's data: it is a list of words they typed,
   reconstructible by typing them again, and a row that stops being offered is one that fell past
   the `LIMIT`. The app has no DataStore and no `SharedPreferences`, and this was not the feature to
   give it one.
@@ -3024,6 +3025,29 @@ rather than needing a counter patched.
 - **The offline screen offers no "Log manually" button**, unlike `PhotoOfflineScreen`. That flow's
   manual door is a state inside itself; back out of this route lands on the diary, where the
   add-entry sheet already is, so the copy says so and saves a button that only navigates.
+- **A sentence is remembered when it becomes a meal, and tapping one back fills the field rather
+  than firing.** The recent strip is the history search's affordance on the voice screen, and it
+  keeps that screen's rule about *when* to record: `OnQueryUsed` fires on a row being opened rather
+  than on a keystroke because opening is the proof, and here the proof is the write — a parse the
+  user read and backed out of is exactly the sentence not worth offering again. So the sentence
+  rides `OnLogMeal` beside the rows it became, and `logMeal` records it after `addEntries`. It is
+  the sentence, not the corrected rows: the corrections are the user's own and what they will want
+  offered back is what they said. Tapping one then stops at the field, where the search screen's
+  chip would have run the query, because a parse is a network call and the whole point of a
+  remembered sentence is editing it — "…and *two* slices of toast" — before one is spent.
+- **They live in `food_search_query` under a `kind`, not in a second table.** That entity was
+  already "a string the user typed that turned out to be useful, keyed by its own text,
+  newest-first, capped by the caller", which is a sentence as much as a word — the two differ only
+  in who reads them. A composite `(kind, query)` key and a `WHERE kind = :kind` cost one column and
+  four lines; a parallel `food_voice_sentence` entity and DAO would have been that file twice and a
+  sixth constructor argument on `FoodRepositoryImpl`. Both kinds keep the no-`isDeleted` argument
+  the table was always exempt on, and neither is exported.
+- **Rows, where the search screen draws pills.** `VoiceRecentSentences` matches
+  `HistoryRecentQueries` on colour, border and the uppercase label and departs from it on shape,
+  which is the one thing the content decides: a pill is sized for "chicken", and "two scrambled
+  eggs, a slice of toast and a black coffee" needs the width of the field it is going into. Shared
+  in `:core:designsystem` neither would be — one screen draws each, which is this app's rule for
+  every component. The rows are 48dp, not the 44 the nine sites in the backlog are stuck at.
 
 - **The button is hidden, never disabled, when there is no day to ask about.** No profile means no
   target and no gap; under `MIN_IDEA_KCAL` (100) there is no meal left in the day, only a mint. Same

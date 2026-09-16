@@ -260,6 +260,23 @@ interface FoodRepository {
      */
     suspend fun recordQuery(query: String)
 
+    /**
+     * The sentences talk-to-log has actually logged a meal from, newest first, capped at [limit].
+     *
+     * [observeRecentQueries]'s flow, its table and its reasons — a sentence is one more string the
+     * user typed that worked, and the voice screen offers them under the same blank field.
+     */
+    fun observeRecentSentences(limit: Int): Flow<List<String>>
+
+    /**
+     * Remembers a sentence that became a meal.
+     *
+     * Called when the reviewed rows are written, not when the parse comes back: a parse the user
+     * backed out of is not a sentence worth offering again — [recordQuery]'s rule, where the row
+     * being opened is what proves the word worked. A blank sentence records nothing.
+     */
+    suspend fun recordSentence(sentence: String)
+
     /** Soft-deletes every entry, for import's replace-in-full semantics. */
     suspend fun deleteAllEntries()
 

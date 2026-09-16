@@ -15,6 +15,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
+import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.food.MealParseResult
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
@@ -45,6 +46,7 @@ fun VoiceLogScreen(
     onExit: () -> Unit,
     viewModel: VoiceLogViewModel = koinViewModel(),
 ) {
+    val uiState by viewModel.collectAsState()
     val state = rememberVoiceLogScreen()
 
     // Set when a retry finds the network still down, so the screen says so instead of appearing to
@@ -92,6 +94,7 @@ fun VoiceLogScreen(
                 VoiceFlow.Input -> VoiceInputScreen(
                     text = state.text,
                     mealType = state.mealType,
+                    recentSentences = uiState.recentSentences,
                     onTextChange = { state.text = it },
                     onMealTypeSelect = state::selectMealType,
                     onEstimate = { startParse(viewModel, state) },
@@ -110,7 +113,12 @@ fun VoiceLogScreen(
                     onToggleExpanded = state::toggleExpanded,
                     onLog = {
                         viewModel.handleEvent(
-                            VoiceLogEvent.OnLogMeal(state.items.map { it.toFoodEntry(dateEpochDay) }),
+                            VoiceLogEvent.OnLogMeal(
+                                entries = state.items.map { it.toFoodEntry(dateEpochDay) },
+                                // What was said, not what the rows became — corrections are the
+                                // user's, and the sentence is what they will want offered back.
+                                sentence = state.text,
+                            ),
                         )
                     },
                     // Back already asks before throwing away edits; the button that means the same

@@ -218,6 +218,7 @@
     <string name="food_voice_placeholder">Say or type your meal…</string>
     <string name="food_voice_speak">Speak your meal</string>
     <string name="food_voice_estimate">Estimate</string>
+    <string name="food_voice_recent">Recent</string>
     <string name="food_voice_none_heading">No food in that one</string>
     <string name="food_voice_none_body">Try naming what you ate and roughly how much — \"two eggs and a slice of toast\".</string>
     <string name="food_voice_edit">Edit what you said</string>

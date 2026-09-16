@@ -38,6 +38,11 @@ private const val PHOTO_DIR = "meal_photos"
  * a gallery frame, never a before/after comparison anyone studies. */
 private const val PHOTO_QUALITY = 85
 
+/** Which field a remembered string was typed into — `food_search_query`'s discriminator. Persisted,
+ * so both stay in Kotlin and neither is ever translated. */
+private const val SEARCH_KIND = "search"
+private const val VOICE_KIND = "voice"
+
 internal class FoodRepositoryImpl(
     private val context: Context,
     private val dao: FoodEntryDao,
@@ -100,13 +105,23 @@ internal class FoodRepositoryImpl(
     override suspend fun dayTotals(dates: List<Long>): Map<Long, Int> =
         dao.dayTotals(dates).associate { it.date to it.kcal }
 
-    override fun observeRecentQueries(limit: Int): Flow<List<String>> =
-        searchQueryDao.observeRecent(limit).map { rows -> rows.map { it.query } }
+    override fun observeRecentQueries(limit: Int): Flow<List<String>> = observeRecent(SEARCH_KIND, limit)
 
-    override suspend fun recordQuery(query: String) {
-        val trimmed = query.trim()
+    override suspend fun recordQuery(query: String) = record(SEARCH_KIND, query)
+
+    override fun observeRecentSentences(limit: Int): Flow<List<String>> = observeRecent(VOICE_KIND, limit)
+
+    override suspend fun recordSentence(sentence: String) = record(VOICE_KIND, sentence)
+
+    private fun observeRecent(kind: String, limit: Int): Flow<List<String>> =
+        searchQueryDao.observeRecent(kind, limit).map { rows -> rows.map { it.query } }
+
+    private suspend fun record(kind: String, text: String) {
+        val trimmed = text.trim()
         if (trimmed.isEmpty()) return
-        searchQueryDao.record(SearchQueryEntity(query = trimmed, lastUsedAt = System.currentTimeMillis()))
+        searchQueryDao.record(
+            SearchQueryEntity(kind = kind, query = trimmed, lastUsedAt = System.currentTimeMillis()),
+        )
     }
 
     override suspend fun deleteAllEntries() {

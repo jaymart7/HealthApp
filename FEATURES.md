@@ -169,6 +169,9 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Talk-to-log — say or type "two eggs, toast and a black coffee" and log the whole meal at
   once, every parsed row editable and repriceable before anything is written. Speech is the
   system's own dialog; typing is the same path.
+  Under an empty field, the three sentences that have already become meals, newest first — tapping
+  one fills the field and stops there, leaving it editable and the estimate a tap away. Recorded
+  when the meal is logged, never when it merely parses.
 - Water row in the diary; water goal and glass size configurable.
 - Share the day — a PNG card of the day's summary bar and its per-meal totals, from a link at
   the foot of the diary. Absolute date, no food names.
