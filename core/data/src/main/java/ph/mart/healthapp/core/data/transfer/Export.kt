@@ -72,10 +72,12 @@ internal data class FitPulseExport(
  * measurement part. That one adds no field, and the bump is the point: [enumOf] throws on a name
  * it doesn't know, so without it a v18 build fed a file holding a body fat row would fail the
  * whole all-or-nothing import on "Unrecognized MeasurementPart" instead of the version gate's
- * plain "written by a newer version of FitPulse".
+ * plain "written by a newer version of FitPulse"; 20 added the time of day on
+ * [FitPulseExport.weightEntries], [FitPulseExport.measurements] and [FitPulseExport.cycleDays] —
+ * null on every row written before it, which is the same silence a synced row carries.
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 19
+internal const val EXPORT_SCHEMA_VERSION = 20
 
 @Serializable
 internal data class ExportProfile(
@@ -137,10 +139,20 @@ internal data class ExportFoodEntry(
 )
 
 @Serializable
-internal data class ExportWeightEntry(val dateEpochDay: Long, val weightKg: Double, val note: String = "")
+internal data class ExportWeightEntry(
+    val dateEpochDay: Long,
+    val weightKg: Double,
+    val note: String = "",
+    val minuteOfDay: Int? = null,
+)
 
 @Serializable
-internal data class ExportMeasurement(val part: String, val dateEpochDay: Long, val valueCm: Double)
+internal data class ExportMeasurement(
+    val part: String,
+    val dateEpochDay: Long,
+    val valueCm: Double,
+    val minuteOfDay: Int? = null,
+)
 
 @Serializable
 internal data class ExportWaterDay(val dateEpochDay: Long, val glasses: Int)
@@ -182,7 +194,12 @@ internal data class ExportMoodDay(val dateEpochDay: Long, val mood: Int, val ene
  * what makes a tag this build doesn't know degrade on import rather than throw.
  */
 @Serializable
-internal data class ExportCycleDay(val dateEpochDay: Long, val flow: Int, val symptoms: String = "")
+internal data class ExportCycleDay(
+    val dateEpochDay: Long,
+    val flow: Int,
+    val symptoms: String = "",
+    val minuteOfDay: Int? = null,
+)
 
 @Serializable
 internal data class ExportFastSession(val startMillis: Long, val endMillis: Long, val goalHours: Int)
@@ -250,8 +267,8 @@ fun buildExportJson(
     FitPulseExport(
         profile = profile?.toExport(),
         foodEntries = foodEntries.map { it.toExport() },
-        weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note) },
-        measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.value) },
+        weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note, it.minuteOfDay) },
+        measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.value, it.minuteOfDay) },
         waterDays = waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
         exercises = exercises.map { entry ->
             ExportExercise(
@@ -273,7 +290,7 @@ fun buildExportJson(
             ExportBloodPressureReading(it.takenAtMillis, it.systolic, it.diastolic, it.pulseBpm)
         },
         cycleDays = cycleDays.map {
-            ExportCycleDay(it.dateEpochDay, it.flow, encodeCycleSymptoms(it.symptoms))
+            ExportCycleDay(it.dateEpochDay, it.flow, encodeCycleSymptoms(it.symptoms), it.minuteOfDay)
         },
     ),
 )
@@ -290,9 +307,14 @@ fun parseExport(text: String): Result<ImportData> = runCatching {
     ImportData(
         profile = export.profile?.toProfile(),
         foodEntries = export.foodEntries.map { it.toFoodEntry() },
-        weightEntries = export.weightEntries.map { WeightEntry(it.dateEpochDay, it.weightKg, it.note) },
+        weightEntries = export.weightEntries.map { WeightEntry(it.dateEpochDay, it.weightKg, it.note, it.minuteOfDay) },
         measurements = export.measurements.map {
-            MeasurementEntry(enumOf<MeasurementPart>(it.part, MeasurementPart.entries), it.dateEpochDay, it.valueCm)
+            MeasurementEntry(
+                enumOf<MeasurementPart>(it.part, MeasurementPart.entries),
+                it.dateEpochDay,
+                it.valueCm,
+                it.minuteOfDay,
+            )
         },
         waterDays = export.waterDays.map { WaterDay(it.dateEpochDay, it.glasses) },
         exercises = export.exercises.map { entry ->
@@ -332,7 +354,7 @@ fun parseExport(text: String): Result<ImportData> = runCatching {
             )
         },
         cycleDays = export.cycleDays.map {
-            CycleDay(it.dateEpochDay, it.flow, cycleSymptoms(it.symptoms))
+            CycleDay(it.dateEpochDay, it.flow, cycleSymptoms(it.symptoms), it.minuteOfDay)
         },
     )
 }

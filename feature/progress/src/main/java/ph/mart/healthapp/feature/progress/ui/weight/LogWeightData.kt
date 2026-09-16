@@ -1,15 +1,20 @@
 package ph.mart.healthapp.feature.progress.ui.weight
 
+import ph.mart.healthapp.core.data.nowMinuteOfDay
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.todayEpochDay
 
 data class LogWeightUiState(val entries: List<WeightEntry> = emptyList(), val preferredUnit: UnitSystem = UnitSystem.Metric)
 
+/** [minuteOfDay] opens at now, and matters more here than anywhere else it is asked: a body is a
+ * kilo heavier in the evening than it was that morning, and the Weight page's `weighInTimeSplit`
+ * is what reads this field back. */
 data class LogWeightForm(
     val dateEpochDay: Long = todayEpochDay(),
     val weightKg: Double = 70.0,
     val note: String = "",
+    val minuteOfDay: Int = nowMinuteOfDay(),
 )
 
 sealed interface LogWeightEvent {

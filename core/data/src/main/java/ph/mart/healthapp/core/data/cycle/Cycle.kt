@@ -17,6 +17,11 @@ data class CycleDay(
     val dateEpochDay: Long,
     val flow: Int,
     val symptoms: Set<CycleSymptom> = emptySet(),
+    /** Minutes past local midnight the day was logged — see
+     * [MeasurementEntry.minuteOfDay][ph.mart.healthapp.core.data.progress.MeasurementEntry.minuteOfDay].
+     * Null on every row Health Connect's `MenstruationPeriodRecord` brought in, which reports a
+     * span of days and no hour, the same silence its missing intensity already has. */
+    val minuteOfDay: Int? = null,
 ) {
     val logged: Boolean get() = flow > 0 || symptoms.isNotEmpty()
 }

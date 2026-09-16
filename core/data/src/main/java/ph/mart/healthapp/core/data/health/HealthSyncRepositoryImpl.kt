@@ -6,6 +6,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.epochDayStartMillis
+import ph.mart.healthapp.core.data.minuteOfDayOf
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -383,7 +384,15 @@ internal class HealthSyncRepositoryImpl(
                 SKIPPED
             } else {
                 progressRepository.upsertWeightEntry(
-                    WeightEntry(dateEpochDay = day, weightKg = remote.weightKg, note = note),
+                    WeightEntry(
+                        dateEpochDay = day,
+                        weightKg = remote.weightKg,
+                        note = note,
+                        // The record's own instant is the hour they stood on the scale, not a
+                        // sync time — so the row keeps it, and the Weight page's timing split
+                        // counts an imported weigh-in like any other.
+                        minuteOfDay = minuteOfDayOf(remote.timeMillis),
+                    ),
                 )
                 // The table is keyed by date, so the date is the local id.
                 day

@@ -80,7 +80,7 @@ import ph.mart.healthapp.core.data.water.local.WaterDayEntity
         ChatMessageEntity::class,
         SearchQueryEntity::class,
     ],
-    version = 34,
+    version = 35,
     exportSchema = true,
 )
 internal abstract class AppDatabase : RoomDatabase() {

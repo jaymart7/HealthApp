@@ -25,7 +25,14 @@ internal class ProgressRepositoryImpl(
         weightDao.observeAll().map { entities -> entities.map { it.toWeightEntry() } }
 
     override suspend fun upsertWeightEntry(entry: WeightEntry) {
-        weightDao.upsert(WeightEntryEntity(date = entry.dateEpochDay, weightKg = entry.weightKg, note = entry.note))
+        weightDao.upsert(
+            WeightEntryEntity(
+                date = entry.dateEpochDay,
+                weightKg = entry.weightKg,
+                note = entry.note,
+                minuteOfDay = entry.minuteOfDay,
+            ),
+        )
     }
 
     override suspend fun deleteWeightEntry(dateEpochDay: Long) {
@@ -39,25 +46,49 @@ internal class ProgressRepositoryImpl(
 
     override suspend fun upsertMeasurementEntry(entry: MeasurementEntry) {
         measurementDao.upsert(
-            MeasurementEntryEntity(part = entry.part.name, date = entry.dateEpochDay, valueCm = entry.value),
+            MeasurementEntryEntity(
+                part = entry.part.name,
+                date = entry.dateEpochDay,
+                valueCm = entry.value,
+                minuteOfDay = entry.minuteOfDay,
+            ),
         )
     }
 
     override fun observePhotos(): Flow<List<ProgressPhoto>> =
         photoDao.observeAll().map { entities -> entities.map { it.toProgressPhoto() } }
 
-    override suspend fun addPhoto(bitmap: Bitmap, dateEpochDay: Long, weightKg: Double?) {
+    override suspend fun addPhoto(bitmap: Bitmap, dateEpochDay: Long, weightKg: Double?, minuteOfDay: Int?) {
         val dir = File(context.filesDir, "progress_photos").apply { mkdirs() }
         val file = File(dir, "${UUID.randomUUID()}.jpg")
         FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out) }
-        photoDao.insert(ProgressPhotoEntity(date = dateEpochDay, filePath = file.absolutePath, weightKg = weightKg))
+        photoDao.insert(
+            ProgressPhotoEntity(
+                date = dateEpochDay,
+                filePath = file.absolutePath,
+                weightKg = weightKg,
+                minuteOfDay = minuteOfDay,
+            ),
+        )
     }
 }
 
-private fun WeightEntryEntity.toWeightEntry() = WeightEntry(dateEpochDay = date, weightKg = weightKg, note = note)
+private fun WeightEntryEntity.toWeightEntry() =
+    WeightEntry(dateEpochDay = date, weightKg = weightKg, note = note, minuteOfDay = minuteOfDay)
 
 private fun MeasurementEntryEntity.toMeasurementEntry() =
-    MeasurementEntry(part = MeasurementPart.valueOf(part), dateEpochDay = date, value = valueCm)
+    MeasurementEntry(
+        part = MeasurementPart.valueOf(part),
+        dateEpochDay = date,
+        value = valueCm,
+        minuteOfDay = minuteOfDay,
+    )
 
 private fun ProgressPhotoEntity.toProgressPhoto() =
-    ProgressPhoto(id = id, dateEpochDay = date, filePath = filePath, weightKg = weightKg)
+    ProgressPhoto(
+        id = id,
+        dateEpochDay = date,
+        filePath = filePath,
+        weightKg = weightKg,
+        minuteOfDay = minuteOfDay,
+    )

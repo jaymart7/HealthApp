@@ -31,13 +31,15 @@ internal class AddMeasurementState(form: AddMeasurementForm = AddMeasurementForm
 
     companion object {
         fun Saver(): Saver<AddMeasurementState, Any> = listSaver(
-            save = { listOf(it.form.part?.name, it.form.dateEpochDay, it.form.value, it.showingCalendar) },
+            // Appended, never renumbered.
+            save = { listOf(it.form.part?.name, it.form.dateEpochDay, it.form.value, it.showingCalendar, it.form.minuteOfDay) },
             restore = { saved ->
                 AddMeasurementState(
                     form = AddMeasurementForm(
                         part = (saved[0] as String?)?.let(MeasurementPart::valueOf),
                         dateEpochDay = saved[1] as Long,
                         value = saved[2] as Double,
+                        minuteOfDay = saved[4] as Int,
                     ),
                     showingCalendar = saved[3] as Boolean,
                 )

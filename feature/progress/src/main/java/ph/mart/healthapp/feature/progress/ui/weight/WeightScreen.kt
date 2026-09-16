@@ -71,6 +71,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
+import ph.mart.healthapp.feature.progress.ui.weight.components.WeighInTimingCard
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightInsightCard
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightProgressChart
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightRecordRow
@@ -341,6 +342,11 @@ private fun ColumnScope.WeightBody(
         unit = unit,
         onOpen = { state.checkInOpen = true },
     )
+
+    // Every entry, not `filtered`: the question is this user's weigh-in habit, which the chart's
+    // range toggle has nothing to say about — and a 1-month window rarely holds enough timed
+    // readings to clear the floors at all.
+    WeighInTimingCard(split = entries.weighInTimeSplit(), unit = unit)
 
     val weekTrend = entries.trendVsSevenDaysAgo(fallbackKg = current)
     StatRowsCard(

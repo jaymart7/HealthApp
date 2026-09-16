@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.NOTE_GOOGLE_HEALTH
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.core.designsystem.component.formatMinuteOfDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
@@ -48,7 +49,11 @@ internal fun WeightRecordRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = formatEpochDay(entry.dateEpochDay),
+                    // The hour is what makes two readings comparable or not, so it sits on the
+                    // date rather than under it — `weighInTimeSplit` below reads the same field.
+                    text = entry.minuteOfDay?.let {
+                        stringResource(R.string.progress_when, formatEpochDay(entry.dateEpochDay), formatMinuteOfDay(it))
+                    } ?: formatEpochDay(entry.dateEpochDay),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )

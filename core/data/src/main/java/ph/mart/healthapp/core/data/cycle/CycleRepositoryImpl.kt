@@ -49,10 +49,16 @@ internal class CycleRepositoryImpl(private val dao: CycleDayDao) : CycleReposito
 private fun Int.clampToScale(): Int = if (this <= 0) 0 else coerceIn(FLOW_SCALE)
 
 private fun CycleDayEntity.toDomain() =
-    CycleDay(dateEpochDay = dateEpochDay, flow = flow, symptoms = cycleSymptoms(symptoms))
+    CycleDay(
+        dateEpochDay = dateEpochDay,
+        flow = flow,
+        symptoms = cycleSymptoms(symptoms),
+        minuteOfDay = minuteOfDay,
+    )
 
 private fun CycleDay.toEntity() = CycleDayEntity(
     dateEpochDay = dateEpochDay,
     flow = flow.clampToScale(),
     symptoms = encodeCycleSymptoms(symptoms),
+    minuteOfDay = minuteOfDay,
 )

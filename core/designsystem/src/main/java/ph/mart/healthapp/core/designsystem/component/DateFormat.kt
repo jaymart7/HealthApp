@@ -82,6 +82,23 @@ fun formatTimeOfDay(epochMillis: Long): String =
         .format(java.util.Date(epochMillis))
 
 /**
+ * The same clock face for a **minute past local midnight** — `0..1439`, the shape the weigh-in,
+ * measurement, cycle and progress-photo rows store their time of day in (`core.data.nowMinuteOfDay`).
+ *
+ * The fields are *set* on today's midnight rather than added to it in millis, because a stored
+ * minute is a wall-clock reading and not an elapsed duration: `midnight + 390 * 60_000` prints
+ * 5:30 or 7:30 on the two mornings a year a DST zone shifts, where a 6:30 weigh-in is 6:30 on
+ * every one of them. The one hour a spring-forward skips has no wall clock to print and
+ * normalises forward; nothing is stored in it, because it never occurred.
+ */
+fun formatMinuteOfDay(minuteOfDay: Int): String = formatTimeOfDay(
+    midnightToday().apply {
+        set(Calendar.HOUR_OF_DAY, minuteOfDay / 60)
+        set(Calendar.MINUTE, minuteOfDay % 60)
+    }.timeInMillis,
+)
+
+/**
  * "August", or "August 2024" when the day is not in the current year — the heading over a run of
  * days in a list that scrolls back through months.
  *

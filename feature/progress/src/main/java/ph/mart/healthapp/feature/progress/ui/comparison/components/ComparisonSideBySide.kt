@@ -23,12 +23,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
-import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.comparison.ComparisonPair
 import ph.mart.healthapp.feature.progress.ui.shared.components.PhotoOverlayLabel
+import ph.mart.healthapp.feature.progress.ui.shared.components.photoWhenLabel
 
 /**
  * The same pair, both shots whole. A wipe is the better read on a small change in one place; two
@@ -40,8 +40,8 @@ import ph.mart.healthapp.feature.progress.ui.shared.components.PhotoOverlayLabel
  */
 @Composable
 internal fun ComparisonSideBySide(pair: ComparisonPair, modifier: Modifier = Modifier) {
-    val labelA = formatEpochDay(pair.older.dateEpochDay)
-    val labelB = formatEpochDay(pair.newer.dateEpochDay)
+    val labelA = photoWhenLabel(pair.older)
+    val labelB = photoWhenLabel(pair.newer)
     val spoken = stringResource(R.string.progress_compare_between, labelA, labelB)
 
     Row(

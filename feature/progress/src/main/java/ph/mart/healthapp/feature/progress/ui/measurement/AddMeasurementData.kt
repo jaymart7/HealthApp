@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.progress.ui.measurement
 
+import ph.mart.healthapp.core.data.nowMinuteOfDay
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.defaultValue
@@ -15,6 +16,7 @@ data class AddMeasurementForm(
     val part: MeasurementPart? = null,
     val dateEpochDay: Long = todayEpochDay(),
     val value: Double = MeasurementPart.Chest.defaultValue(),
+    val minuteOfDay: Int = nowMinuteOfDay(),
 )
 
 sealed interface AddMeasurementEvent {

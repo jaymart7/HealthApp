@@ -162,7 +162,14 @@
     <string name="progress_weight_down">%1$s %2$s down</string>
     <string name="progress_weight_up">%1$s %2$s up</string>
     <string name="progress_weight_readings">Readings logged</string>
+    <!-- A logged row's date with the time of day it was taken beside it. -->
+    <string name="progress_when">%1$s · %2$s</string>
     <string name="progress_weight_readings_of">%1$d of %2$d days</string>
+    <!-- The weigh-in timing split. A comparison of the user's own readings, never a claim. -->
+    <string name="progress_weight_timing_title">When you weigh in</string>
+    <string name="progress_weight_timing_above">Weigh-ins from %1$s on run %2$s %3$s above your earlier ones — %4$d against %5$d.</string>
+    <string name="progress_weight_timing_below">Weigh-ins from %1$s on run %2$s %3$s below your earlier ones — %4$d against %5$d.</string>
+    <string name="progress_weight_timing_note">Your own readings compared, not a claim about your body — a scale reads differently depending on the hour. Weighing in at the same time is what makes a trend comparable.</string>
     <string name="progress_weight_current">Current</string>
     <string name="progress_weight_change">Change</string>
     <string name="progress_weight_goal_remaining">Goal remaining</string>

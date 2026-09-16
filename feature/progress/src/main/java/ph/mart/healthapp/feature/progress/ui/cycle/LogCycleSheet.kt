@@ -90,6 +90,8 @@ private fun LogCycleContent(
                     state.form = seedCycleForm(days, date)
                     state.showingCalendar = false
                 },
+                selectedMinuteOfDay = form.minuteOfDay,
+                onSelectTime = { state.form = form.copy(minuteOfDay = it) },
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
                     Label(stringResource(R.string.progress_cycle_flow))

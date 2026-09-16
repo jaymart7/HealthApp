@@ -11,8 +11,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import ph.mart.healthapp.core.data.progress.ProgressPhoto
+import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.core.designsystem.component.formatMinuteOfDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
+import ph.mart.healthapp.feature.progress.R
+
+/**
+ * A shot's date with the hour it was taken beside it — what a full-frame [PhotoOverlayLabel] says.
+ *
+ * Here rather than in either comparison file: both of them build this label, and two copies is two
+ * answers to when a photo was taken. The grid tile is deliberately not a caller — its `Small` pill
+ * carries a bare "12 Mar" and has no width for a clock.
+ *
+ * Falls back to the plain date for a shot from before the field existed.
+ */
+@Composable
+internal fun photoWhenLabel(photo: ProgressPhoto): String = photo.minuteOfDay?.let {
+    stringResource(R.string.progress_when, formatEpochDay(photo.dateEpochDay), formatMinuteOfDay(it))
+} ?: formatEpochDay(photo.dateEpochDay)
 
 /** [Small] is a grid tile's corner; [Medium] is a full-frame one — compare, timelapse, the PNG. */
 internal enum class OverlayLabelSize { Small, Medium }

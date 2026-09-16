@@ -20,6 +20,30 @@ import kotlinx.coroutines.flow.flow
 fun todayEpochDay(): Long = epochDayOf(System.currentTimeMillis())
 
 /**
+ * The current time of day as **minutes past local midnight**, `0..1439` — what the four
+ * date-picker logs (weigh-in, measurement, cycle day, progress photo) open their time row at.
+ *
+ * A minute of the day rather than an instant on purpose. Those four rows are keyed by a date the
+ * user picks and can backdate, so a second timestamp beside it would be a second copy of the day
+ * — the drift `BloodPressureReadingEntity` refuses a `date` column to avoid, arrived at from the
+ * other side. The day column stays the key; this is the other half of it, and never the whole.
+ *
+ * [Calendar] rather than `LocalTime`, for [todayEpochDay]'s reason: no core-library desugaring.
+ */
+fun nowMinuteOfDay(): Int = Calendar.getInstance().let {
+    it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE)
+}
+
+/**
+ * The same figure for an arbitrary instant, as [epochDayOf] is to [todayEpochDay] — what an
+ * imported weigh-in's timestamp becomes once it has been placed on its local day. A scale's own
+ * record carries the hour the user stood on it, so the row keeps it rather than reading null.
+ */
+fun minuteOfDayOf(millis: Long): Int = Calendar.getInstance().apply { timeInMillis = millis }.let {
+    it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE)
+}
+
+/**
  * The same conversion for an arbitrary instant — an imported workout carries a UTC timestamp and
  * has to land on the local day the user actually trained.
  */

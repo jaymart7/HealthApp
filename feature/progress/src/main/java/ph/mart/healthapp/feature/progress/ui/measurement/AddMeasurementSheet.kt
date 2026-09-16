@@ -119,9 +119,17 @@ private fun AddMeasurementContent(
                 markedDates = part?.let { p -> uiState.entriesByPart[p]?.map { it.dateEpochDay }?.toSet() } ?: emptySet(),
                 onSelectDate = { date ->
                     val existing = part?.let { p -> uiState.entriesByPart[p]?.find { it.dateEpochDay == date } }
-                    state.form = state.form.copy(dateEpochDay = date, value = existing?.value ?: state.form.value)
+                    state.form = state.form.copy(
+                        dateEpochDay = date,
+                        value = existing?.value ?: state.form.value,
+                        // Follows the figure: a day that already has this part's reading shows it
+                        // as it was taken, because saving replaces it.
+                        minuteOfDay = existing?.minuteOfDay ?: state.form.minuteOfDay,
+                    )
                     state.showingCalendar = false
                 },
+                selectedMinuteOfDay = state.form.minuteOfDay,
+                onSelectTime = { state.form = state.form.copy(minuteOfDay = it) },
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
                     if (existingForDate != null) {

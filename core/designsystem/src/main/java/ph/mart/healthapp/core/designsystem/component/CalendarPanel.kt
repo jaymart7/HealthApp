@@ -200,6 +200,8 @@ private fun SheetDatePickerCalendarPreview() {
                     selectedDate = today,
                     markedDates = setOf(today - 2, today - 5),
                     onSelectDate = {},
+                    selectedMinuteOfDay = 6 * 60 + 30,
+                    onSelectTime = {},
                 ) {}
             }
         }

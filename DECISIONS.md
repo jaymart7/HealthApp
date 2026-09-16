@@ -1489,6 +1489,47 @@ rather than needing a counter patched.
   exactly the same reason. The two have nothing to do with each other past both being things the
   user taps in themselves; the combine is simply full. The goal needed no slot at all — it comes
   off the profile the first combine was already reading.
+- **A logged reading carries a time of day, and it is a `minuteOfDay: Int?`, not a timestamp.**
+  The weigh-in, the measurement, the cycle day and the progress photo were all filed under an epoch
+  day and nothing finer, which throws away the half of the reading that says whether two of them are
+  comparable — a body is a kilo heavier at 9pm than it was at 6am. Three things were argued.
+  *Why not epoch millis, the way `food_entry.loggedAt` and `exercise_entry.loggedAt` do it.* Those
+  two are stamped at the moment of logging; these four are **backdatable**, and the date is the
+  primary key on three of the tables. A millisecond timestamp beside a user-picked key is a second
+  copy of the day that can drift from it — which is the exact drift `BloodPressureReadingEntity`
+  refuses a denormalised `date` column to avoid, arrived at from the other side. The day column
+  stays the key and the minute is the other half of the reading, never the whole of it.
+  *Why nullable rather than a sentinel.* This module's idiom is `flow = 0` and `pulseBpm = 0` for
+  "not recorded", and it does not survive here: midnight is a legitimate 0. `Int?` follows
+  `progress_photo.weightKg` and `food_entry.photoPath` instead. Null is not a legacy artefact to be
+  backfilled — Health Connect's `MenstruationPeriodRecord` reports a span of days and no hour, and
+  a coach-drafted weigh-in has none either, which is the same silence an imported reading's missing
+  intensity already carries. *Why the clock is a dialog where the calendar is a swap-in panel.* A
+  third swap-in state would turn `showingCalendar` into a three-way enum at four call sites and four
+  `listSaver`s. A dialog's back dismisses the dialog and leaves the sheet open, which is the
+  one-level step the predictive-back rule asks for and comes free from `Dialog` — so the clock's
+  open flag is held inside `SheetDatePicker` rather than hoisted, because unlike the calendar no
+  caller has a Save button to hide behind it. An *imported* weigh-in does get a time, off
+  `RemoteWeight.timeMillis`: a scale's own record carries the hour the user stood on it, and `note`
+  is what marks provenance.
+- **Weight is allowed on both sides of the weigh-in timing split, where `Patterns.kt` bans it on
+  either.** That file's stated reason for the ban is that a day-level weight is mostly water — and
+  water is exactly what `weighInTimeSplit` reports. It is a statement about the *measurement*, not
+  about the body: your scale reads differently depending on the hour you stand on it, so a trend
+  drawn from readings taken at scattered hours is measuring the clock as much as the person.
+  Methodological, not clinical, and the only conclusion it invites is "weigh in at the same time".
+  Everything else is `Patterns.kt`'s shape, deliberately: a median split rather than a fixed
+  "morning is before 10" cutoff, because a cutoff would be this app deciding when a weigh-in ought
+  to happen; ties to the early side unless that empties the late one; two averages and the day count
+  behind each on screen; and null — the card absent entirely — wherever there is nothing honest to
+  say. The floors are its own rather than imported (`MIN_TIMED_WEIGH_INS = 12`, five a side, two
+  hours of separation, 0.3kg of gap) because a weigh-in series is sparser than a food log and the
+  two questions do not need the same bar. It reads every entry, not the chart's window: the question
+  is a habit, which a range toggle has nothing to say about. **What did not follow**: the strongest
+  time-driven comparison this app could draw is a late-last-meal pattern, and it needs no schema at
+  all — `food_entry.loggedAt` is already stored. It is left for its own pass, because it is a
+  `Patterns.kt` change (raw entries into `PatternInputs`, which today takes aggregated
+  `DayNutrition`) and not part of putting a clock on four pickers.
 
 ### Saved meals, recipes & the food library
 

@@ -27,12 +27,14 @@ internal class AddPhotoPreviewState(
 
     companion object {
         val Saver: Saver<AddPhotoPreviewState, Any> = listSaver(
-            save = { listOf(it.form.dateEpochDay, it.form.weightKg, it.showingCalendar) },
+            // Appended, never renumbered.
+            save = { listOf(it.form.dateEpochDay, it.form.weightKg, it.showingCalendar, it.form.minuteOfDay) },
             restore = {
                 AddPhotoPreviewState(
                     form = AddPhotoPreviewForm(
                         dateEpochDay = it[0] as Long,
                         weightKg = it[1] as Double?,
+                        minuteOfDay = it[3] as Int,
                     ),
                     showingCalendar = it[2] as Boolean,
                 )

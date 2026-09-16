@@ -49,7 +49,14 @@ class LogWeightViewModel(
      * the profile's weight setters use. */
     private fun onSave(form: LogWeightForm) = intent {
         val weightKg = form.weightKg.coerceIn(WEIGHT_KG)
-        progressRepository.upsertWeightEntry(WeightEntry(dateEpochDay = form.dateEpochDay, weightKg = weightKg, note = form.note))
+        progressRepository.upsertWeightEntry(
+            WeightEntry(
+                dateEpochDay = form.dateEpochDay,
+                weightKg = weightKg,
+                note = form.note,
+                minuteOfDay = form.minuteOfDay,
+            ),
+        )
         postSideEffect(LogWeightSideEffect.Saved)
     }
 

@@ -251,8 +251,11 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, a BMI chip naming its WHO band, and an insight card carrying the projection and the
   energy check-in — the app's only insight card fed by two sources. Tapping it opens the check-in
-  over the page. Under it, **Records**: every weigh-in in the chart's window, newest first, each row
-  opening the log sheet on its date to edit the figure or delete it — an imported row shows where it
+  over the page. Under it, **When you weigh in**: once the log holds twelve timed weigh-ins that
+  really split into an earlier and a later habit, the two averages and the day count behind each —
+  a comparison of the user's own readings, never a claim about the body. Then **Records**: every
+  weigh-in in the chart's window, newest first, each row showing its time beside its date and
+  opening the log sheet on it to edit the figure or delete it — an imported row shows where it
   came from instead of a delete, and the list pages twenty at a time as you scroll.
 - Food: the week's calorie bank (the Home card's figures, unranged — the week is the week), then
   calories + macros against target over the window, the seven nutrients averaged against
@@ -328,10 +331,14 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Energy check-in: maintenance calories measured from 28 days of logged intake against the real
   weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
   opening a full overlay that shows its working).
-- Logging sheets: weigh-in (backdatable), measurements, blood pressure, cycle day.
+- Logging sheets: weigh-in (backdatable), measurements, blood pressure, cycle day. All but blood
+  pressure carry a **time of day** beside the date, opening at now and set from a clock dialog —
+  a reading is not only which day it was taken on. Blood pressure is stamped with the moment Save
+  is tapped and has no picker at all.
 - Add photo: two routes — a full-screen viewfinder with the gallery beside the shutter, then a
-  preview putting a date and an optional weight on the shot before it is saved. Back off the
-  preview is a retake.
+  preview putting a date, a time and an optional weight on the shot before it is saved. Back off
+  the preview is a retake. The time shows on the before/after and timelapse labels, not on a grid
+  tile, which has no width for it.
 
 ## AI (Firebase AI Logic / Gemini)
 

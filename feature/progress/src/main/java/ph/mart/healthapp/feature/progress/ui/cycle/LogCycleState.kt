@@ -29,13 +29,20 @@ internal class LogCycleState(
         /** The symptom set rides the saver as its stored string — the format Room holds it in, so
          * a rotation can't produce a set the table couldn't. */
         fun Saver(): Saver<LogCycleState, Any> = listSaver(
-            save = { listOf(it.form.dateEpochDay, it.form.flow, encodeCycleSymptoms(it.form.symptoms), it.showingCalendar) },
+            // Appended, never renumbered.
+            save = {
+                listOf(
+                    it.form.dateEpochDay, it.form.flow, encodeCycleSymptoms(it.form.symptoms),
+                    it.showingCalendar, it.form.minuteOfDay,
+                )
+            },
             restore = { saved ->
                 LogCycleState(
                     form = CycleLogForm(
                         dateEpochDay = saved[0] as Long,
                         flow = saved[1] as Int,
                         symptoms = cycleSymptoms(saved[2] as String),
+                        minuteOfDay = saved[4] as Int,
                     ),
                     showingCalendar = saved[3] as Boolean,
                 )

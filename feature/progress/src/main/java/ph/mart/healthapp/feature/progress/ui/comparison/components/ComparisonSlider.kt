@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
-import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -49,6 +48,7 @@ import ph.mart.healthapp.feature.progress.ui.comparison.ComparisonState
 import ph.mart.healthapp.feature.progress.ui.comparison.DIVIDER_RANGE
 import ph.mart.healthapp.feature.progress.ui.comparison.rememberComparisonState
 import ph.mart.healthapp.feature.progress.ui.shared.components.PhotoOverlayLabel
+import ph.mart.healthapp.feature.progress.ui.shared.components.photoWhenLabel
 
 /** Half the handle, in dp — it is clamped by this so it stays fully inside the clipped frame. */
 private val HandleRadius = 24.dp
@@ -69,8 +69,8 @@ internal fun ComparisonSlider(
     val bitmapA = rememberBitmapFromFile(pair.older.filePath)
     val bitmapB = rememberBitmapFromFile(pair.newer.filePath)
     var widthPx by remember { mutableFloatStateOf(0f) }
-    val labelA = formatEpochDay(pair.older.dateEpochDay)
-    val labelB = formatEpochDay(pair.newer.dateEpochDay)
+    val labelA = photoWhenLabel(pair.older)
+    val labelB = photoWhenLabel(pair.newer)
     val spoken = stringResource(R.string.progress_compare_spoken, labelA, labelB)
 
     Box(

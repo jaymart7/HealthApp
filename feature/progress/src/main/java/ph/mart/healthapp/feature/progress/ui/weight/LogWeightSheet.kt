@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.data.nowMinuteOfDay
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
@@ -48,8 +49,16 @@ fun LogWeightSheet(
 ) {
     val uiState by viewModel.collectAsState()
     val state = rememberLogWeightState(
-        entry?.let { LogWeightForm(dateEpochDay = it.dateEpochDay, weightKg = it.weightKg, note = it.note) }
-            ?: LogWeightForm(),
+        entry?.let {
+            LogWeightForm(
+                dateEpochDay = it.dateEpochDay,
+                weightKg = it.weightKg,
+                note = it.note,
+                // A row from before the field existed has no time to re-seed from, so the sheet
+                // opens at now rather than inventing a midnight.
+                minuteOfDay = it.minuteOfDay ?: nowMinuteOfDay(),
+            )
+        } ?: LogWeightForm(),
     )
     viewModel.collectSideEffect { effect ->
         when (effect) {
@@ -83,9 +92,17 @@ private fun LogWeightContent(
                 markedDates = uiState.entries.map { it.dateEpochDay }.toSet(),
                 onSelectDate = { date ->
                     val existing = uiState.entries.find { it.dateEpochDay == date }
-                    state.form = state.form.copy(dateEpochDay = date, weightKg = existing?.weightKg ?: state.form.weightKg)
+                    state.form = state.form.copy(
+                        dateEpochDay = date,
+                        weightKg = existing?.weightKg ?: state.form.weightKg,
+                        // Follows the weight: landing on a day that already has a weigh-in shows
+                        // that weigh-in, hour and all, because saving is going to replace it.
+                        minuteOfDay = existing?.minuteOfDay ?: state.form.minuteOfDay,
+                    )
                     state.showingCalendar = false
                 },
+                selectedMinuteOfDay = state.form.minuteOfDay,
+                onSelectTime = { state.form = state.form.copy(minuteOfDay = it) },
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 12.dp)) {
                     if (existingForDate != null) {

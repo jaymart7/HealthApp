@@ -44,7 +44,14 @@ fun MeasurementPart.defaultValue(): Double = if (percent) 20.0 else 80.0
 
 fun MeasurementPart.range(): ClosedFloatingPointRange<Double> = if (percent) 1.0..70.0 else 10.0..250.0
 
-data class WeightEntry(val dateEpochDay: Long, val weightKg: Double, val note: String = "")
+data class WeightEntry(
+    val dateEpochDay: Long,
+    val weightKg: Double,
+    val note: String = "",
+    /** Minutes past local midnight this weigh-in was taken — see [MeasurementEntry.minuteOfDay].
+     * The one place it is read for more than display: `weighInTimeSplit` on the Weight page. */
+    val minuteOfDay: Int? = null,
+)
 
 /** The note `HealthSyncRepositoryImpl.weightWriter` stamps on a row Health Connect brought in. */
 const val NOTE_HEALTH_CONNECT = "Health Connect"
@@ -65,13 +72,28 @@ fun WeightEntry.isImported(): Boolean = note == NOTE_HEALTH_CONNECT || note == N
 /** [value] is centimetres for a circumference and percent for [MeasurementPart.BodyFat] — the part
  * is what says which. The Room column and the export key are both still named `valueCm`: renaming
  * a column is a migration, and renaming a wire field is a schema version, neither bought by a name. */
-data class MeasurementEntry(val part: MeasurementPart, val dateEpochDay: Long, val value: Double)
+data class MeasurementEntry(
+    val part: MeasurementPart,
+    val dateEpochDay: Long,
+    val value: Double,
+    /**
+     * Minutes past local midnight the reading was taken, `0..1439` — null wherever no clock was
+     * ever recorded: a row written before the field existed, one a provider synced in, or one the
+     * coach drafted. Every path that asks a human opens at
+     * [nowMinuteOfDay][ph.mart.healthapp.core.data.nowMinuteOfDay], so a hand-logged row has one.
+     *
+     * Not a timestamp: [dateEpochDay] is the key, and a second copy of the day could drift from it.
+     */
+    val minuteOfDay: Int? = null,
+)
 
 data class ProgressPhoto(
     val id: Long = 0,
     val dateEpochDay: Long,
     val filePath: String,
     val weightKg: Double? = null,
+    /** Minutes past local midnight the shot was taken — see [MeasurementEntry.minuteOfDay]. */
+    val minuteOfDay: Int? = null,
 )
 
 /** What a run of progress photos adds up to: kilograms gained or lost between its ends, and the
@@ -142,5 +164,5 @@ interface ProgressRepository {
     suspend fun upsertMeasurementEntry(entry: MeasurementEntry)
 
     fun observePhotos(): Flow<List<ProgressPhoto>>
-    suspend fun addPhoto(bitmap: Bitmap, dateEpochDay: Long, weightKg: Double?)
+    suspend fun addPhoto(bitmap: Bitmap, dateEpochDay: Long, weightKg: Double?, minuteOfDay: Int? = null)
 }

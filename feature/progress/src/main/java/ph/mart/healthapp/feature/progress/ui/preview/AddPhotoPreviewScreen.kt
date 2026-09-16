@@ -137,6 +137,8 @@ private fun AddPhotoPreviewContent(
                     state.form = state.form.copy(dateEpochDay = date)
                     state.showingCalendar = false
                 },
+                selectedMinuteOfDay = state.form.minuteOfDay,
+                onSelectTime = { state.form = state.form.copy(minuteOfDay = it) },
             ) {
                 WeightField(
                     form = state.form,

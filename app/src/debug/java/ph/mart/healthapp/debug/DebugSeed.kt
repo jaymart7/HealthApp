@@ -91,11 +91,17 @@ private suspend fun ProgressRepository.seedProgress(today: Long) {
     // 90 days so 1M and 3M differ visibly; 6M/1Y then show the same series with more empty runway.
     for (daysAgo in 89 downTo 0) {
         val trend = 87.6 - (89 - daysAgo) * 0.058
+        // Every other day is an evening weigh-in, and an evening reading carries the day's food
+        // and water — which is what gives the Weight page's timing split something real to report.
+        // Half and half rather than a thin minority: the split is at the median, so a 2-to-1 log
+        // would cut through the larger group instead of between the two.
+        val evening = daysAgo % 2 == 1
         upsertWeightEntry(
             WeightEntry(
                 dateEpochDay = today - daysAgo,
-                weightKg = round1(trend + random.nextDouble(-0.4, 0.4)),
+                weightKg = round1(trend + random.nextDouble(-0.4, 0.4) + if (evening) 0.7 else 0.0),
                 note = if (daysAgo == 0) "Morning, after gym" else "",
+                minuteOfDay = if (evening) 19 * 60 + random.nextInt(0, 45) else 6 * 60 + 30 + random.nextInt(0, 40),
             ),
         )
     }
@@ -116,6 +122,7 @@ private suspend fun ProgressRepository.seedProgress(today: Long) {
                     part = part,
                     dateEpochDay = today - (5 - step) * 18L,
                     value = round1(startCm + perStep * step),
+                    minuteOfDay = 7 * 60 + 10,
                 ),
             )
         }
@@ -132,6 +139,9 @@ private suspend fun ProgressRepository.seedProgress(today: Long) {
             bitmap = Bitmap.createBitmap(720, 1280, Bitmap.Config.ARGB_8888).apply { eraseColor(color) },
             dateEpochDay = today - daysAgo,
             weightKg = weightKg,
+            // Same hour every time, which is the point of a progress shot: the comparison labels
+            // have a clock to show, and it is the same one on both frames.
+            minuteOfDay = 7 * 60 + 20,
         )
     }
 }

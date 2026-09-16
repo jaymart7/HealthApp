@@ -28,8 +28,11 @@
     <!-- Water -->
     <string name="ds_water_set">Set %1$d of %2$d glasses</string>
 
-    <!-- Date picker and calendar -->
+    <!-- Date and time pickers, and the calendar -->
     <string name="ds_date">Date</string>
+    <string name="ds_time">Time</string>
+    <string name="ds_time_set">Set</string>
+    <string name="ds_cancel">Cancel</string>
     <string name="ds_previous_month">Previous month</string>
     <string name="ds_next_month">Next month</string>
     <string name="ds_weekday_initials">S,M,T,W,T,F,S</string>

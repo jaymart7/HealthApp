@@ -31,7 +31,7 @@ class AddPhotoPreviewViewModel(
     }
 
     private fun onSave(bitmap: Bitmap, form: AddPhotoPreviewForm) = intent {
-        progressRepository.addPhoto(bitmap, form.dateEpochDay, form.weightKg)
+        progressRepository.addPhoto(bitmap, form.dateEpochDay, form.weightKg, form.minuteOfDay)
         postSideEffect(AddPhotoPreviewSideEffect.Saved)
     }
 }

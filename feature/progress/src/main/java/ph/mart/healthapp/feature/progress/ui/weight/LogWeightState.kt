@@ -31,11 +31,19 @@ internal class LogWeightState(
         fun Saver(): Saver<LogWeightState, Any> = listSaver(
             // Appended, never renumbered.
             save = {
-                listOf(it.form.dateEpochDay, it.form.weightKg, it.form.note, it.showingCalendar, it.confirmingDelete)
+                listOf(
+                    it.form.dateEpochDay, it.form.weightKg, it.form.note, it.showingCalendar,
+                    it.confirmingDelete, it.form.minuteOfDay,
+                )
             },
             restore = { saved ->
                 LogWeightState(
-                    form = LogWeightForm(dateEpochDay = saved[0] as Long, weightKg = saved[1] as Double, note = saved[2] as String),
+                    form = LogWeightForm(
+                        dateEpochDay = saved[0] as Long,
+                        weightKg = saved[1] as Double,
+                        note = saved[2] as String,
+                        minuteOfDay = saved[5] as Int,
+                    ),
                     showingCalendar = saved[3] as Boolean,
                     confirmingDelete = saved[4] as Boolean,
                 )

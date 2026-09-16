@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.progress.ui.cycle
 
 import ph.mart.healthapp.core.data.cycle.CycleDay
 import ph.mart.healthapp.core.data.cycle.CycleSymptom
+import ph.mart.healthapp.core.data.nowMinuteOfDay
 
 /**
  * A day being logged or corrected. Seeded from the row that day already has, so opening the sheet
@@ -15,8 +16,9 @@ data class CycleLogForm(
     val dateEpochDay: Long,
     val flow: Int = 0,
     val symptoms: Set<CycleSymptom> = emptySet(),
+    val minuteOfDay: Int = nowMinuteOfDay(),
 ) {
-    fun toDay() = CycleDay(dateEpochDay = dateEpochDay, flow = flow, symptoms = symptoms)
+    fun toDay() = CycleDay(dateEpochDay = dateEpochDay, flow = flow, symptoms = symptoms, minuteOfDay = minuteOfDay)
 
     fun toggle(symptom: CycleSymptom): CycleLogForm =
         copy(symptoms = if (symptom in symptoms) symptoms - symptom else symptoms + symptom)
@@ -25,7 +27,9 @@ data class CycleLogForm(
 /** What the sheet shows for [date] — the row already logged there, or a blank day. */
 fun seedCycleForm(days: List<CycleDay>, date: Long): CycleLogForm =
     days.firstOrNull { it.dateEpochDay == date }
-        ?.let { CycleLogForm(date, it.flow, it.symptoms) }
+        // A day Health Connect brought in, or one logged before the field existed, has no hour to
+        // re-seed from — the sheet opens at now rather than inventing a midnight.
+        ?.let { CycleLogForm(date, it.flow, it.symptoms, it.minuteOfDay ?: nowMinuteOfDay()) }
         ?: CycleLogForm(date)
 
 sealed interface CycleEvent {

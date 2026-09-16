@@ -22,10 +22,12 @@ import org.junit.Test
 class DateFormatTest {
 
     private val original: TimeZone = TimeZone.getDefault()
+    private val originalLocale: Locale = Locale.getDefault()
 
     @After
     fun restoreZone() {
         TimeZone.setDefault(original)
+        Locale.setDefault(originalLocale)
     }
 
     private fun epochDayOfContract(millis: Long): Long = Calendar.getInstance().apply {
@@ -97,6 +99,26 @@ class DateFormatTest {
 
             assertFalse("$id", formatMonthYear(today).any { it.isDigit() })
             assertTrue("$id", formatMonthYear(today - 400).any { it.isDigit() })
+        }
+    }
+
+    /**
+     * The one failure this function can really have is a swapped or scaled field — 13:40 printing
+     * as 1:40 AM, or as 1:40 on the 40th hour of the day. Pinned against a fixed locale so the
+     * expected strings mean something, and away from the hour a spring-forward skips, which has no
+     * wall clock to print in any zone.
+     */
+    @Test
+    fun `formatMinuteOfDay prints the wall clock the minute stands for`() {
+        val expected = mapOf(0 to "12:00 AM", 6 * 60 + 30 to "6:30 AM", 12 * 60 to "12:00 PM", 13 * 60 + 40 to "1:40 PM", 23 * 60 + 59 to "11:59 PM")
+        Locale.setDefault(Locale.US)
+        zones.forEach { id ->
+            TimeZone.setDefault(TimeZone.getTimeZone(id))
+            expected.forEach { (minute, clock) ->
+                // Whitespace-normalised: JDK 20+ separates the AM/PM marker with U+202F, and
+                // which space it is is not what this test is about.
+                assertEquals("$id minute $minute", clock, formatMinuteOfDay(minute).replace('\u202f', ' ').replace('\u00a0', ' '))
+            }
         }
     }
 }
