@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.addphoto
+package ph.mart.healthapp.feature.progress.ui.preview
 
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
@@ -9,29 +9,29 @@ import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 
-class AddPhotoViewModel(
+class AddPhotoPreviewViewModel(
     private val progressRepository: ProgressRepository,
     private val profileRepository: ProfileRepository,
-) : ViewModel(), OrbitContainerHost<AddPhotoUiState, AddPhotoUiState, AddPhotoSideEffect> {
+) : ViewModel(), OrbitContainerHost<AddPhotoPreviewUiState, AddPhotoPreviewUiState, AddPhotoPreviewSideEffect> {
 
-    override val container = orbitContainer<AddPhotoUiState, AddPhotoSideEffect>(AddPhotoUiState()) {
+    override val container = orbitContainer<AddPhotoPreviewUiState, AddPhotoPreviewSideEffect>(AddPhotoPreviewUiState()) {
         observePhotos(progressRepository, profileRepository)
     }
 
-    fun handleEvent(event: AddPhotoEvent) {
+    fun handleEvent(event: AddPhotoPreviewEvent) {
         when (event) {
-            is AddPhotoEvent.OnSave -> onSave(event.bitmap, event.form)
+            is AddPhotoPreviewEvent.OnSave -> onSave(event.bitmap, event.form)
         }
     }
 
     private fun observePhotos(progressRepository: ProgressRepository, profileRepository: ProfileRepository) = intent {
         combine(progressRepository.observePhotos(), profileRepository.observeProfile()) { photos, profile ->
-            AddPhotoUiState(photos = photos, preferredUnit = profile?.preferredUnit ?: UnitSystem.Metric)
+            AddPhotoPreviewUiState(photos = photos, preferredUnit = profile?.preferredUnit ?: UnitSystem.Metric)
         }.collect { newState -> reduce { newState } }
     }
 
-    private fun onSave(bitmap: Bitmap, form: AddPhotoForm) = intent {
+    private fun onSave(bitmap: Bitmap, form: AddPhotoPreviewForm) = intent {
         progressRepository.addPhoto(bitmap, form.dateEpochDay, form.weightKg)
-        postSideEffect(AddPhotoSideEffect.Saved)
+        postSideEffect(AddPhotoPreviewSideEffect.Saved)
     }
 }

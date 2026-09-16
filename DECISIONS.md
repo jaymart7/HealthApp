@@ -3347,7 +3347,36 @@ rather than needing a counter patched.
   flow no longer floats over the screen it was opened from — leaving it is a back, not a dismiss —
   and `AddPhotoState` now keeps a step that can be reached with no photo behind it, so the preview
   branch reads `state.photo?.let`. Back inside the flow steps one level, as everywhere else: off
-  the preview is a retake, off the viewfinder is out.
+  the preview is a retake, off the viewfinder is out. (Superseded in part by the entry below: the
+  step enum and the handler that dispatched on it are gone, and the two steps are two routes.)
+- **The viewfinder and the form are two routes, and the shot crosses between them as a path.** One
+  route holding an `AddPhotoStep` machine meant one file with a `Modifier` ternary at its root,
+  because its two halves want opposite things — black chrome over a live feed that needs the whole
+  window, and an `AppTopBar` over a scrolling form that needs the safe area and the IME. They are
+  `ui/capture/` and `ui/preview/` now, `AddPhotoRoute` and `AddPhotoPreviewRoute`, and **the back
+  stack is the step machine**: a retake is one pop, leaving is the pop after it, so the
+  always-mounted `NavigationBackHandler` that used to dispatch on the step deletes outright. It is
+  the first flow in the app to do that rather than wire its own handler, and the reason it can is
+  that its steps are genuinely sequential — the food photo flow's four are not (Analyzing cancels,
+  Confirmation asks before discarding), which is why that one keeps its handler.
+  **The handover is the argued part.** A `Bitmap` cannot ride in a `NavKey`, so capture compresses
+  the decoded shot to one staging JPEG in `cacheDir` and the route carries its path; the preview
+  reads it back through `rememberBitmapFromFile`, the app's one decoder for a stored photo. The
+  alternative was a holder living beside the back stack, which is a second place to keep the flow's
+  state and loses the shot on process death anyway. The path does not: a rotation or a restore now
+  keeps the picture, and with the bitmap out of the state class everything left in it is saveable,
+  so the form's date and weight survive too — the `ponytail:` comment on the old `remember` named
+  exactly that bitmap as its ceiling. **What it costs** is one extra JPEG encode of a ≤1280px
+  bitmap per shot, and a staging file to bound: `stageCapture` sweeps the previous one before
+  writing, which holds it at one file without deletion sites on save, retake and cancel to keep in
+  step. `FULL_FRAME_PX` is 1080 and `decodeSampled` only halves, so a 1280px staging file decodes
+  at full size and nothing is lost on the way to `addPhoto` — which keeps taking a `Bitmap`,
+  because `DebugSeed` is its other caller and has no file to hand it.
+  **Capture has no ViewModel**, and that is the rule rather than an omission: it observes nothing
+  and persists nothing, since the save belongs with the form. It gets a screen and a state holder
+  with two booleans; the preview keeps the whole quartet. `AppScaffold` grows one clause —
+  the preview joins `ownsTopBar` but *not* `fullBleed`, which is precisely the split that line's
+  comment is named for.
 - **Camera permission is asked for here at last, and the screen that asks moved up.** This flow
   requested nothing: refuse the camera and the preview was a black rectangle with a shutter over
   it, because `rememberCameraCaptureController` binds whether or not it may. It now runs the same

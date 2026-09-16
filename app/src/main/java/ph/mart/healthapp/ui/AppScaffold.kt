@@ -63,6 +63,7 @@ import ph.mart.healthapp.feature.profile.ui.RoutinesRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
+import ph.mart.healthapp.feature.progress.ui.AddPhotoPreviewRoute
 import ph.mart.healthapp.feature.progress.ui.AddPhotoRoute
 import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
 import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
@@ -317,8 +318,13 @@ fun AppScaffold(
     // The history search is here for a third reason: tapping a result opens the shared review
     // screen, which brings its own bar, and a bar drawn from out here would stack on top of it.
     //
+    // The add-photo preview is the second half of a flow whose first half is full-bleed, and it
+    // wants the insets rather than the window: a form under a top bar, exactly a subject page's
+    // shape. Its viewfinder is in [fullBleed] above, which is the split this line is named for.
+    //
     // A route in here never reaches `title()`, which is why none of them has a branch there.
-    val ownsTopBar = fullBleed || current is FoodHistoryRoute || current in ProgressSubjectRoutes
+    val ownsTopBar = fullBleed || current is FoodHistoryRoute || current is AddPhotoPreviewRoute ||
+        current in ProgressSubjectRoutes
 
     // Tapping the arrow has to run the same handler chain system back runs — the recipe builder
     // asks before discarding, and popping the stack here would walk straight past that question.
@@ -447,6 +453,11 @@ fun AppScaffold(
                                 topLevelBackStack.add(PhotoComparisonRoute(first, second))
                             },
                             onOpenTimelapse = { topLevelBackStack.add(TimelapseRoute) },
+                            // Pushed above the viewfinder rather than replacing it, so a retake is
+                            // one back press — the step the flow's own handler used to dispatch.
+                            onOpenPhotoPreview = { path ->
+                                topLevelBackStack.add(AddPhotoPreviewRoute(path))
+                            },
                             onOpenRecap = { topLevelBackStack.add(RecapRoute) },
                             onAskCoach = { question -> topLevelBackStack.add(CoachRoute(question)) },
                             onExitFlow = { topLevelBackStack.removeLast() },

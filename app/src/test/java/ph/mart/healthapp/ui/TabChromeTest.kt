@@ -10,6 +10,7 @@ import ph.mart.healthapp.feature.coach.ui.CoachRoute
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
+import ph.mart.healthapp.feature.progress.ui.AddPhotoPreviewRoute
 import ph.mart.healthapp.feature.progress.ui.AddPhotoRoute
 import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
 import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
@@ -55,11 +56,19 @@ class TabChromeTest {
      * either width. Nothing in [showsTabChrome] names them — that is what this pins.
      *
      * It reads [ProgressSubjectRoutes] rather than listing the subject pages, so each conversion
-     * commit is covered by the set it already has to edit. [AddPhotoRoute] rides along as the one
-     * write flow among them — a viewfinder has as little use for a bottom bar as a viewer does. */
+     * commit is covered by the set it already has to edit. The add-photo flow's two routes ride
+     * along as the one write flow among them — a viewfinder has as little use for a bottom bar as
+     * a viewer does, and neither has the form behind it. */
     @Test
     fun `a Progress viewer route wears no chrome at either width`() {
-        val routes = ProgressSubjectRoutes + listOf(PhotoComparisonRoute(1, 2), TimelapseRoute, RecapRoute, AddPhotoRoute)
+        val routes = ProgressSubjectRoutes +
+            listOf(
+                PhotoComparisonRoute(1, 2),
+                TimelapseRoute,
+                RecapRoute,
+                AddPhotoRoute,
+                AddPhotoPreviewRoute("/cache/progress_capture_1.jpg"),
+            )
         routes.forEach { route ->
             assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = false))
             assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = true))

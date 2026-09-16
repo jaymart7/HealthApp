@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.progress.ui.achievement.AchievementsScreen
 import ph.mart.healthapp.feature.progress.ui.activity.ActivityScreen
-import ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoScreen
+import ph.mart.healthapp.feature.progress.ui.capture.AddPhotoCaptureScreen
 import ph.mart.healthapp.feature.progress.ui.comparison.PhotoComparisonScreen
 import ph.mart.healthapp.feature.progress.ui.cycle.CycleScreen
 import ph.mart.healthapp.feature.progress.ui.fasting.FastingScreen
@@ -17,6 +17,7 @@ import ph.mart.healthapp.feature.progress.ui.mood.MoodScreen
 import ph.mart.healthapp.feature.progress.ui.nutrition.NutritionScreen
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosScreen
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureScreen
+import ph.mart.healthapp.feature.progress.ui.preview.AddPhotoPreviewScreen
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreen
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.recap.RecapScreen
@@ -141,12 +142,22 @@ data object TimelapseRoute : NavKey
 @Serializable
 data object RecapRoute : NavKey
 
-/** A body progress shot, from the viewfinder to the saved row. A route rather than the bottom sheet
- * it used to be, because its first step is a full-window camera — the argument `FoodCaptureRoute`
- * and `BarcodeScanRoute` already settled. Carries nothing: the shot is today's unless the date
- * field moves it. */
+/** The viewfinder a body progress shot starts at. A route rather than the bottom sheet it used to
+ * be, because a full-window camera is the one thing a sheet cannot hand it — the argument
+ * `FoodCaptureRoute` and `BarcodeScanRoute` already settled. Carries nothing: it ends the moment
+ * there is a picture, and [AddPhotoPreviewRoute] is what carries that. */
 @Serializable
 data object AddPhotoRoute : NavKey
+
+/** The same shot, with the date and weight it gets filed under — the other half of the flow, and a
+ * route of its own because a scrolling form has nothing in common with a viewfinder.
+ *
+ * [cachePath] is a staging JPEG in `cacheDir`, because a `Bitmap` cannot ride in a `NavKey` and a
+ * holder living beside the back stack would be a second place to keep the flow's state. A path is
+ * also what lets the shot survive a rotation and a process death, which the single-route flow's
+ * remembered bitmap did not. */
+@Serializable
+data class AddPhotoPreviewRoute(val cachePath: String) : NavKey
 
 /**
  * [scrollState] is hoisted for the usual reason: the FAB's scroll-collapse lives in AppScaffold,
@@ -155,8 +166,8 @@ data object AddPhotoRoute : NavKey
  *
  * Every surface but [ProgressRoute] itself is a route rather than an overlay drawn inside it, so
  * none of them wears the bottom bar or the FAB and none wires a back handler to leave itself with.
- * [AddPhotoRoute] is the one holding a handler at all, and it is for stepping *within* the flow —
- * a retake is one back press, leaving is the next.
+ * Not one of them holds a handler now: the add-photo flow's two steps used to need one and are two
+ * routes instead, so a retake is the stack popping one entry and leaving is it popping the next.
  *
  * [onOpenSubject] pushes a subject page. The comparison and the timelapse are reached from the
  * Photos page rather than from the tab, which is why those callbacks land on a different entry.
@@ -166,6 +177,8 @@ fun EntryProviderScope<NavKey>.progressEntries(
     onOpenSubject: (Subject) -> Unit,
     onCompare: (Long, Long) -> Unit,
     onOpenTimelapse: () -> Unit,
+    /** The staging path the viewfinder just wrote, pushed as [AddPhotoPreviewRoute]. */
+    onOpenPhotoPreview: (String) -> Unit,
     onOpenRecap: () -> Unit,
     /** The page's own question, carried to the coach — which lives above this tab, so like
      * every other cross-feature jump it stays a callback `AppScaffold` resolves. Only the twelve
@@ -286,5 +299,17 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<TimelapseRoute> { TimelapseScreen() }
     entry<RecapRoute> { RecapScreen(onAskCoach = onAskCoach, onExitFlow = onExitFlow) }
-    entry<AddPhotoRoute> { AddPhotoScreen(onExitFlow = onExitFlow) }
+    entry<AddPhotoRoute> {
+        AddPhotoCaptureScreen(onPreview = onOpenPhotoPreview, onExitFlow = onExitFlow)
+    }
+    entry<AddPhotoPreviewRoute> { key ->
+        AddPhotoPreviewScreen(
+            cachePath = key.cachePath,
+            // A retake is one pop, which lands on the viewfinder the shot came from — or on the
+            // screen explaining a refused camera, which is where the viewfinder actually is.
+            onRetake = onExitFlow,
+            // Saving or cancelling leaves the whole flow, and the flow is two entries deep.
+            onExitFlow = { onExitFlow(); onExitFlow() },
+        )
+    }
 }

@@ -317,8 +317,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
   opening a full overlay that shows its working).
 - Logging sheets: weigh-in (backdatable), measurements, blood pressure, cycle day.
-- Add photo: a full-screen route opening on the viewfinder, with the gallery beside the shutter and
-  a date and optional weight on the shot before it is saved.
+- Add photo: two routes — a full-screen viewfinder with the gallery beside the shutter, then a
+  preview putting a date and an optional weight on the shot before it is saved. Back off the
+  preview is a retake.
 
 ## AI (Firebase AI Logic / Gemini)
 

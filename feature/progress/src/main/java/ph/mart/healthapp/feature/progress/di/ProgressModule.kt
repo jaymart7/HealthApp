@@ -4,7 +4,6 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import ph.mart.healthapp.feature.progress.ui.achievement.AchievementsViewModel
 import ph.mart.healthapp.feature.progress.ui.activity.ActivityViewModel
-import ph.mart.healthapp.feature.progress.ui.addphoto.AddPhotoViewModel
 import ph.mart.healthapp.feature.progress.ui.comparison.ComparisonViewModel
 import ph.mart.healthapp.feature.progress.ui.cycle.CycleViewModel
 import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleViewModel
@@ -18,6 +17,7 @@ import ph.mart.healthapp.feature.progress.ui.nutrition.NutritionViewModel
 import ph.mart.healthapp.feature.progress.ui.photo.PhotosViewModel
 import ph.mart.healthapp.feature.progress.ui.pressure.BloodPressureViewModel
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureViewModel
+import ph.mart.healthapp.feature.progress.ui.preview.AddPhotoPreviewViewModel
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressViewModel
 import ph.mart.healthapp.feature.progress.ui.recap.RecapViewModel
 import ph.mart.healthapp.feature.progress.ui.sleep.SleepViewModel
@@ -31,7 +31,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.WeightViewModel
 val progressModule = module {
     viewModelOf(::ProgressViewModel)
     viewModelOf(::LogWeightViewModel)
-    viewModelOf(::AddPhotoViewModel)
+    viewModelOf(::AddPhotoPreviewViewModel)
     viewModelOf(::AddMeasurementViewModel)
     viewModelOf(::LogBloodPressureViewModel)
     viewModelOf(::LogCycleViewModel)
