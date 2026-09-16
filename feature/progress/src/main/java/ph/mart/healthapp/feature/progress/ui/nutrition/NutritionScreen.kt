@@ -24,6 +24,7 @@ import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.data.food.WeekBudget
 import ph.mart.healthapp.core.data.food.averages
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -31,6 +32,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.WeekBudgetCard
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -69,6 +71,7 @@ internal fun NutritionScreen(
         mealPhotos = uiState.mealPhotos,
         targets = uiState.targets,
         nutrientTargets = uiState.nutrientTargets,
+        weekBudget = uiState.weekBudget,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -82,6 +85,7 @@ private fun NutritionContent(
     mealPhotos: List<FoodEntry>,
     targets: DailyTargets?,
     nutrientTargets: Nutrients?,
+    weekBudget: WeekBudget?,
     onOpenRecap: () -> Unit,
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
@@ -134,6 +138,7 @@ private fun NutritionContent(
                         mealPhotos = mealPhotos,
                         targets = targets,
                         nutrientTargets = nutrientTargets,
+                        weekBudget = weekBudget,
                         state = state,
                     )
                 }
@@ -167,6 +172,7 @@ private fun ColumnScope.NutritionBody(
     mealPhotos: List<FoodEntry>,
     targets: DailyTargets?,
     nutrientTargets: Nutrients?,
+    weekBudget: WeekBudget?,
     state: NutritionState,
 ) {
     val range = state.range
@@ -189,6 +195,19 @@ private fun ColumnScope.NutritionBody(
             FactChip(stringResource(R.string.progress_nutrition_days, averages.daysLogged)),
         ),
     )
+    // Above the chart and **outside** the range toggle: the week is the week, and a bank that
+    // shrank when someone picked "1M" would be reporting a different thing under the same name —
+    // `MealPhotoStrip` below is unranged for the same reason.
+    weekBudget?.let {
+        WeekBudgetCard(
+            bankedKcal = it.bankedKcal,
+            daysCounted = it.daysCounted,
+            daysClosed = it.daysClosed,
+            daysLeft = it.daysLeft,
+            perDayKcal = it.perDayKcal,
+            belowFloor = it.belowFloor,
+        )
+    }
     ChartCard(
         title = stringResource(R.string.progress_nutrition_calories),
         range = range,
@@ -219,6 +238,15 @@ private fun targetsPreview() = DailyTargets(
     floor = 1500,
 )
 
+private fun weekBudgetPreview() = WeekBudget(
+    bankedKcal = 840,
+    daysCounted = 4,
+    daysClosed = 5,
+    daysLeft = 2,
+    perDayKcal = 2420,
+    belowFloor = false,
+)
+
 @PreviewLightDark
 @Composable
 private fun NutritionScreenPreview() {
@@ -228,6 +256,7 @@ private fun NutritionScreenPreview() {
             mealPhotos = emptyList(),
             targets = targetsPreview(),
             nutrientTargets = null,
+            weekBudget = weekBudgetPreview(),
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},
@@ -245,6 +274,7 @@ private fun NutritionScreenEmptyPreview() {
             mealPhotos = emptyList(),
             targets = targetsPreview(),
             nutrientTargets = null,
+            weekBudget = weekBudgetPreview(),
             onOpenRecap = {},
             onAskCoach = {},
             onExitFlow = {},

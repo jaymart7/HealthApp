@@ -7,6 +7,7 @@ import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.cycle.CycleDay
 import ph.mart.healthapp.core.data.food.DiaryTotals
+import ph.mart.healthapp.core.data.food.WeekBudget
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
@@ -85,6 +86,13 @@ data class HomeUiState(
      * only place adherence is defined. */
     val trainingWeek: List<PlanDay> = emptyList(),
     val streak: StreakStats = StreakStats(current = 0, best = 0, totalDaysLogged = 0),
+    /**
+     * This Monday-to-Sunday week's calorie bank, or null with no profile — there is no target for
+     * it to be a surplus of. Derived in the container like [streak] and [photoArc], off the day
+     * series and the burn series rather than holding either list here; see `weekBudget()` for the
+     * four rules behind the figure.
+     */
+    val weekBudget: WeekBudget? = null,
     /** The model's line, once it answers. Null until then and null forever offline or on a failed
      * call — `HomeCards` falls back to [insightFor], so the card never waits on the network. */
     val aiInsight: String? = null,

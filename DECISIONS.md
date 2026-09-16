@@ -54,6 +54,51 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 - **Estimated burn stops re-estimating** (MET × kg × hours) once the user edits
   the kcal field by hand.
 
+### The week's calorie bank
+
+`weekBudget()` in `:core:data/food/WeekBudget.kt`, drawn by `WeekBudgetCard` on
+Home and on the Progress → Nutrition page. Derived, never stored — the `streak/`
+and `trainingWeek()` shape, so a backdated meal or a restored import recomputes
+rather than needing a counter patched.
+
+- **Monday to Sunday, through the existing `weekStart()`** — the week
+  `trainingWeek()` already scores, not a rolling seven days. A bank you can spend
+  needs an end; a rolling figure never lands and has no "rest of the week" to
+  spend itself on. (The weekly *recap* is rolling for the opposite reason: it has
+  no weekday to anchor to.)
+- **Today is never in the bank.** It holds the week's *closed* days only. Today
+  is what the calorie ring is for, and folding a half-eaten day in would make the
+  figure fall all afternoon and land somewhere different every time you looked.
+- **An unlogged day is skipped, not banked.** Counting a day nobody opened the
+  app on as "2,000 under" invents a credit the user never earned — `averages()`'s
+  reason for dividing by logged days only. The card prints `daysCounted` against
+  `daysClosed`, so a sparse week says so rather than reading as a full one.
+- **Burn folds in exactly as it does on the day**, through `budgetKcal()` and the
+  same `addExerciseToBudget` switch, priced by `burnSeries()` — which is
+  `dayBurnedKcal()` per day, so an imported walk is not counted twice. Anything
+  else and this card and the calorie ring above it disagree on one screen. This
+  is what the Nutrition page's two extra flows and Home's one extra flow buy.
+- **Every day is scored against today's target.** The app historises no targets;
+  the same caveat `stepAverages()` carries for the step goal.
+- **`perDayKcal` is a report, not a new target.** It is clamped at
+  `DailyTargets.floor` with `belowFloor` set when the clamp bit, and the card
+  says so in `error` — the warn-don't-block floor, not a silent 900 kcal
+  suggestion. Nothing here writes to the profile.
+- **No status dot**, though on-track is arguably a fact here: `CLAUDE.md` fixes
+  the 8dp mark to four cards "and nowhere else", and this is a fifth reading of
+  one of them.
+- **The banked figure carries no colour**, and its sign is carried by the word
+  beside it ("840 kcal banked" / "1,300 kcal over") rather than by a glyph. Under
+  budget is on track for Lose and off track for Build, so colouring it would need
+  the goal's direction — the trend-arrow rule, which forbids defaulting to
+  green-for-under. The one colour the card spends is `error`, on the floor line.
+- **The card still draws on a Monday**, with an empty bank and the week's plain
+  allowance, rather than disappearing until Tuesday. It is gated on the profile
+  (no targets, nothing to be a surplus of), never on `daysCounted`.
+- **Unranged on the Nutrition page**, sitting above the 1M/3M/6M/1Y chart rather
+  than inside it — `MealPhotoStrip`'s rule. A bank that shrank when someone
+  picked "1M" would be reporting a different thing under the same name.
+
 ### The diary & sharing a day
 
 - **Diary date navigation:** forward stepping stops at today (there are no

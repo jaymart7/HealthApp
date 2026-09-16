@@ -65,9 +65,9 @@ slide between them and back never clearing a thing.
 
 ## Home
 
-A pinned header block, then fifteen reorderable/hideable cards laid out in paired rows:
+A pinned header block, then sixteen reorderable/hideable cards laid out in paired rows:
 
-Calories (hero ring) · Water · Macros · Streak · Weight · Steps · Sleep · Heart rate ·
+Calories (hero ring) · Water · Macros · Week budget · Streak · Weight · Steps · Sleep · Heart rate ·
 Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · Progress photo.
 
 - Pinned header block — mascot greeting + the app's one door to the coach, a two-or-three-cell
@@ -76,14 +76,19 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Half-width cards pair with an adjacent half; an unpaired half falls back to full width. Gated
   cards are removed before pairing, so survivors close up rather than leaving holes.
 - Tapping a card's body opens that card's Progress subject page (photo card → the photo set,
-  Streak → Badges, Steps → Activity, Workout → Strength, Calories/Macros → Nutrition); back returns
-  to Home. The card's own controls keep their taps, and Water — the one card with no page — is not
+  Streak → Badges, Steps → Activity, Workout → Strength, Calories/Macros/Week budget → Nutrition);
+  back returns to Home. The card's own controls keep their taps, and Water — the one card with no page — is not
   tappable.
 - An 8dp status dot on the four cards where on-track is a fact the app measures (calories, streak,
   fasting goal, weight direction) and nowhere else.
 - Card order and visibility edited in Profile → Home layout (drag handle + move up/down a11y
   actions), reachable from a "Rearrange your Home" link at the foot of Home; "Reset to default"
   restores declaration order.
+- Week budget — the Monday-to-Sunday calorie bank: what the week's *closed* days banked or
+  overspent, how many of them were logged, and what the days left could each hold to finish even
+  (clamped at the calorie floor, which it names). Unlogged days are skipped rather than counted as
+  credit, today is never in it, and burned calories raise a past day's budget under the same switch
+  they raise today's. Derived, never stored; it never rewrites a target.
 - Mascot picker: five characters (Rui, Gel, Mart, Alo, Lala) × thirty-five colours — five
   theme-derived (Soft, Bold, Muted, Contrast, Neutral) and fifteen named hues in a pale and a
   vivid tier (Blush/Red through Rose/Crimson), picked from a bottom sheet off Settings →
@@ -237,7 +242,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   over the page. Under it, **Records**: every weigh-in in the chart's window, newest first, each row
   opening the log sheet on its date to edit the figure or delete it — an imported row shows where it
   came from instead of a delete, and the list pages twenty at a time as you scroll.
-- Food: calories + macros against target over the window, the seven nutrients averaged against
+- Food: the week's calorie bank (the Home card's figures, unranged — the week is the week), then
+  calories + macros against target over the window, the seven nutrients averaged against
   their targets, then the meal-photo strip — the newest
   twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.
 - Activity: two charts sharing one range toggle — daily steps against the profile's goal line

@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.progress.ui.nutrition
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.data.food.WeekBudget
 import ph.mart.healthapp.core.data.profile.DailyTargets
 
 /**
@@ -21,4 +22,8 @@ data class NutritionUiState(
     val mealPhotos: List<FoodEntry> = emptyList(),
     val targets: DailyTargets? = null,
     val nutrientTargets: Nutrients? = null,
+    /** This Monday-to-Sunday week's calorie bank, derived in the container for [targets]' reason
+     * and from the same `weekBudget()` Home reads — one fold, so the card and the page cannot
+     * report different figures. Null with no profile. */
+    val weekBudget: WeekBudget? = null,
 )

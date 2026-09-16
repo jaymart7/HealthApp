@@ -83,6 +83,7 @@
     <string name="ds_card_weight">Weight</string>
     <string name="ds_card_macros">Macros</string>
     <string name="ds_card_progress_photo">Progress photo</string>
+    <string name="ds_card_week_budget">Week budget</string>
     <string name="ds_card_note_watch">Shows once Google Health has synced</string>
     <string name="ds_card_note_workout">Shows once a routine has days set</string>
     <string name="ds_card_note_blood_pressure">Shows once you log a reading</string>
@@ -150,4 +151,18 @@
     <string name="ds_mascot_colour_pink">Pink</string>
     <string name="ds_mascot_colour_rose">Rose</string>
     <string name="ds_mascot_colour_crimson">Crimson</string>
+
+    <!-- Week budget card -->
+    <string name="ds_week_budget_title">This week</string>
+    <string name="ds_week_budget_span">Mon–Sun</string>
+    <string name="ds_week_budget_banked">kcal banked</string>
+    <string name="ds_week_budget_over">kcal over</string>
+    <string name="ds_week_budget_days">%1$d of %2$d days logged</string>
+    <string name="ds_week_budget_empty">Nothing logged yet this week.</string>
+    <string name="ds_week_budget_even">%1$s · %2$d a day to finish even</string>
+    <string name="ds_week_budget_floor">That is the %1$d kcal floor, not the arithmetic — the week is further behind than one day can repay.</string>
+    <plurals name="ds_week_budget_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
 </resources>

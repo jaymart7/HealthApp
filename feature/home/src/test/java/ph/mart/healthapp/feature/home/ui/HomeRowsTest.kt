@@ -47,11 +47,12 @@ class HomeRowsTest {
 
     @Test
     fun `gated cards are removed before pairing, so the survivors re-pair`() {
-        // The handoff's artboard C: no profile (Calories, Macros gone), no watch (Steps, Sleep,
-        // Heart gone), cycle tracking off. What is left has to close up, not leave holes.
+        // The handoff's artboard C: no profile (Calories, Macros and WeekBudget gone — all three
+        // need targets), no watch (Steps, Sleep, Heart gone), cycle tracking off. What is left has
+        // to close up, not leave holes.
         val all = HomeCard.entries
         val gone = setOf(
-            HomeCard.Calories, HomeCard.Macros, HomeCard.Steps, HomeCard.Sleep,
+            HomeCard.Calories, HomeCard.Macros, HomeCard.WeekBudget, HomeCard.Steps, HomeCard.Sleep,
             HomeCard.Heart, HomeCard.Cycle, HomeCard.Workout, HomeCard.BloodPressure,
         )
         val rows = homeRows(all.filterNot { it in gone }, fastRunning = false)

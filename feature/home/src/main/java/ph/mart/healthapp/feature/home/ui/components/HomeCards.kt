@@ -46,6 +46,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HomeCard
 import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.component.WeekBudgetCard
 import ph.mart.healthapp.core.designsystem.component.homeCardLayout
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.R
@@ -193,8 +194,9 @@ internal fun HomeCards(
  * synced is as absent as it was before the layout editor existed.
  */
 private fun HomeCard.hasData(uiState: HomeUiState): Boolean = when (this) {
-    // No profile, no targets, so no ring and no macro goals to price a bar against.
-    HomeCard.Calories, HomeCard.Macros -> uiState.profile != null
+    // No profile, no targets, so no ring, no macro goals to price a bar against, and nothing for
+    // a week to be a surplus of.
+    HomeCard.Calories, HomeCard.Macros, HomeCard.WeekBudget -> uiState.profile != null
 
     // Hidden rather than zeroed when Google Health isn't connected or hasn't synced.
     HomeCard.Sleep -> uiState.lastNight != null
@@ -264,6 +266,22 @@ private fun HomeCardContent(
 
         HomeCard.Macros -> targets?.let {
             MacroSummaryCard(consumed = uiState.totals, targets = it, modifier = modifier, onClick = open)
+        }
+
+        // The week's own gate, on top of `hasData`'s: the card is null-checked here rather than
+        // gated on `daysCounted` above, so a fresh Monday still draws — it has a week's allowance
+        // to report even with an empty bank.
+        HomeCard.WeekBudget -> uiState.weekBudget?.let { week ->
+            WeekBudgetCard(
+                bankedKcal = week.bankedKcal,
+                daysCounted = week.daysCounted,
+                daysClosed = week.daysClosed,
+                daysLeft = week.daysLeft,
+                perDayKcal = week.perDayKcal,
+                belowFloor = week.belowFloor,
+                onClick = open,
+                modifier = modifier,
+            )
         }
 
         HomeCard.Streak -> StreakCard(streak = uiState.streak, wide = wide, modifier = modifier, onClick = open)

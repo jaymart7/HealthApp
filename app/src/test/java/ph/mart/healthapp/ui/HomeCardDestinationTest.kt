@@ -31,9 +31,10 @@ class HomeCardDestinationTest {
     }
 
     @Test
-    fun `both nutrition cards open the same page`() {
+    fun `all three nutrition cards open the same page`() {
         assertEquals(Subject.Nutrition, HomeCard.Calories.subject())
         assertEquals(Subject.Nutrition, HomeCard.Macros.subject())
+        assertEquals(Subject.Nutrition, HomeCard.WeekBudget.subject())
     }
 
     /** Every destination is a route the app can actually draw, which is what keeps the push honest. */

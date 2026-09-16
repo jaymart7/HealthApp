@@ -33,6 +33,7 @@ internal fun HomeCard.isHalf(fastRunning: Boolean): Boolean = when (this) {
     HomeCard.Calories,
     HomeCard.Water,
     HomeCard.Macros,
+    HomeCard.WeekBudget,
     HomeCard.Mood,
     HomeCard.Supplements,
     HomeCard.Cycle,

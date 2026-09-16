@@ -30,6 +30,7 @@ enum class HomeCard(@StringRes val label: Int, @StringRes val note: Int? = null)
     Calories(R.string.ds_card_calories),
     Water(R.string.ds_card_water),
     Macros(R.string.ds_card_macros),
+    WeekBudget(R.string.ds_card_week_budget),
     Streak(R.string.ds_card_streak),
     Weight(R.string.ds_card_weight),
     Steps(R.string.ds_card_steps, WATCH_NOTE),

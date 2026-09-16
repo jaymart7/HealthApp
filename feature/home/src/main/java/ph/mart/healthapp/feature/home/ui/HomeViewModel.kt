@@ -17,11 +17,15 @@ import ph.mart.healthapp.core.data.exercise.RoutineRepository
 import ph.mart.healthapp.core.data.exercise.trainingWeek
 import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.FastingRepository
+import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.food.weekBudget
 import ph.mart.healthapp.core.data.health.HeartRepository
 import ph.mart.healthapp.core.data.health.SleepRepository
+import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.health.StepsRepository
+import ph.mart.healthapp.core.data.health.burnSeries
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.health.stepsCreditKcal
@@ -30,6 +34,7 @@ import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.weightArc
 import ph.mart.healthapp.core.data.streak.loggedDays
@@ -177,13 +182,17 @@ class HomeViewModel(
             )
         }
 
+        // The nutrition series rides out of here as well as into `loggedDays()`: the week's bank
+        // is a fold over the same rows, and reading them twice would be a second query for one
+        // answer.
         val activeDays = combine(
             foodRepository.observeDailyNutrition(),
             waterRepository.observeLoggedDays(),
             progressRepository.observeWeightEntries(),
             exerciseRepository.observeLoggedDays(),
-            ::loggedDays,
-        )
+        ) { nutrition, waterDays, weightEntries, exerciseDays ->
+            ActiveDays(loggedDays(nutrition, waterDays, weightEntries, exerciseDays), nutrition)
+        }
 
         // The three Google Health flows group up before the outer combine: it is already at the
         // five-flow arity the typed overloads stop at.
@@ -208,14 +217,16 @@ class HomeViewModel(
             ::UserLogged,
         )
 
-        // Today's workouts, the plan, and the year window the plan strip scores this week off.
-        // Grouped for [fromWatch]'s reason — the outer combine is at the typed overloads' five —
-        // and grouped *with* today's entries because all three are the same domain. Both flows
-        // already existed; the plan added no query.
+        // Today's workouts, the plan, the year window the plan strip scores this week off, and
+        // every imported step day. Grouped for [fromWatch]'s reason — the outer combine is at the
+        // typed overloads' five — and grouped together because they are all movement. The step
+        // series is the one flow the week's bank added: `burnSeries()` needs both sources to price
+        // a *past* day's budget, and today's steps in [fromWatch] only ever answer for today.
         val training = combine(
             exerciseRepository.observeTodayEntries(),
             routineRepository.observeRoutines(),
             exerciseRepository.observeRecentEntries(),
+            stepsRepository.observeDays(),
             ::Training,
         )
 
@@ -225,8 +236,11 @@ class HomeViewModel(
             training,
             userLogged,
             fromWatch,
-        ) { state, days, training, logged, (lastNight, steps, heart) ->
+        ) { state, active, training, logged, (lastNight, steps, heart) ->
             val exercise = training.today
+            // Read once here rather than at flow-construction time, for the streak's reason below:
+            // an app left open past midnight must not keep scoring yesterday.
+            val today = todayEpochDay()
             state.copy(
                 loaded = true,
                 // Steps fold in here rather than in budgetKcal(), which stays the single place
@@ -245,11 +259,21 @@ class HomeViewModel(
                 addExerciseToBudget = state.profile?.addExerciseToBudget != false,
                 // Read on every emission, not once at flow-construction time, so the streak
                 // doesn't freeze at whatever day the app happened to be opened.
-                streak = days.streakStats(todayEpochDay()),
+                streak = active.days.streakStats(today),
+                // Null with no profile: there is no target for a week to be a surplus of. The
+                // burn series is priced by `dayBurnedKcal()` inside `burnSeries()`, the same
+                // function the line above it uses for today, so the card and the ring agree.
+                weekBudget = state.profile?.dailyTargets()?.let { targets ->
+                    weekBudget(
+                        nutrition = active.nutrition,
+                        burn = burnSeries(training.stepDays, training.recent),
+                        targets = targets,
+                        addExerciseToBudget = state.profile?.addExerciseToBudget != false,
+                        todayEpochDay = today,
+                    )
+                },
                 routines = training.routines,
-                // Read here rather than at flow-construction time, for the streak's reason: an app
-                // left open past midnight must not keep scoring yesterday's week.
-                trainingWeek = trainingWeek(training.routines, training.recent, todayEpochDay()),
+                trainingWeek = trainingWeek(training.routines, training.recent, today),
             )
         }.collect { newState ->
             // [newState] is rebuilt from the repositories on every emission, so a plain
@@ -278,12 +302,22 @@ class HomeViewModel(
     }
 }
 
-/** Today's workouts, the routines planned across the week, and the windowed history the plan
- * strip is scored against. Grouped and private for [UserLogged]'s reason. */
+/** Today's workouts, the routines planned across the week, the windowed history the plan strip is
+ * scored against, and every imported step day. Grouped and private for [UserLogged]'s reason; the
+ * last two are also what the week's bank is priced from. */
 private data class Training(
     val today: List<ExerciseEntry>,
     val routines: List<Routine>,
     val recent: List<ExerciseEntry>,
+    val stepDays: List<StepDay>,
+)
+
+/** The streak's four-domain day set and the diary series one of them was folded out of — the
+ * series is the week bank's input, and re-reading it downstream would be a second query. Private
+ * and structural, like [Training]. */
+private data class ActiveDays(
+    val days: Set<Long>,
+    val nutrition: List<DayNutrition>,
 )
 
 /** The five things the user logs by hand, grouped so the outer combine stays inside the typed

@@ -123,9 +123,10 @@ private fun NavKey?.title(): String = when (this) {
  * reason. The `when` is exhaustive, so a card added later has to answer the question here.
  */
 internal fun HomeCard.subject(): Subject? = when (this) {
-    // Both nutrition cards open the same page rather than switching to the Food tab: the card
-    // reports the day, and the page is where the day sits in a series. One rule for all fourteen.
-    HomeCard.Calories, HomeCard.Macros -> Subject.Nutrition
+    // All three nutrition cards open the same page rather than switching to the Food tab: the card
+    // reports the day or the week, and the page is where either sits in a series. One rule for all
+    // fifteen.
+    HomeCard.Calories, HomeCard.Macros, HomeCard.WeekBudget -> Subject.Nutrition
     HomeCard.Water -> null
     HomeCard.Streak -> Subject.Badges
     HomeCard.Weight -> Subject.Weight
