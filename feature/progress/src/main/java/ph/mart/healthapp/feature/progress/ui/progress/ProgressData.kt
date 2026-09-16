@@ -21,6 +21,8 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.SupplementDay
+import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
+import ph.mart.healthapp.core.data.water.WaterDay
 
 /** Pure read model — Progress has nothing of its own to write; weight/photo/measurement writes
  * all happen through the FAB's [ph.mart.healthapp.feature.progress.ui.weight.LogWeightSheet]/
@@ -56,6 +58,13 @@ data class ProgressUiState(
     val stepGoal: Int = DEFAULT_STEP_GOAL,
     /** Sparse — logged days only, unlike [dailyNutrition]. The Mood tab places them by date. */
     val moodDays: List<MoodDay> = emptyList(),
+    /** Sparse too — one row per day a glass was logged, so a gap is a day nobody tracked rather
+     * than a day they drank nothing. The Water tab places them by date, like [moodDays]. */
+    val waterDays: List<WaterDay> = emptyList(),
+    /** The profile's current target — the water chart's goal line, and the denominator's
+     * yardstick. Unlike [fastingGoalHours]' bars, no snapshot exists to fall back on: `water_day`
+     * holds a date and a count and nothing else. See `DECISIONS.md` -> Progress. */
+    val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
     /** Sparse too, and import-only: FitPulse cannot measure sleep, so a night with no row is a
      * night Google Health never sent. The Sleep tab places them by date, like [moodDays]. */
     val sleepNights: List<SleepNight> = emptyList(),

@@ -24,6 +24,7 @@ import ph.mart.healthapp.feature.progress.ui.sleep.SleepScreen
 import ph.mart.healthapp.feature.progress.ui.strength.StrengthScreen
 import ph.mart.healthapp.feature.progress.ui.supplement.SupplementsScreen
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseScreen
+import ph.mart.healthapp.feature.progress.ui.water.WaterScreen
 import ph.mart.healthapp.feature.progress.ui.weight.WeightScreen
 
 /** The whole progress-photo set — a full-bleed grid that launches [PhotoComparisonRoute] and
@@ -76,6 +77,10 @@ data object MeasurementsRoute : NavKey
 @Serializable
 data object WeightRoute : NavKey
 
+/** Glasses a day against the current goal. Carries nothing: `WaterViewModel` reads both itself. */
+@Serializable
+data object WaterRoute : NavKey
+
 /** Calories, macros and the kept plates. Carries nothing: `NutritionViewModel` reads all three flows itself. */
 @Serializable
 data object NutritionRoute : NavKey
@@ -92,7 +97,7 @@ data object AchievementsRoute : NavKey
  * [route] and by `TabChromeTest`, so none of the three can disagree about which subjects have
  * converted. It grows by one per conversion commit.
  */
-val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute, WeightRoute, NutritionRoute, AchievementsRoute)
+val ProgressSubjectRoutes: Set<NavKey> = setOf(PhotosRoute, SleepRoute, MoodRoute, HeartRoute, SupplementsRoute, StrengthRoute, FastingRoute, ActivityRoute, CycleRoute, BloodPressureRoute, MeasurementsRoute, WeightRoute, NutritionRoute, WaterRoute, AchievementsRoute)
 
 /**
  * A subject to the route that draws it. The one place the mapping lives, which is what keeps
@@ -116,6 +121,7 @@ fun Subject.route(): NavKey = when (this) {
     Subject.Measurements -> MeasurementsRoute
     Subject.Weight -> WeightRoute
     Subject.Nutrition -> NutritionRoute
+    Subject.Water -> WaterRoute
     Subject.Badges -> AchievementsRoute
 }
 
@@ -259,6 +265,13 @@ fun EntryProviderScope<NavKey>.progressEntries(
     }
     entry<NutritionRoute> {
         NutritionScreen(
+            onOpenRecap = onOpenRecap,
+            onAskCoach = onAskCoach,
+            onExitFlow = onExitFlow,
+        )
+    }
+    entry<WaterRoute> {
+        WaterScreen(
             onOpenRecap = onOpenRecap,
             onAskCoach = onAskCoach,
             onExitFlow = onExitFlow,

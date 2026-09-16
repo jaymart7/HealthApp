@@ -22,6 +22,7 @@ import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.SleepRepository
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.health.StepsRepository
+import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -32,12 +33,14 @@ import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.streak.weightProgressKg
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
+import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
+import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /** Read-only container — nothing on the Progress tab itself writes data (see [ProgressUiState]),
- * so there's no handleEvent/Event pair here, unlike the other screens in this feature. The water
- * repository is read for one thing only: the weekly recap's logged-day count. Exercise is read
- * twice — for that count, and for the Activity tab's burn series. */
+ * so there's no handleEvent/Event pair here, unlike the other screens in this feature. Water and
+ * exercise are each read twice — for the weekly recap's logged-day count, and for their own
+ * series: the Water tab's days and the Activity tab's burn. */
 class ProgressViewModel(
     progressRepository: ProgressRepository,
     profileRepository: ProfileRepository,
@@ -97,6 +100,7 @@ class ProgressViewModel(
                 targets = profile?.dailyTargets(),
                 nutrientTargets = profile?.let { nutrientTargets(it, it.dailyTargets()) },
                 fastingGoalHours = profile?.fastingGoalHours ?: DEFAULT_FAST_GOAL_HOURS,
+                waterGoalGlasses = profile?.waterGoalGlasses ?: DEFAULT_WATER_GOAL_GLASSES,
                 stepGoal = profile?.stepGoal ?: DEFAULT_STEP_GOAL,
                 // null means never asked, which is off — the reading `Profile.cycleTrackingOn` gives.
                 cycleTrackingOn = profile?.cycleTrackingOn == true,
@@ -144,16 +148,25 @@ class ProgressViewModel(
             ::ActivitySeries,
         )
 
+        // Mood and water pair up for the arity reason the two groups above name, and for no
+        // other: the outer combine is full, and a Pair would say less than a name does.
+        val dailyLogs = combine(
+            moodRepository.observeDays(),
+            waterRepository.observeDays(),
+            ::DailyLogs,
+        )
+
         combine(
             progress,
             activeDays,
-            moodRepository.observeDays(),
+            dailyLogs,
             sparseSeries,
             activity,
-        ) { state, days, moodDays, sparse, activitySeries ->
+        ) { state, days, logs, sparse, activitySeries ->
             state.copy(
                 activeDays = days,
-                moodDays = moodDays,
+                moodDays = logs.moodDays,
+                waterDays = logs.waterDays,
                 sleepNights = sparse.nights,
                 heartDays = sparse.heartDays,
                 fastSessions = activitySeries.fasts,
@@ -167,6 +180,13 @@ class ProgressViewModel(
         }.collect { newState -> reduce { newState } }
     }
 }
+
+/** The two the user taps in themselves, grouped for the same arity reason. Private and
+ * structural — it never leaves this file. */
+private data class DailyLogs(
+    val moodDays: List<MoodDay>,
+    val waterDays: List<WaterDay>,
+)
 
 /** The four sparse series, grouped so the outer combine stays inside the typed overloads'
  * five-flow arity. Private and structural — it never leaves this file. */

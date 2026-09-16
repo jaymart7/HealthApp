@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.water
 
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.progress.ChartRange
 import ph.mart.healthapp.core.data.streak.STREAK_WINDOW_DAYS
 
 /** One day's hydration, as a glass count. Days the user never logged simply have no row. */
@@ -44,6 +45,11 @@ interface WaterRepository {
     /** Every day with a non-zero count, oldest first — for data export. */
     suspend fun allDays(): List<WaterDay>
 
+    /** The same days, observed — the Progress tab's series. Sparse: a day nobody logged has no
+     * row, the way [SleepRepository.observeNights][ph.mart.healthapp.core.data.health.SleepRepository.observeNights]
+     * is sparse, and unbounded for the same reason — the chart's range slices it, not the query. */
+    fun observeDays(): Flow<List<WaterDay>>
+
     /** Days with at least one glass, within the last [STREAK_WINDOW_DAYS] — water's contribution
      * to the logging streak. */
     fun observeLoggedDays(): Flow<Set<Long>>
@@ -51,3 +57,34 @@ interface WaterRepository {
     /** Zeroes every day, for import's replace-in-full semantics. */
     suspend fun clearAllDays()
 }
+
+/**
+ * Anchored to today, like [ph.mart.healthapp.core.data.fasting.inRange]: the series is sparse, so
+ * a window headed "1M" has to show the last 30 days with their gaps intact.
+ */
+fun List<WaterDay>.inRange(range: ChartRange, todayEpochDay: Long): List<WaterDay> =
+    filter { it.dateEpochDay >= todayEpochDay - range.days }
+
+/** Null rather than zero on an empty window, so the stat row renders "—" instead of "0" —
+ * [ph.mart.healthapp.core.data.fasting.FastingAverages]' rule. */
+data class WaterAverages(
+    val averageGlasses: Double?,
+    val bestGlasses: Int?,
+    val daysHitGoal: Int,
+    val daysLogged: Int,
+)
+
+/**
+ * A pure fold over the window, like `fastingAverages()`.
+ *
+ * **The denominator is days with a row**, never calendar days in the window: a day nobody logged
+ * is a gap, not a day they drank nothing — Supplements' rule, where a missed day and an untracked
+ * day draw differently. Only rows with a glass on them reach here (see [observeDays]), so
+ * [daysLogged] and `size` are the same number.
+ */
+fun List<WaterDay>.waterAverages(goalGlasses: Int): WaterAverages = WaterAverages(
+    averageGlasses = takeIf { it.isNotEmpty() }?.let { days -> days.sumOf { it.glasses }.toDouble() / days.size },
+    bestGlasses = maxOfOrNull { it.glasses },
+    daysHitGoal = count { it.glasses >= goalGlasses },
+    daysLogged = size,
+)

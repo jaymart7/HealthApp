@@ -36,6 +36,7 @@ import ph.mart.healthapp.core.data.progress.weightArc
 import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.supplement.adherenceByDay
 import ph.mart.healthapp.core.data.supplement.averageAdherence
+import ph.mart.healthapp.core.data.water.waterAverages
 import ph.mart.healthapp.feature.progress.ui.achievement.badgeGroups
 import ph.mart.healthapp.feature.progress.ui.measurement.components.formatMeasurement
 import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
@@ -82,7 +83,7 @@ data class SubjectSummary(
  * The single fold behind every subject card **and** its detail page's hero — which is the point:
  * each branch calls the derivation that subject's own tab already calls
  * (`sleepAverages()`, `stepAverages()`, `personalRecords()`, …), so a card and the page behind it
- * can never quote different numbers. Pure, so a JVM test can reach all thirteen branches.
+ * can never quote different numbers. Pure, so a JVM test can reach all fifteen branches.
  *
  * Windows differ per subject on purpose, and each footnote says which it used: dense series
  * (nutrition) average their last [PREVIEW_POINTS] days, sparse ones (sleep, heart, mood, fasting,
@@ -204,6 +205,19 @@ fun summarize(
                     averages.calories > target -> "${averages.calories - target} kcal over target"
                     else -> "On target"
                 },
+            )
+        }
+
+        Subject.Water -> {
+            val days = uiState.waterDays
+            val averages = days.waterAverages(uiState.waterGoalGlasses)
+            val average = averages.averageGlasses ?: return SubjectSummary(subject)
+            SubjectSummary(
+                subject = subject,
+                value = "%.1f".format(average),
+                unit = "glasses avg",
+                preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.glasses }),
+                footnote = "${averages.daysHitGoal} of ${averages.daysLogged} days hit goal",
             )
         }
 

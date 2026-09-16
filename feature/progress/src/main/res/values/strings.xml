@@ -30,12 +30,13 @@
     <string name="progress_group_nutrition">Nutrition</string>
     <string name="progress_group_training">Training</string>
     <string name="progress_group_wellbeing">Wellbeing</string>
-    <!-- What a subject page asks the coach, carried into its field unsent. Only the eleven subjects
+    <!-- What a subject page asks the coach, carried into its field unsent. Only the twelve subjects
          the coach has tools for have one; the rest carry no action — see Subject.kt. -->
     <string name="progress_ask_coach">Ask the coach</string>
     <string name="progress_ask_weight">How\'s my weight trending?</string>
     <string name="progress_ask_measurements">How are my measurements going?</string>
     <string name="progress_ask_nutrition">How has my eating been this week?</string>
+    <string name="progress_ask_water">Am I drinking enough water?</string>
     <string name="progress_ask_fasting">How have my fasts been going?</string>
     <string name="progress_ask_supplements">Have I been keeping up with my supplements?</string>
     <string name="progress_ask_activity">How has my training been this week?</string>
@@ -49,6 +50,7 @@
     <string name="progress_subject_photos">Photos</string>
     <string name="progress_subject_measurements">Measurements</string>
     <string name="progress_subject_nutrition">Food</string>
+    <string name="progress_subject_water">Water</string>
     <string name="progress_subject_fasting">Fasting</string>
     <string name="progress_subject_supplements">Supplements</string>
     <string name="progress_subject_activity">Activity</string>
@@ -63,6 +65,7 @@
     <string name="progress_hint_photos">How progress photos work</string>
     <string name="progress_hint_measurements">How measurements work</string>
     <string name="progress_hint_nutrition">How the food diary works</string>
+    <string name="progress_hint_water">How water tracking works</string>
     <string name="progress_hint_fasting">How fasting works</string>
     <string name="progress_hint_supplements">How supplements work</string>
     <string name="progress_hint_activity">How activity works</string>
@@ -232,6 +235,15 @@
     <string name="progress_fasting_average">Average fast</string>
     <string name="progress_fasting_longest">Longest</string>
     <string name="progress_fasting_goals_hit">Goals hit</string>
+    <string name="progress_water_hero">glasses a day</string>
+    <string name="progress_water_goal">Goal %1$d glasses · %2$s</string>
+    <string name="progress_water_title">Water</string>
+    <string name="progress_water_legend">Glasses logged</string>
+    <string name="progress_water_goal_legend">Daily goal</string>
+    <string name="progress_water_average">Average a day</string>
+    <string name="progress_water_best">Best day</string>
+    <string name="progress_water_goals_hit">Goals hit</string>
+    <string name="progress_water_glasses">%1$d glasses</string>
     <string name="progress_mood_hero">average mood out of %1$d</string>
     <string name="progress_mood_days">%1$d days reflected on</string>
     <string name="progress_mood_title">Mood and energy</string>
@@ -419,6 +431,8 @@
     <string name="progress_empty_nutrition_body">Log a few meals in the diary and your calorie trend shows up here.</string>
     <string name="progress_empty_fasting_heading">No fasts yet</string>
     <string name="progress_empty_fasting_body">Start one from the Home screen and it lands here when you end it.</string>
+    <string name="progress_empty_water_heading">No water logged yet</string>
+    <string name="progress_empty_water_body">Tap a glass on the Home card or in the diary and your days show up here.</string>
     <string name="progress_empty_supplements_heading">No supplements ticked yet</string>
     <string name="progress_empty_supplements_body">Add what you take in Profile, then tick it off on Home and it shows up here.</string>
     <string name="progress_empty_activity_heading">No activity yet</string>

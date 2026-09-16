@@ -218,8 +218,8 @@ see `DECISIONS.md`.
 ## Progress
 
 An **overview** with a per-subject **page** behind every card — each one a route of its own, so it
-draws the full window with no bottom bar and no FAB over its chart. Fourteen subjects in four
-groups: Body (Weight · Photos · Measurements) · Nutrition (Food · Fasting · Supplements) ·
+draws the full window with no bottom bar and no FAB over its chart. Fifteen subjects in four
+groups: Body (Weight · Photos · Measurements) · Nutrition (Food · Water · Fasting · Supplements) ·
 Training (Activity · Strength) · Wellbeing (Sleep · Mood · Cycle · Heart · Blood pressure), plus
 Badges as a summary row under the grids. Cycle is the one subject a setting can remove entirely.
 
@@ -255,6 +255,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   lowest is never called a resting rate.
 - Supplements: adherence per day against each day's own snapshotted target, the window average,
   the count of full days and the days logged. A missed day and an untracked day draw differently.
+- Water: glasses a day as bars against a dashed line for the profile's current goal, plus the
+  window's average, best day and goals hit, and the goal read in the user's own units under the
+  chip. Read-only — a glass is logged from Home's card or the diary's row, never from here.
 - Fasting: completed fasts as bars on the day each one ended, against a dashed line for the
   profile's current goal, plus the window's average, longest and goals hit. Raising the goal moves
   the line, never a bar.
@@ -359,9 +362,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a
   protein gap, room left, water short, a weigh-in to compare) and falling back to diary questions.
   Rule-based, not generated: tapping one sends it exactly as an opener does.
-- Coach doors — the diary's day header and the eleven Progress subject pages the coach has tools
-  for (weight, measurements, nutrition, fasting, supplements, activity, strength, sleep, mood,
-  heart, blood pressure) carry an
+- Coach doors — the diary's day header and the twelve Progress subject pages the coach has tools
+  for (weight, measurements, nutrition, water, fasting, supplements, activity, strength, sleep,
+  mood, heart, blood pressure) carry an
   "ask the coach" action. It opens the chat with that day's or that subject's question **in the field, unsent**.
 - Coach stop — the send button becomes a stop button while an answer is streaming. The turn is
   abandoned, nothing is written, and the question goes back into the field.

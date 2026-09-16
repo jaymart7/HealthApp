@@ -32,9 +32,14 @@ internal class WaterRepositoryImpl(private val dao: WaterDayDao) : WaterReposito
     }
 
     override suspend fun allDays(): List<WaterDay> =
-        dao.allNonZero().map { WaterDay(dateEpochDay = it.dateEpochDay, glasses = it.glasses) }
+        dao.allNonZero().map { it.toWaterDay() }
+
+    override fun observeDays(): Flow<List<WaterDay>> =
+        dao.observeAll().map { days -> days.map { it.toWaterDay() } }
 
     override suspend fun clearAllDays() {
         dao.clearAll()
     }
 }
+
+private fun WaterDayEntity.toWaterDay() = WaterDay(dateEpochDay = dateEpochDay, glasses = glasses)

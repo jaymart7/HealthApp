@@ -14,6 +14,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.water.WaterDay
 
 private const val TODAY = 20_000L
 
@@ -240,6 +241,19 @@ class SubjectSummaryTest {
         val summary = summaryFor(Subject.Sleep, ProgressUiState(sleepNights = nights))
         assertEquals("7h 30m", summary.value)
         assertEquals(SubjectPreview.Bars(listOf(420, 480)), summary.preview)
+    }
+
+    /**
+     * The card reads the same fold the page does, so neither can quote a figure the other
+     * doesn't: three logged days average over three, not over the fortnight they sit in.
+     */
+    @Test
+    fun `water averages the days with a row and counts the goals hit`() {
+        val days = listOf(WaterDay(TODAY - 13, 9), WaterDay(TODAY - 6, 6), WaterDay(TODAY, 3))
+        val summary = summaryFor(Subject.Water, ProgressUiState(waterDays = days, waterGoalGlasses = 8))
+        assertEquals("6.0", summary.value)
+        assertEquals("1 of 3 days hit goal", summary.footnote)
+        assertEquals(SubjectPreview.Bars(listOf(9, 6, 3)), summary.preview)
     }
 
     /** Badges is the one subject with no group — it is a row under the grids, not a card in one. */

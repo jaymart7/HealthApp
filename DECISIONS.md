@@ -1376,6 +1376,24 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `collect` — four pages that read the profile for one boolean they never displayed. The empty-state
   `Column { Box(weight(1f)) { … } }` on each page collapses back to the `Box` it was before the
   switcher needed a sibling beneath the mascot.
+- **Water's goal line is read live, and that is not the hole in Fasting's rule it looks like.**
+  Every other target-bearing series here snapshots: `fast_session.goalHours`, `step_day.burnedKcal`,
+  a supplement day's own due count. `water_day` cannot — it holds a date and a count and nothing
+  else, and widening it to carry a target would be writing history nobody recorded, retroactively,
+  from today's profile. So `waterAverages()` scores every day in the window against the *current*
+  goal, and the chart's dashed line is the same number. The outcome Fasting's snapshot buys is
+  still bought: raising the goal moves the line and prices tomorrow. What is lost is narrower than
+  it sounds — a day logged under an old goal is re-scored — and a glass is a fixed serving rather
+  than a measured pour, so the count it re-scores never changes meaning. If that ever starts to
+  matter, the fix is a `goalGlasses` column and a migration, not a second derivation.
+- **The overview's Water card and the Water page read one fold.** `summarize(Subject.Water)` calls
+  the same `waterAverages()` the page calls, which is the rule every subject card follows — but
+  it cost the Progress container an arity it did not have. All five of its `combine`s already sat
+  at the typed overloads' five-flow ceiling, so mood and water pair up in a `DailyLogs` holder
+  ahead of the outer combine, beside the `SparseSeries` and `ActivitySeries` holders that exist for
+  exactly the same reason. The two have nothing to do with each other past both being things the
+  user taps in themselves; the combine is simply full. The goal needed no slot at all — it comes
+  off the profile the first combine was already reading.
 
 ### Saved meals, recipes & the food library
 

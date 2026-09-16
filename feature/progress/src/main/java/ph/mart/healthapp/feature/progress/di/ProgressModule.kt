@@ -24,6 +24,7 @@ import ph.mart.healthapp.feature.progress.ui.sleep.SleepViewModel
 import ph.mart.healthapp.feature.progress.ui.strength.StrengthViewModel
 import ph.mart.healthapp.feature.progress.ui.supplement.SupplementsViewModel
 import ph.mart.healthapp.feature.progress.ui.timelapse.TimelapseViewModel
+import ph.mart.healthapp.feature.progress.ui.water.WaterViewModel
 import ph.mart.healthapp.feature.progress.ui.weight.LogWeightViewModel
 import ph.mart.healthapp.feature.progress.ui.weight.WeightViewModel
 
@@ -51,6 +52,7 @@ val progressModule = module {
     viewModelOf(::MeasurementsViewModel)
     viewModelOf(::WeightViewModel)
     viewModelOf(::NutritionViewModel)
+    viewModelOf(::WaterViewModel)
     viewModelOf(::AchievementsViewModel)
     viewModelOf(::ComparisonViewModel)
     viewModelOf(::TimelapseViewModel)

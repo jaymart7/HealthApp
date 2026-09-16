@@ -4,7 +4,7 @@ import androidx.annotation.StringRes
 import ph.mart.healthapp.feature.progress.R
 
 /**
- * The four families the twelve metric subjects sort into. The grouping is what replaced a
+ * The four families the fourteen metric subjects sort into. The grouping is what replaced a
  * thirteen-pill scrolling tab strip: past the fifth pill nothing was reachable without a swipe
  * nobody knew to make, and no pill said whether there was anything behind it.
  *
@@ -27,7 +27,7 @@ enum class SubjectAccent { Primary, Secondary }
  *
  * [group] is null for exactly one entry, [Badges], which is drawn as a summary row under the four
  * grids rather than a metric card: it is an achievement list, not a trend, and a card promising a
- * chart would be a card that lies. It still has a detail page, so all thirteen stay reachable.
+ * chart would be a card that lies. It still has a detail page, so all fifteen stay reachable.
  *
  * [accent] is an explicit column rather than a fold over [group] because Activity breaks the
  * pattern — it sits in Training with the lifting, but its steps come off a watch like Sleep's and
@@ -41,7 +41,7 @@ enum class SubjectAccent { Primary, Secondary }
  * [coachQuestion] is what this page would ask the coach, and **null means the page carries no
  * coach action at all**.
  *
- * The eleven that have one are the eleven the coach can answer: its tools reach food and macros,
+ * The twelve that have one are the twelve the coach can answer: its tools reach food and macros,
  * water, training, steps, sleep, mood, fasting, the weight trend, the change in a body
  * measurement and — since the two read tools began carrying them — the supplements they ticked
  * off against what was due, their heart rate and their blood-pressure readings. Nothing else. A
@@ -64,6 +64,7 @@ enum class Subject(
     Photos(R.string.progress_subject_photos, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_photos),
     Measurements(R.string.progress_subject_measurements, SubjectGroup.Body, SubjectAccent.Primary, R.string.progress_hint_measurements, R.string.progress_ask_measurements),
     Nutrition(R.string.progress_subject_nutrition, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_nutrition, R.string.progress_ask_nutrition),
+    Water(R.string.progress_subject_water, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_water, R.string.progress_ask_water),
     Fasting(R.string.progress_subject_fasting, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_fasting, R.string.progress_ask_fasting),
     Supplements(R.string.progress_subject_supplements, SubjectGroup.Nutrition, SubjectAccent.Primary, R.string.progress_hint_supplements, R.string.progress_ask_supplements),
     Activity(R.string.progress_subject_activity, SubjectGroup.Training, SubjectAccent.Secondary, R.string.progress_hint_activity, R.string.progress_ask_activity),
