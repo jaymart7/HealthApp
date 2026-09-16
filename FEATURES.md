@@ -366,6 +366,13 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   *and* the foods they log most often, at the portions and figures they log them at, and their
   dietary preference is in its instructions. What it picks is drafted as a proposal card, so a
   suggestion is one tap from the diary.
+- Coach workouts — "what should I train today?" is answered from the user's own saved routines:
+  `get_library` hands the coach each one's lifts and the weekdays it is planned for, so the one on
+  today's plan is the one it names, and `start_routine` drafts it as a card showing those lifts. It
+  is the one proposal whose Confirm **writes nothing** — the button says "Start it", and the tap
+  opens the strength screen seeded with that routine at last week's loads, which the user saves
+  themselves. A routine is drafted alone, never beside rows, and the coach can neither invent a
+  workout nor add a lift to one.
 - Coach door out — once a confirmed draft has put rows in **today's** diary, a "View it in your
   diary" line sits under that answer and switches to the Food tab. It lasts until the next
   question. A weigh-in, a supplement or a backdated draft gets none: the diary opens on today and

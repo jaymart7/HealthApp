@@ -29,6 +29,7 @@ import ph.mart.healthapp.core.data.bloodpressure.formatBloodPressure
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.health.formatBpm
 import ph.mart.healthapp.core.data.mood.MoodLevel
@@ -109,7 +110,15 @@ internal fun ProposalCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SecondaryButton(
-                label = stringResource(R.string.coach_proposal_confirm),
+                // "Log it" is a promise a routine does not keep: its tap opens the workout screen
+                // and writes nothing at all, so it says what it does instead.
+                label = stringResource(
+                    if (keptActions.singleOrNull() is CoachAction.StartRoutine) {
+                        R.string.coach_proposal_start
+                    } else {
+                        R.string.coach_proposal_confirm
+                    },
+                ),
                 // Striking out every row is a dismissal the long way round, but it is not one
                 // until the user says so — the button goes quiet rather than the card vanishing.
                 enabled = keptActions.isNotEmpty(),
@@ -199,6 +208,12 @@ private fun SingleProposal(action: CoachAction, day: String? = null) {
                 day,
             )
             ProposalHeadline(measurementAmount(action))
+        }
+
+        is CoachAction.StartRoutine -> {
+            ProposalTitle(stringResource(R.string.coach_proposal_routine_title), day)
+            ProposalHeadline(action.name)
+            routineLifts(action)?.let { ProposalDetail(it) }
         }
 
         // `resolve()` turns a saved meal into its own rows before any card is drawn, so this is
@@ -339,6 +354,9 @@ private fun actionName(action: CoachAction): String = when (action) {
     is CoachAction.LogBloodPressure ->
         formatBloodPressure(action.systolic, action.diastolic)
     is CoachAction.LogMeasurement -> stringResource(action.part.label)
+    // Never drawn in a list — `routineDraftStandsAlone()` is what guarantees a routine is the
+    // whole draft — but the name is the right answer if that ever stops being true.
+    is CoachAction.StartRoutine -> action.name
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -356,6 +374,7 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.LogMood -> null
     is CoachAction.LogBloodPressure -> bandLine(action)
     is CoachAction.LogMeasurement -> measurementAmount(action)
+    is CoachAction.StartRoutine -> routineLifts(action)
 }
 
 /**
@@ -389,6 +408,10 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
             stringResource(single.part.label),
             measurementAmount(single),
         )
+        // Nothing was logged: the tap opened a form the user has not saved yet, and a "Logged:"
+        // line under the answer would be a claim the app cannot stand behind. The turn is
+        // persisted with the coach's own prose, exactly as a dismissal is.
+        single is CoachAction.StartRoutine -> ""
         else -> pluralStringResource(
             R.plurals.coach_proposal_logged_items,
             actions.size,
@@ -432,6 +455,23 @@ private fun weightChange(action: CoachAction.LogWeight): String? {
  * measurement row keep locally. */
 private fun formatWeight(value: Double): String =
     if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
+
+/**
+ * What the workout opens with — "Bench press 3x8 · Squat 3x5".
+ *
+ * Every lift, not the first few: this is the card's usual promise in the one place it is not about
+ * figures being *written*, and a user deciding whether to start a session needs to see what is in
+ * it. Null for a routine with no lifts, the rule the water row follows.
+ *
+ * `map` before the join because it is inline and `joinToString`'s transform is not — a
+ * `stringResource` cannot be read from the latter. The separator is punctuation, not copy, the
+ * same reading `Routine.dayLabel()` gives its own.
+ */
+@Composable
+private fun routineLifts(action: CoachAction.StartRoutine): String? = action.lifts
+    .map { stringResource(R.string.coach_proposal_routine_lift, it.exerciseName, it.sets, it.reps) }
+    .takeIf { it.isNotEmpty() }
+    ?.joinToString(" \u00b7 ")
 
 /** An unnamed activity is called after its type — what [ph.mart.healthapp.core.data.exercise.ExerciseEntry]
  * means by an empty name, resolved here because only a composable can read the enum's label. */
@@ -699,6 +739,33 @@ private fun ProposalCardMeasurementPreview() {
                         part = MeasurementPart.Waist,
                         value = 82.5,
                         unit = UnitSystem.Metric,
+                    ),
+                ),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** The one card whose Confirm writes nothing: it says "Start it", and every lift on it is the
+ * user's own. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardRoutinePreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(
+                    CoachAction.StartRoutine(
+                        name = "Push day",
+                        routineId = 1,
+                        lifts = listOf(
+                            RoutineLift("Bench press", sets = 3, reps = 8),
+                            RoutineLift("Overhead press", sets = 3, reps = 8),
+                            RoutineLift("Triceps pushdown", sets = 3, reps = 12),
+                        ),
                     ),
                 ),
                 onConfirm = { _, _ -> },

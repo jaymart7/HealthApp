@@ -123,7 +123,12 @@ class CoachViewModel(
     private fun onSettle(kept: List<CoachAction>, loggedLine: String?) = intent {
         if (state.proposal.isEmpty()) return@intent
         val question = state.pending ?: return@intent
-        val answer = listOfNotNull(state.streaming, loggedLine).joinToString("\n")
+        // Blanks dropped, not just nulls: a drafted routine confirms with no logged line at all —
+        // nothing was written — and an empty one would leave the persisted answer trailing a
+        // newline.
+        val answer = listOfNotNull(state.streaming, loggedLine)
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
         if (answer.isEmpty()) {
             return@intent reduce { state.withTurnAbandoned() }
         }

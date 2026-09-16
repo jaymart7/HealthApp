@@ -91,6 +91,13 @@
     <string name="coach_proposal_confirm">Log it</string>
     <string name="coach_proposal_dismiss">No thanks</string>
 
+    <!-- A drafted workout routine. It is the one card that writes nothing: the tap opens the
+         workout screen seeded with these lifts and the user saves it themselves, which is why the
+         button says Start it rather than Log it and why no "Logged:" line follows it. -->
+    <string name="coach_proposal_routine_title">Start workout</string>
+    <string name="coach_proposal_routine_lift">%1$s %2$d×%3$d</string>
+    <string name="coach_proposal_start">Start it</string>
+
     <!-- Appended to the persisted answer once the user confirms, so reopening the chat still shows
          that something was logged. Resolved on the screen, never in the ViewModel. -->
     <string name="coach_proposal_logged_food">Logged: %1$s, %2$d kcal.</string>

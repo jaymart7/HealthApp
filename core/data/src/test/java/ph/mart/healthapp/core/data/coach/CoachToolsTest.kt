@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.coach
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -13,6 +14,9 @@ import ph.mart.healthapp.core.data.bloodpressure.SYSTOLIC_RANGE
 import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.weekStart
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
@@ -526,8 +530,8 @@ class CoachToolsTest {
     @Test
     fun `an empty library says so rather than going quiet`() {
         assertEquals(
-            "They have not saved any meals or recipes, have not logged any food yet, and take " +
-                "no supplements.",
+            "They have not saved any meals or recipes, have not logged any food yet, take " +
+                "no supplements and have no workout routines.",
             formatLibrary(emptyList(), emptyList(), emptyList()),
         )
     }
@@ -1322,6 +1326,122 @@ class CoachToolsTest {
             systolic = systolic,
             diastolic = diastolic,
         )
+
+    // endregion
+
+    // region Routines
+
+    /** Monday of a week, so the plan clauses below are reading a weekday this test picked rather
+     * than whichever one the machine is on. `weekStart` is the app's own Monday. */
+    private val monday = weekStart(TODAY)
+
+    private val pushDay = Routine(
+        id = 7,
+        name = "Push day",
+        lifts = listOf(
+            RoutineLift("Bench press", sets = 3, reps = 8),
+            RoutineLift("Overhead press", sets = 3, reps = 8),
+        ),
+        // Monday and Thursday.
+        days = 0b000_1001,
+    )
+
+    private val legDay = Routine(
+        id = 8,
+        name = "Leg day",
+        lifts = listOf(RoutineLift("Squat", sets = 5, reps = 5)),
+        days = 0,
+    )
+
+    /**
+     * The half of this tool that answers *"what should I train today?"*: the names
+     * `start_routine` matches on, the lifts the card draws, and the plan clause that makes "today"
+     * a real answer rather than a pick from a list.
+     */
+    @Test
+    fun `the library lists routines with their lifts and which day they are planned for`() {
+        val text = formatLibrary(
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            routines = listOf(pushDay, legDay),
+            today = monday,
+        )
+        assertTrue(text, "\"Push day\" (planned for today): Bench press 3x8, Overhead press 3x8" in text)
+        // Unscheduled says so rather than printing a blank day list.
+        assertTrue(text, "\"Leg day\" (not on their weekly plan): Squat 5x5" in text)
+    }
+
+    /** Off its own weekday it names the days it *is* on, so the model can say "not today". */
+    @Test
+    fun `a routine off today's plan names its own days`() {
+        val text = formatLibrary(
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            routines = listOf(pushDay),
+            today = monday + 1,
+        )
+        assertTrue(text, "planned for today" !in text)
+        assertTrue(text, "planned for " in text)
+    }
+
+    /** A user with nothing saved but a routine still has a library — the empty sentence must not
+     * claim otherwise, the rule the foods already set. */
+    @Test
+    fun `routines alone are a library`() {
+        val text = formatLibrary(
+            emptyList(),
+            emptyList(),
+            emptyList(),
+            routines = listOf(pushDay),
+            today = monday,
+        )
+        assertTrue(text, "have not" !in text)
+    }
+
+    @Test
+    fun `a routine call becomes an action the app will match itself`() {
+        val action = parseAction(TOOL_START_ROUTINE, args("name" to "Push day"))
+        assertEquals(CoachAction.StartRoutine(name = "Push day"), action)
+        // The id and the lifts are `resolve`'s to stamp on, exactly as a supplement's id is.
+        assertEquals(0L, (action as CoachAction.StartRoutine).routineId)
+        assertTrue(action.lifts.isEmpty())
+    }
+
+    @Test
+    fun `a routine call with no name is refused`() {
+        assertNull(parseAction(TOOL_START_ROUTINE, args("name" to "   ")))
+        assertNull(parseAction(TOOL_START_ROUTINE, args()))
+    }
+
+    /** Exact, case-insensitive, never fuzzy: the whole of what the model supplies is a name this
+     * tool already gave it, and opening a workout the user did not name is the one thing a card
+     * one tap from their training must not do. */
+    @Test
+    fun `a routine is matched exactly and carries the user's own lifts`() {
+        val started = routineToStart("push DAY", listOf(pushDay, legDay))
+        assertEquals(
+            CoachAction.StartRoutine(name = "Push day", routineId = 7, lifts = pushDay.lifts),
+            started,
+        )
+    }
+
+    @Test
+    fun `a routine name that matches nothing fails rather than opening the nearest`() {
+        assertNull(routineToStart("push", listOf(pushDay, legDay)))
+        assertNull(routineToStart("Push day", emptyList()))
+    }
+
+    /** A routine's Confirm leaves the screen, so it cannot also be the tap that writes a meal. */
+    @Test
+    fun `a routine draft may not ride with rows`() {
+        val routine = CoachAction.StartRoutine(name = "Push day", routineId = 7)
+        assertTrue(listOf(routine).routineDraftStandsAlone())
+        assertTrue(listOf(logFood("Toast", 180), CoachAction.LogWater(glasses = 1)).routineDraftStandsAlone())
+        assertTrue(emptyList<CoachAction>().routineDraftStandsAlone())
+        assertFalse(listOf(logFood("Toast", 180), routine).routineDraftStandsAlone())
+    }
 
     // endregion
 }

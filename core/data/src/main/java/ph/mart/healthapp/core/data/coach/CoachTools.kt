@@ -22,6 +22,10 @@ import ph.mart.healthapp.core.data.bloodpressure.formatBloodPressure
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineRepository
+import ph.mart.healthapp.core.data.exercise.dayLabel
+import ph.mart.healthapp.core.data.exercise.isPlannedOn
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.fasting.FastingRepository
@@ -153,6 +157,7 @@ internal const val TOOL_LOG_SUPPLEMENT = "log_supplement"
 internal const val TOOL_LOG_MOOD = "log_mood"
 internal const val TOOL_LOG_BLOOD_PRESSURE = "log_blood_pressure"
 internal const val TOOL_LOG_MEASUREMENT = "log_measurement"
+internal const val TOOL_START_ROUTINE = "start_routine"
 
 /** The ones the model may call but the app never executes. Kept as a set rather than a `when` so
  * [CoachRepositoryImpl]'s loop can ask the question without knowing what any of them does. */
@@ -166,6 +171,9 @@ internal val WRITE_TOOLS = setOf(
     TOOL_LOG_MOOD,
     TOOL_LOG_BLOOD_PRESSURE,
     TOOL_LOG_MEASUREMENT,
+    // The one that executes nothing *and* writes nothing: it ends the turn as a draft like the
+    // rest, and the tap on that draft opens a form. See [CoachAction.StartRoutine].
+    TOOL_START_ROUTINE,
 )
 
 /**
@@ -374,6 +382,19 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 ),
             ),
         ),
+        FunctionDeclaration(
+            name = TOOL_START_ROUTINE,
+            description = "Propose starting one of the user's own saved workout routines, by its " +
+                "exact name from get_library. This does NOT log a workout and records nothing: " +
+                "it opens their workout screen already filled in with that routine's lifts, and " +
+                "they save it themselves. Only ever one of their own routines — you cannot " +
+                "invent a workout, add a lift to one, or set how much they lift.",
+            parameters = mapOf(
+                "name" to Schema.string(
+                    description = "The routine's name, exactly as get_library gave it.",
+                ),
+            ),
+        ),
     ),
 )
 
@@ -412,6 +433,12 @@ internal fun parseAction(
     TOOL_LOG_MOOD -> parseLogMood(args)
     TOOL_LOG_BLOOD_PRESSURE -> parseLogBloodPressure(args)
     TOOL_LOG_MEASUREMENT -> parseLogMeasurement(args)
+    // A name and nothing else: [resolve] finds the user's own routine from it, and everything the
+    // card shows and the form opens with comes off that row.
+    TOOL_START_ROUTINE -> args.string("name")
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS }
+        ?.let { CoachAction.StartRoutine(name = it) }
     else -> null
 }
 
@@ -944,16 +971,26 @@ private fun Map<Long, List<String>>.mergedWith(
  * figures they log it at, rather than with something invented. It carries full macros where a
  * saved meal carries only a calorie total: a recommendation is steered by the protein gap, and a
  * single food is what the model would otherwise have to estimate.
+ *
+ * [routines] is the same idea one domain over, and the reason this tool answers *"what should I
+ * train today?"* as well as *"what should I eat?"*: `start_routine` matches on these names and
+ * nothing else, the lifts are what the card shows and the form opens with, and the weekdays are
+ * what makes "today" a real answer rather than a pick from a list. [today] is only read to say
+ * which of them is on the plan now.
  */
 internal fun formatLibrary(
     meals: List<SavedMeal>,
     recipes: List<Recipe>,
     foods: List<FoodSuggestion>,
     supplements: List<SupplementToday> = emptyList(),
+    routines: List<Routine> = emptyList(),
+    today: Long = todayEpochDay(),
 ): String = buildString {
-    if (meals.isEmpty() && recipes.isEmpty() && foods.isEmpty() && supplements.isEmpty()) {
-        return "They have not saved any meals or recipes, have not logged any food yet, and take " +
-            "no supplements."
+    if (meals.isEmpty() && recipes.isEmpty() && foods.isEmpty() && supplements.isEmpty() &&
+        routines.isEmpty()
+    ) {
+        return "They have not saved any meals or recipes, have not logged any food yet, take " +
+            "no supplements and have no workout routines."
     }
     if (meals.isNotEmpty()) {
         appendLine("Saved meals:")
@@ -984,6 +1021,22 @@ internal fun formatLibrary(
                 "- \"${it.supplement.name}\"$dose: ${it.taken} of ${it.supplement.timesPerDay} " +
                     "taken today",
             )
+        }
+    }
+    if (routines.isNotEmpty()) {
+        appendLine("Workout routines they have saved:")
+        routines.forEach { routine ->
+            // Unscheduled routines say so rather than printing a blank, the rule `dayLabel()`'s own
+            // callers keep; "planned for today" is the clause that answers "what should I train?".
+            val plan = when {
+                routine.isPlannedOn(today) -> "planned for today"
+                routine.days != 0 -> "planned for ${routine.dayLabel()}"
+                else -> "not on their weekly plan"
+            }
+            val lifts = routine.lifts.joinToString(", ") {
+                "${it.exerciseName} ${it.sets}x${it.reps}"
+            }
+            appendLine("- \"${routine.name}\" ($plan): $lifts")
         }
     }
 }
@@ -1047,6 +1100,45 @@ internal fun supplementDose(
         supplementId = match.supplement.id,
     )
 }
+
+/**
+ * One of the user's own routines, by the name they gave it — or null when nothing matches, which
+ * fails the turn.
+ *
+ * [savedMealRows]' rule applied to a third list, for its reason: `get_library` hands the model the
+ * names verbatim, so a name matching nothing is a broken call rather than a near miss. Guessing
+ * that "legs" meant *Leg day* would open a workout the user did not name, already filled in with
+ * lifts they did not ask for.
+ *
+ * The stored name, the stored id and the stored lifts: everything the card draws and the form
+ * opens with is the user's own, and the model supplied only the name it was given.
+ */
+internal fun routineToStart(
+    name: String,
+    routines: List<Routine>,
+): CoachAction.StartRoutine? {
+    val wanted = name.trim()
+    val match = routines.firstOrNull { it.name.equals(wanted, ignoreCase = true) } ?: return null
+    return CoachAction.StartRoutine(
+        name = match.name,
+        routineId = match.id,
+        lifts = match.lifts,
+    )
+}
+
+/**
+ * Whether a draft holding a routine holds *only* that routine.
+ *
+ * A routine's Confirm leaves the screen, and a button that both writes a meal and navigates away
+ * is two decisions on one tap — the half that happened off screen being the half nobody notices.
+ * So a mixed draft fails the whole turn, the ruling `draftDay` already makes about a card whose
+ * rows disagree about the day.
+ *
+ * Pure and here rather than inline in `send`, for [parseAction]'s reason: it is the part a JVM
+ * test can reach.
+ */
+internal fun List<CoachAction>.routineDraftStandsAlone(): Boolean =
+    none { it is CoachAction.StartRoutine } || size == 1
 
 private fun SavedMealItem.toLogFood(name: String, mealType: MealType, dateEpochDay: Long) =
     CoachAction.LogFood(
@@ -1114,6 +1206,10 @@ internal class CoachToolbox(
     // question about a heartbeat is still a question about one day or one span.
     private val heartRepository: HeartRepository,
     private val bloodPressureRepository: BloodPressureRepository,
+    // The user's own workout templates, read for the supplements' reason: `start_routine` matches
+    // on a name this publishes, and the weekdays are what let "what should I train today?" be
+    // answered with the routine that is actually on the plan.
+    private val routineRepository: RoutineRepository,
 ) {
     /** Null for a tool this does not run — which is every write tool, and is how the caller's loop
      * tells a question from an instruction without a second lookup. */
@@ -1137,6 +1233,8 @@ internal class CoachToolbox(
         recipes = foodRepository.observeAllRecipes().first(),
         foods = foodRepository.observeSuggestions().first(),
         supplements = supplementRepository.observeToday().first(),
+        routines = routineRepository.observeRoutines().first(),
+        today = todayEpochDay(),
     )
 
     /**
@@ -1168,6 +1266,10 @@ internal class CoachToolbox(
     /** The one read [supplementDose] needs — the matching itself is pure, [savedMealRows]' shape. */
     suspend fun supplementDose(name: String, doses: Int): CoachAction.LogSupplement? =
         supplementDose(name, doses, supplementRepository.observeToday().first())
+
+    /** The one read [routineToStart] needs — the matching itself is pure, the same shape again. */
+    suspend fun routineToStart(name: String): CoachAction.StartRoutine? =
+        routineToStart(name, routineRepository.observeRoutines().first())
 
     /**
      * What a MET estimate is priced against: the latest weigh-in, else the onboarding weight —
@@ -1291,6 +1393,10 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
     is CoachAction.LogMeasurement -> toolbox.unitSystem().let { unit ->
         listOf(copy(unit = unit)).takeIf { part.fromDisplay(value, unit) in part.range() }
     }
+    // [CoachAction.LogSupplement]'s line one domain over: the model's spelling becomes the user's
+    // own row, and a name that is in no library fails the turn rather than opening the nearest
+    // workout.
+    is CoachAction.StartRoutine -> toolbox.routineToStart(name)?.let(::listOf)
     else -> listOf(this)
 }
 

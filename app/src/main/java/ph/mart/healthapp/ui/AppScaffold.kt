@@ -409,6 +409,12 @@ fun AppScaffold(
                             onOpenDiary = {
                                 topLevelBackStack.addTopLevel(TopLevelDestination.Food.route)
                             },
+                            // Day 0 is today, the same convention Home's plan card follows — a
+                            // drafted routine is only ever started now. Pushed above the coach
+                            // rather than replacing it, so back returns to the conversation.
+                            onStartRoutine = { routineId ->
+                                topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
+                            },
                         )
                         foodEntries(
                             scrollState = foodScroll,

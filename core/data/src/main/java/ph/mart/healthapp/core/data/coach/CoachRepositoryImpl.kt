@@ -178,6 +178,9 @@ internal class CoachRepositoryImpl(
                 // correctly for some of them, and the card's promise is that what it shows is what
                 // gets written.
                 if (actions.draftDay(today) == null) return@flow emit(CoachReply.Failed)
+                // And one card, one kind, where that kind is a routine: its Confirm leaves the
+                // screen, so it cannot also be the tap that writes a meal.
+                if (!actions.routineDraftStandsAlone()) return@flow emit(CoachReply.Failed)
                 return@flow emit(CoachReply.Proposal(actions))
             }
 
@@ -385,8 +388,8 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
         "You can read the rest of their diary with tools. Use get_day for any single day — it " +
             "returns every food they logged with its calories and macros, their water and their " +
             "activity. Use get_history for a week, a month, a trend or an average, and " +
-            "get_library for the meals and recipes they have saved. Days are given " +
-            "as how many days back from today, where 0 is today and 1 is yesterday; today is day " +
+            "get_library for the meals, recipes, foods and workout routines they have saved. " +
+            "Days are given as how many days back from today, where 0 is today and 1 is yesterday; today is day " +
             "number ${todayEpochDay()} internally, so just count backwards. Never state a figure " +
             "you were not given or did not read from a tool — call the tool instead of guessing, " +
             "and if a tool comes back empty, say plainly that nothing was logged. Do not narrate " +
@@ -448,6 +451,17 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "and is not the same thing as stating one of their logged figures, which still only " +
             "ever comes from a tool. Keep portions ordinary and cookable, and once they pick one, " +
             "draft it with log_food or log_saved_meal so they can confirm it into their diary.",
+    )
+    appendLine(
+        "When they ask what to train, which workout to do, or to start one, call get_library and " +
+            "answer with one of their own routines — it tells you the lifts in each and which " +
+            "weekday each is planned for, so prefer the one planned for today. Then call " +
+            "start_routine with its exact name. That logs nothing and records nothing: it opens " +
+            "their workout screen already filled in with that routine's lifts, and they save it " +
+            "themselves, so say which routine you are proposing. Only ever one of their own — " +
+            "you cannot invent a workout, add a lift to one, or say how much they should lift — " +
+            "and never draft a routine in the same turn as anything else. If they have no " +
+            "routines, say so and leave it there.",
     )
     appendLine(
         "Reply in plain conversational text, in the second person. Keep it to three short " +

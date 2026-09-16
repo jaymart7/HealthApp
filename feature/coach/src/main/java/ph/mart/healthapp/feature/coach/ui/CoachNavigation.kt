@@ -24,9 +24,21 @@ data class CoachRoute(val question: String? = null) : NavKey
  * [onOpenDiary] is the way *out* — shown only after a draft has put rows in today's diary. It is a
  * callback rather than a route this module names, the shape `onAskCoach` already has in the other
  * direction: the Food tab is `:core:navigation`'s and switching to it is `AppScaffold`'s job.
+ *
+ * [onStartRoutine] is the second way out and takes the same shape for the same reason:
+ * `StrengthWorkoutRoute` is `:feature:training`'s and features never name each other's. It carries
+ * the routine's id, which is all the back stack ever carries — the row is resolved by the screen.
+ * Confirming a drafted routine is what calls it; every other draft writes and stays.
  */
-fun EntryProviderScope<NavKey>.coachEntries(onOpenDiary: () -> Unit) {
+fun EntryProviderScope<NavKey>.coachEntries(
+    onOpenDiary: () -> Unit,
+    onStartRoutine: (Long) -> Unit,
+) {
     entry<CoachRoute> { route ->
-        CoachScreen(question = route.question, onOpenDiary = onOpenDiary)
+        CoachScreen(
+            question = route.question,
+            onOpenDiary = onOpenDiary,
+            onStartRoutine = onStartRoutine,
+        )
     }
 }

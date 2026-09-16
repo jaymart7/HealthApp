@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.coach
 
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementPart
@@ -28,6 +29,9 @@ data class ChatMessage(
  * reached through a different door, not the coach logging. Everything here has already cleared
  * that trust boundary, so the screen can render it and [CoachRepository.settle] can write it
  * without re-checking anything.
+ *
+ * [StartRoutine] is the one member that is not a row at all — it commits nothing and the tap on it
+ * opens a form. Its own KDoc is where that is argued.
  */
 sealed interface CoachAction {
     data class LogFood(
@@ -176,13 +180,38 @@ sealed interface CoachAction {
         val value: Double,
         val unit: UnitSystem = UnitSystem.Metric,
     ) : CoachAction
+
+    /**
+     * One of the user's own workout routines, about to be started.
+     *
+     * **The one action that commits nothing**, and it is not an exception to the coach-never-writes
+     * rule so much as a step further from it: starting a routine writes nothing anywhere in this
+     * app — [ph.mart.healthapp.core.data.exercise.RoutineRepository] says so — it seeds the
+     * strength screen's form, and saving that form is an ordinary `ExerciseRepository.addEntry`
+     * the user makes themselves. So [CoachRepository.settle] has no branch for this and needs
+     * none: the confirm persists the turn and opens the form.
+     *
+     * [routineId] and [lifts] are the *user's own*, stamped by [resolve] from an exact name match —
+     * [LogSupplement.supplementId]'s rule, for its reason. The model supplies the name and nothing
+     * else: it cannot invent a workout, add a lift, or set a load. They are `0`/empty until then,
+     * which never reaches a confirm, exactly as [LogExercise.burnedKcal] is 0 until it is priced.
+     *
+     * [lifts] rides along only so the card can show what the tap is about to open; nothing is
+     * derived from it.
+     */
+    data class StartRoutine(
+        val name: String,
+        val routineId: Long = 0,
+        val lifts: List<RoutineLift> = emptyList(),
+    ) : CoachAction
 }
 
 /**
  * Which day a drafted row lands on, or **null for the kinds that are only ever today**: a weigh-in
  * the user just said out loud, a supplement tick, whose write call is `setTakenToday`, and the
- * three that followed it — how the day felt, a cuff reading and a tape measurement. None of the
- * five carries `days_ago` on its tool at all, which is what stops a model backdating one.
+ * three that followed it — how the day felt, a cuff reading and a tape measurement — plus the
+ * workout a tap is about to start. None of the six carries `days_ago` on its tool at all, which is
+ * what stops a model backdating one.
  *
  * Zero is today, the convention `FoodEntry` and `ExerciseEntry` already keep — so a hand-built
  * action, a preview and every draft the model did not backdate all mean the same thing by it.
@@ -201,6 +230,8 @@ val CoachAction.draftedOn: Long?
         is CoachAction.LogMood,
         is CoachAction.LogBloodPressure,
         is CoachAction.LogMeasurement,
+        // A workout is started now or not at all, and it carries no row to date anyway.
+        is CoachAction.StartRoutine,
         -> null
     }?.takeIf { it > 0 }
 

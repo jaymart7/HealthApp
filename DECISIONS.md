@@ -2664,6 +2664,40 @@ rather than needing a counter patched.
   which is exactly the reading `log_weight` has had since it shipped, alongside the identical
   clause for weight.
 
+- **The coach can start a workout, and it is the one action that writes nothing.** *"What should I
+  eat?"* had a whole path — `get_library` → the user's own saved meal → `log_saved_meal` → a card
+  one tap from the diary — and *"what should I train today?"* ended in prose, with the user leaving
+  the chat to find Home's plan card. `start_routine` is the tenth write tool and the first that
+  commits nothing: **starting a routine already writes nothing anywhere in this app.**
+  `RoutineRepository`'s own KDoc says so — a routine seeds the strength screen's form, and saving
+  that form is an ordinary `addEntry`. So the Confirm pushes `StrengthWorkoutRoute(0, 0,
+  routineId)` and `settle` needs no branch at all: every clause in it filters by type, a
+  `StartRoutine` falls through all of them, and only the exchange is persisted. That is not a hole
+  in the coach-never-writes rule, it is a step further from it — the tap opens a form the user then
+  fills in and saves.
+  **It says "Start it", not "Log it", and leaves no logged line.** The card's standing promise is
+  that every figure on it is a figure that gets written; this one's is that the lifts on it are the
+  lifts the form opens with. A `Logged: Push day` line under the answer would be a claim the app
+  cannot stand behind — the user may never save that workout — so the turn is persisted with the
+  coach's prose alone, which is how a dismissal already ends. `opensTheDiary()` is false for the
+  same reason: nothing landed anywhere, and the screen it would point at is already on top.
+  **A routine draft stands alone.** `routineDraftStandsAlone()` fails a turn mixing one with rows,
+  because a button that both writes a meal and navigates away is two decisions on one tap and the
+  half that happened off screen is the half nobody notices — the ruling `draftDay` already makes
+  about a card whose rows disagree about the day.
+  **The name is the whole of what the model supplies.** `routineToStart` matches exactly, case- and
+  space-insensitively, never fuzzily, and stamps the stored id, name and lifts — `savedMealRows`'
+  rule applied to a third list, for its reason: guessing that "legs" meant *Leg day* would open a
+  session the user did not name. It cannot invent a workout, add a lift, or set a load; the load is
+  `toSets()`'s job and comes off what was last lifted.
+  **The routines ride in `get_library` rather than in a tool of their own.** They are the same
+  question that tool already answers — *what is already theirs?* — and a fourth declaration is a
+  fourth thing for the model to pick wrong, the ruling the four wellbeing domains got when they
+  widened `get_day` instead. Each line carries the lifts and `isPlannedOn(today)`, which is what
+  makes "today" a real answer rather than a pick from a list. **No last-performed date**: nothing
+  links a logged workout back to the routine that seeded it, and `TrainingPlan.kt` says on purpose
+  that it never will.
+
 ### Training, strength & routines
 
 - **A strength workout is an `ExerciseEntry` with sets, not a second kind of thing.** One table for

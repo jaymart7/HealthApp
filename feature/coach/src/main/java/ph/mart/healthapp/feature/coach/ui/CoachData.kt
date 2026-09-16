@@ -53,9 +53,9 @@ data class CoachUiState(
  *
  * Two conditions, and both are about not offering one that lands in the wrong place. **The kind
  * has to be a diary row** — food, water and an activity all appear on the day the diary draws,
- * while a weigh-in, a mood, a cuff reading and a measurement are Progress's and a supplement
- * tick is Profile's, and a door that opens the wrong screen is the shrug the coach's own
- * subject actions are written against. **And it has to
+ * while a weigh-in, a mood, a cuff reading and a measurement are Progress's, a supplement
+ * tick is Profile's and a started routine has written nothing at all yet, and a door that opens
+ * the wrong screen is the shrug the coach's own subject actions are written against. **And it has to
  * be today**, because the diary opens on today and its day is ViewModel state rather than
  * something a route carries: a door from a backdated draft would open a day that does not hold the
  * rows it just promised. A backdated draft therefore gets no door, which is the honest half.
@@ -72,9 +72,23 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
         is CoachAction.LogMood,
         is CoachAction.LogBloodPressure,
         is CoachAction.LogMeasurement,
+        // Nothing was written at all: the tap opened a form the user has not saved. The workout
+        // screen it opened *is* the place to go and look, and it is already on screen.
+        is CoachAction.StartRoutine,
         -> false
     }
 }
+
+/**
+ * The routine a confirmed draft is about to open, or null when it is not one.
+ *
+ * The one action whose Confirm navigates rather than writes, so the screen needs to know — and it
+ * is a pure function beside [opensTheDiary] for that one's reason: a composable that pattern-matches
+ * on an action kind is a rule nothing can test. `routineDraftStandsAlone()` in `:core:data` is what
+ * guarantees the singleton, so anything else here is null rather than the first routine it finds.
+ */
+internal fun List<CoachAction>.routineIdToStart(): Long? =
+    (singleOrNull() as? CoachAction.StartRoutine)?.routineId?.takeIf { it > 0 }
 
 /**
  * A Room emission folded in.

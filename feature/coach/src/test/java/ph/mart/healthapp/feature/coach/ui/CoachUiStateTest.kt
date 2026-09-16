@@ -125,8 +125,27 @@ class CoachUiStateTest {
         // shrug the coach's subject actions are written against.
         assertFalse(listOf(CoachAction.LogWeight(weight = 82.0)).opensTheDiary())
         assertFalse(listOf(CoachAction.LogSupplement("Creatine", 1, 2)).opensTheDiary())
+        // Nothing was written at all — the tap opened a form the user has yet to save.
+        assertFalse(listOf(routine()).opensTheDiary())
         assertFalse(emptyList<CoachAction>().opensTheDiary())
     }
+
+    /**
+     * The one action whose Confirm navigates instead of writing. `routineDraftStandsAlone()` in
+     * `:core:data` is what stops a routine sharing a card with rows, so anything but a lone one
+     * is null here rather than the first routine in the list.
+     */
+    @Test
+    fun `a lone routine draft names the workout to open and nothing else does`() {
+        assertEquals(7L, listOf(routine()).routineIdToStart())
+        assertNull(listOf(food()).routineIdToStart())
+        assertNull(listOf(food(), routine()).routineIdToStart())
+        assertNull(emptyList<CoachAction>().routineIdToStart())
+        // Unresolved: `resolve` stamps the id from the user's own row, and 0 never reaches a card.
+        assertNull(listOf(CoachAction.StartRoutine(name = "Push day")).routineIdToStart())
+    }
+
+    private fun routine() = CoachAction.StartRoutine(name = "Push day", routineId = 7)
 
     @Test
     fun `a backdated draft earns no door`() {

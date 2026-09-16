@@ -39,6 +39,7 @@ import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 fun CoachScreen(
     question: String? = null,
     onOpenDiary: () -> Unit = {},
+    onStartRoutine: (Long) -> Unit = {},
     viewModel: CoachViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
@@ -57,6 +58,7 @@ fun CoachScreen(
         state = state,
         onEvent = viewModel::handleEvent,
         onOpenDiary = onOpenDiary,
+        onStartRoutine = onStartRoutine,
     )
 }
 
@@ -74,6 +76,7 @@ private fun CoachContent(
     state: CoachScreenState,
     onEvent: (CoachEvent) -> Unit,
     onOpenDiary: () -> Unit = {},
+    onStartRoutine: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     // The newest turn is the one worth reading, so every arrival — a reply, a failure, or the
@@ -143,8 +146,14 @@ private fun CoachContent(
                     item(key = "proposal") {
                         ProposalCard(
                             actions = uiState.proposal,
+                            // The turn is settled either way — the rows go down, or in a routine's
+                            // case nothing does — and only then does the screen change. A drafted
+                            // routine's Confirm is a *jump*: `CoachRoute` stays under the workout
+                            // screen, so this ViewModel is still there to finish the write and the
+                            // conversation is what back returns to.
                             onConfirm = { kept, line ->
                                 onEvent(CoachEvent.OnConfirmProposal(kept, line))
+                                kept.routineIdToStart()?.let(onStartRoutine)
                             },
                             onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
                         )
