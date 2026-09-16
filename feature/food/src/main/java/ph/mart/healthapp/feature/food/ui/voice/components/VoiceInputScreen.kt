@@ -5,6 +5,8 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,8 +35,13 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
+import ph.mart.healthapp.feature.food.ui.voice.withSpoken
 
 private val EXAMPLE = R.string.food_voice_example
+
+/** How far the sentence field grows before it scrolls instead. Four lines is a plate with four
+ * things on it, which is also what the parse is capped at being able to return. */
+private const val SENTENCE_LINES = 4
 
 /**
  * The sentence, the slot, and the button that turns one into rows.
@@ -43,6 +50,12 @@ private val EXAMPLE = R.string.food_voice_example
  * in-app [SpeechRecognizer]: it needs no `RECORD_AUDIO` permission, so there is no permission
  * screen to write and nothing to deny, and the transcript lands in a field that stays editable.
  * Typing is the same path — the mic only fills the field in.
+ *
+ * The field takes the whole width and wraps to [SENTENCE_LINES], because on this one screen the
+ * content is a sentence rather than a value and a 48dp box scrolls it out of sight. The mic and
+ * Clear sit in a row beneath it rather than beside it for the same reason — they were costing the
+ * sentence 112dp of the width it is read in. Clear is drawn only over text, the mic only where
+ * there is a recognizer, and the row is right-aligned so neither moves when the other appears.
  *
  * Under the field, the sentences that have become meals before — tapping one fills the field and
  * stops there. It does not estimate: a parse is a network call, and half the value of a remembered
@@ -70,13 +83,20 @@ internal fun VoiceInputScreen(
         result.data
             ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             ?.firstOrNull()
-            ?.let(onTextChange)
+            ?.let { onTextChange(withSpoken(text, it)) }
     }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(
-            // The estimate button sits under the field, which is where the keyboard lands.
-            modifier = Modifier.fillMaxSize().imePadding().padding(16.dp),
+            // The estimate button sits under the field, which is where the keyboard lands — and it
+            // scrolls to stay reachable, since the field, the recent strip and the keyboard can
+            // between them be taller than a short phone. `VoiceReviewScreen` scrolls for the same
+            // reason.
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .imePadding()
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -92,16 +112,33 @@ internal fun VoiceInputScreen(
                 )
             }
 
+            AppTextField(
+                value = text,
+                onValueChange = onTextChange,
+                placeholder = stringResource(R.string.food_voice_placeholder),
+                maxLines = SENTENCE_LINES,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                AppTextField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    placeholder = stringResource(R.string.food_voice_placeholder),
-                    modifier = Modifier.weight(1f),
-                )
+                if (text.isNotBlank()) {
+                    // No confirm, `HistorySearchField`'s clear button's call — and the strip below
+                    // holds the last three sentences, so a cleared one is rarely gone for good.
+                    IconButton(
+                        onClick = { onTextChange("") },
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Icon(
+                            imageVector = AppIcons.Close,
+                            contentDescription = stringResource(R.string.food_voice_clear),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 if (speechAvailable) {
                     IconButton(
                         onClick = { speech.launch(speechIntent(prompt)) },
@@ -144,6 +181,24 @@ private fun VoiceInputScreenPreview() {
     AppTheme {
         VoiceInputScreen(
             text = "two scrambled eggs, a slice of toast and a black coffee",
+            mealType = MealType.Breakfast,
+            recentSentences = emptyList(),
+            onTextChange = {},
+            onMealTypeSelect = {},
+            onEstimate = {},
+        )
+    }
+}
+
+/** Two dictations' worth, which is what the field has to be able to show: it wraps to
+ * [SENTENCE_LINES] and Clear appears beside the mic. */
+@PreviewLightDark
+@Composable
+private fun VoiceInputScreenLongSentencePreview() {
+    AppTheme {
+        VoiceInputScreen(
+            text = "two scrambled eggs, a slice of wholemeal toast with butter and a black coffee, " +
+                "a handful of blueberries and a small pot of greek yoghurt",
             mealType = MealType.Breakfast,
             recentSentences = emptyList(),
             onTextChange = {},

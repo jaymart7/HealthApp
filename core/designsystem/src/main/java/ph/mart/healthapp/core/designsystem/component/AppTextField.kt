@@ -5,7 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -35,6 +35,15 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * `ImeAction.Send` and hands it the same lambda its button calls. [onImeAction] null is what makes
  * the key inert while the action is unavailable, so the keyboard can never do what the button
  * refuses to.
+ *
+ * [maxLines] above 1 lets the text wrap and the box grow with it — talk-to-log's sentence field,
+ * which is the one field in the app whose content is a sentence rather than a value. It is a
+ * *parameter*, not a second component, and it is the only thing this field has ever grown: what
+ * `HistorySearchField` was kept out of here (a pill radius, a magnifier, a clear button, a progress
+ * line) were all features that would have landed in every form in the product, and letting text
+ * wrap lands nothing in a caller that doesn't ask. The height is a floor rather than a fixture as
+ * of that change, so a one-line field is still exactly 48dp and no longer clips its own text at the
+ * largest font scales.
  */
 @Composable
 fun AppTextField(
@@ -46,6 +55,7 @@ fun AppTextField(
     error: String? = null,
     imeAction: ImeAction = ImeAction.Default,
     onImeAction: (() -> Unit)? = null,
+    maxLines: Int = 1,
 ) {
     Column(modifier = modifier) {
         if (label != null) {
@@ -58,7 +68,9 @@ fun AppTextField(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                // A floor, not a fixture: one line of bodyLarge plus the padding below is exactly
+                // 48dp, so a form field is the height it always was and a wrapping one grows.
+                .heightIn(min = 48.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .border(
                     BorderStroke(
@@ -67,7 +79,7 @@ fun AppTextField(
                     ),
                     RoundedCornerShape(12.dp),
                 )
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
             if (value.isEmpty() && placeholder != null) {
@@ -80,7 +92,9 @@ fun AppTextField(
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
-                singleLine = true,
+                // Not `singleLine = true` beside a maxLines above 1 — BasicTextField rejects the pair.
+                singleLine = maxLines == 1,
+                maxLines = maxLines,
                 keyboardOptions = KeyboardOptions(imeAction = imeAction),
                 // One handler for all of them: the key the IME shows is `imeAction`'s, so whichever
                 // callback fires is the one the caller asked for.
@@ -121,6 +135,11 @@ private fun AppTextFieldPreview() {
         Surface {
             Column(modifier = Modifier.padding(16.dp)) {
                 AppTextField(value = "", onValueChange = {}, placeholder = "Search foods…")
+                AppTextField(
+                    value = "two scrambled eggs, a slice of toast and a black coffee",
+                    onValueChange = {},
+                    maxLines = 4,
+                )
             }
         }
     }

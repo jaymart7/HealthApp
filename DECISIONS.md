@@ -3042,6 +3042,34 @@ rather than needing a counter patched.
   four lines; a parallel `food_voice_sentence` entity and DAO would have been that file twice and a
   sixth constructor argument on `FoodRepositoryImpl`. Both kinds keep the no-`isDeleted` argument
   the table was always exempt on, and neither is exported.
+- **The sentence field is `AppTextField` with `maxLines`, not a third text field.** This screen's
+  content is a sentence where every other field in the app holds a value, and a fixed 48dp box
+  scrolls a dictated meal out of sight — the one thing you most need to see before spending a parse
+  on it. The obvious move was `HistorySearchField`'s: one screen wants a different field, so it gets
+  its own. It was the wrong read of that entry. What was kept out of `AppTextField` there were
+  *features* — a pill radius, a leading magnifier, a clear button, a progress line — each of which
+  would have landed in all fifteen forms that draw it. `maxLines`, defaulted to 1, lands nothing in
+  a caller that does not ask for it, and it cost four lines against a second eighty-line component
+  with one user. The fixed `height(48.dp)` became `heightIn(min = 48.dp)` with 12dp of vertical
+  padding, which is the same 48dp for one line of `bodyLarge` and stops every one of those fifteen
+  fields clipping its own text at the largest font scales. The clear button — the part that really
+  is a feature — stayed on this screen, where it belongs.
+- **The mic adds to the sentence; it does not replace it.** `ChatInputBar.withSpoken` already made
+  this call for the coach's question ("a mic that ate it would be a worse mistake than one that
+  needs a space deleted") and talk-to-log, the screen with a whole meal to eat rather than a
+  half-typed question, was the one still replacing. It joins with a **comma** where the coach joins
+  with a space, which is the only place the two differ: a question continues, a meal is a list, and
+  "two eggs a black coffee" is a worse thing to hand the parser than "two eggs, a black coffee". Not
+  shared across the two modules — a feature never imports another's types, which is why
+  `speechIntent` is already duplicated in both files; this is one more line under the same rule,
+  and `VoiceSentenceTest` is what earns its separator the stay-in-Kotlin exemption.
+- **The mic and Clear moved under the field, and the column scrolls.** Beside the field the two
+  buttons cost the sentence 112dp of the width it is read in, which is most of a line on a phone.
+  Right-aligned in a row beneath it, Clear drawn only over text and the mic only where a recognizer
+  exists, so neither moves when the other appears. The scroll is the fix for what the recent strip
+  made reachable: field, strip, chips and button under a raised keyboard are taller than a short
+  phone, and a `Column` that cannot scroll simply puts Estimate past the bottom edge.
+  `VoiceReviewScreen`, one screen along in the same flow, already scrolled.
 - **Rows, where the search screen draws pills.** `VoiceRecentSentences` matches
   `HistoryRecentQueries` on colour, border and the uppercase label and departs from it on shape,
   which is the one thing the content decides: a pill is sized for "chicken", and "two scrambled

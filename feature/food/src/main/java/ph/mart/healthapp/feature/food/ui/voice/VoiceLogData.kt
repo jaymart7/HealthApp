@@ -12,6 +12,30 @@ import ph.mart.healthapp.core.data.food.MealParseResult
  */
 data class VoiceLogUiState(val recentSentences: List<String> = emptyList())
 
+/**
+ * What the field holds after a phrase comes back from the speech dialog. It **appends** rather than
+ * replaces, the call `ChatInputBar.withSpoken` makes for the coach's question and for its reason: a
+ * sentence already in the field is the user's, and a mic that ate it would be a worse mistake than
+ * one that needs a comma deleted. This is the screen with more to eat — a whole meal, not a
+ * half-typed question.
+ *
+ * It joins with a comma where the coach joins with a space, which is the one place the two differ:
+ * a question continues, a meal is a **list**, and "two eggs a black coffee" is a worse thing to
+ * hand the parser than "two eggs, a black coffee". A sentence that already ends in its own
+ * punctuation keeps it rather than collecting a second one.
+ */
+// Stays in Kotlin under the pure-function-with-a-test rule: VoiceSentenceTest asserts the joins.
+internal fun withSpoken(sentence: String, spoken: String): String {
+    val said = spoken.trim()
+    val existing = sentence.trimEnd()
+    return when {
+        said.isEmpty() -> sentence
+        existing.isBlank() -> said
+        existing.endsWith(",") || existing.endsWith(";") -> "$existing $said"
+        else -> "$existing, $said"
+    }
+}
+
 sealed interface VoiceLogEvent {
     data class OnParse(val text: String) : VoiceLogEvent
     data object OnCancelParse : VoiceLogEvent

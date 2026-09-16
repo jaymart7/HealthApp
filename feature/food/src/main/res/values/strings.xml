@@ -217,6 +217,7 @@
     <string name="food_voice_example">e.g. \"two scrambled eggs, a slice of toast and a black coffee\"</string>
     <string name="food_voice_placeholder">Say or type your meal…</string>
     <string name="food_voice_speak">Speak your meal</string>
+    <string name="food_voice_clear">Clear what you said</string>
     <string name="food_voice_estimate">Estimate</string>
     <string name="food_voice_recent">Recent</string>
     <string name="food_voice_none_heading">No food in that one</string>
