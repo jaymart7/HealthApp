@@ -45,6 +45,9 @@
     <string name="progress_ask_mood">How has my mood been lately?</string>
     <string name="progress_ask_heart">How has my heart rate been?</string>
     <string name="progress_ask_pressure">How have my blood pressure readings been?</string>
+    <string name="progress_ask_recap">Ask the coach about this %1$s</string>
+    <string name="progress_ask_recap_week">How did my week go overall?</string>
+    <string name="progress_ask_recap_month">How did my month go overall?</string>
 
     <string name="progress_subject_weight">Weight</string>
     <string name="progress_subject_photos">Photos</string>

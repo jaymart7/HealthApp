@@ -78,6 +78,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
  */
 @Composable
 internal fun RecapScreen(
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecapViewModel = koinViewModel(),
@@ -86,6 +87,7 @@ internal fun RecapScreen(
     RecapContent(
         uiState = uiState,
         onPeriodChange = { period -> viewModel.handleEvent(RecapEvent.OnPeriodChange(period)) },
+        onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
         modifier = modifier,
     )
@@ -95,6 +97,7 @@ internal fun RecapScreen(
 private fun RecapContent(
     uiState: RecapUiState,
     onPeriodChange: (RecapPeriod) -> Unit,
+    onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: RecapState = rememberRecapState(),
@@ -129,6 +132,7 @@ private fun RecapContent(
                 NutritionSection(recap = report)
                 MovementSection(recap = report, unit = uiState.unit)
                 PhotoSection(recap = report)
+                AskCoachButton(period = uiState.period, onAskCoach = onAskCoach)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SecondaryButton(label = stringResource(R.string.progress_share), onClick = { state.sharing = true }, modifier = Modifier.weight(1f))
@@ -146,6 +150,29 @@ private fun RecapContent(
             onDismiss = { state.sharing = false },
         )
     }
+}
+
+/**
+ * The door to the coach, carrying the question this period raises — **nothing at all** where
+ * [RecapPeriod.coachQuestion] is null, which is the year.
+ *
+ * The last thing in the scroll rather than a third pill in the docked row: Share and Close split
+ * that row evenly and a third would cramp all three, and this is an action for someone who has
+ * read the page rather than one competing with the way out of it. The empty recap never reaches
+ * here — `report == null` returns above — which is right, since there would be nothing to ask
+ * about.
+ *
+ * It fills the coach's field rather than sending, the rule every other door follows.
+ */
+@Composable
+private fun AskCoachButton(period: RecapPeriod, onAskCoach: (String) -> Unit) {
+    val question = period.coachQuestion ?: return
+    val text = stringResource(question)
+    SecondaryButton(
+        label = stringResource(R.string.progress_ask_recap, stringResource(period.short).lowercase()),
+        onClick = { onAskCoach(text) },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /** Nothing logged in the window — said plainly rather than drawn as a page of zeros. */
@@ -319,6 +346,7 @@ private fun RecapScreenPreview() {
                 unit = UnitSystem.Metric,
             ),
             onPeriodChange = {},
+            onAskCoach = {},
             onExitFlow = {},
         )
     }
@@ -329,6 +357,11 @@ private fun RecapScreenPreview() {
 @Composable
 private fun RecapScreenEmptyPreview() {
     AppTheme {
-        RecapContent(uiState = RecapUiState(period = RecapPeriod.Week), onPeriodChange = {}, onExitFlow = {})
+        RecapContent(
+            uiState = RecapUiState(period = RecapPeriod.Week),
+            onPeriodChange = {},
+            onAskCoach = {},
+            onExitFlow = {},
+        )
     }
 }

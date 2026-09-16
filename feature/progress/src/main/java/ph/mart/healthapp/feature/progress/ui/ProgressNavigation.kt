@@ -167,9 +167,10 @@ fun EntryProviderScope<NavKey>.progressEntries(
     onCompare: (Long, Long) -> Unit,
     onOpenTimelapse: () -> Unit,
     onOpenRecap: () -> Unit,
-    /** The subject's own question, carried to the coach — which lives above this tab, so like
-     * every other cross-feature jump it stays a callback `AppScaffold` resolves. Only the eleven
-     * subjects the coach has tools for ever call it; see [Subject.coachQuestion]. */
+    /** The page's own question, carried to the coach — which lives above this tab, so like
+     * every other cross-feature jump it stays a callback `AppScaffold` resolves. Only the twelve
+     * subjects the coach has tools for ever call it (see [Subject.coachQuestion]), plus the recap
+     * on a week or a month (see [ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod]). */
     onAskCoach: (String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
@@ -284,6 +285,6 @@ fun EntryProviderScope<NavKey>.progressEntries(
         PhotoComparisonScreen(selectedIds = listOf(key.firstId, key.secondId))
     }
     entry<TimelapseRoute> { TimelapseScreen() }
-    entry<RecapRoute> { RecapScreen(onExitFlow = onExitFlow) }
+    entry<RecapRoute> { RecapScreen(onAskCoach = onAskCoach, onExitFlow = onExitFlow) }
     entry<AddPhotoRoute> { AddPhotoScreen(onExitFlow = onExitFlow) }
 }

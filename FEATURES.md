@@ -310,7 +310,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   days against protein, steps against mood, a fast against the next day — each splitting the last
   90 days at the driver's median and reporting both averages with the day count behind each.
   Derived, never stored, never sent to a model, and drawn only once the log can support one.
-- Recap: rolling 7/30/365-day summary, shareable as a single-card PNG.
+- Recap: rolling 7/30/365-day summary, shareable as a single-card PNG, and — on the week and
+  the month, never the year — a door to the coach carrying that period's question, since
+  `get_history` reads a span of at most a month.
 - Energy check-in: maintenance calories measured from 28 days of logged intake against the real
   weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
   opening a full overlay that shows its working).
