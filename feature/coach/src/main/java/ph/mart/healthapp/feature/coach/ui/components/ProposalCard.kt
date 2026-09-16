@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.coach.ui.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -110,15 +112,10 @@ internal fun ProposalCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SecondaryButton(
-                // "Log it" is a promise a routine does not keep: its tap opens the workout screen
-                // and writes nothing at all, so it says what it does instead.
-                label = stringResource(
-                    if (keptActions.singleOrNull() is CoachAction.StartRoutine) {
-                        R.string.coach_proposal_start
-                    } else {
-                        R.string.coach_proposal_confirm
-                    },
-                ),
+                // "Log it" is a promise two of these do not keep: a routine's tap opens the
+                // workout screen and writes nothing at all, and a fast's flips a timer rather than
+                // logging a row. Both say what they do instead.
+                label = stringResource(confirmLabelFor(keptActions.singleOrNull())),
                 // Striking out every row is a dismissal the long way round, but it is not one
                 // until the user says so — the button goes quiet rather than the card vanishing.
                 enabled = keptActions.isNotEmpty(),
@@ -127,6 +124,22 @@ internal fun ProposalCard(
             TextButton(label = stringResource(R.string.coach_proposal_dismiss), onClick = onDismiss)
         }
     }
+}
+
+/**
+ * Which verb the confirm button uses.
+ *
+ * "Log it" is the default because logging is what all but two of these do. A routine *starts*
+ * something — its tap opens a form and writes nothing — and a fast starts or ends one, which is a
+ * state and not a row. [single] is null for a multi-row draft, which is always foods and always
+ * logs.
+ */
+@StringRes
+private fun confirmLabelFor(single: CoachAction?): Int = when {
+    single is CoachAction.StartRoutine -> R.string.coach_proposal_start
+    single is CoachAction.SetFast && single.ending -> R.string.coach_proposal_end
+    single is CoachAction.SetFast -> R.string.coach_proposal_start
+    else -> R.string.coach_proposal_confirm
 }
 
 /** A meal of one thing is not a list: the single draft keeps the layout it shipped with, where the
@@ -214,6 +227,20 @@ private fun SingleProposal(action: CoachAction, day: String? = null) {
             ProposalTitle(stringResource(R.string.coach_proposal_routine_title), day)
             ProposalHeadline(action.name)
             routineLifts(action)?.let { ProposalDetail(it) }
+        }
+
+        // The goal on a start, the elapsed time on an end. Neither is the model's: a start takes
+        // the profile's target and an end takes the running fast's own snapshotted one, both
+        // stamped by `resolve`. The elapsed figure says "so far" because it is the one number on
+        // any of these cards that nothing writes — the end is stamped at the tap.
+        is CoachAction.SetFast -> {
+            if (action.ending) {
+                ProposalTitle(stringResource(R.string.coach_proposal_fast_end_title), day)
+                ProposalHeadline(fastElapsed(action))
+            } else {
+                ProposalTitle(stringResource(R.string.coach_proposal_fast_start_title), day)
+                ProposalHeadline(fastGoal(action))
+            }
         }
 
         // `resolve()` turns a saved meal into its own rows before any card is drawn, so this is
@@ -357,6 +384,12 @@ private fun actionName(action: CoachAction): String = when (action) {
     // Never drawn in a list — `routineDraftStandsAlone()` is what guarantees a routine is the
     // whole draft — but the name is the right answer if that ever stops being true.
     is CoachAction.StartRoutine -> action.name
+    // Drawn in a list when a fast rides beside rows — "I broke my fast with two eggs" — which is
+    // the whole reason it is not held to a routine's stand-alone rule.
+    is CoachAction.SetFast -> stringResource(
+        if (action.ending) R.string.coach_proposal_fast_end_title
+        else R.string.coach_proposal_fast_start_title,
+    )
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -375,6 +408,7 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.LogBloodPressure -> bandLine(action)
     is CoachAction.LogMeasurement -> measurementAmount(action)
     is CoachAction.StartRoutine -> routineLifts(action)
+    is CoachAction.SetFast -> if (action.ending) fastElapsed(action) else fastGoal(action)
 }
 
 /**
@@ -412,6 +446,14 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
         // line under the answer would be a claim the app cannot stand behind. The turn is
         // persisted with the coach's own prose, exactly as a dismissal is.
         single is CoachAction.StartRoutine -> ""
+        // Unlike a routine this *did* change something, so it says so — and it says the figure the
+        // tap settled on rather than a total, because a fast has none.
+        single is CoachAction.SetFast && single.ending -> stringResource(
+            R.string.coach_proposal_logged_fast_ended,
+            formatDuration(single.elapsedMinutes),
+        )
+        single is CoachAction.SetFast ->
+            stringResource(R.string.coach_proposal_logged_fast_started, single.goalHours)
         else -> pluralStringResource(
             R.plurals.coach_proposal_logged_items,
             actions.size,
@@ -420,6 +462,17 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
         )
     }
 }
+
+/** The target a start will run to — the profile's, stamped by `resolve`, never the model's. */
+@Composable
+private fun fastGoal(action: CoachAction.SetFast): String =
+    stringResource(R.string.coach_proposal_fast_goal, action.goalHours)
+
+/** How long the fast has run. `formatDuration` because a duration is written one way in this app,
+ * and "so far" because this one is still growing while the card sits there. */
+@Composable
+private fun fastElapsed(action: CoachAction.SetFast): String =
+    stringResource(R.string.coach_proposal_fast_elapsed, formatDuration(action.elapsedMinutes))
 
 /**
  * The figure the user gave, in the unit their profile uses and **not converted** — this is the
@@ -786,3 +839,39 @@ private fun food(name: String, kcal: Int, protein: Int, carbs: Int, fat: Int) = 
     portionAmount = 1.0,
     portionUnit = "serving",
 )
+
+/** A fast about to start: the goal is the profile's, and the button is the routine's verb because
+ * a start is a start. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardFastStartPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(CoachAction.SetFast(ending = false, goalHours = 16)),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** And the other half of the one card that confirms a state: the elapsed time says "so far"
+ * because it is still growing while the card sits there. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardFastEndPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(
+                    CoachAction.SetFast(ending = true, goalHours = 16, elapsedMinutes = 972),
+                ),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}

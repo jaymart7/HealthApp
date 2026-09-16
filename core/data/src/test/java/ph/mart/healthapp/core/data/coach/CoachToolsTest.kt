@@ -17,6 +17,8 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.weekStart
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
@@ -1444,4 +1446,85 @@ class CoachToolsTest {
     }
 
     // endregion
+
+    // region The fasting timer
+
+    @Test
+    fun `a fast call becomes a transition the app will check itself`() {
+        assertEquals(
+            CoachAction.SetFast(ending = false),
+            parseAction(TOOL_LOG_FAST, args("action" to FAST_START)),
+        )
+        assertEquals(
+            CoachAction.SetFast(ending = true),
+            parseAction(TOOL_LOG_FAST, args("action" to FAST_END)),
+        )
+    }
+
+    /** The verb is the whole argument, so a wrong one has nothing to fall back on. Neither figure
+     * is the model's either — both are still at their defaults until `resolve` stamps them. */
+    @Test
+    fun `a fast call with no usable verb is refused`() {
+        assertNull(parseAction(TOOL_LOG_FAST, args("action" to "pause")))
+        assertNull(parseAction(TOOL_LOG_FAST, args("action" to "  ")))
+        assertNull(parseAction(TOOL_LOG_FAST, args("action" to 1)))
+        assertNull(parseAction(TOOL_LOG_FAST, args()))
+    }
+
+    @Test
+    fun `a fast call is case-insensitive and carries no figures of its own`() {
+        val action = parseAction(TOOL_LOG_FAST, args("action" to "START")) as CoachAction.SetFast
+        assertEquals(DEFAULT_FAST_GOAL_HOURS, action.goalHours)
+        assertEquals(0, action.elapsedMinutes)
+    }
+
+    /** A start against an open fast and an end against none are both `FastingRepository` no-ops,
+     * and a Confirm that does nothing is the one thing this card may not offer. */
+    @Test
+    fun `a fast draft that disagrees with the timer fails the turn`() {
+        assertNull(fastDraft(ending = false, active = running, goalHours = 18, nowMillis = NOW))
+        assertNull(fastDraft(ending = true, active = null, goalHours = 18, nowMillis = NOW))
+    }
+
+    @Test
+    fun `a started fast takes the profile's goal`() {
+        assertEquals(
+            CoachAction.SetFast(ending = false, goalHours = 18),
+            fastDraft(ending = false, active = null, goalHours = 18, nowMillis = NOW),
+        )
+    }
+
+    /** The running fast's own snapshotted goal, never the profile's: raising the target must not
+     * re-price a fast already under way — `fast_session.goalHours`' whole reason for existing. */
+    @Test
+    fun `an ended fast takes its own goal and how long it has run`() {
+        assertEquals(
+            CoachAction.SetFast(ending = true, goalHours = 16, elapsedMinutes = 90),
+            fastDraft(ending = true, active = running, goalHours = 18, nowMillis = NOW),
+        )
+    }
+
+    /** It may ride beside rows — "I broke my fast with two eggs" — but never beside another of
+     * itself, which would start and end a fast on one tap. */
+    @Test
+    fun `a draft holds at most one fasting transition`() {
+        val start = CoachAction.SetFast(ending = false)
+        val end = CoachAction.SetFast(ending = true)
+        assertTrue(emptyList<CoachAction>().fastDraftIsSingular())
+        assertTrue(listOf(end).fastDraftIsSingular())
+        assertTrue(listOf(logFood("Toast", 180), end).fastDraftIsSingular())
+        assertFalse(listOf(start, end).fastDraftIsSingular())
+    }
+
+    private val running = FastSession(
+        id = 3,
+        startMillis = NOW - 90 * 60_000L,
+        endMillis = null,
+        goalHours = 16,
+    )
+
+    // endregion
 }
+
+/** A fixed instant, so an elapsed time is arithmetic rather than a race with the clock. */
+private const val NOW = 1_700_000_000_000L

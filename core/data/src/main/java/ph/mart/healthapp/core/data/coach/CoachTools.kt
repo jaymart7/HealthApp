@@ -28,6 +28,8 @@ import ph.mart.healthapp.core.data.exercise.dayLabel
 import ph.mart.healthapp.core.data.exercise.isPlannedOn
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
+import ph.mart.healthapp.core.data.fasting.FastSession
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.fasting.dateEpochDay
 import ph.mart.healthapp.core.data.fasting.durationMinutes
@@ -77,7 +79,7 @@ import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
- * The coach's tools: three the app *runs*, nine it only ever *drafts*.
+ * The coach's tools: three the app *runs*, ten it only ever *drafts*.
  *
  * The split is the whole design. A read is a local Room query with no user-visible effect, so it
  * executes the moment the model asks for it and the answer goes straight back into the same turn.
@@ -157,6 +159,12 @@ internal const val TOOL_LOG_SUPPLEMENT = "log_supplement"
 internal const val TOOL_LOG_MOOD = "log_mood"
 internal const val TOOL_LOG_BLOOD_PRESSURE = "log_blood_pressure"
 internal const val TOOL_LOG_MEASUREMENT = "log_measurement"
+internal const val TOOL_LOG_FAST = "log_fast"
+
+/** The only two values `log_fast` takes. Stays in Kotlin like every other word the model
+ * reads: it is schema text, and it is compared against rather than shown. */
+internal const val FAST_START = "start"
+internal const val FAST_END = "end"
 internal const val TOOL_START_ROUTINE = "start_routine"
 
 /** The ones the model may call but the app never executes. Kept as a set rather than a `when` so
@@ -171,6 +179,9 @@ internal val WRITE_TOOLS = setOf(
     TOOL_LOG_MOOD,
     TOOL_LOG_BLOOD_PRESSURE,
     TOOL_LOG_MEASUREMENT,
+    // The one that writes no row at all: its confirm flips the fasting timer, which is a state
+    // and not a row. See [CoachAction.SetFast].
+    TOOL_LOG_FAST,
     // The one that executes nothing *and* writes nothing: it ends the turn as a draft like the
     // rest, and the tap on that draft opens a form. See [CoachAction.StartRoutine].
     TOOL_START_ROUTINE,
@@ -383,6 +394,20 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             ),
         ),
         FunctionDeclaration(
+            name = TOOL_LOG_FAST,
+            description = "Propose starting the user's fasting timer, or ending the fast they " +
+                "have running. This does NOT do it: they see what you proposed and tap to " +
+                "confirm. Only call it when they say they are starting or breaking a fast — " +
+                "never suggest one, and never propose a fast for an earlier time or an earlier " +
+                "day. Do not set how long the fast should be: the app uses their own goal.",
+            parameters = mapOf(
+                "action" to Schema.enumeration(
+                    values = listOf(FAST_START, FAST_END),
+                    description = "start to begin a fast now, end to finish the one running.",
+                ),
+            ),
+        ),
+        FunctionDeclaration(
             name = TOOL_START_ROUTINE,
             description = "Propose starting one of the user's own saved workout routines, by its " +
                 "exact name from get_library. This does NOT log a workout and records nothing: " +
@@ -433,6 +458,13 @@ internal fun parseAction(
     TOOL_LOG_MOOD -> parseLogMood(args)
     TOOL_LOG_BLOOD_PRESSURE -> parseLogBloodPressure(args)
     TOOL_LOG_MEASUREMENT -> parseLogMeasurement(args)
+    // A verb and nothing else. Which of the two is legal depends on whether a fast is running,
+    // and that is [resolve]'s question — this stays pure, with no clock and no Room.
+    TOOL_LOG_FAST -> when (args.string("action")?.trim()?.lowercase()) {
+        FAST_START -> CoachAction.SetFast(ending = false)
+        FAST_END -> CoachAction.SetFast(ending = true)
+        else -> null
+    }
     // A name and nothing else: [resolve] finds the user's own routine from it, and everything the
     // card shows and the form opens with comes off that row.
     TOOL_START_ROUTINE -> args.string("name")
@@ -1127,6 +1159,52 @@ internal fun routineToStart(
 }
 
 /**
+ * The fasting timer's two transitions, checked against the state they are about to change — or
+ * **null when they disagree with it**, which fails the turn.
+ *
+ * That is the whole reason this function exists. `FastingRepository.start()` is a no-op while a
+ * fast is already open and `stop()` is one while none is, so a card drawn without this check could
+ * offer a Confirm that does nothing at all — and a proposal card's promise is that the tap does
+ * what the card says. Failing the turn is [supplementDose]'s ruling on a name that matches nothing,
+ * for its reason: the honest ending is a shrug, not a button that lies.
+ *
+ * Both figures are the app's. A start takes the profile's [goalHours]; an end takes **the running
+ * fast's own**, never the profile's, because `fast_session.goalHours` is snapshotted at the start
+ * precisely so that raising the target next month cannot re-price a fast already under way.
+ *
+ * Pure, with the clock and the two reads passed in — the shape [savedMealRows], [supplementDose]
+ * and [routineToStart] all keep, and what lets [CoachToolsTest] pin the four cases.
+ */
+internal fun fastDraft(
+    ending: Boolean,
+    active: FastSession?,
+    goalHours: Int,
+    nowMillis: Long,
+): CoachAction.SetFast? = when {
+    ending && active != null -> CoachAction.SetFast(
+        ending = true,
+        goalHours = active.goalHours,
+        elapsedMinutes = active.durationMinutes(nowMillis),
+    )
+    !ending && active == null -> CoachAction.SetFast(ending = false, goalHours = goalHours)
+    else -> null
+}
+
+/**
+ * Whether a draft holds at most one fasting transition.
+ *
+ * Unlike [routineDraftStandsAlone] this permits company: *"I broke my fast with two eggs"* is one
+ * sentence, both halves are writes, and both are on the card to be read before the tap — the
+ * stand-alone rule a routine has is about its Confirm *leaving the screen*, which this one does
+ * not. What it cannot hold is two of these: one tap would start and end a fast, and no sentence
+ * means that.
+ *
+ * Pure and here rather than inline in `send`, for [routineDraftStandsAlone]'s reason.
+ */
+internal fun List<CoachAction>.fastDraftIsSingular(): Boolean =
+    count { it is CoachAction.SetFast } <= 1
+
+/**
  * Whether a draft holding a routine holds *only* that routine.
  *
  * A routine's Confirm leaves the screen, and a button that both writes a meal and navigates away
@@ -1271,6 +1349,16 @@ internal class CoachToolbox(
     suspend fun routineToStart(name: String): CoachAction.StartRoutine? =
         routineToStart(name, routineRepository.observeRoutines().first())
 
+    /** The two reads [fastDraft] needs — the running fast, and the goal a *new* one would take.
+     * The rule itself is pure, the same shape a fourth time. */
+    suspend fun fastDraft(ending: Boolean): CoachAction.SetFast? = fastDraft(
+        ending = ending,
+        active = fastingRepository.observeActive().first(),
+        goalHours = profileRepository.observeProfile().first()?.fastingGoalHours
+            ?: DEFAULT_FAST_GOAL_HOURS,
+        nowMillis = System.currentTimeMillis(),
+    )
+
     /**
      * What a MET estimate is priced against: the latest weigh-in, else the onboarding weight —
      * `:feature:training`'s own rule, so a coach-drafted workout and a hand-logged one of the same
@@ -1397,6 +1485,10 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
     // own row, and a name that is in no library fails the turn rather than opening the nearest
     // workout.
     is CoachAction.StartRoutine -> toolbox.routineToStart(name)?.let(::listOf)
+    // The only branch that resolves against a *state* rather than a row. Null when the timer
+    // disagrees with the draft — a start against an open fast, an end against none — which fails
+    // the turn rather than drawing a Confirm that would be one of the repository's no-ops.
+    is CoachAction.SetFast -> toolbox.fastDraft(ending)?.let(::listOf)
     else -> listOf(this)
 }
 

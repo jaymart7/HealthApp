@@ -188,6 +188,25 @@ internal fun fakeCoachScript(question: String): FakeScript {
 
     if ("fail" in asked) return FakeScript.Fail
 
+    // Above the log block, because not one of `LOG_WORDS` is in "start my fast". Keyed on the
+    // whole word — "log my breakfast" is not a fast — and on a verb as well, so "how's my fasting
+    // going?" falls through to the read routing below instead of drafting a transition. Which of
+    // the two is legal is `resolve`'s question, exactly as it is for the real thing: a start
+    // against an open fast comes back null and the turn fails.
+    if (FAST_WORD.containsMatchIn(asked)) {
+        val ending = FAST_END_WORDS.any { it in asked }
+        if (ending || FAST_START_WORDS.any { it in asked }) {
+            return FakeScript.Propose(
+                actions = listOf(CoachAction.SetFast(ending = ending)),
+                preamble = preamble(
+                    asked,
+                    if (ending) "Here's the fast to close out:"
+                    else "Here's the fast I'd start — it runs to your own goal:",
+                ),
+            )
+        }
+    }
+
     if (LOG_WORDS.any { it in asked }) {
         // The same calendar words the read routing uses, read *inside* the log block: "log the
         // eggs I had yesterday" is a draft for yesterday, not a question about it. Zero is today,
@@ -339,6 +358,11 @@ internal fun fakeCoachScript(question: String): FakeScript {
         }
     }
 }
+
+/** The whole word, so "breakfast" is not a fast. */
+private val FAST_WORD = Regex("\\bfast(ing)?\\b")
+private val FAST_START_WORDS = listOf("start", "begin", "starting")
+private val FAST_END_WORDS = listOf("break", "broke", "end", "stop", "finish", "done")
 
 private val LOG_WORDS = listOf("log ", "add ", "i ate", "i had", "i drank", "i weigh", "took ", "note down")
 private val WATER_WORDS = listOf("water", "glass")

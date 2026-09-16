@@ -373,6 +373,12 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   opens the strength screen seeded with that routine at last week's loads, which the user saves
   themselves. A routine is drafted alone, never beside rows, and the coach can neither invent a
   workout nor add a lift to one.
+- Coach fasting — "start my fast" / "I'm breaking my fast" drafts the timer's own transition, the
+  one proposal that writes no row: the card shows the goal a start will run to (the profile's) or
+  how long the running fast has gone so far, the button says Start it or End it, and the tap flips
+  the timer Home's card drives. A start while a fast is already running, or an end while none is,
+  fails the turn rather than offering a Confirm that would do nothing. Never backdated, never
+  suggested, and it earns no diary door.
 - Coach door out — once a confirmed draft has put rows in **today's** diary, a "View it in your
   diary" line sits under that answer and switches to the Food tab. It lasts until the next
   question. A weigh-in, a supplement or a backdated draft gets none: the diary opens on today and

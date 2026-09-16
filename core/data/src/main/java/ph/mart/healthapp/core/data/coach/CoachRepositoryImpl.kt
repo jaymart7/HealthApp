@@ -24,6 +24,7 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
@@ -111,6 +112,9 @@ internal class CoachRepositoryImpl(
     // neighbourhood and its unit rule.
     private val moodRepository: MoodRepository,
     private val bloodPressureRepository: BloodPressureRepository,
+    // The eighth, and the only one whose write is a *state transition* rather than a row: a
+    // confirmed fast draft starts or stops the timer Home's card and the widget already drive.
+    private val fastingRepository: FastingRepository,
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
@@ -181,6 +185,10 @@ internal class CoachRepositoryImpl(
                 // And one card, one kind, where that kind is a routine: its Confirm leaves the
                 // screen, so it cannot also be the tap that writes a meal.
                 if (!actions.routineDraftStandsAlone()) return@flow emit(CoachReply.Failed)
+                // And one card, one fasting transition: a draft holding two would start and end a
+                // fast on the same tap. It may still ride beside rows — "I broke my fast with two
+                // eggs" is one sentence — which is where it parts company with a routine.
+                if (!actions.fastDraftIsSingular()) return@flow emit(CoachReply.Failed)
                 return@flow emit(CoachReply.Proposal(actions))
             }
 
@@ -320,6 +328,15 @@ internal class CoachRepositoryImpl(
             )
         }
 
+        // The one settled action that writes no row at all: it flips the timer Home's card and
+        // the widget drive. Both calls already no-op against a state that has moved — `start()`
+        // while a fast is open, `stop()` while none is — so a card left on screen while the user
+        // starts a fast in another tab does nothing rather than something wrong. `resolve` is what
+        // makes that a rarity instead of the normal case.
+        actions.filterIsInstance<CoachAction.SetFast>().singleOrNull()?.let {
+            if (it.ending) fastingRepository.stop() else fastingRepository.start(it.goalHours)
+        }
+
         writeExchange(question, answer)
     }
 
@@ -408,8 +425,8 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
     )
     appendLine(
         "If the user asks you to log something, call log_food, log_water, log_exercise, " +
-            "log_saved_meal, log_weight, log_supplement, log_mood, log_blood_pressure or " +
-            "log_measurement. These " +
+            "log_saved_meal, log_weight, log_supplement, log_mood, log_blood_pressure, " +
+            "log_measurement or log_fast. These " +
             "do not log anything themselves: the user sees what you drafted and taps to confirm " +
             "it, so say what you are proposing in the same reply. Call log_food once per food: a " +
             "meal of three things is three calls in the same turn, and they are drafted together " +
@@ -441,6 +458,14 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "measurement, call log_measurement with the figure exactly as they gave it and do not " +
             "convert it; one call per site, and never state a measurement you were not told in " +
             "this conversation.",
+    )
+    appendLine(
+        "Fasting is a timer rather than a log. If they say they are starting a fast, call " +
+            "log_fast with start; if they say they are breaking or ending one, call it with end. " +
+            "Do not set how long the fast should be — the app uses the goal on their profile — " +
+            "and do not propose one for an earlier time or an earlier day, because the tap starts " +
+            "or ends it there and then. Only ever when they have said so: never suggest a fast, " +
+            "never suggest ending one, and if they are not fasting at all, leave it alone.",
     )
     appendLine(
         "When they ask what to eat, what to have for a meal or what you would recommend, work " +

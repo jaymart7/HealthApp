@@ -127,6 +127,8 @@ class CoachUiStateTest {
         assertFalse(listOf(CoachAction.LogSupplement("Creatine", 1, 2)).opensTheDiary())
         // Nothing was written at all — the tap opened a form the user has yet to save.
         assertFalse(listOf(routine()).opensTheDiary())
+        // Home's timer and Progress's page: no diary row exists to go and look at.
+        assertFalse(listOf(CoachAction.SetFast(ending = true)).opensTheDiary())
         assertFalse(emptyList<CoachAction>().opensTheDiary())
     }
 

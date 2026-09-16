@@ -2698,6 +2698,47 @@ rather than needing a counter patched.
   links a logged workout back to the routine that seeded it, and `TrainingPlan.kt` says on purpose
   that it never will.
 
+- **The coach can start and end a fast, and that is the "different card" this file said it would
+  be.** The entry above ruled fasting out in the round that shipped a mood, a cuff reading and a
+  measurement, on the grounds that *"`start`/`stop` is a running state rather than a dated row,
+  with its own no-op rules, and a card that confirms a state transition is a different card"*. That
+  named a cost, not an impossibility, and the cost has now been paid: `log_fast` is the eleventh
+  write tool and `CoachAction.SetFast` the eleventh action, on the same
+  `parseAction → resolve → ProposalCard → settle` path as the other ten. **Nothing about the
+  original reasoning is repealed.** No dated fasting row was invented and
+  `FastingRepository.upsertSession` — an import and the debug seed — is untouched, which is
+  precisely what keeps **sleep** out: inventing a write so the coach has something to draft is a
+  feature pretending to be a tool, and a hand-entered past fast would be one, since no surface in
+  this app offers one either.
+  **The state check is `resolve`'s, and a disagreement fails the turn.** `start()` no-ops while a
+  fast is open and `stop()` no-ops while none is, so a card drawn without checking could offer a
+  Confirm that does nothing at all — the one thing this surface may not do, its whole promise
+  being that the tap does what the card says. So a start against an open fast and an end against
+  none both come back null, which is `supplementDose`'s ruling on a name that matches nothing. The
+  check is `fastDraft()`, pure over a `FastSession?` with the clock passed in, the shape
+  `savedMealRows`/`supplementDose`/`routineToStart` set and what lets `CoachToolsTest` pin all four
+  cases. **A stale tap is then harmless rather than unhandled**: those same two no-ops are what a
+  card left on screen while the user starts a fast in another tab runs into, so the rare race does
+  nothing instead of something wrong.
+  **The tool takes one argument and the app supplies the rest.** `action: start | end`, no
+  `days_ago` — a fast is started or broken *now*, and `draftedOn` is null for it exactly as it is
+  for a weigh-in — and no hours: a start takes `Profile.fastingGoalHours`, an end takes **the
+  running fast's own** snapshotted `goalHours`, never the profile's, because that snapshot exists
+  so raising the target cannot re-price a fast already under way.
+  **It may ride beside rows where a routine may not.** *"I broke my fast with two eggs"* is one
+  sentence and both halves are writes the card shows; `routineDraftStandsAlone()` exists because a
+  routine's Confirm *leaves the screen*, which this one does not. What a draft may not hold is two
+  of them — one tap that starts and ends a fast — so `fastDraftIsSingular()` sits beside it as the
+  narrower rule, and `send()` fails the turn on it like every other post-resolve guard.
+  **One action with an `ending` flag, not a `StartFast`/`EndFast` pair.** The parse, `resolve`,
+  `settle` and four exhaustive `when`s on the card would each have gained two branches to say one
+  thing. **And it earns a verb but no diary door**: the button reads "Start it" (a routine's, since
+  a start is a start) or "End it", never "Log it", because no row is logged — and `opensTheDiary()`
+  is false, a fast being Home's timer and Progress's page. The elapsed time on an end card is the
+  one figure on any proposal card that is **not** the figure that gets written — nothing writes it;
+  the end is stamped at the tap and it keeps growing while the card sits there — which is why the
+  string says *"so far"*.
+
 ### Training, strength & routines
 
 - **A strength workout is an `ExerciseEntry` with sets, not a second kind of thing.** One table for

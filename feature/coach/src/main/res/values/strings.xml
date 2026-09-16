@@ -98,6 +98,17 @@
     <string name="coach_proposal_routine_lift">%1$s %2$d×%3$d</string>
     <string name="coach_proposal_start">Start it</string>
 
+    <!-- The fasting timer. The one card whose confirm changes a state rather than writing a row,
+         so it gets its own verb rather than "Log it". A start shows the goal it will run to, which
+         is the profile's; an end shows how long the fast has been going, which is the one figure on
+         any of these cards that is not written anywhere — it keeps growing until the tap, hence
+         "so far". -->
+    <string name="coach_proposal_fast_start_title">Start a fast</string>
+    <string name="coach_proposal_fast_end_title">End your fast</string>
+    <string name="coach_proposal_fast_goal">%1$d-hour fast</string>
+    <string name="coach_proposal_fast_elapsed">%1$s so far</string>
+    <string name="coach_proposal_end">End it</string>
+
     <!-- Appended to the persisted answer once the user confirms, so reopening the chat still shows
          that something was logged. Resolved on the screen, never in the ViewModel. -->
     <string name="coach_proposal_logged_food">Logged: %1$s, %2$d kcal.</string>
@@ -108,6 +119,8 @@
     <string name="coach_proposal_logged_mood">Recorded: %1$s.</string>
     <string name="coach_proposal_logged_bp">Logged: %1$s.</string>
     <string name="coach_proposal_logged_measurement">Logged: %1$s, %2$s.</string>
+    <string name="coach_proposal_logged_fast_started">Started a %1$d-hour fast.</string>
+    <string name="coach_proposal_logged_fast_ended">Fast ended after %1$s.</string>
     <plurals name="coach_proposal_logged_items">
         <item quantity="one">Logged: %1$d item, %2$d kcal.</item>
         <item quantity="other">Logged: %1$d items, %2$d kcal.</item>

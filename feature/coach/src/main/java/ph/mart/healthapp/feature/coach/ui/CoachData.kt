@@ -54,7 +54,7 @@ data class CoachUiState(
  * Two conditions, and both are about not offering one that lands in the wrong place. **The kind
  * has to be a diary row** — food, water and an activity all appear on the day the diary draws,
  * while a weigh-in, a mood, a cuff reading and a measurement are Progress's, a supplement
- * tick is Profile's and a started routine has written nothing at all yet, and a door that opens
+ * tick is Profile's, a fast is Home's timer and a started routine has written nothing at all yet, and a door that opens
  * the wrong screen is the shrug the coach's own subject actions are written against. **And it has to
  * be today**, because the diary opens on today and its day is ViewModel state rather than
  * something a route carries: a door from a backdated draft would open a day that does not hold the
@@ -75,6 +75,8 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
         // Nothing was written at all: the tap opened a form the user has not saved. The workout
         // screen it opened *is* the place to go and look, and it is already on screen.
         is CoachAction.StartRoutine,
+        // A fast is Home's card and Progress's page, and it writes no diary row at all.
+        is CoachAction.SetFast,
         -> false
     }
 }

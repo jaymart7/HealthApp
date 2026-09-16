@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.coach
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementPart
@@ -204,6 +205,37 @@ sealed interface CoachAction {
         val routineId: Long = 0,
         val lifts: List<RoutineLift> = emptyList(),
     ) : CoachAction
+
+    /**
+     * The fasting timer, about to be started or stopped.
+     *
+     * **The one action that is a state transition rather than a row**, which is why it waited:
+     * `DECISIONS.md` ruled fasting out of the round that shipped a mood, a cuff reading and a
+     * measurement on the grounds that *"a card that confirms a state transition is a different
+     * card"*. It is, and this is it. Nothing about that reasoning is repealed — no dated fasting
+     * row is invented, and `FastingRepository.upsertSession` (an import and the debug seed) is
+     * untouched, which is what keeps **sleep** out for its own reason.
+     *
+     * One member with a flag rather than a `StartFast`/`EndFast` pair: the parse, [resolve],
+     * [CoachRepository.settle] and four exhaustive `when`s on the card would each have gained two
+     * branches to say one thing.
+     *
+     * [goalHours] and [elapsedMinutes] are the **app's**, stamped by [resolve] —
+     * [LogExercise.burnedKcal]'s rule. A start takes the profile's target; an end takes the
+     * running fast's own snapshotted one, never the profile's, because raising the target must not
+     * retroactively re-price a fast already running. And [resolve] is where the state is checked:
+     * a start against an open fast, or an end against none, **fails the turn** rather than drawing
+     * a card whose Confirm would be one of `FastingRepository`'s no-ops.
+     *
+     * [elapsedMinutes] is the one figure on a proposal card that is *not* the figure that gets
+     * written — nothing writes it at all; the end is stamped at the tap. It keeps growing while
+     * the card sits there, which is why the card says "so far".
+     */
+    data class SetFast(
+        val ending: Boolean,
+        val goalHours: Int = DEFAULT_FAST_GOAL_HOURS,
+        val elapsedMinutes: Int = 0,
+    ) : CoachAction
 }
 
 /**
@@ -232,6 +264,8 @@ val CoachAction.draftedOn: Long?
         is CoachAction.LogMeasurement,
         // A workout is started now or not at all, and it carries no row to date anyway.
         is CoachAction.StartRoutine,
+        // And a fast is started or broken now by definition: the transition is the thing.
+        is CoachAction.SetFast,
         -> null
     }?.takeIf { it > 0 }
 
