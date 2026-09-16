@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.insight
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
@@ -69,7 +70,7 @@ class InsightTest {
     fun `insight prefers the calorie overage, then protein, then weight`() {
         val flatTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
         assertEquals(
-            "You're 200 kcal over today's target.",
+            "You're 200 kcal over today's budget.",
             insightFor(DiaryTotals(2200, 150, 200, 67), TARGETS, flatTrend),
         )
         assertEquals(
@@ -103,5 +104,46 @@ class InsightTest {
     fun `empty diary does not trigger the protein insight`() {
         val trend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
         assertNull(insightFor(DiaryTotals(0, 0, 0, 0), TARGETS, trend))
+    }
+
+    /** The whole point of the credit: the day is only "over" once it passes the budget the
+     * workout actually bought, which is the figure the calorie ring drew. */
+    @Test
+    fun `the overage counts the day's burn, and says so only once past it`() {
+        val flatTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
+        assertEquals(
+            "You're 100 kcal over today's budget.",
+            insightFor(DiaryTotals(2500, 150, 200, 67), TARGETS, flatTrend, burnedKcal = 400),
+        )
+        // 2,300 against a 2,000 target is over; against the 2,400 the run bought, it is not.
+        assertEquals(
+            "Today's activity bought you 400 kcal more than a rest day — about a peanut-butter sandwich.",
+            insightFor(DiaryTotals(2300, 150, 200, 67), TARGETS, flatTrend, burnedKcal = 400),
+        )
+    }
+
+    /** Above protein on purpose — a day with real burn is the day this line exists for. */
+    @Test
+    fun `the workout line outranks a protein shortfall`() {
+        val flatTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
+        val short = DiaryTotals(1000, 80, 100, 30)
+        assertEquals("You're 70g short on protein today.", insightFor(short, TARGETS, flatTrend))
+        assertEquals(
+            "Today's activity bought you 220 kcal more than a rest day — about yoghurt and berries.",
+            insightFor(short, TARGETS, flatTrend, burnedKcal = 220),
+        )
+    }
+
+    /**
+     * Two silences that matter more than any sentence: a credit under the floor is not worth a
+     * line, and a caller passing 0 — which is what `addExerciseToBudget` being off looks like from
+     * here — must fall straight through to the rules that shipped before this one.
+     */
+    @Test
+    fun `a burn under the floor, or never credited, says nothing about a workout`() {
+        val flatTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
+        val quiet = DiaryTotals(1000, 140, 100, 30)
+        assertNull(insightFor(quiet, TARGETS, flatTrend, burnedKcal = EARNED_MIN_KCAL - 1))
+        assertNull(insightFor(quiet, TARGETS, flatTrend, burnedKcal = 0))
     }
 }

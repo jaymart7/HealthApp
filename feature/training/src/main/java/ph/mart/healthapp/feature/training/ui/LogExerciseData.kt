@@ -11,7 +11,8 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 
 /**
  * [weightKg] is the latest weigh-in, falling back to the onboarding weight — it feeds the MET
- * estimate and nothing else.
+ * estimate and nothing else. [addExerciseToBudget] is the profile's, and feeds the save
+ * confirmation and nothing else.
  *
  * The three fields below are the strength screen's, and are loaded only when it asks
  * ([LogExerciseEvent.OnOpenStrength]) — the sheet shares this container and would otherwise pay
@@ -21,6 +22,10 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 data class LogExerciseUiState(
     val weightKg: Double = 70.0,
     val preferredUnit: UnitSystem = UnitSystem.Metric,
+    /** From the profile — whether a saved workout actually raises today's budget. Read for one
+     * purpose: [LogExerciseSideEffect.Saved]'s figure. With the switch off the credit is zero and
+     * the confirmation says nothing, because there is nothing it could truthfully say. */
+    val addExerciseToBudget: Boolean = true,
     val editing: ExerciseEntry? = null,
     /** The most recent strength session — what "Repeat last workout" seeds from. */
     val lastWorkout: ExerciseEntry? = null,
@@ -129,5 +134,13 @@ sealed interface LogExerciseEvent {
 }
 
 sealed interface LogExerciseSideEffect {
-    data object Saved : LogExerciseSideEffect
+    /**
+     * [creditedKcal] is what this save just added to today's budget, and **0 means say nothing**:
+     * the profile's switch is off, or the save was a correction to a row logged earlier.
+     *
+     * It rides the side effect rather than being read back off a repository by whoever shows it,
+     * because the one screen that could — `AppScaffold`, which hosts both this sheet and the
+     * strength route — has no ViewModel and is not about to grow one for a sentence.
+     */
+    data class Saved(val creditedKcal: Int) : LogExerciseSideEffect
 }

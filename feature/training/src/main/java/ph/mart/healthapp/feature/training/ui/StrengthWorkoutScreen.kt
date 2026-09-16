@@ -84,6 +84,7 @@ fun StrengthWorkoutScreen(
     editingId: Long,
     routineId: Long = 0,
     onExit: () -> Unit,
+    onSaved: (creditedKcal: Int) -> Unit = {},
     viewModel: LogExerciseViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
@@ -92,7 +93,12 @@ fun StrengthWorkoutScreen(
     }
     viewModel.collectSideEffect { effect ->
         when (effect) {
-            LogExerciseSideEffect.Saved -> onExit()
+            // [onExit] stays a bare pop, so the back and discard paths below are untouched — only
+            // a *save* has a figure to report, and it reports it here.
+            is LogExerciseSideEffect.Saved -> {
+                onSaved(effect.creditedKcal)
+                onExit()
+            }
         }
     }
 

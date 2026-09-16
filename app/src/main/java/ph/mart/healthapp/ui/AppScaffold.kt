@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -23,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavKey
@@ -33,10 +36,13 @@ import androidx.window.core.layout.WindowSizeClass
 import kotlinx.coroutines.launch
 import ph.mart.healthapp.R
 import ph.mart.healthapp.ShortcutAction
+import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
+import ph.mart.healthapp.core.data.exercise.earnedSavedLine
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavItem
 import ph.mart.healthapp.core.designsystem.component.DockedFab
+import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HomeCard
 import ph.mart.healthapp.core.designsystem.component.NavRail
 import ph.mart.healthapp.core.designsystem.component.rememberFabExpanded
@@ -342,6 +348,18 @@ fun AppScaffold(
             scope.launch { currentScroll.animateScrollTo(0) }
         }
     }
+    // The app shell's only snackbar, and it has exactly one sender: a saved workout. It lives here
+    // rather than on a screen because the sheet and the strength route that raise it are both
+    // hosted here, and the surface they close onto is whichever tab happens to be underneath.
+    val snackbarHostState = remember { SnackbarHostState() }
+    // A confirmation of something the user just did, so it is silent when there is nothing to
+    // confirm: the profile's credit switch is off, the save was a correction, or the burn is under
+    // the floor `EarnedCalories.kt` argues for.
+    val onWorkoutSaved: (Int) -> Unit = { creditedKcal ->
+        if (creditedKcal >= EARNED_MIN_KCAL) {
+            scope.launch { snackbarHostState.showSnackbar(earnedSavedLine(creditedKcal)) }
+        }
+    }
     val tabItems = TopLevelDestination.entries.map { BottomNavItem(it.icon(), stringResource(it.label())) }
     val selectedTab = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey }
 
@@ -445,7 +463,10 @@ fun AppScaffold(
                             },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )
-                        trainingEntries(onExitFlow = { topLevelBackStack.removeLast() })
+                        trainingEntries(
+                            onExitFlow = { topLevelBackStack.removeLast() },
+                            onSaved = onWorkoutSaved,
+                        )
                         progressEntries(
                             scrollState = progressScroll,
                             onOpenSubject = { subject -> topLevelBackStack.add(subject.route()) },
@@ -516,6 +537,7 @@ fun AppScaffold(
                     sheetDate = 0
                     sheetEditingId = 0
                 },
+                onSaved = onWorkoutSaved,
                 // The FAB's sheet carries no day, so the workout screen it opens gets 0 too —
                 // which the repository stamps as today, exactly as the sheet's own save would.
                 // The diary's does carry one, and the row being corrected rides with it.
@@ -532,5 +554,14 @@ fun AppScaffold(
             ActiveSheet.LogWeight -> LogWeightSheet(onDismiss = { activeSheet = ActiveSheet.None })
             ActiveSheet.None -> Unit
         }
+
+        // Above the docked FAB, the placement `FoodScreen` already uses for its undo — a
+        // confirmation hidden behind the button that raised it is no confirmation.
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = DockedFabContentPadding),
+        )
     }
 }

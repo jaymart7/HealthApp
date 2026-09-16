@@ -53,6 +53,7 @@ import ph.mart.healthapp.feature.home.R
 import ph.mart.healthapp.feature.home.ui.HomeEvent
 import ph.mart.healthapp.feature.home.ui.HomeScreenState
 import ph.mart.healthapp.feature.home.ui.HomeUiState
+import ph.mart.healthapp.feature.home.ui.creditedKcal
 import ph.mart.healthapp.feature.home.ui.daysSincePhoto
 import ph.mart.healthapp.feature.home.ui.greetingFor
 import ph.mart.healthapp.feature.home.ui.greetingSubFor
@@ -105,9 +106,10 @@ internal fun HomeCards(
         todayEpochDay = todayEpochDay(),
     )
     // The model's line when it answered, the rules when it didn't — offline, a failed call
-    // and a model with nothing to say all land on the same three rules that shipped before
-    // there was a model at all.
-    val insight = uiState.aiInsight ?: targets?.let { insightFor(uiState.totals, it, trend) }
+    // and a model with nothing to say all land on the same rules that shipped before there
+    // was a model at all. The credit rides along so the workout rule can fire.
+    val insight = uiState.aiInsight
+        ?: targets?.let { insightFor(uiState.totals, it, trend, uiState.creditedKcal) }
     val unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric
     val budget = targets?.let { budgetKcal(it.calories, uiState.burnedKcal, uiState.addExerciseToBudget) } ?: 0
 
@@ -251,7 +253,7 @@ private fun HomeCardContent(
         HomeCard.Calories -> CalorieRingCard(
             consumedKcal = uiState.totals.calories,
             goalKcal = budget,
-            burnedKcal = if (uiState.addExerciseToBudget) uiState.burnedKcal else 0,
+            burnedKcal = uiState.creditedKcal,
             onClick = open,
             modifier = modifier,
         )

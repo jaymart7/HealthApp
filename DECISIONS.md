@@ -53,6 +53,55 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   target itself is never touched.
 - **Estimated burn stops re-estimating** (MET × kg × hours) once the user edits
   the kcal field by hand.
+- **Saying what the credit bought is one function, not three sentences.**
+  `EarnedCalories.kt` sits beside `budgetKcal()` in `:core:data/exercise/` and owns
+  every word the app says about the credit: the food phrase, the save confirmation,
+  Home's ring line and `insightFor()`'s workout rule. It went there rather than into
+  `:core:designsystem` — `goalProjectionLine()`'s home, and the shape it otherwise
+  copies exactly — because the insight rule lives in `:core:data`, and that module
+  cannot reach designsystem. The strings stay in Kotlin on the usual terms: a pure
+  function with a JVM test over its wording, commented at the definition. It needs no
+  `literalExceptions` entry, for the same reason `insightFor()` doesn't — the gate's
+  positional rules only run under `/ui/` and `/designsystem/component/`.
+- **The food phrase is a hand-written threshold table, not `COMMON_FOODS`.** Every row
+  there is per 100 g, so pricing a credit against it yields "0.7 of a chicken breast" —
+  true, and nothing anyone pictures. *ponytail: no diet or goal awareness, so a
+  vegetarian is offered a burger; a `DietaryPreference` filter is the upgrade path.*
+- **A confirmation on save is not the celebration the streak rules out.** It fires on
+  an action the user just took, not on a threshold crossed, so nothing has to remember
+  whether it already fired — which was the whole objection to a streak toast. It is
+  `AppScaffold`'s snackbar because `AppScaffold` hosts both the sheet and the strength
+  route, and the surface they close onto is whichever tab is underneath; the figure
+  rides `LogExerciseSideEffect.Saved` rather than being re-read, since the host has no
+  ViewModel and is not growing one for a sentence. `onExit`/`onDismiss` stay bare, so
+  the back and discard paths are untouched.
+- **Zero means say nothing, in four places at once.** The credit switch off, a
+  correction to a row logged earlier, a burn under `EARNED_MIN_KCAL` (50 — inside the
+  MET estimate's own error), and any caller that simply doesn't pass one. Announcing a
+  credit the arithmetic never granted is the failure mode the whole feature is written
+  against, and it is the same refusal `DiarySummaryBar` already makes about its figure.
+- **The overage rule now measures against the budget, and says "budget".** It compared
+  consumed against the plain Mifflin–St Jeor target, so a day the workout credit fully
+  covered could still be called "over". It folds `burnedKcal` in exactly as
+  `budgetKcal()` does; with the default `0` every caller but Home is byte-identical.
+  The workout line ranks above the protein shortfall on purpose — it can only fire on
+  a day with real burn, which is the day it exists for.
+- **The ring's earned arc is `primaryContainer`, drawn before the sweep.** Behind the
+  progress arc so eating into the earned slice reads as *spending* it, and at the tail
+  of the track so it sits where the day ends. Every other role was spoken for:
+  `tertiaryContainer` is the AI accent's alone, and `secondary`/`tertiary` carry Fat
+  and Carbs. Arc and line are both held back under `EARNED_MIN_KCAL` rather than at
+  zero — a credit that small moves the budget by under two percent, which is an
+  invisible arc under a sentence congratulating someone for it.
+- **The diary's summary bar was deliberately left flat.** It is the third statement of
+  the same fact on the same scroll; a food phrase there makes the feature noise instead
+  of motivation, and it is also the one surface that still accounts for a sub-floor
+  credit.
+- **The coach's fallback bubble never gets the workout line.** `InsightRequest` gains no
+  `burnedKcal` field: `observeInsightRequest()` would need an eighth flow in an already
+  twice-nested combine, and `dayNumbersBlock()` would start telling the model about a
+  workout — a prompt change, not a plumbing one. The fallback is quieter than Home's
+  card rather than wrong, which is the property that matters for a fallback.
 
 ### The week's calorie bank
 

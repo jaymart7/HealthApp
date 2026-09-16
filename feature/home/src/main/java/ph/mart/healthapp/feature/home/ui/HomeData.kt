@@ -159,6 +159,17 @@ fun daysSincePhoto(lastPhotoEpochDay: Long?, todayEpochDay: Long): Long? =
     lastPhotoEpochDay?.let { (todayEpochDay - it).coerceAtLeast(0) }
 
 /**
+ * The day's burn **as the budget actually received it** — zero when the profile's
+ * "add exercise calories" switch is off.
+ *
+ * One property because three things read it and all three must agree: the calorie ring's earned
+ * arc and line, and `insightFor()`'s workout rule. `budgetKcal()` is still the arithmetic; this is
+ * the same gate in the form the surfaces that *talk* about the credit need. See
+ * `EarnedCalories.kt` for why announcing a credit the day never received is the failure mode.
+ */
+internal val HomeUiState.creditedKcal: Int get() = if (addExerciseToBudget) burnedKcal else 0
+
+/**
  * Today's payload for the model, off state Home has already combined for its cards — the coach
  * builds the identical request from flows instead (`observeInsightRequest`), and both land in
  * [insightRequest] so the two can't drift.

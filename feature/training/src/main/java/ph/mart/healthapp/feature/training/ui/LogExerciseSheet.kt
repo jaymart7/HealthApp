@@ -31,6 +31,10 @@ import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
  * the one host of this sheet now that `:feature:food` cannot import it, and its sheet state is
  * `rememberSaveable`, which an `ExerciseEntry` is not.
  *
+ * [onSaved] carries what the save just added to today's budget — 0 when there is nothing to say.
+ * It is separate from [onDismiss] rather than folded into it because a dismiss also happens on a
+ * swipe and a cancel, neither of which earned anything; see [LogExerciseSideEffect.Saved].
+ *
  * [onOpenStrength] leaves for the strength workout screen, carrying the day. It is offered only
  * once Strength is picked, and it is a door rather than an automatic redirect on purpose: the
  * plain duration-and-kcal path is what an imported watch session is, and it stays reachable. */
@@ -38,6 +42,7 @@ import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
 fun LogExerciseSheet(
     onDismiss: () -> Unit,
     onOpenStrength: (Long) -> Unit,
+    onSaved: (creditedKcal: Int) -> Unit = {},
     dateEpochDay: Long = 0,
     editingId: Long = 0,
     viewModel: LogExerciseViewModel = koinViewModel(),
@@ -48,7 +53,12 @@ fun LogExerciseSheet(
     }
     viewModel.collectSideEffect { effect ->
         when (effect) {
-            LogExerciseSideEffect.Saved -> onDismiss()
+            // Reported before the dismiss, not after: the host shows the confirmation on the
+            // screen this sheet is closing onto, and the two have to be one frame's work.
+            is LogExerciseSideEffect.Saved -> {
+                onSaved(effect.creditedKcal)
+                onDismiss()
+            }
         }
     }
     // The row has to be *this* row: the ViewModel outlives the sheet, so a previous edit's entry

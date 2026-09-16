@@ -18,10 +18,11 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
  * Shared by the log-exercise sheet and the strength workout screen — one form, two presentations,
  * so there is no second ViewModel and therefore no second flow package (see CLAUDE.md's rule).
  *
- * The always-on read side is two numbers: the weight the MET estimate multiplies by, and the unit
- * the strength screen prints loads in. The weight is the latest weigh-in rather than
- * `Profile.weightKg`, which is the onboarding weight and is never updated — same fallback rule
- * `trendVsSevenDaysAgo(fallbackKg)` uses on Home.
+ * The always-on read side is three fields off one combine: the weight the MET estimate multiplies
+ * by, the unit the strength screen prints loads in, and whether a save actually raises today's
+ * budget. The weight is the latest weigh-in rather than `Profile.weightKg`, which is the
+ * onboarding weight and is never updated — same fallback rule `trendVsSevenDaysAgo(fallbackKg)`
+ * uses on Home.
  *
  * Everything the strength screen needs is loaded on demand instead, by
  * [LogExerciseEvent.OnOpenStrength]: the sheet shares this container, and it shows none of it.
@@ -66,6 +67,7 @@ class LogExerciseViewModel(
                 state.copy(
                     weightKg = latestKg ?: profile?.weightKg ?: LogExerciseUiState().weightKg,
                     preferredUnit = profile?.preferredUnit ?: UnitSystem.Metric,
+                    addExerciseToBudget = profile?.addExerciseToBudget != false,
                 )
             }
         }
@@ -130,6 +132,14 @@ class LogExerciseViewModel(
         } else {
             exerciseRepository.updateEntry(entry.copy(id = editingId))
         }
-        postSideEffect(LogExerciseSideEffect.Saved)
+        // Zero on a correction as firmly as on a switched-off credit: reopening Tuesday's run to
+        // fix its duration is not a workout anybody just did, and congratulating it would make
+        // the confirmation fire on an edit loop.
+        val credited = when {
+            editingId != null -> 0
+            state.addExerciseToBudget -> form.burnedKcal
+            else -> 0
+        }
+        postSideEffect(LogExerciseSideEffect.Saved(credited))
     }
 }

@@ -81,6 +81,8 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   tappable.
 - An 8dp status dot on the four cards where on-track is a fact the app measures (calories, streak,
   fasting goal, weight direction) and nowhere else.
+- The calorie ring names the day's exercise credit in `primary` and draws the share of the track it
+  bought as its own `primaryContainer` arc — see **Exercise & strength** → Earned calories.
 - Card order and visibility edited in Profile → Home layout (drag handle + move up/down a11y
   actions), reachable from a "Rearrange your Home" link at the foot of Home; "Reset to default"
   restores declaration order.
@@ -210,6 +212,11 @@ see `DECISIONS.md`.
 
 - Log a workout: type, duration, MET-estimated burn (editable; stops re-estimating once touched).
 - Burned calories credited to the day's budget, with a Profile switch to opt out.
+- **Earned calories** — what the credit bought, said in one voice on three surfaces: a
+  snackbar the moment a workout saves, a promoted line and its own arc on Home's calorie
+  ring, and a rule in the insight card ("Today's activity bought you 320 kcal more than a
+  rest day — about a peanut-butter sandwich"). Every one of them goes silent with the
+  switch off, on a correction to a past row, and under a 50 kcal floor.
 - Strength workouts: a full set editor (lift name, reps, weight in the user's unit), lift-name
   chips from recent sessions, last-lifted load shown per lift.
 - Bodyweight sets (0 kg) are a real value.

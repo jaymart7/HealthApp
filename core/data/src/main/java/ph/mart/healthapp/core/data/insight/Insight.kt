@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.insight
 
 import kotlin.math.abs
+import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
+import ph.mart.healthapp.core.data.exercise.earnedInsightLine
 import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
@@ -112,31 +114,60 @@ internal fun dayNumbersBlock(request: InsightRequest): String = buildString {
  * each other. Same reason `goalProjection()` sits in `progress/`: pure derivation over
  * `:core:data` types, no table, no repository.
  *
- * The three sentences stay in Kotlin for now — this is a pure function with a JVM test over its
+ * The sentences stay in Kotlin for now — this is a pure function with a JVM test over its
  * wording, and moving them means returning a case type for a composable to resolve. Deferred by
  * decision in the localization pass, not overlooked; `goalProjectionLine()` is the twin.
+ *
+ * [burnedKcal] is the day's whole credit (`dayBurnedKcal()`), and **0 unless the caller has
+ * checked `Profile.addExerciseToBudget`** — it both widens the first rule's budget and unlocks
+ * the workout line, neither of which may fire off a credit the day never received. Home is the
+ * one caller that passes it; see the [InsightRequest] overload for why the coach does not.
  */
-fun insightFor(totals: DiaryTotals, targets: DailyTargets, trend: WeightTrendDisplay): String? = when {
-    totals.calories > targets.calories ->
-        "You're ${totals.calories - targets.calories} kcal over today's target."
-    targets.proteinG > 0 && totals.calories > 0 && totals.proteinG < targets.proteinG * 0.6 ->
-        "You're ${targets.proteinG - totals.proteinG}g short on protein today."
-    trend.hasPrior && abs(trend.deltaKg) >= TREND_ARROW_DEADBAND_KG ->
-        "${formatDelta(trend.deltaKg)} kg over the last week — keep it steady."
-    else -> null
+fun insightFor(
+    totals: DiaryTotals,
+    targets: DailyTargets,
+    trend: WeightTrendDisplay,
+    burnedKcal: Int = 0,
+): String? {
+    // The same fold `budgetKcal()` makes, and the reason the first rule says "budget" rather than
+    // "target": with a workout credited, the figure the day is over is the one the ring drew, not
+    // the one Mifflin–St Jeor produced. Zero — every caller but Home — leaves both untouched.
+    val budget = targets.calories + burnedKcal
+    return when {
+        totals.calories > budget ->
+            "You're ${totals.calories - budget} kcal over today's budget."
+        // Above protein on purpose: it fires only on a day with real burn, which is the day this
+        // line exists for. Callers pass 0 when `addExerciseToBudget` is off, so a credit that was
+        // never added is never announced.
+        burnedKcal >= EARNED_MIN_KCAL -> earnedInsightLine(burnedKcal)
+        targets.proteinG > 0 && totals.calories > 0 && totals.proteinG < targets.proteinG * 0.6 ->
+            "You're ${targets.proteinG - totals.proteinG}g short on protein today."
+        trend.hasPrior && abs(trend.deltaKg) >= TREND_ARROW_DEADBAND_KG ->
+            "${formatDelta(trend.deltaKg)} kg over the last week — keep it steady."
+        else -> null
+    }
 }
 
 /** Signed, one decimal, tabular-friendly — e.g. "-0.6", "+1.2". */
 fun formatDelta(deltaKg: Double): String = "%+.1f".format(deltaKg)
 
 /**
- * The same three rules, off the payload the model was given rather than off the screen's state.
+ * The same rules, off the payload the model was given rather than off the screen's state.
  *
  * The coach's fallback goes through here so an unanswered question is still answered with the
  * numbers the failed call would have used — a line quoting anything else would be worse than
  * none. The reconstruction is lossless for what [insightFor] actually reads: it touches
  * `targets.calories`/`proteinG` and `trend.deltaKg`/`hasPrior` and nothing else, hence the unused
  * `floor` and `currentKg` below.
+ *
+ * `burnedKcal` is the one thing it cannot reconstruct, so the workout line never reaches the
+ * coach's bubble and its first rule keeps comparing against the plain target. That is a quiet
+ * answer rather than a wrong one, which is the property that matters for a fallback.
+ *
+ * ponytail: [InsightRequest] gains no `burnedKcal` field, because `observeInsightRequest()` would
+ * then need an eighth flow in an already twice-nested combine *and* [dayNumbersBlock] would start
+ * telling the model about a workout — a prompt change, not a plumbing one. Add it there the day
+ * the coach needs to speak about one.
  */
 fun insightFor(request: InsightRequest): String? = insightFor(
     totals = DiaryTotals(

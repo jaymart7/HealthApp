@@ -26,13 +26,17 @@ data class StrengthWorkoutRoute(
  * are the diary's exercise block, and the history is the Progress tab's. [LogExerciseSheet] is not
  * here because `AppScaffold` hosts it directly, the way it hosts every other FAB sheet.
  */
-fun EntryProviderScope<NavKey>.trainingEntries(onExitFlow: () -> Unit) {
+fun EntryProviderScope<NavKey>.trainingEntries(
+    onExitFlow: () -> Unit,
+    onSaved: (creditedKcal: Int) -> Unit = {},
+) {
     entry<StrengthWorkoutRoute> { key ->
         StrengthWorkoutScreen(
             dateEpochDay = key.dateEpochDay,
             editingId = key.editingId,
             routineId = key.routineId,
             onExit = onExitFlow,
+            onSaved = onSaved,
         )
     }
 }

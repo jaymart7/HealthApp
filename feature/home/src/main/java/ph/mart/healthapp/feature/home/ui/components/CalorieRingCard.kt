@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
+import ph.mart.healthapp.core.data.exercise.earnedRingLine
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
@@ -45,6 +47,16 @@ private val RING_STROKE = 24.dp
  * It is the hero because it is the figure the whole app is arranged around, and because a screen
  * where every card carries the same weight is the flat scroll this redesign was fixing. It is also
  * the reason nothing else got promoted: two heroes is no hero.
+ *
+ * The share of the track [burnedKcal] bought is drawn as its own arc in `primaryContainer`, behind
+ * the progress sweep so eating into it reads as spending it. `primaryContainer` because every
+ * other candidate is spoken for: `tertiaryContainer` is the AI accent's and nothing else's, and
+ * `secondary`/`tertiary` carry Fat and Carbs wherever a macro is in the room.
+ *
+ * Both the arc and the line are held back under [EARNED_MIN_KCAL] rather than at zero: a credit
+ * that small moves a day's budget by under two percent — an arc nobody can see under a sentence
+ * congratulating them for it. The diary's summary bar still states any credit at all, flatly,
+ * which is where a 30 kcal walk is accounted for.
  *
  * The arc is the app's one authored entrance: it sweeps to its share over [Motion.Settle] while
  * the numbers stay instant and true, so the ring reads as settling onto a fact rather than the
@@ -74,7 +86,15 @@ fun CalorieRingCard(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CalorieRing(progress = progress, remainingKcal = goalKcal - consumedKcal)
+            CalorieRing(
+                progress = progress,
+                remainingKcal = goalKcal - consumedKcal,
+                earnedShare = if (goalKcal > 0 && burnedKcal >= EARNED_MIN_KCAL) {
+                    (burnedKcal.toFloat() / goalKcal).coerceIn(0f, 1f)
+                } else {
+                    0f
+                },
+            )
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.weight(1f),
@@ -111,11 +131,11 @@ fun CalorieRingCard(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    if (burnedKcal > 0) {
+                    if (burnedKcal >= EARNED_MIN_KCAL) {
                         Text(
-                            text = stringResource(R.string.home_calories_from_exercise, burnedKcal),
-                            style = MaterialTheme.typography.labelSmall.tabularNums,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = earnedRingLine(burnedKcal),
+                            style = MaterialTheme.typography.bodyMedium.tabularNums,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -127,8 +147,9 @@ fun CalorieRingCard(
 /** [progress] arrives as a [State] rather than a plain float so the sweep is read inside the
  * [Canvas] draw lambda — the whole animation lives in the Draw phase and recomposes nothing. */
 @Composable
-private fun CalorieRing(progress: State<Float>, remainingKcal: Int) {
+private fun CalorieRing(progress: State<Float>, remainingKcal: Int, earnedShare: Float) {
     val trackColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh
+    val earnedColor: Color = MaterialTheme.colorScheme.primaryContainer
     val progressColor: Color = MaterialTheme.colorScheme.primary
     Box(modifier = Modifier.size(RING_SIZE), contentAlignment = Alignment.Center) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -148,6 +169,19 @@ private fun CalorieRing(progress: State<Float>, remainingKcal: Int) {
                 size = arcSize,
                 style = stroke,
             )
+            // The tail of the track, so the slice the day was *given* sits where the day ends —
+            // and drawn before the sweep, so consuming it paints over it rather than beside it.
+            if (earnedShare > 0f) {
+                drawArc(
+                    color = earnedColor,
+                    startAngle = -90f + 360f * (1f - earnedShare),
+                    sweepAngle = 360f * earnedShare,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = stroke,
+                )
+            }
             drawArc(
                 color = progressColor,
                 startAngle = -90f,
@@ -180,6 +214,9 @@ private fun CalorieRingCardPreview() {
         Surface {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(16.dp)) {
                 CalorieRingCard(consumedKcal = 1560, goalKcal = 2692, burnedKcal = 431)
+                // A credit big enough to name a meal, on a day barely started — the earned arc is
+                // the whole tail of the ring.
+                CalorieRingCard(consumedKcal = 420, goalKcal = 3010, burnedKcal = 749)
                 // Over budget, and with the exercise credit switched off: no dot, no red.
                 CalorieRingCard(consumedKcal = 2810, goalKcal = 2261)
             }
