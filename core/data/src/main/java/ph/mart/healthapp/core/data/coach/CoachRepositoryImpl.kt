@@ -20,13 +20,19 @@ import kotlinx.coroutines.flow.map
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
+import ph.mart.healthapp.core.data.mood.MOOD_SCALE
+import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
+import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.progress.fromDisplay
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.logAiFailure
@@ -99,6 +105,12 @@ internal class CoachRepositoryImpl(
     // The fifth, and the second whose write call takes a day's *total* rather than a delta — which
     // is why `supplementDoses()` sums before anything reaches it.
     private val supplementRepository: SupplementRepository,
+    // The sixth and seventh. Both are manual-entry-only domains — a cuff reading has no provider at
+    // all and a mood is two taps — so the coach is a second door onto them rather than a third.
+    // `progressRepository` above already covers the measurements, which share the weigh-in's table
+    // neighbourhood and its unit rule.
+    private val moodRepository: MoodRepository,
+    private val bloodPressureRepository: BloodPressureRepository,
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
@@ -270,6 +282,41 @@ internal class CoachRepositoryImpl(
             }
         }
 
+        // Folded to one row before anything is written: a mood is an absolute value, so two rows
+        // applied in sequence would have the second's empty column blank the first's. Each column
+        // is set only when it was drafted — `setTodayMood`/`setTodayEnergy` leave the other alone,
+        // which is what lets "I felt great" record a mood without claiming an energy.
+        actions.moodToSet()?.let { mood ->
+            if (mood.mood > 0) moodRepository.setTodayMood(mood.mood)
+            if (mood.energy > 0) moodRepository.setTodayEnergy(mood.energy)
+        }
+
+        // Stamped now, because now is when they told us — the table is keyed per reading rather
+        // than per day, so a morning and an evening are two rows and neither overwrites the other.
+        actions.filterIsInstance<CoachAction.LogBloodPressure>().forEach {
+            bloodPressureRepository.addReading(
+                BloodPressureReading(
+                    takenAtMillis = System.currentTimeMillis(),
+                    systolic = it.systolic,
+                    diastolic = it.diastolic,
+                    pulseBpm = it.pulseBpm,
+                ),
+            )
+        }
+
+        // The weigh-in's rule one table over: the conversion happens here and nowhere else, so the
+        // figure on the card is the one the user said, in the unit they said it in. Keyed on part
+        // and day, so a second waist today replaces today's rather than appending.
+        actions.filterIsInstance<CoachAction.LogMeasurement>().forEach {
+            progressRepository.upsertMeasurementEntry(
+                MeasurementEntry(
+                    part = it.part,
+                    dateEpochDay = todayEpochDay(),
+                    value = it.part.fromDisplay(it.value, it.unit),
+                ),
+            )
+        }
+
         writeExchange(question, answer)
     }
 
@@ -310,7 +357,9 @@ private fun List<ChatMessageEntity>.asHistory(): List<Content> =
  * - **No medical advice.** A coach that reaches further is a coach a user trusts further, so this
  *   matters more than it did, not less — and it grew a clause when the tools began carrying blood
  *   pressure: the band on a reading is the app's, handed over by `categoryOf()`, and the model may
- *   repeat it but never derive one and never say what a reading means.
+ *   repeat it but never derive one and never say what a reading means. `log_blood_pressure` asks
+ *   nothing more of it — a drafted reading is two numbers read back, and the card's band is
+ *   `categoryOf()`'s too.
  * - **No numbers block at all** when [request] is null: with no profile there is no target to be
  *   over or under, and a coach that admits it beats one improvising one. The tools still work —
  *   a diary can be read without a profile.
@@ -356,7 +405,8 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
     )
     appendLine(
         "If the user asks you to log something, call log_food, log_water, log_exercise, " +
-            "log_saved_meal, log_weight or log_supplement. These " +
+            "log_saved_meal, log_weight, log_supplement, log_mood, log_blood_pressure or " +
+            "log_measurement. These " +
             "do not log anything themselves: the user sees what you drafted and taps to confirm " +
             "it, so say what you are proposing in the same reply. Call log_food once per food: a " +
             "meal of three things is three calls in the same turn, and they are drafted together " +
@@ -372,8 +422,22 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "take, and never as a suggestion. To log something for an earlier day, pass days_ago " +
             "on the same call — 1 for yesterday, up to $MAX_DRAFT_DAYS_AGO — and say which day " +
             "you are proposing; every row of one draft has to be for the same day, so draft two " +
-            "days as two separate turns. A weigh-in and a supplement are always today. You " +
+            "days as two separate turns. A weigh-in, a supplement, a mood, a blood-pressure " +
+            "reading and a measurement are always today. You " +
             "cannot edit or delete anything — point them at the Food tab's diary for that.",
+    )
+    appendLine(
+        "Three of those record something they told you about themselves, and all three follow " +
+            "log_weight's rule: the number is theirs, you are only reading it back, and you never " +
+            "ask for one. If they say how they felt or how much energy they had, call log_mood " +
+            "with whichever of the two they mentioned, on a scale of ${MOOD_SCALE.first} to " +
+            "${MOOD_SCALE.last} where ${MOOD_SCALE.last} is best, and leave the other one out. If " +
+            "they give you a blood-pressure reading, call log_blood_pressure with the numbers " +
+            "exactly as they said them — the app works out which band it falls in, so do not " +
+            "categorise it yourself and do not say what it means. If they tell you a body " +
+            "measurement, call log_measurement with the figure exactly as they gave it and do not " +
+            "convert it; one call per site, and never state a measurement you were not told in " +
+            "this conversation.",
     )
     appendLine(
         "When they ask what to eat, what to have for a meal or what you would recommend, work " +

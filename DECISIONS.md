@@ -2570,6 +2570,55 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
   `Ignoring header X-Firebase-Locale because its value was null` log it silenced comes from
   `firebase-auth`'s own GMS plumbing, which is no longer here to emit it.
 
+- **The coach can draft a mood, a cuff reading and a measurement — and all three are `log_weight`'s
+  kind of tool, not `log_food`'s.** The gap they close was visible from the outside: `get_day`
+  already returned the day's mood and every blood-pressure reading, `get_history` already returned
+  each measurement as a change, and asking the same coach to *write* any of the three got a shrug.
+  Blood pressure and measurements are also the app's only manual-entry-only domains — a cuff has no
+  provider at all, and `BloodPressure.kt` says why the Google Health scope was deliberately never
+  asked for — so a second door onto them is worth more than one onto a type a watch fills in
+  anyway. **Sleep was weighed and is out**: `SleepRepository` exposes no write at all, because a
+  night is imported, and inventing one to give the coach something to draft is a feature pretending
+  to be a tool. **Fasting is out too** — `start`/`stop` is a running state rather than a dated row,
+  with its own no-op rules ("no-op while a fast is already open"), and a card that confirms a state
+  transition is a different card. Consequences worth writing down.
+  **All three are only ever today, and the tools carry no `days_ago` at all** — which is stronger
+  than validating one, because there is nothing for the model to get wrong. `draftedOn` returns
+  null for the three exactly as it does for a weigh-in and a supplement tick, so a backdated food
+  draft cannot quietly carry one and `draftDay()`'s one-day-per-card rule is untouched.
+  **The figure is the user's, and the app supplies what a model would invent.** A measurement's
+  unit is the profile's, stamped by `resolve()` and converted by `fromDisplay` in `settle` and
+  nowhere else — `LogWeight.unit` and `displayUnitToKg` one table over. A reading's band is
+  `categoryOf()`'s, drawn on the card from the same worst-first call the Blood pressure page and
+  the prompt's own payload make, so the label under the figure is the label on the page the tap
+  writes to.
+  **Out of range fails the draft rather than clamping**, which is the *opposite* of what the two
+  repositories do with the same figures — `addReading` clamps to `SYSTOLIC_RANGE` and the
+  measurement stepper to `range()`. The difference is who has already seen the number: a sheet
+  clamps a typo the user typed and is looking at, while this card's whole promise is that the
+  figure on it is the figure that gets written, so a clamp would make it lie. Those same two
+  constants are the bound, not new `MAX_ACTION_*` ones — a coach-drafted reading and a hand-typed
+  one admit exactly the same figures. A measurement is checked twice for the same reason
+  `MIN_ACTION_WEIGHT` is a wide band: the number arrives before the unit does, so the parse only
+  asks that it be positive and not absurd, and `resolve` applies `range()` once the profile's unit
+  is known.
+  **A swapped reading fails.** `parseAction` refuses one whose systolic is not the higher number.
+  It is the one mistake a model actually makes here — "76 over 118" read back in the order it was
+  said — and it is wrong twice over, in the chart and in the band, because `categoryOf` is
+  worst-first and would read the diastolic and call a crisis Elevated.
+  **A mood is one action holding both columns, folded to one row on the write.** `MoodDay` is one
+  row with two of them and `0` already means "not set" there, so "I felt great" records a mood
+  without claiming an energy. `moodToSet()` is `glassesToAdd()`'s lesson with the opposite
+  arithmetic: water and doses *add*, so they sum; a mood is absolute, so the last one wins — **per
+  column**, because a second row naming only the energy must not blank the mood the first set.
+  **None of the three earns the diary door.** All three are Progress's surfaces, so
+  `opensTheDiary()` is false for them, the rule a weigh-in already had.
+  **And `log_measurement` does not contradict "the coach is never told a measurement."** That rule
+  is about what a *tool returns* — `formatHistory` still reports a direction and never a figure,
+  and the prompt still forbids asking. This is the user volunteering one in their own question,
+  which is exactly the reading `log_weight` has had since it shipped, alongside the identical
+  clause for weight.
+
 ### Training, strength & routines
 
 - **A strength workout is an `ExerciseEntry` with sets, not a second kind of thing.** One table for

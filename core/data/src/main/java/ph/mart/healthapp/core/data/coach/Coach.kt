@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.stripMarkdown
 
@@ -120,11 +121,68 @@ sealed interface CoachAction {
         val doses: Int,
         val supplementId: Long = 0,
     ) : CoachAction
+
+    /**
+     * How the day felt, on the two 1–5 scales the mood card taps out.
+     *
+     * **One action for both columns**, because [ph.mart.healthapp.core.data.mood.MoodDay] is one
+     * row with two of them and "I felt great but had no energy" is one sentence. `0` is that
+     * type's own "not set" and means the same thing here: a draft that names only the mood leaves
+     * the energy column alone. Both zero never parses — a card whose Confirm writes nothing.
+     *
+     * [LogWeight]'s kind, not [LogFood]'s: the figure is the user's, said out loud, and the model
+     * reads it back. Always today, which is what `setTodayMood` and `setTodayEnergy` are.
+     */
+    data class LogMood(val mood: Int = 0, val energy: Int = 0) : CoachAction
+
+    /**
+     * One cuff reading, as the user read it off the cuff.
+     *
+     * Nothing here is interpreted. The band the card draws is [categoryOf]'s, the same call
+     * `formatDay` already hands the model, so the label on the card and the label on the Blood
+     * pressure page can never disagree — and the model's only job is to read two numbers back.
+     *
+     * **Out of band fails the draft rather than clamping**, which is the opposite of
+     * `addReading`'s own behaviour and deliberately: the repository clamps a typo because a sheet
+     * has already shown the user their own number, while this card promises that the figure on it
+     * is the figure that gets written. `SYSTOLIC_RANGE`, `DIASTOLIC_RANGE` and `PULSE_RANGE` are
+     * the bounds, and a reading whose systolic is not the higher of the two fails with them: "76
+     * over 118" is the one mistake a model actually makes here, and a swapped reading lands in the
+     * chart *and* in the wrong band.
+     *
+     * [pulseBpm] is `0` when the user didn't say it — [BloodPressureReading]'s own reading of zero.
+     */
+    data class LogBloodPressure(
+        val systolic: Int,
+        val diastolic: Int,
+        val pulseBpm: Int = 0,
+    ) : CoachAction
+
+    /**
+     * One tape-measure site, in the unit the user said it in.
+     *
+     * [LogWeight] exactly, applied to a tape. [value] is **never converted before the write**: the
+     * card draws this figure and [CoachRepository.settle] is the one place `fromDisplay` turns it
+     * into what the table stores. [unit] is the **profile's**, stamped by [resolve] — a model
+     * asked which unit a number was in is a model guessing at the one figure the card promises is
+     * exact — and is `Metric` until then.
+     *
+     * It does not contradict the coach never being *told* a measurement: a tool still answers with
+     * a direction and never a figure, and this is the user volunteering one in their own question.
+     * The prompt still forbids asking.
+     */
+    data class LogMeasurement(
+        val part: MeasurementPart,
+        val value: Double,
+        val unit: UnitSystem = UnitSystem.Metric,
+    ) : CoachAction
 }
 
 /**
  * Which day a drafted row lands on, or **null for the kinds that are only ever today**: a weigh-in
- * the user just said out loud, and a supplement tick, whose write call is `setTakenToday`.
+ * the user just said out loud, a supplement tick, whose write call is `setTakenToday`, and the
+ * three that followed it — how the day felt, a cuff reading and a tape measurement. None of the
+ * five carries `days_ago` on its tool at all, which is what stops a model backdating one.
  *
  * Zero is today, the convention `FoodEntry` and `ExerciseEntry` already keep — so a hand-built
  * action, a preview and every draft the model did not backdate all mean the same thing by it.
@@ -138,7 +196,12 @@ val CoachAction.draftedOn: Long?
         is CoachAction.LogWater -> dateEpochDay
         is CoachAction.LogExercise -> dateEpochDay
         is CoachAction.LogSavedMeal -> dateEpochDay
-        is CoachAction.LogWeight, is CoachAction.LogSupplement -> null
+        is CoachAction.LogWeight,
+        is CoachAction.LogSupplement,
+        is CoachAction.LogMood,
+        is CoachAction.LogBloodPressure,
+        is CoachAction.LogMeasurement,
+        -> null
     }?.takeIf { it > 0 }
 
 /**

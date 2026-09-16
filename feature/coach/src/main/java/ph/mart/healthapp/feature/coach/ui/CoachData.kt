@@ -53,8 +53,9 @@ data class CoachUiState(
  *
  * Two conditions, and both are about not offering one that lands in the wrong place. **The kind
  * has to be a diary row** — food, water and an activity all appear on the day the diary draws,
- * while a weigh-in is Progress's and a supplement tick is Profile's, and a door that opens the
- * wrong screen is the shrug the coach's own subject actions are written against. **And it has to
+ * while a weigh-in, a mood, a cuff reading and a measurement are Progress's and a supplement
+ * tick is Profile's, and a door that opens the wrong screen is the shrug the coach's own
+ * subject actions are written against. **And it has to
  * be today**, because the diary opens on today and its day is ViewModel state rather than
  * something a route carries: a door from a backdated draft would open a day that does not hold the
  * rows it just promised. A backdated draft therefore gets no door, which is the honest half.
@@ -66,7 +67,12 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
         is CoachAction.LogExercise,
         is CoachAction.LogSavedMeal,
         -> it.draftedOn == null
-        is CoachAction.LogWeight, is CoachAction.LogSupplement -> false
+        is CoachAction.LogWeight,
+        is CoachAction.LogSupplement,
+        is CoachAction.LogMood,
+        is CoachAction.LogBloodPressure,
+        is CoachAction.LogMeasurement,
+        -> false
     }
 }
 

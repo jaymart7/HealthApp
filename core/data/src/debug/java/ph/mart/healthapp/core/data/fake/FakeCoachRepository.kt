@@ -19,6 +19,7 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
+import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
@@ -60,6 +61,10 @@ import ph.mart.healthapp.core.data.todayEpochDay
  * | `log eggs, rice and an apple for lunch` | the multi-row card, its per-row `✕` and a partial confirm |
  * | `log my usual Overnight oats for breakfast` | a saved meal expanded into one row per item |
  * | `log my creatine` | the supplement card, ticked off against the user's own row |
+ * | `log my mood as great`, `log my energy as low` | the mood card, one column or the other |
+ * | `log my blood pressure 118 over 76` | the cuff card, with the band `categoryOf()` put it in |
+ * | `log my waist 82` | the measurement card, in the profile's unit |
+ * | `log my waist 400` | prose, then the failure bubble — `resolve` rejected it as out of range |
  * | `log two eggs for breakfast yesterday` | the same card, titled with the day it will write to |
  * | `took my Nothing At All supplement` | prose, then the failure bubble — no such supplement |
  * | `log my saved Nothing At All` | prose, then the failure bubble — the draft resolved to nothing |
@@ -197,6 +202,30 @@ internal fun fakeCoachScript(question: String): FakeScript {
                     asked,
                     "Here's today's weigh-in — the unit is whichever your profile uses:",
                 ),
+            )
+        }
+        // The three that record something the user said about themselves, before every generic
+        // match below and each keyed on a **figure in the sentence** rather than on its word
+        // alone: "chest day at the gym" is not a measurement and "how's my mood?" is not a draft.
+        // `weighInIn` above still runs first, because "log my weight 82.4" names no site.
+        bloodPressureIn(asked)?.let { (systolic, diastolic) ->
+            return FakeScript.Propose(
+                actions = listOf(
+                    CoachAction.LogBloodPressure(systolic = systolic, diastolic = diastolic),
+                ),
+                preamble = preamble(asked, "Here's that reading — the band on it is the app's:"),
+            )
+        }
+        moodIn(asked)?.let { mood ->
+            return FakeScript.Propose(
+                actions = listOf(mood),
+                preamble = preamble(asked, "Noting how today went:"),
+            )
+        }
+        measurementIn(asked)?.let { measurement ->
+            return FakeScript.Propose(
+                actions = listOf(measurement),
+                preamble = preamble(asked, "Here's that measurement, in whichever unit you use:"),
             )
         }
         if (WATER_WORDS.any { it in asked }) {
@@ -347,6 +376,70 @@ private fun weighInIn(asked: String): Double? =
 
 /** "weigh" covers weight, weighed and weigh-in; the two units cover a sentence that names one. */
 private val WEIGH_WORDS = listOf("weigh", "kg", "lb")
+
+/**
+ * A reading, the two ways anyone says one out loud — "118 over 76" and "118/76".
+ *
+ * The category word is what makes the sentence one, exactly as [WEIGH_WORDS] is for a weigh-in:
+ * without it "add 2 eggs and 3 slices" would draft a cuff reading. Both numbers go through
+ * unconverted and unordered — `parseAction`'s real counterpart is what refuses a swapped one, and
+ * this fake deliberately does not, so typing them backwards reaches that rejection.
+ */
+private fun bloodPressureIn(asked: String): Pair<Int, Int>? {
+    if (BP_WORDS.none { it in asked }) return null
+    val (systolic, diastolic) = BLOOD_PRESSURE.find(asked)?.destructured ?: return null
+    return (systolic.toIntOrNull() ?: return null) to (diastolic.toIntOrNull() ?: return null)
+}
+
+private val BP_WORDS = listOf("blood pressure", "bp ")
+
+private val BLOOD_PRESSURE = Regex("""(\d{2,3})\s*(?:/|over)\s*(\d{2,3})""")
+
+/**
+ * How the day felt, as one of the five names [MOOD_LEVELS] holds.
+ *
+ * "energy" picks the column, and it is checked rather than assumed because a draft that names only
+ * the one the user did *not* mention is the whole thing `LogMood`'s two zeros exist to avoid.
+ */
+private fun moodIn(asked: String): CoachAction.LogMood? {
+    if (MOOD_WORDS.none { it in asked }) return null
+    val level = MOOD_LEVELS.firstNotNullOfOrNull { (word, value) -> value.takeIf { word in asked } }
+        ?: return null
+    return if ("energy" in asked) {
+        CoachAction.LogMood(energy = level)
+    } else {
+        CoachAction.LogMood(mood = level)
+    }
+}
+
+private val MOOD_WORDS = listOf("mood", "felt", "feeling", "energy")
+
+/** `MoodLevel`'s five values by the words anyone uses for them. **Ordered**, because "very low"
+ * has to be found before "low" finds itself inside it. */
+private val MOOD_LEVELS = listOf("very low" to 1, "great" to 5, "good" to 4, "okay" to 3, "low" to 2)
+
+/**
+ * One site and **the figure immediately after it** — "log my waist 82".
+ *
+ * The adjacency is the whole rule, and it is why this runs before the exercise match rather than
+ * after: "chest" and "arms" are gym words too, and a number loose in the sentence is not enough to
+ * tell the two apart — "log a 40 minute gym session, chest day" has both. What a measurement
+ * sentence has and a gym one does not is the figure sitting against the site word.
+ *
+ * The figure is unconverted, because `resolve` is where the profile's unit gets stamped on it —
+ * and where a figure out of `range()` fails the draft.
+ */
+private fun measurementIn(asked: String): CoachAction.LogMeasurement? =
+    MeasurementPart.entries.firstNotNullOfOrNull { part ->
+        Regex("""${part.fakeWord()}\D{0,4}(\d+(?:\.\d+)?)""").find(asked)
+            ?.groupValues?.get(1)?.toDoubleOrNull()
+            ?.let { CoachAction.LogMeasurement(part = part, value = it) }
+    }
+
+/** `CoachTools`' own `promptName()`, which is private to it — a second copy rather than widening
+ * that one's visibility for a debug source set. */
+private fun MeasurementPart.fakeWord(): String =
+    if (this == MeasurementPart.BodyFat) "body fat" else name.lowercase()
 
 private val DECIMAL = Regex("""\d+(?:\.\d+)?""")
 

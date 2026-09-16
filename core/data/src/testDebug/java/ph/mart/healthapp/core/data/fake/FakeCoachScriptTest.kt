@@ -12,6 +12,7 @@ import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_LIBRARY
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.progress.MeasurementPart
 
 /**
  * The debug fakes' routing.
@@ -218,6 +219,69 @@ class FakeCoachScriptTest {
     fun `a supplement named before the category word is drafted too`() {
         val script = fakeCoachScript("took my Nothing At All supplement") as FakeScript.Propose
         assertEquals("nothing at all", (script.actions.single() as CoachAction.LogSupplement).name)
+    }
+
+    @Test
+    fun `a mood sentence drafts the column it named`() {
+        val mood = fakeCoachScript("log my mood as great") as FakeScript.Propose
+        assertEquals(CoachAction.LogMood(mood = 5), mood.actions.single())
+        val energy = fakeCoachScript("log my energy as low") as FakeScript.Propose
+        assertEquals(CoachAction.LogMood(energy = 2), energy.actions.single())
+    }
+
+    /** "very low" has to be found before "low" finds itself inside it. */
+    @Test
+    fun `the five mood words are matched longest-phrase first`() {
+        val script = fakeCoachScript("log how i felt today: very low") as FakeScript.Propose
+        assertEquals(CoachAction.LogMood(mood = 1), script.actions.single())
+    }
+
+    /** A mood word with no level in the sentence is a question, not a draft. */
+    @Test
+    fun `asking about a mood is not a draft`() {
+        assertTrue(fakeCoachScript("how has my mood been lately?") !is FakeScript.Propose)
+    }
+
+    /** Both ways anyone says a reading out loud. The fake does **not** order the pair — typing
+     * them backwards is how a debug build reaches `parseAction`'s swapped-reading rejection. */
+    @Test
+    fun `a blood pressure sentence drafts both numbers`() {
+        val spoken = fakeCoachScript("log my blood pressure 118 over 76") as FakeScript.Propose
+        assertEquals(
+            CoachAction.LogBloodPressure(systolic = 118, diastolic = 76),
+            spoken.actions.single(),
+        )
+        val slashed = fakeCoachScript("log my bp 130/85") as FakeScript.Propose
+        assertEquals(
+            CoachAction.LogBloodPressure(systolic = 130, diastolic = 85),
+            slashed.actions.single(),
+        )
+    }
+
+    /** The figure has to sit *against* the site word, which is what tells a measurement from a gym
+     * sentence — see the test below. */
+    @Test
+    fun `a measurement sentence drafts its site and figure`() {
+        val script = fakeCoachScript("log my waist 82.5") as FakeScript.Propose
+        val action = script.actions.single() as CoachAction.LogMeasurement
+        assertEquals(MeasurementPart.Waist, action.part)
+        assertEquals(82.5, action.value, 0.001)
+
+        val fat = fakeCoachScript("log my body fat 18") as FakeScript.Propose
+        assertEquals(
+            MeasurementPart.BodyFat,
+            (fat.actions.single() as CoachAction.LogMeasurement).part,
+        )
+    }
+
+    /**
+     * The measurement match runs before the exercise one, so a loose number anywhere in the
+     * sentence would claim every "chest day" as a chest of 40cm. Adjacency is what stops it.
+     */
+    @Test
+    fun `a chest day at the gym is an exercise, not a measurement`() {
+        val script = fakeCoachScript("log a 40 minute gym session, chest day") as FakeScript.Propose
+        assertTrue(script.actions.toString(), script.actions.single() is CoachAction.LogExercise)
     }
 
     /** The other half of that rule: with no name after the library word there is nothing to draft,

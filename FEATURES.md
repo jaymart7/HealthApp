@@ -334,7 +334,12 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   weigh-in, drawn in the unit their profile uses with what it moves by under it, and only ever
   from a figure they volunteered: the coach never asks what they weigh and is never told — or a
   dose of one of their own supplements, matched by exact name and ticked onto today, never one the
-  coach suggested. A whole meal is
+  coach suggested. Three more record what the user said about themselves, on the weigh-in's rule:
+  **how the day felt** (mood and energy on the same 1–5 scale the card taps out, either column or
+  both), **a blood-pressure reading** (drawn with the band `categoryOf()` puts it in — the app's
+  label, never the model's), and **one body measurement** (in the unit their profile uses,
+  converted only on the write). All three are always today, none of them carries `days_ago` at all,
+  and none earns the diary door. A whole meal is
   one card of several rows, each removable before the tap, written to the diary together. A food,
   a glass, an activity or a saved meal can be drafted **into an earlier day** — up to a month back,
   with the day on the card's own title; every row of one draft shares that day, and a weigh-in or

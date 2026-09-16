@@ -7,6 +7,9 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
+import ph.mart.healthapp.core.data.bloodpressure.DIASTOLIC_RANGE
+import ph.mart.healthapp.core.data.bloodpressure.PULSE_RANGE
+import ph.mart.healthapp.core.data.bloodpressure.SYSTOLIC_RANGE
 import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -20,6 +23,7 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
+import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
@@ -266,6 +270,177 @@ class CoachToolsTest {
         assertNull(parseAction(TOOL_LOG_WATER, args("glasses" to -1)))
         assertNull(parseAction(TOOL_LOG_WATER, args("glasses" to MAX_ACTION_GLASSES + 1)))
         assertNull(parseAction(TOOL_LOG_WATER, emptyMap()))
+    }
+
+    // endregion
+
+    // region The three the user tells you about themselves
+
+    @Test
+    fun `a mood call becomes an action`() {
+        val action = parseAction(TOOL_LOG_MOOD, args("mood" to 4, "energy" to 2)) as CoachAction.LogMood
+        assertEquals(4, action.mood)
+        assertEquals(2, action.energy)
+    }
+
+    /** "I felt great" names no energy, and zero is what leaves that column alone. */
+    @Test
+    fun `a mood call may name one column and leave the other unset`() {
+        val mood = parseAction(TOOL_LOG_MOOD, args("mood" to 5)) as CoachAction.LogMood
+        assertEquals(5, mood.mood)
+        assertEquals(0, mood.energy)
+
+        val energy = parseAction(TOOL_LOG_MOOD, args("energy" to 1)) as CoachAction.LogMood
+        assertEquals(0, energy.mood)
+        assertEquals(1, energy.energy)
+    }
+
+    /** A card whose Confirm writes nothing is worse than no card. */
+    @Test
+    fun `a mood call naming neither column fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_MOOD, emptyMap()))
+    }
+
+    /** Off the scale fails rather than clamping: the card's figure is the one the tap writes. */
+    @Test
+    fun `a mood off the scale fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_MOOD, args("mood" to 0)))
+        assertNull(parseAction(TOOL_LOG_MOOD, args("mood" to MOOD_SCALE.last + 1)))
+        assertNull(parseAction(TOOL_LOG_MOOD, args("energy" to -1)))
+        assertNull(parseAction(TOOL_LOG_MOOD, args("mood" to "great")))
+    }
+
+    @Test
+    fun `a blood pressure call becomes an action`() {
+        val action = parseAction(
+            TOOL_LOG_BLOOD_PRESSURE,
+            args("systolic" to 118, "diastolic" to 76, "pulse_bpm" to 64),
+        ) as CoachAction.LogBloodPressure
+        assertEquals(118, action.systolic)
+        assertEquals(76, action.diastolic)
+        assertEquals(64, action.pulseBpm)
+    }
+
+    /** Plenty of cuffs show no pulse, and the user often doesn't say it. Zero is what
+     * [BloodPressureReading.pulseBpm] already means by that. */
+    @Test
+    fun `a blood pressure call needs no pulse`() {
+        val action = parseAction(
+            TOOL_LOG_BLOOD_PRESSURE,
+            args("systolic" to 118, "diastolic" to 76),
+        ) as CoachAction.LogBloodPressure
+        assertEquals(0, action.pulseBpm)
+    }
+
+    /**
+     * The one mistake a model actually makes here — "76 over 118" read back in the order it was
+     * said. A swapped reading is wrong twice: in the chart, and in the band `categoryOf` is
+     * worst-first about.
+     */
+    @Test
+    fun `a swapped blood pressure reading fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_BLOOD_PRESSURE, args("systolic" to 76, "diastolic" to 118)))
+        assertNull(parseAction(TOOL_LOG_BLOOD_PRESSURE, args("systolic" to 90, "diastolic" to 90)))
+    }
+
+    /** The cuff's own ranges, not constants invented for the coach — and they fail rather than
+     * clamp, which is the opposite of what `addReading` does to the same figures. */
+    @Test
+    fun `a blood pressure outside the cuff's own ranges fails the draft`() {
+        assertNull(
+            parseAction(
+                TOOL_LOG_BLOOD_PRESSURE,
+                args("systolic" to SYSTOLIC_RANGE.last + 1, "diastolic" to 80),
+            ),
+        )
+        assertNull(
+            parseAction(
+                TOOL_LOG_BLOOD_PRESSURE,
+                args("systolic" to 120, "diastolic" to DIASTOLIC_RANGE.first - 1),
+            ),
+        )
+        assertNull(
+            parseAction(
+                TOOL_LOG_BLOOD_PRESSURE,
+                args("systolic" to 120, "diastolic" to 80, "pulse_bpm" to PULSE_RANGE.last + 1),
+            ),
+        )
+        assertNull(parseAction(TOOL_LOG_BLOOD_PRESSURE, args("systolic" to 120)))
+    }
+
+    /** The unit is not here — [CoachAction.LogMeasurement.unit] is stamped by `resolve` from the
+     * profile, the way a weigh-in's is, so the parse stays pure. */
+    @Test
+    fun `a measurement call becomes an action the app will unit itself`() {
+        val action = parseAction(
+            TOOL_LOG_MEASUREMENT,
+            args("part" to "Waist", "value" to 82.5),
+        ) as CoachAction.LogMeasurement
+        assertEquals(MeasurementPart.Waist, action.part)
+        assertEquals(82.5, action.value, 0.0)
+        assertEquals(UnitSystem.Metric, action.unit)
+    }
+
+    @Test
+    fun `a measurement part is matched case-insensitively`() {
+        val action = parseAction(
+            TOOL_LOG_MEASUREMENT,
+            args("part" to "bodyfat", "value" to 18.0),
+        ) as CoachAction.LogMeasurement
+        assertEquals(MeasurementPart.BodyFat, action.part)
+    }
+
+    @Test
+    fun `an unknown part or an absurd measurement fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_MEASUREMENT, args("part" to "Neck", "value" to 40.0)))
+        assertNull(parseAction(TOOL_LOG_MEASUREMENT, args("part" to "Waist", "value" to 0.0)))
+        assertNull(parseAction(TOOL_LOG_MEASUREMENT, args("part" to "Waist", "value" to -82.0)))
+        assertNull(
+            parseAction(
+                TOOL_LOG_MEASUREMENT,
+                args("part" to "Waist", "value" to MAX_ACTION_WEIGHT + 1),
+            ),
+        )
+        assertNull(parseAction(TOOL_LOG_MEASUREMENT, args("value" to 82.0)))
+    }
+
+    /** None of the three may be backdated, so none of them takes the offset at all — passing one
+     * is ignored rather than honoured, which is what keeps `draftedOn` null for them. */
+    @Test
+    fun `none of the three can be backdated`() {
+        val mood = parseAction(TOOL_LOG_MOOD, args("mood" to 4, "days_ago" to 3))
+        val bp = parseAction(
+            TOOL_LOG_BLOOD_PRESSURE,
+            args("systolic" to 118, "diastolic" to 76, "days_ago" to 3),
+        )
+        val measurement = parseAction(
+            TOOL_LOG_MEASUREMENT,
+            args("part" to "Waist", "value" to 82.0, "days_ago" to 3),
+        )
+        assertNull(mood!!.draftedOn)
+        assertNull(bp!!.draftedOn)
+        assertNull(measurement!!.draftedOn)
+    }
+
+    /**
+     * `glassesToAdd`'s lesson with the opposite arithmetic: water sums, a mood is absolute and the
+     * last one wins — **per column**, so a second row naming only the energy must not blank the
+     * mood the first row set.
+     */
+    @Test
+    fun `two mood rows fold to one, column by column`() {
+        val folded = listOf(
+            CoachAction.LogMood(mood = 4),
+            CoachAction.LogMood(energy = 2),
+            CoachAction.LogMood(mood = 5),
+        ).moodToSet()
+        assertEquals(5, folded?.mood)
+        assertEquals(2, folded?.energy)
+    }
+
+    @Test
+    fun `a draft with no mood folds to nothing`() {
+        assertNull(listOf(CoachAction.LogWater(glasses = 1)).moodToSet())
     }
 
     // endregion

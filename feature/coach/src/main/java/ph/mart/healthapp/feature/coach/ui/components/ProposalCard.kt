@@ -24,14 +24,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
+import ph.mart.healthapp.core.data.bloodpressure.categoryOf
+import ph.mart.healthapp.core.data.bloodpressure.formatBloodPressure
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.health.formatBpm
+import ph.mart.healthapp.core.data.mood.MoodLevel
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.progress.MeasurementPart
+import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.formatDayMonth
@@ -168,6 +174,33 @@ private fun SingleProposal(action: CoachAction, day: String? = null) {
             ProposalDetail(supplementDoses(action.doses))
         }
 
+        is CoachAction.LogMood -> {
+            ProposalTitle(stringResource(R.string.coach_proposal_mood_title), day)
+            // The mood is the headline when there is one; a draft that names only the energy makes
+            // the energy the headline rather than leaving the card with a blank first line.
+            val mood = moodLine(action.mood)
+            val energy = energyLine(action.energy)
+            ProposalHeadline(mood ?: energy.orEmpty())
+            if (mood != null) energy?.let { ProposalDetail(it) }
+        }
+
+        is CoachAction.LogBloodPressure -> {
+            ProposalTitle(stringResource(R.string.coach_proposal_bp_title), day)
+            ProposalHeadline(formatBloodPressure(action.systolic, action.diastolic))
+            ProposalDetail(bandLine(action))
+        }
+
+        is CoachAction.LogMeasurement -> {
+            ProposalTitle(
+                stringResource(
+                    R.string.coach_proposal_measurement_title,
+                    stringResource(action.part.label),
+                ),
+                day,
+            )
+            ProposalHeadline(measurementAmount(action))
+        }
+
         // `resolve()` turns a saved meal into its own rows before any card is drawn, so this is
         // only ever reached if that stops being true. It renders the name rather than nothing,
         // which stays honest: the name is the whole of what the model supplied.
@@ -302,6 +335,10 @@ private fun actionName(action: CoachAction): String = when (action) {
     is CoachAction.LogSavedMeal -> action.name
     is CoachAction.LogWeight -> weightAmount(action)
     is CoachAction.LogSupplement -> action.name
+    is CoachAction.LogMood -> moodName(action)
+    is CoachAction.LogBloodPressure ->
+        formatBloodPressure(action.systolic, action.diastolic)
+    is CoachAction.LogMeasurement -> stringResource(action.part.label)
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -315,6 +352,10 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.LogSavedMeal -> null
     is CoachAction.LogWeight -> weightChange(action)
     is CoachAction.LogSupplement -> supplementDoses(action.doses)
+    // The name already carries both columns, so there is nothing left to put on the right.
+    is CoachAction.LogMood -> null
+    is CoachAction.LogBloodPressure -> bandLine(action)
+    is CoachAction.LogMeasurement -> measurementAmount(action)
 }
 
 /**
@@ -337,6 +378,17 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
             stringResource(R.string.coach_proposal_logged_weight, weightAmount(single))
         single is CoachAction.LogSupplement ->
             stringResource(R.string.coach_proposal_logged_supplement, single.name)
+        single is CoachAction.LogMood ->
+            stringResource(R.string.coach_proposal_logged_mood, moodName(single))
+        single is CoachAction.LogBloodPressure -> stringResource(
+            R.string.coach_proposal_logged_bp,
+            formatBloodPressure(single.systolic, single.diastolic),
+        )
+        single is CoachAction.LogMeasurement -> stringResource(
+            R.string.coach_proposal_logged_measurement,
+            stringResource(single.part.label),
+            measurementAmount(single),
+        )
         else -> pluralStringResource(
             R.plurals.coach_proposal_logged_items,
             actions.size,
@@ -386,6 +438,60 @@ private fun formatWeight(value: Double): String =
 @Composable
 private fun activityName(action: CoachAction.LogExercise): String =
     action.name.ifEmpty { stringResource(action.type.label) }
+
+/**
+ * The five names [MoodLevel] already carries — and they are the *energy* control's names too, which
+ * is what its own resource comment says, so the card and the Mood page cannot drift apart.
+ *
+ * Null for `0`, which is [ph.mart.healthapp.core.data.mood.MoodDay]'s "not set": a draft naming
+ * only the mood leaves the energy line off rather than printing a zero.
+ */
+@Composable
+private fun levelName(level: Int): String? =
+    MoodLevel.entries.firstOrNull { it.value == level }?.let { stringResource(it.label) }
+
+@Composable
+private fun moodLine(level: Int): String? =
+    levelName(level)?.let { stringResource(R.string.coach_proposal_mood_body, it) }
+
+@Composable
+private fun energyLine(level: Int): String? =
+    levelName(level)?.let { stringResource(R.string.coach_proposal_mood_energy, it) }
+
+/** Both columns on one line — what a list row and the logged line need, where the single card has
+ * two lines to spend. Never empty: the parse refuses a draft with neither column set. */
+@Composable
+private fun moodName(action: CoachAction.LogMood): String {
+    val mood = moodLine(action.mood)
+    val energy = energyLine(action.energy)
+    return when {
+        mood != null && energy != null ->
+            stringResource(R.string.coach_proposal_mood_both, mood, energy)
+        else -> mood ?: energy.orEmpty()
+    }
+}
+
+/**
+ * **The app's band, not the model's.** [categoryOf] is worst-first and is the same call the Blood
+ * pressure card and the prompt's own payload make, so the label under the figure here is the label
+ * the user will see on the page the tap writes to. The pulse joins it when the cuff showed
+ * one and the user said it.
+ */
+@Composable
+private fun bandLine(action: CoachAction.LogBloodPressure): String {
+    val band = stringResource(categoryOf(action.systolic, action.diastolic).label)
+    if (action.pulseBpm <= 0) return band
+    return stringResource(R.string.coach_proposal_bp_band_pulse, band, formatBpm(action.pulseBpm))
+}
+
+/** The figure the user gave and the unit their profile uses — not converted, for [weightAmount]'s
+ * reason: this is the number `settle` is about to turn into what the table stores. */
+@Composable
+private fun measurementAmount(action: CoachAction.LogMeasurement): String = stringResource(
+    R.string.coach_proposal_measurement_body,
+    formatWeight(action.value),
+    action.part.unitLabel(action.unit),
+)
 
 /** One glass reads as "1 glass", not "1 glasses" — the only place the coach counts something the
  * user can have exactly one of. */
@@ -540,6 +646,61 @@ private fun ProposalCardWaterPreview() {
         Surface {
             ProposalCard(
                 actions = listOf(CoachAction.LogWater(glasses = 1)),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** Both columns set: the mood is the headline and the energy the line under it. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardMoodPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(CoachAction.LogMood(mood = 4, energy = 2)),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** The band is `categoryOf()`'s — 118/76 is Normal — and the pulse joins it when it was given. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardBloodPressurePreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(
+                    CoachAction.LogBloodPressure(systolic = 118, diastolic = 76, pulseBpm = 64),
+                ),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ProposalCardMeasurementPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(
+                    CoachAction.LogMeasurement(
+                        part = MeasurementPart.Waist,
+                        value = 82.5,
+                        unit = UnitSystem.Metric,
+                    ),
+                ),
                 onConfirm = { _, _ -> },
                 onDismiss = {},
                 modifier = Modifier.padding(16.dp),

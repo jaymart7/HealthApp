@@ -54,6 +54,25 @@
     <!-- What the weigh-in moves by, e.g. "−0.6 kg since your last weigh-in". -->
     <string name="coach_proposal_weight_change">%1$s %2$s since your last weigh-in</string>
     <string name="coach_proposal_supplement_title">Mark as taken</string>
+    <!-- How the day felt. The headline names the level with MoodLevel's own labels, which are
+         already what both the mood and the energy control announce. -->
+    <string name="coach_proposal_mood_title">Record how you felt</string>
+    <string name="coach_proposal_mood_body">Mood: %1$s</string>
+    <string name="coach_proposal_mood_energy">Energy: %1$s</string>
+    <!-- Both columns on the one row, e.g. "Mood: Great · Energy: Low". -->
+    <string name="coach_proposal_mood_both">%1$s · %2$s</string>
+
+    <!-- A cuff reading. The band under it is the app's own label from categoryOf(), never the
+         model's — the same one the Blood pressure card shows. -->
+    <string name="coach_proposal_bp_title">Add blood-pressure reading</string>
+    <!-- The band and the pulse, when the cuff's pulse was given too, e.g. "Normal · 64 bpm". -->
+    <string name="coach_proposal_bp_band_pulse">%1$s · %2$s</string>
+
+    <!-- One tape-measure site. The figure is in the unit the user gave it in, never converted —
+         the conversion happens on the write. -->
+    <string name="coach_proposal_measurement_title">Add %1$s</string>
+    <string name="coach_proposal_measurement_body">%1$s %2$s</string>
+
     <!-- A draft the coach backdated. The title carries the day, e.g. "Add to Breakfast ·
          Yesterday"; a draft for today says nothing, which is almost every draft. -->
     <string name="coach_proposal_title_day">%1$s · %2$s</string>
@@ -79,6 +98,9 @@
     <string name="coach_proposal_logged_exercise">Logged: %1$s, %2$d min.</string>
     <string name="coach_proposal_logged_weight">Logged: %1$s.</string>
     <string name="coach_proposal_logged_supplement">Logged: %1$s.</string>
+    <string name="coach_proposal_logged_mood">Recorded: %1$s.</string>
+    <string name="coach_proposal_logged_bp">Logged: %1$s.</string>
+    <string name="coach_proposal_logged_measurement">Logged: %1$s, %2$s.</string>
     <plurals name="coach_proposal_logged_items">
         <item quantity="one">Logged: %1$d item, %2$d kcal.</item>
         <item quantity="other">Logged: %1$d items, %2$d kcal.</item>

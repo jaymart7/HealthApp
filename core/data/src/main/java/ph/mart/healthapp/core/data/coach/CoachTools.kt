@@ -11,6 +11,9 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureCategory
+import ph.mart.healthapp.core.data.bloodpressure.DIASTOLIC_RANGE
+import ph.mart.healthapp.core.data.bloodpressure.PULSE_RANGE
+import ph.mart.healthapp.core.data.bloodpressure.SYSTOLIC_RANGE
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.bloodpressure.byDay
@@ -57,6 +60,8 @@ import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.progress.fromDisplay
+import ph.mart.healthapp.core.data.progress.range
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_TIMES_PER_DAY
@@ -68,7 +73,7 @@ import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
- * The coach's tools: three the app *runs*, six it only ever *drafts*.
+ * The coach's tools: three the app *runs*, nine it only ever *drafts*.
  *
  * The split is the whole design. A read is a local Room query with no user-visible effect, so it
  * executes the moment the model asks for it and the answer goes straight back into the same turn.
@@ -145,6 +150,9 @@ internal const val TOOL_LOG_EXERCISE = "log_exercise"
 internal const val TOOL_LOG_SAVED_MEAL = "log_saved_meal"
 internal const val TOOL_LOG_WEIGHT = "log_weight"
 internal const val TOOL_LOG_SUPPLEMENT = "log_supplement"
+internal const val TOOL_LOG_MOOD = "log_mood"
+internal const val TOOL_LOG_BLOOD_PRESSURE = "log_blood_pressure"
+internal const val TOOL_LOG_MEASUREMENT = "log_measurement"
 
 /** The ones the model may call but the app never executes. Kept as a set rather than a `when` so
  * [CoachRepositoryImpl]'s loop can ask the question without knowing what any of them does. */
@@ -155,6 +163,9 @@ internal val WRITE_TOOLS = setOf(
     TOOL_LOG_SAVED_MEAL,
     TOOL_LOG_WEIGHT,
     TOOL_LOG_SUPPLEMENT,
+    TOOL_LOG_MOOD,
+    TOOL_LOG_BLOOD_PRESSURE,
+    TOOL_LOG_MEASUREMENT,
 )
 
 /**
@@ -311,6 +322,58 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 ),
             ),
         ),
+        FunctionDeclaration(
+            name = TOOL_LOG_MOOD,
+            description = "Propose recording how the user felt today. This does NOT log it: they " +
+                "see what you proposed and tap to confirm. Only call it when they have told you " +
+                "how they felt or how much energy they had — never ask. Pass whichever of the " +
+                "two they mentioned and leave the other out.",
+            parameters = mapOf(
+                "mood" to Schema.integer(
+                    description = "How they felt, from ${MOOD_SCALE.first} (very low) to " +
+                        "${MOOD_SCALE.last} (great). Leave it out if they only mentioned energy.",
+                ),
+                "energy" to Schema.integer(
+                    description = "How much energy they had, from ${MOOD_SCALE.first} (very low) " +
+                        "to ${MOOD_SCALE.last} (great). Leave it out if they only mentioned mood.",
+                ),
+            ),
+        ),
+        FunctionDeclaration(
+            name = TOOL_LOG_BLOOD_PRESSURE,
+            description = "Propose recording a blood-pressure reading the user has told you. " +
+                "This does NOT log it: they see the figures and tap to confirm. Pass the numbers " +
+                "exactly as they gave them — the app works out which band the reading is in, so " +
+                "do not categorise it, and do not say what it means.",
+            parameters = mapOf(
+                "systolic" to Schema.integer(
+                    description = "The upper number, e.g. 118. Always the higher of the two.",
+                ),
+                "diastolic" to Schema.integer(
+                    description = "The lower number, e.g. 76.",
+                ),
+                "pulse_bpm" to Schema.integer(
+                    description = "The pulse the cuff showed, if they said it. Optional.",
+                ),
+            ),
+        ),
+        FunctionDeclaration(
+            name = TOOL_LOG_MEASUREMENT,
+            description = "Propose recording one body measurement the user has told you. This " +
+                "does NOT log it: they see the figure and tap to confirm. Only call this when " +
+                "they have given you the number — never ask them for one. Pass it exactly as " +
+                "they said it and do not convert it: the app knows whether they measure in " +
+                "centimetres or inches. One call per site.",
+            parameters = mapOf(
+                "part" to Schema.enumeration(
+                    values = MeasurementPart.entries.map { it.name },
+                    description = "Which site they measured. BodyFat is a percentage.",
+                ),
+                "value" to Schema.double(
+                    description = "The number they gave, in their own unit, e.g. 82.5.",
+                ),
+            ),
+        ),
     ),
 )
 
@@ -346,7 +409,78 @@ internal fun parseAction(
         ?.takeIf { it in MIN_ACTION_WEIGHT..MAX_ACTION_WEIGHT }
         ?.let { CoachAction.LogWeight(weight = round1(it)) }
     TOOL_LOG_SUPPLEMENT -> parseLogSupplement(args)
+    TOOL_LOG_MOOD -> parseLogMood(args)
+    TOOL_LOG_BLOOD_PRESSURE -> parseLogBloodPressure(args)
+    TOOL_LOG_MEASUREMENT -> parseLogMeasurement(args)
     else -> null
+}
+
+/**
+ * Either column, or both — and **never neither**, which is a card whose Confirm writes nothing.
+ *
+ * A missing column is `0` rather than a failed draft: "I felt great" names no energy, and leaving
+ * that column alone is what [ph.mart.healthapp.core.data.mood.MoodDay]'s own zero means. A figure
+ * outside [MOOD_SCALE] does fail — a model answering `7` on a five-point scale has not read the
+ * schema, and clamping it would put a number on the card that the tap does not write.
+ */
+private fun parseLogMood(args: Map<String, JsonElement>): CoachAction.LogMood? {
+    val mood = args.optionalInt("mood", MOOD_SCALE) ?: return null
+    val energy = args.optionalInt("energy", MOOD_SCALE) ?: return null
+    if (mood == 0 && energy == 0) return null
+    return CoachAction.LogMood(mood = mood, energy = energy)
+}
+
+/**
+ * A figure the model may leave out entirely: absent is `0`, the "not set" both
+ * [ph.mart.healthapp.core.data.mood.MoodDay]'s columns and [BloodPressureReading.pulseBpm] already
+ * mean by it.
+ *
+ * Present but outside [range] is a **failure, not a clamp** — a model answering 7 on a five-point
+ * scale has not read the schema, and clamping it would draw a figure on the card that the tap does
+ * not write.
+ */
+private fun Map<String, JsonElement>.optionalInt(key: String, range: IntRange): Int? {
+    if (key !in this) return 0
+    return int(key)?.takeIf { it in range }
+}
+
+/**
+ * Two numbers and an optional third, bounded by the cuff's own ranges rather than by
+ * [MAX_ACTION_CALORIES]-style constants invented here: [SYSTOLIC_RANGE], [DIASTOLIC_RANGE] and
+ * [PULSE_RANGE] are what the manual sheet's steppers already allow, so a coach-drafted reading and
+ * a hand-typed one admit exactly the same figures.
+ *
+ * **Failing rather than clamping**, which is the opposite of `addReading`'s own behaviour and
+ * deliberately: the repository clamps because a sheet has already shown the user their own number,
+ * while this card's whole promise is that the figure on it is the figure that gets written.
+ *
+ * **The systolic has to be the higher of the two.** It is the one mistake a model actually makes
+ * here — "76 over 118" read back in the order it was said — and a swapped reading is wrong twice
+ * over: in the chart, and in the band [categoryOf] puts it in, which is worst-first and would call
+ * it Elevated.
+ */
+private fun parseLogBloodPressure(args: Map<String, JsonElement>): CoachAction.LogBloodPressure? {
+    val systolic = args.int("systolic")?.takeIf { it in SYSTOLIC_RANGE } ?: return null
+    val diastolic = args.int("diastolic")?.takeIf { it in DIASTOLIC_RANGE } ?: return null
+    if (systolic <= diastolic) return null
+    val pulse = args.optionalInt("pulse_bpm", PULSE_RANGE) ?: return null
+    return CoachAction.LogBloodPressure(systolic = systolic, diastolic = diastolic, pulseBpm = pulse)
+}
+
+/**
+ * A site and a figure, and the figure is checked twice.
+ *
+ * Here it only has to be a positive number under [MAX_ACTION_WEIGHT] — the band that constant's
+ * own comment explains, for the same reason: the number arrives before the unit does, and 32 is a
+ * plausible arm in centimetres and in inches both. The real bound is [MeasurementPart.range], which
+ * is in *stored* units and so cannot be applied until [resolve] has stamped the profile's.
+ */
+private fun parseLogMeasurement(args: Map<String, JsonElement>): CoachAction.LogMeasurement? {
+    val part = args.string("part")
+        ?.let { raw -> MeasurementPart.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
+        ?: return null
+    val value = args.double("value")?.takeIf { it > 0 && it <= MAX_ACTION_WEIGHT } ?: return null
+    return CoachAction.LogMeasurement(part = part, value = round1(value))
 }
 
 /**
@@ -1151,6 +1285,12 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
     // Where the model's spelling becomes the user's own row. Null when it names nothing they take,
     // which fails the turn rather than ticking the nearest thing.
     is CoachAction.LogSupplement -> toolbox.supplementDose(name, doses)?.let(::listOf)
+    // The second half of [CoachAction.LogMeasurement]'s two checks, and the half that needs a unit:
+    // `range()` is in stored units, so 32 inches is in band for an arm and 32 centimetres is not.
+    // Null fails the turn rather than clamping, the rule the parse above already keeps.
+    is CoachAction.LogMeasurement -> toolbox.unitSystem().let { unit ->
+        listOf(copy(unit = unit)).takeIf { part.fromDisplay(value, unit) in part.range() }
+    }
     else -> listOf(this)
 }
 
@@ -1216,6 +1356,25 @@ internal fun List<CoachAction>.supplementDoses(): Map<Long, Int> =
     filterIsInstance<CoachAction.LogSupplement>()
         .groupBy { it.supplementId }
         .mapValues { (_, actions) -> actions.sumOf { it.doses } }
+
+/**
+ * The one mood row a settled draft writes, folded from however many it holds — or null when it
+ * holds none.
+ *
+ * [glassesToAdd]'s lesson a third time, with the opposite arithmetic. Water and doses *add*, so
+ * they sum; a mood is an absolute value, so the last one the user agreed to wins. **Per column**,
+ * which is the load-bearing half: a draft of "felt great" then "energy was low" is two actions
+ * whose zeros must not erase each other, and folding them into one row is what stops the second
+ * write blanking the first's column.
+ */
+internal fun List<CoachAction>.moodToSet(): CoachAction.LogMood? {
+    val moods = filterIsInstance<CoachAction.LogMood>()
+    if (moods.isEmpty()) return null
+    return CoachAction.LogMood(
+        mood = moods.lastOrNull { it.mood > 0 }?.mood ?: 0,
+        energy = moods.lastOrNull { it.energy > 0 }?.energy ?: 0,
+    )
+}
 
 /** The envelope the SDK requires around a [String] result. One key, because the result is prose
  * and prose has no fields. */
