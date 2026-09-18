@@ -48,6 +48,15 @@ data class CoachUiState(
      * label, which the screen turns into "View it in Breakfast". Null when there is nowhere true to
      * send anyone. See [diaryDestination]. */
     @StringRes val loggedDestination: Int? = null,
+    /** Whether the device can reach the network *right now*, from `NetworkMonitor.observe()`. It
+     * drives the pinned strip under the top bar and nothing else — the decision to call the model
+     * is still a recheck at the moment of the send, because that is the only answer that matters to
+     * a request about to be spent. */
+    val offline: Boolean = false,
+    /** Whether the last thing that happened to this conversation was the user stopping a turn.
+     * UI-only and never persisted, for [failure]'s reason: a stopped turn wrote no rows, so there
+     * is nothing in Room for it to describe. Cleared by the next send. */
+    val stopped: Boolean = false,
 )
 
 /**
@@ -198,9 +207,14 @@ internal fun daySeparatorAt(messages: List<ChatMessage>, index: Int): Long? {
  * dismissed when no prose came with it (no answer to persist means no write, so no Room emission
  * arrives to retire the bubbles). A shared function rather than the same `copy` twice, because
  * missing a field in one of them strands the input bar.
+ *
+ * They differ in exactly one thing, which is what [stopped] carries: a **stop leaves a mark** in
+ * the transcript, because the user did something and both bubbles vanishing with no trace reads as
+ * the app losing their question. A dismissed proposal leaves none — the card going away *is* the
+ * acknowledgement, and there was never a turn to mark.
  */
-internal fun CoachUiState.withTurnAbandoned(): CoachUiState =
-    copy(pending = null, streaming = null, proposal = emptyList())
+internal fun CoachUiState.withTurnAbandoned(stopped: Boolean = false): CoachUiState =
+    copy(pending = null, streaming = null, proposal = emptyList(), stopped = stopped)
 
 /**
  * What to show when a send didn't produce an answer.

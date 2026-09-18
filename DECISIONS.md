@@ -2072,6 +2072,9 @@ rather than needing a counter patched.
   hand out: an `AnnotatedString` path through `MascotSpeechBubble` — shared with onboarding and
   Home — would have left raw markup in the database, asterisks in every copied answer, and two
   representations of one reply that have to agree. It also needed no `:feature:*` change at all.
+  (That bubble is no longer the coach's — see *The coach's bubble stopped being the mascot's* below
+  — but the argument is untouched: what a sanitizer returns is still what Room stores and what Copy
+  hands out, whichever component draws it.)
   Order matters twice: it runs **before** `MAX_REPLY_CHARS`, so the cap measures the answer the
   user reads rather than counting asterisks; and **before** `sanitizeInsight`'s whitespace collapse,
   because a heading or a bullet is only recognisable while its line still starts where it started —
@@ -2829,6 +2832,161 @@ rather than needing a counter patched.
   one figure on any proposal card that is **not** the figure that gets written — nothing writes it;
   the end is stamped at the tap and it keeps growing while the card sits there — which is why the
   string says *"so far"*.
+
+- **The coach's bubble stopped being the mascot's, and the failures stopped being bubbles at all.**
+  The design handoff's whole argument is that this screen had one shape doing three jobs, and both
+  halves of that were true. `MascotSpeechBubble` is right on Home and in onboarding — centred text
+  in a 280dp box with a tail on its vertical middle, for one cheerful sentence — and an answer is
+  prose with figures in it, several lines long. It wants left-aligned text, a width that tracks the
+  screen (84%, capped at 480dp so a tablet does not get 900px lines) and a tail at the *bottom*
+  corner where the speaker is. Flipping the shared component would have made every other caller
+  worse to make this one right, so `CoachBubble` is the feature's own and `MascotSpeechBubble` is
+  untouched. The user's side is its mirror — the square-ish corner swaps sides — which means the two
+  are told apart by **shape before colour**, and a greyscale screenshot still reads as a
+  conversation. The harder half is the failures. A mascot speaking means *the coach answered*, and
+  on an offline or failed turn it did not: nothing was read and nothing was written. Worse, the
+  fallback line drawn in that bubble is not the coach's sentence at all — it is `insightFor()`, the
+  same three local rules Home falls back to — so the app was passing its own arithmetic off as a
+  model's answer in the model's own voice. `CoachNotice` is a bordered `surfaceContainerLow` panel
+  with no avatar, no tail and no mascot, and the fallback sits in a `surfaceContainer` panel inside
+  it under an eyebrow naming where it came from and a caption naming the method. **No `error`
+  colour on any of it**: a turn that did not come back is not a crash, and red would put the failure
+  on the user's own data. `error` on this screen is one thing now — "Clear chat" in the overflow.
+  `CoachFailure.reason: Int` became `offline: Boolean` with the change, because the two failures
+  are two *shapes* rather than two sentences and the screen picks every word of both.
+- **The wait gets a bubble from the first frame.** The lone `Thinking` mascot on an empty row was
+  the honest minimum and the wrong one: the bubble appeared under it when the first chunk landed,
+  so the one moment the user is most attentive was the one moment the layout jumped. The bubble is
+  now there from the tap, holding a status line over three placeholder lines at 100/88/54%, and the
+  first chunk **overwrites them in place** — no bubble swap, no reflow. The widths are the message:
+  they say a short paragraph is coming, which a spinner cannot, and `MAX_REPLY_CHARS` is what makes
+  that promise nearly always true. It is still one `Row` across both states, so the avatar stays a
+  single node and `MascotAvatar`'s spring plays `Thinking → Idle` instead of remounting as a cut.
+  The live-region rule is unchanged and is the reason this is not one: a region over text that
+  grows per chunk makes TalkBack restart the whole answer every chunk.
+- **Day separators are derived at render, and there is still no date column.** A persisted
+  transcript reopened after a week is a wall of bubbles with no way to tell Tuesday's question from
+  this morning's. The obvious fix is a `date` column on `chat_message`, and `ChatMessageEntity`'s
+  own KDoc refuses one for a good reason — a conversation is a sequence, not a series of days — so
+  `daySeparatorAt()` derives the boundary from `sentAtMillis` instead. That is also the *more*
+  correct answer, not merely the cheaper one: a row read in a different timezone from the one it was
+  written in lands on the right local day, which a stored column would have frozen wrong. Pure, with
+  the JVM test, including the minute-either-side-of-midnight case a naive comparison gets wrong.
+  Index 0 always opens a day — the top of a conversation is a boundary by definition.
+- **"Clear chat" moved into a top-bar overflow, and the coach took its own toolbar with it.** A
+  permanent destructive text button sat between the list and the field, on screen for every turn,
+  under the thumb, competing with the follow-up chips for the same strip. Behind an overflow it is
+  a deliberate reach and it still opens the same confirmation dialog — a conversation is
+  user-authored, so it asks first. The cost is that `AppScaffold` cannot fill an `actions` slot from
+  a `NavKey` alone, so `CoachRoute` joined `ownsTopBar` beside the Progress subject pages and draws
+  its own `AppTopBar` at `WindowInsets(0)`. That was not a detour: the pinned offline strip below
+  had to sit under that bar too, and only the screen knows about it.
+- **The greeting bubble is gone and the empty state proves what it claims.** It was a mascot, a
+  speech bubble saying "ask me about any day you've logged", a caption under it saying what the
+  coach could do, and four identical pills — two sentences making the same promise, one dressed as a
+  turn that never happened, over four examples with nothing saying what they were examples *of*.
+  Three blocks replaced it, spread over the list's height. A **context strip** at the top showing
+  the three figures the coach is told about before it is asked anything, straight off the
+  `InsightRequest` the ViewModel already holds: a coach that claims to read your diary should prove
+  it above the fold. It is **read-only and never a tap target** — no chevron, no CTA, no rings, no
+  bars, no colour — because the moment it looks actionable it is a second Home screen and this stops
+  being a chat. Water reads in *glasses* rather than the handoff's litres, which is what the app
+  stores and what the model is told, so it is a figure the coach can repeat back. A **capability
+  line** in the middle, a line rather than a bubble. And the **starters** at the bottom under the
+  thumb as a 2×2 of filled cards, each with an eyebrow naming the kind of question it stands in for
+  — `Starter(reach, question)`, the eyebrow never sent. That eyebrow is the half that earns its
+  line: it says the four are a *range*, which is the empty state's whole job.
+- **Three commitments, three shapes.** The starters, the follow-up chips and the draft card's
+  confirm were all the same outlined pill, which made the one control that *writes something* look
+  like the third-most important thing on its own card. Starters are filled cards, follow-ups stay
+  outlined pills indented 40dp to the answer's text edge, and the confirm is the screen's **only
+  filled `primary`**. `PrimaryButton` gained an `icon` slot for it — the same 20dp lead
+  `SecondaryButton` already had — because the glyph carries what the word cannot: a `check` writes
+  and a `play_arrow` opens a screen and writes nothing.
+- **Every figure the draft will write sits on a white panel, and the confirm counts what is left.**
+  The card was asking for agreement to numbers it had folded into a sentence. `ReceiptPanel` is
+  `surfaceContainerLowest`, the **only white surface in the conversation**: the `tertiaryContainer`
+  around it says a model made this, and the panel inside says these are the numbers. Calories are
+  the big tabular figure and the macros are equal columns under the app's fixed dots. A several-row
+  draft gets a cell **per row**, so the 48dp `✕` has a boundary instead of crowding its neighbour,
+  and macros shrink to coloured letters there — the one place in the app they do, because three
+  full words over four rows is the legend four times, and the legend under the total repeats the
+  mapping in full anyway. Three consequences. **A removed row leaves an undo line inside the card**,
+  not a snackbar: the decision was made here and the card is still on screen, so a bar at the bottom
+  of the window would be a second place to look for the consequence of a tap. One row deep — an undo
+  stack on a card the user is about to confirm is a second thing to reason about for a tap that is
+  one `✕` from being redone. **The confirm label counts the survivors**, and `confirmCountFor()` is
+  pure with the JVM test because the card recounts its title, its total and its legend on every `✕`
+  and a button still reading "Log 4 items" over two rows is the single stale figure that costs a
+  user a row. **Striking every row out is not a dismissal until the user says so**: the card stays,
+  says "Nothing left to add", and the second action becomes "Dismiss" — a three-row draft is still a
+  valid write and only an empty one is not.
+- **The logged line left `ChatMessage.text` for its own column.** It was joined onto the persisted
+  answer with a newline, which worked exactly until the turn came back out of Room: the live turn
+  drew the receipt under a rule with a `check_circle` beside it and the reloaded one drew it as one
+  more paragraph, so the same answer looked different depending on when you read it. `chat_message`
+  gained a nullable `receipt` (DB 35 → 36; destructive fallback, as `DatabaseModule` already
+  documents, so no `Migration` object) and `settle()` takes it as its own argument. The two are
+  different kinds of sentence — one is the coach and one is the app reporting — and only a separate
+  column lets a reopened conversation still tell them apart. `finish()` passes none, because an
+  ordinary turn writes nothing.
+- **The door out names where the rows went.** "View it in your diary" was true and vague: a draft
+  goes into a *meal*, the diary opens on a day holding four of them, and naming the one that grew is
+  the difference between a link and a direction. `loggedToDiary: Boolean` became
+  `loggedDestination: Int?` — a `@StringRes` meal label the ViewModel names and the screen resolves,
+  which is this feature's existing rule — and it draws as a full-width outlined row with a trailing
+  arrow rather than a bare text button, because it is a *destination* and not an action on this
+  screen. `opensTheDiary()` stays as the exhaustive statement of the rule beside it: a `when` with no
+  `else` is what forces a new `CoachAction` kind to answer the question, and `diaryDestination()`'s
+  own `when` cannot.
+- **`NetworkMonitor` gained a `Flow`, and `isOnline()` did not change.** This file and CLAUDE.md
+  both said `network/` was "a recheck, not a listener", and that was right for every caller it had:
+  Home's one insight call and the coach's pre-send check are each about to spend a request, and the
+  only answer that matters is the one true at that instant. A listener would have been a
+  subscription held open for a screen's lifetime to answer a question asked once. What broke it is
+  that the redesign's offline notice says *the coach needs a connection* — and a strip saying so is
+  a **state**: it has to stay for as long as that is true and go when it stops, or the user cannot
+  tell a fixable state from a one-off failure, which is the entire distinction between the offline
+  notice and the failed one. Derived from a recheck it would either lie or need polling. So
+  `observe()` is a `callbackFlow` over `registerDefaultNetworkCallback` (API 24, the app's minSdk),
+  seeded with `isOnline()` before registering so a collector has an answer on its first frame, and
+  `distinctUntilChanged` because the callbacks fire per *network* and a phone moving between wifi and
+  cellular reports both without the answer changing. Every callback **re-reads `isOnline()`** rather
+  than trusting the `Network` it was handed: that parameter describes one network and the question
+  is about the device, so a phone that loses wifi while on cellular gets an `onLost` and is still
+  online. `NetworkMonitor` stopped being a `fun interface` and no existing call site moved.
+- **A stopped turn leaves a mark; a dismissed proposal does not.** Both endings already ran through
+  `withTurnAbandoned()`, because missing a field in one of two nearly identical `copy`s is what
+  strands the input bar. They differ in one thing and it needed saying: the user pressing stop *did
+  something*, and both bubbles vanishing without trace reads as the app having lost their question.
+  The marker takes the **day separator's shape** — a centred ruled label — rather than a notice's,
+  which is the point: something happened *to* the conversation, and nothing went wrong. A dismissed
+  card going away is already its own acknowledgement and there was never a turn to mark. UI-only and
+  never persisted, for `failure`'s reason: a stopped turn wrote no rows, so there is nothing in Room
+  for it to describe. It clears on the next send.
+- **The composer's mic went inside the field and the send became a circle outside it.** They sat
+  side by side as two grey glyphs doing unrelated jobs — one belongs to the *text* and one belongs
+  to the *turn*, and nothing on screen said so. The mic is `AppTextField`'s trailing slot now, which
+  is passed **even where no recognizer exists**, so the 48dp stays reserved and the geometry does
+  not shift between devices; absent-not-disabled is unchanged. The circle never moves or resizes and
+  only its fill and glyph change — quiet with an `outline` arrow on an empty field, `primary` once
+  there is something to send, quiet with a stop glyph and the spinner as a ring around it while a
+  turn runs. `canSend()` is untouched and still gates the circle and `ImeAction.Send` together.
+  `AppTextField` grew `shape`/`color`/`border`, defaulted to exactly what it drew — the move
+  `AppCard` already made for the diary's section cards, and for that reason: one caller wants a
+  different container and a second text-field component would be a second set of focus, IME and
+  trailing-slot rules to keep in step. The tray itself is `surfaceContainerLow` under a 1dp rule,
+  which is what says it is pinned and the list scrolls beneath it.
+- **A pre-filled question now carries where it came from.** `CoachRoute` took a question and the
+  composer had nothing to say about it, so arriving from the diary's day header looked identical to
+  typing the same sentence. `onAskCoach` grew a second `String` — the door's own name, resolved at
+  each door (`diaryDateLabel()` at the diary, `Subject.label` on a subject page, `RecapPeriod.label`
+  on a recap) and carried by `CoachRoute.source` to a context chip above the field. A plain String
+  for the reason every cross-feature reference in this app is one: both ends already have the words
+  and neither module learns the other's types. Dismissing the chip **leaves the text** — the label
+  is context and the question is the user's, which is the same reading the prefill-don't-send rule
+  is built on. The whole chip is the dismiss target rather than the 14dp glyph inside it, at the
+  48dp-touch / 40dp-visual split the profile stepper already ships: one intent, one target.
 
 ### Training, strength & routines
 

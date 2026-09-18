@@ -26,6 +26,9 @@
 
     <!-- The mark a stopped turn leaves. Not a failure: nothing went wrong, so it takes the day
          separator's shape rather than a notice's. -->
+    <!-- Pinned under the top bar for as long as the connection is gone. A state, not an
+         event — the notice in the list can only describe the send that already failed. -->
+    <string name="coach_offline_strip">No connection</string>
     <string name="coach_stopped_label">You stopped this one</string>
     <string name="coach_stopped_body">Your question is back in the box, unchanged. Nothing was logged.</string>
 

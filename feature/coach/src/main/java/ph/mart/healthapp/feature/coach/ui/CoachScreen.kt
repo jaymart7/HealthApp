@@ -46,6 +46,8 @@ import ph.mart.healthapp.feature.coach.ui.components.CoachEmptyState
 import ph.mart.healthapp.feature.coach.ui.components.CoachNotice
 import ph.mart.healthapp.feature.coach.ui.components.DaySeparator
 import ph.mart.healthapp.feature.coach.ui.components.DestinationRow
+import ph.mart.healthapp.feature.coach.ui.components.OfflineStrip
+import ph.mart.healthapp.feature.coach.ui.components.StoppedMarker
 import ph.mart.healthapp.feature.coach.ui.components.FollowUpRow
 import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
@@ -113,6 +115,7 @@ private fun CoachContent(
         (if (uiState.pending != null) 2 else 0) +
         (if (uiState.proposal.isNotEmpty()) 1 else 0) +
         (if (uiState.failure != null) 1 else 0) +
+        (if (uiState.stopped && uiState.pending == null) 1 else 0) +
         // The door to the diary, when the last tap put rows in it.
         (if (uiState.loggedDestination != null && uiState.pending == null) 1 else 0) +
         // The follow-up row is an item too, and it is the last one — scrolling to the answer above
@@ -138,6 +141,11 @@ private fun CoachContent(
                     CoachOverflow(onClear = { state.confirmingClear = true })
                 },
             )
+            // Pinned under the bar rather than drawn in the list, because it is a *state* and not
+            // an event: it stays for as long as the connection is gone and goes when it comes
+            // back, which is what lets the user tell a fixable state from a one-off failure. A
+            // notice in the list can only ever describe the send that already failed.
+            if (uiState.offline) OfflineStrip()
             Column(modifier = Modifier.weight(1f).imePadding()) {
                 LazyColumn(
                     state = listState,
@@ -236,6 +244,12 @@ private fun CoachContent(
                                 modifier = Modifier.padding(start = AnswerIndent),
                             )
                         }
+                    }
+                    // After the bubbles it retired, which is where it happened. Hidden the moment
+                    // a new turn starts: the mark is about the last thing that happened to the
+                    // conversation, and by then something else has.
+                    if (uiState.stopped && uiState.pending == null) {
+                        item(key = "stopped") { StoppedMarker() }
                     }
                     uiState.failure?.let { failure ->
                         item(key = "failure") {
@@ -413,6 +427,32 @@ private fun CoachScreenStreamingPreview() {
     }
 }
 
+/** A turn the user walked away from: both bubbles withdrawn, the question back in the field, and a
+ * mark where it happened. */
+@PreviewLightDark
+@Composable
+private fun CoachScreenStoppedPreview() {
+    AppTheme {
+        CoachContent(
+            uiState = CoachUiState(
+                loaded = true,
+                messages = listOf(
+                    ChatMessage(id = 1, fromUser = true, text = "How has my week gone?", sentAtMillis = 1),
+                    ChatMessage(
+                        id = 2,
+                        fromUser = false,
+                        text = "Steady — four logged days out of seven.",
+                        sentAtMillis = 2,
+                    ),
+                ),
+                stopped = true,
+            ),
+            state = CoachScreenState(draft = "What should I eat tonight?"),
+            onEvent = {},
+        )
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun CoachScreenOfflinePreview() {
@@ -423,6 +463,7 @@ private fun CoachScreenOfflinePreview() {
                 messages = listOf(
                     ChatMessage(id = 1, fromUser = true, text = "How am I doing today?", sentAtMillis = 1),
                 ),
+                offline = true,
                 failure = CoachFailure(
                     offline = true,
                     insight = "You're 88g short on protein today.",

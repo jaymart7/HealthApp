@@ -134,6 +134,31 @@ class CoachUiStateTest {
     }
 
     /**
+     * A stop leaves a mark; a dismissed proposal does not.
+     *
+     * Both endings run through the same function, because missing a field in one of two nearly
+     * identical `copy`s is what strands the input bar. They differ in exactly one thing, and it is
+     * the one worth asserting: the user pressing stop *did something*, and both bubbles vanishing
+     * with no trace reads as the app having lost their question. A dismissed card going away is
+     * already its own acknowledgement, and there was never a turn to mark.
+     */
+    @Test
+    fun `stopping marks the conversation and dismissing a proposal does not`() {
+        val running = CoachUiState(
+            pending = "How am I doing?",
+            streaming = "You are",
+            proposal = listOf(food()),
+        )
+        val stopped = running.withTurnAbandoned(stopped = true)
+        assertNull(stopped.pending)
+        assertNull(stopped.streaming)
+        assertTrue(stopped.proposal.isEmpty())
+        assertTrue(stopped.stopped)
+
+        assertFalse(running.withTurnAbandoned().stopped)
+    }
+
+    /**
      * The door now *names* where the rows went, so the rule has a second half: which of two labels
      * a qualifying draft gets. A meal names its slot, because "View it in your diary" was true and
      * vague — a draft goes into one of four meals and naming the one that grew is the difference

@@ -194,3 +194,45 @@ private fun DestinationRowPreview() {
         }
     }
 }
+
+/**
+ * The connection being gone, said once and kept there.
+ *
+ * Pinned under the top bar rather than drawn in the list, because it describes a **state** and the
+ * list describes what happened. The offline notice in the conversation can only ever be about the
+ * send that already failed; this is what tells the user whether trying again is worth it — and it
+ * disappears by itself when the connection comes back, which is the half a notice cannot do.
+ *
+ * `onSurfaceVariant` on `surfaceContainerHigh`, no `error`: being offline is a fact about the room
+ * the phone is in, not something wrong with the user's data.
+ */
+@Composable
+internal fun OfflineStrip(modifier: Modifier = Modifier) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.heightIn(min = 32.dp).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                imageVector = AppIcons.CloudOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = stringResource(R.string.coach_offline_strip),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun OfflineStripPreview() {
+    AppTheme {
+        Surface { OfflineStrip() }
+    }
+}

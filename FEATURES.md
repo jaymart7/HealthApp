@@ -363,7 +363,7 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   measurements (the last two as a change since the reading before, never as a figure), and `get_library` for
   the meals and recipes the user has saved, the foods they log most often and the supplements they
   take with today's count on each.
-  History persisted, clearable with a confirm. The answer streams in word
+  History persisted, clearable with a confirm from the top-bar overflow. The answer streams in word
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
 - Coach proposals — asked to log something, the coach drafts the rows and the user taps to confirm
@@ -385,7 +385,11 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the user's own saved meals or recipes is drafted by name, with the figures they saved and none
   the model invented. It never writes on its own, and nothing —
   not even the turn that drafted it — is persisted until the tap. Dismissing keeps the answer and
-  writes nothing.
+  writes nothing. Every figure a draft will write sits on a white receipt panel inside the card —
+  calories big, the three macros under their fixed dots, one cell per row on a multi-row draft with
+  a removable ✕ and a total underneath. Removing a row recounts the title, the total, the macro
+  legend and the button label, and leaves an undo line inside the card. Taking every row out is not
+  a dismissal: the card says so and the confirm goes quiet.
 - Coach bands, not coach verdicts — a blood-pressure reading reaches the model **with the AHA band
   `categoryOf()` put it in**, the same label the Blood pressure card shows. The prompt lets it
   repeat that band and forbids it deriving one, calling a reading good or bad, or saying what a
@@ -409,24 +413,43 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the timer Home's card drives. A start while a fast is already running, or an end while none is,
   fails the turn rather than offering a Confirm that would do nothing. Never backdated, never
   suggested, and it earns no diary door.
-- Coach door out — once a confirmed draft has put rows in **today's** diary, a "View it in your
-  diary" line sits under that answer and switches to the Food tab. It lasts until the next
+- Coach door out — once a confirmed draft has put rows in **today's** diary, an outlined row under
+  that answer names where they went ("View it in Breakfast") and switches to the Food tab. It lasts until the next
   question. A weigh-in, a supplement or a backdated draft gets none: the diary opens on today and
   holds neither of the first two, and a door onto the wrong screen or the wrong day is a shrug.
 - Coach answer menu — long-press an answer to copy it, share it as text, or ask the same question
   again. Ask again appears on the newest answer only, and is a fresh send rather than a repair.
-- Coach follow-ups — three chips under the newest answer, picked from the day's own numbers (a
-  protein gap, room left, water short, a weigh-in to compare) and falling back to diary questions.
-  Rule-based, not generated: tapping one sends it exactly as an opener does.
+- Coach follow-ups — three outlined pills under the newest answer, indented to its text edge,
+  picked from the day's own numbers (a protein gap, room left, water short, a weigh-in to compare)
+  and falling back to diary questions. Rule-based, not generated: tapping one sends it exactly as an
+  opener does.
+- Coach empty state — a read-only strip of the three figures the coach is already told about
+  (calories, protein and water, each against its goal), a capability line beside the 64dp mascot,
+  and four openers as a 2×2 of cards, each with an eyebrow naming the kind of question it stands in
+  for: today, a logged day, a span, an opinion. The eyebrow is a label, never part of what is sent.
+- Coach transcript — persisted, with a ruled day label at each day boundary, derived at render
+  rather than stored. The coach's bubble and the user's are mirrors of each other, so the two read
+  apart by shape before colour.
+- Coach waiting — the turn in flight gets a real bubble from the moment it is sent, holding a status
+  line over three placeholder lines that the first chunk overwrites in place. The mascot never sits
+  alone on an empty row.
+- Coach offline — a pinned strip under the top bar for as long as the connection is gone, plus a
+  bordered notice (no mascot, no bubble) carrying the on-device fallback line under an eyebrow
+  saying it came from the diary and not the coach, a Try again and a door to the diary. A failed
+  turn is the same notice with one action and no fallback. No red on any of it.
+- Coach stop mark — a stopped turn leaves a centred ruled line in the transcript saying so, the same
+  shape as a day separator. Nothing is logged and the question is back in the field.
 - Coach doors — the diary's day header and the twelve Progress subject pages the coach has tools
   for (weight, measurements, nutrition, water, fasting, supplements, activity, strength, sleep,
   mood, heart, blood pressure) carry an
-  "ask the coach" action. It opens the chat with that day's or that subject's question **in the field, unsent**.
+  "ask the coach" action. It opens the chat with that day's or that subject's question **in the
+  field, unsent**, with a chip above the field naming where it came from. Dismissing the chip
+  leaves the text.
 - Coach stop — the send button becomes a stop button while an answer is streaming. The turn is
   abandoned, nothing is written, and the question goes back into the field.
-- Coach voice — a mic on the chat bar dictates the question through the system's own speech dialog
-  and fills the field in. It never sends on its own, and it is absent where no recognizer is
-  installed. The keyboard's own Send key sends, under the same rule the button follows: not on a
+- Coach voice — a mic inside the chat field dictates the question through the system's own speech
+  dialog and fills the field in. It never sends on its own, and it is absent where no recognizer is
+  installed — its 48dp slot stays reserved either way, so the composer's geometry never shifts. The keyboard's own Send key sends, under the same rule the button follows: not on a
   blank field, and not while an answer is still streaming.
 - Meal ideas (above).
 - Talk-to-log (above) — a sentence parsed into several priced diary rows.

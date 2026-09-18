@@ -83,12 +83,18 @@ class CoachViewModel(
                 waterRepository,
                 exerciseRepository,
             ),
-            // Paired rather than folded here: `state` inside a `combine` transform is read when
+            // The third flow, and the only one that is not about the conversation: the connection
+            // is a *state* the screen pins a strip for, so it has to arrive as changes rather than
+            // as an answer to a question asked once. `isOnline()` is untouched and is still what
+            // decides whether a send calls the model at all.
+            networkMonitor.observe(),
+            // Tupled rather than folded here: `state` inside a `combine` transform is read when
             // the transform runs, so building the new state there would carry a snapshot of the
             // in-flight turn from before whatever arrived since.
-        ) { messages, request -> messages to request }.collect { (messages, request) ->
-            reduce { state.withMessages(messages, request) }
-        }
+        ) { messages, request, online -> Triple(messages, request, online) }
+            .collect { (messages, request, online) ->
+                reduce { state.withMessages(messages, request).copy(offline = !online) }
+            }
     }
 
     /**
@@ -101,7 +107,7 @@ class CoachViewModel(
      */
     private fun onStop() {
         sendJob?.cancel()
-        intent { reduce { state.withTurnAbandoned() } }
+        intent { reduce { state.withTurnAbandoned(stopped = true) } }
     }
 
     private fun onRetry() = intent {
@@ -172,6 +178,9 @@ class CoachViewModel(
                     proposal = emptyList(),
                     // The door belongs to the turn that logged something, not to the conversation.
                     loggedDestination = null,
+                    // And the mark belongs to the turn that was stopped: asking again is the user
+                    // moving on from it.
+                    stopped = false,
                 )
             }
 
