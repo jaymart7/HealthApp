@@ -78,7 +78,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
  */
 @Composable
 internal fun RecapScreen(
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecapViewModel = koinViewModel(),
@@ -97,7 +97,7 @@ internal fun RecapScreen(
 private fun RecapContent(
     uiState: RecapUiState,
     onPeriodChange: (RecapPeriod) -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: RecapState = rememberRecapState(),
@@ -165,12 +165,13 @@ private fun RecapContent(
  * It fills the coach's field rather than sending, the rule every other door follows.
  */
 @Composable
-private fun AskCoachButton(period: RecapPeriod, onAskCoach: (String) -> Unit) {
+private fun AskCoachButton(period: RecapPeriod, onAskCoach: (question: String, source: String) -> Unit) {
     val question = period.coachQuestion ?: return
     val text = stringResource(question)
+    val source = stringResource(period.label)
     SecondaryButton(
         label = stringResource(R.string.progress_ask_recap, stringResource(period.short).lowercase()),
-        onClick = { onAskCoach(text) },
+        onClick = { onAskCoach(text, source) },
         modifier = Modifier.fillMaxWidth(),
     )
 }
@@ -346,7 +347,7 @@ private fun RecapScreenPreview() {
                 unit = UnitSystem.Metric,
             ),
             onPeriodChange = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -360,7 +361,7 @@ private fun RecapScreenEmptyPreview() {
         RecapContent(
             uiState = RecapUiState(period = RecapPeriod.Week),
             onPeriodChange = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

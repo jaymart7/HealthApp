@@ -8,6 +8,11 @@
     <string name="coach_bubble_copy">Copy</string>
     <string name="coach_bubble_share">Share</string>
     <string name="coach_bubble_ask_again">Ask again</string>
+
+    <!-- The screen's own toolbar. It draws its own rather than taking AppScaffold's, because the
+         overflow below has to reach this screen's confirmation dialog. -->
+    <string name="coach_title">Coach</string>
+    <string name="coach_more">More</string>
     <string name="coach_clear">Clear chat</string>
     <!-- The way out of the chat, under the answer that logged something. Only ever shown for
          rows that landed in today's diary, which is the only screen it opens. -->
@@ -20,6 +25,11 @@
     <string name="coach_input_send">Send</string>
     <string name="coach_input_speak">Speak your question</string>
     <string name="coach_input_stop">Stop answering</string>
+    <!-- The chip above the field when the question was pre-filled by a door elsewhere in the app.
+         %1$s is that door's own name, resolved where the door is — "Diary, Tue 9 Sep", "Weight".
+         Dismissing the chip leaves the text: the question is the user's, the label is context. -->
+    <string name="coach_input_context">Asking about · %1$s</string>
+    <string name="coach_input_context_dismiss">Stop asking about %1$s</string>
     <string name="coach_empty_greeting">Ask me about any day you\'ve logged — meals, macros, how the week\'s going.</string>
     <string name="coach_empty_limits">I can read your diary, and draft a log for you to confirm.</string>
 

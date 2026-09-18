@@ -33,7 +33,6 @@
     <string name="app_tab_profile">Profile</string>
 
     <!-- Toolbar titles for the routes a level above a tab -->
-    <string name="app_title_coach">Coach</string>
     <string name="app_title_new_recipe">New recipe</string>
     <string name="app_title_edit_workout">Edit workout</string>
     <string name="app_title_strength_workout">Strength workout</string>

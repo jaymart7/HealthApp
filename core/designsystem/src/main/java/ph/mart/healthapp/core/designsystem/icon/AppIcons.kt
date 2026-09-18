@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.designsystem.icon
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DragHandle
@@ -32,6 +34,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Person
@@ -39,18 +42,21 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Chair
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EggAlt
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -69,6 +75,7 @@ import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.SportsGymnastics
+import androidx.compose.material.icons.outlined.SyncProblem
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.WarningAmber
@@ -91,6 +98,12 @@ object AppIcons {
     /** The progress photo, wherever it has to read as a body shot rather than a plate —
      * [Camera] is the plate, and the FAB's sheet draws both. */
     val AddPhoto: ImageVector = Icons.Outlined.AddAPhoto
+    /** Onward to the place a thing landed — the coach's door into the meal it just wrote to.
+     * Auto-mirrored, because "forward" is the reading direction and not a compass point. */
+    val ArrowForward: ImageVector = Icons.AutoMirrored.Filled.ArrowForward
+    /** The composer's send glyph. Same vector as [TrendUp] and deliberately its own name: one
+     * of them means "send this" and the other means "this went up". */
+    val ArrowUp: ImageVector = Icons.Filled.ArrowUpward
     val Back: ImageVector = Icons.AutoMirrored.Filled.ArrowBack
     val Barcode: ImageVector = Icons.Filled.QrCodeScanner
     /** Notifications, wherever reminders are the subject rather than a single alert. */
@@ -113,7 +126,10 @@ object AppIcons {
     val ChevronRight: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight
     val Close: ImageVector = Icons.Filled.Close
     val Compare: ImageVector = Icons.Filled.SwapHoriz
+    val Copy: ImageVector = Icons.Filled.ContentCopy
     val Delete: ImageVector = Icons.Outlined.Delete
+    /** Clear a whole conversation at once, as against [Delete]'s one row. */
+    val DeleteSweep: ImageVector = Icons.Outlined.DeleteSweep
     val DragHandle: ImageVector = Icons.Filled.DragHandle
     val Dumbbell: ImageVector = Icons.Outlined.FitnessCenter
     val Edit: ImageVector = Icons.Outlined.Edit
@@ -136,12 +152,16 @@ object AppIcons {
     val Lock: ImageVector = Icons.Outlined.Lock
     val Mic: ImageVector = Icons.Filled.Mic
     val More: ImageVector = Icons.Filled.MoreHoriz
+    /** The overflow in a top bar, where [More] is the one that sits in a row of content. */
+    val MoreVert: ImageVector = Icons.Filled.MoreVert
     /** The minus of a stepper. Same vector as [TrendFlat] and deliberately its own name: one of
      * them means "take some away" and the other means "this has not moved". */
     val Minus: ImageVector = Icons.Filled.Remove
     val Pause: ImageVector = Icons.Filled.Pause
     val Play: ImageVector = Icons.Filled.PlayArrow
     val Plant: ImageVector = Icons.Outlined.Grass
+    /** Ask again for something that didn't come back. Never a sync glyph — see [SyncProblem]. */
+    val Refresh: ImageVector = Icons.Filled.Refresh
     val Search: ImageVector = Icons.Filled.Search
     /** Nothing matched — the search's own empty state, distinct from [CloudOff]'s could-not-ask. */
     val SearchOff: ImageVector = Icons.Outlined.SearchOff
@@ -149,6 +169,9 @@ object AppIcons {
     val Smartphone: ImageVector = Icons.Outlined.Smartphone
     val Steps: ImageVector = Icons.AutoMirrored.Outlined.DirectionsWalk
     val Supplement: ImageVector = Icons.Outlined.Medication
+    /** A round trip that failed — the coach's answer that never arrived. Not [CloudOff], which
+     * is the connection being gone rather than the call going wrong. */
+    val SyncProblem: ImageVector = Icons.Outlined.SyncProblem
     val Timer: ImageVector = Icons.Outlined.Timer
     val Undo: ImageVector = Icons.AutoMirrored.Filled.Undo
     /** Exercise, wherever it has to read as its own kind of thing rather than a fifth meal. */
@@ -158,6 +181,9 @@ object AppIcons {
     /** Abandon something already running — the coach's answer mid-stream. Not [Close], which
      * dismisses a surface the user opened. */
     val Stop: ImageVector = Icons.Filled.Stop
+    /** A turn the user stopped, marked in the transcript afterwards. [Stop] is the control;
+     * this is the record of having pressed it. */
+    val StopCircle: ImageVector = Icons.Filled.StopCircle
     val Streak: ImageVector = Icons.Filled.LocalFireDepartment
     val TrendDown: ImageVector = Icons.Filled.ArrowDownward
     /** The third trend glyph — a movement too small to call, or too few readings to call one.

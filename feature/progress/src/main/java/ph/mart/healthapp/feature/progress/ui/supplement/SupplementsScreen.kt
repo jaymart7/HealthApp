@@ -50,7 +50,7 @@ import ph.mart.healthapp.feature.progress.ui.supplement.components.SupplementAdh
 @Composable
 internal fun SupplementsScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SupplementsViewModel = koinViewModel(),
@@ -69,7 +69,7 @@ internal fun SupplementsScreen(
 private fun SupplementsContent(
     days: List<SupplementDay>,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: SupplementsState = rememberSupplementsState(),
@@ -162,7 +162,7 @@ private fun SupplementsScreenPreview() {
                 SupplementDay(today - 4 + index, supplementId = 1, taken = taken, dueTimes = due)
             },
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -176,7 +176,7 @@ private fun SupplementsScreenEmptyPreview() {
         SupplementsContent(
             days = emptyList(),
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

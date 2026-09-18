@@ -184,7 +184,7 @@ fun EntryProviderScope<NavKey>.progressEntries(
      * every other cross-feature jump it stays a callback `AppScaffold` resolves. Only the twelve
      * subjects the coach has tools for ever call it (see [Subject.coachQuestion]), plus the recap
      * on a week or a month (see [ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod]). */
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<ProgressRoute> {

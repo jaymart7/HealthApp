@@ -97,7 +97,6 @@ private fun TopLevelDestination.label(): Int = when (this) {
 
 @Composable
 private fun NavKey?.title(): String = when (this) {
-    is CoachRoute -> stringResource(R.string.app_title_coach)
     RecipeBuilderRoute -> stringResource(R.string.app_title_new_recipe)
     is StrengthWorkoutRoute -> stringResource(
         if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
@@ -329,8 +328,12 @@ fun AppScaffold(
     // shape. Its viewfinder is in [fullBleed] above, which is the split this line is named for.
     //
     // A route in here never reaches `title()`, which is why none of them has a branch there.
+    //
+    // The coach is here for the `actions` slot too: its overflow holds "Clear chat", which needs
+    // the screen's own confirmation dialog, and it draws a pinned offline strip directly under the
+    // bar that only that screen knows about.
     val ownsTopBar = fullBleed || current is FoodHistoryRoute || current is AddPhotoPreviewRoute ||
-        current in ProgressSubjectRoutes
+        current is CoachRoute || current in ProgressSubjectRoutes
 
     // Tapping the arrow has to run the same handler chain system back runs — the recipe builder
     // asks before discarding, and popping the stack here would walk straight past that question.
@@ -439,6 +442,7 @@ fun AppScaffold(
                             onStartRoutine = { routineId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
                             },
+                            onExitFlow = { topLevelBackStack.removeLast() },
                         )
                         foodEntries(
                             scrollState = foodScroll,
@@ -455,7 +459,7 @@ fun AppScaffold(
                             },
                             // The same door Home's mascot card opens, carrying the question the
                             // day raised. `CoachRoute` fills the field with it and never sends.
-                            onAskCoach = { question -> topLevelBackStack.add(CoachRoute(question)) },
+                            onAskCoach = { question, source -> topLevelBackStack.add(CoachRoute(question, source)) },
                             onLogExercise = { date, editingId ->
                                 sheetDate = date
                                 sheetEditingId = editingId
@@ -480,7 +484,7 @@ fun AppScaffold(
                                 topLevelBackStack.add(AddPhotoPreviewRoute(path))
                             },
                             onOpenRecap = { topLevelBackStack.add(RecapRoute) },
-                            onAskCoach = { question -> topLevelBackStack.add(CoachRoute(question)) },
+                            onAskCoach = { question, source -> topLevelBackStack.add(CoachRoute(question, source)) },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )
                         profileEntries(

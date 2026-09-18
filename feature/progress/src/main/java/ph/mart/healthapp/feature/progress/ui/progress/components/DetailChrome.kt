@@ -55,13 +55,17 @@ private val RangePillWidth = 40.dp
  * Photos would buy a shrug, and a shrug reads as a broken feature. [Subject] is where that
  * decision lives, so a page cannot disagree with it.
  *
- * It fills the coach's field rather than sending — the mic's rule — so a mistap costs nothing.
+ * It fills the coach's field rather than sending — the mic's rule — so a mistap costs nothing, and
+ * it hands over the page's own name as the *source* so the coach's context chip can say where the
+ * question came from. [Subject.label] rather than a second string: the chip names the door the user
+ * walked through, and that is the word already at the top of the page they walked out of.
  */
 @Composable
-internal fun AskCoachAction(subject: Subject, onAskCoach: (String) -> Unit) {
+internal fun AskCoachAction(subject: Subject, onAskCoach: (question: String, source: String) -> Unit) {
     val question = subject.coachQuestion ?: return
     val text = stringResource(question)
-    IconButton(onClick = { onAskCoach(text) }) {
+    val source = stringResource(subject.label)
+    IconButton(onClick = { onAskCoach(text, source) }) {
         Icon(
             imageVector = AppIcons.AiSparkle,
             contentDescription = stringResource(R.string.progress_ask_coach),

@@ -24,6 +24,7 @@ internal class CoachScreenState(
     draft: String = "",
     confirmingClear: Boolean = false,
     prefilled: Boolean = false,
+    chipDismissed: Boolean = false,
 ) {
     var draft: String by mutableStateOf(draft)
     var confirmingClear: Boolean by mutableStateOf(confirmingClear)
@@ -33,14 +34,21 @@ internal class CoachScreenState(
      * an opening move, not a state the screen returns to. */
     var prefilled: Boolean by mutableStateOf(prefilled)
 
+    /** Whether the context chip naming the door has been dismissed. Saved beside [prefilled] and
+     * for its reason — a rotation is not a second arrival — and dismissing it deliberately
+     * **leaves the text**: the chip says where the question came from, and the question itself is
+     * the user's to keep. */
+    var chipDismissed: Boolean by mutableStateOf(chipDismissed)
+
     companion object {
         fun Saver(): Saver<CoachScreenState, Any> = listSaver(
-            save = { listOf(it.draft, it.confirmingClear, it.prefilled) },
+            save = { listOf(it.draft, it.confirmingClear, it.prefilled, it.chipDismissed) },
             restore = { saved ->
                 CoachScreenState(
                     draft = saved[0] as String,
                     confirmingClear = saved[1] as Boolean,
                     prefilled = saved[2] as Boolean,
+                    chipDismissed = saved[3] as Boolean,
                 )
             },
         )

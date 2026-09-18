@@ -70,7 +70,7 @@ internal fun DiaryBody(
     onOpenHistory: (Long, String) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
@@ -290,7 +290,7 @@ private fun DiaryBodyPreview() {
             onOpenHistory = { _, _ -> },
             onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             snackbarHostState = SnackbarHostState(),
         )
     }

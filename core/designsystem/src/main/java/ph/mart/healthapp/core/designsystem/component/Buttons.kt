@@ -26,13 +26,21 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
-/** Pill button, 48dp min height, [MaterialTheme.colorScheme.primary] fill. Disabled = 40% opacity. */
+/**
+ * Pill button, 48dp min height, [MaterialTheme.colorScheme.primary] fill. Disabled = 40% opacity.
+ *
+ * [icon] leads the label at 20dp, the slot [SecondaryButton] already has and for its reason: where
+ * the word alone under-sells what the tap does. The coach's draft card is the caller — its Confirm
+ * says "Log it" over a `check` and "Start it" over a `play_arrow`, and the glyph is what carries
+ * that one of them writes and the other opens a screen.
+ */
 @Composable
 fun PrimaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    icon: ImageVector? = null,
 ) {
     Surface(
         onClick = onClick,
@@ -44,7 +52,14 @@ fun PrimaryButton(
             .graphicsLayer(alpha = if (enabled) 1f else 0.4f)
             .heightIn(min = 48.dp),
     ) {
-        Box(modifier = Modifier.padding(horizontal = 24.dp), contentAlignment = Alignment.Center) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 24.dp),
+        ) {
+            if (icon != null) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
+            }
             Text(text = label, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
         }
     }

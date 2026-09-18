@@ -61,7 +61,7 @@ private const val FULL_NIGHT_MINUTES = 480
 @Composable
 internal fun SleepScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SleepViewModel = koinViewModel(),
@@ -80,7 +80,7 @@ internal fun SleepScreen(
 private fun SleepContent(
     nights: List<SleepNight>,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: SleepState = rememberSleepState(),
@@ -180,7 +180,7 @@ private fun SleepScreenPreview() {
                 SleepNight(today - 4 + index, minutes)
             },
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -194,7 +194,7 @@ private fun SleepScreenEmptyPreview() {
         SleepContent(
             nights = emptyList(),
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

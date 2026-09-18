@@ -67,7 +67,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
     onLogExercise: (Long, Long) -> Unit,
     /** The day's own question, carried to the coach — which lives above this tab, so like
      * `onOpenStrength` it stays a callback `AppScaffold` resolves. */
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<FoodRoute> {

@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -47,6 +50,14 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * of that change, so a one-line field is still exactly 48dp and no longer clips its own text at the
  * largest font scales.
  *
+ * [shape], [color] and [border] are the third, and they default to exactly the chrome above — the
+ * move [AppCard] already made for the diary's section cards, for the same reason: one caller wants
+ * a different container and every other one is unchanged by a defaulted parameter. The coach's
+ * composer is that caller, and it is a *field that is a control* rather than a field in a form — a
+ * 24dp pill filled with `surfaceContainerHighest` and no border at all, sitting beside its own send
+ * circle. A second text-field component would be a second set of focus, IME and trailing-slot rules
+ * to keep in step.
+ *
  * [trailing] is the second, and it earns its place the same way: a 48dp slot at the end of the box,
  * laid out only when a caller passes one, top-aligned so it stays put as a wrapping field grows.
  * Talk-to-log's Clear is the one user — it lived in a row beneath the field, where it and the mic
@@ -66,6 +77,9 @@ fun AppTextField(
     onImeAction: (() -> Unit)? = null,
     maxLines: Int = 1,
     trailing: @Composable (() -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(12.dp),
+    color: Color = Color.Transparent,
+    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
 ) {
     Column(modifier = modifier) {
         if (label != null) {
@@ -81,14 +95,17 @@ fun AppTextField(
                 // A floor, not a fixture: one line of bodyLarge plus the padding below is exactly
                 // 48dp, so a form field is the height it always was and a wrapping one grows.
                 .heightIn(min = 48.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .border(
-                    BorderStroke(
-                        1.dp,
-                        if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
-                    ),
-                    RoundedCornerShape(12.dp),
-                )
+                .clip(shape)
+                .background(color)
+                // An error outlines the field whatever its usual chrome is — including a field that
+                // normally has no border at all, which is the one state a fill cannot say by itself.
+                .let { base ->
+                    val stroke = when {
+                        error != null -> BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                        else -> border
+                    }
+                    if (stroke == null) base else base.border(stroke, shape)
+                }
                 .padding(start = 16.dp, end = if (trailing != null) 0.dp else 16.dp),
             contentAlignment = Alignment.CenterStart,
         ) {

@@ -60,7 +60,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 @Composable
 internal fun NutritionScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NutritionViewModel = koinViewModel(),
@@ -87,7 +87,7 @@ private fun NutritionContent(
     nutrientTargets: Nutrients?,
     weekBudget: WeekBudget?,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: NutritionState = rememberNutritionState(),
@@ -258,7 +258,7 @@ private fun NutritionScreenPreview() {
             nutrientTargets = null,
             weekBudget = weekBudgetPreview(),
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -276,7 +276,7 @@ private fun NutritionScreenEmptyPreview() {
             nutrientTargets = null,
             weekBudget = weekBudgetPreview(),
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

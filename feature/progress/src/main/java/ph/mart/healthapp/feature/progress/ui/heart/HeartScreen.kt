@@ -48,7 +48,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
 @Composable
 internal fun HeartScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HeartViewModel = koinViewModel(),
@@ -67,7 +67,7 @@ internal fun HeartScreen(
 private fun HeartContent(
     days: List<HeartDay>,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: HeartState = rememberHeartState(),
@@ -160,7 +160,7 @@ private fun HeartScreenPreview() {
                 HeartDay(today - 3 + index, averageBpm = average, minBpm = low)
             },
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -174,7 +174,7 @@ private fun HeartScreenEmptyPreview() {
         HeartContent(
             days = emptyList(),
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

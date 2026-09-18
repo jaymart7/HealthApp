@@ -59,7 +59,7 @@ import ph.mart.healthapp.feature.progress.ui.strength.components.LiftRecordRow
 @Composable
 internal fun StrengthScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: StrengthViewModel = koinViewModel(),
@@ -80,7 +80,7 @@ private fun StrengthContent(
     entries: List<ExerciseEntry>,
     unit: UnitSystem,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: StrengthState = rememberStrengthState(),
@@ -222,7 +222,7 @@ private fun StrengthScreenPreview() {
             entries = entriesPreview(todayEpochDay()),
             unit = UnitSystem.Metric,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -237,7 +237,7 @@ private fun StrengthScreenEmptyPreview() {
             entries = emptyList(),
             unit = UnitSystem.Metric,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

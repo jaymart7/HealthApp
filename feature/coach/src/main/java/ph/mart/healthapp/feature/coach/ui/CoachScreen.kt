@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -11,11 +12,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -23,8 +32,10 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.coach.ChatMessage
+import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.coach.R
 import ph.mart.healthapp.feature.coach.ui.components.ChatBubble
@@ -38,8 +49,10 @@ import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 @Composable
 fun CoachScreen(
     question: String? = null,
+    source: String? = null,
     onOpenDiary: () -> Unit = {},
     onStartRoutine: (Long) -> Unit = {},
+    onExitFlow: () -> Unit = {},
     viewModel: CoachViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
@@ -57,8 +70,12 @@ fun CoachScreen(
         uiState = uiState,
         state = state,
         onEvent = viewModel::handleEvent,
+        // The chip goes when the user says so and stays gone: `chipDismissed` is saved beside
+        // `prefilled` for that one's reason, a rotation not being a second arrival.
+        source = source?.takeUnless { state.chipDismissed },
         onOpenDiary = onOpenDiary,
         onStartRoutine = onStartRoutine,
+        onExitFlow = onExitFlow,
     )
 }
 
@@ -67,16 +84,22 @@ fun CoachScreen(
  * sub-views, so NavDisplay's own back is already the right answer — the clear-history dialog is
  * the only overlay, and `DiscardConfirmDialog` dismisses itself.
  *
- * `imePadding()` sits on the outer column so the whole screen lifts with the keyboard; the
- * `AppScaffold` above already cleared the system bars.
+ * The bar is drawn here rather than by `AppScaffold`, because the overflow behind `more_vert` has
+ * to raise this screen's own confirmation dialog and nothing out there can reach it. Zero insets:
+ * the scaffold's `innerPadding` has already cleared the status bar — a subject page's rule.
+ *
+ * `imePadding()` sits on the column *under* the bar so the conversation and the composer lift with
+ * the keyboard and the toolbar stays where it is.
  */
 @Composable
 private fun CoachContent(
     uiState: CoachUiState,
     state: CoachScreenState,
     onEvent: (CoachEvent) -> Unit,
+    source: String? = null,
     onOpenDiary: () -> Unit = {},
     onStartRoutine: (Long) -> Unit = {},
+    onExitFlow: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     // The newest turn is the one worth reading, so every arrival — a reply, a failure, or the
@@ -102,126 +125,129 @@ private fun CoachContent(
     }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().imePadding()) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                // `pending == null` too: on the very first send the list is still empty, and
-                // without it the four starters sit above the question the user just asked — and
-                // `itemCount` above, which has never counted this item, stops matching the list.
-                if (uiState.loaded && uiState.messages.isEmpty() &&
-                    uiState.pending == null && uiState.failure == null
+        Column(modifier = Modifier.fillMaxSize()) {
+            AppTopBar(
+                title = stringResource(R.string.coach_title),
+                onBack = onExitFlow,
+                windowInsets = WindowInsets(0),
+                actions = {
+                    CoachOverflow(onClear = { state.confirmingClear = true })
+                },
+            )
+            Column(modifier = Modifier.weight(1f).imePadding()) {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    item {
-                        CoachEmptyState(onStarter = { onEvent(CoachEvent.OnSend(it)) })
+                    // `pending == null` too: on the very first send the list is still empty, and
+                    // without it the four starters sit above the question the user just asked — and
+                    // `itemCount` above, which has never counted this item, stops matching the list.
+                    if (uiState.loaded && uiState.messages.isEmpty() &&
+                        uiState.pending == null && uiState.failure == null
+                    ) {
+                        item {
+                            CoachEmptyState(onStarter = { onEvent(CoachEvent.OnSend(it)) })
+                        }
                     }
-                }
-                itemsIndexed(uiState.messages, key = { _, message -> message.id }) { index, message ->
-                    // The question this answer came from, when re-asking it makes sense — the
-                    // newest answer only, and never mid-turn. `askAgainQuestion` is the rule.
-                    val question = uiState.askAgainQuestion(index)
-                    ChatBubble(
-                        text = message.text,
-                        fromUser = message.fromUser,
-                        // The newest answer, and only it: the live region is what makes a finished
-                        // reply reach a screen reader at all, and marking every bubble would
-                        // re-announce the whole conversation.
-                        announce = !message.fromUser && message.id == uiState.messages.last().id,
-                        onAskAgain = question?.let { { onEvent(CoachEvent.OnSend(it)) } },
-                    )
-                }
-                // The turn in flight, neither half of it in Room yet: the question is on screen
-                // from the tap, and the answer grows under it in place.
-                uiState.pending?.let { pending ->
-                    item(key = "pending-question") { ChatBubble(text = pending, fromUser = true) }
-                    item(key = "pending-answer") { StreamingBubble(text = uiState.streaming) }
-                }
-                // Under the answer that introduced it, and inside the list rather than over it:
-                // a proposal is part of the conversation, so it scrolls with the conversation and
-                // ignoring it is as valid an answer as tapping it.
-                if (uiState.proposal.isNotEmpty()) {
-                    item(key = "proposal") {
-                        ProposalCard(
-                            actions = uiState.proposal,
-                            // The turn is settled either way — the rows go down, or in a routine's
-                            // case nothing does — and only then does the screen change. A drafted
-                            // routine's Confirm is a *jump*: `CoachRoute` stays under the workout
-                            // screen, so this ViewModel is still there to finish the write and the
-                            // conversation is what back returns to.
-                            onConfirm = { kept, line ->
-                                onEvent(CoachEvent.OnConfirmProposal(kept, line))
-                                kept.routineIdToStart()?.let(onStartRoutine)
-                            },
-                            onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
+                    itemsIndexed(uiState.messages, key = { _, message -> message.id }) { index, message ->
+                        // The question this answer came from, when re-asking it makes sense — the
+                        // newest answer only, and never mid-turn. `askAgainQuestion` is the rule.
+                        val question = uiState.askAgainQuestion(index)
+                        ChatBubble(
+                            text = message.text,
+                            fromUser = message.fromUser,
+                            // The newest answer, and only it: the live region is what makes a finished
+                            // reply reach a screen reader at all, and marking every bubble would
+                            // re-announce the whole conversation.
+                            announce = !message.fromUser && message.id == uiState.messages.last().id,
+                            onAskAgain = question?.let { { onEvent(CoachEvent.OnSend(it)) } },
                         )
                     }
-                }
-                // Under the answer that logged them, because that is the answer it is about —
-                // above the chips rather than below, so the way *out* is nearer the thing it
-                // refers to than the questions that would keep the user here.
-                if (uiState.loggedToDiary && uiState.pending == null) {
-                    item(key = "open-diary") {
-                        TextButton(
-                            label = stringResource(R.string.coach_open_diary),
-                            onClick = onOpenDiary,
-                        )
+                    // The turn in flight, neither half of it in Room yet: the question is on screen
+                    // from the tap, and the answer grows under it in place.
+                    uiState.pending?.let { pending ->
+                        item(key = "pending-question") { ChatBubble(text = pending, fromUser = true) }
+                        item(key = "pending-answer") { StreamingBubble(text = uiState.streaming) }
                     }
-                }
-                // Under the newest answer, and only when nothing is in flight: a row of questions
-                // beside a half-written one asks the user to abandon the answer they are reading.
-                if (uiState.loaded && uiState.messages.isNotEmpty() &&
-                    uiState.pending == null && uiState.failure == null
-                ) {
-                    item(key = "follow-ups") {
-                        FollowUpRow(
-                            followUps = followUpsFor(uiState.request),
-                            onAsk = { onEvent(CoachEvent.OnSend(it)) },
-                        )
+                    // Under the answer that introduced it, and inside the list rather than over it:
+                    // a proposal is part of the conversation, so it scrolls with the conversation and
+                    // ignoring it is as valid an answer as tapping it.
+                    if (uiState.proposal.isNotEmpty()) {
+                        item(key = "proposal") {
+                            ProposalCard(
+                                actions = uiState.proposal,
+                                // The turn is settled either way — the rows go down, or in a routine's
+                                // case nothing does — and only then does the screen change. A drafted
+                                // routine's Confirm is a *jump*: `CoachRoute` stays under the workout
+                                // screen, so this ViewModel is still there to finish the write and the
+                                // conversation is what back returns to.
+                                onConfirm = { kept, line ->
+                                    onEvent(CoachEvent.OnConfirmProposal(kept, line))
+                                    kept.routineIdToStart()?.let(onStartRoutine)
+                                },
+                                onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
+                            )
+                        }
                     }
-                }
-                uiState.failure?.let { failure ->
-                    item {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            FailureBubble(reason = failure.reason, insight = failure.insight)
-                            TextButton(label = stringResource(R.string.coach_retry), onClick = { onEvent(CoachEvent.OnRetry) })
+                    // Under the answer that logged them, because that is the answer it is about —
+                    // above the chips rather than below, so the way *out* is nearer the thing it
+                    // refers to than the questions that would keep the user here.
+                    if (uiState.loggedToDiary && uiState.pending == null) {
+                        item(key = "open-diary") {
+                            TextButton(
+                                label = stringResource(R.string.coach_open_diary),
+                                onClick = onOpenDiary,
+                            )
+                        }
+                    }
+                    // Under the newest answer, and only when nothing is in flight: a row of questions
+                    // beside a half-written one asks the user to abandon the answer they are reading.
+                    if (uiState.loaded && uiState.messages.isNotEmpty() &&
+                        uiState.pending == null && uiState.failure == null
+                    ) {
+                        item(key = "follow-ups") {
+                            FollowUpRow(
+                                followUps = followUpsFor(uiState.request),
+                                onAsk = { onEvent(CoachEvent.OnSend(it)) },
+                            )
+                        }
+                    }
+                    uiState.failure?.let { failure ->
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                FailureBubble(reason = failure.reason, insight = failure.insight)
+                                TextButton(label = stringResource(R.string.coach_retry), onClick = { onEvent(CoachEvent.OnRetry) })
+                            }
                         }
                     }
                 }
-            }
 
-            if (uiState.messages.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(label = stringResource(R.string.coach_clear), onClick = { state.confirmingClear = true })
-                }
+                ChatInputBar(
+                    draft = state.draft,
+                    // A proposal leaves `pending` set and the bar locked, which is deliberate: the
+                    // turn has not ended, and starting a second one would race the first one's write
+                    // — `withMessages` retires the bubbles on a list-size change, so the new question
+                    // would vanish the moment the old pair landed. The card carries both ways out.
+                    sending = uiState.pending != null,
+                    onDraftChange = { state.draft = it },
+                    onSend = {
+                        onEvent(CoachEvent.OnSend(state.draft))
+                        state.draft = ""
+                    },
+                    // The abandoned question goes back in the field — the reading `CoachFailure`
+                    // already gives one that failed to send: stopping must not cost the user their
+                    // typing. Only into an empty field, since the field stays editable while a turn
+                    // runs and whatever is in it is newer.
+                    onStop = {
+                        if (state.draft.isBlank()) state.draft = uiState.pending.orEmpty()
+                        onEvent(CoachEvent.OnStop)
+                    },
+                    source = source,
+                    onDismissSource = { state.chipDismissed = true },
+                )
             }
-
-            ChatInputBar(
-                draft = state.draft,
-                // A proposal leaves `pending` set and the bar locked, which is deliberate: the
-                // turn has not ended, and starting a second one would race the first one's write
-                // — `withMessages` retires the bubbles on a list-size change, so the new question
-                // would vanish the moment the old pair landed. The card carries both ways out.
-                sending = uiState.pending != null,
-                onDraftChange = { state.draft = it },
-                onSend = {
-                    onEvent(CoachEvent.OnSend(state.draft))
-                    state.draft = ""
-                },
-                // The abandoned question goes back in the field — the reading `CoachFailure`
-                // already gives one that failed to send: stopping must not cost the user their
-                // typing. Only into an empty field, since the field stays editable while a turn
-                // runs and whatever is in it is newer.
-                onStop = {
-                    if (state.draft.isBlank()) state.draft = uiState.pending.orEmpty()
-                    onEvent(CoachEvent.OnStop)
-                },
-            )
         }
     }
 
@@ -238,6 +264,48 @@ private fun CoachContent(
                 state.confirmingClear = false
             },
             onDismiss = { state.confirmingClear = false },
+        )
+    }
+}
+
+/**
+ * The top bar's overflow, and the only `error` colour on this screen.
+ *
+ * One row, because there is one thing to do to a conversation you cannot do to a message. It used
+ * to be a permanent "Clear chat" text button sitting between the list and the field — a destructive
+ * action parked under the thumb, on screen for every turn, competing with the follow-up chips for
+ * the same strip of space. Behind an overflow it is a deliberate reach, and the tap still opens the
+ * existing confirmation dialog unchanged: a conversation is user-authored, so it asks first.
+ */
+@Composable
+private fun CoachOverflow(onClear: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    IconButton(onClick = { open = true }) {
+        Icon(
+            imageVector = AppIcons.MoreVert,
+            contentDescription = stringResource(R.string.coach_more),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = stringResource(R.string.coach_clear),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = AppIcons.DeleteSweep,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            },
+            onClick = {
+                onClear()
+                open = false
+            },
         )
     }
 }

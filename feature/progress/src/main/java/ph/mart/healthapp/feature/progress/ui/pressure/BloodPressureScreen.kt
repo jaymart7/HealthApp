@@ -64,7 +64,7 @@ private const val AXIS_PAD_MMHG = 10
 @Composable
 internal fun BloodPressureScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BloodPressureViewModel = koinViewModel(),
@@ -86,7 +86,7 @@ private fun BloodPressureContent(
     readings: List<BloodPressureReading>,
     onEvent: (BloodPressureEvent) -> Unit,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: BloodPressureState = rememberBloodPressureState(),
@@ -260,7 +260,7 @@ private fun BloodPressureScreenPreview() {
             readings = readingsPreview(),
             onEvent = {},
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -275,7 +275,7 @@ private fun BloodPressureScreenEmptyPreview() {
             readings = emptyList(),
             onEvent = {},
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

@@ -68,7 +68,7 @@ internal fun DiaryDateHeader(
     today: Long,
     onSelectDate: (Long) -> Unit,
     onOpenCalendar: (() -> Unit)?,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     filterExpanded: Boolean,
     onFilterExpandedChange: (Boolean) -> Unit,
     query: String,
@@ -109,7 +109,7 @@ private fun RowScope.DateControls(
     today: Long,
     onSelectDate: (Long) -> Unit,
     onOpenCalendar: (() -> Unit)?,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onOpenFilter: () -> Unit,
 ) {
     IconButton(onClick = { onSelectDate(selectedDate - 1) }, modifier = Modifier.size(48.dp)) {
@@ -178,7 +178,10 @@ private fun RowScope.DateControls(
     // the label already on screen — so the coach opens knowing which day was meant, and it fills
     // the field rather than sending: the mic's rule, and the reason a mistap costs nothing.
     val coachQuestion = stringResource(R.string.food_ask_coach_question, diaryDateLabel(selectedDate, today))
-    IconButton(onClick = { onAskCoach(coachQuestion) }, modifier = Modifier.size(48.dp)) {
+    // What the coach's context chip says it is being asked about: the same words as the question,
+    // named as a place rather than as a sentence.
+    val coachSource = stringResource(R.string.food_ask_coach_source, diaryDateLabel(selectedDate, today))
+    IconButton(onClick = { onAskCoach(coachQuestion, coachSource) }, modifier = Modifier.size(48.dp)) {
         Icon(
             imageVector = AppIcons.AiSparkle,
             contentDescription = stringResource(R.string.food_ask_coach),
@@ -229,7 +232,7 @@ private fun DiaryDateHeaderPreview() {
                 today = today,
                 onSelectDate = {},
                 onOpenCalendar = {},
-                onAskCoach = {},
+                onAskCoach = { _, _ -> },
                 filterExpanded = false,
                 onFilterExpandedChange = {},
                 query = "",
@@ -252,7 +255,7 @@ private fun DiaryDateHeaderPastPreview() {
                 today = today,
                 onSelectDate = {},
                 onOpenCalendar = {},
-                onAskCoach = {},
+                onAskCoach = { _, _ -> },
                 filterExpanded = false,
                 onFilterExpandedChange = {},
                 query = "",
@@ -275,7 +278,7 @@ private fun DiaryDateHeaderTwoPanePreview() {
                 today = today,
                 onSelectDate = {},
                 onOpenCalendar = null,
-                onAskCoach = {},
+                onAskCoach = { _, _ -> },
                 filterExpanded = false,
                 onFilterExpandedChange = {},
                 query = "",
@@ -298,7 +301,7 @@ private fun DiaryDateHeaderFilteringPreview() {
                 today = today,
                 onSelectDate = {},
                 onOpenCalendar = {},
-                onAskCoach = {},
+                onAskCoach = { _, _ -> },
                 filterExpanded = true,
                 onFilterExpandedChange = {},
                 query = "yog",

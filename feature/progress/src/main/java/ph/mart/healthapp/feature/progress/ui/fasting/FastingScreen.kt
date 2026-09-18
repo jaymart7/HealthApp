@@ -55,7 +55,7 @@ private const val FULL_DAY_MINUTES = 24 * 60
 @Composable
 internal fun FastingScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FastingViewModel = koinViewModel(),
@@ -76,7 +76,7 @@ private fun FastingContent(
     sessions: List<FastSession>,
     goalHours: Int,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: FastingState = rememberFastingState(),
@@ -194,7 +194,7 @@ private fun FastingScreenPreview() {
             sessions = sessionsPreview(todayEpochDay()),
             goalHours = 16,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -209,7 +209,7 @@ private fun FastingScreenEmptyPreview() {
             sessions = emptyList(),
             goalHours = 16,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

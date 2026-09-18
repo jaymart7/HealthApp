@@ -53,7 +53,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.AskCoachAction
 @Composable
 internal fun MeasurementsScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MeasurementsViewModel = koinViewModel(),
@@ -78,7 +78,7 @@ private fun MeasurementsContent(
     heightCm: Double?,
     unit: UnitSystem,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: MeasurementsState = rememberMeasurementsState(),
@@ -216,7 +216,7 @@ private fun MeasurementsScreenPreview() {
             heightCm = 178.0,
             unit = UnitSystem.Metric,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -233,7 +233,7 @@ private fun MeasurementsScreenEmptyPreview() {
             heightCm = null,
             unit = UnitSystem.Metric,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

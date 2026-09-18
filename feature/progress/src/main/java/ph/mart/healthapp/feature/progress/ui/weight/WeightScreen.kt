@@ -89,7 +89,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 @Composable
 internal fun WeightScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WeightViewModel = koinViewModel(),
@@ -115,7 +115,7 @@ private fun WeightContent(
     profile: Profile?,
     onApplyTarget: (Int) -> Unit,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: WeightState = rememberWeightState(),
@@ -437,7 +437,7 @@ private fun WeightScreenPreview() {
             profile = profilePreview(),
             onApplyTarget = {},
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -454,7 +454,7 @@ private fun WeightScreenEmptyPreview() {
             profile = profilePreview(),
             onApplyTarget = {},
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

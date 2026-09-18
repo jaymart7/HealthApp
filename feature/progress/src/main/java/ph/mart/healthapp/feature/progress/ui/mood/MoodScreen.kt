@@ -52,7 +52,7 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
 @Composable
 internal fun MoodScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MoodViewModel = koinViewModel(),
@@ -71,7 +71,7 @@ internal fun MoodScreen(
 private fun MoodContent(
     days: List<MoodDay>,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: MoodState = rememberMoodState(),
@@ -167,7 +167,7 @@ private fun MoodScreenPreview() {
                 MoodDay(today - 3 + index, mood, energy)
             },
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -181,7 +181,7 @@ private fun MoodScreenEmptyPreview() {
         MoodContent(
             days = emptyList(),
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }

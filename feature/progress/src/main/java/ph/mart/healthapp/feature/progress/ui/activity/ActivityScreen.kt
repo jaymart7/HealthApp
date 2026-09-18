@@ -53,7 +53,7 @@ import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
 @Composable
 internal fun ActivityScreen(
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ActivityViewModel = koinViewModel(),
@@ -76,7 +76,7 @@ private fun ActivityContent(
     exerciseEntries: List<ExerciseEntry>,
     stepGoal: Int,
     onOpenRecap: () -> Unit,
-    onAskCoach: (String) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
     modifier: Modifier = Modifier,
     state: ActivityState = rememberActivityState(),
@@ -216,7 +216,7 @@ private fun ActivityScreenPreview() {
             exerciseEntries = emptyList(),
             stepGoal = DEFAULT_STEP_GOAL,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
@@ -232,7 +232,7 @@ private fun ActivityScreenEmptyPreview() {
             exerciseEntries = emptyList(),
             stepGoal = DEFAULT_STEP_GOAL,
             onOpenRecap = {},
-            onAskCoach = {},
+            onAskCoach = { _, _ -> },
             onExitFlow = {},
         )
     }
