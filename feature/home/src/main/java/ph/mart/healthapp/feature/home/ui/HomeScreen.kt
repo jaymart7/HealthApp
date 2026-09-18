@@ -15,10 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
-import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.DiaryTotals
@@ -35,13 +33,9 @@ import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.todayEpochDay
-import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.HomeCard
-import ph.mart.healthapp.core.designsystem.component.MascotAvatar
-import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
-import ph.mart.healthapp.feature.home.R
 import ph.mart.healthapp.feature.home.ui.components.HomeCards
 
 @Composable
@@ -83,24 +77,21 @@ private fun HomeContent(
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         AnimatedContent(
-            targetState = homePhase(uiState),
+            // Blank until the repositories' first combined emission: HomeUiState's default is
+            // all-zero, which is indistinguishable from a real empty day, so a user with months
+            // of history would watch a zeroed Home fade away on every cold start.
+            targetState = uiState.loaded,
             // Material fade-through: the outgoing phase clears before the incoming one arrives.
             // These are unrelated contents, not a shared container, so nothing should slide.
             transitionSpec = {
                 fadeIn(tween(Motion.Enter, delayMillis = 90)) togetherWith fadeOut(tween(90))
             },
-            label = "homePhase",
-        ) { phase ->
-            when (phase) {
-                HomePhase.Loading -> Box(modifier = Modifier.fillMaxSize())
-
-                HomePhase.DayOne -> FullScreenState(
-                    icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
-                    heading = stringResource(R.string.home_empty_heading),
-                    body = stringResource(R.string.home_empty_body),
-                )
-
-                HomePhase.Populated -> HomeCards(
+            label = "homeLoaded",
+        ) { loaded ->
+            if (!loaded) {
+                Box(modifier = Modifier.fillMaxSize())
+            } else {
+                HomeCards(
                     uiState = uiState,
                     state = state,
                     scrollState = scrollState,
@@ -196,23 +187,6 @@ private fun HomeScreenGatedPreview() {
                 streak = StreakStats(current = 90, best = 90, totalDaysLogged = 140),
                 lastPhotoEpochDay = today - 3,
             ),
-            state = HomeScreenState(),
-            onAddPhoto = {},
-            onOpenCoach = {},
-            onStartRoutine = {},
-            onOpenHomeLayout = {},
-            onOpenCard = {},
-            onEvent = {},
-        )
-    }
-}
-
-@PreviewLightDark
-@Composable
-private fun HomeScreenDayOnePreview() {
-    AppTheme {
-        HomeContent(
-            uiState = HomeUiState(loaded = true, profile = PreviewProfile),
             state = HomeScreenState(),
             onAddPhoto = {},
             onOpenCoach = {},

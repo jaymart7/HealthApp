@@ -1123,6 +1123,20 @@ rather than needing a counter patched.
 
 ### Home
 
+- **Home draws its cards from the first launch; there is no day-one screen any more.** A loaded
+  state with nothing logged used to replace the whole tab with "Let's log your first meal", which
+  hid the calorie ring onboarding had just computed and every card that exists to *take* the first
+  tap — Water, Mood, Fasting and Progress photo are all input cards that draw fine on an empty day,
+  and the Streak card at 0 is what the first log moves. An empty state that hides the controls for
+  filling it is a dead end with copy on it. What survives: the **blank** phase before the
+  repositories' first combined emission, because `HomeUiState`'s default is all-zero and
+  indistinguishable from a real empty day — that was always the more important half of the phase
+  enum, and with `DayOne` gone the enum was two names for `uiState.loaded`, so `HomePhase` and
+  `homePhase()` went with it. `isDayOne` stays, with one caller: `requestInsight()` still won't ask
+  the model about a day with nothing in it. Per-card `hasData()` gating is untouched, so day one is
+  the header block plus Calories, Macros, Week budget, Streak, Water, Fasting, Mood, Weight and
+  Progress photo, with the watch, blood-pressure, supplement, cycle and workout cards absent for
+  the reasons they already were.
 - **The photo card reports the run, and `weightArc()` sits in `:core:data` because two features
   draw it.** Home's card counted the days since the last shot and said nothing about the shots
   themselves, while `HomeViewModel`'s first combine was already collecting the whole list and

@@ -2,8 +2,6 @@
     <!-- Shared across the three watch-fed cards -->
     <string name="home_from_google_health">From Google Health</string>
 
-    <string name="home_empty_heading">Let\'s log your first meal</string>
-    <string name="home_empty_body">Tap Log below to add food by photo or search.</string>
     <string name="home_ask_coach">Ask your coach</string>
     <!-- The chip beside the greeting; the full sentence above is its contentDescription. -->
     <string name="home_ask_short">Ask</string>
