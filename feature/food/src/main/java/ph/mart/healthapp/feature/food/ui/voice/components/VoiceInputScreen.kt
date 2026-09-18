@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.designsystem.component.DockedActionBar
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.rememberSpeechAvailable
 import ph.mart.healthapp.core.designsystem.component.speechIntent
@@ -29,7 +30,6 @@ import ph.mart.healthapp.core.designsystem.component.spokenPhrase
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.shared.components.DockedActionBar
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
 
 private val EXAMPLE = R.string.food_voice_example

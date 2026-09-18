@@ -28,6 +28,7 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.RecognitionConfidence
 import ph.mart.healthapp.core.designsystem.component.AIChip
 import ph.mart.healthapp.core.designsystem.component.AIChipVariant
+import ph.mart.healthapp.core.designsystem.component.DockedActionBar
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
@@ -35,7 +36,6 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
-import ph.mart.healthapp.feature.food.ui.shared.components.DockedActionBar
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTotalCard
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTotal

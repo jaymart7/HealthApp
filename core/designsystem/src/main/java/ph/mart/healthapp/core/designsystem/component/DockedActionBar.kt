@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.shared.components
+package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,8 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 
 /**
@@ -32,7 +30,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * rules everywhere else, and a shadow here would be the only one in the flow.
  */
 @Composable
-internal fun DockedActionBar(
+fun DockedActionBar(
     modifier: Modifier = Modifier,
     content: @Composable RowScope.() -> Unit,
 ) {

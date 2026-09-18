@@ -21,22 +21,30 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
-import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
-import ph.mart.healthapp.feature.profile.ui.routine.components.WeekdayPicker
-import ph.mart.healthapp.feature.profile.ui.shared.components.LibraryRow
+import ph.mart.healthapp.feature.profile.ui.routine.components.RoutinePlanZone
+import ph.mart.healthapp.feature.profile.ui.shared.components.DeleteConfirmDialog
+import ph.mart.healthapp.feature.profile.ui.shared.components.FigureRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
+import ph.mart.healthapp.feature.profile.ui.shared.components.RowMarker
+import ph.mart.healthapp.feature.profile.ui.shared.components.RowOverflowMenu
+import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
 
 /**
  * Every saved workout routine, one Nav3 level above Profile — the food library's twin, and the
- * only place a routine can be renamed or removed.
+ * only place a routine can be renamed, removed, or put in the week.
  *
  * Rename and delete only. Starting a routine needs a workout in progress and a day to log it on,
  * and Profile has neither — the same division the food library draws against the add-entry sheet.
+ *
+ * The plan is the exception, and the reason the row here has a footer the other two don't: the
+ * week a routine is trained on is rendered on Home and authored nowhere else, so it belongs *in*
+ * the routine's card rather than hanging off the bottom of it.
  */
 @Composable
 fun RoutinesScreen(
@@ -55,6 +63,7 @@ private fun RoutinesContent(
     // process death would reopen asking about a row the user has stopped looking at.
     var pendingDelete by remember { mutableStateOf<Routine?>(null) }
     var renaming by remember { mutableStateOf<Routine?>(null) }
+    val renameLabel = stringResource(R.string.profile_rename)
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         if (!uiState.loaded) {
@@ -66,23 +75,29 @@ private fun RoutinesContent(
             return@Surface
         }
         Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         ) {
             uiState.routines.forEach { routine ->
-                LibraryRow(
+                SavedThingRow(
                     name = routine.name,
-                    summary = routine.summary(),
-                    contents = routine.lifts.contents(),
-                    onRename = { renaming = routine },
-                    onDelete = { pendingDelete = routine },
-                    // Authored here and rendered on Home — the division this screen already draws
-                    // against the strength screen, one field over.
-                    trailing = {
-                        WeekdayPicker(
+                    marker = { RowMarker(icon = AppIcons.Dumbbell, contentDescription = null) },
+                    figures = { FigureRow(*routine.figures().toTypedArray()) },
+                    detail = routine.lifts.contents().ifEmpty { null },
+                    onClick = { renaming = routine },
+                    menu = {
+                        RowOverflowMenu(
+                            name = routine.name,
+                            primaryLabel = renameLabel,
+                            onPrimary = { renaming = routine },
+                            onDelete = { pendingDelete = routine },
+                        )
+                    },
+                    footer = {
+                        RoutinePlanZone(
                             days = routine.days,
                             onDaysChange = { days -> onEvent(RoutinesEvent.OnSetDays(routine.id, days)) },
                         )
@@ -92,19 +107,17 @@ private fun RoutinesContent(
         }
     }
 
-    // A routine is something the user built, and its delete sits beside the rename — so it asks
-    // first, rather than deleting with an undo the way a swiped diary row does.
+    // A routine is something the user built, so its delete asks first rather than deleting with
+    // an undo the way a swiped diary row does.
     pendingDelete?.let { routine ->
-        DiscardConfirmDialog(
-            title = stringResource(R.string.profile_delete_title, routine.name),
+        DeleteConfirmDialog(
+            name = routine.name,
             body = stringResource(R.string.profile_routine_delete_body),
-            confirmLabel = stringResource(R.string.profile_delete),
-            dismissLabel = stringResource(R.string.profile_keep),
-            onConfirm = {
+            onDelete = {
                 onEvent(RoutinesEvent.OnDelete(routine.id))
                 pendingDelete = null
             },
-            onDismiss = { pendingDelete = null },
+            onKeep = { pendingDelete = null },
         )
     }
 

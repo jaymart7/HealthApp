@@ -4172,6 +4172,79 @@ editable after onboarding. The split is what fixed both halves of that.
 - **Nav rows still carry no counts.** Unchanged rule, and the reason is unchanged: a number here is
   one more thing that can go stale, and the screen it opens is where counting is honest.
 
+### Your stuff — the three saved-thing lists
+
+Supplements, the food library and the routine library drew three copies of one row and the copies
+had drifted. The redesign specifies the row once and applies it, and everything here is a
+consequence of that.
+
+- **One `SavedThingRow`, in `ui/shared/components/`, not `:core:designsystem`.** The handoff asked
+  for the promotion; every consumer is a flow inside `:feature:profile`, which is the same
+  `ui/shared/` case `AppListRow` and `RenameSheet` already sit in. `FigureText` and
+  `RowOverflowMenu` go with it. `FrequencyMarker`, `MacroTriplet`, `LibrarySearchField`,
+  `LibrarySectionHeader` and `RecipeYieldPill` are screen-local and stay that way.
+- **The card dropped a step to `surfaceContainerLow`, and that is what let the figures be data.**
+  `surfaceContainerHighest` sat too close to the figures' own ink, so every number was a grey
+  caption. One step down lets a figure carry `onSurface` with only its unit staying quiet, and
+  frees `surfaceContainerHighest` for the markers, the once-daily frequency tile and the
+  open-menu anchor. The name went `bodyMedium` → `titleMedium` in the same move: a saved thing's
+  name is a heading for the figures under it.
+- **Two 44dp icon buttons became one 48dp overflow, and the point is not the tap count.** Delete
+  sat one thumb-width from rename, same tint, same weight. It exists only inside the menu now,
+  below a rule, in `error` with an `error` glyph — and the ~96dp the pair took goes back to the
+  figures. Four of the nine 44dp sites the Backlog tracks went with them.
+- **No swipe-to-delete, deliberately.** That gesture already means "delete a diary *entry*".
+  Reusing it where the same swipe destroys a reusable definition is the wrong muscle memory, and
+  it is why the menu is the row's only control.
+- **The menu's first item is `Rename` in the library and `Edit` on supplements.** Not a wording
+  slip: a saved food's fields are corrected by re-saving from the add-entry sheet, so a menu that
+  said Edit would promise a form that does not exist. Supplements have one.
+- **`DeleteConfirmDialog` puts Keep in the confirm slot.** It replaced `DiscardConfirmDialog` on
+  all three screens, whose *confirm* is the destructive answer because it guards a back gesture
+  out of an edited form. Here Keep is rightmost and `primary` — the thumb's default landing spot
+  holds the safe action — and Delete sits left in `error`. Neither is filled: one filled `error`
+  container would out-shout the body copy, which is the thing actually doing the reassuring. The
+  name goes in the title and never in the body, so each body stays constant per row type.
+- **Supplements' Add is a docked bar, and the ≥840dp pane is what chose it.** The shipped button
+  was the last item in the scroll and left the screen the moment the list needed it. A
+  screen-level FAB would land beside the app's own at two-pane width; a top-bar action would put
+  the pane's primary action in the chrome above it. A bar docked to the bottom of the pane is the
+  only one of the three that stays in its own column. It is `DockedActionBar`, promoted from
+  `:feature:food` to `:core:designsystem` on the ≥2-consumers rule rather than copied.
+- **Frequency is the supplement row's marker, and it is never a checkbox.** Times-per-day was the
+  tail of a grey caption and invisible unless read; a scan down the list now shows which rows owe
+  a second dose. `primaryContainer` at two or more, quiet at one, and the figure is printed
+  either way — a tick belongs to a day, and Profile has none.
+- **Supplements are sorted A→Z at read time, with no sections.** Three to ten rows, and the app
+  holds no time-of-day data, so morning/evening groups would be information nobody entered.
+  Insertion order, which is what shipped, looks random after a year. Sorted in the ViewModel, not
+  the DAO: Home's card reads the same flow and wants the list it already had.
+- **The library's search is persistent and undebounced; its headers are counted and sticky.** At
+  two hundred saved items search is the common intent, so hiding it behind a top-bar icon costs a
+  tap every time. A segmented filter was the alternative and answers "where is the thing I saved"
+  by hiding two thirds of the library — a wrong guess costs a second guess and a second scroll —
+  where a count says how far a section runs before you commit to it. There is no debounce because
+  all three lists are already in memory: a keystroke costs a filter, not the Room read the food
+  history's field throttles. The query is `rememberSaveable` local state and never reaches the
+  ViewModel or Room.
+- **The macro triplet is the last place in the app P/C/F stopped being grey text.** Fixed mapping,
+  full opacity, letter printed as well as colour — a faded 12sp figure on `surfaceContainerLow` is
+  the one pairing in this flow that would miss 4.5:1.
+- **The plan moved inside the routine's card and the days left the summary line.** "3 lifts · 9
+  sets · Mon · Wed · Fri" crammed volume and schedule into one caption and then said the schedule
+  twice, since the picker under the row already showed it. Volume stays as figures; the schedule
+  is read off the picker, in a labelled zone under a full-bleed rule that belongs to the routine
+  rather than hanging off it.
+- **The selected weekday never rests on colour or on the letter.** `M T W T F S S` repeats two
+  letters, so the initial is decoration and the day name rides a `contentDescription`. Under the
+  `secondaryContainer` fill and the `primary` border sit a 4dp bottom edge and a 600-weight
+  letter: flatten the whole cell to grey and the thickened baseline still reads. An unscheduled
+  routine draws all seven cells dashed — "nothing chosen" is a shape, not only a sentence.
+- **Both of the handoff's cuttable additions were cut.** The "Your week" summary strip duplicates
+  what Home's training-plan card already answers, and the supplement empty state's three starter
+  chips are a guess at first entries. Neither had anything depending on it, which is what made
+  cutting them free.
+
 ### Health Connect
 
 The local provider, and the one that wins. Everything here exists because there are now *two*

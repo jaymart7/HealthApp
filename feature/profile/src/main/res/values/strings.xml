@@ -6,9 +6,10 @@
     <string name="profile_save">Save</string>
     <string name="profile_name">Name</string>
     <string name="profile_rename">Rename</string>
-    <string name="profile_rename_item">Rename %1$s</string>
-    <string name="profile_delete_item">Delete %1$s</string>
-    <string name="profile_edit_item">Edit %1$s</string>
+    <string name="profile_edit">Edit</string>
+    <!-- The row overflow. Deliberately two words for two powers: the food library can only
+         rename, supplements have a real edit form. -->
+    <string name="profile_row_more">More options for %1$s</string>
     <string name="profile_delete_title">Delete %1$s?</string>
 
     <string name="profile_title">Profile</string>
@@ -190,28 +191,41 @@
     <string name="profile_routines_empty_heading">No routines yet</string>
     <string name="profile_routines_empty_body">Log a strength workout, tap \"Save as routine\", and it shows up here.</string>
     <string name="profile_routine_delete_body">This routine is removed for good. Workouts you logged from it stay in your diary.</string>
-    <plurals name="profile_routine_lifts">
-        <item quantity="one">%1$d lift</item>
-        <item quantity="other">%1$d lifts</item>
+    <!-- Units only: the figure line prints the number itself, tabular, in its own colour. -->
+    <plurals name="profile_routine_lifts_unit">
+        <item quantity="one">lift</item>
+        <item quantity="other">lifts</item>
     </plurals>
-    <plurals name="profile_routine_sets">
-        <item quantity="one">%1$d set</item>
-        <item quantity="other">%1$d sets</item>
+    <plurals name="profile_routine_sets_unit">
+        <item quantity="one">set</item>
+        <item quantity="other">sets</item>
     </plurals>
-    <string name="profile_routine_no_days">No days set</string>
-    <string name="profile_routine_summary">%1$s · %2$s · %3$s</string>
+    <string name="profile_routine_plan">Plan</string>
+    <plurals name="profile_routine_days_a_week">
+        <item quantity="one">%1$d day a week</item>
+        <item quantity="other">%1$d days a week</item>
+    </plurals>
+    <string name="profile_routine_unscheduled">Tap a day to put this in your week</string>
     <string name="profile_routine_lift">%1$s %2$d×%3$d</string>
 
     <!-- Supplements -->
-    <string name="profile_supplements_empty">Nothing here yet. Add what you take and it shows up on Home each day.</string>
+    <string name="profile_supplements_empty_heading">Nothing here yet</string>
+    <string name="profile_supplements_empty_body">Add what you take and it shows up on Home each day.</string>
+    <plurals name="profile_supplements_count">
+        <item quantity="one">%1$d supplement · A to Z</item>
+        <item quantity="other">%1$d supplements · A to Z</item>
+    </plurals>
+    <string name="profile_supplements_no_dose">No dose set</string>
     <string name="profile_supplements_add">Add supplement</string>
     <string name="profile_supplements_edit">Edit supplement</string>
     <string name="profile_supplements_delete_body">It leaves your daily list. Days you already ticked keep their record.</string>
     <string name="profile_supplements_dose">Dose (optional)</string>
     <string name="profile_supplements_how_often">How often</string>
-    <string name="profile_supplements_once_daily">once daily</string>
-    <string name="profile_supplements_twice_daily">twice daily</string>
-    <string name="profile_supplements_times_daily">%1$dx daily</string>
+    <string name="profile_supplements_once_daily">once a day</string>
+    <string name="profile_supplements_twice_daily">twice a day</string>
+    <string name="profile_supplements_times_daily">%1$d times a day</string>
+    <!-- The frequency marker prints "{n}×"; this is what it reads as. -->
+    <string name="profile_supplements_times_a11y">%1$d times a day</string>
     <plurals name="profile_supplements_times_a_day">
         <item quantity="one">time a day</item>
         <item quantity="other">times a day</item>
@@ -227,14 +241,22 @@
     <string name="profile_library_noun_meal">saved meal</string>
     <string name="profile_library_noun_recipe">recipe</string>
     <string name="profile_library_delete_body">This %1$s is removed for good. Anything already logged from it stays in your diary.</string>
-    <string name="profile_library_food_summary">%1$d kcal · %2$s %3$s</string>
-    <string name="profile_library_macro_line">P %1$dg · C %2$dg · F %3$dg</string>
-    <plurals name="profile_library_items">
-        <item quantity="one">%1$d item</item>
-        <item quantity="other">%1$d items</item>
+    <!-- Units only: the figure line prints the number itself, tabular, in its own colour. -->
+    <plurals name="profile_library_items_unit">
+        <item quantity="one">item</item>
+        <item quantity="other">items</item>
     </plurals>
-    <string name="profile_library_meal_summary">%1$s · %2$d kcal</string>
-    <string name="profile_library_recipe_summary">%1$d kcal per serving · makes %2$d</string>
+    <string name="profile_library_per_serving">kcal per serving</string>
+    <string name="profile_library_makes">makes %1$d</string>
+    <string name="profile_library_macro_protein">P %1$dg</string>
+    <string name="profile_library_macro_carbs">C %1$dg</string>
+    <string name="profile_library_macro_fat">F %1$dg</string>
+    <string name="profile_library_search">Search %1$d saved items</string>
+    <string name="profile_library_search_clear">Clear search</string>
+    <plurals name="profile_library_matches">
+        <item quantity="one">%1$d match in %2$d saved items</item>
+        <item quantity="other">%1$d matches in %2$d saved items</item>
+    </plurals>
 
     <!-- Google Health -->
     <string name="profile_health_unavailable">Google Health needs Google Play services and a Google account on this device.</string>

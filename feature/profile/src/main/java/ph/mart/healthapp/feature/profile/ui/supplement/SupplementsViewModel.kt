@@ -27,9 +27,16 @@ class SupplementsViewModel(
         }
     }
 
+    /** Sorted here rather than in the DAO: the order is this screen's presentation choice, and
+     * Home's card reads the same flow and wants the list it already had. */
     private fun observeSupplements() = intent {
         supplementRepository.observeSupplements().collect { supplements ->
-            reduce { state.copy(supplements = supplements, loaded = true) }
+            reduce {
+                state.copy(
+                    supplements = supplements.sortedBy { it.name.lowercase() },
+                    loaded = true,
+                )
+            }
         }
     }
 

@@ -506,9 +506,18 @@ panes at ≥840dp.
 - Sex, age, height, current weight, **target weight**, goal and activity level all editable on
   About you — no save button, and the result card reprices as you nudge.
 - Light / dark / follow-device; mascot character row and a colour row opening the 35-swatch sheet.
-- Supplements: name, dose label, times per day; edit and delete.
+- One row family across all three "Your stuff" lists — supplements, food library, routines: a
+  marker tile, a title-weight name, the figures drawn as data, a one-line contents summary, and a
+  single 48dp overflow whose Delete sits below a rule in `error`. No swipe, no drag, no
+  multi-select, and nothing on any of the three can log, tick or start anything.
+- Supplements: name, dose label, times per day; A→Z, times-per-day as the row's marker tile, a
+  docked Add bar that never scrolls away, edit and delete.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
-  delete (neither can log or start anything).
+  delete (neither can log or start anything). The food library adds a persistent search over
+  names *and* contents lines, with match highlighting, and sticky counted section headers; My
+  foods rows draw their macros in the fixed P/C/F colours.
+- Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a
+  week", or a prompt and seven dashed cells when nothing is set yet.
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 21, import is all-or-nothing.
 - Automatic local backup — the same JSON, written weekly to app-private storage, newest three
   kept. Listed under Data with a confirm-first restore that runs the ordinary import. Android
