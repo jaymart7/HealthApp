@@ -4556,6 +4556,32 @@ The rules that bind are `CLAUDE.md` → **Localization**. These are the argument
   `-keep class androidx.compose.**` is how an app quietly ships unoptimized.
 - **`ndk.debugSymbolLevel` is gone.** FitPulse is Kotlin and Compose with no native code and no
   `.so` of its own, so the line asked the build to package debug symbols for nothing.
+- **The database migrates from version 1, and `fallbackToDestructiveMigration` is gone.** The
+  builder dropped every table on any version it could not reach, which was defensible while
+  nothing was installed anywhere and indefensible the moment something was: the failure is
+  silent, and what it takes is the whole diary. `MIGRATIONS` in `:core:data/Migrations.kt` now
+  covers all thirty-six steps, so an unreachable version throws on open instead — a crash is a
+  bug report, an emptied database is a user who stops using the app.
+- **The migrations are a table of SQL, not thirty-six `Migration` classes.** Every step but one
+  is additive — thirteen new tables and fifty-odd new columns, no drop, no rename, no type
+  change — so each class would have been the same four lines around a different string. `STEPS`
+  is a `Map<Int, List<String>>` derived from the exported schemas' own `createSql`, and one
+  `map` turns it into the array Room wants. The exception is 33 → 34, where `kind` joined
+  `food_search_query`'s primary key: that one rebuilds the table and backfills `'search'`,
+  because every row it already held was a history search.
+- **A column arriving `NOT NULL` gets the entity's Kotlin default, not SQLite's.** These
+  entities declare defaults in the constructor rather than in `@ColumnInfo`, so the schema files
+  carry none and Room's auto-migrations refuse the column outright. Each `DEFAULT` in `STEPS` is
+  the value a fresh row would have had — `mealRemindersOn` 1, `recapReminderOn` 0,
+  `waterGoalGlasses` 8 — so an upgraded row is indistinguishable from a new one. Room's
+  validation compares a default only when the entity declared one, which is why the extra
+  `DEFAULT` in the DDL does not fail the identity check.
+- **`MigrationsTest` is a JVM test against the schema files, not a `MigrationTestHelper`.** The
+  real helper needs an emulator this project has decided not to run in CI. What a JVM test can
+  still do is read `schemas/` and catch the mistake that actually happens — a version bumped and
+  its step forgotten — plus fail on any dropped table or column, which the additive SQL cannot
+  express and which needs a rebuild step written by hand. It does not execute the SQL; the
+  instrumented test that would is on the same list as the other four.
 
 ## Considered and declined
 
