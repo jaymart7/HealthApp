@@ -7,6 +7,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
@@ -32,6 +33,7 @@ suspend fun exportJson(
     fastingRepository: FastingRepository,
     supplementRepository: SupplementRepository,
     bloodPressureRepository: BloodPressureRepository,
+    noteRepository: NoteRepository,
 ): String = buildExportJson(
     profile = profileRepository.observeProfile().first(),
     foodEntries = foodRepository.allEntries(),
@@ -45,4 +47,5 @@ suspend fun exportJson(
     supplementDays = supplementRepository.allDays(),
     bloodPressure = bloodPressureRepository.allReadings(),
     cycleDays = cycleRepository.allDays(),
+    dayNotes = noteRepository.allNotes(),
 )

@@ -54,6 +54,8 @@ internal class FoodScreenState(
     quickAddKcal: Int? = null,
     seededFromProduct: Boolean = false,
     saveMyFood: Boolean = false,
+    noteSheetOpen: Boolean = false,
+    noteDraft: String = "",
 ) {
     var activeMealSheet: MealType? by mutableStateOf(activeMealSheet)
     var addForm: AddEntryForm by mutableStateOf(addForm)
@@ -124,6 +126,24 @@ internal class FoodScreenState(
      * spot because a switch states an intention and [FoodEvent.OnSaveMyFood] acts on it when Add
      * does — which is what a switch beside a button means. */
     var saveMyFood: Boolean by mutableStateOf(saveMyFood)
+
+    /** Whether the day's note is being written, and the text so far. The draft is held here rather
+     * than committed per keystroke for the reason [saveMyFood] is: a sheet with a Save button means
+     * nothing is written until it is tapped, and backing out of a half-typed note leaves the day's
+     * note as it was. */
+    var noteSheetOpen: Boolean by mutableStateOf(noteSheetOpen)
+    var noteDraft: String by mutableStateOf(noteDraft)
+
+    /** Seeded from what the day already holds, so the sheet opens on the note being corrected. */
+    fun openNoteSheet(current: String) {
+        noteDraft = current
+        noteSheetOpen = true
+    }
+
+    fun closeNoteSheet() {
+        noteSheetOpen = false
+        noteDraft = ""
+    }
 
     fun openSheet(mealType: MealType) {
         addForm = AddEntryForm(mealType = mealType)
@@ -249,6 +269,8 @@ internal class FoodScreenState(
                         it.quickAddKcal,
                         it.seededFromProduct,
                         it.saveMyFood,
+                        it.noteSheetOpen,
+                        it.noteDraft,
                     )
             },
             restore = { saved ->
@@ -280,6 +302,8 @@ internal class FoodScreenState(
                     quickAddKcal = saved[21 + MealType.entries.size] as Int?,
                     seededFromProduct = saved[22 + MealType.entries.size] as Boolean,
                     saveMyFood = saved[23 + MealType.entries.size] as Boolean,
+                    noteSheetOpen = saved[24 + MealType.entries.size] as Boolean,
+                    noteDraft = saved[25 + MealType.entries.size] as String,
                 )
             },
         )

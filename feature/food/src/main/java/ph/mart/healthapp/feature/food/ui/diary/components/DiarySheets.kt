@@ -55,6 +55,19 @@ internal fun DiarySheets(
         ShareDaySheet(uiState = uiState, targets = targets, onDismiss = { state.shareOpen = false })
     }
 
+    if (state.noteSheetOpen) {
+        DayNoteSheet(
+            dateLabel = diaryDateLabel(uiState.selectedDate, uiState.today),
+            draft = state.noteDraft,
+            onDraftChange = { state.noteDraft = it },
+            onDismiss = state::closeNoteSheet,
+            onSave = {
+                onEvent(FoodEvent.OnSetNote(state.noteDraft))
+                state.closeNoteSheet()
+            },
+        )
+    }
+
     val activeMealSheet = state.activeMealSheet
     if (activeMealSheet != null) {
         val editingId = state.editingEntryId

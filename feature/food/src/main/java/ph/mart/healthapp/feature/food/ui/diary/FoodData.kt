@@ -53,6 +53,9 @@ data class FoodUiState(
     val recipes: List<Recipe> = emptyList(),
     val waterGlasses: Int = 0,
     val waterGoalGlasses: Int = DEFAULT_WATER_GOAL_GLASSES,
+    /** What the user wrote about [selectedDate], blank when they wrote nothing — the reading
+     * `DayNote` gives an empty string, and what leaves the note block off the day entirely. */
+    val note: String = "",
     val unit: UnitSystem = UnitSystem.Metric,
     /** The day a copy is being taken *from* — null unless the copy sheet is open, and what the
      * sheet's own visibility is read off. */
@@ -190,6 +193,11 @@ sealed interface FoodEvent {
      * that already exists edits it rather than adding a rival. */
     data class OnSaveMyFood(val form: AddEntryForm) : FoodEvent
     data class OnSetWaterGlasses(val glasses: Int) : FoodEvent
+
+    /** The day's note, written to the day being shown like every other write on this screen.
+     * Blank is the delete: there is no separate remove event, the same way clearing a mood tap
+     * writes 0 rather than dropping the row. */
+    data class OnSetNote(val text: String) : FoodEvent
     data class OnDeleteExercise(val id: Long) : FoodEvent
 
     /** Twin of [OnRestoreEntry], for the exercise section's swipe. */

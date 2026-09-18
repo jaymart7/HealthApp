@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -44,6 +45,7 @@ class SettingsViewModel(
     private val fastingRepository: FastingRepository,
     private val supplementRepository: SupplementRepository,
     private val bloodPressureRepository: BloodPressureRepository,
+    private val noteRepository: NoteRepository,
     private val dataTransferRepository: DataTransferRepository,
     private val localBackups: LocalBackups,
 ) : ViewModel(), OrbitContainerHost<SettingsUiState, SettingsUiState, SettingsSideEffect> {
@@ -95,7 +97,7 @@ class SettingsViewModel(
     private suspend fun collectExport(): String = exportJson(
         profileRepository, foodRepository, progressRepository, waterRepository, exerciseRepository,
         moodRepository, cycleRepository, fastingRepository, supplementRepository,
-        bloodPressureRepository,
+        bloodPressureRepository, noteRepository,
     )
 
     /** Parse here, write there. The whole replay is one transaction inside `:core:data` — see

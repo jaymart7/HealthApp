@@ -240,14 +240,22 @@ internal fun DiaryBody(
                 },
             )
 
-            // Three doors at the foot of the scroll rather than in the date header — that row
+            // What the day was, in the user's own words — under its own rule, and only when there
+            // is something to read. The link below is the way in on a day with no note.
+            DayNoteBlock(
+                note = uiState.note,
+                onEdit = { state.openNoteSheet(uiState.note) },
+            )
+
+            // Four doors at the foot of the scroll rather than in the date header — that row
             // already carries three 48dp buttons and a label it goes out of its way to protect at
             // large font scales. Home's "Rearrange your Home" link is the shape. The row wraps
             // rather than shrinking, so a large font scale costs a line and not a label.
             //
-            // Search and copy are always here, including on a bare day: a day with nothing on it
-            // is exactly when you want to look backwards, and exactly when you want yesterday
-            // again. Sharing is not — there is no day to share yet. The search carries the day's
+            // Search, copy and the note are always here, including on a bare day: a day with
+            // nothing on it is exactly when you want to look backwards, exactly when you want
+            // yesterday again, and exactly when what happened is the only record there will be.
+            // Sharing is not — there is no day to share yet. The search carries the day's
             // filter query along, so a word already typed into the header survives the step up to
             // every day.
             FlowRow(
@@ -262,6 +270,14 @@ internal fun DiaryBody(
                     label = stringResource(R.string.food_copy_link),
                     onClick = { state.copyPickerOpen = true },
                 )
+                // Only while the day has no note. Once it has one the card above is the door, and
+                // two ways into the same sheet on the same screen is one too many.
+                if (uiState.note.isBlank()) {
+                    TextButton(
+                        label = stringResource(R.string.food_note_add),
+                        onClick = { state.openNoteSheet(current = "") },
+                    )
+                }
                 if (!dayIsEmpty && uiState.targets != null) {
                     TextButton(
                         label = stringResource(R.string.food_share_day),

@@ -15,6 +15,7 @@ import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.health.StepsRepository
+import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
@@ -39,6 +40,7 @@ class FoodViewModel(
     private val waterRepository: WaterRepository,
     private val exerciseRepository: ExerciseRepository,
     stepsRepository: StepsRepository,
+    private val noteRepository: NoteRepository,
 ) : ViewModel(), OrbitContainerHost<FoodUiState, FoodUiState, FoodSideEffect> {
 
     /** The diary's day, and the only thing that re-points the three dated flows below. */
@@ -49,7 +51,10 @@ class FoodViewModel(
     private val copySourceDate = MutableStateFlow<Long?>(null)
 
     override val container = orbitContainer<FoodUiState, FoodSideEffect>(FoodUiState()) {
-        observeDiary(foodRepository, profileRepository, waterRepository, exerciseRepository, stepsRepository)
+        observeDiary(
+            foodRepository, profileRepository, waterRepository, exerciseRepository,
+            stepsRepository, noteRepository,
+        )
         followMidnight()
     }
 
@@ -63,6 +68,7 @@ class FoodViewModel(
             is FoodEvent.OnToggleFavorite -> onToggleFavorite(event)
             is FoodEvent.OnSaveMyFood -> onSaveMyFood(event.form)
             is FoodEvent.OnSetWaterGlasses -> onSetWaterGlasses(event.glasses)
+            is FoodEvent.OnSetNote -> onSetNote(event.text)
             is FoodEvent.OnDeleteExercise -> onDeleteExercise(event.id)
             is FoodEvent.OnRestoreExercise -> onRestoreExercise(event.entry)
             is FoodEvent.OnSaveMeal -> onSaveMeal(event.name, event.items)
@@ -92,6 +98,7 @@ class FoodViewModel(
         waterRepository: WaterRepository,
         exerciseRepository: ExerciseRepository,
         stepsRepository: StepsRepository,
+        noteRepository: NoteRepository,
     ) = intent {
         // Saved meals and recipes belong to no day, so they combine outside the date switch —
         // which also keeps the inner combine at the five-flow arity the typed overloads stop at.
@@ -100,7 +107,14 @@ class FoodViewModel(
                 foodRepository.observeEntries(date),
                 profileRepository.observeProfile(),
                 foodRepository.observeSuggestions(),
-                waterRepository.observeDay(date),
+                // Water and the day's note pair up for the reason exercise and steps do below:
+                // the combine is at the arity its typed overloads stop at, and a Pair costs
+                // nothing where a sixth flow would cost the whole shape.
+                combine(
+                    waterRepository.observeDay(date),
+                    noteRepository.observeForDate(date),
+                    ::Pair,
+                ),
                 // The day's burn comes from two sources now, so they pair up before the combine
                 // that is already at its typed-overload arity.
                 combine(
@@ -108,7 +122,7 @@ class FoodViewModel(
                     stepsRepository.observeSteps(date),
                     ::Pair,
                 ),
-            ) { entries, profile, suggestions, waterGlasses, (exercise, steps) ->
+            ) { entries, profile, suggestions, (waterGlasses, note), (exercise, steps) ->
                 FoodUiState(
                     selectedDate = date,
                     entries = entries,
@@ -121,6 +135,7 @@ class FoodViewModel(
                     diet = profile?.dietaryPreference,
                     suggestions = suggestions,
                     waterGlasses = waterGlasses,
+                    note = note.text,
                     waterGoalGlasses = profile?.waterGoalGlasses ?: DEFAULT_WATER_GOAL_GLASSES,
                     unit = profile?.preferredUnit ?: UnitSystem.Metric,
                 )
@@ -185,6 +200,13 @@ class FoodViewModel(
     // land on the wrong row.
     private fun onSetWaterGlasses(glasses: Int) = intent {
         waterRepository.upsertDay(WaterDay(dateEpochDay = selectedDate.value, glasses = glasses))
+    }
+
+    /** The day being shown, off `selectedDate` like every other write here — a note typed while
+     * reviewing Tuesday is Tuesday's, not today's. Trimming and the length cap are the
+     * repository's, so the sheet and an import cannot disagree about them. */
+    private fun onSetNote(text: String) = intent {
+        noteRepository.setNote(dateEpochDay = selectedDate.value, text = text)
     }
 
     private fun onAddEntry(form: AddEntryForm) = intent {

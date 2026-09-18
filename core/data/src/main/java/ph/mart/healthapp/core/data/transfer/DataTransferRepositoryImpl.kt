@@ -9,6 +9,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
@@ -35,6 +36,7 @@ internal class DataTransferRepositoryImpl(
     private val fastingRepository: FastingRepository,
     private val supplementRepository: SupplementRepository,
     private val bloodPressureRepository: BloodPressureRepository,
+    private val noteRepository: NoteRepository,
 ) : DataTransferRepository {
 
     override suspend fun replaceAll(data: ImportData) {
@@ -57,6 +59,9 @@ internal class DataTransferRepositoryImpl(
 
                 moodRepository.clearAllDays()
                 data.moodDays.forEach { moodRepository.upsertDay(it) }
+
+                noteRepository.clearAllNotes()
+                data.dayNotes.forEach { noteRepository.setNote(it.dateEpochDay, it.text) }
 
                 cycleRepository.clearAllDays()
                 data.cycleDays.forEach { cycleRepository.upsertDay(it) }

@@ -10,7 +10,9 @@ import ph.mart.healthapp.core.data.transfer.LocalBackups
  * the database it shares with them, which is the whole of what a transaction needs. */
 val transferDataModule = module {
     single<DataTransferRepository> {
-        DataTransferRepositoryImpl(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+        DataTransferRepositoryImpl(
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+        )
     }
     single { LocalBackups(androidContext()) }
 }

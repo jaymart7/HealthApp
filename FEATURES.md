@@ -185,6 +185,11 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   back; a notice above counts how many. Remove lives in the opened row, Discard is a word beside
   Log in the docked bar, and a one-row parse offers "Say it again" back to the sentence.
 - Water row in the diary; water goal and glass size configurable.
+- A note on the day — one free-text note per day (500 chars), under its own rule at the foot of
+  the diary. A day with a note draws it as a card you tap to edit; a day without one carries an
+  "Add a note" link beside Search and Copy. Written to the day being shown, never to today, and
+  saving an empty field is the delete. It exports, and the coach's `get_day` reads it; it is on no
+  chart, in no recap, on no shared picture and in no copied day.
 - Share the day — a PNG card of the day's summary bar and its per-meal totals, from a link at
   the foot of the diary. Absolute date, no food names.
 - Meal ideas — AI suggestions sized to the day's remaining calories, with an offline fallback
@@ -363,7 +368,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Coach — a chat screen told the day's numbers, which can read the rest of the diary itself:
   `get_day` for any past day's meals, macros, water and activity — plus that day's steps against
   the step goal, and its sleep, mood, completed fast, supplements against what was due, heart rate
-  and every blood-pressure reading it holds, where those are tracked — `get_history`
+  and every blood-pressure reading it holds, where those are tracked, plus the note the user
+  wrote about that day — `get_history`
   for a span of up to a month with water, training, steps, sleep, supplements, heart rate, the
   day's mean blood pressure, weigh-ins and body
   measurements (the last two as a change since the reading before, never as a figure), and `get_library` for
@@ -486,7 +492,7 @@ panes at ≥840dp.
 - Supplements: name, dose label, times per day; edit and delete.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything).
-- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 18, import is all-or-nothing.
+- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 21, import is all-or-nothing.
 - Automatic local backup — the same JSON, written weekly to app-private storage, newest three
   kept. Listed under Data with a confirm-first restore that runs the ordinary import. Android
   Auto Backup covers the database and those files; progress photos are excluded from the cloud

@@ -224,6 +224,34 @@ rather than needing a counter patched.
   of its own — and is null whenever the sheet is closed, which is what keeps those reads off the
   diary's path. The sheet's visibility is that null, not a flag, so it survives a rotation; only
   the picker's open/closed is screen state.
+- **A note on the day is dated to the day on screen, and a blank one is the delete.** `note_day`
+  is `mood_day`'s shape — one row per day, upsert, no deleted flag — with two differences that
+  both come off the diary rather than off Home. It is **dated rather than today-only**, because
+  the diary reviews any past day and a sentence about Tuesday typed on Thursday is Tuesday's; and
+  **clearing the field is how a note is removed**, the reading a blank row already has, so there
+  is no Remove beside Save doing the same thing twice. The trim and the 500-character cap live in
+  `NoteRepositoryImpl`, not in the field: the sheet and an import are two callers, and a rule
+  enforced at one of them is a rule the other can break.
+- **The note is drawn only when there is one, and the link only when there is not.** An empty
+  note card on every day of the year costs the scroll the vertical space the three logging chips
+  were moved out of the pinned area to buy back (see `DiaryBody`). So a written note is a card
+  under its own `SectionRule` — the break `ExerciseSection` already uses to stop a block reading
+  as a fifth meal — and it is its own door back into the sheet; a day with nothing written carries
+  one more word in the footer row instead. Two doors into the same sheet on the same screen is one
+  too many, which is why the link disappears once the card is there.
+- **The coach reads it through `get_day`, and not through `get_history`.** A note is the only
+  thing in a day payload the *user* composed rather than the app measured, and "slept badly" is
+  exactly the context that makes an answer about a day worth asking for — so it goes in verbatim,
+  under the omitted-when-absent rule steps, sleep, mood and fasting already follow. It stays out
+  of `get_history` because that tool is one line per day for up to a month: free text would swamp
+  the span it exists to summarise, and a month of someone's own sentences is a payload nobody
+  asked to send.
+- **It is on no chart, in no recap, on no shared picture and in no copied day.** A note is not a
+  series, so Progress has nothing to draw. The day's PNG deliberately carries no food names
+  because a shared image is read by people the diary was never written for — a paragraph about
+  the day is further over that line, not nearer it. And copying a day brings forward what was
+  *eaten*: a sentence about a particular Tuesday copied onto Thursday would be a lie about
+  Thursday. It does export, because it is history like a mood day (schema 21).
 
 ### Camera, barcode & Open Food Facts
 

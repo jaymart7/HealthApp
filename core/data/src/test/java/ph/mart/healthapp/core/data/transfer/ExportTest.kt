@@ -19,6 +19,7 @@ import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.note.DayNote
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.Profile
@@ -125,6 +126,13 @@ class ExportTest {
         BloodPressureReading(id = 2, takenAtMillis = 1_756_640_000_000, systolic = 121, diastolic = 79),
     )
 
+    // Only written days reach the file — `allNotes()` filters the blanks out, because a cleared
+    // note is a day nobody wrote about rather than a row holding an empty string.
+    private val dayNotes = listOf(
+        DayNote(20_000, "Slept badly and ate out at lunch."),
+        DayNote(20_001, "Long day on site. Ate whatever was going."),
+    )
+
     // A period day, a symptom-only day, and an imported one carrying the level nobody typed.
     private val cycleDays = listOf(
         CycleDay(20_100, FlowLevel.Heavy.value, setOf(CycleSymptom.Cramps, CycleSymptom.Fatigue)),
@@ -134,7 +142,7 @@ class ExportTest {
 
     @Test
     fun `round trips profile food weight measurements water exercise mood and fasting`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(profile, payload.profile)
@@ -149,9 +157,30 @@ class ExportTest {
         assertEquals(fastSessions.take(2).map { it.copy(id = 0) }, payload.fastSessions)
     }
 
+    /** History like a mood day, and the one thing in the file the user wrote rather than logged. */
+    @Test
+    fun `round trips the notes the user wrote about their days`() {
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
+        val payload = parseExport(json).getOrThrow()
+
+        assertEquals(dayNotes, payload.dayNotes)
+    }
+
+    /** A file written before v21 has no notes at all, and imports as a run of days nobody wrote
+     * about rather than failing the version gate. */
+    @Test
+    fun `a file from before the note existed imports with none`() {
+        val v20 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, emptyList())
+            .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 20")
+        val payload = parseExport(v20).getOrThrow()
+
+        assertEquals(emptyList<DayNote>(), payload.dayNotes)
+        assertEquals(moodDays, payload.moodDays)
+    }
+
     @Test
     fun `export carries no photo data`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
         assertFalse(json.contains("filePath"))
         assertFalse(json.contains("\"photos\""))
     }
@@ -164,7 +193,7 @@ class ExportTest {
 
     @Test
     fun `unrecognized enum value fails`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
             .replace("\"Waist\"", "\"Elbow\"")
         assertTrue(parseExport(json).isFailure)
     }
@@ -173,7 +202,7 @@ class ExportTest {
      * the v1 case below, checked at the boundary that just moved. */
     @Test
     fun `a v5 file without fasting still imports`() {
-        val v5 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, emptyList(), supplements, supplementDays, emptyList(), emptyList())
+        val v5 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, emptyList(), supplements, supplementDays, emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 5")
         val payload = parseExport(v5).getOrThrow()
 
@@ -270,7 +299,7 @@ class ExportTest {
         val packet = foodEntries.first().copy(
             nutrients = Nutrients(vitaminDUg = 3, calciumMg = 240, ironUg = 4200, potassiumMg = 610),
         )
-        val json = buildExportJson(profile, listOf(packet), weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, listOf(packet), weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
 
         val entry = parseExport(json).getOrThrow().foodEntries.single()
 
@@ -281,7 +310,7 @@ class ExportTest {
      * so regenerating ids on import would restore a log of ticks with nothing to tick. */
     @Test
     fun `supplement ids and their day snapshots survive the round trip`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(supplements, payload.supplements)
@@ -294,7 +323,7 @@ class ExportTest {
     /** A v7 file — the schema one version back, written before supplements existed. */
     @Test
     fun `a v7 file without supplements still imports`() {
-        val v7 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, emptyList(), emptyList(), emptyList(), emptyList())
+        val v7 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 7")
         val payload = parseExport(v7).getOrThrow()
 
@@ -306,7 +335,7 @@ class ExportTest {
     /** Readings are history, so they ride the file. The id is dropped — nothing points at one. */
     @Test
     fun `blood pressure readings survive the round trip`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
         val restored = parseExport(json).getOrThrow().bloodPressure
 
         assertEquals(2, restored.size)
@@ -321,7 +350,7 @@ class ExportTest {
     /** A v8 file — the schema one version back, written before blood pressure existed. */
     @Test
     fun `a v8 file without blood pressure still imports`() {
-        val v8 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, emptyList(), emptyList())
+        val v8 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 8")
         val payload = parseExport(v8).getOrThrow()
 
@@ -333,7 +362,7 @@ class ExportTest {
      * The field defaults to 0, which is what the repository reads as "re-derive the estimate". */
     @Test
     fun `a v12 file without exercise steps still imports`() {
-        val v12 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val v12 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 12")
             // Dropped mid-object now that `sets` follows it, so the preceding comma goes.
             .replace(Regex(",\\s*\"steps\": \\d+"), "")
@@ -349,7 +378,7 @@ class ExportTest {
      * restore onto a fresh install should do rather than failing to parse. */
     @Test
     fun `a v15 file without the recap and workout switches still imports`() {
-        val v15 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val v15 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 15")
             .replace(Regex(",\\s*\"workoutRemindersOn\": (true|false)"), "")
             .replace(Regex(",\\s*\"recapReminderOn\": (true|false)"), "")
@@ -362,7 +391,7 @@ class ExportTest {
 
     @Test
     fun `newer schema version is rejected`() {
-        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        val json = buildExportJson(profile, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 99")
         assertTrue(parseExport(json).isFailure)
     }
@@ -371,7 +400,7 @@ class ExportTest {
      * has no meaning in the database a backup is restored into, and nothing points at a workout. */
     @Test
     fun `a strength workout keeps its sets through the file`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
         val restored = parseExport(json).getOrThrow().exercises
 
         assertEquals(exercises.map { it.copy(id = 0) }, restored)
@@ -383,7 +412,7 @@ class ExportTest {
      * import, as the setless rows they always were. */
     @Test
     fun `a v13 file without sets still imports`() {
-        val v13 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val v13 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 13")
             // The field is last in the object, so the preceding comma goes with it.
             .replace(Regex(",\\s*\"sets\": \\[[^]]*]"), "")
@@ -398,7 +427,7 @@ class ExportTest {
      * imported level all intact. */
     @Test
     fun `cycle days and their symptoms survive the file`() {
-        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val json = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
         val payload = parseExport(json).getOrThrow()
 
         assertEquals(cycleDays, payload.cycleDays)
@@ -409,7 +438,7 @@ class ExportTest {
      * with no days and the switch unset, which is null rather than false: never asked. */
     @Test
     fun `a v16 file without cycle days still imports`() {
-        val v16 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays)
+        val v16 = buildExportJson(profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays, fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes)
             .replace("\"schemaVersion\": $EXPORT_SCHEMA_VERSION", "\"schemaVersion\": 16")
             .replace(Regex(",\\s*\"cycleTrackingOn\": (true|false)"), "")
             .replace(Regex(",\\s*\"cycleDays\": \\[[^]]*]"), "")

@@ -56,6 +56,7 @@ import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.formatBpm
 import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.data.health.formatSteps
+import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.MoodRepository
@@ -218,7 +219,8 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             description = "Read one day of the user's diary in full: every food they logged with " +
                 "its calories and macros, the day's totals against their targets, water, any " +
                 "activity, their steps, and their sleep, mood, fasting, supplements, heart rate " +
-                "and blood-pressure readings where they track those. Call this before answering " +
+                "and blood-pressure readings where they track those, plus anything they wrote " +
+                "about the day themselves. Call this before answering " +
                 "anything about a specific day.",
             parameters = mapOf("days_ago" to daysAgoSchema),
         ),
@@ -703,6 +705,7 @@ internal fun formatDay(
     supplements: List<Pair<String, SupplementDay>> = emptyList(),
     heart: HeartDay? = null,
     bloodPressure: List<BloodPressureReading> = emptyList(),
+    note: String? = null,
 ): String = buildString {
     appendLine("$label:")
     if (foods.isEmpty()) {
@@ -774,6 +777,12 @@ internal fun formatDay(
             },
         )
     }
+
+    // Last, and omitted when blank for the reason the six above are: a day nobody wrote about is
+    // not a day with an empty note on it. It is also the only thing in this payload the *user*
+    // composed rather than the app measured, so it goes in verbatim — summarising someone's own
+    // sentence back at them is what a coach is for, not what a tool should do on the way in.
+    note?.takeIf { it.isNotBlank() }?.let { appendLine("Note: $it") }
 }
 
 /** Null when neither half was tapped, and each half omitted on its own: `mood_day` stores 0 for
@@ -1288,6 +1297,9 @@ internal class CoachToolbox(
     // on a name this publishes, and the weekdays are what let "what should I train today?" be
     // answered with the routine that is actually on the plan.
     private val routineRepository: RoutineRepository,
+    // The day in the user's own words. It widens `get_day` alone: `get_history` is one line per
+    // day for up to a month, and free text would swamp the span it exists to summarise.
+    private val noteRepository: NoteRepository,
 ) {
     /** Null for a tool this does not run — which is every write tool, and is how the caller's loop
      * tells a question from an instruction without a second lookup. */
@@ -1427,6 +1439,9 @@ internal class CoachToolbox(
             // reading, and a morning and an evening are two answers, not one.
             bloodPressure = bloodPressureRepository.observeReadings().first()
                 .filter { it.dateEpochDay == date },
+            // Blank whenever nothing was written, which is what leaves the line out entirely —
+            // the rule steps, sleep, mood and fasting already follow.
+            note = noteRepository.observeForDate(date).first().text,
         )
     }
 

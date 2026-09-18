@@ -311,6 +311,13 @@
     </plurals>
     <string name="food_copy_confirm">Copy</string>
     <string name="food_copy_empty">Nothing was logged that day, so there is nothing to bring over.</string>
+    <!-- The day's note: what the day was, in the user's own words. -->
+    <string name="food_note_rule">Note</string>
+    <string name="food_note_add">Add a note</string>
+    <string name="food_note_sheet_title">A note on the day</string>
+    <string name="food_note_placeholder">What happened today?</string>
+    <!-- Saving an empty note is how it is removed, so the button never says "Add". -->
+    <string name="food_note_save">Save note</string>
     <!-- Diary history search -->
     <string name="food_history_link">Search your diary</string>
     <!-- The screen's own toolbar; it draws it rather than AppScaffold, so the title lives here. -->

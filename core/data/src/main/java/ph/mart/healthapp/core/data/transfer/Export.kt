@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.note.DayNote
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 import ph.mart.healthapp.core.data.profile.Goal
@@ -54,6 +55,7 @@ internal data class FitPulseExport(
     val supplementDays: List<ExportSupplementDay> = emptyList(),
     val bloodPressure: List<ExportBloodPressureReading> = emptyList(),
     val cycleDays: List<ExportCycleDay> = emptyList(),
+    val dayNotes: List<ExportDayNote> = emptyList(),
 )
 
 /** 2 added [FitPulseExport.waterDays] and the profile's water fields; 3 added
@@ -74,10 +76,11 @@ internal data class FitPulseExport(
  * whole all-or-nothing import on "Unrecognized MeasurementPart" instead of the version gate's
  * plain "written by a newer version of FitPulse"; 20 added the time of day on
  * [FitPulseExport.weightEntries], [FitPulseExport.measurements] and [FitPulseExport.cycleDays] —
- * null on every row written before it, which is the same silence a synced row carries.
+ * null on every row written before it, which is the same silence a synced row carries; 21 added
+ * [FitPulseExport.dayNotes].
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 20
+internal const val EXPORT_SCHEMA_VERSION = 21
 
 @Serializable
 internal data class ExportProfile(
@@ -184,6 +187,12 @@ internal data class ExportStrengthSet(val exerciseName: String, val reps: Int, v
 @Serializable
 internal data class ExportMoodDay(val dateEpochDay: Long, val mood: Int, val energy: Int)
 
+/** A day's note is history like a mood day — the user's own account of the day, and the one thing
+ * in the file they wrote rather than logged. Only days actually written about travel; a blank note
+ * is a cleared one, so there is nothing to carry. */
+@Serializable
+internal data class ExportDayNote(val dateEpochDay: Long, val text: String)
+
 /** Completed fasts only — `endMillis` is non-null here because a running fast is a timer, not
  * history, and restoring one on another device would resume a clock nobody started there. The row
  * id is dropped: it is an autoGenerate key with no meaning outside the database it came from. */
@@ -263,6 +272,7 @@ fun buildExportJson(
     supplementDays: List<SupplementDay>,
     bloodPressure: List<BloodPressureReading>,
     cycleDays: List<CycleDay>,
+    dayNotes: List<DayNote>,
 ): String = json.encodeToString(
     FitPulseExport(
         profile = profile?.toExport(),
@@ -277,6 +287,7 @@ fun buildExportJson(
             )
         },
         moodDays = moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
+        dayNotes = dayNotes.map { ExportDayNote(it.dateEpochDay, it.text) },
         fastSessions = fastSessions.mapNotNull { session ->
             session.endMillis?.let { ExportFastSession(session.startMillis, it, session.goalHours) }
         },
@@ -329,6 +340,7 @@ fun parseExport(text: String): Result<ImportData> = runCatching {
             )
         },
         moodDays = export.moodDays.map { MoodDay(it.dateEpochDay, it.mood, it.energy) },
+        dayNotes = export.dayNotes.map { DayNote(it.dateEpochDay, it.text) },
         fastSessions = export.fastSessions.map {
             FastSession(startMillis = it.startMillis, endMillis = it.endMillis, goalHours = it.goalHours)
         },

@@ -16,6 +16,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
@@ -52,6 +53,7 @@ class BackupWorker(
     private val fastingRepository: FastingRepository by inject()
     private val supplementRepository: SupplementRepository by inject()
     private val bloodPressureRepository: BloodPressureRepository by inject()
+    private val noteRepository: NoteRepository by inject()
     private val localBackups: LocalBackups by inject()
 
     override suspend fun doWork(): Result {
@@ -61,7 +63,7 @@ class BackupWorker(
             exportJson(
                 profileRepository, foodRepository, progressRepository, waterRepository,
                 exerciseRepository, moodRepository, cycleRepository, fastingRepository,
-                supplementRepository, bloodPressureRepository,
+                supplementRepository, bloodPressureRepository, noteRepository,
             ),
         )
         return Result.success()

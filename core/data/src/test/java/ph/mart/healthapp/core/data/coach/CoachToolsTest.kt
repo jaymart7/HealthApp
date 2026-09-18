@@ -857,6 +857,43 @@ class CoachToolsTest {
         assertTrue(text, "Steps: 8,432 of 10,000" in text)
     }
 
+    /** The one thing in a day payload the user composed rather than the app measured, so it goes
+     * in verbatim — and a day nobody wrote about carries no line at all, the rule steps, sleep,
+     * mood and fasting already follow. */
+    @Test
+    fun `a day carries the note the user wrote about it`() {
+        val text = formatDay(
+            label = "Yesterday",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            note = "Slept badly and ate out at lunch.",
+        )
+        assertTrue(text, "Note: Slept badly and ate out at lunch." in text)
+    }
+
+    @Test
+    fun `a day nobody wrote about carries no note line`() {
+        val blank = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            note = "   ",
+        )
+        val absent = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+        )
+        assertTrue(blank, "Note" !in blank)
+        assertTrue(absent, "Note" !in absent)
+    }
+
     /** No profile, so no goal — the count still stands on its own rather than failing the read. */
     @Test
     fun `steps with no goal report the count alone`() {

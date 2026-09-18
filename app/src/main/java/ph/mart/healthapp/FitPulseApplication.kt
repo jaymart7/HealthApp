@@ -32,6 +32,7 @@ import ph.mart.healthapp.core.data.bloodpressure.di.bloodPressureDataModule
 import ph.mart.healthapp.core.data.coach.di.coachDataModule
 import ph.mart.healthapp.core.data.cycle.di.cycleDataModule
 import ph.mart.healthapp.core.data.mood.di.moodDataModule
+import ph.mart.healthapp.core.data.note.di.noteDataModule
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.di.profileDataModule
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -81,6 +82,7 @@ class FitPulseApplication : Application() {
                 waterDataModule,
                 exerciseDataModule,
                 moodDataModule,
+                noteDataModule,
                 cycleDataModule,
                 fastingDataModule,
                 supplementDataModule,
