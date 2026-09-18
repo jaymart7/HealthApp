@@ -1,16 +1,20 @@
 package ph.mart.healthapp.feature.coach.ui.components
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,7 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
@@ -44,7 +49,7 @@ import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.formatDayMonth
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
+import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -83,150 +88,366 @@ internal fun ProposalCard(
     // is what stops a rotation mid-decision putting the removed rows back. Indices rather than the
     // rows themselves, so a draft holding the same food twice loses only the one that was tapped.
     var removed by rememberSaveable(actions) { mutableStateOf(emptySet<Int>()) }
+    // The one that went most recently, so it can come back. Saved beside `removed` and cleared by
+    // the undo itself: an undo line for a row already restored is a line that lies.
+    var lastRemoved by rememberSaveable(actions) { mutableStateOf<Int?>(null) }
     val kept = actions.indices.filterNot { it in removed }
     val keptActions = kept.map { actions[it] }
+    val emptied = keptActions.isEmpty()
 
     AppCard(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.tertiaryContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary),
     ) {
         // One day for the card: every row agrees on it by the time a card exists, so the first
         // dated row speaks for the rest — and striking a row out cannot change it.
         val day = dayLabel(actions.firstNotNullOfOrNull { it.draftedOn })
-        if (actions.size == 1) {
-            SingleProposal(actions.first(), day)
-        } else {
-            MultiProposal(
+        DraftHeader(day = day)
+
+        when {
+            // Striking out every row is a dismissal the long way round, but it is not one until
+            // the user says so. The card stays, says what happened, and the second action becomes
+            // "Dismiss" — a three-row draft is still a valid write, only an empty one is not.
+            emptied -> {
+                ProposalHeadline(stringResource(R.string.coach_proposal_empty_title))
+                ProposalDetail(stringResource(R.string.coach_proposal_empty_body))
+            }
+            actions.size == 1 -> SingleProposal(actions.first())
+            else -> MultiProposal(
                 actions = actions,
                 kept = kept,
-                day = day,
-                onRemove = { index -> removed = removed + index },
+                onRemove = { index ->
+                    removed = removed + index
+                    lastRemoved = index
+                },
+            )
+        }
+
+        lastRemoved?.let { index ->
+            UndoLine(
+                name = actionName(actions[index]),
+                onUndo = {
+                    removed = removed - index
+                    lastRemoved = null
+                },
             )
         }
 
         // Resolved here rather than passed down: what gets persisted is the words the user was
         // shown, and a ViewModel cannot read a resource.
-        val loggedLine = loggedLineFor(keptActions)
+        val receipt = loggedLineFor(keptActions)
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            SecondaryButton(
+            // The only filled `primary` button in the conversation, and that is the point: the
+            // starters are filled cards, the follow-ups are outlined pills, and this is the one
+            // control on the screen that writes something. It used to be a `SecondaryButton`,
+            // which made the write look like the third-most important thing on its own card.
+            PrimaryButton(
                 // "Log it" is a promise two of these do not keep: a routine's tap opens the
                 // workout screen and writes nothing at all, and a fast's flips a timer rather than
-                // logging a row. Both say what they do instead.
-                label = stringResource(confirmLabelFor(keptActions.singleOrNull())),
-                // Striking out every row is a dismissal the long way round, but it is not one
-                // until the user says so — the button goes quiet rather than the card vanishing.
-                enabled = keptActions.isNotEmpty(),
-                onClick = { onConfirm(keptActions, loggedLine) },
+                // logging a row. Both say what they do instead. And the label **counts what is
+                // left** — striking two rows out of four and still reading "Log 4 items" would be
+                // the card breaking its own promise on the button that keeps it.
+                label = confirmLabel(keptActions, actions.size),
+                icon = confirmIconFor(keptActions.singleOrNull()),
+                enabled = !emptied,
+                onClick = { onConfirm(keptActions, receipt) },
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp),
             )
-            TextButton(label = stringResource(R.string.coach_proposal_dismiss), onClick = onDismiss)
+            TextButton(
+                label = stringResource(
+                    if (emptied) R.string.coach_proposal_empty_dismiss
+                    else R.string.coach_proposal_dismiss,
+                ),
+                onClick = onDismiss,
+            )
+        }
+
+        // Only where the tap writes nothing: the button says "Start it" and a user who reads
+        // "Start" on a card full of lifts could reasonably expect the session to be logged.
+        if (keptActions.singleOrNull() is CoachAction.StartRoutine) {
+            ProposalDetail(stringResource(R.string.coach_proposal_routine_caveat))
         }
     }
 }
 
 /**
- * Which verb the confirm button uses.
+ * The card's first line: what this is, and — only when it is not today — which day.
+ *
+ * "Draft · nothing logged yet" says the card's whole promise in the place a reader starts, which is
+ * the half that colour cannot carry: `tertiaryContainer` says *the model made this* and nothing
+ * about whether it has happened yet. The day rides as a white chip at the row's end rather than as
+ * a second heading, because it qualifies the draft rather than announcing one — and a card that
+ * grew a line when backdated would move everything under it.
+ */
+@Composable
+private fun DraftHeader(day: String?) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = AppIcons.AiSparkle,
+            contentDescription = stringResource(R.string.coach_proposal_drafted),
+            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = stringResource(R.string.coach_proposal_draft_label).uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.weight(1f),
+        )
+        if (day != null) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            ) {
+                Text(
+                    text = day,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * What the last `✕` took, and the way back.
+ *
+ * Inside the card, not a snackbar: the decision was made here, the card is still on screen, and a
+ * bar at the bottom of the window would be a second place to look for the consequence of a tap.
+ * One row deep — the row before last is not coming back, because an undo stack on a card the user
+ * is about to confirm is a second thing to reason about for a tap that is one `✕` away from being
+ * redone.
+ */
+@Composable
+private fun UndoLine(name: String, onUndo: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = AppIcons.Undo,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = stringResource(R.string.coach_proposal_removed, name),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+        )
+        Text(
+            text = stringResource(R.string.coach_proposal_undo),
+            style = MaterialTheme.typography.bodySmall.copy(textDecoration = TextDecoration.Underline),
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier
+                .minimumInteractiveComponentSize()
+                .clickable(onClick = onUndo),
+        )
+    }
+}
+
+/**
+ * Which verb the confirm button uses, and what it counts.
  *
  * "Log it" is the default because logging is what all but two of these do. A routine *starts*
  * something — its tap opens a form and writes nothing — and a fast starts or ends one, which is a
  * state and not a row. [single] is null for a multi-row draft, which is always foods and always
  * logs.
+ *
+ * Pure and `internal` so [ConfirmLabelTest] can hold it, because the interesting half is not the
+ * verb: it is that a *multi-row* draft counts **what is left** rather than what was drafted. A card
+ * whose title, total and macro legend all recount on a `✕` while the button still says "Log 4
+ * items" is the one place on the card where a stale figure costs the user a row.
  */
 @StringRes
-private fun confirmLabelFor(single: CoachAction?): Int = when {
+internal fun confirmLabelFor(single: CoachAction?): Int = when {
     single is CoachAction.StartRoutine -> R.string.coach_proposal_start
     single is CoachAction.SetFast && single.ending -> R.string.coach_proposal_end
     single is CoachAction.SetFast -> R.string.coach_proposal_start
     else -> R.string.coach_proposal_confirm
 }
 
-/** A meal of one thing is not a list: the single draft keeps the layout it shipped with, where the
- * name is the headline and every figure that will be written is under it. */
+/**
+ * Whether the button counts, given what is left of a draft that started with [drafted] rows.
+ *
+ * A single-row draft never counts — "Log it" is what a meal of one thing deserves — and a draft
+ * that started with several counts even once it is down to one, because the user *took rows out*
+ * and the number is the acknowledgement. Null means "no count", which is the label above alone.
+ */
+internal fun confirmCountFor(kept: Int, drafted: Int): Int? = kept.takeIf { drafted > 1 && it > 0 }
+
+/** The two together, resolved. A composable rather than a pure function because only a composable
+ * reads a plural, and the rule underneath it is the two functions above. */
 @Composable
-private fun SingleProposal(action: CoachAction, day: String? = null) {
+private fun confirmLabel(kept: List<CoachAction>, drafted: Int): String {
+    val count = confirmCountFor(kept.size, drafted)
+    return if (count == null) {
+        stringResource(confirmLabelFor(kept.singleOrNull()))
+    } else {
+        pluralStringResource(R.plurals.coach_proposal_confirm_items, count, count)
+    }
+}
+
+/** The glyph that leads the label, and it carries what the word cannot: a `check` writes, a
+ * `play_arrow` opens a screen and writes nothing. */
+private fun confirmIconFor(single: CoachAction?): ImageVector = when (single) {
+    is CoachAction.StartRoutine -> AppIcons.Play
+    is CoachAction.SetFast -> if (single.ending) AppIcons.Check else AppIcons.Play
+    else -> AppIcons.Check
+}
+
+/**
+ * A meal of one thing is not a list, so a single draft keeps the headline layout: a kicker naming
+ * where it is going, the thing itself as the title, and every figure that will be written on the
+ * white panel underneath.
+ *
+ * The three that write no figures at all — a routine, and a fast at either end — draw a panel that
+ * says what the tap *opens* rather than one that says what it writes. The panel is still there,
+ * because its absence would read as a card that forgot to show its numbers.
+ */
+@Composable
+private fun SingleProposal(action: CoachAction) {
     when (action) {
         is CoachAction.LogFood -> {
-            ProposalTitle(
+            ProposalKicker(
                 stringResource(
                     R.string.coach_proposal_food_title,
                     stringResource(action.mealType.labelRes),
                 ),
-                day,
             )
             ProposalHeadline(action.name)
-            ProposalDetail(
-                stringResource(
-                    R.string.coach_proposal_macros,
-                    action.calories,
-                    action.proteinG,
-                    action.carbsG,
-                    action.fatG,
-                ),
-            )
+            ReceiptPanel {
+                ReceiptHeadline(
+                    label = stringResource(R.string.coach_receipt_calories),
+                    value = action.calories.toString(),
+                    unit = stringResource(R.string.coach_unit_kcal),
+                )
+                MacroColumns(
+                    proteinG = action.proteinG,
+                    carbsG = action.carbsG,
+                    fatG = action.fatG,
+                )
+            }
         }
 
         is CoachAction.LogExercise -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_exercise_title), day)
+            ProposalKicker(stringResource(R.string.coach_proposal_exercise_title))
             ProposalHeadline(activityName(action))
-            ProposalDetail(
-                stringResource(
-                    R.string.coach_proposal_exercise_body,
-                    action.minutes,
-                    action.burnedKcal,
-                ),
-            )
+            ReceiptPanel {
+                ReceiptHeadline(
+                    label = stringResource(R.string.coach_receipt_minutes),
+                    value = action.minutes.toString(),
+                    unit = stringResource(R.string.coach_unit_min),
+                )
+                // The app's own MET estimate off the user's latest weigh-in, never the model's —
+                // labelled "burned" so it can never be read as calories eaten.
+                ReceiptLine(
+                    label = stringResource(R.string.coach_receipt_burned),
+                    value = stringResource(R.string.coach_proposal_row_kcal, action.burnedKcal),
+                )
+            }
         }
 
         is CoachAction.LogWater -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_water_title), day)
+            ProposalKicker(stringResource(R.string.coach_proposal_water_title))
             ProposalHeadline(waterAmount(action.glasses))
         }
 
         is CoachAction.LogWeight -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_weight_title), day)
-            ProposalHeadline(weightAmount(action))
-            weightChange(action)?.let { ProposalDetail(it) }
+            ProposalKicker(stringResource(R.string.coach_proposal_weight_title))
+            ReceiptPanel {
+                ReceiptHeadline(
+                    label = stringResource(R.string.coach_receipt_weight),
+                    value = formatWeight(action.weight),
+                    unit = action.unit.weightUnitLabel(),
+                )
+                weightChange(action)?.let {
+                    ReceiptLine(label = it, value = null)
+                }
+            }
         }
 
         is CoachAction.LogSupplement -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_supplement_title), day)
+            ProposalKicker(stringResource(R.string.coach_proposal_supplement_title))
             ProposalHeadline(action.name)
-            ProposalDetail(supplementDoses(action.doses))
+            ReceiptPanel {
+                ReceiptLine(
+                    label = stringResource(R.string.coach_receipt_dose),
+                    value = supplementDoses(action.doses),
+                )
+            }
         }
 
         is CoachAction.LogMood -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_mood_title), day)
-            // The mood is the headline when there is one; a draft that names only the energy makes
-            // the energy the headline rather than leaving the card with a blank first line.
-            val mood = moodLine(action.mood)
-            val energy = energyLine(action.energy)
-            ProposalHeadline(mood ?: energy.orEmpty())
-            if (mood != null) energy?.let { ProposalDetail(it) }
+            ProposalKicker(stringResource(R.string.coach_proposal_mood_title))
+            ReceiptPanel {
+                // The mood is the first line when there is one; a draft naming only the energy
+                // makes the energy the first line rather than leaving a blank one above it.
+                val mood = moodLine(action.mood)
+                val energy = energyLine(action.energy)
+                ReceiptLine(label = mood ?: energy.orEmpty(), value = null)
+                if (mood != null) energy?.let { ReceiptLine(label = it, value = null) }
+            }
         }
 
         is CoachAction.LogBloodPressure -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_bp_title), day)
-            ProposalHeadline(formatBloodPressure(action.systolic, action.diastolic))
-            ProposalDetail(bandLine(action))
+            ProposalKicker(stringResource(R.string.coach_proposal_bp_title))
+            ReceiptPanel {
+                ReceiptHeadline(
+                    label = stringResource(R.string.coach_receipt_reading),
+                    value = formatBloodPressure(action.systolic, action.diastolic),
+                )
+                ReceiptLine(label = bandLine(action), value = null)
+            }
         }
 
         is CoachAction.LogMeasurement -> {
-            ProposalTitle(
+            ProposalKicker(
                 stringResource(
                     R.string.coach_proposal_measurement_title,
                     stringResource(action.part.label),
                 ),
-                day,
             )
-            ProposalHeadline(measurementAmount(action))
+            ReceiptPanel {
+                ReceiptHeadline(
+                    label = stringResource(action.part.label),
+                    value = formatWeight(action.value),
+                    unit = action.part.unitLabel(action.unit),
+                )
+            }
         }
 
         is CoachAction.StartRoutine -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_routine_title), day)
+            ProposalKicker(stringResource(R.string.coach_proposal_routine_title))
             ProposalHeadline(action.name)
-            routineLifts(action)?.let { ProposalDetail(it) }
+            // Every lift, not the first few — the one panel here that shows no figures the app
+            // will write, because it writes none. A user deciding whether to start a session needs
+            // to see what is in it.
+            if (action.lifts.isNotEmpty()) {
+                ReceiptPanel {
+                    action.lifts.forEach { lift ->
+                        ReceiptLine(
+                            label = lift.exerciseName,
+                            value = stringResource(
+                                R.string.coach_proposal_routine_sets,
+                                lift.sets,
+                                lift.reps,
+                            ),
+                        )
+                    }
+                }
+            }
         }
 
         // The goal on a start, the elapsed time on an end. Neither is the model's: a start takes
@@ -235,11 +456,21 @@ private fun SingleProposal(action: CoachAction, day: String? = null) {
         // any of these cards that nothing writes — the end is stamped at the tap.
         is CoachAction.SetFast -> {
             if (action.ending) {
-                ProposalTitle(stringResource(R.string.coach_proposal_fast_end_title), day)
-                ProposalHeadline(fastElapsed(action))
+                ProposalKicker(stringResource(R.string.coach_proposal_fast_end_title))
+                ReceiptPanel {
+                    ReceiptLine(
+                        label = stringResource(R.string.coach_receipt_elapsed),
+                        value = fastElapsed(action),
+                    )
+                }
             } else {
-                ProposalTitle(stringResource(R.string.coach_proposal_fast_start_title), day)
-                ProposalHeadline(fastGoal(action))
+                ProposalKicker(stringResource(R.string.coach_proposal_fast_start_title))
+                ReceiptPanel {
+                    ReceiptLine(
+                        label = stringResource(R.string.coach_receipt_goal),
+                        value = fastGoal(action),
+                    )
+                }
             }
         }
 
@@ -247,7 +478,12 @@ private fun SingleProposal(action: CoachAction, day: String? = null) {
         // only ever reached if that stops being true. It renders the name rather than nothing,
         // which stays honest: the name is the whole of what the model supplied.
         is CoachAction.LogSavedMeal -> {
-            ProposalTitle(stringResource(R.string.coach_proposal_food_title, stringResource(action.mealType.labelRes)), day)
+            ProposalKicker(
+                stringResource(
+                    R.string.coach_proposal_food_title,
+                    stringResource(action.mealType.labelRes),
+                ),
+            )
             ProposalHeadline(action.name)
         }
     }
@@ -258,88 +494,87 @@ private fun SingleProposal(action: CoachAction, day: String? = null) {
  *
  * A removed row is *gone* rather than struck through: the card's promise is that what it shows is
  * what gets written, and a greyed row still on screen is a row the eye counts. [kept] carries the
- * original indices in order, so removing the middle row does not renumber the rest.
+ * original indices in order, so removing the middle row does not renumber the rest — and the undo
+ * line on the card is what makes that removal cheap enough to be irreversible-looking.
  */
 @Composable
-private fun MultiProposal(
-    actions: List<CoachAction>,
-    kept: List<Int>,
-    day: String?,
-    onRemove: (Int) -> Unit,
-) {
-    ProposalTitle(stringResource(R.string.coach_proposal_items_title, kept.size), day)
-    kept.forEach { index ->
-        val action = actions[index]
-        val name = actionName(action)
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                modifier = Modifier.weight(1f),
+private fun MultiProposal(actions: List<CoachAction>, kept: List<Int>, onRemove: (Int) -> Unit) {
+    ProposalHeadline(stringResource(R.string.coach_proposal_items_title, kept.size))
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        kept.forEach { index ->
+            val action = actions[index]
+            val name = actionName(action)
+            val food = action as? CoachAction.LogFood
+            ReceiptRow(
+                name = name,
+                detail = rowDetail(action).takeIf { food == null },
+                macros = food?.let { Triple(it.proteinG, it.carbsG, it.fatG) },
+                trailing = food?.calories?.toString(),
+                onRemove = { onRemove(index) },
+                removeLabel = stringResource(R.string.coach_proposal_remove, name),
             )
-            rowDetail(action)?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall.tabularNums,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                    textAlign = TextAlign.End,
-                )
-            }
-            IconButton(onClick = { onRemove(index) }) {
-                Icon(
-                    imageVector = AppIcons.Close,
-                    contentDescription = stringResource(R.string.coach_proposal_remove, name),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                )
-            }
         }
-    }
 
-    // Only the foods, and only when there are some: a workout's calories are *burned* and a glass
-    // of water has none, so summing either into one "kcal" figure would print a number that is
-    // true of nothing.
-    val foods = kept.map { actions[it] }.filterIsInstance<CoachAction.LogFood>()
-    if (foods.isNotEmpty()) {
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.2f),
-        )
-        ProposalDetail(
-            stringResource(
-                R.string.coach_proposal_items_total,
-                foods.sumOf { it.calories },
-                foods.sumOf { it.proteinG },
-                foods.sumOf { it.carbsG },
-                foods.sumOf { it.fatG },
-            ),
-        )
+        // Only the foods, and only when there are some: a workout's calories are *burned* and a
+        // glass of water has none, so summing either into one "kcal" figure would print a number
+        // that is true of nothing.
+        val foods = kept.map { actions[it] }.filterIsInstance<CoachAction.LogFood>()
+        if (foods.isNotEmpty()) {
+            ReceiptTotal(
+                count = kept.size,
+                calories = foods.sumOf { it.calories },
+                proteinG = foods.sumOf { it.proteinG },
+                carbsG = foods.sumOf { it.carbsG },
+                fatG = foods.sumOf { it.fatG },
+            )
+        }
     }
 }
 
-/**
- * The kind of row, and the day when it is not today — "Add to Breakfast · Yesterday".
- *
- * The day goes here rather than on its own line because it is a qualifier on the title, not a
- * second heading, and a card that grows a line when backdated moves everything under it.
- */
+/** A plain label/value line on the receipt panel — the figures that are not the headline, and the
+ * lines (a band, a mood) that are a label with nothing to put beside them. */
 @Composable
-private fun ProposalTitle(text: String, day: String? = null) = Text(
-    text = day?.let { stringResource(R.string.coach_proposal_title_day, text, it) } ?: text,
-    style = MaterialTheme.typography.labelMedium,
+private fun ReceiptLine(label: String, value: String?) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (value != null) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium.tabularNums,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+/** Where this is going — the meal a food joins, or the weigh-in it becomes. A kicker over the
+ * title rather than a title in its own right: the *thing* is the headline and the destination
+ * qualifies it. The day no longer rides here; it is a chip in [DraftHeader], where a qualifier on
+ * the whole card belongs. */
+@Composable
+private fun ProposalKicker(text: String) = Text(
+    text = text,
+    style = MaterialTheme.typography.labelLarge,
     color = MaterialTheme.colorScheme.onTertiaryContainer,
 )
 
 @Composable
 private fun ProposalHeadline(text: String) = Text(
     text = text,
-    style = MaterialTheme.typography.titleMedium,
+    style = MaterialTheme.typography.titleLarge,
     color = MaterialTheme.colorScheme.onTertiaryContainer,
-    modifier = Modifier.padding(top = 4.dp),
+    modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
 )
 
 @Composable

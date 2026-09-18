@@ -45,6 +45,7 @@ import ph.mart.healthapp.feature.coach.ui.components.ChatInputBar
 import ph.mart.healthapp.feature.coach.ui.components.CoachEmptyState
 import ph.mart.healthapp.feature.coach.ui.components.CoachNotice
 import ph.mart.healthapp.feature.coach.ui.components.DaySeparator
+import ph.mart.healthapp.feature.coach.ui.components.DestinationRow
 import ph.mart.healthapp.feature.coach.ui.components.FollowUpRow
 import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
@@ -113,7 +114,7 @@ private fun CoachContent(
         (if (uiState.proposal.isNotEmpty()) 1 else 0) +
         (if (uiState.failure != null) 1 else 0) +
         // The door to the diary, when the last tap put rows in it.
-        (if (uiState.loggedToDiary && uiState.pending == null) 1 else 0) +
+        (if (uiState.loggedDestination != null && uiState.pending == null) 1 else 0) +
         // The follow-up row is an item too, and it is the last one — scrolling to the answer above
         // it would leave the chips off screen, which is the whole of what they are for.
         (if (uiState.messages.isNotEmpty() && uiState.pending == null && uiState.failure == null) 1 else 0)
@@ -212,11 +213,12 @@ private fun CoachContent(
                     // Under the answer that logged them, because that is the answer it is about —
                     // above the chips rather than below, so the way *out* is nearer the thing it
                     // refers to than the questions that would keep the user here.
-                    if (uiState.loggedToDiary && uiState.pending == null) {
+                    uiState.loggedDestination?.takeIf { uiState.pending == null }?.let { destination ->
                         item(key = "open-diary") {
-                            TextButton(
-                                label = stringResource(R.string.coach_open_diary),
+                            DestinationRow(
+                                label = stringResource(R.string.coach_open_diary, stringResource(destination)),
                                 onClick = onOpenDiary,
+                                modifier = Modifier.padding(start = AnswerIndent),
                             )
                         }
                     }
@@ -370,11 +372,12 @@ private fun CoachScreenLoggedPreview() {
                     ChatMessage(
                         id = 2,
                         fromUser = false,
-                        text = "Done — two scrambled eggs for breakfast.\nLogged: Scrambled eggs, 220 kcal.",
+                        text = "Done — two scrambled eggs for breakfast.",
                         sentAtMillis = 2,
+                        receipt = "Logged: Scrambled eggs, 220 kcal.",
                     ),
                 ),
-                loggedToDiary = true,
+                loggedDestination = R.string.coach_destination_diary,
             ),
             state = CoachScreenState(),
             onEvent = {},

@@ -20,6 +20,10 @@ data class ChatMessage(
     val fromUser: Boolean,
     val text: String,
     val sentAtMillis: Long,
+    /** What a confirmed draft wrote — "Logged: Scrambled eggs, 220 kcal." — kept apart from [text]
+     * so the screen can draw it as the app reporting rather than as the coach talking. Null on
+     * every turn that logged nothing. */
+    val receipt: String? = null,
 )
 
 /**
@@ -336,8 +340,18 @@ interface CoachRepository {
      *
      * The writes go through the ordinary repositories the add-entry sheet uses, so a coach-drafted
      * row is indistinguishable from a hand-typed one once it lands.
+     *
+     * [receipt] is the line naming what was written, and it is stored in its own column rather than
+     * appended to [answer]: the two are different kinds of sentence — one is the coach and one is
+     * the app — and only a separate column lets a reopened conversation still tell them apart.
+     * Null on a dismissal, and on the one confirm that writes nothing (a routine opens a form).
      */
-    suspend fun settle(question: String, answer: String, actions: List<CoachAction>)
+    suspend fun settle(
+        question: String,
+        answer: String,
+        actions: List<CoachAction>,
+        receipt: String? = null,
+    )
 
     /** Soft-deletes the whole conversation. Room's rows stay, like every other domain's. */
     suspend fun clear()

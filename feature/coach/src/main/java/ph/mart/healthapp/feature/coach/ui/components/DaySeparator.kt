@@ -1,12 +1,15 @@
 package ph.mart.healthapp.feature.coach.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -15,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -136,6 +140,57 @@ private fun DaySeparatorPreview() {
                 DaySeparator(epochDay = todayEpochDay())
                 StoppedMarker()
             }
+        }
+    }
+}
+
+/**
+ * The way out, under the answer that logged something — "View it in Breakfast".
+ *
+ * A full-width outlined row rather than the bare text button it replaced, because it is a
+ * *destination* and not an action on this screen: it names where the rows went and the trailing
+ * arrow says the tap leaves. Outlined rather than filled keeps the screen's one filled `primary`
+ * on the draft card's confirm, where the consequence is.
+ *
+ * It is offered only when the rows landed in **today's** diary, which is `diaryDestination()`'s
+ * rule — a door onto the wrong screen or the wrong day is a shrug.
+ */
+@Composable
+internal fun DestinationRow(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.heightIn(min = 48.dp).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = AppIcons.ArrowForward,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun DestinationRowPreview() {
+    AppTheme {
+        Surface {
+            DestinationRow(label = "View it in Breakfast", onClick = {}, modifier = Modifier.padding(16.dp))
         }
     }
 }

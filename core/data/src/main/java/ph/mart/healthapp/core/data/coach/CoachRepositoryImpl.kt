@@ -240,7 +240,12 @@ internal class CoachRepositoryImpl(
      * `setToday` for a stronger reason: it takes the day's *new total*, so two proposals applied
      * one after the other would have the second overwrite the first.
      */
-    override suspend fun settle(question: String, answer: String, actions: List<CoachAction>) {
+    override suspend fun settle(
+        question: String,
+        answer: String,
+        actions: List<CoachAction>,
+        receipt: String?,
+    ) {
         actions.foodEntries().takeIf { it.isNotEmpty() }?.let { foodRepository.addEntries(it) }
 
         // Added to the day, never assigned: a coach that proposes "one glass" must not wipe the
@@ -337,18 +342,25 @@ internal class CoachRepositoryImpl(
             if (it.ending) fastingRepository.stop() else fastingRepository.start(it.goalHours)
         }
 
-        writeExchange(question, answer)
+        writeExchange(question, answer, receipt)
     }
 
     /** The one write, shared by both endings, so "a question is only persisted once it has been
      * answered" stays one rule with one implementation. */
-    private suspend fun writeExchange(question: String, answer: String) {
+    private suspend fun writeExchange(question: String, answer: String, receipt: String? = null) {
         val now = System.currentTimeMillis()
         dao.addExchange(
             question = ChatMessageEntity(fromUser = true, text = question, sentAtMillis = now),
             // One millisecond apart so the ascending sort can never render the reply first; the
             // id tie-break in the DAO covers a clock that doesn't move between the two.
-            answer = ChatMessageEntity(fromUser = false, text = answer, sentAtMillis = now + 1),
+            answer = ChatMessageEntity(
+                fromUser = false,
+                text = answer,
+                sentAtMillis = now + 1,
+                // Only ever on the answer: a receipt is about what the coach's turn did, and the
+                // question row is the user's own words.
+                receipt = receipt,
+            ),
         )
     }
 
@@ -507,4 +519,5 @@ private fun ChatMessageEntity.toMessage() = ChatMessage(
     fromUser = fromUser,
     text = text,
     sentAtMillis = sentAtMillis,
+    receipt = receipt,
 )

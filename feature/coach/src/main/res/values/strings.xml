@@ -43,7 +43,14 @@
     <string name="coach_clear">Clear chat</string>
     <!-- The way out of the chat, under the answer that logged something. Only ever shown for
          rows that landed in today's diary, which is the only screen it opens. -->
-    <string name="coach_open_diary">View it in your diary</string>
+    <string name="coach_open_diary">View it in %1$s</string>
+    <!-- Where water and an activity land, which is the day rather than a meal slot. -->
+    <string name="coach_destination_diary">your diary</string>
+
+    <!-- Unit symbols. Not copy — kcal and min are the same in every locale this would ship in —
+         but they are drawn beside a figure and the gate reads every literal in a ui/ package. -->
+    <string name="coach_unit_kcal">kcal</string>
+    <string name="coach_unit_min">min</string>
     <string name="coach_clear_title">Clear this chat?</string>
     <string name="coach_clear_body">The whole conversation goes. Your logged food and weight aren\'t affected.</string>
     <string name="coach_clear_confirm">Clear</string>
@@ -100,7 +107,6 @@
     <string name="coach_proposal_water_title">Add water</string>
     <string name="coach_proposal_water_body">%1$d glasses</string>
     <string name="coach_proposal_water_body_one">1 glass</string>
-    <string name="coach_proposal_macros">%1$d kcal · %2$dg protein · %3$dg carbs · %4$dg fat</string>
     <string name="coach_proposal_exercise_title">Add activity</string>
     <!-- The burn is the app's own MET estimate from the user's weight, never the model's figure. -->
     <string name="coach_proposal_exercise_body">%1$d min · %2$d kcal burned</string>
@@ -129,29 +135,78 @@
     <string name="coach_proposal_measurement_title">Add %1$s</string>
     <string name="coach_proposal_measurement_body">%1$s %2$s</string>
 
-    <!-- A draft the coach backdated. The title carries the day, e.g. "Add to Breakfast ·
-         Yesterday"; a draft for today says nothing, which is almost every draft. -->
-    <string name="coach_proposal_title_day">%1$s · %2$s</string>
+    <!-- A draft the coach backdated. The day sits as a chip at the end of the card's header row;
+         a draft for today shows none at all, which is almost every draft. -->
     <string name="coach_proposal_day_yesterday">Yesterday</string>
     <!-- How many doses the tick adds to today, e.g. "1 dose". Never the day's new total. -->
     <plurals name="coach_proposal_supplement_doses">
         <item quantity="one">%1$d dose</item>
         <item quantity="other">%1$d doses</item>
     </plurals>
-    <!-- A draft holding more than one row: one title for the card, and one footer totalling what
-         is still on it after any removals. -->
+    <!-- A draft holding more than one row. The count recounts on every removal, as the total and
+         the macro legend on the receipt panel below it do. -->
     <string name="coach_proposal_items_title">Add %1$d items</string>
-    <string name="coach_proposal_items_total">%1$d kcal · %2$dg protein · %3$dg carbs · %4$dg fat</string>
     <string name="coach_proposal_row_kcal">%1$d kcal</string>
     <string name="coach_proposal_remove">Remove %1$s</string>
     <string name="coach_proposal_confirm">Log it</string>
     <string name="coach_proposal_dismiss">No thanks</string>
+    <!-- The confirm on a draft that started with several rows. It counts what is LEFT, not what
+         was drafted: the title, the total and the macro legend all recount when a row is struck
+         out, and a button still promising four is the one stale figure that costs a row. -->
+    <plurals name="coach_proposal_confirm_items">
+        <item quantity="one">Log %1$d item</item>
+        <item quantity="other">Log %1$d items</item>
+    </plurals>
+
+    <!-- The card's first line. It says the card's whole promise where a reader starts, because
+         colour cannot: tertiaryContainer says a model made this and nothing about whether it has
+         happened yet. -->
+    <string name="coach_proposal_draft_label">Draft · nothing logged yet</string>
+    <string name="coach_proposal_drafted">Drafted by the coach</string>
+
+    <!-- A row struck out, and the way back. Inside the card rather than a snackbar: the decision
+         was made here and the card is still on screen. -->
+    <string name="coach_proposal_removed">%1$s removed.</string>
+    <string name="coach_proposal_undo">Put it back</string>
+
+    <!-- Every row struck out. Not a dismissal until the user says so, so the card stays and says
+         what happened; only then does the confirm go quiet. -->
+    <string name="coach_proposal_empty_title">Nothing left to add</string>
+    <string name="coach_proposal_empty_body">You took every row out.</string>
+    <string name="coach_proposal_empty_dismiss">Dismiss</string>
+
+    <!-- What a several-row draft comes to, e.g. "Total · 4 items". -->
+    <string name="coach_proposal_total">Total · %1$d items</string>
+
+    <!-- The labels on the white receipt panel: the figures the tap is about to write. -->
+    <string name="coach_receipt_calories">Calories</string>
+    <string name="coach_receipt_minutes">Minutes</string>
+    <string name="coach_receipt_burned">Burned</string>
+    <string name="coach_receipt_weight">Weight</string>
+    <string name="coach_receipt_dose">Dose</string>
+    <string name="coach_receipt_reading">Reading</string>
+    <string name="coach_receipt_elapsed">Elapsed</string>
+    <string name="coach_receipt_goal">Goal</string>
+
+    <!-- The three macros, and the letters they shrink to on a multi-row card. The colours are
+         fixed app-wide — protein primary, carbs tertiary, fat secondary — so these words and those
+         letters carry the same mapping the legend under the total repeats in full. -->
+    <string name="coach_macro_protein">Protein</string>
+    <string name="coach_macro_carbs">Carbs</string>
+    <string name="coach_macro_fat">Fat</string>
+    <string name="coach_macro_letter_protein">P</string>
+    <string name="coach_macro_letter_carbs">C</string>
+    <string name="coach_macro_letter_fat">F</string>
+    <string name="coach_macro_grams">%1$dg</string>
 
     <!-- A drafted workout routine. It is the one card that writes nothing: the tap opens the
          workout screen seeded with these lifts and the user saves it themselves, which is why the
          button says Start it rather than Log it and why no "Logged:" line follows it. -->
     <string name="coach_proposal_routine_title">Start workout</string>
     <string name="coach_proposal_routine_lift">%1$s %2$d×%3$d</string>
+    <!-- One lift on the receipt panel: sets by reps, and no figure the app will write. -->
+    <string name="coach_proposal_routine_sets">%1$d × %2$d</string>
+    <string name="coach_proposal_routine_caveat">Opens the workout screen. Nothing is written until you finish it there.</string>
     <string name="coach_proposal_start">Start it</string>
 
     <!-- The fasting timer. The one card whose confirm changes a state rather than writing a row,

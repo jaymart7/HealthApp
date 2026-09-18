@@ -61,10 +61,10 @@ class CoachViewModel(
             // never touches it, so a chat cleared after a failed send would keep the apology and
             // its Retry button over an empty screen — with the starters hidden behind them.
             CoachEvent.OnClear -> intent {
-                reduce { state.copy(failure = null, loggedToDiary = false) }
+                reduce { state.copy(failure = null, loggedDestination = null) }
                 coachRepository.clear()
             }
-            is CoachEvent.OnConfirmProposal -> onSettle(event.kept, event.loggedLine)
+            is CoachEvent.OnConfirmProposal -> onSettle(event.kept, event.receipt)
             CoachEvent.OnDismissProposal -> onSettle(emptyList(), null)
         }
     }
@@ -120,16 +120,17 @@ class CoachViewModel(
      * proposal that came with no prose: there is no answer to persist, so no write happens, so no
      * emission arrives to retire them.
      */
-    private fun onSettle(kept: List<CoachAction>, loggedLine: String?) = intent {
+    private fun onSettle(kept: List<CoachAction>, receiptLine: String?) = intent {
         if (state.proposal.isEmpty()) return@intent
         val question = state.pending ?: return@intent
-        // Blanks dropped, not just nulls: a drafted routine confirms with no logged line at all —
-        // nothing was written — and an empty one would leave the persisted answer trailing a
-        // newline.
-        val answer = listOfNotNull(state.streaming, loggedLine)
-            .filter { it.isNotBlank() }
-            .joinToString("\n")
-        if (answer.isEmpty()) {
+        val answer = state.streaming.orEmpty()
+        // Blank dropped, not just null: a drafted routine confirms with no receipt at all — nothing
+        // was written — and storing an empty string would have the bubble draw a rule under a
+        // heading with no line beneath it.
+        val receipt = receiptLine?.takeIf { it.isNotBlank() }
+        // Neither half of the turn exists: no prose came back and nothing was written, so there is
+        // nothing to persist and the bubbles have to be retired here — no Room emission is coming.
+        if (answer.isBlank() && receipt == null) {
             return@intent reduce { state.withTurnAbandoned() }
         }
         // The card goes on the tap, before the write is awaited. Nothing else reduces until Room
@@ -139,10 +140,10 @@ class CoachViewModel(
         // The door to the diary goes up in the same reduce the card comes down in: the tap is
         // what wrote the rows, and `kept` is what the user actually agreed to — a draft whose only
         // surviving row is a weigh-in has nothing in the diary to go and look at.
-        reduce { state.copy(proposal = emptyList(), loggedToDiary = kept.opensTheDiary()) }
+        reduce { state.copy(proposal = emptyList(), loggedDestination = kept.diaryDestination()) }
         // [kept] rather than `state.proposal`: the card is where a row was struck out, and what
         // comes back from it is what the user agreed to. A dismissal sends nothing at all.
-        coachRepository.settle(question, answer, kept)
+        coachRepository.settle(question, answer, kept, receipt)
     }
 
     /**
@@ -170,7 +171,7 @@ class CoachViewModel(
                     failure = null,
                     proposal = emptyList(),
                     // The door belongs to the turn that logged something, not to the conversation.
-                    loggedToDiary = false,
+                    loggedDestination = null,
                 )
             }
 

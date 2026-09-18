@@ -44,22 +44,53 @@ data class CoachUiState(
     /** The rows the coach drafted, waiting on a tap — empty when there is no card up. One meal is
      * several of them. [streaming] holds the prose that came with them. */
     val proposal: List<CoachAction> = emptyList(),
-    /** Whether the last confirmed draft put rows in today's diary, which is the one thing on this
-     * screen there is somewhere to go and see. See [opensTheDiary]. */
-    val loggedToDiary: Boolean = false,
+    /** Where the last confirmed draft put rows, when that was today's diary — a `@StringRes` meal
+     * label, which the screen turns into "View it in Breakfast". Null when there is nowhere true to
+     * send anyone. See [diaryDestination]. */
+    @StringRes val loggedDestination: Int? = null,
 )
 
 /**
- * Whether a confirmed draft is worth offering a door to the diary for.
+ * Where a confirmed draft landed, when the diary is a true answer to that — a `@StringRes` meal
+ * label, or null.
  *
- * Two conditions, and both are about not offering one that lands in the wrong place. **The kind
- * has to be a diary row** — food, water and an activity all appear on the day the diary draws,
- * while a weigh-in, a mood, a cuff reading and a measurement are Progress's, a supplement
- * tick is Profile's, a fast is Home's timer and a started routine has written nothing at all yet, and a door that opens
- * the wrong screen is the shrug the coach's own subject actions are written against. **And it has to
- * be today**, because the diary opens on today and its day is ViewModel state rather than
- * something a route carries: a door from a backdated draft would open a day that does not hold the
- * rows it just promised. A backdated draft therefore gets no door, which is the honest half.
+ * It used to be a bare Boolean and the door read "View it in your diary", which was true and
+ * vague: a draft goes into a *meal*, the diary opens on a day of four of them, and naming the one
+ * that grew is the difference between a link and a direction. So the food rows name their slot and
+ * everything else that still earns a door — water, an activity — says "diary", which is where those
+ * actually appear.
+ *
+ * The two conditions [opensTheDiary] carried are unchanged and are both about not offering a door
+ * that lands in the wrong place. **The kind has to be a diary row** — food, water and an activity
+ * all appear on the day the diary draws, while a weigh-in, a mood, a cuff reading and a measurement
+ * are Progress's, a supplement tick is Profile's, a fast is Home's timer and a started routine has
+ * written nothing at all yet, and a door that opens the wrong screen is the shrug the coach's own
+ * subject actions are written against. **And it has to be today**, because the diary opens on today
+ * and its day is ViewModel state rather than something a route carries: a door from a backdated
+ * draft would open a day that does not hold the rows it just promised. A backdated draft therefore
+ * gets no door, which is the honest half.
+ *
+ * The **first** qualifying row names it, not the commonest: a draft is one meal by construction
+ * (`send()` refuses rows that disagree about the day, and a mixed draft is a meal plus a glass), so
+ * there is never a second slot to choose between.
+ */
+@StringRes
+internal fun List<CoachAction>.diaryDestination(): Int? = firstNotNullOfOrNull { action ->
+    when (action) {
+        is CoachAction.LogFood -> action.mealType.labelRes.takeIf { action.draftedOn == null }
+        is CoachAction.LogSavedMeal -> action.mealType.labelRes.takeIf { action.draftedOn == null }
+        is CoachAction.LogWater,
+        is CoachAction.LogExercise,
+        -> R.string.coach_destination_diary.takeIf { action.draftedOn == null }
+        else -> null
+    }
+}
+
+/**
+ * Whether a confirmed draft is worth offering a door to the diary for. [diaryDestination] is what
+ * the screen reads; this stays as the exhaustive statement of the rule, so a new [CoachAction] kind
+ * cannot be added without answering the question — a `when` with an `else` cannot force that and
+ * this one has no `else`.
  */
 internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
     when (it) {
@@ -192,10 +223,10 @@ data class CoachFailure(val offline: Boolean, val insight: String?, val question
  * All the screen's writes. [OnRetry] resends the question the failure is holding, so a dropped
  * connection doesn't cost the user their typing.
  *
- * [OnConfirmProposal] carries its own copy because the line it appends to the persisted answer is
- * user-facing, and the screen is the only place that can resolve a resource — *composables
- * resolve, ViewModels name*, and no `Context` reaches this one. [OnDismissProposal] needs no such
- * line: the turn is persisted with the coach's prose alone.
+ * [OnConfirmProposal] carries its own copy because the line naming what was written is user-facing,
+ * and the screen is the only place that can resolve a resource — *composables resolve, ViewModels
+ * name*, and no `Context` reaches this one. [OnDismissProposal] needs no such line: the turn is
+ * persisted with the coach's prose alone.
  */
 sealed interface CoachEvent {
     data class OnSend(val question: String) : CoachEvent
@@ -207,8 +238,12 @@ sealed interface CoachEvent {
     data object OnClear : CoachEvent
     /** [kept] is what survived the card's per-row `✕`, which is why the screen sends the rows back
      * rather than the ViewModel reading them off the state: striking a row out is a decision the
-     * user made on the card, and only what is left was agreed to. */
-    data class OnConfirmProposal(val kept: List<CoachAction>, val loggedLine: String) : CoachEvent
+     * user made on the card, and only what is left was agreed to.
+     *
+     * [receipt] is the line naming what is about to be written. Blank on the one confirm that
+     * writes nothing — a drafted routine opens a form — and the repository stores it in its own
+     * column rather than joined onto the answer. */
+    data class OnConfirmProposal(val kept: List<CoachAction>, val receipt: String) : CoachEvent
     data object OnDismissProposal : CoachEvent
 }
 

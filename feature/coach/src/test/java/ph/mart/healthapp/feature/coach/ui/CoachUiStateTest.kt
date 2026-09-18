@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.feature.coach.R
 
 /**
  * The one rule a Room emission has to get right while a send is in flight: when the streamed
@@ -130,6 +131,52 @@ class CoachUiStateTest {
         // Home's timer and Progress's page: no diary row exists to go and look at.
         assertFalse(listOf(CoachAction.SetFast(ending = true)).opensTheDiary())
         assertFalse(emptyList<CoachAction>().opensTheDiary())
+    }
+
+    /**
+     * The door now *names* where the rows went, so the rule has a second half: which of two labels
+     * a qualifying draft gets. A meal names its slot, because "View it in your diary" was true and
+     * vague — a draft goes into one of four meals and naming the one that grew is the difference
+     * between a link and a direction. Water and an activity name the diary, which is where those
+     * actually appear.
+     */
+    @Test
+    fun `the door names the meal a draft landed in`() {
+        assertEquals(MealType.Breakfast.labelRes, listOf(food()).diaryDestination())
+        assertEquals(
+            MealType.Dinner.labelRes,
+            listOf(food().copy(mealType = MealType.Dinner)).diaryDestination(),
+        )
+        assertEquals(
+            R.string.coach_destination_diary,
+            listOf(CoachAction.LogWater(glasses = 1)).diaryDestination(),
+        )
+        assertEquals(
+            R.string.coach_destination_diary,
+            listOf(CoachAction.LogExercise(ExerciseType.Run, "", 30, 300)).diaryDestination(),
+        )
+    }
+
+    /** The same two refusals the Boolean already made, so the two cannot drift: no door for a kind
+     * the diary does not hold, and none for a day it does not open on. */
+    @Test
+    fun `nothing the diary cannot show gets a destination`() {
+        assertNull(listOf(CoachAction.LogWeight(weight = 82.0)).diaryDestination())
+        assertNull(listOf(CoachAction.LogSupplement("Creatine", 1, 2)).diaryDestination())
+        assertNull(listOf(routine()).diaryDestination())
+        assertNull(listOf(CoachAction.SetFast(ending = true)).diaryDestination())
+        assertNull(emptyList<CoachAction>().diaryDestination())
+        assertNull(listOf(food().copy(dateEpochDay = todayEpochDay() - 1)).diaryDestination())
+    }
+
+    /** A meal plus a glass is one card, and the meal is what it is about — the first qualifying row
+     * names it rather than the commonest, because a draft is one meal by construction. */
+    @Test
+    fun `a mixed draft is named by its first qualifying row`() {
+        assertEquals(
+            MealType.Breakfast.labelRes,
+            listOf(food(), CoachAction.LogWater(glasses = 1)).diaryDestination(),
+        )
     }
 
     /**
