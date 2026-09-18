@@ -3,7 +3,9 @@ package ph.mart.healthapp.core.data
 import android.util.Log
 import ph.mart.healthapp.core.data.coach.CoachRepository
 import ph.mart.healthapp.core.data.coach.CoachToolbox
+import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
 import ph.mart.healthapp.core.data.fake.FakeCoachRepository
+import ph.mart.healthapp.core.data.fake.FakeExerciseParseRepository
 import ph.mart.healthapp.core.data.fake.FakeInsightRepository
 import ph.mart.healthapp.core.data.fake.FakeMealIdeaRepository
 import ph.mart.healthapp.core.data.fake.FakeMealParseRepository
@@ -17,20 +19,20 @@ import ph.mart.healthapp.core.data.insight.InsightRepository
  * **Flip this to hit the real models.** Left `false`, a debug build never calls Firebase AI Logic
  * at all and therefore bills nothing.
  *
- * All five call sites at once rather than five switches, because the reason to flip is always the
- * same — *checking a change against the real thing before a release* — and five booleans is five
+ * All six call sites at once rather than six switches, because the reason to flip is always the
+ * same — *checking a change against the real thing before a release* — and six booleans is six
  * ways to leave one on by accident. Splitting it per feature is one line if that ever stops being
  * true.
  *
  * A debug-only escape hatch in the shape `FORCE_ONBOARDING` already uses in `AppRoot.kt`, except
- * that this one lives in a source set rather than behind `BuildConfig.DEBUG`: five fake
+ * that this one lives in a source set rather than behind `BuildConfig.DEBUG`: six fake
  * repositories are more than a boolean's worth of code to keep out of a release build by
  * convention, and the release twin of this file keeps them out by construction.
  */
 private const val USE_REAL_AI = false
 
 /**
- * The five fakes exist so a debug build can be *iterated on*, not merely run cheaply.
+ * The six fakes exist so a debug build can be *iterated on*, not merely run cheaply.
  *
  * A stub returning null everywhere would cost the same and hide the things this app's AI surface
  * actually gets wrong — a streamed answer that scrolls badly, a proposal card with an absurd
@@ -50,6 +52,9 @@ internal fun debugRecognition(): FoodRecognitionRepository? = ifFaking { FakeRec
 internal fun debugMealIdeas(): MealIdeaRepository? = ifFaking { FakeMealIdeaRepository() }
 
 internal fun debugMealParse(): MealParseRepository? = ifFaking { FakeMealParseRepository() }
+
+internal fun debugExerciseParse(): ExerciseParseRepository? =
+    ifFaking { FakeExerciseParseRepository() }
 
 /**
  * Says out loud which mode the build is in, once, under the tag `logAiFailure` already uses.

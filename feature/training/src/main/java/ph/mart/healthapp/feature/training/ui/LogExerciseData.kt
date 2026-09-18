@@ -1,8 +1,10 @@
 package ph.mart.healthapp.feature.training.ui
 
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
+import ph.mart.healthapp.core.data.exercise.ExerciseParseResult
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.LiftPerformance
+import ph.mart.healthapp.core.data.exercise.ParsedExercise
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthSet
@@ -44,6 +46,10 @@ data class LogExerciseUiState(
      * content back on it: seeding a `rememberSaveable` form from a row that arrives an emission
      * later would re-key the saver and wipe what the user had already typed. */
     val strengthLoaded: Boolean = false,
+    /** True while the describe field's sentence is with the model. The strength screen shares this
+     * container and never sets it — it has no describe field, the reason [editing] is loaded on
+     * demand rather than always. */
+    val parsing: Boolean = false,
 ) {
     /** [lastLifts] reduced to the one figure a routine needs: what was on the bar. */
     val lastLoads: Map<String, Double> get() = lastLifts.mapValues { it.value.topSet.weightKg }
@@ -96,6 +102,21 @@ fun ExerciseEntry.toLogExerciseForm(): LogExerciseForm = LogExerciseForm(
     sets = sets,
 )
 
+/**
+ * What a parsed sentence does to the form: the three fields the model answered, and nothing else.
+ *
+ * [LogExerciseForm.burnedEdited] is deliberately left alone rather than set. On a new form it is
+ * false, so the caller's [withEstimate] prices the parsed type and duration at the user's own
+ * weight — which is the whole reason the model is never asked for a burn. And if the user had
+ * already moved the kcal stepper before describing the workout, the latch holds their figure
+ * exactly as it holds it against a type chip.
+ */
+fun LogExerciseForm.withParsed(activity: ParsedExercise): LogExerciseForm = copy(
+    type = activity.type,
+    name = activity.name,
+    minutes = activity.minutes,
+)
+
 /** [dateEpochDay] 0 leaves the stamping to the repository, which means today. */
 fun LogExerciseForm.toExerciseEntry(dateEpochDay: Long = 0): ExerciseEntry = ExerciseEntry(
     dateEpochDay = dateEpochDay,
@@ -128,6 +149,16 @@ sealed interface LogExerciseEvent {
      * last trained at, in one intent — and starts observing the saved routines. */
     data class OnOpenStrength(val editingId: Long = 0, val routineId: Long = 0) : LogExerciseEvent
 
+    /** The sentence in the describe field, on its way to the model. The sheet checks
+     * `isOnline()` before firing this one: offline is the sheet's own message and spends nothing,
+     * the recheck-at-the-moment-of-the-call rule `NetworkMonitor.isOnline` is written for. */
+    data class OnParse(val text: String) : LogExerciseEvent
+
+    /** Back, or the cancel button, while a parse is in flight. It abandons the call and leaves the
+     * sentence in the field — a model can hang, and a spinner with no way out would cost the user
+     * what they typed. */
+    data object OnCancelParse : LogExerciseEvent
+
     /** Names the workout on screen as a routine. It logs nothing: [OnSave] is still what writes
      * the session, and the two are deliberately independent. */
     data class OnSaveRoutine(val name: String, val lifts: List<RoutineLift>) : LogExerciseEvent
@@ -143,4 +174,12 @@ sealed interface LogExerciseSideEffect {
      * strength route — has no ViewModel and is not about to grow one for a sentence.
      */
     data class Saved(val creditedKcal: Int) : LogExerciseSideEffect
+
+    /**
+     * All three answers on one side effect, `VoiceLogSideEffect.ParseFinished`'s shape and for its
+     * reason: what a parse becomes is the *form's*, which is screen state
+     * ([LogExerciseState]) rather than the container's, so the result is handed over rather than
+     * reduced onto it.
+     */
+    data class Parsed(val result: ExerciseParseResult) : LogExerciseSideEffect
 }

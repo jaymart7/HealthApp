@@ -1,8 +1,5 @@
 package ph.mart.healthapp.feature.food.ui.voice.components
 
-import android.content.Intent
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -19,15 +16,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.component.rememberSpeechAvailable
+import ph.mart.healthapp.core.designsystem.component.speechIntent
+import ph.mart.healthapp.core.designsystem.component.spokenPhrase
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
@@ -43,10 +41,10 @@ private const val SENTENCE_LINES = 4
 /**
  * The sentence, the slot, and the button that turns one into rows.
  *
- * Speech is the system's own dialog ([RecognizerIntent.ACTION_RECOGNIZE_SPEECH]) rather than an
- * in-app [SpeechRecognizer]: it needs no `RECORD_AUDIO` permission, so there is no permission
- * screen to write and nothing to deny, and the transcript lands in a field that stays editable.
- * Typing is the same path — the mic only fills the field in.
+ * Speech is the system's own dialog ([speechIntent]) rather than an in-app `SpeechRecognizer`:
+ * it needs no `RECORD_AUDIO` permission, so there is no permission screen to write and nothing
+ * to deny, and the transcript lands in a field that stays editable. Typing is the same path —
+ * the mic only fills the field in.
  *
  * **The mic is the screen, not a glyph on it.** It used to be a 48dp grey icon button in a
  * right-aligned row beside an identical grey Clear, which is the wrong weight for the fastest path
@@ -81,17 +79,11 @@ internal fun VoiceInputScreen(
     onEstimate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     // The same words the screen's own heading uses, so the dialog reads as part of it.
     val prompt = stringResource(R.string.food_voice_prompt)
-    val speechAvailable = remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
+    val speechAvailable = rememberSpeechAvailable()
     val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        result.data
-            ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            ?.firstOrNull()
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
-            ?.let(onTextChange)
+        spokenPhrase(result.data)?.let(onTextChange)
     }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
@@ -164,12 +156,6 @@ internal fun VoiceInputScreen(
             }
         }
     }
-}
-
-/** The prompt is the system dialog's, so it is passed in — this is not a composition. */
-private fun speechIntent(prompt: String): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
 }
 
 @PreviewLightDark

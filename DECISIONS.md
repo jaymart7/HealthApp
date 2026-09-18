@@ -3159,6 +3159,47 @@ rather than needing a counter patched.
   recent and a search hit already have, so the feature adds no write path at all. The button sits
   *above* the sheet's four panels because it answers a different question — they are faster ways to
   log something already decided on.
+- **The log sheet describes a workout; it never asks what it burned.** `CoachAction.LogExercise`
+  already settled that a model handed a duration invents a calorie figure and the app owns
+  `estimateBurnedKcal()` instead. That was written for the coach's tool call; the describe panel is
+  the second path under it, and here the rule is enforced by the **schema** rather than by a prompt
+  asking nicely — `PARSED_EXERCISE_SCHEMA` has three properties and none of them is a burn, so
+  there is nowhere for a figure to arrive. What comes back is type, note and minutes; `withParsed`
+  leaves `burnedEdited` alone and `withEstimate` prices it at the user's own latest weigh-in, so a
+  described run and a typed one of the same length are the same number and the weight that made it
+  never leaves the device. `parsedExercise` is the trust boundary and it deliberately **rejects** a
+  type the model invented rather than bucketing it into `Other`: the type is what the burn is
+  computed from, so a guessed one would price a workout nobody described.
+- **A panel in the sheet, not a `VoiceLogRoute` of its own.** Talk-to-log is a route because a
+  sentence there becomes up to eight priced rows that each need reviewing before anything is
+  written; one activity is three fields and those three fields are already on screen, so the review
+  *is* the form. A route would also have meant a second ViewModel, and a second ViewModel is what
+  CLAUDE.md says earns a flow package — `:feature:training` would have stopped being flat to draw
+  one text field. So `LogExerciseViewModel` took the parse repository and `NetworkMonitor` as two
+  more constructor arguments and the module's DI did not change at all. The strength screen shares
+  that container and names the new side effect to ignore it, rather than growing an `else` that
+  would swallow the next one too.
+- **It is absent when correcting a logged activity.** The panel draws only for `editingId == null`.
+  Every figure on an edit form is already the user's own, and a parse that rewrote the type and
+  duration of a row they opened to fix a typo is noise on the one path where there is nothing left
+  to guess — the same reading that makes `burnedEdited` latch true on an edit.
+- **Offline is answered before the call, not by it.** The sheet asks `viewModel.isOnline()` at the
+  tap and shows its own line, so an offline tap never reaches an intent and spends nothing;
+  `NetworkMonitor.observe()` is deliberately not used, because a sheet lives seconds and the only
+  answer that matters is the one true when a request is about to go out. The sheet underneath *is*
+  the manual path, which is the whole of the graceful degrade — there is nothing else to fall back
+  to and nothing to build.
+- **Back steps through the panel, and through a parse inside it.** A `NavigationBackHandler`
+  mounted only while the panel is open: back with a call in flight abandons it and leaves the
+  sentence, back again closes the panel, back again dismisses the sheet. Dismissing the sheet fires
+  the same cancel — this ViewModel outlives the sheet, so a spinner abandoned mid-parse would still
+  be up the next time the FAB opened a blank one.
+- **The third mic in the app moved the helper to `:core:designsystem`.** `SpeechInput.kt` holds
+  `rememberSpeechAvailable()`, `speechIntent()` and `spokenPhrase()`; the coach's composer and
+  talk-to-log's input deleted their copies. What did *not* move is what each screen decides for
+  itself and argues at its own call site: the coach appends a transcript (`withSpoken`) and both
+  the other two replace. The `<queries>` entry for `RecognitionService` was already in `:app`'s
+  manifest and merges app-wide, so `:feature:training` needed none.
 
 ### Meal ideas & talk-to-log
 

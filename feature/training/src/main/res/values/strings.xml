@@ -9,6 +9,18 @@
     <string name="training_exercise_log">Log exercise</string>
     <string name="training_exercise_edit">Edit exercise</string>
     <string name="training_exercise_log_sets">Log sets instead →</string>
+
+    <!-- Describe it: the sentence the model turns into the form above -->
+    <string name="training_exercise_describe">Describe it instead</string>
+    <string name="training_exercise_describe_prompt">What did you do?</string>
+    <string name="training_exercise_describe_placeholder">45 minute run along the river</string>
+    <string name="training_exercise_describe_speak">Say it instead of typing</string>
+    <string name="training_exercise_describe_close">Close</string>
+    <string name="training_exercise_describe_estimate">Fill in the form</string>
+    <string name="training_exercise_describe_cancel">Cancel</string>
+    <string name="training_exercise_describe_none">No workout in that one — try naming what you did and how long for.</string>
+    <string name="training_exercise_describe_failed">That didn\'t work. Try again, or just fill it in below.</string>
+    <string name="training_exercise_describe_offline">You\'re offline. Fill it in below instead.</string>
     <string name="training_exercise_note">Note (optional)</string>
     <string name="training_exercise_duration">Duration</string>
     <string name="training_exercise_minutes">min</string>

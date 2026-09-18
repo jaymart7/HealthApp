@@ -1,8 +1,5 @@
 package ph.mart.healthapp.feature.coach.ui.components
 
-import android.content.Intent
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -23,15 +20,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.designsystem.component.rememberSpeechAvailable
+import ph.mart.healthapp.core.designsystem.component.speechIntent
+import ph.mart.healthapp.core.designsystem.component.spokenPhrase
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.coach.R
@@ -55,10 +53,10 @@ import ph.mart.healthapp.feature.coach.R
  * and a model can hang; a progress indicator that cannot be pressed leaves leaving the screen as the
  * only way out, and that costs the user the question they typed.
  *
- * Speech is the system's own dialog ([RecognizerIntent.ACTION_RECOGNIZE_SPEECH]), the same call
- * `VoiceInputScreen` makes for talk-to-log: no `RECORD_AUDIO`, so no permission screen and nothing
- * to deny. The transcript **fills the field and stops there** — it never sends, because a misheard
- * question would be spent before it could be read, and typing is the same path either way.
+ * Speech is the system's own dialog ([speechIntent]), the same call `VoiceInputScreen` makes for
+ * talk-to-log: no `RECORD_AUDIO`, so no permission screen and nothing to deny. The transcript
+ * **fills the field and stops there** — it never sends, because a misheard question would be
+ * spent before it could be read, and typing is the same path either way.
  *
  * The keyboard's own key sends too — `ImeAction.Send`, wired to the same lambda the circle calls
  * and gated by the same [canSend], so the two can never disagree about whether a send is available.
@@ -85,10 +83,7 @@ internal fun ChatInputBar(
     // than as two ways of asking the same thing.
     val prompt = stringResource(R.string.coach_input_placeholder)
     val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        result.data
-            ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
-            ?.firstOrNull()
-            ?.let { onDraftChange(withSpoken(draft, it)) }
+        spokenPhrase(result.data)?.let { onDraftChange(withSpoken(draft, it)) }
     }
 
     Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier.fillMaxWidth()) {
@@ -232,12 +227,6 @@ private fun ContextChip(source: String, onDismiss: () -> Unit) {
     }
 }
 
-@Composable
-private fun rememberSpeechAvailable(): Boolean {
-    val context = LocalContext.current
-    return remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
-}
-
 /**
  * Whether a send is available at all — the circle's `enabled` and the keyboard's action key read
  * the same function, so the return key can never start a turn the circle refuses to. [sending] is
@@ -253,12 +242,6 @@ internal fun canSend(draft: String, sending: Boolean): Boolean = draft.isNotBlan
  */
 internal fun withSpoken(draft: String, spoken: String): String =
     if (draft.isBlank()) spoken else "${draft.trimEnd()} $spoken"
-
-/** The prompt is the system dialog's, so it is passed in — this is not a composition. */
-private fun speechIntent(prompt: String): Intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-    putExtra(RecognizerIntent.EXTRA_PROMPT, prompt)
-}
 
 @PreviewLightDark
 @Composable

@@ -1,15 +1,18 @@
 package ph.mart.healthapp.feature.training.ui
 
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.RoutineRepository
 import ph.mart.healthapp.core.data.exercise.lastPerformances
 import ph.mart.healthapp.core.data.exercise.recentLiftNames
+import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -26,10 +29,16 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
  *
  * Everything the strength screen needs is loaded on demand instead, by
  * [LogExerciseEvent.OnOpenStrength]: the sheet shares this container, and it shows none of it.
+ *
+ * The two AI dependencies are the sheet's alone, and they are the reason this stayed one
+ * ViewModel: a describe field is a second *presentation* of the same form, not a second form, so
+ * `:feature:training` keeps its flat package exactly as `StrengthWorkoutScreen` does.
  */
 class LogExerciseViewModel(
     private val exerciseRepository: ExerciseRepository,
     private val routineRepository: RoutineRepository,
+    private val exerciseParseRepository: ExerciseParseRepository,
+    private val networkMonitor: NetworkMonitor,
     profileRepository: ProfileRepository,
     progressRepository: ProgressRepository,
 ) : ViewModel(), OrbitContainerHost<LogExerciseUiState, LogExerciseUiState, LogExerciseSideEffect> {
@@ -38,9 +47,20 @@ class LogExerciseViewModel(
      * ViewModel survives it, so the routine collection has to be started at most once. */
     private var routinesObserved = false
 
+    /** Lets [LogExerciseEvent.OnCancelParse] cancel just the in-flight call, the way the photo
+     * flow's `analysisJob` and talk-to-log's `parseJob` do — cancellation reaches the Firebase AI
+     * SDK cooperatively, and `ExerciseParseRepositoryImpl` rethrows it rather than logging a
+     * request the user withdrew. */
+    private var parseJob: Job? = null
+
     override val container = orbitContainer<LogExerciseUiState, LogExerciseSideEffect>(LogExerciseUiState()) {
         observeWeight(profileRepository, progressRepository)
     }
+
+    /** Asked by the sheet at the moment of the tap, not observed: a sheet lives seconds and the
+     * only answer that matters is the one true when a request is about to be spent. The offline
+     * message is the sheet's, so an offline tap never reaches an intent. */
+    fun isOnline(): Boolean = networkMonitor.isOnline()
 
     fun handleEvent(event: LogExerciseEvent) {
         when (event) {
@@ -48,6 +68,8 @@ class LogExerciseViewModel(
             is LogExerciseEvent.OnLoadEditing -> onLoadEditing(event.id)
             is LogExerciseEvent.OnOpenStrength -> onOpenStrength(event.editingId, event.routineId)
             is LogExerciseEvent.OnSaveRoutine -> onSaveRoutine(event.name, event.lifts)
+            is LogExerciseEvent.OnParse -> onParse(event.text)
+            LogExerciseEvent.OnCancelParse -> onCancelParse()
         }
     }
 
@@ -123,6 +145,28 @@ class LogExerciseViewModel(
 
     private fun onSaveRoutine(name: String, lifts: List<RoutineLift>) = intent {
         routineRepository.addRoutine(name, lifts)
+    }
+
+    /** The repository swallows everything but a cancellation, so the only way out of this
+     * without reaching the last line is [onCancelParse] — which lowers the flag itself. */
+    private fun onParse(text: String) {
+        parseJob = intent {
+            reduce { state.copy(parsing = true) }
+            val result = exerciseParseRepository.parse(text)
+            reduce { state.copy(parsing = false) }
+            postSideEffect(LogExerciseSideEffect.Parsed(result))
+        }
+    }
+
+    /**
+     * Two steps and a second intent, because the first one kills the coroutine the reduce would
+     * otherwise have run in. Called by back, by the cancel button **and by dismissing the sheet**:
+     * this ViewModel outlives the sheet, so a spinner abandoned mid-parse would still be spinning
+     * the next time the FAB opened a blank one.
+     */
+    private fun onCancelParse() {
+        parseJob?.cancel()
+        intent { reduce { state.copy(parsing = false) } }
     }
 
     private fun onSave(form: LogExerciseForm, dateEpochDay: Long, editingId: Long?) = intent {

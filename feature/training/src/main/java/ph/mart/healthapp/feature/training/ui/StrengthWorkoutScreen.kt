@@ -99,6 +99,11 @@ fun StrengthWorkoutScreen(
                 onSaved(effect.creditedKcal)
                 onExit()
             }
+
+            // This screen shares the sheet's container and has no describe field — the type is
+            // Strength by definition here, and a sentence cannot say what was on the bar. Named
+            // rather than swept into an `else`, so adding a third side effect still fails here.
+            is LogExerciseSideEffect.Parsed -> Unit
         }
     }
 

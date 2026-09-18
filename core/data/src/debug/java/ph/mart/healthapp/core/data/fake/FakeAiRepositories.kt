@@ -2,6 +2,11 @@ package ph.mart.healthapp.core.data.fake
 
 import android.graphics.Bitmap
 import kotlinx.coroutines.delay
+import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
+import ph.mart.healthapp.core.data.exercise.ExerciseParseResult
+import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.ParsedExercise
+import ph.mart.healthapp.core.data.exercise.parsedExercise
 import ph.mart.healthapp.core.data.food.COMMON_FOODS
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.MAX_MEAL_IDEAS
@@ -22,7 +27,7 @@ import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
 
 /**
- * The four smaller AI features, faked off local data. The coach is next door in
+ * The five smaller AI features, faked off local data. The coach is next door in
  * [FakeCoachRepository], because it is the only one with a state machine worth faking carefully.
  *
  * Every one of these reuses something the app already ships, and that is the design rather than an
@@ -30,7 +35,7 @@ import ph.mart.healthapp.core.data.insight.insightFor
  * the first time the real shape changes. `COMMON_FOODS` is a hand-written table of real USDA
  * figures already in the APK, and `insightFor` is the rule-based line Home already falls back to.
  *
- * All four keep a short [delay]: a call that returns instantly hides every spinner, and the point
+ * All five keep a short [delay]: a call that returns instantly hides every spinner, and the point
  * of a debug build is to look at them.
  */
 
@@ -150,6 +155,62 @@ internal fun commonFoodFor(word: String): ScannedProduct? {
         ?: term.removeSuffix("s")
     return searchCommonFoods(term.removeSuffix("s")).firstOrNull()
         ?: searchCommonFoods(singular).firstOrNull()
+}
+
+/**
+ * The sentence against [ExerciseType]'s own names, and the first number in it as the duration.
+ *
+ * Crude on purpose and still genuinely useful: "45 minute run" really does come back as Run at 45
+ * minutes, which is the case the sheet's whole seeding path turns on. A sentence naming nothing it
+ * recognises answers [ExerciseParseResult.NoActivityFound] — the branch worth being able to see
+ * without pointing a real model at a shopping list.
+ */
+internal class FakeExerciseParseRepository : ExerciseParseRepository {
+    override suspend fun parse(text: String): ExerciseParseResult {
+        delay(FAKE_LATENCY_MS)
+        val activity = fakeExerciseParse(text)
+        return if (activity == null) {
+            ExerciseParseResult.NoActivityFound
+        } else {
+            ExerciseParseResult.Success(activity)
+        }
+    }
+}
+
+/**
+ * The words people actually use for four of the eight types. The enum's own names cover the rest
+ * ("yoga", "swim", "walk"), so this is only the gap between what a type is called and what it is
+ * said as — and [ExerciseType.Other] is deliberately absent, because nobody says "other".
+ */
+private val FAKE_SYNONYMS = mapOf(
+    "jog" to ExerciseType.Run,
+    "ran" to ExerciseType.Run,
+    "bike" to ExerciseType.Cycle,
+    "cycling" to ExerciseType.Cycle,
+    "gym" to ExerciseType.Strength,
+    "lift" to ExerciseType.Strength,
+    "weights" to ExerciseType.Strength,
+)
+
+private val FIRST_NUMBER = Regex("""\d+""")
+
+/**
+ * Pulled out of the class so the routing is a pure function a JVM test can reach — [fakeParse]'s
+ * reason, and the same reason `parsedExercise` is the last line of it: the caps and the
+ * blank-name rule are exercised here rather than bypassed.
+ *
+ * The whole sentence becomes the note, which is what the real parse is asked for too — a short
+ * phrase in the user's own words.
+ */
+internal fun fakeExerciseParse(text: String): ParsedExercise? {
+    val words = text.lowercase().split(' ', ',', '.', '\n')
+    val type = words.firstNotNullOfOrNull { word ->
+        ExerciseType.entries.firstOrNull { it.name.lowercase() == word } ?: FAKE_SYNONYMS[word]
+    } ?: return null
+    // No number said is not no workout: the real model is asked to estimate the shortest
+    // plausible duration, and half an hour is this fake's version of that.
+    val minutes = FIRST_NUMBER.find(text)?.value?.toIntOrNull() ?: 30
+    return parsedExercise(type = type.name, name = text.trim(), minutes = minutes)
 }
 
 /** Below this a "word" matches half the table — "an" is in "banana", "pan" and "pancake". */

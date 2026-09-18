@@ -226,6 +226,12 @@ Profile keeps routine authoring, Progress keeps the history. There is no Trainin
 see `DECISIONS.md`.
 
 - Log a workout: type, duration, MET-estimated burn (editable; stops re-estimating once touched).
+- **Describe it instead** — a swap-in panel at the top of the log sheet takes a sentence,
+  typed or dictated ("45 minute run along the river"), and fills in the type, the note and the
+  duration. The burn stays the app's: the model is never asked for one and the schema has
+  nowhere to put one, so a described run and a typed one of the same length price identically
+  off the user's own latest weigh-in. Every field is editable after, back steps out of the
+  panel one level, and the panel is absent when correcting a logged workout.
 - Burned calories credited to the day's budget, with a Profile switch to opt out.
 - **Earned calories** — what the credit bought, said in one voice on three surfaces: a
   snackbar the moment a workout saves, a promoted line and its own arc on Home's calorie
@@ -453,6 +459,7 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   blank field, and not while an answer is still streaming.
 - Meal ideas (above).
 - Talk-to-log (above) — a sentence parsed into several priced diary rows.
+- Describe a workout (above) — a sentence parsed into one activity, priced on-device.
 - Every AI path degrades to a manual or local-derivation path offline.
 
 ## Profile & settings
