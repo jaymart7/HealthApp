@@ -42,6 +42,10 @@ import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.todayEpochDay
 
+/** Flip to false to leave a fresh debug install empty. Debug source set only — nothing to guard
+ * against in release, where [seedDebugData] is already a no-op. */
+private const val SEED_DATA = true
+
 /**
  * Fills a fresh debug install with one varied dataset so every data-driven screen — Home's rings,
  * the weight chart at each [ph.mart.healthapp.core.data.progress.ChartRange], measurements, photo
@@ -50,8 +54,12 @@ import ph.mart.healthapp.core.data.todayEpochDay
  * Runs only when no profile exists, so it fires once per install and leaves onboarding testable by
  * clearing app data. Everything goes through the public repository interfaces — no DAO or Entity
  * reaches `:app`. The release source set has a no-op counterpart, so none of this ships.
+ *
+ * [SEED_DATA] turns it off for a debug run that needs the empty install the fixture otherwise
+ * hides — first-run empty states, onboarding's own writes.
  */
 fun seedDebugData(koin: Koin) {
+    if (!SEED_DATA) return
     CoroutineScope(Dispatchers.IO).launch {
         val profiles = koin.get<ProfileRepository>()
         if (profiles.observeProfile().first() != null) return@launch
