@@ -183,14 +183,28 @@ sealed interface CoachEvent {
 }
 
 /**
+ * One opener: the question, and the **reach** it demonstrates.
+ *
+ * The eyebrow is the half that earns its line. Four questions stacked as identical pills read as
+ * four arbitrary examples; "TODAY / A LOGGED DAY / A SPAN / AN OPINION" over them says the set is
+ * a *range* and that each one is standing in for a kind of question, which is the whole job the
+ * empty state has. It is a label on the card and never sent — [question] is what the tap sends,
+ * verbatim, the rule every door in this feature follows.
+ */
+data class Starter(@StringRes val reach: Int, @StringRes val question: Int)
+
+/**
  * Openers for an empty conversation. A blank text box against a coach the user has never used is
  * a dead end, and these four teach its reach faster than a paragraph would: one about today, one
  * about a past day, one about a span, and one that needs an opinion. The first three exist to show
  * that the diary questions now have answers — before the tools they were the deflections.
+ *
+ * Four rather than three, and in this order, because they are drawn as a 2×2: the two that read
+ * back a day sit on the top row and the two that reason over one sit beneath them.
  */
 val STARTERS = listOf(
-    R.string.coach_starter_today,
-    R.string.coach_starter_yesterday,
-    R.string.coach_starter_week,
-    R.string.coach_starter_dinner,
+    Starter(R.string.coach_starter_reach_today, R.string.coach_starter_today),
+    Starter(R.string.coach_starter_reach_logged, R.string.coach_starter_yesterday),
+    Starter(R.string.coach_starter_reach_span, R.string.coach_starter_week),
+    Starter(R.string.coach_starter_reach_opinion, R.string.coach_starter_dinner),
 )

@@ -30,16 +30,35 @@
          Dismissing the chip leaves the text: the question is the user's, the label is context. -->
     <string name="coach_input_context">Asking about · %1$s</string>
     <string name="coach_input_context_dismiss">Stop asking about %1$s</string>
-    <string name="coach_empty_greeting">Ask me about any day you\'ve logged — meals, macros, how the week\'s going.</string>
     <string name="coach_empty_limits">I can read your diary, and draft a log for you to confirm.</string>
 
+    <!-- The strip at the top of an empty conversation: what the coach can already see without
+         being asked. Read-only, never a tap target — it is context, not a dashboard. -->
+    <string name="coach_empty_seen">What I can already see · %1$s</string>
+    <string name="coach_empty_seen_today">Today</string>
+    <string name="coach_empty_calories">kcal</string>
+    <string name="coach_empty_protein">protein</string>
+    <string name="coach_empty_water">water</string>
+    <!-- A value against its goal, e.g. "1,240 / 2,000". The goal half is drawn quieter. -->
+    <string name="coach_empty_of_goal">/ %1$s</string>
+    <!-- Spoken as one phrase, since the three columns are a sentence to a screen reader and a
+         grid to everyone else. -->
+    <string name="coach_empty_pair_spoken">%1$s of %2$s %3$s</string>
+
     <!-- Openers for an empty conversation. Translated, unlike the prompts in :core:data: these are
-         the user's own words, and what gets sent is whatever the button said. The first three are
+         the user's own words, and what gets sent is whatever the card said. The first three are
          diary questions on purpose — before the coach had tools, all three were deflections. -->
+    <string name="coach_starter_heading">Try one of these</string>
     <string name="coach_starter_today">How am I doing today?</string>
     <string name="coach_starter_yesterday">What did I eat yesterday?</string>
     <string name="coach_starter_week">How has my week gone?</string>
     <string name="coach_starter_dinner">What should I eat tonight?</string>
+    <!-- The eyebrow over each starter, naming the *kind* of question it stands in for. A label on
+         the card, never part of what the tap sends. -->
+    <string name="coach_starter_reach_today">Today</string>
+    <string name="coach_starter_reach_logged">A logged day</string>
+    <string name="coach_starter_reach_span">A span</string>
+    <string name="coach_starter_reach_opinion">An opinion</string>
 
     <!-- Follow-ups offered under a finished answer. Same rule as the starters: what gets sent is
          whatever the chip said, so these are translated. Each one is a question the coach can

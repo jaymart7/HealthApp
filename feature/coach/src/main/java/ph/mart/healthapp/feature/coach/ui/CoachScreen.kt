@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -147,8 +148,17 @@ private fun CoachContent(
                     if (uiState.loaded && uiState.messages.isEmpty() &&
                         uiState.pending == null && uiState.failure == null
                     ) {
+                        // The whole viewport, because the layout *is* the spread: the strip at the
+                        // top, the capability line in the middle, the starters under the thumb.
+                        // `heightIn` rather than `fillParentMaxHeight` alone, so the keyboard
+                        // pushing the viewport up scrolls the starters off rather than squashing
+                        // the three blocks into each other.
                         item {
-                            CoachEmptyState(onStarter = { onEvent(CoachEvent.OnSend(it)) })
+                            CoachEmptyState(
+                                onStarter = { onEvent(CoachEvent.OnSend(it)) },
+                                modifier = Modifier.fillParentMaxHeight().heightIn(min = 420.dp),
+                                request = uiState.request,
+                            )
                         }
                     }
                     itemsIndexed(uiState.messages, key = { _, message -> message.id }) { index, message ->
