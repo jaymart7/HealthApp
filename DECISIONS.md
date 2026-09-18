@@ -253,7 +253,7 @@ rather than needing a counter patched.
   *eaten*: a sentence about a particular Tuesday copied onto Thursday would be a lie about
   Thursday. It does export, because it is history like a mood day (schema 21).
 
-### Camera, barcode & Open Food Facts
+### Camera, barcode, the label & Open Food Facts
 
 - **Both viewfinders carry a gallery door and a manual door** (`ViewfinderActions`, in
   `:feature:food`'s `ui/shared/components/` because the two flows share it). A picked image runs
@@ -418,6 +418,76 @@ rather than needing a counter patched.
   down to the repository rather than a path coming up from the UI, because where a plate lives,
   what it is scaled to and how many are kept are all `:core:data`'s to know — the same division
   `ProgressRepository.addPhoto` already draws.
+
+- **Reading a nutrition panel is not estimating one, and that is the whole argument for the label
+  scan.** `FEATURES.md` rules out AI-estimated micronutrients on a real objection: a model asked
+  what calcium is in a photographed plate will produce a number, and a day's coverage count exists
+  precisely to expose figures nobody measured. But that line was already drawn more precisely than
+  "the model touched it" — `OpenFoodFacts.kt` refuses to read `nutriments_estimated` because it is
+  *"a number the source derived rather than read off a label"*, while mapping the declared
+  `nutriments` object without hesitation. A photographed Nutrition Facts panel is the second of
+  those, not the first. So the label schema carries all seven nutrients, its prompt forbids
+  inferring, completing or recalling anything not printed, and `LabelJson` reads every figure
+  through a null-returning accessor rather than `optInt`'s zero default: a line the panel does not
+  carry reaches the form as nothing, and prints an em dash. The photo and voice schemas are
+  unchanged and stay at three — they estimate, and nothing here reopens that.
+- **The label is the answer to a dead end, not a fourth food door.** The diary's chip row and the
+  FAB sheet each carry three ways to log food, and a fourth would have to earn a place beside them
+  on every surface plus the launcher shortcuts. It cannot: nobody opens the app wanting to read a
+  label — they want to log a packet, and the barcode is the faster way to do that whenever it
+  works. The label is what is left when it does not, which is why the only doors onto it are
+  `ScanFlow.NotFound` and `ScanFlow.NoBarcode`, where it takes the primary button and hand entry
+  drops to a text button. That demotion is the substance of the change: for a `ph.mart` app a
+  locally-packaged product largely is not in Open Food Facts or FoodData Central, so "Add it
+  manually" was the *ordinary* outcome of a scan — a blank form asking the user to retype figures
+  printed on the pack in their hand, and one that could never carry vitamin D, calcium, iron or
+  potassium at all, since those four are seeded and never typed.
+- **The figures are left as the panel printed them, against the amount it printed them for.** A
+  per-100 g panel seeds 100 g; a per-serving panel seeds the weight its serving declares, which
+  `servingGrams` already pulls out of "1 bar (25 g)" for a scanned product; a serving with no weight
+  in it ("1 cup") seeds one serving, because guessing that a cup is 240 g is the invented number
+  that helper exists to refuse. Normalising a per-serving panel to per 100 g was the alternative and
+  it is worse in the only way that matters here: the user is holding the packet, and the number on
+  screen should be the number on the label. The cost is that `PortionControl`'s caveat could no
+  longer be "Database values are per 100 g" — wrong twice over against a packet — so it takes a
+  base sentence and, separately, a `caveatBaseAmount`. The scale note survives that: "×1.5" is about
+  the number above it rather than about where the number came from, and dividing by the real seed is
+  what keeps it true when the seed was 25 g.
+- **The confirmation says a model was involved, and lists what it read.** `ScanConfirmationScreen`
+  was written on the rule that a barcode match is a database row and therefore wears no `AIChip` —
+  still true, and still true of a search hit. A label read is neither a database row nor an
+  estimate, so it gets the chip and the caveat names what was being read. It also gets a read-only
+  panel readout under the macros, built from `readings(targets = null)` and `formatNutrient` so
+  nothing is derived twice. That readout is not decoration: four of the seven are seeded-never-typed
+  by the app's own rule, so without it the "check it before you log it" the whole screen is for
+  would skip exactly the figures with the least corroboration behind them.
+- **"Save as my food" is the label flow's barcode cache.** A resolved barcode is remembered by its
+  code, so a rescan is instant, offline and free. A panel has no such key — the next photo of the
+  same packet is another Gemini request and another set of figures to re-check. The switch the
+  add-entry sheet already ships answers it exactly: one tap and the product leads every later food
+  search as a food the user owns, which is the same `favorite_food` row starring one writes. The row
+  moved to `ui/shared/components/` and `ScanConfirmationScreen` takes a nullable `saveMyFood` —
+  null everywhere else, because the barcode flow's product is already in a database and the photo
+  flow's search hit came out of one.
+- **A fourth camera flow is a fourth route, not a state inside the barcode one.** The label is only
+  ever reached from the barcode flow, which is an argument for folding it in — and the reason not to
+  is CameraX, not taste: the barcode viewfinder binds `IMAGE_ANALYSIS` through one
+  `LifecycleCameraController` and a still capture binds `IMAGE_CAPTURE` through another, and
+  `bindToLifecycle` unbinds everything before binding its own. Two of them alive in one composition
+  is a race over which use case survives. Every camera flow in this app is already a route for the
+  same reason. The visible cost is that back from the label lands on the barcode viewfinder rather
+  than on the not-found screen it was pushed from — Nav3 disposes the entry underneath and
+  `BarcodeScanScreenState` is a plain `remember`, which its own KDoc says is right because a
+  half-finished scan is not worth restoring. Back still steps exactly one level.
+- **No photo is kept.** Every exit from the *food* camera flow attaches its bitmap, on the argument
+  that the numbers being hand-entered does not make the picture less a picture of the meal. A
+  nutrition panel is not a picture of the meal under any reading, so the label flow attaches
+  nothing — the same line the barcode viewfinder already sits on.
+- **The reading is stored as a basis, not as a boolean beside one.** `LabelScanScreenState.readBasis`
+  is null when nobody read a panel, which is exactly the condition that hides the AI chip and the
+  readout, and carries `Per100g`/`PerServing` otherwise, which is what the caveat names. Deriving
+  "was this read?" back out of the form's portion was the alternative and it is wrong the moment the
+  user changes the portion — the panel still said what it said.
 
 ### Meal photos
 

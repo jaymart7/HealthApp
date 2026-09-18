@@ -9,6 +9,10 @@ import ph.mart.healthapp.core.data.exercise.ParsedExercise
 import ph.mart.healthapp.core.data.exercise.parsedExercise
 import ph.mart.healthapp.core.data.food.COMMON_FOODS
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
+import ph.mart.healthapp.core.data.food.LabelBasis
+import ph.mart.healthapp.core.data.food.LabelReading
+import ph.mart.healthapp.core.data.food.LabelScanRepository
+import ph.mart.healthapp.core.data.food.LabelScanResult
 import ph.mart.healthapp.core.data.food.MAX_MEAL_IDEAS
 import ph.mart.healthapp.core.data.food.MealIdea
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
@@ -27,7 +31,7 @@ import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
 
 /**
- * The five smaller AI features, faked off local data. The coach is next door in
+ * The six smaller AI features, faked off local data. The coach is next door in
  * [FakeCoachRepository], because it is the only one with a state machine worth faking carefully.
  *
  * Every one of these reuses something the app already ships, and that is the design rather than an
@@ -35,7 +39,7 @@ import ph.mart.healthapp.core.data.insight.insightFor
  * the first time the real shape changes. `COMMON_FOODS` is a hand-written table of real USDA
  * figures already in the APK, and `insightFor` is the rule-based line Home already falls back to.
  *
- * All five keep a short [delay]: a call that returns instantly hides every spinner, and the point
+ * All six keep a short [delay]: a call that returns instantly hides every spinner, and the point
  * of a debug build is to look at them.
  */
 
@@ -81,6 +85,43 @@ internal class FakeRecognitionRepository : FoodRecognitionRepository {
             COMMON_FOODS[(seed + offset).mod(COMMON_FOODS.size)].toRecognized()
         }
         return RecognitionResult.Success(foods)
+    }
+}
+
+/**
+ * A nutrition panel the camera "read", picked from [COMMON_FOODS] by the bitmap's own dimensions —
+ * [FakeRecognitionRepository]'s trick, and for its reasons: deterministic per photo so a review
+ * screen can be looked at twice, varied across photos so it isn't always chicken breast.
+ *
+ * `COMMON_FOODS` is the right table to fake this off precisely because its rows carry all seven
+ * nutrients at real USDA figures and are already per 100 g — which is what a panel read reaches the
+ * form as. So the confirmation screen, the panel readout and the portion repricing all see the
+ * shape they will see in production.
+ *
+ * Every fifth distinct photo answers [LabelScanResult.NoLabelFound], so the branch that says
+ * "point it at the panel" is reachable without finding an unlabelled packet.
+ */
+internal class FakeLabelScanRepository : LabelScanRepository {
+    override suspend fun read(photo: Bitmap): LabelScanResult {
+        delay(FAKE_LATENCY_MS)
+        val seed = photo.width * 31 + photo.height
+        if (seed % 5 == 0) return LabelScanResult.NoLabelFound
+        val product = COMMON_FOODS[seed.mod(COMMON_FOODS.size)]
+        return LabelScanResult.Found(
+            LabelReading(
+                name = product.name,
+                // Not from the table: `COMMON_FOODS` leaves servingSize null on purpose, because a
+                // serving label there would be app copy. A packet declares one, so the fake does
+                // too — otherwise the portion control's third preset chip is never seen.
+                servingSize = "1 serving (30 g)",
+                basis = LabelBasis.Per100g,
+                calories = product.calories,
+                proteinG = product.proteinG,
+                carbsG = product.carbsG,
+                fatG = product.fatG,
+                nutrients = product.nutrients,
+            ),
+        )
     }
 }
 

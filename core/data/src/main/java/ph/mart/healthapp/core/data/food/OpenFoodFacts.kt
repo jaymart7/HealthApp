@@ -59,12 +59,14 @@ private const val TIMEOUT_MS = 10_000
  * `sodium_100g: 0.0428`, `calcium_100g: 0.0253`, `iron_100g: 0.00094`. [Nutrients] stores sodium,
  * calcium and potassium as milligrams and iron and vitamin D as micrograms, so the conversion is
  * one of these two factors and never a unit read off the payload. */
-private const val MG_PER_G = 1000
+internal const val MG_PER_G = 1000
 
 private const val UG_PER_G = 1_000_000
 
-/** Many labels declare salt where the app wants sodium; the label conversion is sodium × 2.5. */
-private const val SALT_TO_SODIUM = 2.5
+/** Many labels declare salt where the app wants sodium; the label conversion is sodium × 2.5.
+ * Internal rather than private because [sodiumMgFrom] applies the same factor to a panel read off
+ * a packet — one source for a constant two readers would otherwise keep in step by hand. */
+internal const val SALT_TO_SODIUM = 2.5
 
 private val offJson = Json { ignoreUnknownKeys = true }
 

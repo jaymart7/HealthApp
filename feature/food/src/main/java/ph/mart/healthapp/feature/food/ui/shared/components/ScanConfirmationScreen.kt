@@ -27,6 +27,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.designsystem.component.AIChip
+import ph.mart.healthapp.core.designsystem.component.AIChipVariant
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.MacroFieldGroup
@@ -36,6 +38,7 @@ import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.isValid
 
 /** How far the content has to scroll before the bar takes over the food's name. One card's worth,
@@ -43,11 +46,18 @@ import ph.mart.healthapp.feature.food.ui.shared.isValid
 private const val TITLE_HANDOVER_PX = 240
 
 /**
- * The barcode flow's review step, and the photo flow's after a search hit or a hand entry. Same
- * parts as [ConfirmationScreen][ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen]
- * minus the photo and the AI chrome: a barcode match is a database row, not an estimate, so there is
- * no `AIChip` and no confidence notice here — `tertiaryContainer` stays the AI accent alone, and the
- * only `tertiary` on this screen is the carbs cell's dot.
+ * The review step for the three flows that confirm one item: the barcode flow's, the photo flow's
+ * after a search hit or a hand entry, and the label scan's. Same parts as
+ * [ConfirmationScreen][ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen] minus
+ * the photo and the plate's list of rows.
+ *
+ * **[aiLabel] is the one thing that varies about where the figures came from.** A barcode match is a
+ * database row and a search hit is a database row, so neither wears an `AIChip` and neither gets a
+ * confidence notice — this screen was written on that rule and it still holds for both. A label
+ * scan is a model reading printed text, which is not a database row and is not an estimate either;
+ * the chip says a model was involved, and [caveat] says what it was reading. `tertiaryContainer`
+ * remains the AI accent and nothing else on this screen borrows it — the only other `tertiary` here
+ * is the carbs cell's dot.
  *
  * **One subject, then its corrections.** The screen used to be a flat stack of nine input boxes, all
  * weighted the same, which made confirming a scan into a reading exercise. Now the name, the portion
@@ -62,6 +72,16 @@ private const val TITLE_HANDOVER_PX = 240
  *
  * [subtitle] is null for a found product — the per-100 g caveat it used to carry now sits under the
  * portion it is about, which is the number it was always talking about.
+ *
+ * [saveMyFood] mounts the keep-this-food switch above the docked bar, in the arrangement the
+ * add-entry sheet already ships. Null leaves it absent, which is every caller that has somewhere
+ * else to keep a food from — the barcode flow's product is already in a database and the photo
+ * flow's search hit came out of one. The label scan has neither, and a panel read once becoming a
+ * food the user owns is how that flow avoids paying for the same packet twice.
+ *
+ * [belowMacros] is an empty slot under the macro tiles, for the one thing a caller can say that
+ * this screen cannot work out: what a nutrition panel gave beyond the three nutrients the
+ * micronutrient group lets anybody type. Nothing is drawn there by default.
  */
 @Composable
 internal fun ScanConfirmationScreen(
@@ -73,6 +93,12 @@ internal fun ScanConfirmationScreen(
     onDiscard: () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    caveat: String? = null,
+    caveatBaseAmount: Double = 100.0,
+    aiLabel: String? = null,
+    saveMyFood: Boolean? = null,
+    onSaveMyFoodChange: (Boolean) -> Unit = {},
+    belowMacros: @Composable () -> Unit = {},
 ) {
     val scroll = rememberScrollState()
     // Both are derived so the screen re-composes when an *answer* changes rather than on every
@@ -127,9 +153,19 @@ internal fun ScanConfirmationScreen(
                     )
                 }
 
+                if (aiLabel != null) {
+                    AIChip(label = aiLabel, variant = AIChipVariant.Default)
+                }
+
                 MealTypeChipRow(selected = form.mealType, onSelect = onMealTypeSelect)
 
-                SubjectCard(form = form, manualEntry = manualEntry, onFormChange = onFormChange)
+                SubjectCard(
+                    form = form,
+                    manualEntry = manualEntry,
+                    onFormChange = onFormChange,
+                    caveat = caveat,
+                    caveatBaseAmount = caveatBaseAmount,
+                )
 
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     CardLabel(stringResource(R.string.food_macros))
@@ -150,6 +186,8 @@ internal fun ScanConfirmationScreen(
                     )
                 }
 
+                belowMacros()
+
                 MicronutrientInputGroup(
                     fiberG = form.nutrients.fiberG.takeIf { it > 0 },
                     sugarG = form.nutrients.sugarG.takeIf { it > 0 },
@@ -157,6 +195,14 @@ internal fun ScanConfirmationScreen(
                     onFiberChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(fiberG = it ?: 0))) },
                     onSugarChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sugarG = it ?: 0))) },
                     onSodiumChange = { onFormChange(form.copy(nutrients = form.nutrients.copy(sodiumMg = it ?: 0))) },
+                )
+            }
+
+            if (saveMyFood != null) {
+                SaveMyFoodRow(
+                    checked = saveMyFood && form.isSaveableFood(),
+                    enabled = form.isSaveableFood(),
+                    onCheckedChange = onSaveMyFoodChange,
                 )
             }
 

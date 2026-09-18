@@ -15,7 +15,7 @@ either. `DECISIONS.md` also holds what was weighed and deferred.
 
 **Routes above a tab** (own back toolbar, no bottom bar/FAB):
 `CoachRoute` · `FoodCaptureRoute(dateEpochDay)` · `BarcodeScanRoute(dateEpochDay)` ·
-`VoiceLogRoute(dateEpochDay)` · `RecipeBuilderRoute` ·
+`LabelScanRoute(dateEpochDay)` · `VoiceLogRoute(dateEpochDay)` · `RecipeBuilderRoute` ·
 `StrengthWorkoutRoute` · `HealthConnectionRoute` · `FoodLibraryRoute` · `RoutinesRoute` ·
 `SupplementsRoute` · `HomeLayoutRoute`.
 
@@ -195,7 +195,7 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
 - Meal ideas — AI suggestions sized to the day's remaining calories, with an offline fallback
   built from the user's own recents and recipes; picking one seeds the add sheet, never logs.
 
-## Camera & barcode
+## Camera, barcode & the label
 
 - AI photo food logging: capture → analyze → confirm, with retry, offline and manual-search paths.
   **A plate is every food on it** — rice, chicken and greens come back as three rows, up to eight,
@@ -211,6 +211,19 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   is a real barcode lookup and is stocked internationally, so a locally-packaged product resolves
   where FDC's US database has nothing; FDC's `foods/search` with its `gtinUpc` match check is the
   fallback. Not-found only when both answered; try-again only when neither could.
+- Nutrition-label scan — the answer to a barcode neither database holds. Photograph the panel on
+  the back of the pack and a model transcribes it into the review screen: name, the serving in the
+  label's own words, calories, the three macros and **all seven nutrients**, including the four the
+  Nutrition Facts panel mandates and no other path can supply, since those are seeded and never
+  typed. Nothing is estimated — a line the panel does not print arrives absent and shows an em dash,
+  never a zero. The figures stay as printed, for the amount they were printed against: a per-100 g
+  panel seeds 100 g, a per-serving one seeds the weight its serving declares ("1 bar (25 g)" → 25 g)
+  or one serving where it declares none, and the caveat under the portion says which. What the panel
+  gave is listed read-only under the macros, because the four nobody can type still have to be
+  checkable. The confirmation carries "Save as my food", so a local product read once leads every
+  later food search and the second packet costs no AI call. Reached from the barcode flow's
+  not-found and no-barcode screens, where it is now the leading action and hand entry has dropped to
+  a text button; offline, unreadable and failed all land on hand entry with the pack still in view.
 - Barcode memory — a resolved product is remembered by its barcode, so a rescan is instant, works
   offline and spends none of the shared FDC budget. Not exported.
 - The diary's mic, barcode and camera doors all log to the day being reviewed; the FAB and the
@@ -575,6 +588,10 @@ each one is argued in `CLAUDE.md`.
   zeros, so most days would read as a deficiency the app invented.
 - **AI-estimated micronutrients.** The photo, voice and meal-idea schemas ask for three nutrients
   and will not be widened — a model asked what calcium is in a photographed plate produces a number.
+  **The label scan is not an exception to this**, and the line is where `OpenFoodFacts.kt` already
+  drew it in refusing `nutriments_estimated`: a figure the source *derived* is out, a figure *read
+  off a label* is in. Reading a printed panel is transcription, and its prompt forbids inferring,
+  completing or recalling anything not visible.
 - **A stepper for vitamin D, calcium, iron or potassium.** They are seeded and repriced, never typed.
 - **A fertile window or ovulation date.** FitPulse names things and reports numbers; a fertile
   window derived from a mean cycle length is a contraception claim it cannot stand behind.

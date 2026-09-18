@@ -81,6 +81,12 @@ private val GRAM_PRESETS = listOf(50.0, 150.0)
  * being true. [manualEntry] swaps it for the opposite instruction, because a form nobody seeded has
  * no per-100 g values to scale.
  *
+ * [caveat] replaces the *base sentence only*, for a caller whose figures came from neither a
+ * database nor the user. The label scan is the one: "Database values are per 100 g" is wrong twice
+ * over against a panel read off a packet, which is not a database and may not be per 100 g. The
+ * scale note still follows it, because "×1.5" is about the number above rather than about where it
+ * came from — and [caveatBaseAmount] is what keeps that factor true when the seed was not 100 g.
+ *
  * **[manualEntry] also hides the presets**, and that is the same fact stated once rather than a
  * second flag: a form nobody seeded from a per-100 g row has nothing to preset, and so does an edit
  * of a logged meal, whose portion is already the one the user ate. Both pass `true`.
@@ -102,6 +108,8 @@ internal fun PortionControl(
     onUnitChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     servingSize: String? = null,
+    caveat: String? = null,
+    caveatBaseAmount: Double = SEEDED_BASE_AMOUNT,
     controlColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -176,7 +184,7 @@ internal fun PortionControl(
         }
 
         Text(
-            text = caveatFor(manualEntry, amount, unit),
+            text = caveatFor(manualEntry, amount, unit, caveat, caveatBaseAmount),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -186,18 +194,32 @@ internal fun PortionControl(
 /**
  * What the numbers in this card are figures *for*.
  *
- * The scale factor is only printable in grams: the seed is per 100 g, so `amount / 100` is the
- * factor — but switching the unit to ounces moves neither the amount nor the values, and a "×1.5"
- * against a number that means ounces would be arithmetic nobody performed.
+ * The scale factor is only printable in grams: switching the unit to ounces moves neither the
+ * amount nor the values, and a "×1.5" against a number that means ounces would be arithmetic
+ * nobody performed.
+ *
+ * [base] is divided into rather than hardcoded to 100 because a label scan's seed need not be per
+ * 100 g — a per-serving panel seeds 25 g, and `amount / 100` against that would print "×0.5" for a
+ * portion the user had just doubled.
  */
 @Composable
-private fun caveatFor(manualEntry: Boolean, amount: Double, unit: String): String {
-    if (manualEntry) return stringResource(R.string.food_portion_caveat_manual)
-    val base = stringResource(R.string.food_portion_caveat_per_100g)
-    val factor = amount / 100.0
-    if (unit != "g" || abs(factor - 1.0) < 0.005) return base
-    return base + " " + stringResource(R.string.food_portion_scaled, factor.formatFactor())
+private fun caveatFor(
+    manualEntry: Boolean,
+    amount: Double,
+    unit: String,
+    override: String?,
+    base: Double,
+): String {
+    if (override == null && manualEntry) return stringResource(R.string.food_portion_caveat_manual)
+    val sentence = override ?: stringResource(R.string.food_portion_caveat_per_100g)
+    val factor = if (base > 0.0) amount / base else 1.0
+    if (unit != "g" || abs(factor - 1.0) < 0.005) return sentence
+    return sentence + " " + stringResource(R.string.food_portion_scaled, factor.formatFactor())
 }
+
+/** What a seeded figure is a figure for unless a caller says otherwise — every database row in the
+ * app reports per 100 g, which is why this was a literal `100.0` before a label scan existed. */
+private const val SEEDED_BASE_AMOUNT = 100.0
 
 @Composable
 private fun PresetChip(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {

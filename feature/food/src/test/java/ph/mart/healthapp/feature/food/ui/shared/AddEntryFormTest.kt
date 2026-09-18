@@ -7,6 +7,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.food.LabelBasis
+import ph.mart.healthapp.core.data.food.LabelReading
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
@@ -273,5 +275,70 @@ class AddEntryFormTest {
         assertEquals(550, half.calories)
         assertEquals(50, half.proteinG)
         assertEquals(40, half.fatG)
+    }
+
+    /** A per-100 g panel is what the form already assumes, which is the whole reason it needs no
+     * arithmetic — the figures go in against the amount they were printed for. */
+    @Test
+    fun `a per-100 g panel seeds a hundred grams`() {
+        val form = LabelReading(
+            name = "Nutella",
+            basis = LabelBasis.Per100g,
+            calories = 539,
+            proteinG = 6,
+            carbsG = 58,
+            fatG = 31,
+            nutrients = Nutrients(sugarG = 56, sodiumMg = 41),
+        ).toAddEntryForm(MealType.Snacks)
+
+        assertEquals(100.0, form.portionAmount, 0.0)
+        assertEquals("g", form.portionUnit)
+        assertEquals(539, form.calories)
+        assertEquals(56, form.nutrients.sugarG)
+    }
+
+    /** The figures on a per-serving panel are figures for that serving, so the portion has to be
+     * the serving's weight — otherwise the first stepper tap reprices from the wrong base. */
+    @Test
+    fun `a per-serving panel is priced at the weight the label declares`() {
+        val form = LabelReading(
+            servingSize = "1 bar (25 g)",
+            basis = LabelBasis.PerServing,
+            calories = 120,
+        ).toAddEntryForm(MealType.Snacks)
+
+        assertEquals(25.0, form.portionAmount, 0.0)
+        assertEquals("g", form.portionUnit)
+        assertEquals(120, form.calories)
+        // Kept so the portion control can offer it as a preset chip in the label's own words.
+        assertEquals("1 bar (25 g)", form.servingSize)
+    }
+
+    /** No grams anywhere in the serving means no grams to use. Guessing that a cup is 240 g is the
+     * invented number the nullable figures exist to avoid, so the portion stays what was said. */
+    @Test
+    fun `a serving with no weight in it stays one serving`() {
+        val form = LabelReading(
+            servingSize = "1 cup",
+            basis = LabelBasis.PerServing,
+            calories = 150,
+        ).toAddEntryForm(MealType.Breakfast)
+
+        assertEquals(1.0, form.portionAmount, 0.0)
+        assertEquals(SERVING_UNIT, form.portionUnit)
+    }
+
+    /** The reason `LabelReading`'s figures are nullable: a line the panel does not print must reach
+     * the form as nothing, so it draws an em dash rather than a zero nobody declared. */
+    @Test
+    fun `a line the panel never printed arrives as nobody having said`() {
+        val form = LabelReading(basis = LabelBasis.Per100g, calories = 90)
+            .toAddEntryForm(MealType.Lunch)
+
+        assertEquals(90, form.calories)
+        assertNull(form.proteinG)
+        assertNull(form.fatG)
+        // A nameless panel is ordinary — the front of the pack need not be in the frame.
+        assertEquals("", form.name)
     }
 }

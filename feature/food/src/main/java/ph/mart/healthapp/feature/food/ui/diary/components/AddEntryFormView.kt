@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,6 +45,7 @@ import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.components.CardLabel
 import ph.mart.healthapp.feature.food.ui.shared.components.PhotoViewerOverlay
+import ph.mart.healthapp.feature.food.ui.shared.components.SaveMyFoodRow
 import ph.mart.healthapp.feature.food.ui.shared.components.SubjectCard
 
 /** How far the content has to scroll before the bar takes over the food's name — one card's worth,
@@ -265,53 +265,6 @@ private fun PhotoRow(path: String) {
         ) {
             PhotoViewerOverlay(photo = rememberBitmapFromFile(path), onClose = { viewing = false })
         }
-    }
-}
-
-/**
- * "Save as my food", as a switch and not a button, pinned above the action bar.
- *
- * **Mounted from the moment the form opens and dimmed until there is something worth keeping**,
- * rather than appearing when the form turns valid — which is what used to shove the action row down
- * the screen under the user's thumb.
- *
- * It became a switch because it is now beside the commit rather than above it: a switch states an
- * intention and the button acts on it, where the old button kept the food on the spot and left the
- * sheet open. Keeping and logging are still two things — the switch is what lets you say you want
- * both without pressing twice.
- */
-@Composable
-internal fun SaveMyFoodRow(
-    checked: Boolean,
-    enabled: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = stringResource(R.string.food_save_as_my_food),
-                style = MaterialTheme.typography.labelLarge,
-                color = if (enabled) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-            Text(
-                text = stringResource(R.string.food_save_as_my_food_caption),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }
 

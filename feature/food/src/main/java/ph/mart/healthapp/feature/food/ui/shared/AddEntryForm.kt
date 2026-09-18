@@ -3,6 +3,8 @@ package ph.mart.healthapp.feature.food.ui.shared
 import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
+import ph.mart.healthapp.core.data.food.LabelBasis
+import ph.mart.healthapp.core.data.food.LabelReading
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QUICK_ADD_NAME
@@ -10,6 +12,7 @@ import ph.mart.healthapp.core.data.food.RecognitionConfidence
 import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
+import ph.mart.healthapp.core.data.food.servingGrams
 import ph.mart.healthapp.core.data.food.times
 
 /** What the user is actively editing in the add-entry sheet — seeded fresh (not from a loaded
@@ -166,6 +169,48 @@ fun ScannedProduct.toAddEntryForm(mealType: MealType): AddEntryForm = AddEntryFo
     nutrients = nutrients,
     servingSize = servingSize,
 )
+
+/**
+ * A transcribed nutrition panel, as a form to check.
+ *
+ * **This is where a basis becomes a portion**, and it is here rather than in `:core:data` because
+ * [SERVING_UNIT] is this module's word: the reading carries what the panel printed and this decides
+ * what amount it was printed against.
+ *
+ * - Per 100 g is the form's own default, so it needs saying only to be obvious.
+ * - A per-serving panel that declares a weight is priced at that weight — [servingGrams] pulls
+ *   "25" out of "1 bar (25 g)", exactly as it does for a scanned product's serving — so the figures
+ *   go in against the grams they are figures for and [withPortionAmount] reprices correctly from
+ *   there.
+ * - A per-serving panel with no weight in it ("1 cup", "2 cookies") has no grams to find, and
+ *   guessing that a cup is 240 g is the invented number [servingGrams] exists to refuse. One
+ *   serving is what the panel said, so one serving is what goes in.
+ *
+ * Nothing is converted between the two. A per-serving panel stays per serving, because normalising
+ * it to per 100 g would put a figure on screen that the packet in the user's hand does not print.
+ *
+ * Every unread figure stays null, which is the whole reason [LabelReading]'s are nullable: a line
+ * the panel does not carry prints an em dash here, and never a `0` nobody declared.
+ */
+fun LabelReading.toAddEntryForm(mealType: MealType): AddEntryForm {
+    val serving = servingGrams(servingSize)
+    return AddEntryForm(
+        mealType = mealType,
+        name = name.orEmpty(),
+        portionAmount = when {
+            basis == LabelBasis.Per100g -> 100.0
+            serving != null -> serving
+            else -> 1.0
+        },
+        portionUnit = if (basis == LabelBasis.PerServing && serving == null) SERVING_UNIT else "g",
+        calories = calories,
+        proteinG = proteinG,
+        carbsG = carbsG,
+        fatG = fatG,
+        nutrients = nutrients,
+        servingSize = servingSize,
+    )
+}
 
 /**
  * Changing the portion reprices what the portion is made of.

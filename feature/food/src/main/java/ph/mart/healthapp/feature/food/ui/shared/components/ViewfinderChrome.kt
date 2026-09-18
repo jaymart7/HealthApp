@@ -26,12 +26,12 @@ import ph.mart.healthapp.feature.food.R
 
 /**
  * The two escape hatches every viewfinder in this feature carries — pick an image the flow can read
- * instead of aiming at it, or skip the camera and type the entry in. Shared by the food-photo and
- * barcode viewfinders, which is why it sits in `ui/shared/` rather than either flow's `components/`.
+ * instead of aiming at it, or skip the camera and type the entry in. Shared by the food-photo,
+ * barcode and nutrition-label viewfinders, which is why it sits in `ui/shared/` rather than any one
+ * flow's `components/`.
  *
- * Always black/white regardless of app theme, for the reason
- * [CaptureScreen][ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen]'s KDoc gives:
- * chrome over a live feed of arbitrary brightness can't follow the app's colors.
+ * Always black/white regardless of app theme, for the reason [CaptureScreen]'s KDoc gives: chrome
+ * over a live feed of arbitrary brightness can't follow the app's colors.
  */
 @Composable
 internal fun ViewfinderActions(

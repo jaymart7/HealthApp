@@ -199,10 +199,11 @@
     <string name="food_scan_looking_up">Looking that up…</string>
     <string name="food_scan_looking_up_body">Checking the product database for this barcode.</string>
     <string name="food_scan_not_found">We don\'t have that product</string>
-    <string name="food_scan_not_found_body">It isn\'t in the product database yet — you can still add it by hand, or scan a different item.</string>
+    <string name="food_scan_not_found_body">It isn\'t in the product database yet. The nutrition panel on the back of the pack has everything — point the camera at that instead.</string>
     <string name="food_scan_no_barcode">No barcode in that photo</string>
-    <string name="food_scan_no_barcode_body">I couldn\'t read a product barcode there — try a clearer shot of the pack, scan it live, or add the item by hand.</string>
+    <string name="food_scan_no_barcode_body">I couldn\'t read a product barcode there — and plenty of packs don\'t carry one. The nutrition panel will do just as well.</string>
     <string name="food_scan_add_manually">Add it manually</string>
+    <string name="food_scan_read_label">Read the label instead</string>
     <string name="food_scan_again">Scan again</string>
     <string name="food_scan_offline_retry">Still nothing. A barcode lookup needs a connection — you can add the item by hand in the meantime.</string>
     <string name="food_scan_offline">Looking up a barcode needs a connection. You can still log manually — everything else works offline.</string>
@@ -353,4 +354,23 @@
     <string name="food_history_empty_query_body">Nothing in your diary matches that. Search looks at food names only \u2014 a shorter word finds more.</string>
     <string name="food_history_empty_diary">Nothing logged yet</string>
     <string name="food_history_empty_body">Every food you log lands here, ready to re-log onto any day without typing it again.</string>
+    <!-- Nutrition-label scan: the answer to a barcode neither database holds. -->
+    <string name="food_label_frame">Fit the nutrition panel in frame</string>
+    <string name="food_label_reading">Reading the label…</string>
+    <string name="food_label_reading_body">Copying the figures off the panel. Nothing is logged until you\'ve checked them.</string>
+    <string name="food_label_ai_chip">Read from the label</string>
+    <string name="food_label_caveat_per_100g">Read off the panel, per 100 g.</string>
+    <string name="food_label_caveat_per_serving">Read off the panel, for one serving.</string>
+    <string name="food_label_panel_readout">What the panel gave</string>
+    <string name="food_label_enter_by_hand">Enter it by hand</string>
+    <string name="food_label_retake">Take another photo</string>
+    <string name="food_label_unreadable">No nutrition panel there</string>
+    <string name="food_label_unreadable_body">I couldn\'t find a nutrition panel in that photo. Try the back of the pack, filling the frame and holding steady.</string>
+    <string name="food_label_failed">That didn\'t work</string>
+    <string name="food_label_failed_body">The label couldn\'t be read this time. Another photo might do it — or type the figures in from the pack.</string>
+    <string name="food_label_offline">Reading a label needs a connection. You can still enter it by hand — everything else works offline.</string>
+    <string name="food_label_offline_retry">Still nothing. Reading a label needs a connection — the pack\'s figures can go in by hand in the meantime.</string>
+    <string name="food_label_permission_grant">Grant camera access to read a nutrition label, or go back and enter it by hand.</string>
+    <string name="food_label_permission_settings">Camera access is off for FitPulse. Turn it on in Settings to read a label, or go back and enter it by hand.</string>
+    <string name="food_label_discard_title">Discard this item?</string>
 </resources>

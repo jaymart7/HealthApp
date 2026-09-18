@@ -48,10 +48,12 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
+import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.barcode.components.ScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
+import ph.mart.healthapp.feature.food.ui.label.LabelScanScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
@@ -60,11 +62,17 @@ import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
  * The barcode flow, built to the same shape as [PhotoCaptureScreen]: one always-mounted
  * [NavigationBackHandler] that dispatches on the current [ScanFlow] instead of applying one
  * behavior to every state.
+ *
+ * [onScanLabel] leaves this flow for [LabelScanScreen], and only from the two states where a code
+ * failed to resolve. **That is the whole entry point for the label scan**, on purpose: the panel is
+ * the answer to a barcode neither database holds, and offering it from the viewfinder would be
+ * offering it before anything had gone wrong.
  */
 @Composable
 fun BarcodeScanScreen(
     dateEpochDay: Long,
     onExit: () -> Unit,
+    onScanLabel: () -> Unit,
     viewModel: BarcodeScanViewModel = koinViewModel(),
 ) {
     val state = rememberBarcodeScanScreen()
@@ -207,14 +215,19 @@ fun BarcodeScanScreen(
                     onDiscard = { if (state.isDirty) state.pendingDiscard = { onExit() } else onExit() },
                 )
 
+                // Reading the label leads here now, and typing it in has dropped to a text
+                // button. The demotion is the point: a barcode neither Open Food Facts nor
+                // FoodData Central holds is the ordinary outcome for a locally-packaged product,
+                // and the figures the user was about to retype are printed on the back of the
+                // packet already in their hand.
                 ScanFlow.NotFound -> FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                     heading = stringResource(R.string.food_scan_not_found),
                     body = stringResource(R.string.food_scan_not_found_body),
                     actions = {
                         PrimaryButton(
-                            label = stringResource(R.string.food_scan_add_manually),
-                            onClick = state::startManualEntry,
+                            label = stringResource(R.string.food_scan_read_label),
+                            onClick = onScanLabel,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         SecondaryButton(
@@ -222,22 +235,34 @@ fun BarcodeScanScreen(
                             onClick = state::rescan,
                             modifier = Modifier.fillMaxWidth(),
                         )
+                        TextButton(
+                            label = stringResource(R.string.food_scan_add_manually),
+                            onClick = state::startManualEntry,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                     },
                 )
 
+                // Same three doors, and for a nearer reason: plenty of packets carry no retail
+                // barcode at all, and every one of those still carries a panel.
                 ScanFlow.NoBarcode -> FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                     heading = stringResource(R.string.food_scan_no_barcode),
                     body = stringResource(R.string.food_scan_no_barcode_body),
                     actions = {
                         PrimaryButton(
-                            label = stringResource(R.string.food_scan_add_manually),
-                            onClick = state::startManualEntry,
+                            label = stringResource(R.string.food_scan_read_label),
+                            onClick = onScanLabel,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         SecondaryButton(
                             label = stringResource(R.string.food_scan_again),
                             onClick = state::rescan,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        TextButton(
+                            label = stringResource(R.string.food_scan_add_manually),
+                            onClick = state::startManualEntry,
                             modifier = Modifier.fillMaxWidth(),
                         )
                     },

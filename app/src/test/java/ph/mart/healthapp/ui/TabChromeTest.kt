@@ -3,10 +3,13 @@ package ph.mart.healthapp.ui
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.navigation.route.FoodRoute
 import ph.mart.healthapp.core.navigation.route.HomeRoute
 import ph.mart.healthapp.core.navigation.route.ProfileRoute
 import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.coach.ui.CoachRoute
+import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
+import ph.mart.healthapp.feature.food.ui.LabelScanRoute
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
@@ -73,6 +76,19 @@ class TabChromeTest {
             assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = false))
             assertFalse(showsTabChrome(current = route, beneath = ProgressRoute, twoPane = true))
         }
+    }
+
+    /** The camera flows are full-bleed at every width and dispatch back per capture state, so
+     * neither the bar nor the FAB may draw over them. The label scan is pushed from *inside* the
+     * barcode flow, which is the one case worth pinning: a route reached from another route above
+     * a tab is still not a tab. */
+    @Test
+    fun `a camera flow wears no chrome, including one pushed from another camera flow`() {
+        listOf(BarcodeScanRoute(0), LabelScanRoute(0)).forEach { route ->
+            assertFalse(showsTabChrome(current = route, beneath = FoodRoute, twoPane = false))
+            assertFalse(showsTabChrome(current = route, beneath = FoodRoute, twoPane = true))
+        }
+        assertFalse(showsTabChrome(current = LabelScanRoute(0), beneath = BarcodeScanRoute(0), twoPane = true))
     }
 
     @Test

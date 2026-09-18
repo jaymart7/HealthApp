@@ -55,6 +55,7 @@ import ph.mart.healthapp.feature.coach.ui.CoachRoute
 import ph.mart.healthapp.feature.coach.ui.coachEntries
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
+import ph.mart.healthapp.feature.food.ui.LabelScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodHistoryRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
 import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
@@ -313,7 +314,8 @@ fun AppScaffold(
 
     // The camera flows are the one exemption: full-bleed surfaces that draw under both system bars
     // (appScaffold.js) and dispatch back per capture state, so a generic toolbar would break both.
-    val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute || current is AddPhotoRoute
+    val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute ||
+        current is LabelScanRoute || current is AddPhotoRoute
 
     // Routes that draw their own `AppTopBar`. The camera flows do it full-bleed, under the system
     // bars; every Progress subject page keeps the window's insets and wants the bar's `actions`
@@ -448,6 +450,10 @@ fun AppScaffold(
                             scrollState = foodScroll,
                             twoPane = twoPane,
                             onScanBarcode = { date -> topLevelBackStack.add(BarcodeScanRoute(date)) },
+                            // Pushed from inside the barcode flow rather than from the diary: the
+                            // label is what a not-found code leaves you with, and it inherits that
+                            // flow's day so the entry still lands where the diary was looking.
+                            onScanLabel = { date -> topLevelBackStack.add(LabelScanRoute(date)) },
                             onSpeakFood = { date -> topLevelBackStack.add(VoiceLogRoute(date)) },
                             onCapturePhoto = { date -> topLevelBackStack.add(FoodCaptureRoute(date)) },
                             onOpenHistory = { date, query ->

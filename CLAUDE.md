@@ -311,7 +311,7 @@ are next open.
   the `*Data`/`*State`/`*ViewModel`/`*Screen` quartet intact inside each. Anything
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
-  declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `history`,
+  declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `label`, `history`,
   `recipe`, `search`, `ideas`, `voice`, `shared`), `:feature:progress` (`progress` — the overview and
   the detail chrome — plus `weight`, `measurement`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and

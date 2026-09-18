@@ -4,6 +4,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import ph.mart.healthapp.core.data.AppDatabase
 import ph.mart.healthapp.core.data.debugMealIdeas
+import ph.mart.healthapp.core.data.debugLabelScan
 import ph.mart.healthapp.core.data.debugMealParse
 import ph.mart.healthapp.core.data.debugRecognition
 import ph.mart.healthapp.core.data.food.BarcodeLookupRepository
@@ -12,6 +13,8 @@ import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepositoryImpl
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.FoodRepositoryImpl
+import ph.mart.healthapp.core.data.food.LabelScanRepository
+import ph.mart.healthapp.core.data.food.LabelScanRepositoryImpl
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRepositoryImpl
 import ph.mart.healthapp.core.data.food.MealParseRepository
@@ -19,7 +22,7 @@ import ph.mart.healthapp.core.data.food.MealParseRepositoryImpl
 import ph.mart.healthapp.core.data.food.ProductSearchRepository
 import ph.mart.healthapp.core.data.food.ProductSearchRepositoryImpl
 
-/** The three `debugX()` calls are a source-set pair and are null in release — see `DebugAi.kt`. */
+/** The four `debugX()` calls are a source-set pair and are null in release — see `DebugAi.kt`. */
 val foodDataModule = module {
     single { get<AppDatabase>().foodEntryDao() }
     single { get<AppDatabase>().favoriteFoodDao() }
@@ -29,6 +32,7 @@ val foodDataModule = module {
     single<FoodRepository> { FoodRepositoryImpl(androidContext(), get(), get(), get(), get()) }
     single<FoodRecognitionRepository> { debugRecognition() ?: FoodRecognitionRepositoryImpl() }
     single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl(get()) }
+    single<LabelScanRepository> { debugLabelScan() ?: LabelScanRepositoryImpl() }
     single<MealIdeaRepository> { debugMealIdeas() ?: MealIdeaRepositoryImpl() }
     single<MealParseRepository> { debugMealParse() ?: MealParseRepositoryImpl() }
     single<ProductSearchRepository> { ProductSearchRepositoryImpl() }

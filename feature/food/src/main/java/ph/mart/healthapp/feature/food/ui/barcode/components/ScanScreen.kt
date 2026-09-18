@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
+import ph.mart.healthapp.feature.food.ui.shared.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.ViewfinderActions
 
 /**

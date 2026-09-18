@@ -41,11 +41,11 @@ import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.photo.components.AnalyzingScreen
-import ph.mart.healthapp.feature.food.ui.photo.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.PhotoOfflineScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.RetryScreen
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen
+import ph.mart.healthapp.feature.food.ui.shared.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
@@ -163,6 +163,7 @@ fun PhotoCaptureScreen(
                         // The same manual door RetryScreen's "Log manually" opens: search or hand
                         // entry, one back step from the camera rather than out of the flow.
                         onEnterManually = { state.flow = CaptureFlow.NoFood },
+                        hint = stringResource(R.string.food_photo_center),
                         cameraPreview = { cameraController.Preview(modifier = Modifier.fillMaxSize()) },
                     )
                 }

@@ -7,10 +7,12 @@ import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
 import ph.mart.healthapp.core.data.fake.FakeCoachRepository
 import ph.mart.healthapp.core.data.fake.FakeExerciseParseRepository
 import ph.mart.healthapp.core.data.fake.FakeInsightRepository
+import ph.mart.healthapp.core.data.fake.FakeLabelScanRepository
 import ph.mart.healthapp.core.data.fake.FakeMealIdeaRepository
 import ph.mart.healthapp.core.data.fake.FakeMealParseRepository
 import ph.mart.healthapp.core.data.fake.FakeRecognitionRepository
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
+import ph.mart.healthapp.core.data.food.LabelScanRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
 import ph.mart.healthapp.core.data.food.MealParseRepository
 import ph.mart.healthapp.core.data.insight.InsightRepository
@@ -19,26 +21,26 @@ import ph.mart.healthapp.core.data.insight.InsightRepository
  * **Flip this to hit the real models.** Left `false`, a debug build never calls Firebase AI Logic
  * at all and therefore bills nothing.
  *
- * All six call sites at once rather than six switches, because the reason to flip is always the
- * same — *checking a change against the real thing before a release* — and six booleans is six
- * ways to leave one on by accident. Splitting it per feature is one line if that ever stops being
- * true.
+ * All seven call sites at once rather than seven switches, because the reason to flip is always
+ * the same — *checking a change against the real thing before a release* — and seven booleans is
+ * seven ways to leave one on by accident. Splitting it per feature is one line if that ever stops
+ * being true.
  *
  * A debug-only escape hatch in the shape `FORCE_ONBOARDING` already uses in `AppRoot.kt`, except
- * that this one lives in a source set rather than behind `BuildConfig.DEBUG`: six fake
+ * that this one lives in a source set rather than behind `BuildConfig.DEBUG`: seven fake
  * repositories are more than a boolean's worth of code to keep out of a release build by
  * convention, and the release twin of this file keeps them out by construction.
  */
 private const val USE_REAL_AI = false
 
 /**
- * The six fakes exist so a debug build can be *iterated on*, not merely run cheaply.
+ * The seven fakes exist so a debug build can be *iterated on*, not merely run cheaply.
  *
  * A stub returning null everywhere would cost the same and hide the things this app's AI surface
  * actually gets wrong — a streamed answer that scrolls badly, a proposal card with an absurd
  * figure in it, a parse that returns nothing. So each fake answers from **data that already
- * exists locally**: the coach's own `CoachToolbox` reads the real Room rows, and the other four
- * reuse the fallbacks the app already ships for offline. What is faked is the model, and nothing
+ * exists locally**: the coach's own `CoachToolbox` reads the real Room rows, and the other five
+ * reuse the fallbacks and the built-in food table the app already ships. What is faked is the model, and nothing
  * else — the tool loop, the trust boundaries, the sanitizers and every Room write are the real
  * code either way.
  */
@@ -48,6 +50,8 @@ internal fun debugCoach(real: CoachRepository, toolbox: CoachToolbox): CoachRepo
 internal fun debugInsight(): InsightRepository? = ifFaking { FakeInsightRepository() }
 
 internal fun debugRecognition(): FoodRecognitionRepository? = ifFaking { FakeRecognitionRepository() }
+
+internal fun debugLabelScan(): LabelScanRepository? = ifFaking { FakeLabelScanRepository() }
 
 internal fun debugMealIdeas(): MealIdeaRepository? = ifFaking { FakeMealIdeaRepository() }
 

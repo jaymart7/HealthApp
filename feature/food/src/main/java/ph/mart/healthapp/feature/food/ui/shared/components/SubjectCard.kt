@@ -60,6 +60,9 @@ private val CardShape = RoundedCornerShape(24.dp)
  *
  * It is a card and not a section rule because it is the subject, and a subject wants an edge.
  *
+ * [caveat] and [caveatBaseAmount] are passed straight through to [PortionControl], which is the
+ * only thing on this card that makes a claim about where the figures came from.
+ *
  * [containerColor] and [controlColor] are the two rungs of the tone ladder this card occupies, not
  * colour choices. A card is one step above the surface it sits on and the controls inside it are one
  * step above the card. The defaults suit a screen on `surface` — the review screen — while the
@@ -72,6 +75,8 @@ internal fun SubjectCard(
     manualEntry: Boolean,
     onFormChange: (AddEntryForm) -> Unit,
     modifier: Modifier = Modifier,
+    caveat: String? = null,
+    caveatBaseAmount: Double = 100.0,
     containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
     controlColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
 ) {
@@ -97,6 +102,8 @@ internal fun SubjectCard(
             onAmountChange = { onFormChange(form.withPortionAmount(it)) },
             onUnitChange = { onFormChange(form.copy(portionUnit = it)) },
             servingSize = form.servingSize,
+            caveat = caveat,
+            caveatBaseAmount = caveatBaseAmount,
             controlColor = controlColor,
         )
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

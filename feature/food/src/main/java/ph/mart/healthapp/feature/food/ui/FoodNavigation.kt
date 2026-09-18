@@ -8,6 +8,7 @@ import ph.mart.healthapp.core.navigation.route.FoodRoute
 import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
 import ph.mart.healthapp.feature.food.ui.history.FoodHistoryScreen
+import ph.mart.healthapp.feature.food.ui.label.LabelScanScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 import ph.mart.healthapp.feature.food.ui.voice.VoiceLogScreen
@@ -22,6 +23,18 @@ data class FoodCaptureRoute(val dateEpochDay: Long) : NavKey
  * selected day, so a scan taken while reviewing a past day is logged to that day. */
 @Serializable
 data class BarcodeScanRoute(val dateEpochDay: Long) : NavKey
+
+/**
+ * Reading a nutrition panel with the camera. Carries the day like [BarcodeScanRoute] and for its
+ * reason — a packet read while reviewing a past day belongs to that day.
+ *
+ * A route of its own rather than a state inside [BarcodeScanRoute], although that is the only place
+ * it is reached from: the two flows bind different CameraX use cases, and two
+ * `LifecycleCameraController`s alive in one composition is a binding race rather than a shape.
+ * Every camera flow in this app is a route for the same reason.
+ */
+@Serializable
+data class LabelScanRoute(val dateEpochDay: Long) : NavKey
 
 /**
  * Searching everything ever logged. Carries the day like [BarcodeScanRoute] and for the same
@@ -48,7 +61,7 @@ data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
  * dependency of its own. It reaches the diary and nothing else: the camera flows are full-bleed at
  * every width, and the recipe screen is a form.
  *
- * [onExitFlow] is the toolbar arrow for the five routes that draw their own: the three camera-side
+ * [onExitFlow] is the toolbar arrow for the six routes that draw their own: the four camera-side
  * flows, the recipe builder, and the history search, which took its bar over when the review screen
  * behind a result brought one of its own.
  *
@@ -59,6 +72,9 @@ fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
     twoPane: Boolean = false,
     onScanBarcode: (Long) -> Unit,
+    /** Reached only from the barcode flow's two not-found states — see [BarcodeScanScreen]. It is a
+     * route above this tab like the rest, so `:app` resolves it. */
+    onScanLabel: (Long) -> Unit,
     onSpeakFood: (Long) -> Unit,
     onCapturePhoto: (Long) -> Unit,
     onOpenHistory: (Long, String) -> Unit,
@@ -86,7 +102,14 @@ fun EntryProviderScope<NavKey>.foodEntries(
     }
     entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }
     entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
-    entry<BarcodeScanRoute> { key -> BarcodeScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
+    entry<BarcodeScanRoute> { key ->
+        BarcodeScanScreen(
+            dateEpochDay = key.dateEpochDay,
+            onExit = onExitFlow,
+            onScanLabel = { onScanLabel(key.dateEpochDay) },
+        )
+    }
+    entry<LabelScanRoute> { key -> LabelScanScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<VoiceLogRoute> { key -> VoiceLogScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<FoodHistoryRoute> { key ->
         FoodHistoryScreen(dateEpochDay = key.dateEpochDay, query = key.query, onExit = onExitFlow)
