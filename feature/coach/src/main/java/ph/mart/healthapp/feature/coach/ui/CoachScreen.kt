@@ -40,9 +40,11 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.coach.R
 import ph.mart.healthapp.feature.coach.ui.components.ChatBubble
+import ph.mart.healthapp.feature.coach.ui.components.AnswerIndent
 import ph.mart.healthapp.feature.coach.ui.components.ChatInputBar
 import ph.mart.healthapp.feature.coach.ui.components.CoachEmptyState
-import ph.mart.healthapp.feature.coach.ui.components.FailureBubble
+import ph.mart.healthapp.feature.coach.ui.components.CoachNotice
+import ph.mart.healthapp.feature.coach.ui.components.DaySeparator
 import ph.mart.healthapp.feature.coach.ui.components.FollowUpRow
 import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
@@ -165,6 +167,12 @@ private fun CoachContent(
                         // The question this answer came from, when re-asking it makes sense — the
                         // newest answer only, and never mid-turn. `askAgainQuestion` is the rule.
                         val question = uiState.askAgainQuestion(index)
+                        // Drawn inside the message's own item rather than as a list item of its
+                        // own: a separator belongs to the message under it, and a separate item
+                        // would need its own key and would drift out of `itemCount` below.
+                        daySeparatorAt(uiState.messages, index)?.let { day ->
+                            DaySeparator(epochDay = day, modifier = Modifier.padding(bottom = 12.dp))
+                        }
                         ChatBubble(
                             text = message.text,
                             fromUser = message.fromUser,
@@ -218,18 +226,22 @@ private fun CoachContent(
                         uiState.pending == null && uiState.failure == null
                     ) {
                         item(key = "follow-ups") {
+                            // Indented to the answer's own text edge, so they read as belonging to
+                            // that answer rather than to the list.
                             FollowUpRow(
                                 followUps = followUpsFor(uiState.request),
                                 onAsk = { onEvent(CoachEvent.OnSend(it)) },
+                                modifier = Modifier.padding(start = AnswerIndent),
                             )
                         }
                     }
                     uiState.failure?.let { failure ->
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                FailureBubble(reason = failure.reason, insight = failure.insight)
-                                TextButton(label = stringResource(R.string.coach_retry), onClick = { onEvent(CoachEvent.OnRetry) })
-                            }
+                        item(key = "failure") {
+                            CoachNotice(
+                                failure = failure,
+                                onRetry = { onEvent(CoachEvent.OnRetry) },
+                                onOpenDiary = onOpenDiary,
+                            )
                         }
                     }
                 }
@@ -409,7 +421,7 @@ private fun CoachScreenOfflinePreview() {
                     ChatMessage(id = 1, fromUser = true, text = "How am I doing today?", sentAtMillis = 1),
                 ),
                 failure = CoachFailure(
-                    reason = OFFLINE_REASON,
+                    offline = true,
                     insight = "You're 88g short on protein today.",
                     question = "How am I doing today?",
                 ),

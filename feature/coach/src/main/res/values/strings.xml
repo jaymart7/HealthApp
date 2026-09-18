@@ -1,6 +1,16 @@
 <resources>
-    <string name="coach_failure_offline">You\'re offline — the coach needs a connection.</string>
-    <string name="coach_failure_failed">The coach couldn\'t answer that just now.</string>
+    <!-- A send that didn't come back. Two shapes, not two sentences: offline is a state that will
+         still be true in a second, so it offers the on-device line and the diary; a failed turn is
+         an event with one action. No error colour on any of it — nothing crashed. -->
+    <string name="coach_notice_offline_heading">You\'re offline</string>
+    <string name="coach_notice_offline_body">The coach reads your diary on the server, so it needs a connection. Your question is still in the field.</string>
+    <string name="coach_notice_failed_heading">That didn\'t work</string>
+    <string name="coach_notice_failed_body">The coach couldn\'t answer that one. Nothing was read or written, and your question is still in the field — the same question usually works on a second try.</string>
+    <!-- The attribution on the offline fallback. It is three local rules over the diary, not the
+         coach, and saying so is the difference between a fallback and a lie. -->
+    <string name="coach_notice_fallback_label">From your diary · not the coach</string>
+    <string name="coach_notice_fallback_attribution">FitPulse worked this out on your device from what you\'ve logged.</string>
+    <string name="coach_notice_open_diary">Open the diary</string>
     <string name="coach_retry">Try again</string>
 
     <!-- The long-press menu on an answer. "Ask again" only appears on the newest one. -->
@@ -8,6 +18,23 @@
     <string name="coach_bubble_copy">Copy</string>
     <string name="coach_bubble_share">Share</string>
     <string name="coach_bubble_ask_again">Ask again</string>
+
+    <!-- The label between one day of the conversation and the next. A weekday inside the last
+         week, a date past it — how anyone talks about a recent day. -->
+    <string name="coach_day_today">Today</string>
+    <string name="coach_day_yesterday">Yesterday</string>
+
+    <!-- The mark a stopped turn leaves. Not a failure: nothing went wrong, so it takes the day
+         separator's shape rather than a notice's. -->
+    <string name="coach_stopped_label">You stopped this one</string>
+    <string name="coach_stopped_body">Your question is back in the box, unchanged. Nothing was logged.</string>
+
+    <!-- The status line in the bubble while a turn is in flight, over the placeholder lines the
+         first chunk overwrites. It says what the coach is doing, not that it is thinking. -->
+    <string name="coach_pending_status">Reading your diary…</string>
+    <string name="coach_pending_spoken">Working on an answer</string>
+    <!-- The check beside what a confirmed draft wrote, inside the answer it came from. -->
+    <string name="coach_receipt_logged">Logged</string>
 
     <!-- The screen's own toolbar. It draws its own rather than taking AppScaffold's, because the
          overflow below has to reach this screen's confirmation dialog. -->

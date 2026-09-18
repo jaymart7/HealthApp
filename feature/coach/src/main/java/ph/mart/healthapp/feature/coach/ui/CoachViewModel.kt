@@ -196,7 +196,7 @@ class CoachViewModel(
                             streaming = null,
                             proposal = emptyList(),
                             failure = CoachFailure(
-                                reason = if (online) FAILED_REASON else OFFLINE_REASON,
+                                offline = !online,
                                 insight = state.request?.let(::insightFor),
                                 question = text,
                             ),

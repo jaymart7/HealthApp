@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.coach.ui
 
 import androidx.annotation.StringRes
+import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.draftedOn
@@ -134,6 +135,31 @@ internal fun CoachUiState.askAgainQuestion(index: Int): String? {
 }
 
 /**
+ * The day a separator goes above the message at [index], or null where none does.
+ *
+ * A transcript persists, so reopening the coach after a week is a wall of bubbles with no way to
+ * tell Tuesday's question from this morning's. One label per day boundary answers that and costs
+ * the list nothing on the common case, where every message is from today and only the first one
+ * gets a label.
+ *
+ * Index 0 always opens a day — the top of a conversation is a boundary by definition — and every
+ * other message opens one only where its local day differs from the message above it.
+ * [ChatMessage.sentAtMillis] is the only ordering this type carries, which is deliberate
+ * (`ChatMessageEntity` has no `date` column: a conversation is a sequence, not a series of days),
+ * so the day is *derived at render* rather than stored. That is what keeps a row correct when it is
+ * read in a different timezone from the one it was written in.
+ *
+ * Pure, and a JVM test rather than a comment: the rule is an off-by-one waiting to happen and the
+ * screen is where it would be least visible.
+ */
+internal fun daySeparatorAt(messages: List<ChatMessage>, index: Int): Long? {
+    val message = messages.getOrNull(index) ?: return null
+    val day = epochDayOf(message.sentAtMillis)
+    val previous = messages.getOrNull(index - 1) ?: return day
+    return day.takeIf { it != epochDayOf(previous.sentAtMillis) }
+}
+
+/**
  * The turn in flight, dropped. Nothing was persisted — the repository writes a question only once
  * it has an answer — so there is nothing to reconcile and all three go together.
  *
@@ -146,17 +172,21 @@ internal fun CoachUiState.withTurnAbandoned(): CoachUiState =
     copy(pending = null, streaming = null, proposal = emptyList())
 
 /**
- * What to show when a send didn't produce an answer. [reason] says why in one line; [insight] is
- * the rule-based line for the same day — the identical fallback Home's insight card uses, so
- * offline the coach still says something true about today rather than only apologising.
+ * What to show when a send didn't produce an answer.
+ *
+ * [offline] is the whole of the distinction and it is a Boolean rather than the pair of
+ * `@StringRes` reasons it used to be: the two failures are now two *shapes*, not two sentences —
+ * offline is a **state** and carries a heading, a body, the on-device fallback and two actions,
+ * while a failed turn is an **event** with one action and nothing to fall back to. The screen picks
+ * every one of those words, which is the rule this feature already follows: composables resolve,
+ * ViewModels name.
+ *
+ * [insight] is the rule-based line for the same day — the identical fallback Home's insight card
+ * uses, so offline the coach still says something true about today rather than only apologising.
+ * It is *attributed* on screen rather than drawn as an answer, which is the whole reason the
+ * failure shapes stopped being bubbles.
  */
-data class CoachFailure(@StringRes val reason: Int, val insight: String?, val question: String)
-
-// Resources rather than `const val`s: a library module's R fields aren't compile-time
-// constants, and the screen is where a reason gets read anyway.
-@StringRes val OFFLINE_REASON = R.string.coach_failure_offline
-
-@StringRes val FAILED_REASON = R.string.coach_failure_failed
+data class CoachFailure(val offline: Boolean, val insight: String?, val question: String)
 
 /**
  * All the screen's writes. [OnRetry] resends the question the failure is holding, so a dropped
