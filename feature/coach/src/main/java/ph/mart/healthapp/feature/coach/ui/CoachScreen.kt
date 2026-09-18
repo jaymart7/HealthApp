@@ -190,6 +190,12 @@ private fun CoachContent(
                             // re-announce the whole conversation.
                             announce = !message.fromUser && message.id == uiState.messages.last().id,
                             onAskAgain = question?.let { { onEvent(CoachEvent.OnSend(it)) } },
+                            // Drawn on the user's own bubbles only — `ChatBubble` ignores it on the
+                            // other side. It **replaces** the draft rather than deferring to it, the
+                            // door prefill's own rule and for that one's reason: a long press on one
+                            // bubble followed by a tap on Edit asks for *that* text. The stop button
+                            // defers because filling the field is its side effect, not its point.
+                            onEdit = { state.draft = message.text },
                         )
                     }
                     // The turn in flight, neither half of it in Room yet: the question is on screen

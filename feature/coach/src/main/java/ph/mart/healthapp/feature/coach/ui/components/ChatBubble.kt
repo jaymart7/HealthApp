@@ -6,6 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -56,8 +57,12 @@ internal val AnswerIndent = 40.dp
  * over text that grows per chunk makes TalkBack restart the whole answer on every chunk.
  *
  * **Long-pressing the coach's side opens Copy / Share / Ask again**, the last only when
- * [onAskAgain] is non-null. The user's own side has no menu: their question is already theirs, and
- * the one thing worth doing to it — asking it again — is what the answer's menu does.
+ * [onAskAgain] is non-null. **Long-pressing the user's own side opens Edit**, when [onEdit] is —
+ * one item, because rephrasing is the only thing worth doing to a question that the answer's menu
+ * cannot already do. Copy and Share stay off it: the question is the user's own words and they
+ * have them. Edit puts the text back in the composer and sends nothing, so it is offered on every
+ * question rather than under `askAgainQuestion()`'s newest-only rule — that rule guards against
+ * burying the answer being read, and nothing that does not send can bury anything.
  *
  * [receipt] is what a confirmed draft wrote, drawn inside the answer under a rule rather than
  * appended to its prose. See [Receipt].
@@ -70,6 +75,7 @@ internal fun ChatBubble(
     announce: Boolean = false,
     receipt: String? = null,
     onAskAgain: (() -> Unit)? = null,
+    onEdit: (() -> Unit)? = null,
 ) {
     val announced = if (announce) {
         modifier.semantics { liveRegion = LiveRegionMode.Polite }
@@ -78,7 +84,31 @@ internal fun ChatBubble(
     }
     if (fromUser) {
         Row(modifier = announced.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            UserBubble(text = text)
+            if (onEdit == null) {
+                UserBubble(text = text)
+            } else {
+                BubbleActions(
+                    menu = { dismiss ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.coach_bubble_edit)) },
+                            leadingIcon = { Icon(AppIcons.Edit, contentDescription = null) },
+                            onClick = {
+                                onEdit()
+                                dismiss()
+                            },
+                        )
+                    },
+                ) { open, raised ->
+                    UserBubble(
+                        text = text,
+                        modifier = raised.combinedClickable(
+                            onClick = {},
+                            onLongClick = open,
+                            onLongClickLabel = stringResource(R.string.coach_question_actions),
+                        ),
+                    )
+                }
+            }
         }
     } else {
         Row(
@@ -87,7 +117,9 @@ internal fun ChatBubble(
             verticalAlignment = Alignment.Top,
         ) {
             MascotAvatar(state = MascotState.Idle, size = 32.dp)
-            AnswerActions(text = text, onAskAgain = onAskAgain) { open, raised ->
+            BubbleActions(
+                menu = { dismiss -> AnswerMenu(text = text, onAskAgain = onAskAgain, dismiss = dismiss) },
+            ) { open, raised ->
                 CoachBubble(
                     text = text,
                     receipt = receipt,
@@ -105,25 +137,20 @@ internal fun ChatBubble(
 }
 
 /**
- * The menu behind a long press on an answer.
+ * The shell behind a long press on any bubble — the menu's *behaviour*, with [menu] supplying the
+ * rows. Both sides share it so a question's menu and an answer's can never disagree about how they
+ * open, and neither side owns a second copy of the raise.
  *
  * The pressed bubble is **raised** while its menu is up — the one elevation on this screen, and the
- * only thing that says which of several answers the menu belongs to. The menu itself is anchored to
- * the bubble's own text edge rather than to the finger, for the same reason.
- *
- * The clipboard is the platform's, not Compose's: `LocalClipboardManager` is deprecated and its
- * replacement is a suspending API with a moving shape, while two lines of `ClipData` have been
- * stable for a decade. Android 13 and up show their own "copied" confirmation, which is why nothing
- * here raises a snackbar.
+ * only thing that says which of several bubbles the menu belongs to. The menu itself is anchored to
+ * the bubble's own edge rather than to the finger, for the same reason.
  */
 @Composable
-private fun AnswerActions(
-    text: String,
-    onAskAgain: (() -> Unit)?,
+private fun BubbleActions(
+    menu: @Composable ColumnScope.(dismiss: () -> Unit) -> Unit,
     bubble: @Composable (open: () -> Unit, raised: Modifier) -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     Box {
         val raised = if (open) {
             Modifier.shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp))
@@ -136,34 +163,49 @@ private fun AnswerActions(
             onDismissRequest = { open = false },
             offset = DpOffset(x = 0.dp, y = 0.dp),
         ) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.coach_bubble_copy)) },
-                leadingIcon = { Icon(AppIcons.Copy, contentDescription = null) },
-                onClick = {
-                    context.getSystemService(ClipboardManager::class.java)
-                        ?.setPrimaryClip(ClipData.newPlainText(null, text))
-                    open = false
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.coach_bubble_share)) },
-                leadingIcon = { Icon(AppIcons.Share, contentDescription = null) },
-                onClick = {
-                    shareText(context, text)
-                    open = false
-                },
-            )
-            if (onAskAgain != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.coach_bubble_ask_again)) },
-                    leadingIcon = { Icon(AppIcons.Refresh, contentDescription = null) },
-                    onClick = {
-                        onAskAgain()
-                        open = false
-                    },
-                )
-            }
+            menu { open = false }
         }
+    }
+}
+
+/**
+ * What a long press on an answer offers. Ask again only when [onAskAgain] is non-null — the newest
+ * answer, and never mid-turn.
+ *
+ * The clipboard is the platform's, not Compose's: `LocalClipboardManager` is deprecated and its
+ * replacement is a suspending API with a moving shape, while two lines of `ClipData` have been
+ * stable for a decade. Android 13 and up show their own "copied" confirmation, which is why nothing
+ * here raises a snackbar.
+ */
+@Composable
+private fun AnswerMenu(text: String, onAskAgain: (() -> Unit)?, dismiss: () -> Unit) {
+    val context = LocalContext.current
+    DropdownMenuItem(
+        text = { Text(stringResource(R.string.coach_bubble_copy)) },
+        leadingIcon = { Icon(AppIcons.Copy, contentDescription = null) },
+        onClick = {
+            context.getSystemService(ClipboardManager::class.java)
+                ?.setPrimaryClip(ClipData.newPlainText(null, text))
+            dismiss()
+        },
+    )
+    DropdownMenuItem(
+        text = { Text(stringResource(R.string.coach_bubble_share)) },
+        leadingIcon = { Icon(AppIcons.Share, contentDescription = null) },
+        onClick = {
+            shareText(context, text)
+            dismiss()
+        },
+    )
+    if (onAskAgain != null) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.coach_bubble_ask_again)) },
+            leadingIcon = { Icon(AppIcons.Refresh, contentDescription = null) },
+            onClick = {
+                onAskAgain()
+                dismiss()
+            },
+        )
     }
 }
 

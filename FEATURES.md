@@ -431,6 +431,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   holds neither of the first two, and a door onto the wrong screen or the wrong day is a shrug.
 - Coach answer menu — long-press an answer to copy it, share it as text, or ask the same question
   again. Ask again appears on the newest answer only, and is a fresh send rather than a repair.
+- Coach question menu — long-press your own question to edit it: the text goes back in the composer,
+  unsent, for the user to rephrase and send themselves. Every question in the transcript offers it,
+  however old, since nothing is sent and nothing is deleted — the original turn stays put. The
+  question still in flight has none; the stop button is already its way back into the field.
 - Coach follow-ups — three outlined pills under the newest answer, indented to its text edge,
   picked from the day's own numbers (a protein gap, room left, water short, a weigh-in to compare)
   and falling back to diary questions. Rule-based, not generated: tapping one sends it exactly as an

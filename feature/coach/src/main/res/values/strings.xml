@@ -19,6 +19,11 @@
     <string name="coach_bubble_share">Share</string>
     <string name="coach_bubble_ask_again">Ask again</string>
 
+    <!-- The long-press menu on your own question. One item: it fills the composer and sends
+         nothing, so every question offers it, however old. -->
+    <string name="coach_question_actions">Question options</string>
+    <string name="coach_bubble_edit">Edit</string>
+
     <!-- The label between one day of the conversation and the next. A weekday inside the last
          week, a date past it — how anyone talks about a recent day. -->
     <string name="coach_day_today">Today</string>

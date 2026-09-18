@@ -2117,10 +2117,28 @@ rather than needing a counter patched.
   this**: `FakeCoachRepository.stream()` emits its text verbatim and never passes through
   `sanitizeReply`, which is why the `MAX_REPLY_CHARS` rejection is documented there as
   real-AI-only too.
-- **An answer can be copied, shared and asked again; a question can be none of those.** A long
-  press on the coach's side opens Copy / Share / Ask again, and the user's own bubble has no menu
-  at all — their question is already theirs, and the one thing worth doing to it is what the
-  *answer's* menu does. Three calls. **Ask again is on the newest answer only** and never while a
+- **An answer can be copied, shared and asked again; a question can be edited.** A long press on
+  the coach's side opens Copy / Share / Ask again. The user's own bubble used to have no menu at
+  all, on the argument that their question was already theirs and the one thing worth doing to it
+  was what the *answer's* menu does — true only while **re-asking verbatim** is that one thing. It
+  isn't: a question worth narrowing or rephrasing had to be retyped in full, and the longer and
+  more specific it was the worse that trade got. So **rephrasing is a second thing worth doing to a
+  question, and it belongs to the question rather than to the answer** — a long press on your own
+  bubble opens **Edit**, which puts that text back in the composer, unsent. One item and not three:
+  Copy and Share are for words you did not write. **It is on every question, however old**, which
+  reads against Ask again's rule below and is the same rule applied honestly — that one is narrow
+  because re-asking *sends*, burying the answer being read, and Edit sends nothing, so it has
+  nothing to bury and no reason to be narrow. It is **not** on the in-flight question either: the
+  stop button already returns exactly that text to the field, and a second door onto it is a second
+  rule to keep in step. It **replaces** the draft rather than deferring to it — the door prefill's
+  rule (`LaunchedEffect(question) { state.draft = question }`), and the opposite of the stop
+  button's, because stopping fills the field as a *side effect* while a long press followed by a
+  tap on Edit is an explicit request for that text. Nothing is deleted and nothing is repaired: the
+  old turn stays in the transcript, so the no-hard-deletes rule is untouched and no Room, repository,
+  ViewModel or `CoachEvent` change was needed — the draft is `CoachScreenState.draft`, which is
+  where the composer's text already lived. `BubbleActions` is the raise-and-anchor shell both sides
+  now share, so a question's menu and an answer's cannot drift apart in how they open.
+  **Ask again is on the newest answer only** and never while a
   turn is in flight: re-asking an older one appends a fresh pair at the bottom and buries the
   answer the user was looking at, which is worse than scrolling, and mid-turn it is the same send
   the locked input bar is already refusing. `askAgainQuestion()` is that rule as a pure function
