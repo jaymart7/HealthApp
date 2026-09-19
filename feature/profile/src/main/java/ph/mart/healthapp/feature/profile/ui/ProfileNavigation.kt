@@ -20,6 +20,7 @@ import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryScreen
 import ph.mart.healthapp.feature.profile.ui.profile.AboutYouScreen
 import ph.mart.healthapp.feature.profile.ui.profile.ProfileScreen
 import ph.mart.healthapp.feature.profile.ui.routine.RoutinesScreen
+import ph.mart.healthapp.feature.profile.ui.scan.SupplementScanScreen
 import ph.mart.healthapp.feature.profile.ui.settings.RemindersScreen
 import ph.mart.healthapp.feature.profile.ui.settings.SettingsScreen
 import ph.mart.healthapp.feature.profile.ui.supplement.SupplementsScreen
@@ -46,6 +47,16 @@ data object RoutinesRoute : NavKey
  * outgrow a sheet, and NavDisplay's back is what returns to Profile. */
 @Serializable
 data object SupplementsRoute : NavKey
+
+/**
+ * The supplement-label camera, one level above [SupplementsRoute].
+ *
+ * The one route in this feature that is **not** a detail pane: it is a full-bleed viewfinder, and a
+ * camera drawn into the right-hand half of a tablet is a camera aimed at nothing. `AppScaffold`
+ * lists it under `fullBleed` for that reason and it stays out of `ProfileDetailRoutes`.
+ */
+@Serializable
+data object SupplementScanRoute : NavKey
 
 /** The Home card order and visibility, one level above Profile for the reasons [SupplementsRoute]
  * is: a thirteen-row list that outgrows a sheet, and NavDisplay's back returns to Profile. */
@@ -96,6 +107,7 @@ fun EntryProviderScope<NavKey>.profileEntries(
     onOpenLibrary: () -> Unit,
     onOpenRoutines: () -> Unit,
     onOpenSupplements: () -> Unit,
+    onOpenSupplementScan: () -> Unit,
     onOpenHomeLayout: () -> Unit,
     onExitFlow: () -> Unit,
 ) {
@@ -118,7 +130,9 @@ fun EntryProviderScope<NavKey>.profileEntries(
     entry<HealthConnectionRoute>(metadata = detail) { HealthConnectionScreen(onBack = onExitFlow) }
     entry<FoodLibraryRoute>(metadata = detail) { FoodLibraryScreen() }
     entry<RoutinesRoute>(metadata = detail) { RoutinesScreen() }
-    entry<SupplementsRoute>(metadata = detail) { SupplementsScreen() }
+    entry<SupplementsRoute>(metadata = detail) { SupplementsScreen(onOpenScan = onOpenSupplementScan) }
+    // No pane metadata: see [SupplementScanRoute].
+    entry<SupplementScanRoute> { SupplementScanScreen(onExit = onExitFlow) }
     entry<HomeLayoutRoute>(metadata = detail) { HomeLayoutScreen() }
     entry<SettingsRoute>(metadata = detail) {
         SettingsScreen(

@@ -231,6 +231,26 @@
         <item quantity="other">times a day</item>
     </plurals>
 
+    <!-- Supplement label scan -->
+    <string name="profile_supplements_scan">Scan label</string>
+    <string name="profile_supplements_scan_frame">Fit the Supplement Facts panel in frame</string>
+    <string name="profile_supplements_scan_reading">Reading the label…</string>
+    <string name="profile_supplements_scan_reading_body">Copying what the panel says so you don\'t have to type it.</string>
+    <string name="profile_supplements_scan_chip">AI read this</string>
+    <string name="profile_supplements_scan_panel_caveat">Straight off the label — check it against the bottle. FitPulse counts the ones it tracks toward your day.</string>
+    <string name="profile_supplements_scan_unreadable">We couldn\'t find a panel</string>
+    <string name="profile_supplements_scan_unreadable_body">Point the camera at the Supplement Facts panel on the back of the bottle, or add it by hand.</string>
+    <string name="profile_supplements_scan_failed">That didn\'t work</string>
+    <string name="profile_supplements_scan_failed_body">Try the shot again with better lighting, or add the supplement by hand.</string>
+    <string name="profile_supplements_scan_offline">Reading a label needs a connection. You can still add the supplement by hand — everything else works offline.</string>
+    <string name="profile_supplements_scan_offline_retry">Still nothing. Reading a label needs a connection — you can add it by hand in the meantime.</string>
+    <string name="profile_supplements_scan_retake">Take another photo</string>
+    <string name="profile_supplements_scan_add_by_hand">Add it by hand</string>
+    <string name="profile_supplements_scan_permission_grant">Grant camera access to read a supplement label, or go back and add it by hand.</string>
+    <string name="profile_supplements_scan_permission_settings">Camera access is off for FitPulse. Turn it on in Settings to read a supplement label, or go back and add it by hand.</string>
+    <string name="profile_no_connection">No connection</string>
+    <string name="profile_try_again">Try again</string>
+
     <!-- Food library -->
     <string name="profile_library_empty_heading">Nothing saved yet</string>
     <string name="profile_library_empty_body">Save a food or a meal from the diary, or build a recipe, and it shows up here.</string>

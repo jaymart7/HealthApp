@@ -37,6 +37,8 @@ import ph.mart.healthapp.core.data.food.DiaryTotals
 import ph.mart.healthapp.core.data.food.NutrientReading
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.formatNutrient
+import ph.mart.healthapp.core.data.food.isEmpty
+import ph.mart.healthapp.core.data.food.plus
 import ph.mart.healthapp.core.data.food.readings
 import ph.mart.healthapp.core.designsystem.component.MacroBar
 import ph.mart.healthapp.core.designsystem.component.Macros
@@ -79,6 +81,9 @@ fun DiarySummaryBar(
     fatGoalG: Int,
     modifier: Modifier = Modifier,
     nutrientTargets: Nutrients? = null,
+    /** What the day's ticked supplements carried. It reaches the nutrient panel and nothing
+     * else — see [FoodUiState.supplementNutrients][ph.mart.healthapp.feature.food.ui.diary.FoodUiState]. */
+    supplementNutrients: Nutrients = Nutrients(),
     collapsed: Boolean = false,
     burnedKcal: Int = 0,
     exerciseCredited: Boolean = false,
@@ -97,6 +102,7 @@ fun DiarySummaryBar(
         } else {
             FullSummary(
                 consumed = consumed,
+                supplementNutrients = supplementNutrients,
                 goalKcal = goalKcal,
                 remaining = remaining,
                 proteinGoalG = proteinGoalG,
@@ -114,6 +120,7 @@ fun DiarySummaryBar(
 @Composable
 private fun FullSummary(
     consumed: DiaryTotals,
+    supplementNutrients: Nutrients,
     goalKcal: Int,
     remaining: Int,
     proteinGoalG: Int,
@@ -157,9 +164,15 @@ private fun FullSummary(
 
             // Silent on a day nothing was logged for, and on one logged entirely by quick add —
             // which is why it sits outside the legend Row rather than as a fourth item inside it.
+            //
+            // **Supplements are added in here and nowhere else in this bar.** A multivitamin
+            // ticked this morning genuinely supplied its vitamin D, and a panel that ignored it
+            // would report a shortfall the user does not have; but it supplied no calories, so
+            // nothing above this line moves. The sentence underneath is what stops the sum being
+            // a claim about food.
             NutrientPanel(
-                rows = consumed.nutrients.readings(nutrientTargets).toRows(),
-                coverage = coverageLine(consumed),
+                rows = (consumed.nutrients + supplementNutrients).readings(nutrientTargets).toRows(),
+                coverage = panelNote(consumed, supplementNutrients),
             )
 
             // The consumed line above already reads against goal + burn, which silently grew the
@@ -460,6 +473,21 @@ private fun List<NutrientReading>.toRows(): List<NutrientRow> = map { reading ->
  * figure for. Null once every logged food carried figures — there is nothing to explain then, and
  * a line saying "from 6 of 6" is noise.
  */
+/**
+ * The one line under the panel, which now has two things to say and says them in one breath: how
+ * much of the day's *food* carried figures at all, and whether a supplement is part of the sum
+ * above. Either can be absent; both absent is no line, which is the ordinary well-covered day.
+ */
+@Composable
+private fun panelNote(consumed: DiaryTotals, supplementNutrients: Nutrients): String? {
+    val supplements = stringResource(R.string.food_nutrient_from_supplements)
+        .takeIf { !supplementNutrients.isEmpty }
+    // The interpunct the app already separates two quiet clauses with, rather than a full stop:
+    // the coverage half is a fragment ("…from 3 of 6 foods") and punctuating it as a sentence
+    // would read as two.
+    return listOfNotNull(coverageLine(consumed), supplements).joinToString(" · ").ifBlank { null }
+}
+
 @Composable
 private fun coverageLine(consumed: DiaryTotals): String? {
     if (consumed.foodCount == 0 || consumed.foodsWithMicronutrients >= consumed.foodCount) return null

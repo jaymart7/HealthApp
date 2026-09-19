@@ -26,12 +26,16 @@ import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.loggable
 import ph.mart.healthapp.core.data.food.searchCommonFoods
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
+import ph.mart.healthapp.core.data.supplement.SupplementLabelReading
+import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
+import ph.mart.healthapp.core.data.supplement.SupplementScanResult
 
 /**
- * The six smaller AI features, faked off local data. The coach is next door in
+ * The seven smaller AI features, faked off local data. The coach is next door in
  * [FakeCoachRepository], because it is the only one with a state machine worth faking carefully.
  *
  * Every one of these reuses something the app already ships, and that is the design rather than an
@@ -39,7 +43,7 @@ import ph.mart.healthapp.core.data.insight.insightFor
  * the first time the real shape changes. `COMMON_FOODS` is a hand-written table of real USDA
  * figures already in the APK, and `insightFor` is the rule-based line Home already falls back to.
  *
- * All six keep a short [delay]: a call that returns instantly hides every spinner, and the point
+ * All seven keep a short [delay]: a call that returns instantly hides every spinner, and the point
  * of a debug build is to look at them.
  */
 
@@ -120,6 +124,44 @@ internal class FakeLabelScanRepository : LabelScanRepository {
                 carbsG = product.carbsG,
                 fatG = product.fatG,
                 nutrients = product.nutrients,
+            ),
+        )
+    }
+}
+
+
+/**
+ * A multivitamin, which is the case worth looking at: four of its lines are figures this app
+ * grades and the rest are text, so the confirmation's readout and the day's nutrient panel can
+ * both be checked against a reading that exercises both halves.
+ *
+ * Hand-written rather than read from something the app ships, unlike the other six — there is no
+ * local table of supplement formulas to read, and inventing one for the fake alone would be a
+ * fixture pretending to be data. The photo seeds a [SupplementScanResult.NoLabelFound] every fifth
+ * shot, the way [FakeLabelScanRepository] does, so the dead end is reachable too.
+ */
+internal class FakeSupplementScanRepository : SupplementScanRepository {
+    override suspend fun read(photo: Bitmap): SupplementScanResult {
+        delay(FAKE_LATENCY_MS)
+        if ((photo.width * 31 + photo.height) % 5 == 0) return SupplementScanResult.NoLabelFound
+        return SupplementScanResult.Found(
+            SupplementLabelReading(
+                name = "Daily Multivitamin",
+                dose = "2 tablets",
+                timesPerDay = 1,
+                nutrients = Nutrients(vitaminDUg = 25, calciumMg = 210, ironUg = 18_000, potassiumMg = 80),
+                panel = listOf(
+                    "Vitamin D 25 µg",
+                    "Calcium 210 mg",
+                    "Iron 18 mg",
+                    "Potassium 80 mg",
+                    "Vitamin A 900 µg",
+                    "Vitamin C 90 mg",
+                    "Vitamin E 15 mg",
+                    "Vitamin B12 2.4 µg",
+                    "Zinc 11 mg",
+                    "Magnesium 100 mg",
+                ).joinToString("\n"),
             ),
         )
     }

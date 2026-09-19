@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.shared.components
+package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -30,28 +30,30 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.R
 
 /**
- * Full-bleed camera chrome for the two flows that take a still and send it to a model — the food
- * photo and the nutrition label. Here rather than in either flow's `components/` for that reason;
- * the barcode viewfinder is [ScanScreen][ph.mart.healthapp.feature.food.ui.barcode.components.ScanScreen]
- * next door, which is this screen without a shutter, because its decoder fires by itself.
+ * Full-bleed camera chrome for the three flows that take a still and send it to a model — the food
+ * photo, the nutrition label and the supplement panel. Here rather than in any one of their
+ * `components/` because the third caller crossed a module boundary and a feature never imports
+ * another feature's types — the move `CameraPermissionScreen` already made, and for the same
+ * reason. The barcode viewfinder is `ScanScreen` in `:feature:food`, which is this screen without
+ * a shutter, because its decoder fires by itself.
  *
  * Always black/white regardless of app theme — a camera viewfinder's overlay controls need to stay
  * legible over a live feed of arbitrary brightness, the same reason the prototype hardcodes
  * `rgba(0,0,0,…)`/`#fff` here instead of theme tokens even though every other screen in the app
  * reads colors from [MaterialTheme.colorScheme].
  *
- * [guideSize] and [hint] are the only two things the two flows disagree about, and they disagree
+ * [guideSize] and [hint] are the only two things the callers disagree about, and they disagree
  * about them for the same reason: **the guide is the shape of the thing being framed.** A plate is
- * square and a nutrition panel is a column, and a square drawn over a panel tells the user to stand
+ * square and a printed panel is a column, and a square drawn over a panel tells the user to stand
  * too far back to read it.
  */
 @Composable
-internal fun CaptureScreen(
+fun CaptureScreen(
     onClose: () -> Unit,
     onCapture: () -> Unit,
     onPickPhoto: () -> Unit,
@@ -82,7 +84,7 @@ internal fun CaptureScreen(
                     .size(48.dp)
                     .background(Color.Black.copy(alpha = 0.45f), CircleShape),
             ) {
-                Icon(imageVector = AppIcons.Close, contentDescription = stringResource(R.string.food_photo_close), tint = Color.White)
+                Icon(imageVector = AppIcons.Close, contentDescription = stringResource(R.string.ds_viewfinder_close), tint = Color.White)
             }
 
             Surface(
@@ -114,7 +116,7 @@ internal fun CaptureScreen(
 
                 // An empty Surface is invisible to a screen reader, and this one is the whole
                 // point of the screen. Resolved above the lambda, which cannot read a resource.
-                val takePhoto = stringResource(R.string.food_photo_take)
+                val takePhoto = stringResource(R.string.ds_viewfinder_take_photo)
                 Surface(
                     onClick = onCapture,
                     shape = CircleShape,
@@ -141,12 +143,13 @@ private fun CaptureScreenPreview() {
             onCapture = {},
             onPickPhoto = {},
             onEnterManually = {},
-            hint = stringResource(R.string.food_photo_center),
+            hint = stringResource(R.string.ds_viewfinder_hint_preview),
         )
     }
 }
 
-/** The label flow's shape: a column, not a plate. */
+/** A panel flow's shape: a column, not a plate. The hint is the caller's copy everywhere but
+ * here — this module has no flow to name, and a preview is not a screen. */
 @PreviewLightDark
 @Composable
 private fun CaptureScreenLabelPreview() {
@@ -156,12 +159,13 @@ private fun CaptureScreenLabelPreview() {
             onCapture = {},
             onPickPhoto = {},
             onEnterManually = {},
-            hint = stringResource(R.string.food_label_frame),
+            hint = stringResource(R.string.ds_viewfinder_hint_preview),
             guideSize = LabelGuideSize,
         )
     }
 }
 
-/** The nutrition panel's own proportions — tall and narrow, because that is how one is printed.
- * Here rather than in the label flow so the preview above and its caller cannot drift. */
-internal val LabelGuideSize = DpSize(240.dp, 320.dp)
+/** A printed panel's own proportions — tall and narrow, because that is how one is printed.
+ * Nutrition Facts and Supplement Facts are the same column, so both flows frame with this. Here
+ * rather than in either so the preview above and its callers cannot drift. */
+val LabelGuideSize = DpSize(240.dp, 320.dp)

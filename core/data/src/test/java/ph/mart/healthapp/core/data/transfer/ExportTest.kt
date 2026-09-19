@@ -110,7 +110,16 @@ class ExportTest {
 
     // The third is soft-deleted: it still travels, because supplementDays below names it by id.
     private val supplements = listOf(
-        Supplement(id = 1, name = "Vitamin D", dose = "2000 IU", createdAt = 1_700_000_000_000L),
+        // The scanned one: its per-dose figures and the panel it was read from both have to
+        // survive, or a restored backup stops counting toward the day's nutrients.
+        Supplement(
+            id = 1,
+            name = "Vitamin D",
+            dose = "2000 IU",
+            createdAt = 1_700_000_000_000L,
+            nutrients = Nutrients(vitaminDUg = 50, calciumMg = 200),
+            panel = "Vitamin D3 50 µg\nCalcium 200 mg",
+        ),
         Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2, createdAt = 1_700_000_001_000L),
         Supplement(id = 3, name = "Zinc", deleted = true, createdAt = 1_700_000_002_000L),
     )

@@ -39,8 +39,10 @@ import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.food.LabelBasis
 import ph.mart.healthapp.core.data.food.LabelScanResult
 import ph.mart.healthapp.core.designsystem.component.CameraPermissionScreen
+import ph.mart.healthapp.core.designsystem.component.CaptureScreen
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
+import ph.mart.healthapp.core.designsystem.component.LabelGuideSize
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
@@ -48,8 +50,6 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanScreen
 import ph.mart.healthapp.feature.food.ui.label.components.LabelPanelReadout
-import ph.mart.healthapp.feature.food.ui.shared.components.CaptureScreen
-import ph.mart.healthapp.feature.food.ui.shared.components.LabelGuideSize
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry

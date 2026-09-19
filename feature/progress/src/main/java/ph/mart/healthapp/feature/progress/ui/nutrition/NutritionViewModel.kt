@@ -12,10 +12,11 @@ import ph.mart.healthapp.core.data.health.burnSeries
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.nutrientTargets
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
- * The Nutrition page's container — read-only, five flows, `WeightViewModel`'s shape.
+ * The Nutrition page's container — read-only, six flows in five slots, `WeightViewModel`'s shape.
  *
  * It is the first of the thirteen to copy a **fold** rather than a flow: the two target sets are
  * computed live off the profile, never stored, so this makes the same two `:core:data/profile`
@@ -31,10 +32,14 @@ class NutritionViewModel(
     profileRepository: ProfileRepository,
     stepsRepository: StepsRepository,
     exerciseRepository: ExerciseRepository,
+    supplementRepository: SupplementRepository,
 ) : ViewModel(), OrbitContainerHost<NutritionUiState, NutritionUiState, Nothing> {
 
     override val container = orbitContainer<NutritionUiState, Nothing>(NutritionUiState()) {
-        observeNutrition(foodRepository, profileRepository, stepsRepository, exerciseRepository)
+        observeNutrition(
+            foodRepository, profileRepository, stepsRepository, exerciseRepository,
+            supplementRepository,
+        )
     }
 
     private fun observeNutrition(
@@ -42,17 +47,26 @@ class NutritionViewModel(
         profileRepository: ProfileRepository,
         stepsRepository: StepsRepository,
         exerciseRepository: ExerciseRepository,
+        supplementRepository: SupplementRepository,
     ) = intent {
         combine(
             foodRepository.observeDailyNutrition(),
-            foodRepository.observeMealPhotos(),
+            // Meal photos and the supplement figures pair up: this combine was already at the
+            // arity its typed overloads stop at, and a Pair costs nothing where a sixth flow
+            // would cost the whole shape — the diary's trick, one tab over.
+            combine(
+                foodRepository.observeMealPhotos(),
+                supplementRepository.observeNutrientsByDay(),
+                ::Pair,
+            ),
             profileRepository.observeProfile(),
             stepsRepository.observeDays(),
             exerciseRepository.observeRecentEntries(),
-        ) { dailyNutrition, mealPhotos, profile, stepDays, exercise ->
+        ) { dailyNutrition, (mealPhotos, supplementNutrients), profile, stepDays, exercise ->
             NutritionUiState(
                 dailyNutrition = dailyNutrition,
                 mealPhotos = mealPhotos,
+                supplementNutrients = supplementNutrients,
                 targets = profile?.dailyTargets(),
                 nutrientTargets = profile?.let { nutrientTargets(it, it.dailyTargets()) },
                 // Folded here beside the targets, and the clock read on every emission for

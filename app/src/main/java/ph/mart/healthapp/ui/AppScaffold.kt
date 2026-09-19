@@ -68,6 +68,7 @@ import ph.mart.healthapp.feature.profile.ui.HomeLayoutRoute
 import ph.mart.healthapp.feature.profile.ui.RemindersRoute
 import ph.mart.healthapp.feature.profile.ui.RoutinesRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
+import ph.mart.healthapp.feature.profile.ui.SupplementScanRoute
 import ph.mart.healthapp.feature.profile.ui.SupplementsRoute
 import ph.mart.healthapp.feature.profile.ui.profileEntries
 import ph.mart.healthapp.feature.progress.ui.AddPhotoPreviewRoute
@@ -315,7 +316,7 @@ fun AppScaffold(
     // The camera flows are the one exemption: full-bleed surfaces that draw under both system bars
     // (appScaffold.js) and dispatch back per capture state, so a generic toolbar would break both.
     val fullBleed = current is FoodCaptureRoute || current is BarcodeScanRoute ||
-        current is LabelScanRoute || current is AddPhotoRoute
+        current is LabelScanRoute || current is AddPhotoRoute || current is SupplementScanRoute
 
     // Routes that draw their own `AppTopBar`. The camera flows do it full-bleed, under the system
     // bars; every Progress subject page keeps the window's insets and wants the bar's `actions`
@@ -502,6 +503,7 @@ fun AppScaffold(
                             onOpenLibrary = { topLevelBackStack.add(FoodLibraryRoute) },
                             onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },
                             onOpenSupplements = { topLevelBackStack.add(SupplementsRoute) },
+                            onOpenSupplementScan = { topLevelBackStack.add(SupplementScanRoute) },
                             onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )

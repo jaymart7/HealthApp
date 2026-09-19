@@ -3926,12 +3926,20 @@ rather than needing a counter patched.
   costs the live viewfinder and not the flow, and that door stays on the denied screen.
 
 - **A supplement carries a dose *label* and a times-per-day *number*.** The dose is free text —
-  "2000 IU", "5 g", "one scoop" — and nothing parses it, for the same reason fiber, sugar and
-  sodium are reported and never graded: there is no field on the profile a supplement target could
-  be derived from. `timesPerDay` is a real number only because "2x daily" turns the day's tick into
-  a count out of N, which is what makes the Home row a counter rather than a checkbox. One tap
-  advances a dose and wraps to zero at the target, so both shapes share one gesture and a mis-tap
-  is corrected by the gesture that made it — the same call `MoodCard`'s rows make.
+  "2000 IU", "5 g", "one scoop" — and **nothing parses it, still**. `timesPerDay` is a real number
+  only because "2x daily" turns the day's tick into a count out of N, which is what makes the Home
+  row a counter rather than a checkbox. One tap advances a dose and wraps to zero at the target, so
+  both shapes share one gesture and a mis-tap is corrected by the gesture that made it — the same
+  call `MoodCard`'s rows make.
+  **What has changed is the reason beside it.** This entry used to justify the free text by saying
+  a supplement's contents could never be graded — *"there is no field on the profile a supplement
+  target could be derived from"*, the same sentence that once kept fiber, sugar and sodium
+  ungraded. `NutrientTargets.kt` retired that premise: the Dietary Reference Intakes are a function
+  of sex and age, the profile has carried both since onboarding, and all seven nutrients have had a
+  derived daily target since. So a supplement's figures now have something to sit against — and a
+  scan is what gets them, because they were never going to be typed. The dose label is untouched by
+  that: it is what the *user* wrote, and `Supplement.nutrients` sits beside it rather than being
+  parsed out of it.
 
 ### Supplements
 
@@ -3967,6 +3975,54 @@ rather than needing a counter patched.
   Profile has none — the same division the food library draws against the add-entry sheet. Delete
   asks first (a supplement is user-authored, like a saved meal), and one sheet with `id == 0`
   meaning "add" is what keeps the add and the edit on one save path.
+- **A scanned supplement carries per-dose figures, and they are snapshotted like `dueTimes`.**
+  `Supplement.nutrients` is what one *serving* declares, because one tick is one serving, and it is
+  written once by the scan and never re-read from anywhere. Rescanning a reformulated bottle next
+  year changes what tomorrow's ticks contribute and leaves every past day exactly as it was — the
+  rule `supplement_day.dueTimes` already follows one field over, and the reason both live on the
+  row rather than being derived at read time.
+
+- **Four of a panel's lines are graded; the rest are text, and that split is deliberate.**
+  `Nutrients` holds seven figures and a multivitamin declares twenty — vitamin A, C, E, B12, zinc,
+  magnesium have no field in this app and, more to the point, no target on the profile to be graded
+  against. So the scan asks for both halves: the named fields for what maps, and an `otherNutrients`
+  array for everything else, which is joined into `Supplement.panel` and shown back as printed. The
+  alternative was widening `Nutrients` to twenty fields, which is nine carriers, nine migrations and
+  a nutrient panel of twenty ungraded rows — paid so a supplement could display a figure the app
+  still could not say anything about. `PanelReadout` shows the printed lines rather than the stored
+  ones for the same reason: a bottle saying "Vitamin D3 2000 IU" has to read that way under a
+  supplement whose stored figure is 50 µg.
+
+- **Supplements join the day's *nutrient panel* and nothing else on the diary.** A ticked
+  multivitamin genuinely supplied its vitamin D and a panel that ignored it reports a shortfall the
+  user does not have — but it supplied no calories, so the remaining figure, the macro bar, the
+  legend and `DiaryTotals` are all untouched, and `dailyTotals()` is still a fold over food alone.
+  The one line under the panel is what stops the sum being a claim about food; it shares the slot
+  with the coverage count, joined by an interpunct, because both answer "what are these rows
+  standing on?" and two lines would invite them to be read against each other.
+
+- **Progress averages supplements over the food average's denominator — logged days only.** A month
+  with food logged on four days and a vitamin taken on thirty would otherwise report a per-day
+  figure no day of theirs looked like, in a panel whose other rows are averages of four. So
+  `supplementAverage()` counts the same days `averages()` counts, and a day of supplements with no
+  food is excluded exactly as it is excluded for calories.
+
+- **The supplement scan is a route of its own, and the one Profile route that is not a detail
+  pane.** A viewfinder drawn into the right-hand half of a tablet is a camera aimed at nothing, so
+  `SupplementScanRoute` is in `AppScaffold`'s `fullBleed` list and stays out of
+  `ProfileDetailRoutes`. It has **no enter-by-hand state**, which is where it departs from
+  `LabelScanScreen`: the form for adding a supplement by hand is the list it was opened from, one
+  back press away, and a second copy of it inside the flow would be a second save path to the same
+  table. Its confirmation is `SupplementEditSheet` — seeded rather than blank, the same sheet and
+  the same save the list uses, which is what keeps `id == 0 means add` the only add path there is.
+
+- **`CaptureScreen` and `ViewfinderActions` moved to `:core:designsystem`.** The supplement scan is
+  their third caller and the first outside `:feature:food`, and a feature never imports another
+  feature's types — the move `CameraPermissionScreen` already made when it hit the same wall. Four
+  strings became `ds_` ones; `hint` was already the caller's, which is what made the move a rename
+  rather than a redesign. `LabelGuideSize` went with them: a Supplement Facts panel is the same
+  printed column a Nutrition Facts panel is.
+
 - **The supplement reminder is appended to the `Reminder` enum, never slotted in.** `ordinal` is
   the notification id, so inserting one beside the other daily reminders would re-point every
   notification already pending on a device. It rides `checksSupplements`, the third flag of its

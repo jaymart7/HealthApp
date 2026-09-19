@@ -23,11 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.component.CaptureScreen
+import ph.mart.healthapp.core.designsystem.component.ViewfinderActions
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
-import ph.mart.healthapp.feature.food.ui.shared.components.CaptureScreen
-import ph.mart.healthapp.feature.food.ui.shared.components.ViewfinderActions
 
 /**
  * The barcode viewfinder — [CaptureScreen] without a shutter button, since the decoder fires by

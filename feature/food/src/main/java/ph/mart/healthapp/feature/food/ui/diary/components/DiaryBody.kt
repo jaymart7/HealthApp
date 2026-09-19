@@ -106,6 +106,7 @@ internal fun DiaryBody(
                 carbsGoalG = targets.carbsG,
                 fatGoalG = targets.fatG,
                 nutrientTargets = uiState.nutrientTargets,
+                supplementNutrients = uiState.supplementNutrients,
                 collapsed = summaryCollapsed,
                 // The same burn dayBudgetKcal() just folded in, so the credit line can never
                 // claim a credit the goal above it did not actually receive.

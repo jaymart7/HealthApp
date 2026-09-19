@@ -22,6 +22,8 @@ import ph.mart.healthapp.core.data.food.NutrientReading
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.NutritionAverages
 import ph.mart.healthapp.core.data.food.formatNutrient
+import ph.mart.healthapp.core.data.food.isEmpty
+import ph.mart.healthapp.core.data.food.plus
 import ph.mart.healthapp.core.data.food.readings
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.AppCard
@@ -44,6 +46,9 @@ fun NutritionAverageCard(
     targets: DailyTargets?,
     modifier: Modifier = Modifier,
     nutrientTargets: Nutrients? = null,
+    /** The average day's supplement figures over the same denominator [averages] uses. They join
+     * the nutrient panel and nothing above it — a supplement has no calories. */
+    supplementNutrients: Nutrients = Nutrients(),
 ) {
     AppCard(modifier = modifier) {
         Text(
@@ -73,9 +78,13 @@ fun NutritionAverageCard(
         }
         // No coverage line here, unlike the diary's: the averaged-over-N-days line right below
         // already says how thin the window is, and a second denominator on the same card would
-        // only invite the two to be read against each other.
+        // only invite the two to be read against each other. The supplements note is the one
+        // exception, and it is not a denominator — it says what the rows are a sum *of*, which
+        // the line below cannot.
         NutrientPanel(
-            rows = averages.nutrients.readings(nutrientTargets).toRows(),
+            rows = (averages.nutrients + supplementNutrients).readings(nutrientTargets).toRows(),
+            coverage = stringResource(R.string.progress_nutrition_with_supplements)
+                .takeIf { !supplementNutrients.isEmpty },
             modifier = Modifier.padding(top = 8.dp),
         )
         Text(

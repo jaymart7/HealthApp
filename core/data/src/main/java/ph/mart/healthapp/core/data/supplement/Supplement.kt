@@ -1,6 +1,10 @@
 package ph.mart.healthapp.core.data.supplement
 
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.data.food.isEmpty
+import ph.mart.healthapp.core.data.food.plus
+import ph.mart.healthapp.core.data.food.times
 import ph.mart.healthapp.core.data.progress.ChartRange
 
 /**
@@ -20,6 +24,27 @@ data class Supplement(
     val deleted: Boolean = false,
     /** Ordering only — the list reads oldest-first, so a new row lands at the bottom. */
     val createdAt: Long = 0,
+    /**
+     * What one *dose* carries, of the seven this app grades — the label's own per-serving column,
+     * because a tick is a serving. Empty for every supplement typed by hand, which is the ordinary
+     * case and not a gap: `0` is unknown-or-none here exactly as it is everywhere else
+     * [Nutrients] travels.
+     *
+     * Snapshotted at scan time and never re-read, the rule [SupplementDay.dueTimes] already
+     * follows one field over: a reformulated bottle rescanned next year must not restate what last
+     * year's ticks contributed.
+     */
+    val nutrients: Nutrients = Nutrients(),
+    /**
+     * The Supplement Facts panel as printed, one line per declaration
+     * ("Vitamin C 90 mg\nZinc 11 mg"). Shown, never parsed.
+     *
+     * It exists because [nutrients] cannot hold most of a multivitamin: vitamin A, C, E, B12, zinc
+     * and magnesium have no field in this app and no target on the profile to grade one against,
+     * and a bottle that declares twenty lines should not appear to declare four. Third-party
+     * product text, never authored here, which is why it is a String and not a resource.
+     */
+    val panel: String = "",
 )
 
 /**
@@ -83,6 +108,34 @@ fun List<SupplementDay>.averageAdherence(): Float? =
     adherenceByDay().takeIf { it.isNotEmpty() }?.let { days -> days.sumOf { it.second.toDouble() }.toFloat() / days.size }
 
 /**
+ * What each day's ticks contributed, keyed by day — the diary's panel and the Nutrition page's
+ * range average read the same map.
+ *
+ * A dose is the unit: [SupplementDay.taken] doses of a supplement carry [Supplement.nutrients]
+ * that many times over, which is the one place [Nutrients.times] is handed a count rather than a
+ * portion factor. A day whose ticks carry nothing is **absent rather than zero**, the sparseness
+ * [adherenceByDay] already keeps: a day of supplements nobody scanned is a day with no figures,
+ * not a day of zeros, and the panel above it must not grade it as a shortfall.
+ *
+ * [supplements] must include soft-deleted rows. A past day points at a supplement by id and
+ * dropping the row it names would silently drop what that day carried — the same reason the export
+ * carries them.
+ */
+fun supplementNutrientsByDay(
+    days: List<SupplementDay>,
+    supplements: List<Supplement>,
+): Map<Long, Nutrients> {
+    val byId = supplements.associateBy { it.id }
+    return days.groupBy { it.dateEpochDay }.mapNotNull { (date, rows) ->
+        val total = rows.fold(Nutrients()) { acc, row ->
+            val supplement = byId[row.supplementId] ?: return@fold acc
+            if (row.taken <= 0) acc else acc + supplement.nutrients * row.taken.toDouble()
+        }
+        if (total.isEmpty) null else date to total
+    }.toMap()
+}
+
+/**
  * Anchored to today, like [ph.mart.healthapp.core.data.mood.inRange] and unlike the weight
  * series: a chart headed "1M" must show the last 30 days with their gaps intact, not the 30 days
  * around whenever the user last ticked something.
@@ -110,6 +163,11 @@ interface SupplementRepository {
 
     /** Every day with a row, oldest first — the Progress tab. Sparse, unlike daily nutrition. */
     fun observeDays(): Flow<List<SupplementDay>>
+
+    /** What each day's ticks carried — [supplementNutrientsByDay] over the whole log, including
+     * supplements since deleted. One flow for both callers: the diary takes its own date out of
+     * the map, the Nutrition page sums a range of it. */
+    fun observeNutrientsByDay(): Flow<Map<Long, Nutrients>>
 
     suspend fun addSupplement(supplement: Supplement)
 

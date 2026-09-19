@@ -21,6 +21,11 @@ internal interface SupplementDao {
     @Query("SELECT * FROM supplement ORDER BY createdAt ASC, id ASC")
     suspend fun all(): List<SupplementEntity>
 
+    /** [all] as a flow, for the same reason it keeps soft-deleted rows: a past day's figures are
+     * named by a supplement that may since have been removed. */
+    @Query("SELECT * FROM supplement ORDER BY createdAt ASC, id ASC")
+    fun observeAll(): Flow<List<SupplementEntity>>
+
     @Query("SELECT * FROM supplement_day WHERE dateEpochDay = :date")
     fun observeForDate(date: Long): Flow<List<SupplementDayEntity>>
 

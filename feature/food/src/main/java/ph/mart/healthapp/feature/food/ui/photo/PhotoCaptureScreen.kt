@@ -37,6 +37,7 @@ import ph.mart.healthapp.core.camera.permissionPermanentlyDenied
 import ph.mart.healthapp.core.camera.rememberCameraCaptureController
 import ph.mart.healthapp.core.data.food.RecognitionResult
 import ph.mart.healthapp.core.designsystem.component.CameraPermissionScreen
+import ph.mart.healthapp.core.designsystem.component.CaptureScreen
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.toFoodEntry
@@ -45,7 +46,6 @@ import ph.mart.healthapp.feature.food.ui.photo.components.ConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.PhotoOfflineScreen
 import ph.mart.healthapp.feature.food.ui.photo.components.RetryScreen
 import ph.mart.healthapp.feature.food.ui.search.FoodSearchScreen
-import ph.mart.healthapp.feature.food.ui.shared.components.CaptureScreen
 import ph.mart.healthapp.feature.food.ui.shared.components.PhotoViewerOverlay
 import ph.mart.healthapp.feature.food.ui.shared.components.ScanConfirmationScreen
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry

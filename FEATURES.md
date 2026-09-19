@@ -118,7 +118,9 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   D, calcium, iron, potassium). The four are filled by a barcode scan or a picked food, never typed;
   all seven reprice with the portion. The day's summary bar carries them as one quiet line that
   opens into rows graded against a target, with sodium and sugar as limits rather than goals, and a
-  line naming how many of the day's foods actually carried figures.
+  line naming how many of the day's foods actually carried figures. **A scanned supplement ticked
+  that day counts into those rows too** — and into nothing above them, since a supplement has no
+  calories — with the same line saying so.
 - Quick add — a bare calorie figure with no name, from a pill at the top of the sheet that logs
   and closes without reaching the form at all.
 - Every numeric field is typable and steppable; changing a portion reprices the whole entry. An
@@ -293,7 +295,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   came from instead of a delete, and the list pages twenty at a time as you scroll.
 - Food: the week's calorie bank (the Home card's figures, unranged — the week is the week), then
   calories + macros against target over the window, the seven nutrients averaged against
-  their targets, then the meal-photo strip — the newest
+  their targets — supplements included, over the same logged-days denominator, with a line
+  saying so — then the meal-photo strip — the newest
   twelve kept plates, opening a full-screen gallery grouped by day with a full-frame view per meal.
 - Activity: two charts sharing one range toggle — daily steps against the profile's goal line
   (imported) and daily burn, the latter folding steps and logged workouts so a counted walk is not
@@ -511,7 +514,13 @@ panes at ≥840dp.
   single 48dp overflow whose Delete sits below a rule in `error`. No swipe, no drag, no
   multi-select, and nothing on any of the three can log, tick or start anything.
 - Supplements: name, dose label, times per day; A→Z, times-per-day as the row's marker tile, a
-  docked Add bar that never scrolls away, edit and delete.
+  docked bar that never scrolls away carrying Add beside **Scan label**, edit and delete.
+- Supplement-label scan — photograph the Supplement Facts panel and a model transcribes it into
+  the same edit sheet, seeded: the product name, the serving as the label words it ("2 capsules")
+  as the dose, the frequency where the directions state one, and every declared line listed back
+  read-only. The four this app grades (vitamin D, calcium, iron, potassium) are kept as figures and
+  count toward the day; the rest — vitamin C, B12, zinc, magnesium — are kept as printed text,
+  shown and never graded, because there is no field or target for them. Nothing is estimated.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything). The food library adds a persistent search over
   names *and* contents lines, with match highlighting, and sticky counted section headers; My

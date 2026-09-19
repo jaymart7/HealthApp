@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.shared.components
+package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,21 +20,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.food.R
 
 /**
- * The two escape hatches every viewfinder in this feature carries — pick an image the flow can read
- * instead of aiming at it, or skip the camera and type the entry in. Shared by the food-photo,
- * barcode and nutrition-label viewfinders, which is why it sits in `ui/shared/` rather than any one
- * flow's `components/`.
+ * The two escape hatches every viewfinder in this app carries — pick an image the flow can read
+ * instead of aiming at it, or skip the camera and type the entry in. Drawn by the food-photo,
+ * barcode, nutrition-label and supplement-panel viewfinders, which is why it sits here rather than
+ * in any one flow's `components/`.
  *
  * Always black/white regardless of app theme, for the reason [CaptureScreen]'s KDoc gives: chrome
  * over a live feed of arbitrary brightness can't follow the app's colors.
  */
 @Composable
-internal fun ViewfinderActions(
+fun ViewfinderActions(
     onPickPhoto: () -> Unit,
     onEnterManually: () -> Unit,
     modifier: Modifier = Modifier,
@@ -51,9 +51,9 @@ internal fun ViewfinderActions(
             onClick = onPickPhoto,
             modifier = Modifier.size(48.dp).background(Color.Black.copy(alpha = 0.5f), CircleShape),
         ) {
-            Icon(imageVector = AppIcons.Gallery, contentDescription = stringResource(R.string.food_viewfinder_gallery), tint = Color.White)
+            Icon(imageVector = AppIcons.Gallery, contentDescription = stringResource(R.string.ds_viewfinder_gallery), tint = Color.White)
         }
-        ViewfinderPill(label = stringResource(R.string.food_viewfinder_manual), onClick = onEnterManually)
+        ViewfinderPill(label = stringResource(R.string.ds_viewfinder_manual), onClick = onEnterManually)
     }
 }
 

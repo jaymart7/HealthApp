@@ -7,6 +7,7 @@ import ph.mart.healthapp.feature.profile.ui.layout.HomeLayoutViewModel
 import ph.mart.healthapp.feature.profile.ui.library.FoodLibraryViewModel
 import ph.mart.healthapp.feature.profile.ui.profile.ProfileViewModel
 import ph.mart.healthapp.feature.profile.ui.routine.RoutinesViewModel
+import ph.mart.healthapp.feature.profile.ui.scan.SupplementScanViewModel
 import ph.mart.healthapp.feature.profile.ui.settings.SettingsViewModel
 import ph.mart.healthapp.feature.profile.ui.supplement.SupplementsViewModel
 
@@ -17,5 +18,6 @@ val profileModule = module {
     viewModelOf(::FoodLibraryViewModel)
     viewModelOf(::RoutinesViewModel)
     viewModelOf(::SupplementsViewModel)
+    viewModelOf(::SupplementScanViewModel)
     viewModelOf(::HomeLayoutViewModel)
 }

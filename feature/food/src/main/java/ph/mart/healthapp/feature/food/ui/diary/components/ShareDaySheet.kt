@@ -59,6 +59,7 @@ internal fun ShareDaySheet(uiState: FoodUiState, targets: DailyTargets, onDismis
                 carbsGoalG = targets.carbsG,
                 fatGoalG = targets.fatG,
                 nutrientTargets = uiState.nutrientTargets,
+                supplementNutrients = uiState.supplementNutrients,
                 burnedKcal = dayBurnedKcal(uiState.exercise, uiState.steps),
                 exerciseCredited = uiState.addExerciseToBudget,
             )

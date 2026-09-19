@@ -166,7 +166,6 @@
     <string name="food_photo_close">Close</string>
     <string name="food_photo_view">View photo full screen</string>
     <string name="food_photo_center">Fit the whole meal in frame</string>
-    <string name="food_photo_take">Take photo</string>
     <string name="food_photo_analyzing">Looking at your photo…</string>
     <string name="food_photo_retry_heading">We couldn\'t analyze that photo</string>
     <string name="food_photo_retry_body">Try taking the photo again with better lighting, or log the meal manually.</string>
@@ -188,10 +187,6 @@
     <string name="food_photo_low_confidence">Not fully sure about some of these — double-check the portions.</string>
     <string name="food_photo_search_instead">Search instead</string>
     <string name="food_photo_db_subtitle">From the food database — adjust the portion to match what you ate.</string>
-
-    <!-- Viewfinder chrome, shared by both camera flows -->
-    <string name="food_viewfinder_gallery">Upload a photo</string>
-    <string name="food_viewfinder_manual">Enter manually</string>
 
     <!-- Barcode flow -->
     <string name="food_scan_line_up">Line up the barcode</string>
@@ -287,6 +282,7 @@
     <!-- Under the diary's nutrient rows: what the figures are standing on, since 0 means
          unknown-or-none and half the built-in foods have no vitamin figures. -->
     <string name="food_nutrient_coverage">Vitamins and minerals from %1$d of %2$d foods</string>
+    <string name="food_nutrient_from_supplements">includes today\'s supplements</string>
 
     <!-- Diary exercise block -->
     <string name="food_exercise_row">%1$d min</string>

@@ -3,6 +3,8 @@ package ph.mart.healthapp.feature.progress.ui.nutrition
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.data.food.div
+import ph.mart.healthapp.core.data.food.plus
 import ph.mart.healthapp.core.data.food.WeekBudget
 import ph.mart.healthapp.core.data.profile.DailyTargets
 
@@ -26,4 +28,24 @@ data class NutritionUiState(
      * and from the same `weekBudget()` Home reads — one fold, so the card and the page cannot
      * report different figures. Null with no profile. */
     val weekBudget: WeekBudget? = null,
+    /** What each day's ticked supplements carried, keyed by day and sparse — days nobody ticked
+     * are absent. Windowed and averaged on the screen, against the same denominator the food
+     * averages use. */
+    val supplementNutrients: Map<Long, Nutrients> = emptyMap(),
 )
+
+/**
+ * The average day's supplement figures across [days], over the **same denominator the food
+ * averages use** — logged days only.
+ *
+ * That denominator is the point. A month in which the user logged food on four days and took a
+ * multivitamin on thirty would otherwise report a per-day vitamin D figure that no day of theirs
+ * actually looked like, sitting in a panel whose other rows are averages of four. A day with
+ * supplements but no food is therefore not counted, exactly as it is not counted for calories.
+ */
+internal fun supplementAverage(days: List<DayNutrition>, byDay: Map<Long, Nutrients>): Nutrients {
+    val logged = days.filter { it.isLogged }
+    if (logged.isEmpty()) return Nutrients()
+    return logged.fold(Nutrients()) { acc, day -> acc + (byDay[day.dateEpochDay] ?: Nutrients()) } /
+        logged.size
+}

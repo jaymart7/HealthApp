@@ -171,6 +171,16 @@ internal val STEPS: Map<Int, List<String>> = mapOf(
     36 to listOf(
         "CREATE TABLE IF NOT EXISTS `note_day` (`dateEpochDay` INTEGER NOT NULL, `text` TEXT NOT NULL, PRIMARY KEY(`dateEpochDay`))",
     ),
+    37 to listOf(
+        "ALTER TABLE `supplement` ADD COLUMN `fiberG` INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE `supplement` ADD COLUMN `sugarG` INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE `supplement` ADD COLUMN `sodiumMg` INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE `supplement` ADD COLUMN `vitaminDUg` INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE `supplement` ADD COLUMN `calciumMg` INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE `supplement` ADD COLUMN `ironUg` INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE `supplement` ADD COLUMN `potassiumMg` INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE `supplement` ADD COLUMN `panel` TEXT NOT NULL DEFAULT ''",
+    ),
 )
 
 internal val MIGRATIONS: Array<Migration> =

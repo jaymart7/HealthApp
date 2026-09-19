@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.supplement
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.forToday
 import ph.mart.healthapp.core.data.supplement.local.SupplementDao
 import ph.mart.healthapp.core.data.supplement.local.SupplementDayEntity
@@ -28,6 +29,17 @@ internal class SupplementRepositoryImpl(private val dao: SupplementDao) : Supple
 
     override fun observeDays(): Flow<List<SupplementDay>> =
         dao.observeAllDays().map { rows -> rows.map { it.toSupplementDay() } }
+
+    /** The join is here rather than in the two feature ViewModels for [observeToday]'s reason:
+     * both are already at the arity the typed `combine` overloads stop at, and a day's figures
+     * without the supplements that name them is not a thing either screen can use. */
+    override fun observeNutrientsByDay(): Flow<Map<Long, Nutrients>> =
+        combine(dao.observeAllDays(), dao.observeAll()) { days, supplements ->
+            supplementNutrientsByDay(
+                days = days.map { it.toSupplementDay() },
+                supplements = supplements.map { it.toSupplement() },
+            )
+        }
 
     override suspend fun addSupplement(supplement: Supplement) {
         dao.upsert(supplement.toEntity(createdAt = System.currentTimeMillis()).copy(id = 0))
@@ -80,6 +92,8 @@ private fun SupplementEntity.toSupplement() = Supplement(
     timesPerDay = timesPerDay,
     deleted = deleted,
     createdAt = createdAt,
+    nutrients = nutrients,
+    panel = panel,
 )
 
 private fun Supplement.toEntity(createdAt: Long = this.createdAt) = SupplementEntity(
@@ -89,6 +103,8 @@ private fun Supplement.toEntity(createdAt: Long = this.createdAt) = SupplementEn
     timesPerDay = timesPerDay.coerceIn(SUPPLEMENT_TIMES_PER_DAY),
     deleted = deleted,
     createdAt = createdAt,
+    nutrients = nutrients,
+    panel = panel,
 )
 
 private fun SupplementDayEntity.toSupplementDay() = SupplementDay(

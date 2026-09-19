@@ -34,6 +34,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
@@ -267,8 +268,20 @@ private suspend fun BloodPressureRepository.seedBloodPressure(today: Long) {
  * so the snapshot rule is visible on the chart rather than only in a test.
  */
 private suspend fun SupplementRepository.seedSupplements(today: Long) {
+    // The first is scanned and the other two are not, which is the mix a real list has — and the
+    // only way the diary's nutrient panel and the Nutrition page's average show a supplement
+    // contribution on a fresh debug install at all. Its `panel` carries lines this app cannot
+    // grade, so the readout's two halves are both visible.
     val supplements = listOf(
-        Supplement(id = 1, name = "Vitamin D", dose = "2000 IU", timesPerDay = 1, createdAt = 1),
+        Supplement(
+            id = 1,
+            name = "Vitamin D",
+            dose = "2000 IU",
+            timesPerDay = 1,
+            createdAt = 1,
+            nutrients = Nutrients(vitaminDUg = 50, calciumMg = 120),
+            panel = "Vitamin D 50 µg\nCalcium 120 mg\nVitamin K2 75 µg",
+        ),
         Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2, createdAt = 2),
         Supplement(id = 3, name = "Magnesium", dose = "300 mg", timesPerDay = 1, createdAt = 3),
     )

@@ -29,6 +29,7 @@ import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -56,15 +57,19 @@ import ph.mart.healthapp.feature.profile.ui.supplement.components.SupplementEdit
  * of the *pane* is the only one of the three that stays inside its own column at both widths.
  */
 @Composable
-fun SupplementsScreen(viewModel: SupplementsViewModel = koinViewModel()) {
+fun SupplementsScreen(
+    onOpenScan: () -> Unit,
+    viewModel: SupplementsViewModel = koinViewModel(),
+) {
     val uiState by viewModel.collectAsState()
-    SupplementsContent(uiState = uiState, onEvent = viewModel::handleEvent)
+    SupplementsContent(uiState = uiState, onEvent = viewModel::handleEvent, onOpenScan = onOpenScan)
 }
 
 @Composable
 private fun SupplementsContent(
     uiState: SupplementsUiState,
     onEvent: (SupplementsEvent) -> Unit,
+    onOpenScan: () -> Unit,
 ) {
     // Local rather than in a saveable holder, for the same reason `FoodLibraryScreen` keeps its
     // own: a sheet that survived process death would reopen on a row the user has stopped looking
@@ -137,14 +142,23 @@ private fun SupplementsContent(
                     }
                 }
             }
+            // Two doors to the same table, and the camera is second on purpose: typing three
+            // fields is not a job worth a photo, and the scan earns its place on the bottle the
+            // user cannot be bothered to transcribe. Both land in the same sheet.
             DockedActionBar {
+                SecondaryButton(
+                    label = stringResource(R.string.profile_supplements_scan),
+                    onClick = onOpenScan,
+                    icon = AppIcons.Camera,
+                    modifier = Modifier.weight(1f),
+                )
                 PrimaryButton(
                     label = stringResource(R.string.profile_supplements_add),
                     // A blank row with id 0 — the sheet reads that as the add, so there is one
                     // sheet and one save path rather than two of each.
                     onClick = { editing = Supplement(name = "") },
                     icon = AppIcons.Add,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -190,6 +204,7 @@ private fun SupplementsScreenPreview() {
                 loaded = true,
             ),
             onEvent = {},
+            onOpenScan = {},
         )
     }
 }
@@ -198,6 +213,6 @@ private fun SupplementsScreenPreview() {
 @Composable
 private fun SupplementsScreenEmptyPreview() {
     AppTheme {
-        SupplementsContent(uiState = SupplementsUiState(loaded = true), onEvent = {})
+        SupplementsContent(uiState = SupplementsUiState(loaded = true), onEvent = {}, onOpenScan = {})
     }
 }

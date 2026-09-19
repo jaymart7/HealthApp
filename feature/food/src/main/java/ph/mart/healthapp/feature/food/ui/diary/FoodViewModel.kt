@@ -13,6 +13,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.note.NoteRepository
@@ -20,6 +21,7 @@ import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.nutrientTargets
+import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.todayFlow
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
@@ -41,6 +43,7 @@ class FoodViewModel(
     private val exerciseRepository: ExerciseRepository,
     stepsRepository: StepsRepository,
     private val noteRepository: NoteRepository,
+    supplementRepository: SupplementRepository,
 ) : ViewModel(), OrbitContainerHost<FoodUiState, FoodUiState, FoodSideEffect> {
 
     /** The diary's day, and the only thing that re-points the three dated flows below. */
@@ -53,7 +56,7 @@ class FoodViewModel(
     override val container = orbitContainer<FoodUiState, FoodSideEffect>(FoodUiState()) {
         observeDiary(
             foodRepository, profileRepository, waterRepository, exerciseRepository,
-            stepsRepository, noteRepository,
+            stepsRepository, noteRepository, supplementRepository,
         )
         followMidnight()
     }
@@ -99,6 +102,7 @@ class FoodViewModel(
         exerciseRepository: ExerciseRepository,
         stepsRepository: StepsRepository,
         noteRepository: NoteRepository,
+        supplementRepository: SupplementRepository,
     ) = intent {
         // Saved meals and recipes belong to no day, so they combine outside the date switch —
         // which also keeps the inner combine at the five-flow arity the typed overloads stop at.
@@ -146,8 +150,17 @@ class FoodViewModel(
             foodRepository.observeSavedMeals(),
             foodRepository.observeRecipes(),
             copySource(),
-        ) { newState, savedMeals, recipes, copySource ->
-            newState.copy(savedMeals = savedMeals, recipes = recipes, copySource = copySource)
+            // Undated, so it joins out here rather than inside the date switch: one map of every
+            // day the user ticked something, which this picks the diary's own day out of. That is
+            // also what keeps the inner combine at the arity its typed overloads stop at.
+            supplementRepository.observeNutrientsByDay(),
+        ) { newState, savedMeals, recipes, copySource, supplementNutrients ->
+            newState.copy(
+                savedMeals = savedMeals,
+                recipes = recipes,
+                copySource = copySource,
+                supplementNutrients = supplementNutrients[newState.selectedDate] ?: Nutrients(),
+            )
         }.collect { newState -> reduce { newState } }
     }
 

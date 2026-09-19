@@ -202,6 +202,7 @@
     <string name="progress_nutrition_intake">Daily intake</string>
     <string name="progress_nutrition_target">Target %1$d kcal</string>
     <string name="progress_nutrition_daily_average">Daily average</string>
+    <string name="progress_nutrition_with_supplements">Includes the supplements you ticked, averaged the same way</string>
     <string name="progress_nutrition_of_target">%1$d / %2$d kcal</string>
     <string name="progress_nutrition_plain">%1$d kcal</string>
     <plurals name="progress_nutrition_averaged">

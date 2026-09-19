@@ -57,6 +57,15 @@ data class FoodUiState(
      * `DayNote` gives an empty string, and what leaves the note block off the day entirely. */
     val note: String = "",
     val unit: UnitSystem = UnitSystem.Metric,
+    /**
+     * What [selectedDate]'s ticked supplements carried, and empty on a day nothing was ticked or
+     * nothing scanned carries figures.
+     *
+     * It joins the nutrient panel and **nothing else**: a supplement has no calories, so it does
+     * not touch the remaining figure, the macro bar, or the day's totals — only the seven rows
+     * that grade what the body actually got.
+     */
+    val supplementNutrients: Nutrients = Nutrients(),
     /** The day a copy is being taken *from* — null unless the copy sheet is open, and what the
      * sheet's own visibility is read off. */
     val copySource: CopyDay? = null,

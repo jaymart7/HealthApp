@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:data"))
     implementation(project(":core:navigation"))
+    implementation(project(":core:camera"))
     implementation(libs.kotlinx.serialization.json)
 
     implementation(platform(libs.androidx.compose.bom))
@@ -44,6 +45,8 @@ dependencies {
     implementation(libs.orbit.viewmodel)
     implementation(libs.orbit.compose)
 
+    implementation(libs.androidx.navigationevent)
+    implementation(libs.androidx.navigationevent.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
 

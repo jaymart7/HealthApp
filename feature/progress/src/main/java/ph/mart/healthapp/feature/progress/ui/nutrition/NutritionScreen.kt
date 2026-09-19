@@ -72,6 +72,7 @@ internal fun NutritionScreen(
         targets = uiState.targets,
         nutrientTargets = uiState.nutrientTargets,
         weekBudget = uiState.weekBudget,
+        supplementNutrients = uiState.supplementNutrients,
         onOpenRecap = onOpenRecap,
         onAskCoach = onAskCoach,
         onExitFlow = onExitFlow,
@@ -86,6 +87,7 @@ private fun NutritionContent(
     targets: DailyTargets?,
     nutrientTargets: Nutrients?,
     weekBudget: WeekBudget?,
+    supplementNutrients: Map<Long, Nutrients>,
     onOpenRecap: () -> Unit,
     onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
@@ -139,6 +141,7 @@ private fun NutritionContent(
                         targets = targets,
                         nutrientTargets = nutrientTargets,
                         weekBudget = weekBudget,
+                        supplementNutrients = supplementNutrients,
                         state = state,
                     )
                 }
@@ -173,11 +176,13 @@ private fun ColumnScope.NutritionBody(
     targets: DailyTargets?,
     nutrientTargets: Nutrients?,
     weekBudget: WeekBudget?,
+    supplementNutrients: Map<Long, Nutrients>,
     state: NutritionState,
 ) {
     val range = state.range
     val days = dailyNutrition.takeLast(range.days)
     val averages = days.averages()
+    val supplementAverage = supplementAverage(days, supplementNutrients)
     val target = targets?.calories
 
     HeroValue(value = "${averages.calories}", caption = stringResource(R.string.progress_nutrition_hero))
@@ -219,7 +224,12 @@ private fun ColumnScope.NutritionBody(
     ) {
         NutritionTrendChart(days = days, targetCalories = target)
     }
-    NutritionAverageCard(averages = averages, targets = targets, nutrientTargets = nutrientTargets)
+    NutritionAverageCard(
+        averages = averages,
+        targets = targets,
+        nutrientTargets = nutrientTargets,
+        supplementNutrients = supplementAverage,
+    )
     // Last, and unranged: the plates are the newest ones kept, not a slice of the toggle above —
     // a photo history that thinned out when someone picked "1M" would be lying about what it has.
     MealPhotoStrip(photos = mealPhotos, onOpen = state::openGallery)
@@ -257,6 +267,7 @@ private fun NutritionScreenPreview() {
             targets = targetsPreview(),
             nutrientTargets = null,
             weekBudget = weekBudgetPreview(),
+            supplementNutrients = emptyMap(),
             onOpenRecap = {},
             onAskCoach = { _, _ -> },
             onExitFlow = {},
@@ -275,6 +286,7 @@ private fun NutritionScreenEmptyPreview() {
             targets = targetsPreview(),
             nutrientTargets = null,
             weekBudget = weekBudgetPreview(),
+            supplementNutrients = emptyMap(),
             onOpenRecap = {},
             onAskCoach = { _, _ -> },
             onExitFlow = {},

@@ -11,30 +11,32 @@ import ph.mart.healthapp.core.data.fake.FakeLabelScanRepository
 import ph.mart.healthapp.core.data.fake.FakeMealIdeaRepository
 import ph.mart.healthapp.core.data.fake.FakeMealParseRepository
 import ph.mart.healthapp.core.data.fake.FakeRecognitionRepository
+import ph.mart.healthapp.core.data.fake.FakeSupplementScanRepository
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.LabelScanRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
 import ph.mart.healthapp.core.data.food.MealParseRepository
 import ph.mart.healthapp.core.data.insight.InsightRepository
+import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
 
 /**
  * **Flip this to hit the real models.** Left `false`, a debug build never calls Firebase AI Logic
  * at all and therefore bills nothing.
  *
- * All seven call sites at once rather than seven switches, because the reason to flip is always
- * the same — *checking a change against the real thing before a release* — and seven booleans is
- * seven ways to leave one on by accident. Splitting it per feature is one line if that ever stops
+ * All eight call sites at once rather than seven switches, because the reason to flip is always
+ * the same — *checking a change against the real thing before a release* — and eight booleans is
+ * eight ways to leave one on by accident. Splitting it per feature is one line if that ever stops
  * being true.
  *
  * A debug-only escape hatch in the shape `FORCE_ONBOARDING` already uses in `AppRoot.kt`, except
- * that this one lives in a source set rather than behind `BuildConfig.DEBUG`: seven fake
+ * that this one lives in a source set rather than behind `BuildConfig.DEBUG`: eight fake
  * repositories are more than a boolean's worth of code to keep out of a release build by
  * convention, and the release twin of this file keeps them out by construction.
  */
 private const val USE_REAL_AI = false
 
 /**
- * The seven fakes exist so a debug build can be *iterated on*, not merely run cheaply.
+ * The eight fakes exist so a debug build can be *iterated on*, not merely run cheaply.
  *
  * A stub returning null everywhere would cost the same and hide the things this app's AI surface
  * actually gets wrong — a streamed answer that scrolls badly, a proposal card with an absurd
@@ -59,6 +61,9 @@ internal fun debugMealParse(): MealParseRepository? = ifFaking { FakeMealParseRe
 
 internal fun debugExerciseParse(): ExerciseParseRepository? =
     ifFaking { FakeExerciseParseRepository() }
+
+internal fun debugSupplementScan(): SupplementScanRepository? =
+    ifFaking { FakeSupplementScanRepository() }
 
 /**
  * Says out loud which mode the build is in, once, under the tag `logAiFailure` already uses.

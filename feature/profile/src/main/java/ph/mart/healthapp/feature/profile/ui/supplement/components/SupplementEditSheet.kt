@@ -14,6 +14,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_DOSE_MAX
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_NAME_MAX
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_TIMES_PER_DAY
@@ -27,7 +28,8 @@ import ph.mart.healthapp.feature.profile.R
 
 /**
  * Adds a supplement or edits one, seeded from [supplement] — `id == 0` is the add. One sheet for
- * both, the same way `RenameSheet` is seeded with the name it is about to change.
+ * both, the same way `RenameSheet` is seeded with the name it is about to change — and one sheet
+ * for the scan too, which seeds it from a panel a model read rather than from a row.
  *
  * The draft lives here rather than in the screen: it is discarded on dismiss, and there is nothing
  * on the other side of Save that needs to have seen it. Back dismisses the sheet rather than the
@@ -67,6 +69,11 @@ internal fun SupplementEditSheet(
                 onValueChange = { if (it.length <= SUPPLEMENT_DOSE_MAX) dose = it },
                 placeholder = stringResource(R.string.profile_supplements_dose),
             )
+            // What the panel said, when a panel was read. The figures themselves are carried on
+            // [supplement] and are not editable: they were copied off a bottle, and a typed
+            // correction to a number nobody typed is a worse claim than the reading. Re-scan to
+            // change them, or clear them by adding the supplement by hand.
+            PanelReadout(panel = supplement.panel)
             NumericStepperField(
                 label = stringResource(R.string.profile_supplements_how_often),
                 value = "$timesPerDay",
@@ -97,6 +104,24 @@ internal fun SupplementEditSheet(
 private fun SupplementEditSheetAddPreview() {
     AppTheme {
         SupplementEditSheet(supplement = Supplement(name = ""), onDismiss = {}, onSave = {})
+    }
+}
+
+/** The scanned shape: the same sheet, seeded, with the panel under the fields. */
+@PreviewLightDark
+@Composable
+private fun SupplementEditSheetScannedPreview() {
+    AppTheme {
+        SupplementEditSheet(
+            supplement = Supplement(
+                name = "Daily Multivitamin",
+                dose = "2 tablets",
+                nutrients = Nutrients(vitaminDUg = 25, calciumMg = 210),
+                panel = "Vitamin D 25 µg\nCalcium 210 mg\nVitamin C 90 mg\nZinc 11 mg",
+            ),
+            onDismiss = {},
+            onSave = {},
+        )
     }
 }
 

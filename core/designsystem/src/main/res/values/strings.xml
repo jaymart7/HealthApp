@@ -12,6 +12,13 @@
     <string name="ds_ruler_range">%1$s–%2$s %3$s</string>
     <string name="ds_ruler_done">Done</string>
 
+    <!-- Viewfinder chrome, drawn by every camera flow in the app -->
+    <string name="ds_viewfinder_close">Close</string>
+    <string name="ds_viewfinder_take_photo">Take photo</string>
+    <string name="ds_viewfinder_gallery">Upload a photo</string>
+    <string name="ds_viewfinder_manual">Enter manually</string>
+    <string name="ds_viewfinder_hint_preview">Fit it in frame</string>
+
     <!-- Camera permission -->
     <string name="ds_camera_needed">Camera access needed</string>
     <string name="ds_grant_access">Grant access</string>

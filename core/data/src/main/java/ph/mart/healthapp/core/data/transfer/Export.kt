@@ -77,10 +77,12 @@ internal data class FitPulseExport(
  * plain "written by a newer version of FitPulse"; 20 added the time of day on
  * [FitPulseExport.weightEntries], [FitPulseExport.measurements] and [FitPulseExport.cycleDays] —
  * null on every row written before it, which is the same silence a synced row carries; 21 added
- * [FitPulseExport.dayNotes].
+ * [FitPulseExport.dayNotes]; 22 added the supplements' scanned per-dose figures and
+ * [ExportSupplement.panel] — zero and empty on every row written before the scan existed, which
+ * reads as the supplement nobody scanned that it is.
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 21
+internal const val EXPORT_SCHEMA_VERSION = 22
 
 @Serializable
 internal data class ExportProfile(
@@ -227,6 +229,16 @@ internal data class ExportSupplement(
     val timesPerDay: Int = 1,
     val deleted: Boolean = false,
     val createdAt: Long = 0,
+    /** Per dose, flat and defaulted — [ExportFoodEntry]'s shape, for its reason: the seven names
+     * are the wire format and an older file simply has none of them. */
+    val fiberG: Int = 0,
+    val sugarG: Int = 0,
+    val sodiumMg: Int = 0,
+    val vitaminDUg: Int = 0,
+    val calciumMg: Int = 0,
+    val ironUg: Int = 0,
+    val potassiumMg: Int = 0,
+    val panel: String = "",
 )
 
 /** [dueTimes] is the day's own snapshot of the target, not today's — restoring it is what stops a
@@ -292,7 +304,22 @@ fun buildExportJson(
             session.endMillis?.let { ExportFastSession(session.startMillis, it, session.goalHours) }
         },
         supplements = supplements.map {
-            ExportSupplement(it.id, it.name, it.dose, it.timesPerDay, it.deleted, it.createdAt)
+            ExportSupplement(
+                id = it.id,
+                name = it.name,
+                dose = it.dose,
+                timesPerDay = it.timesPerDay,
+                deleted = it.deleted,
+                createdAt = it.createdAt,
+                fiberG = it.nutrients.fiberG,
+                sugarG = it.nutrients.sugarG,
+                sodiumMg = it.nutrients.sodiumMg,
+                vitaminDUg = it.nutrients.vitaminDUg,
+                calciumMg = it.nutrients.calciumMg,
+                ironUg = it.nutrients.ironUg,
+                potassiumMg = it.nutrients.potassiumMg,
+                panel = it.panel,
+            )
         },
         supplementDays = supplementDays.map {
             ExportSupplementDay(it.dateEpochDay, it.supplementId, it.taken, it.dueTimes)
@@ -352,6 +379,16 @@ fun parseExport(text: String): Result<ImportData> = runCatching {
                 timesPerDay = it.timesPerDay,
                 deleted = it.deleted,
                 createdAt = it.createdAt,
+                nutrients = Nutrients(
+                    fiberG = it.fiberG,
+                    sugarG = it.sugarG,
+                    sodiumMg = it.sodiumMg,
+                    vitaminDUg = it.vitaminDUg,
+                    calciumMg = it.calciumMg,
+                    ironUg = it.ironUg,
+                    potassiumMg = it.potassiumMg,
+                ),
+                panel = it.panel,
             )
         },
         supplementDays = export.supplementDays.map {
