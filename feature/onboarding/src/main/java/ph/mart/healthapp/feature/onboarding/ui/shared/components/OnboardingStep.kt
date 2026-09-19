@@ -88,6 +88,9 @@ internal fun cardsFit(cards: Int): Boolean {
  *
  * [scrollable] is false for the steps whose cards divide the column with `weight(1f)`: a weight
  * inside a scrolling column has no height to divide.
+ *
+ * [stepCount] is false on the one optional step, where Skip already owns the corner and the bar
+ * says where you are.
  */
 @Composable
 internal fun OnboardingStep(
@@ -101,6 +104,7 @@ internal fun OnboardingStep(
     trailingAction: (@Composable () -> Unit)? = null,
     bottomBar: (@Composable () -> Unit)? = null,
     scrollable: Boolean = true,
+    stepCount: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val count = stringResource(R.string.onboarding_step_of, step, ONBOARDING_STEPS)
@@ -140,7 +144,7 @@ internal fun OnboardingStep(
                 )
                 if (trailingAction != null) {
                     trailingAction()
-                } else if (!stacked) {
+                } else if (stepCount && !stacked) {
                     StepCount(count)
                 }
             }
@@ -153,7 +157,7 @@ internal fun OnboardingStep(
             ) {
                 MascotAvatar(state = mascotState, size = mascotSize)
                 MascotSpeechBubble(text = line, tail = BubbleTail.Start, modifier = Modifier.weight(1f, fill = false))
-                if (trailingAction != null || stacked) {
+                if (stepCount && (trailingAction != null || stacked)) {
                     Spacer(modifier = Modifier.weight(1f))
                     StepCount(count)
                 }

@@ -65,6 +65,7 @@ internal fun DietaryScreen(
         headline = stringResource(R.string.onboarding_diet_title),
         onBack = onBack,
         scrollable = !fits,
+        stepCount = false,
         trailingAction = { TextButton(label = stringResource(R.string.onboarding_diet_skip), onClick = onSkip) },
         bottomBar = {
             if (selected == null) {
