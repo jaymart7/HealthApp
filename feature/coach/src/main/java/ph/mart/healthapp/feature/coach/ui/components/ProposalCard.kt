@@ -51,6 +51,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.formatDayMonth
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -369,7 +370,7 @@ private fun SingleProposal(action: CoachAction) {
             ReceiptPanel {
                 ReceiptHeadline(
                     label = stringResource(R.string.coach_receipt_weight),
-                    value = formatWeight(action.weight),
+                    value = formatOneDecimal(action.weight),
                     unit = action.unit.weightUnitLabel(),
                 )
                 weightChange(action)?.let {
@@ -422,7 +423,7 @@ private fun SingleProposal(action: CoachAction) {
             ReceiptPanel {
                 ReceiptHeadline(
                     label = stringResource(action.part.label),
-                    value = formatWeight(action.value),
+                    value = formatOneDecimal(action.value),
                     unit = action.part.unitLabel(action.unit),
                 )
             }
@@ -716,7 +717,7 @@ private fun fastElapsed(action: CoachAction.SetFast): String =
 @Composable
 private fun weightAmount(action: CoachAction.LogWeight): String = stringResource(
     R.string.coach_proposal_weight_body,
-    formatWeight(action.weight),
+    formatOneDecimal(action.weight),
     action.unit.weightUnitLabel(),
 )
 
@@ -734,15 +735,10 @@ private fun weightChange(action: CoachAction.LogWeight): String? {
     if (delta == 0.0) return null
     return stringResource(
         R.string.coach_proposal_weight_change,
-        (if (delta > 0) "+" else "\u2212") + formatWeight(abs(delta)),
+        (if (delta > 0) "+" else "\u2212") + formatOneDecimal(abs(delta)),
         action.unit.weightUnitLabel(),
     )
 }
-
-/** Drops a trailing ".0" — 82 rather than 82.0, the same helper the weigh-in sheet and every
- * measurement row keep locally. */
-private fun formatWeight(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 /**
  * What the workout opens with — "Bench press 3x8 · Squat 3x5".
@@ -817,7 +813,7 @@ private fun bandLine(action: CoachAction.LogBloodPressure): String {
 @Composable
 private fun measurementAmount(action: CoachAction.LogMeasurement): String = stringResource(
     R.string.coach_proposal_measurement_body,
-    formatWeight(action.value),
+    formatOneDecimal(action.value),
     action.part.unitLabel(action.unit),
 )
 

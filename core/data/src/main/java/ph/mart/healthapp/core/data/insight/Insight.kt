@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.insight
 
+import java.util.Locale
 import kotlin.math.abs
 import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
 import ph.mart.healthapp.core.data.exercise.earnedInsightLine
@@ -102,7 +103,7 @@ internal fun dayNumbersBlock(request: InsightRequest): String = buildString {
     appendLine("- Fat: ${request.fatG} of ${request.fatTargetG} g")
     appendLine("- Water: ${request.waterGlasses} of ${request.waterGoalGlasses} glasses")
     appendLine("- Logging streak: ${request.streakDays} days")
-    request.weightDeltaKg?.let { appendLine("- Weight change over the last week: %+.1f kg".format(it)) }
+    request.weightDeltaKg?.let { appendLine(String.format(Locale.US, "- Weight change over the last week: %+.1f kg", it)) }
 }
 
 /**
@@ -149,7 +150,7 @@ fun insightFor(
 }
 
 /** Signed, one decimal, tabular-friendly — e.g. "-0.6", "+1.2". */
-fun formatDelta(deltaKg: Double): String = "%+.1f".format(deltaKg)
+fun formatDelta(deltaKg: Double): String = String.format(Locale.US, "%+.1f", deltaKg)
 
 /**
  * The same rules, off the payload the model was given rather than off the screen's state.

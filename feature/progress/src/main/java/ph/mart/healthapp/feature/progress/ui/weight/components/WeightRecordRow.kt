@@ -21,6 +21,7 @@ import ph.mart.healthapp.core.data.progress.NOTE_GOOGLE_HEALTH
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.formatMinuteOfDay
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
@@ -68,7 +69,7 @@ internal fun WeightRecordRow(
             Text(
                 text = stringResource(
                     R.string.progress_weight_value,
-                    formatKg(entry.weightKg.kgToDisplayUnit(unit)),
+                    formatOneDecimal(entry.weightKg.kgToDisplayUnit(unit)),
                     unit.weightUnitLabel(),
                 ),
                 style = MaterialTheme.typography.titleMedium.tabularNums,

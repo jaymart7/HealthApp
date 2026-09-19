@@ -21,6 +21,7 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
 import ph.mart.healthapp.core.designsystem.component.AIInsightCard
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -46,7 +47,7 @@ internal fun ColumnScope.WeightInsightCard(
         goalProjectionLine(
             goalWeightLabel = stringResource(
                 R.string.progress_weight_value,
-                formatKg(it.goalWeightKg.kgToDisplayUnit(unit)),
+                formatOneDecimal(it.goalWeightKg.kgToDisplayUnit(unit)),
                 unit.weightUnitLabel(),
             ),
             targetEpochDay = it.targetEpochDay,

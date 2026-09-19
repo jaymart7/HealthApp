@@ -31,6 +31,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -145,7 +146,7 @@ private fun ColumnScope.WaterBody(
     val averages = inWindow.waterAverages(goalGlasses)
 
     HeroValue(
-        value = averages.averageGlasses?.let { "%.1f".format(it) } ?: stringResource(R.string.progress_none),
+        value = averages.averageGlasses?.let { formatDecimals(it, decimals = 1) } ?: stringResource(R.string.progress_none),
         caption = stringResource(R.string.progress_water_hero),
     )
     FactChipRow(
@@ -176,7 +177,7 @@ private fun ColumnScope.WaterBody(
         rows = listOf(
             StatRow(
                 stringResource(R.string.progress_water_average),
-                averages.averageGlasses?.let { "%.1f".format(it) } ?: stringResource(R.string.progress_none),
+                averages.averageGlasses?.let { formatDecimals(it, decimals = 1) } ?: stringResource(R.string.progress_none),
             ),
             StatRow(
                 stringResource(R.string.progress_water_best),

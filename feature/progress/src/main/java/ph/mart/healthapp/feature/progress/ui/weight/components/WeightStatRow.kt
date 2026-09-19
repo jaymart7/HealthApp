@@ -22,6 +22,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.goalRelativeTrend
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
@@ -41,14 +42,14 @@ fun WeightStatRow(
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         StatCell(
             label = stringResource(R.string.progress_weight_current),
-            value = stringResource(R.string.progress_weight_value, formatKg(currentKg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
+            value = stringResource(R.string.progress_weight_value, formatOneDecimal(currentKg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
         )
         val trend = goalRelativeTrend(goal, changeKg)
         StatCell(
             label = stringResource(R.string.progress_weight_change),
             value = stringResource(
                 R.string.progress_weight_value,
-                "${if (changeKg > 0) "+" else ""}${formatKg(changeKg.kgToDisplayUnit(unit))}",
+                "${if (changeKg > 0) "+" else ""}${formatOneDecimal(changeKg.kgToDisplayUnit(unit))}",
                 unit.weightUnitLabel(),
             ),
             valueColor = when (trend) {
@@ -61,7 +62,7 @@ fun WeightStatRow(
             val remaining = abs(currentKg - goalWeightKg)
             StatCell(
                 label = stringResource(R.string.progress_weight_goal_remaining),
-                value = stringResource(R.string.progress_weight_value, formatKg(remaining.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
+                value = stringResource(R.string.progress_weight_value, formatOneDecimal(remaining.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
             )
         }
     }
@@ -81,9 +82,6 @@ internal fun StatCell(label: String, value: String, valueColor: Color? = null) {
         )
     }
 }
-
-internal fun formatKg(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
 @Composable

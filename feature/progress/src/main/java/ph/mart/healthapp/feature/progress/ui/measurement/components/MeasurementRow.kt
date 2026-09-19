@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
@@ -46,7 +47,7 @@ fun MeasurementRow(name: String, history: List<Double>, unitLabel: String, onTap
                 Text(text = name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     text = current?.let {
-                        stringResource(R.string.progress_measurement_value, formatMeasurement(it), unitLabel)
+                        stringResource(R.string.progress_measurement_value, formatOneDecimal(it), unitLabel)
                     } ?: stringResource(R.string.progress_measurement_none),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -58,7 +59,7 @@ fun MeasurementRow(name: String, history: List<Double>, unitLabel: String, onTap
                     stringResource(
                         R.string.progress_measurement_delta,
                         if (it > 0) "+" else "",
-                        formatMeasurement(it),
+                        formatOneDecimal(it),
                         unitLabel,
                     )
                 } ?: stringResource(R.string.progress_none),
@@ -93,9 +94,6 @@ private fun Sparkline(values: List<Double>, modifier: Modifier = Modifier) {
         }
     }
 }
-
-internal fun formatMeasurement(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
 @Composable

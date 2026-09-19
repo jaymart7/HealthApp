@@ -42,13 +42,13 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.SelectableCard
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.AppListRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.SectionHeader
 import ph.mart.healthapp.feature.profile.ui.shared.components.StepperRow
-import ph.mart.healthapp.feature.profile.ui.shared.formatBodyValue
 import ph.mart.healthapp.feature.profile.ui.shared.label
 import ph.mart.healthapp.feature.profile.ui.shared.sublabel
 
@@ -143,7 +143,7 @@ private fun AboutYouContent(
                 val height = profile.heightCm.cmToDisplayUnit(unit)
                 StepperRow(
                     label = stringResource(R.string.profile_about_height),
-                    value = formatBodyValue(height),
+                    value = formatOneDecimal(height),
                     unit = unit.lengthUnitLabel(),
                     onIncrement = { onSetHeightCm((height + HEIGHT_STEP).displayUnitToCm(unit)) },
                     onDecrement = { onSetHeightCm((height - HEIGHT_STEP).displayUnitToCm(unit)) },
@@ -153,7 +153,7 @@ private fun AboutYouContent(
                 StepperRow(
                     label = stringResource(R.string.profile_about_weight),
                     sublabel = stringResource(R.string.profile_about_weight_sub),
-                    value = formatBodyValue(weight),
+                    value = formatOneDecimal(weight),
                     unit = unit.weightUnitLabel(),
                     onIncrement = { onSetCurrentWeightKg((weight + WEIGHT_STEP).displayUnitToKg(unit)) },
                     onDecrement = { onSetCurrentWeightKg((weight - WEIGHT_STEP).displayUnitToKg(unit)) },
@@ -167,7 +167,7 @@ private fun AboutYouContent(
                 StepperRow(
                     label = stringResource(R.string.profile_about_target),
                     sublabel = stringResource(R.string.profile_about_target_sub),
-                    value = profile.targetWeightKg?.let { formatBodyValue(it.kgToDisplayUnit(unit)) } ?: UNSET,
+                    value = profile.targetWeightKg?.let { formatOneDecimal(it.kgToDisplayUnit(unit)) } ?: UNSET,
                     unit = unit.weightUnitLabel(),
                     onIncrement = { onSetTargetWeightKg((target + WEIGHT_STEP).displayUnitToKg(unit)) },
                     onDecrement = { onSetTargetWeightKg((target - WEIGHT_STEP).displayUnitToKg(unit)) },

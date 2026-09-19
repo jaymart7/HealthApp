@@ -39,12 +39,12 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.IconTile
-import ph.mart.healthapp.feature.profile.ui.shared.formatBodyValue
 import ph.mart.healthapp.feature.profile.ui.shared.headline
 import ph.mart.healthapp.feature.profile.ui.shared.label
 
@@ -109,7 +109,7 @@ internal fun ProfileIdentityHeader(
                             R.string.profile_header_summary,
                             stringResource(profile.sex.label()),
                             profile.age,
-                            formatBodyValue(profile.heightCm.cmToDisplayUnit(unit)),
+                            formatOneDecimal(profile.heightCm.cmToDisplayUnit(unit)),
                             unit.lengthUnitLabel(),
                             stringResource(profile.activityLevel.label()),
                         ),
@@ -133,7 +133,7 @@ internal fun ProfileIdentityHeader(
             ) {
                 StatCell(label = stringResource(R.string.profile_header_now)) {
                     StatValue(
-                        value = formatBodyValue(trend.currentKg.kgToDisplayUnit(unit)),
+                        value = formatOneDecimal(trend.currentKg.kgToDisplayUnit(unit)),
                         unit = unit.weightUnitLabel(),
                     )
                     TrendLine(
@@ -150,13 +150,13 @@ internal fun ProfileIdentityHeader(
                     VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     StatCell(label = stringResource(R.string.profile_header_target)) {
                         StatValue(
-                            value = formatBodyValue(targetKg.kgToDisplayUnit(unit)),
+                            value = formatOneDecimal(targetKg.kgToDisplayUnit(unit)),
                             unit = unit.weightUnitLabel(),
                         )
                         Text(
                             text = stringResource(
                                 R.string.profile_header_to_go,
-                                formatBodyValue(abs(trend.currentKg - targetKg).kgToDisplayUnit(unit)),
+                                formatOneDecimal(abs(trend.currentKg - targetKg).kgToDisplayUnit(unit)),
                                 unit.weightUnitLabel(),
                             ),
                             style = MaterialTheme.typography.labelSmall.tabularNums,
@@ -243,7 +243,7 @@ private fun TrendLine(
         Text(
             text = stringResource(
                 R.string.profile_header_trend,
-                formatBodyValue(abs(deltaKg).kgToDisplayUnit(unit)),
+                formatOneDecimal(abs(deltaKg).kgToDisplayUnit(unit)),
                 unit.weightUnitLabel(),
                 verdict,
             ),

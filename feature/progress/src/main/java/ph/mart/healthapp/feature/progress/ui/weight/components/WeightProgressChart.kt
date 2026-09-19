@@ -21,6 +21,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.progress.WeightPoint
 import ph.mart.healthapp.core.designsystem.component.formatMonth
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -97,7 +98,7 @@ fun WeightProgressChart(
                 end = Offset(size.width, y),
                 strokeWidth = 1.dp.toPx(),
             )
-            val label = measurer.measure(formatKg(valueAt(y)), labelStyle)
+            val label = measurer.measure(formatOneDecimal(valueAt(y)), labelStyle)
             drawText(
                 textLayoutResult = label,
                 topLeft = Offset(gutter - label.size.width, y - label.size.height / 2f),

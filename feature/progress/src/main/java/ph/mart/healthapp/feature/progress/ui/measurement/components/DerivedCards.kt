@@ -15,6 +15,8 @@ import ph.mart.healthapp.core.data.progress.WAIST_TO_HEIGHT_HEALTHY_MAX
 import ph.mart.healthapp.core.data.progress.fatMassKgOf
 import ph.mart.healthapp.core.data.progress.leanMassKgOf
 import ph.mart.healthapp.core.data.progress.waistToHeightOf
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
@@ -82,7 +84,7 @@ internal fun BodyCompositionCard(
                 label = stringResource(R.string.progress_measurement_fat_mass),
                 value = stringResource(
                     R.string.progress_measurement_value,
-                    formatMeasurement(fatKg.kgToDisplayUnit(unit)),
+                    formatOneDecimal(fatKg.kgToDisplayUnit(unit)),
                     unit.weightUnitLabel(),
                 ),
             ),
@@ -90,7 +92,7 @@ internal fun BodyCompositionCard(
                 label = stringResource(R.string.progress_measurement_lean_mass),
                 value = stringResource(
                     R.string.progress_measurement_value,
-                    formatMeasurement(leanKg.kgToDisplayUnit(unit)),
+                    formatOneDecimal(leanKg.kgToDisplayUnit(unit)),
                     unit.weightUnitLabel(),
                 ),
             ),
@@ -101,7 +103,7 @@ internal fun BodyCompositionCard(
 
 /** Two decimals always — the whole figure lives between 0.4 and 0.6, so a dropped one would put
  * every reading on the boundary it is being compared against. */
-private fun formatRatio(value: Double): String = "%.2f".format(value)
+private fun formatRatio(value: Double): String = formatDecimals(value, decimals = 2)
 
 @PreviewLightDark
 @Composable

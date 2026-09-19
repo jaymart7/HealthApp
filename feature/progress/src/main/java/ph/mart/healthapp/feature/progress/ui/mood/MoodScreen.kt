@@ -30,6 +30,7 @@ import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -136,7 +137,7 @@ private fun ColumnScope.MoodBody(days: List<MoodDay>, state: MoodState) {
     val averages = inWindow.moodAverages()
 
     HeroValue(
-        value = averages.mood?.let { "%.1f".format(it) } ?: stringResource(R.string.progress_none),
+        value = averages.mood?.let { formatDecimals(it, decimals = 1) } ?: stringResource(R.string.progress_none),
         caption = stringResource(R.string.progress_mood_hero, MOOD_SCALE.last),
     )
     FactChipRow(chips = listOf(FactChip(stringResource(R.string.progress_mood_days, averages.daysLogged))))
@@ -150,8 +151,8 @@ private fun ColumnScope.MoodBody(days: List<MoodDay>, state: MoodState) {
     }
     StatRowsCard(
         rows = listOf(
-            StatRow(stringResource(R.string.progress_mood_average), averages.mood?.let { "%.1f / ${MOOD_SCALE.last}".format(it) } ?: stringResource(R.string.progress_none)),
-            StatRow(stringResource(R.string.progress_mood_energy_average), averages.energy?.let { "%.1f / ${MOOD_SCALE.last}".format(it) } ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_mood_average), averages.mood?.let { "${formatDecimals(it, decimals = 1)} / ${MOOD_SCALE.last}" } ?: stringResource(R.string.progress_none)),
+            StatRow(stringResource(R.string.progress_mood_energy_average), averages.energy?.let { "${formatDecimals(it, decimals = 1)} / ${MOOD_SCALE.last}" } ?: stringResource(R.string.progress_none)),
             StatRow(stringResource(R.string.progress_mood_days_logged), "${averages.daysLogged}"),
         ),
     )

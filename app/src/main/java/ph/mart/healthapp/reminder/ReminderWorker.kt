@@ -41,10 +41,10 @@ class ReminderWorker(
     private val progressRepository: ProgressRepository by inject()
 
     /**
-     * Posts if there is anything to say, and then — on every path, including every quiet one —
-     * books the next firing. The chain *is* the schedule (see [ReminderScheduler.schedule]), so a
-     * run that stayed silent because breakfast was already logged must still put tomorrow's in the
-     * queue, or that reminder stops for good.
+     * Posts if there is anything to say, and then — on every path, including every quiet one and
+     * every one that threw — books the next firing. The chain *is* the schedule (see
+     * [ReminderScheduler.schedule]), so a run that stayed silent because breakfast was already
+     * logged must still put tomorrow's in the queue, or that reminder stops for good.
      *
      * The re-enqueue is the last statement rather than the first because REPLACE on a unique name
      * cancels whatever is running under it — which is this worker. By here the notification is
@@ -57,7 +57,12 @@ class ReminderWorker(
             ?.let { name -> Reminder.entries.firstOrNull { it.name == name } }
             ?: return Result.success()
 
-        if (shouldNotify(reminder)) {
+        // runCatching, because the re-enqueue below is only unskippable by an *early return* —
+        // shouldNotify does seven repository reads, and a throw from any of them leaves doWork
+        // via Result.failure(), which drops the unique work. The chain IS the schedule, so that
+        // is the same death the predicate was extracted to prevent, one path over. A day this
+        // worker cannot read is a day it stays quiet about, and tomorrow still gets booked.
+        if (runCatching { shouldNotify(reminder) }.getOrDefault(false)) {
             notify(
                 context,
                 reminder.ordinal,
@@ -74,7 +79,8 @@ class ReminderWorker(
     }
 
     /** Every reason to stay quiet, in one predicate — extracted from [doWork] so the reschedule
-     * below it cannot be skipped by an early return, which is exactly how a chain dies. */
+     * below it cannot be skipped by an early return, which is exactly how a chain dies. It may
+     * still *throw*, which is the same death by another door; [doWork] catches it there. */
     private suspend fun shouldNotify(reminder: Reminder): Boolean {
         // Revoked after the work was enqueued — stay quiet rather than posting into the void.
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return false

@@ -56,6 +56,8 @@ import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -75,7 +77,6 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.WeighInTimingCard
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightInsightCard
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightProgressChart
 import ph.mart.healthapp.feature.progress.ui.weight.components.WeightRecordRow
-import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
 /**
  * The richest subject page, and the one the other twelve were modelled on: hero, fact chips, a
@@ -263,7 +264,7 @@ private fun ColumnScope.WeightBody(
     val windowDelta = filtered.firstOrNull()?.let { current - it.weightKg }
 
     HeroValue(
-        value = formatKg(current.kgToDisplayUnit(unit)),
+        value = formatOneDecimal(current.kgToDisplayUnit(unit)),
         caption = stringResource(R.string.progress_weight_today, unit.weightUnitLabel()),
     )
 
@@ -274,7 +275,7 @@ private fun ColumnScope.WeightBody(
                 FactChip(
                     text = stringResource(
                         R.string.progress_weight_in_span,
-                        formatKg(abs(delta).kgToDisplayUnit(unit)),
+                        formatOneDecimal(abs(delta).kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
                         range.spanWords(),
                         direction.word(delta),
@@ -289,7 +290,7 @@ private fun ColumnScope.WeightBody(
                 FactChip(
                     text = stringResource(
                         R.string.progress_weight_to_goal,
-                        formatKg(abs(current - it).kgToDisplayUnit(unit)),
+                        formatOneDecimal(abs(current - it).kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
                     ),
                 )
@@ -320,7 +321,7 @@ private fun ColumnScope.WeightBody(
                 LegendEntry(
                     label = stringResource(
                         R.string.progress_weight_goal_legend,
-                        formatKg(it.kgToDisplayUnit(unit)),
+                        formatOneDecimal(it.kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
                     ),
                     color = MaterialTheme.colorScheme.tertiary,
@@ -356,7 +357,7 @@ private fun ColumnScope.WeightBody(
                 value = if (weekTrend.hasPrior) {
                     stringResource(
                         if (weekTrend.deltaKg < 0) R.string.progress_weight_down else R.string.progress_weight_up,
-                        formatKg(abs(weekTrend.deltaKg).kgToDisplayUnit(unit)),
+                        formatOneDecimal(abs(weekTrend.deltaKg).kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
                     )
                 } else {
@@ -373,7 +374,7 @@ private fun ColumnScope.WeightBody(
                 value = projection?.let {
                     stringResource(
                         if (it.kgPerWeek < 0) R.string.progress_weight_down else R.string.progress_weight_up,
-                        formatKg(abs(it.kgPerWeek).kgToDisplayUnit(unit)),
+                        formatOneDecimal(abs(it.kgPerWeek).kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
                     )
                 } ?: stringResource(R.string.progress_none),
@@ -403,9 +404,9 @@ private fun TrendDirection.word(deltaKg: Double): String = when {
     else -> stringResource(R.string.progress_word_recorded)
 }
 
-/** Always one decimal, unlike [formatKg] beside it — a weight reads fine as "84", but "BMI 23"
+/** Always one decimal, unlike [formatOneDecimal] — a weight reads fine as "84", but "BMI 23"
  * next to "BMI 23.4" looks like two different precisions of the same figure. */
-private fun formatBmi(value: Double): String = "%.1f".format(value)
+private fun formatBmi(value: Double): String = formatDecimals(value, decimals = 1)
 
 private fun arrowFor(delta: Double) = when {
     abs(delta) < TREND_ARROW_DEADBAND_KG -> AppIcons.TrendFlat

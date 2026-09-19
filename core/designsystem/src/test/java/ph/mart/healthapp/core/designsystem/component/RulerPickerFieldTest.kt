@@ -62,8 +62,8 @@ class RulerPickerFieldTest {
     /** Weight carries a decimal and age does not, and neither may render the other's shape. */
     @Test
     fun `values render to their own precision`() {
-        assertEquals("65.5", format(65.5, decimals = 1))
-        assertEquals("25", format(25.0, decimals = 0))
-        assertEquals("26", format(25.6, decimals = 0))
+        assertEquals("65.5", formatDecimals(65.5, decimals = 1))
+        assertEquals("25", formatDecimals(25.0, decimals = 0))
+        assertEquals("26", formatDecimals(25.6, decimals = 0))
     }
 }

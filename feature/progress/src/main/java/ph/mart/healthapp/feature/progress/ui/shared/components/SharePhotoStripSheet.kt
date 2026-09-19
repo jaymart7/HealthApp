@@ -34,6 +34,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.GRID_TILE_PX
 import ph.mart.healthapp.core.designsystem.component.ShareImageSheet
 import ph.mart.healthapp.core.designsystem.component.formatDayMonth
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -154,7 +155,7 @@ private fun stripHeadline(photos: List<ProgressPhoto>, unit: UnitSystem): String
             R.string.progress_strip_span,
             span,
             if (display > 0) "+" else "",
-            "%.1f".format(display),
+            formatDecimals(display, decimals = 1),
             unit.weightUnitLabel(),
         )
     } ?: span

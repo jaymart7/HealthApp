@@ -49,6 +49,7 @@ import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -61,7 +62,6 @@ import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 import ph.mart.healthapp.feature.progress.ui.shared.components.RecapCard
 import ph.mart.healthapp.feature.progress.ui.shared.components.sampleFrames
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
-import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
 /**
  * The whole period in one page — the question the charts answer one metric at a time and Home
@@ -206,14 +206,14 @@ private fun BodySection(recap: Recap, unit: UnitSystem) {
     AppCard {
         SectionHeading(stringResource(R.string.progress_recap_body))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            StatCell(label = stringResource(R.string.progress_recap_started), value = stringResource(R.string.progress_weight_value, formatKg(start.kgToDisplayUnit(unit)), label))
-            StatCell(label = stringResource(R.string.progress_recap_latest), value = stringResource(R.string.progress_weight_value, formatKg(end.kgToDisplayUnit(unit)), label))
+            StatCell(label = stringResource(R.string.progress_recap_started), value = stringResource(R.string.progress_weight_value, formatOneDecimal(start.kgToDisplayUnit(unit)), label))
+            StatCell(label = stringResource(R.string.progress_recap_latest), value = stringResource(R.string.progress_weight_value, formatOneDecimal(end.kgToDisplayUnit(unit)), label))
             StatCell(
                 label = stringResource(R.string.progress_recap_change),
                 value = recap.weightArcKg?.let {
                     stringResource(
                         R.string.progress_weight_value,
-                        "${if (it > 0) "+" else ""}${formatKg(it.kgToDisplayUnit(unit))}",
+                        "${if (it > 0) "+" else ""}${formatOneDecimal(it.kgToDisplayUnit(unit))}",
                         label,
                     )
                 } ?: stringResource(R.string.progress_none),

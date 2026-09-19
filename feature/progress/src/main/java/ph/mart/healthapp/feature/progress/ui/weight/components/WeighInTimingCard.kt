@@ -15,6 +15,7 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.formatMinuteOfDay
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.weight.WeighInTimeSplit
@@ -45,7 +46,7 @@ internal fun WeighInTimingCard(split: WeighInTimeSplit?, unit: UnitSystem, modif
             text = stringResource(
                 if (split.deltaKg >= 0) R.string.progress_weight_timing_above else R.string.progress_weight_timing_below,
                 formatMinuteOfDay(split.lateFromMinute),
-                formatKg(delta),
+                formatOneDecimal(delta),
                 unit.weightUnitLabel(),
                 split.lateDays,
                 split.earlyDays,

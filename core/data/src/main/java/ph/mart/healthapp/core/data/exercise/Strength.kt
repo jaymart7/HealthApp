@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.exercise
 
+import java.util.Locale
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
@@ -184,9 +185,14 @@ const val RECENT_STRENGTH_WORKOUTS = 10
 // Moving it means handing every one of them a `Context` — none of these is a composable — for a
 // noun and a plural, and that is its own decision.
 
-/** Trims the pointless ".0" — 60 kg is "60", 62.5 kg is "62.5". */
+/** Trims the pointless ".0" — 60 kg is "60", 62.5 kg is "62.5".
+ *
+ * [Locale.US], not the default: this figure is typed back into `StrengthSetEditor`'s field, which
+ * filters and parses ASCII. `:core:data` is a leaf and cannot see `:core:designsystem`, so this is
+ * the one copy of `formatOneDecimal` that stays out here — the rule it holds is the same one, and
+ * `NumberFormat.kt` states it in full. */
 fun formatLoad(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
+    if (value == value.toInt().toDouble()) value.toInt().toString() else String.format(Locale.US, "%.1f", value)
 
 /** "60 kg × 8", or "Bodyweight × 20" when there was no load to name. */
 fun StrengthSet.loadLabel(unit: UnitSystem): String =

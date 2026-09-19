@@ -12,12 +12,13 @@ tracking (weight/measurements/progress photos) and nutrition tracking
 (Room). AI features require network (Firebase AI Logic / Gemini).
 
 The app is built and shipping — all nine build phases are done. **The shipped
-code is the source of truth.** The Claude Design prototype in
-`claude-design/project/` is still the reference
-for layout, copy, and interaction on anything *not yet built*, and
-`claude-design/project/COMPONENTS.md` is its component inventory — prototype-era,
-so its own "Deferred" list is stale. For what components actually exist, read
-`:core:designsystem`.
+code is the source of truth**, and nothing in the prototype is still unbuilt.
+`claude-design/project/` keeps the original Claude Design HTML prototype as a
+visual reference for the shapes the app grew out of, with `COMPONENTS.md` as its
+inventory — both prototype-era, so neither settles what the app does now. For
+components, read `:core:designsystem`; for behaviour, `FEATURES.md` and
+`DECISIONS.md`. The bundle's own README and HANDOFF.md were deleted once every
+item on them shipped.
 
 **`FEATURES.md` is the index of what already ships** — every screen, card, tab
 and surface, plus a "Deliberately absent" list of what was ruled out. Read it
@@ -188,6 +189,16 @@ behind them are `DECISIONS.md` → **Localization**.
 - **Weekday names come from `DateFormatSymbols`** (`:core:data/exercise/TrainingPlan.kt`), never
   a resource array. They index from Sunday and this app counts from Monday — `WeekdayNamesTest`
   is the guard.
+- **Every decimal a user sees is ASCII, and there is one formatter.**
+  `formatOneDecimal` / `formatDecimals` in `:core:designsystem/component/NumberFormat.kt`, both
+  pinned to `Locale.US`; `formatLoad` in `:core:data/exercise/Strength.kt` is the one copy that
+  stays out, because that module is a leaf and cannot see the other. The default locale is *not*
+  an option here: these figures are typed back into the fields that show them, and
+  `String.keepDigits` and `toDoubleOrNull()` both read `'.'` only — a locale-formatted `75,5`
+  froze the stepper's display and saved a typed `75,5` as `7552`. `keepDigits` closes the other
+  half by mapping a typed `','` to `'.'` and rejecting non-ASCII digits. `NumberFormatTest` and
+  `NumericStepperFieldTest` hold the round trip. Locale-formatted *grouping* (`"%,d"`) is
+  untouched — it has no round trip.
 - **Display names live where the enum's `name` is not the display name** — `MealType.labelRes()`
   in `:feature:food/ui/shared/`, `ActivityLevel.label()` in `:feature:profile`, the tab names in
   `:app`. `:core:data` owns a `strings.xml` for the six enums whose labels a feature renders.

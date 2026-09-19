@@ -25,6 +25,7 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -63,7 +64,7 @@ fun WeightMetricCard(
     val showArrow = trend.hasPrior && abs(trend.deltaKg) >= TREND_ARROW_DEADBAND_KG
     MetricCard(
         label = stringResource(R.string.home_weight_title),
-        value = formatWeight(trend.currentKg.kgToDisplayUnit(unit)),
+        value = formatOneDecimal(trend.currentKg.kgToDisplayUnit(unit)),
         unit = " " + unit.weightUnitLabel(),
         wide = wide,
         status = when (direction) {
@@ -78,7 +79,7 @@ fun WeightMetricCard(
             text = if (trend.hasPrior) {
                 stringResource(
                     R.string.home_weight_delta,
-                    formatWeight(abs(trend.deltaKg).kgToDisplayUnit(unit)),
+                    formatOneDecimal(abs(trend.deltaKg).kgToDisplayUnit(unit)),
                     unit.weightUnitLabel(),
                 )
             } else {
@@ -88,7 +89,7 @@ fun WeightMetricCard(
                 goalProjectionLine(
                     goalWeightLabel = stringResource(
                         R.string.home_weight_value,
-                        formatWeight(it.goalWeightKg.kgToDisplayUnit(unit)),
+                        formatOneDecimal(it.goalWeightKg.kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
                     ),
                     targetEpochDay = it.targetEpochDay,
@@ -112,10 +113,6 @@ fun WeightMetricCard(
         )
     }
 }
-
-/** Shared with `ProgressPhotoReminderCard`, which prints a weight under the same rule. */
-internal fun formatWeight(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
 @Composable

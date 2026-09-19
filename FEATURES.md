@@ -581,7 +581,9 @@ BottomNavBar · Buttons · CalendarPanel · DateFormat · DiscardConfirmDialog �
 FoodItemRow (with `MealThumbnail`) · FullScreenState · GoalProjectionLine ·
 HealthDisclosurePanel · HomeCardLayout · MacroBar · MacroFieldCell · MacroInputGroup ·
 MascotAvatar · MascotPalette (the 35 swatches) · MascotSpeechBubble · MicronutrientInputGroup ·
-NavRail (`BottomNavBar`'s ≥600dp sibling) · NumericStepperField · NutrientPanel ·
+NavRail (`BottomNavBar`'s ≥600dp sibling) · NumberFormat (`formatOneDecimal` /
+`formatDecimals`, the app's one decimal formatter, `Locale.US` so a field's own parser can read
+what it shows) · NumericStepperField · NutrientPanel ·
 PhotoBitmap (`rememberBitmapFromFile`, every stored photo in the app decodes through it) ·
 SegmentedToggle · SelectableCard · ShareImage (`ShareImageSheet`, `captureToPicture` +
 `sharePng` — every picture the app hands the chooser) · SheetDatePicker · StepProgressBar ·
@@ -595,6 +597,12 @@ Charts live in `:feature:progress/ui/shared/components/`: `DayBarChart` (zero-ba
 Every module owns a `res/values/strings.xml` and every user-facing string reads from it —
 about 1,100 across twelve modules. **No translation ships**; this is what makes one possible.
 `./gradlew checkUiLiterals` is the gate that keeps it that way.
+
+Numbers are the other half and go the other way: every decimal a user sees or types is ASCII,
+formatted through `NumberFormat.kt` in `Locale.US`, because the fields that show these figures
+parse them back with `toDoubleOrNull()`. `String.keepDigits` accepts a typed `','` and maps it
+onto `'.'`, so a comma-locale keyboard's decimal key works. Grouping separators stay
+locale-aware — nothing types those back in.
 
 ---
 

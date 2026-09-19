@@ -143,7 +143,7 @@ fun RulerPickerField(
     val hint = stringResource(R.string.ds_ruler_hint)
     val increase = stringResource(R.string.ds_increase, label)
     val decrease = stringResource(R.string.ds_decrease, label)
-    val readout = if (value == null) hint else "${format(value, decimals)} $unit"
+    val readout = if (value == null) hint else "${formatDecimals(value, decimals)} $unit"
 
     Column(
         modifier = modifier
@@ -195,8 +195,8 @@ fun RulerPickerField(
             FocusedFooter(
                 rangeText = stringResource(
                     R.string.ds_ruler_range,
-                    format(range.start, decimals),
-                    format(range.endInclusive, decimals),
+                    formatDecimals(range.start, decimals),
+                    formatDecimals(range.endInclusive, decimals),
                     unit,
                 ),
                 onDone = { focused = false },
@@ -277,7 +277,7 @@ private fun ValueRow(
         )
         val valueStyle = MaterialTheme.typography.headlineSmall.tabularNums
         if (focused) {
-            var text by remember { mutableStateOf(value?.let { format(it, decimals) }.orEmpty()) }
+            var text by remember { mutableStateOf(value?.let { formatDecimals(it, decimals) }.orEmpty()) }
             BasicTextField(
                 value = text,
                 onValueChange = { raw ->
@@ -299,7 +299,7 @@ private fun ValueRow(
             )
         } else {
             Text(
-                text = value?.let { format(it, decimals) } ?: EM_DASH,
+                text = value?.let { formatDecimals(it, decimals) } ?: EM_DASH,
                 style = valueStyle,
                 color = if (value == null) {
                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -402,9 +402,6 @@ private fun DrawScope.drawTick(x: Float, spec: Size, color: Color) {
         cornerRadius = CornerRadius(spec.width.dp.toPx() / 2f),
     )
 }
-
-internal fun format(value: Double, decimals: Int): String =
-    if (decimals == 0) value.roundToInt().toString() else "%.${decimals}f".format(value)
 
 /** The default an unset field takes on first contact. Snapped, so the very first value a user sees
  * is one the scale can return to. */

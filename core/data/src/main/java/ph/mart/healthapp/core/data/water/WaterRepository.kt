@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.water
 
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.ChartRange
@@ -23,7 +24,7 @@ fun waterVolumeLabel(glasses: Int, unit: UnitSystem): String = when (unit) {
     UnitSystem.Imperial -> "${glasses * GLASS_FL_OZ} fl oz"
     UnitSystem.Metric -> {
         val ml = glasses * GLASS_ML
-        if (ml < 1000) "$ml ml" else "%.1f L".format(ml / 1000.0)
+        if (ml < 1000) "$ml ml" else String.format(Locale.US, "%.1f L", ml / 1000.0)
     }
 }
 

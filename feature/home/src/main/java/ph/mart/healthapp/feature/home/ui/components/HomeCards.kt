@@ -47,6 +47,7 @@ import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HomeCard
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.component.WeekBudgetCard
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.component.homeCardLayout
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.home.R
@@ -424,7 +425,7 @@ private fun stripCell(card: HomeCard, uiState: HomeUiState, budget: Int, unit: U
 
         HomeCard.Weight -> uiState.weightEntries.lastOrNull()?.let {
             StripCell(
-                value = "%.1f %s".format(it.weightKg.kgToDisplayUnit(unit), unit.weightUnitLabel()),
+                value = "${formatDecimals(it.weightKg.kgToDisplayUnit(unit), decimals = 1)} ${unit.weightUnitLabel()}",
                 label = stringResource(R.string.home_strip_weight),
             )
         }

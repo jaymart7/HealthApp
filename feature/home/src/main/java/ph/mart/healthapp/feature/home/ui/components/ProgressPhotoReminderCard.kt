@@ -21,6 +21,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.PhotoWeightArc
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.home.R
@@ -74,7 +75,7 @@ fun ProgressPhotoReminderCard(
                     pluralStringResource(
                         R.plurals.home_photo_arc,
                         it.days.toInt(),
-                        formatWeight(abs(it.deltaKg).kgToDisplayUnit(unit)),
+                        formatOneDecimal(abs(it.deltaKg).kgToDisplayUnit(unit)),
                         unit.weightUnitLabel(),
                         it.days.toInt(),
                     )

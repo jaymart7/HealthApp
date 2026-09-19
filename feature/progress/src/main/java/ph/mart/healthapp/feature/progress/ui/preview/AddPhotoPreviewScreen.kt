@@ -39,6 +39,7 @@ import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -167,7 +168,7 @@ private fun WeightField(form: AddPhotoPreviewForm, unit: UnitSystem, onFormChang
     val step = 0.5
     NumericStepperField(
         label = stringResource(R.string.progress_photo_weight),
-        value = form.weightKg?.let { formatWeight(it.kgToDisplayUnit(unit)) } ?: stringResource(R.string.progress_none),
+        value = form.weightKg?.let { formatOneDecimal(it.kgToDisplayUnit(unit)) } ?: stringResource(R.string.progress_none),
         unitSuffix = unit.weightUnitLabel(),
         onIncrement = { onFormChange(form.copy(weightKg = ((form.weightKg ?: 0.0) + step.displayUnitToKg(unit)))) },
         onDecrement = { onFormChange(form.copy(weightKg = (((form.weightKg ?: step) - step.displayUnitToKg(unit)).coerceAtLeast(20.0)))) },
@@ -177,9 +178,6 @@ private fun WeightField(form: AddPhotoPreviewForm, unit: UnitSystem, onFormChang
         modifier = modifier,
     )
 }
-
-private fun formatWeight(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
 @Composable

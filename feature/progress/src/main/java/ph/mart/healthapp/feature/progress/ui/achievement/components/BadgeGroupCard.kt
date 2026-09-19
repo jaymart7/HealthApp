@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.BadgeDot
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
@@ -92,7 +93,7 @@ internal fun tierLabel(family: BadgeFamily, tier: Int, unit: UnitSystem): String
 
 /** The bare figure, no unit suffix — what a caption puts its own noun after. */
 internal fun tierNumber(family: BadgeFamily, tier: Int, unit: UnitSystem): String =
-    if (family == BadgeFamily.WeightMoved) "%.0f".format(tier.toDouble().kgToDisplayUnit(unit)) else tier.toString()
+    if (family == BadgeFamily.WeightMoved) formatDecimals(tier.toDouble().kgToDisplayUnit(unit), decimals = 0) else tier.toString()
 
 // This helper and the three below it stay in Kotlin: `captionFor` has a JVM test over its exact
 // wording and the others feed it, which is `SubjectSummary.summarize()`'s reading for the same

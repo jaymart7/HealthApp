@@ -92,9 +92,10 @@ Explicitly undecided:
 ## Evidence on Hand
 
 - **The shipped app is the evidence.** All nine build phases are complete.
-- `claude-design/project/` holds the original Claude Design HTML prototype — the reference
-  for layout, copy, and interaction on anything not yet built. Its `COMPONENTS.md` inventory
-  is prototype-era; `:core:designsystem` is the truth for what exists.
+- `claude-design/project/` holds the original Claude Design HTML prototype, kept as a visual
+  record of where the layouts came from. Nothing on it is still unbuilt, and its
+  `COMPONENTS.md` inventory is prototype-era; `FEATURES.md` and `:core:designsystem` are the
+  truth for what exists.
 - **No users, reviews, testimonials, download counts, benchmarks, or press exist.** The app
   has not been released. Future work must not fabricate any of these, and must not imply an
   existing user base in copy or store-facing material.

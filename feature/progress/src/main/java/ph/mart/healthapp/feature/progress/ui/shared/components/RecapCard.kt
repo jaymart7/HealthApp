@@ -44,6 +44,8 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
 import ph.mart.healthapp.core.designsystem.component.AppCard
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.component.formatWeekday
 import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -54,7 +56,6 @@ import ph.mart.healthapp.feature.progress.ui.shared.BestDay
 import ph.mart.healthapp.feature.progress.ui.shared.Recap
 import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
-import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
 /**
  * The rolling window at a glance — it spans nutrition, weight and consistency, so it belongs to no
@@ -123,7 +124,7 @@ fun RecapCard(
                 {
                     GridCell(
                         label = stringResource(R.string.progress_recap_mood),
-                        value = averages.mood?.let { "%.1f".format(it) } ?: "—",
+                        value = averages.mood?.let { formatDecimals(it, decimals = 1) } ?: "—",
                         secondary = stringResource(R.string.progress_recap_mood_of, MOOD_SCALE.last),
                     )
                 }
@@ -173,7 +174,7 @@ fun RecapCard(
             projection?.let {
                 Note(
                     goalProjectionLine(
-                        goalWeightLabel = stringResource(R.string.progress_weight_value, formatKg(it.goalWeightKg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
+                        goalWeightLabel = stringResource(R.string.progress_weight_value, formatOneDecimal(it.goalWeightKg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
                         targetEpochDay = it.targetEpochDay,
                         reached = it.reached,
                         windowDays = PROJECTION_WINDOW_DAYS,
@@ -278,7 +279,7 @@ private fun WeightCell(trend: WeightTrendDisplay?, goal: Goal?, unit: UnitSystem
     val direction = goalRelativeTrend(goal, delta)
     GridCell(
         label = stringResource(R.string.progress_recap_weight),
-        value = stringResource(R.string.progress_weight_value, formatKg(abs(delta).kgToDisplayUnit(unit)), unit.weightUnitLabel()),
+        value = stringResource(R.string.progress_weight_value, formatOneDecimal(abs(delta).kgToDisplayUnit(unit)), unit.weightUnitLabel()),
         valueColor = if (steady) {
             neutral
         } else {

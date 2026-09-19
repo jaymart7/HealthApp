@@ -40,6 +40,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -54,7 +55,6 @@ import ph.mart.healthapp.feature.progress.ui.progress.SubjectGroup
 import ph.mart.healthapp.feature.progress.ui.progress.badgeTally
 import ph.mart.healthapp.feature.progress.ui.progress.subjectsIn
 import ph.mart.healthapp.feature.progress.ui.progress.summarizeAll
-import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
 /**
  * "What's moving, and what do I have data for" — answered without tapping anything.
@@ -156,7 +156,7 @@ internal fun ProgressOverview(
                 text = goalProjectionLine(
                     goalWeightLabel = stringResource(
                         R.string.progress_weight_value,
-                        formatKg(it.goalWeightKg.kgToDisplayUnit(uiState.preferredUnit)),
+                        formatOneDecimal(it.goalWeightKg.kgToDisplayUnit(uiState.preferredUnit)),
                         uiState.preferredUnit.weightUnitLabel(),
                     ),
                     targetEpochDay = it.targetEpochDay,
@@ -213,8 +213,8 @@ private fun rateLine(projection: GoalProjection, unit: UnitSystem): String {
     return when {
         projection.reached -> stringResource(R.string.progress_trend_holding)
         perWeek == 0.0 -> stringResource(R.string.progress_trend_flat)
-        projection.kgPerWeek < 0 -> stringResource(R.string.progress_trend_down, formatKg(perWeek), unit.weightUnitLabel())
-        else -> stringResource(R.string.progress_trend_up, formatKg(perWeek), unit.weightUnitLabel())
+        projection.kgPerWeek < 0 -> stringResource(R.string.progress_trend_down, formatOneDecimal(perWeek), unit.weightUnitLabel())
+        else -> stringResource(R.string.progress_trend_up, formatOneDecimal(perWeek), unit.weightUnitLabel())
     }
 }
 

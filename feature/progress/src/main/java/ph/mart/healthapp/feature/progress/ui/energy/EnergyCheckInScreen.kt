@@ -32,11 +32,11 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.shared.components.Note
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
-import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 
 /**
  * What the formula got wrong, and the one tap that fixes it.
@@ -173,7 +173,7 @@ private fun EvidenceCard(checkIn: EnergyCheckIn, unit: UnitSystem) {
 
 @Composable
 private fun trendLabel(kgPerWeek: Double, unit: UnitSystem): String {
-    val value = formatKg(kgPerWeek.kgToDisplayUnit(unit))
+    val value = formatOneDecimal(kgPerWeek.kgToDisplayUnit(unit))
     return stringResource(R.string.progress_energy_per_week, if (kgPerWeek > 0) "+" else "", value, unit.weightUnitLabel())
 }
 

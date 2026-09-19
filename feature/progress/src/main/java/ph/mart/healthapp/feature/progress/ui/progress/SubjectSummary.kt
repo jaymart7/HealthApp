@@ -37,9 +37,9 @@ import ph.mart.healthapp.core.data.streak.streakStats
 import ph.mart.healthapp.core.data.supplement.adherenceByDay
 import ph.mart.healthapp.core.data.supplement.averageAdherence
 import ph.mart.healthapp.core.data.water.waterAverages
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.feature.progress.ui.achievement.badgeGroups
-import ph.mart.healthapp.feature.progress.ui.measurement.components.formatMeasurement
-import ph.mart.healthapp.feature.progress.ui.weight.components.formatKg
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -108,13 +108,13 @@ fun summarize(
             val trend = uiState.weightEntries.trendVsSevenDaysAgo(fallbackKg = 0.0)
             SubjectSummary(
                 subject = subject,
-                value = formatKg(entries.last().weightKg.kgToDisplayUnit(unit)),
+                value = formatOneDecimal(entries.last().weightKg.kgToDisplayUnit(unit)),
                 unit = unit.weightUnitLabel(),
                 preview = SubjectPreview.Line(
                     entries.takeLast(PREVIEW_POINTS).map { it.weightKg.kgToDisplayUnit(unit) },
                 ),
                 footnote = if (trend.hasPrior) {
-                    "${formatKg(abs(trend.deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
+                    "${formatOneDecimal(abs(trend.deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
                         "this week · ${trendWord(uiState.goal, trend.deltaKg)}"
                 } else {
                     "One reading so far"
@@ -142,7 +142,7 @@ fun summarize(
                     photos.sortedByDescending { it.dateEpochDay }.take(3).map { it.filePath },
                 ),
                 footnote = arc?.let { (deltaKg, days) ->
-                    "${formatKg(abs(deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
+                    "${formatOneDecimal(abs(deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
                         "over $days ${if (days == 1L) "day" else "days"} · last one $ago"
                 } ?: "Last one $ago",
                 // Direction is the arrow and the judgement is the colour — the split `TrendArrow`
@@ -164,7 +164,7 @@ fun summarize(
             val delta = history.delta()
             SubjectSummary(
                 subject = subject,
-                value = formatMeasurement(lead.key.toDisplay(history.last().value, unit)),
+                value = formatOneDecimal(lead.key.toDisplay(history.last().value, unit)),
                 // Body fat is a percentage, so it carries its own words rather than the unit
                 // toggle's. Two literals in a file the JVM test already pins, which is why this
                 // file is on the literal gate's exception list.
@@ -174,7 +174,7 @@ fun summarize(
                 ),
                 footnote = buildString {
                     if (delta != null) {
-                        append("${formatMeasurement(lead.key.toDisplay(abs(delta), unit))} ${lead.key.unitLabel(unit)} · ")
+                        append("${formatOneDecimal(lead.key.toDisplay(abs(delta), unit))} ${lead.key.unitLabel(unit)} · ")
                     }
                     append("${tracked.size} ${if (tracked.size == 1) "part" else "parts"}")
                 },
@@ -214,7 +214,7 @@ fun summarize(
             val average = averages.averageGlasses ?: return SubjectSummary(subject)
             SubjectSummary(
                 subject = subject,
-                value = "%.1f".format(average),
+                value = formatDecimals(average, decimals = 1),
                 unit = "glasses avg",
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.glasses }),
                 footnote = "${averages.daysHitGoal} of ${averages.daysLogged} days hit goal",
@@ -299,7 +299,7 @@ fun summarize(
             val mood = averages.mood ?: return SubjectSummary(subject)
             SubjectSummary(
                 subject = subject,
-                value = "%.1f".format(mood),
+                value = formatDecimals(mood, decimals = 1),
                 unit = "/ ${MOOD_SCALE.last}",
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.mood }),
                 footnote = "${averages.daysLogged} ${if (averages.daysLogged == 1) "day" else "days"} logged",

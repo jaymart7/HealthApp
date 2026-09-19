@@ -2010,6 +2010,20 @@ rather than needing a counter patched.
 
 ### Reminders & notifications
 
+- **`shouldNotify` may throw, and `doWork` catches it — the predicate was extracted to stop an
+  early return killing the chain, and a throw is the same death by another door.** The schedule
+  here is a chain of one-shots, each run booking the next as its last act, which is what lets a
+  reminder survive a DST change and a flight (see below). That design has exactly one failure mode:
+  a run that ends without booking the next one, and the reminder is gone until `reconcile()` fires
+  on some later app start. Pulling every quiet-day check out into `shouldNotify` closed the
+  `return` route. It did not close the throwing route — the predicate makes seven repository reads,
+  and an exception out of any of them leaves `doWork` as `Result.failure()`, dropping the unique
+  work just as surely. `runCatching { shouldNotify(reminder) }.getOrDefault(false)` is the whole
+  fix: a day this worker cannot read is a day it says nothing about, and tomorrow is still booked.
+  Staying quiet rather than posting is the right default — the alternative is a notification fired
+  on no information, about a meal that may already be logged. There is no test: reaching it needs a
+  throwing repository, and this project has no MockK and no Robolectric on purpose.
+
 - **Only the water reminder gets an action button, and answering it cancels it.** `addGlass()` is a
   single unambiguous write already shared with the widget and the watch, so a fourth surface caps
   at the same goal for free; "Log breakfast" has no single write — it needs the sheet, and a button
@@ -4580,6 +4594,38 @@ Connect.
 ### Localization
 
 The rules that bind are `CLAUDE.md` → **Localization**. These are the arguments behind them.
+
+- **A decimal a user can type is ASCII, and the formatter is pinned to `Locale.US` to make it
+  so.** This reads backwards — the locale-aware `"%.1f".format(v)` is the one that looks correct —
+  so here is why it is not. Three components have to agree on what a decimal separator is: the
+  formatter that seeds a field, `String.keepDigits` that filters what is typed into it, and
+  `toDoubleOrNull()` that reads it back. Two of those three are ASCII-only and cannot be otherwise
+  without a parser at every call site. The third was the default locale, which writes `75,5` in
+  German, French, Spanish, Portuguese, Indonesian and Russian. The result was not a cosmetic one:
+  `StepperValueField` re-seeds only when `text.asNumber() != value.asNumber()`, both sides of that
+  parsed `"75,5"` to `0.0`, so **tapping +/- moved the model and never the display** — and the next
+  keystroke ran `keepDigits("75,52")`, which stripped the comma and wrote 7552 kg, clamped to the
+  range maximum on save. Onboarding's four `RulerPickerField`s discarded a typed height outright,
+  `toDoubleOrNull()` answering null into a `?.let`. Locale-correct output that the app's own input
+  path cannot read is not localization, it is a broken field. The app ships in one language, so
+  the honest resolution is one alphabet: `NumberFormat.kt` formats in `Locale.US` and `keepDigits`
+  maps a typed `','` onto `'.'`, so a comma keyboard still works and what is shown is what is
+  parsed. `NumberFormatTest` sets the default locale to three comma locales and asserts it.
+  Grouping separators (`"%,d"` in `formatSteps`, `volumeLabel`) stay locale-aware: nothing types
+  those back in. *ponytail: if a translation ever ships, this flips to a `NumberFormat` parser at
+  the three input sites rather than back to a locale-aware formatter — the round trip is the
+  constraint, not the separator.*
+- **Nine copies of that formatter became one, and that is why the fix was one line.** The same
+  `if (value == value.toInt().toDouble()) … else "%.1f".format(value)` sat in `:core:data`,
+  `:feature:coach`, `:feature:home`, `:feature:profile` and five places in `:feature:progress`,
+  under seven different names (`formatWeight`, `formatKg`, `formatBodyValue`, `formatMeasurement`,
+  `formatValue`, `formatLoad`, `formatBmi`). Each was locally reasonable — none of them is copy, so
+  none of them was ever a localization question — and collectively they were nine places a locale
+  rule had to be remembered. `formatOneDecimal` lives in `:core:designsystem` beside `DateFormat.kt`
+  for the reason that file gives: a pure function every feature draws, in the module every feature
+  already depends on. `formatLoad` is the one that stayed behind, because `:core:data` is a leaf
+  that cannot see `:core:designsystem`; it carries the `Locale.US` rule in a comment at its own
+  definition rather than a second implementation of the policy.
 
 - **`./gradlew checkUiLiterals` is the gate, and stock lint is not.** `HardcodedText` scans XML
   layout resources; this app has none, so it would pass clean on a module with three hundred

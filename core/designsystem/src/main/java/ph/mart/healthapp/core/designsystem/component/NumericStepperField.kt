@@ -167,12 +167,21 @@ private fun String.asNumber(): Double = if (isBlank()) 0.0 else toDoubleOrNull()
 
 /** Digits only (plus one decimal point when [decimal]), capped, with the placeholder zero dropped
  * as soon as a real digit lands — a field showing "0" that a user types 320 into should read 320,
- * not 0320. */
+ * not 0320.
+ *
+ * **One alphabet, and it is ASCII.** A `KeyboardType.Decimal` keyboard in a comma-locale emits
+ * `','`, which used to be filtered away — the decimal key simply did nothing, in every stepper in
+ * the app. And `Char.isDigit()` is true for Arabic-Indic and Devanagari digits that
+ * `toDoubleOrNull()` then rejects, so they read as zero. Both are normalised here because this is
+ * the single funnel every typed character in every stepper passes through; the other end of the
+ * round trip is `formatOneDecimal` in `NumberFormat.kt`, which is why it formats in [java.util.Locale.US]. */
 internal fun String.keepDigits(decimal: Boolean): String {
-    val allowed = filter { it.isDigit() || (decimal && it == '.') }
+    val allowed = map { if (it == ',') '.' else it }
+        .filter { it in '0'..'9' || (decimal && it == '.') }
+        .joinToString("")
     if (!decimal || !allowed.contains('.')) return allowed.take(MAX_VALUE_DIGITS).trimLeadingZeros()
     val whole = allowed.substringBefore('.').take(MAX_VALUE_DIGITS).trimLeadingZeros()
-    val fraction = allowed.substringAfter('.').filter { it.isDigit() }.take(2)
+    val fraction = allowed.substringAfter('.').filter { it in '0'..'9' }.take(2)
     return "$whole.$fraction"
 }
 

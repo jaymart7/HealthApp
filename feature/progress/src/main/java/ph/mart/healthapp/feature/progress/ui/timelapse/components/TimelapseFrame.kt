@@ -32,6 +32,7 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.rememberBitmapFromFile
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -99,7 +100,7 @@ internal fun TimelapseFrame(
         PhotoOverlayLabel(text = date, modifier = Modifier.align(Alignment.BottomStart).padding(12.dp))
         photo.weightKg?.let { kg ->
             PhotoOverlayLabel(
-                text = stringResource(R.string.progress_weight_value, "%.1f".format(kg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
+                text = stringResource(R.string.progress_weight_value, formatDecimals(kg.kgToDisplayUnit(unit), decimals = 1), unit.weightUnitLabel()),
                 modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp),
                 tabular = true,
             )

@@ -32,6 +32,7 @@ import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
 import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.shared.components.Note
@@ -114,7 +115,7 @@ private fun LogWeightContent(
                     }
                     NumericStepperField(
                         label = stringResource(R.string.progress_weight_label),
-                        value = formatWeight(state.form.weightKg.kgToDisplayUnit(unit)),
+                        value = formatOneDecimal(state.form.weightKg.kgToDisplayUnit(unit)),
                         unitSuffix = unit.weightUnitLabel(),
                         onIncrement = { state.form = state.form.copy(weightKg = state.form.weightKg + step) },
                         onDecrement = { state.form = state.form.copy(weightKg = (state.form.weightKg - step).coerceAtLeast(20.0)) },
@@ -175,9 +176,6 @@ private fun LogWeightContent(
         )
     }
 }
-
-private fun formatWeight(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
 @Composable

@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.coach
 import com.google.firebase.ai.type.FunctionDeclaration
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.Tool
+import java.util.Locale
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -930,7 +931,7 @@ private fun weightClauses(weights: List<WeightEntry>, from: Long, to: Long): Map
         if (delta == null) {
             ", weighed in (first one, nothing to compare against)"
         } else {
-            ", weighed in (%+.1f kg since the last)".format(delta)
+            String.format(Locale.US, ", weighed in (%+.1f kg since the last)", delta)
         }
     }
 
@@ -956,7 +957,7 @@ private fun measurementClauses(
             } else {
                 // The number is formatted on its own and interpolated: `unit` is "%" for a body
                 // fat, and a "%" inside the format string is a conversion specifier, not a sign.
-                ", measured ${part.promptName()} (${"%+.1f".format(delta)} $unit since the last)"
+                ", measured ${part.promptName()} (${String.format(Locale.US, "%+.1f", delta)} $unit since the last)"
             }
         },
     )

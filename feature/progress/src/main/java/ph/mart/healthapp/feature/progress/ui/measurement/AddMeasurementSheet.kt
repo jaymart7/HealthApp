@@ -29,6 +29,7 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SheetDatePicker
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 
@@ -141,7 +142,7 @@ private fun AddMeasurementContent(
                     }
                     NumericStepperField(
                         label = stringResource(R.string.progress_measurement_value_label),
-                        value = formatValue(kind.toDisplay(state.form.value, unit)),
+                        value = formatOneDecimal(kind.toDisplay(state.form.value, unit)),
                         unitSuffix = kind.unitLabel(unit),
                         onIncrement = { state.form = state.form.copy(value = (state.form.value + step).coerceIn(kind.range())) },
                         onDecrement = { state.form = state.form.copy(value = (state.form.value - step).coerceIn(kind.range())) },
@@ -164,9 +165,6 @@ private fun AddMeasurementContent(
         }
     }
 }
-
-private fun formatValue(value: Double): String =
-    if (value == value.toInt().toDouble()) value.toInt().toString() else "%.1f".format(value)
 
 @PreviewLightDark
 @Composable

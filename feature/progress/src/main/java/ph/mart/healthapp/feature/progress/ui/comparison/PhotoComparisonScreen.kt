@@ -30,6 +30,7 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.formatDayMonth
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -156,7 +157,7 @@ private fun ComparisonHeadline(
         val sign = if (display > 0) "+" else if (display < 0) MINUS else ""
         headline = stringResource(
             R.string.progress_weight_value,
-            "$sign${"%.1f".format(abs(display))}",
+            "$sign${formatDecimals(abs(display), decimals = 1)}",
             unit.weightUnitLabel(),
         )
         headlineColor = when (goalRelativeTrend(goal, delta)) {
