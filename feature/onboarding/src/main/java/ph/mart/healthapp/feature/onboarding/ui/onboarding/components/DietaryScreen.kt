@@ -2,7 +2,6 @@ package ph.mart.healthapp.feature.onboarding.ui.onboarding.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -36,11 +35,10 @@ import ph.mart.healthapp.feature.onboarding.ui.shared.components.cardsFit
  * deselection impossible, and "no preference" is a real answer that needs somewhere to go.
  *
  * Everything else about the step says *optional* by weight rather than by label: the cards are
- * outlined instead of filled, the button is tonal until something is chosen, and the stack is
- * bottom-anchored so the air lands in one band under the headline and the answers sit in thumb
- * reach. Three steps of filled cards and a filled button have already taught the reader what
- * required looks like. Selected still fills like every other step — optional applies to the
- * question, not to the answer.
+ * outlined instead of filled and the button is tonal until something is chosen. Three steps of
+ * filled cards and a filled button have already taught the reader what required looks like.
+ * Selected still fills like every other step — optional applies to the question, not to the
+ * answer.
  */
 @Composable
 internal fun DietaryScreen(
@@ -53,8 +51,8 @@ internal fun DietaryScreen(
 ) {
     val next = stringResource(R.string.onboarding_next)
     // Fixed height, not `weight(1f)` like steps 1 and 3: a one-line label in a 130dp card is a
-    // hole. The air becomes one band under the headline instead — unless there isn't any, in
-    // which case the step scrolls like the others.
+    // hole. The slack falls below the last card instead of opening under the headline; where
+    // there is none, the step scrolls like the others.
     val fits = cardsFit(cards = 4)
     OnboardingStep(
         step = 4,
@@ -75,7 +73,6 @@ internal fun DietaryScreen(
             }
         },
     ) {
-        if (fits) Spacer(modifier = Modifier.weight(1f))
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth().semantics {

@@ -4201,7 +4201,9 @@ form, three cards against the top of a 915dp screen and twenty-six taps to set a
   the missing card is the last one. `cardsFit()` asks first and falls back to a scroll with
   fixed-height cards; a large font scale takes the same fallback.
 - **Step 4 is quieter by weight, not by label.** Outlined cards, a tonal Next until something is
-  chosen, and the stack bottom-anchored under one band of air. Three steps of filled cards have
+  chosen. The cards sit straight under the headline like every other step — the stack was
+  bottom-anchored under one band of air, which read as a missing element rather than as breathing
+  room, so the slack now falls below the last card. Three steps of filled cards have
   already taught the reader what required looks like. The selected state is the same
   `primaryContainer` + 2dp border as everywhere else: *optional* applies to the question, not to
   the answer. `TonalButton` exists for this one place.
