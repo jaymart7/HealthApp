@@ -14,8 +14,8 @@ android {
         applicationId = "ph.mart.healthapp"
         minSdk = 24
         targetSdk = 37
-        versionCode = 12
-        versionName = "1.12"
+        versionCode = 14
+        versionName = "1.14"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
