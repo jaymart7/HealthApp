@@ -44,6 +44,8 @@ val literalExceptions = listOf(
     "BadgeGroupCard.kt",
     "HomeData.kt",
     "DiaryDateHeader.kt",
+    // `catchUpDateLabel`'s "Today"/"Yesterday", for `DiaryDateHeader.kt`'s reason one module over.
+    "SupplementCatchUpCard.kt",
     "FoodHistoryData.kt",
     "GoalProjectionLine.kt",
     "MascotAvatar.kt",

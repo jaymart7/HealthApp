@@ -1,12 +1,14 @@
 package ph.mart.healthapp.core.data.supplement
 
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.isEmpty
 import ph.mart.healthapp.core.data.food.plus
 import ph.mart.healthapp.core.data.food.times
 import ph.mart.healthapp.core.data.hasWeekday
 import ph.mart.healthapp.core.data.progress.ChartRange
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.weekdayIndex
 import ph.mart.healthapp.core.data.weekdayLabel
 
@@ -84,9 +86,28 @@ data class SupplementDay(
     val dueTimes: Int,
 )
 
-/** A supplement paired with today's count — what the Home card renders. */
+/**
+ * A supplement paired with today's count — what the Home card renders.
+ *
+ * Prices completion off [Supplement.timesPerDay], which is only ever right for *today*. For any
+ * other day that is [SupplementOnDay], which carries the day's own snapshotted figure.
+ */
 data class SupplementToday(val supplement: Supplement, val taken: Int) {
     val isComplete: Boolean get() = taken >= supplement.timesPerDay
+}
+
+/**
+ * A supplement paired with one *dated* day's count and that day's own ceiling — what the Progress
+ * page's catch-up checklist renders.
+ *
+ * Beside [SupplementToday] rather than replacing it. The two differ in one thing and it is the
+ * thing that matters: this one prices completion off [dueTimes], the figure
+ * [SupplementDay.dueTimes] snapshotted on the day, so a Tuesday that read "2 of 2" still reads
+ * that after the supplement drops to once daily. Widening [SupplementToday] to carry the field
+ * would touch Home, the widget, the coach and the reminder for a figure only this page reads.
+ */
+data class SupplementOnDay(val supplement: Supplement, val taken: Int, val dueTimes: Int) {
+    val isComplete: Boolean get() = taken >= dueTimes
 }
 
 /** Once a day is the common case; past six a checklist stops being one. */
@@ -102,6 +123,15 @@ fun Supplement.isDueOn(epochDay: Long): Boolean = days.hasWeekday(weekdayIndex(e
  * day" has better words for it than seven abbreviations in a row. */
 fun Supplement.dayLabel(): String = if (days == EVERY_DAY) "" else days.weekdayLabel()
 
+/**
+ * How far back the Progress page's catch-up checklist will step, in days.
+ *
+ * A month, the window the coach's backdated drafts already use. Not unbounded, for the reason the
+ * diary's calendar is: a stepper is for the day you forgot, and everything beyond that is history
+ * the chart is already telling you about.
+ */
+const val SUPPLEMENT_BACKFILL_DAYS = 30
+
 /** Doses ride a text field, so this is the only bound on one. */
 const val SUPPLEMENT_NAME_MAX = 40
 const val SUPPLEMENT_DOSE_MAX = 24
@@ -114,6 +144,44 @@ val List<SupplementToday>.completedCount: Int get() = count { it.isComplete }
  * covers both shapes — a once-daily row behaves as a checkbox, a twice-daily one steps 0-1-2-0.
  */
 fun nextTaken(taken: Int, timesPerDay: Int): Int = if (taken >= timesPerDay) 0 else taken + 1
+
+/**
+ * What the checklist for [date] holds — the rows the day's write would seed for that
+ * day, joined to whatever has already been ticked on it.
+ *
+ * A row that exists wins outright, **both its count and its [SupplementDay.dueTimes]**: the
+ * snapshot is the whole reason a past day can still say "2 of 2" after the supplement dropped to
+ * once daily, and re-pricing it off today's [Supplement.timesPerDay] here would undo it at the
+ * one place the user is looking straight at it.
+ *
+ * Two things keep a supplement off a past day, and neither applies once it has a row there — a
+ * row is evidence it was due:
+ * - **Not due on that weekday.** [Supplement.days] is read *live* rather than snapshotted, which
+ *   is the call the schedule field was added under: a day something isn't due on gets no row, and
+ *   an absent row is already what the chart draws as a gap.
+ * - **Created after that day.** Backdating must not invent a week before the user owned the
+ *   bottle, which is the one thing the seeding path could not do when today was the only day it
+ *   could write.
+ *
+ * [supplements] arrives `createdAt ASC, id ASC` and the result keeps that order, so the checklist
+ * reads in the order the user wrote the list in.
+ */
+fun supplementsOn(
+    date: Long,
+    supplements: List<Supplement>,
+    days: List<SupplementDay>,
+): List<SupplementOnDay> {
+    val onDate = days.filter { it.dateEpochDay == date }.associateBy { it.supplementId }
+    return supplements.mapNotNull { supplement ->
+        val row = onDate[supplement.id]
+        when {
+            row != null -> SupplementOnDay(supplement, taken = row.taken, dueTimes = row.dueTimes)
+            !supplement.isDueOn(date) -> null
+            epochDayOf(supplement.createdAt) > date -> null
+            else -> SupplementOnDay(supplement, taken = 0, dueTimes = supplement.timesPerDay)
+        }
+    }
+}
 
 /**
  * One fraction per day that has rows, keyed by day and oldest first. Days with no rows are absent
@@ -210,9 +278,19 @@ interface SupplementRepository {
     /** Soft delete. Past days keep pointing at the row so the chart can still name it. */
     suspend fun deleteSupplement(id: Long)
 
-    /** [taken] is clamped to the supplement's own [Supplement.timesPerDay]. Writes a zero row for
-     * every other supplement *due today* as well — see the impl. */
-    suspend fun setTakenToday(supplementId: Long, taken: Int)
+    /**
+     * [taken] is clamped to that day's own ceiling — the row's snapshotted [SupplementDay.dueTimes]
+     * where one exists, the supplement's current [Supplement.timesPerDay] where it does not.
+     * Writes a zero row for every other supplement *due on [dateEpochDay]* as well — see the impl.
+     *
+     * A future date is refused: a row ahead of today would draw a bar on the chart for a day
+     * nobody has lived.
+     */
+    suspend fun setTakenOn(dateEpochDay: Long, supplementId: Long, taken: Int)
+
+    /** [setTakenOn] against today — what Home's card, the coach and the reminder all mean. */
+    suspend fun setTakenToday(supplementId: Long, taken: Int) =
+        setTakenOn(todayEpochDay(), supplementId, taken)
 
     /** Every supplement including soft-deleted ones — for data export, which must keep the ids a
      * [SupplementDay] points at. */

@@ -58,11 +58,23 @@ internal class SupplementRepositoryImpl(private val dao: SupplementDao) : Supple
         dao.softDelete(id)
     }
 
-    /** Clamped to the supplement's own target rather than the caller's: the card and a stale
-     * flow emission can disagree about how many doses a row still has. */
-    override suspend fun setTakenToday(supplementId: Long, taken: Int) {
-        val times = dao.active().firstOrNull { it.id == supplementId }?.timesPerDay ?: return
-        dao.setTakenOn(todayEpochDay(), supplementId, taken.coerceIn(0, times))
+    /**
+     * Clamped to the day's own target rather than the caller's: the card and a stale flow emission
+     * can disagree about how many doses a row still has.
+     *
+     * The ceiling is the row's snapshotted `dueTimes` where the day already has one, and only
+     * falls back to the supplement's current `timesPerDay` for a day being written for the first
+     * time. Clamping a correction to a past "1 of 2" against a target since dropped to once daily
+     * would silently discard the second dose the user is trying to record.
+     */
+    override suspend fun setTakenOn(dateEpochDay: Long, supplementId: Long, taken: Int) {
+        // The stepper cannot reach a future day; this is the guard for every other caller. A row
+        // ahead of today would draw a bar for a day nobody has lived.
+        if (dateEpochDay > todayEpochDay()) return
+        val times = dao.dueTimesOn(dateEpochDay, supplementId)
+            ?: dao.active().firstOrNull { it.id == supplementId }?.timesPerDay
+            ?: return
+        dao.setTakenOn(dateEpochDay, supplementId, taken.coerceIn(0, times))
     }
 
     override suspend fun allSupplements(): List<Supplement> = dao.all().map { it.toSupplement() }

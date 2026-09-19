@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Chair
+import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
@@ -116,6 +117,9 @@ object AppIcons {
     /** The answered state of a selectable card — [Check] is the bare mark, this is the mark that
      * says a choice has landed. */
     val CheckCircle: ImageVector = Icons.Filled.CheckCircle
+    /** [CheckCircle]'s unticked half — a checklist row nobody has tapped yet. The pair is what
+     * Home's supplements card and the Progress page's catch-up checklist both draw. */
+    val Circle: ImageVector = Icons.Outlined.Circle
     /** The packaged-food lookup could not be reached. Never the offline state: a local list
      * answering with no network is the feature, and only a *failed* ask gets a glyph. */
     val CloudOff: ImageVector = Icons.Outlined.CloudOff

@@ -52,6 +52,12 @@ internal interface SupplementDao {
     @Query("UPDATE supplement_day SET taken = :taken WHERE dateEpochDay = :date AND supplementId = :id")
     suspend fun setTaken(date: Long, id: Long, taken: Int)
 
+    /** That day's own ceiling, or null where the day has no row for this supplement yet. The
+     * clamp on a backdated write reads this rather than the supplement's current `timesPerDay`,
+     * which would re-price a past "1 of 2" against a target set months later. */
+    @Query("SELECT dueTimes FROM supplement_day WHERE dateEpochDay = :date AND supplementId = :id")
+    suspend fun dueTimesOn(date: Long, id: Long): Int?
+
     @Query("UPDATE supplement SET deleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)
 

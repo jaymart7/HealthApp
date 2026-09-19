@@ -313,6 +313,12 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   lowest is never called a resting rate.
 - Supplements: adherence per day against each day's own snapshotted target, the window average,
   the count of full days and the days logged. A missed day and an untracked day draw differently.
+  Under the chart, a **catch-up checklist** — a day stepper back thirty days, and the rows that
+  were due on the day it lands on, tapped the way Home's card is tapped. The one Progress subject
+  page that writes: Home holds today and Profile holds the list, so a Tuesday nobody ticked has
+  nowhere else to be fixed. A day already ticked keeps its own figure, so a row can still read
+  "2 of 2" after the supplement dropped to once daily, and a supplement is never offered on a day
+  before it was added.
 - Water: glasses a day as bars against a dashed line for the profile's current goal, plus the
   window's average, best day and goals hit, and the goal read in the user's own units under the
   chip. Read-only — a glass is logged from Home's card or the diary's row, never from here.

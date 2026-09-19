@@ -4101,6 +4101,43 @@ rather than needing a counter patched.
   kind, and stays quiet both when everything is already ticked *and* when the list is empty — a
   reminder about an empty list is a nudge to open a screen with nothing on it.
 
+- **A day that has gone by can be ticked, and the Progress page is where.** Ticking used to mean
+  today and nothing else: `setTakenToday` stamped the day itself, Home's card was the only surface,
+  and a missed Tuesday charted as a shortfall the user had no way to correct. Profile cannot host
+  the fix — *a tick belongs to a day and Profile has none*, which is still true — and the diary
+  holds no supplements at all. That leaves the page already showing the day that is wrong. So
+  `SupplementRepository.setTakenOn(date, id, taken)` is the write and `setTakenToday` is an
+  interface default over it, which is what kept Home, the coach and the reminder untouched. The
+  dated DAO call it lands on needed nothing: `SupplementDao.setTakenOn` already took a date, and
+  its `|| it.id == id` guard was written for exactly this caller.
+- **The catch-up clamps to the *day's* ceiling, not today's.** `setTakenOn` reads the row's own
+  `dueTimes` where the day has one (`dueTimesOn`) and only falls back to `Supplement.timesPerDay`
+  for a day being written for the first time. Clamping against today's figure would silently
+  discard the second dose of a correction to a past "2 of 2" after the supplement dropped to once
+  daily — the snapshot rule failing at the one place the user is looking straight at it. That is
+  also why `SupplementOnDay` sits beside `SupplementToday` rather than replacing it: the two differ
+  in that one field, and widening the shipped type would touch Home, the widget, the coach and the
+  reminder for a figure only this page reads.
+- **The schedule is read live, the count is not.** `supplementsOn()` asks `isDueOn` against the
+  *current* mask, which is the call `Supplement.days` was added under — a day something isn't due
+  on gets no row, and an absent row is already what the chart draws as a gap. A supplement that
+  **has** a row on the day is kept whatever the mask now says: the row is evidence it was due, and
+  narrowing a schedule must not hide a tick already made.
+- **Thirty days back, and never past today.** `SUPPLEMENT_BACKFILL_DAYS` is the coach's backdated
+  window, reused rather than re-argued. Both chevrons stay present and disabled at their edge,
+  `DiaryDateHeader`'s rule. A supplement whose `createdAt` falls after the day is not offered —
+  backdating must not invent a week before the user owned the bottle, the one thing the seeding
+  path could not do while today was the only day it could write — and `setTakenOn` refuses a
+  future date outright, because a row ahead of today would draw a bar for a day nobody has lived.
+- **The page's empty state now needs both halves empty.** It fired on `days.isEmpty()`, which is
+  exactly the state of someone who wrote their list on Monday and forgot to tick all week — the
+  person the checklist is for. So the full-screen state waits for an empty list *and* an empty
+  log, and with no days the hero, chart and stats are dropped rather than drawn at "—": there is
+  no trend yet, and the checklist is the whole page until the first tick lands.
+- **No back handler on the stepper.** It is inline state with no sub-level to step through, the
+  reading the diary's own date header gets. Back leaves the page, which is where a date stepper's
+  back has always gone.
+
 ### Steps, activity & charts
 
 - **The step goal is current-only, and that is the opposite call to `fast_session.goalHours`.**

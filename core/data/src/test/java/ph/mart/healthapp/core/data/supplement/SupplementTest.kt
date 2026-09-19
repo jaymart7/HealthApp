@@ -5,8 +5,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.progress.ChartRange
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.weekdayIndex
 
 class SupplementTest {
@@ -185,5 +187,86 @@ class SupplementTest {
     fun `a day pointing at an unknown supplement contributes nothing`() {
         val days = listOf(SupplementDay(dateEpochDay = 10, supplementId = 9, taken = 1, dueTimes = 1))
         assertTrue(supplementNutrientsByDay(days, listOf(scanned(1, vitaminDUg = 10))).isEmpty())
+    }
+
+    // ---- supplementsOn: the Progress page's catch-up checklist ----
+
+    /** A supplement created a week ago, so `createdAt` never rules it out of a recent day. */
+    private fun listed(id: Long, timesPerDay: Int = 1, days: Int = EVERY_DAY) = Supplement(
+        id = id,
+        name = "S$id",
+        timesPerDay = timesPerDay,
+        days = days,
+        createdAt = epochDayStartMillis(todayEpochDay() - 7),
+    )
+
+    @Test
+    fun `an existing row wins on both its count and its own due times`() {
+        val date = todayEpochDay() - 2
+        // Since dropped to once daily; the day it was taken twice must still read two of two.
+        val supplement = listed(1, timesPerDay = 1)
+        val rows = supplementsOn(
+            date = date,
+            supplements = listOf(supplement),
+            days = listOf(SupplementDay(date, supplementId = 1, taken = 2, dueTimes = 2)),
+        )
+        assertEquals(listOf(SupplementOnDay(supplement, taken = 2, dueTimes = 2)), rows)
+        assertTrue(rows.single().isComplete)
+    }
+
+    @Test
+    fun `a day with no row is offered at zero against today's target`() {
+        val date = todayEpochDay() - 2
+        val supplement = listed(1, timesPerDay = 3)
+        assertEquals(
+            listOf(SupplementOnDay(supplement, taken = 0, dueTimes = 3)),
+            supplementsOn(date, listOf(supplement), days = emptyList()),
+        )
+    }
+
+    @Test
+    fun `a supplement not due on that weekday is absent`() {
+        val date = todayEpochDay() - 2
+        // Due on every day but that one.
+        val mask = EVERY_DAY and (1 shl weekdayIndex(date)).inv()
+        assertTrue(supplementsOn(date, listOf(listed(1, days = mask)), emptyList()).isEmpty())
+    }
+
+    /** A row is evidence it was due, whatever the mask says now — narrowing a schedule must not
+     * hide a tick the user already made. */
+    @Test
+    fun `a supplement off the schedule is kept where the day already has a row`() {
+        val date = todayEpochDay() - 2
+        val mask = EVERY_DAY and (1 shl weekdayIndex(date)).inv()
+        val rows = supplementsOn(
+            date = date,
+            supplements = listOf(listed(1, days = mask)),
+            days = listOf(SupplementDay(date, supplementId = 1, taken = 1, dueTimes = 1)),
+        )
+        assertEquals(1, rows.size)
+    }
+
+    @Test
+    fun `a supplement created after the day is absent`() {
+        val today = todayEpochDay()
+        val added = Supplement(id = 1, name = "S1", createdAt = epochDayStartMillis(today))
+        assertTrue(supplementsOn(today - 1, listOf(added), emptyList()).isEmpty())
+        assertEquals(1, supplementsOn(today, listOf(added), emptyList()).size)
+    }
+
+    /** Only the day asked for — a row on the day either side must not leak into it. */
+    @Test
+    fun `rows from other days are ignored`() {
+        val date = todayEpochDay() - 2
+        val supplement = listed(1, timesPerDay = 1)
+        val rows = supplementsOn(
+            date = date,
+            supplements = listOf(supplement),
+            days = listOf(
+                SupplementDay(date - 1, supplementId = 1, taken = 1, dueTimes = 1),
+                SupplementDay(date + 1, supplementId = 1, taken = 1, dueTimes = 1),
+            ),
+        )
+        assertEquals(0, rows.single().taken)
     }
 }
