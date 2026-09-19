@@ -36,9 +36,13 @@
       <a href="#how" data-nav-link="1" style="font-size:14px;font-weight:500;color:#C1C9BE;" style-hover="color:#E0E4DB;">How it works</a>
       <a href="#tour" data-nav-link="1" style="font-size:14px;font-weight:500;color:#C1C9BE;" style-hover="color:#E0E4DB;">The app</a>
       <a href="#features" data-nav-link="1" style="font-size:14px;font-weight:500;color:#C1C9BE;" style-hover="color:#E0E4DB;">Features</a>
-      <a href="{{ playUrl }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:#37693D;color:#FFFFFF;font-size:14px;font-weight:600;transition:transform .18s ease, background .18s ease;" style-hover="background:#42804A;transform:translateY(-1px);color:#FFFFFF;">
-        <span style="display:block;width:0;height:0;border-left:9px solid #B8F1B9;border-top:6px solid transparent;border-bottom:6px solid transparent;"></span>
-        Get the app
+      <span data-legal-nav="1" style="display:flex;align-items:center;gap:14px;padding-left:clamp(0px,1.2vw,14px);border-left:1px solid #232A23;margin-left:2px;">
+        <a href="privacy/index.html" style="font-size:14px;font-weight:500;color:#C1C9BE;" style-hover="color:#E0E4DB;">Privacy</a>
+        <a href="Terms and Conditions.dc.html" style="font-size:14px;font-weight:500;color:#C1C9BE;" style-hover="color:#E0E4DB;">Terms</a>
+      </span>
+      <a data-nav-cta="1" href="{{ playUrl }}" target="_blank" rel="noopener" style="display:inline-flex;flex:none;white-space:nowrap;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:#37693D;color:#FFFFFF;font-size:14px;font-weight:600;transition:transform .18s ease, background .18s ease;" style-hover="background:#42804A;transform:translateY(-1px);color:#FFFFFF;">
+        <span data-nav-cta-icon="1" style="display:block;width:0;height:0;border-left:9px solid #B8F1B9;border-top:6px solid transparent;border-bottom:6px solid transparent;"></span>
+        <span data-nav-cta-label="1">Get the app</span>
       </a>
     </nav>
   </header>
@@ -436,9 +440,9 @@
       <span style="font-family:'Poppins',sans-serif;font-size:15px;font-weight:600;color:#C1C9BE;">FitPulse</span>
     </div>
     <span style="font-size:13px;color:#727970;text-wrap:pretty;">Estimates are based on what you enter, not medical advice.</span>
-    <div style="display:flex;align-items:center;gap:16px;">
-      <a href="privacy/index.html" style="font-size:13px;font-weight:500;">Privacy Policy</a>
-      <a href="terms/index.html" style="font-size:13px;font-weight:500;">Terms and Conditions</a>
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;">
+      <a href="privacy/index.html" style="font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px;" style-hover="color:#B8F1B9;">Privacy Policy</a>
+      <a href="terms/index.html" style="font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px;" style-hover="color:#B8F1B9;">Terms and Conditions</a>
       <a href="{{ playUrl }}" target="_blank" rel="noopener" style="font-size:13px;font-weight:500;">View on Google Play</a>
     </div>
   </footer>
@@ -549,6 +553,20 @@ class Component extends DCLogic {
 
     all('[data-nav-link]').forEach((el) => { el.style.display = narrow ? 'none' : 'inline-block'; });
 
+    const legal = q('[data-legal-nav]');
+    if (legal) {
+      legal.style.gap = narrow ? '10px' : '14px';
+      legal.style.paddingLeft = narrow ? '0px' : 'clamp(0px,1.2vw,14px)';
+      legal.style.borderLeft = narrow ? 'none' : '1px solid #232A23';
+      all('[data-legal-nav] a').forEach((el) => { el.style.fontSize = narrow ? '12px' : '14px'; });
+    }
+    const navCta = q('[data-nav-cta]');
+    if (navCta) navCta.style.padding = narrow ? '9px 14px' : '10px 18px';
+    const ctaLabel = q('[data-nav-cta-label]');
+    if (ctaLabel) ctaLabel.textContent = narrow ? 'Get app' : 'Get the app';
+    const ctaIcon = q('[data-nav-cta-icon]');
+    if (ctaIcon) ctaIcon.style.display = narrow ? 'none' : 'block';
+
     const row = q('[data-tour-row]');
     if (row) {
       row.style.flexDirection = mobile ? 'column' : 'row-reverse';
@@ -557,7 +575,9 @@ class Component extends DCLogic {
 
     const phoneCol = q('[data-phone-col]');
     if (phoneCol) {
-      phoneCol.style.top = mobile ? '58px' : '96px';
+      const hdr = document.querySelector('header');
+      const hdrH = hdr ? Math.round(hdr.getBoundingClientRect().height) : 58;
+      phoneCol.style.top = mobile ? (hdrH + 4) + 'px' : '96px';
       phoneCol.style.padding = mobile ? '10px 0 14px' : '24px 0';
       phoneCol.style.zIndex = mobile ? '20' : '';
       phoneCol.style.background = mobile ? 'linear-gradient(#0B0F0B 72%, rgba(11,15,11,0.92) 88%, rgba(11,15,11,0))' : 'none';
