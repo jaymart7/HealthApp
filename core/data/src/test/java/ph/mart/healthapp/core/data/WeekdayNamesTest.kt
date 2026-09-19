@@ -1,4 +1,4 @@
-package ph.mart.healthapp.core.data.exercise
+package ph.mart.healthapp.core.data
 
 import java.util.Locale
 import org.junit.Assert.assertEquals

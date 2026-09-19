@@ -5,7 +5,10 @@ import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.isEmpty
 import ph.mart.healthapp.core.data.food.plus
 import ph.mart.healthapp.core.data.food.times
+import ph.mart.healthapp.core.data.hasWeekday
 import ph.mart.healthapp.core.data.progress.ChartRange
+import ph.mart.healthapp.core.data.weekdayIndex
+import ph.mart.healthapp.core.data.weekdayLabel
 
 /**
  * One thing the user takes. [dose] is a label the app never does math on — "2000 IU", "5 g",
@@ -45,6 +48,22 @@ data class Supplement(
      * product text, never authored here, which is why it is a String and not a resource.
      */
     val panel: String = "",
+    /**
+     * Which weekdays this is due on — the Monday-first mask `Weekday.kt` defines, the same one
+     * [ph.mart.healthapp.core.data.exercise.Routine.days] is written in.
+     *
+     * **[EVERY_DAY] rather than 0 is the empty state.** A routine's 0 means "not on the plan yet",
+     * which is a real thing for a routine and nothing at all for a supplement: something due on no
+     * day cannot be taken, ticked or charted. So 0 is unreachable — the edit sheet refuses the
+     * toggle that would empty the mask and the repository normalises it on write — and every row
+     * that predates this field reads as due daily, which is exactly what it was.
+     *
+     * It is deliberately **not** snapshotted onto [SupplementDay] the way [SupplementDay.dueTimes]
+     * is. It doesn't need to be: a day this isn't due on gets no row at all, and an absent row is
+     * already what the chart reads as "not tracked". Narrowing a schedule next month leaves every
+     * past day exactly as it was for the same reason a changed `timesPerDay` does.
+     */
+    val days: Int = EVERY_DAY,
 )
 
 /**
@@ -72,6 +91,16 @@ data class SupplementToday(val supplement: Supplement, val taken: Int) {
 
 /** Once a day is the common case; past six a checklist stops being one. */
 val SUPPLEMENT_TIMES_PER_DAY = 1..6
+
+/** All seven bits — what every supplement is until the user narrows it. */
+const val EVERY_DAY = 0b1111111
+
+/** Whether this supplement is due on [epochDay]. The one question the mask is asked. */
+fun Supplement.isDueOn(epochDay: Long): Boolean = days.hasWeekday(weekdayIndex(epochDay))
+
+/** "Mon · Wed · Fri", and empty on a supplement due daily — a caller that wants to say "every
+ * day" has better words for it than seven abbreviations in a row. */
+fun Supplement.dayLabel(): String = if (days == EVERY_DAY) "" else days.weekdayLabel()
 
 /** Doses ride a text field, so this is the only bound on one. */
 const val SUPPLEMENT_NAME_MAX = 40
@@ -158,7 +187,11 @@ interface SupplementRepository {
     fun observeSupplements(): Flow<List<Supplement>>
 
     /** The list paired with today's counts — one flow, because both Home and the widget-shaped
-     * callers combine at the arity the typed `combine` overloads stop at. */
+     * callers combine at the arity the typed `combine` overloads stop at.
+     *
+     * **Only what is due today.** A checklist is a list of things to do, so a Monday-only
+     * supplement is absent on a Tuesday rather than present and unticked — which is also what
+     * keeps the reminder quiet and the coach honest, both of which read this. */
     fun observeToday(): Flow<List<SupplementToday>>
 
     /** Every day with a row, oldest first — the Progress tab. Sparse, unlike daily nutrition. */
@@ -178,7 +211,7 @@ interface SupplementRepository {
     suspend fun deleteSupplement(id: Long)
 
     /** [taken] is clamped to the supplement's own [Supplement.timesPerDay]. Writes a zero row for
-     * every other active supplement on that day too — see the impl. */
+     * every other supplement *due today* as well — see the impl. */
     suspend fun setTakenToday(supplementId: Long, taken: Int)
 
     /** Every supplement including soft-deleted ones — for data export, which must keep the ids a

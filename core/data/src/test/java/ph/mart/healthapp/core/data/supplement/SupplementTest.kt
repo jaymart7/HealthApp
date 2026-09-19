@@ -1,11 +1,13 @@
 package ph.mart.healthapp.core.data.supplement
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.progress.ChartRange
+import ph.mart.healthapp.core.data.weekdayIndex
 
 class SupplementTest {
 
@@ -81,6 +83,57 @@ class SupplementTest {
         assertEquals(1, windowed.size)
         assertEquals(today - 5, windowed.single().dateEpochDay)
         assertTrue(days.inRange(ChartRange.OneYear, today).size == 2)
+    }
+
+    /** The anchor every schedule case below counts off. Found rather than hardcoded: an epoch day
+     * is a *local* day here, so which one is a Monday depends on the running timezone. */
+    private val monday = (0L..6L).first { weekdayIndex(it) == 0 }
+
+    private val monWedFri = 0b0010101
+
+    @Test
+    fun `a narrowed schedule is due on its own days and no others`() {
+        val supplement = supplement(1).copy(days = monWedFri)
+        val due = (0..6).map { supplement.isDueOn(monday + it) }
+        assertEquals(listOf(true, false, true, false, true, false, false), due)
+    }
+
+    @Test
+    fun `the default schedule is due every day`() {
+        val supplement = supplement(1)
+        assertEquals(EVERY_DAY, supplement.days)
+        assertTrue((0..6).all { supplement.isDueOn(monday + it) })
+    }
+
+    /** A mask of 0 is unreachable through the app, but an edited backup could carry one — it is
+     * due on nothing rather than throwing or quietly meaning "every day" here. The repository is
+     * what normalises it on the way in. */
+    @Test
+    fun `an empty mask is due on nothing`() {
+        val supplement = supplement(1).copy(days = 0)
+        assertFalse((0..6).any { supplement.isDueOn(monday + it) })
+    }
+
+    @Test
+    fun `only a narrowed schedule spells its days out`() {
+        assertEquals("", supplement(1).dayLabel())
+        assertEquals("Mon · Wed · Fri", supplement(1).copy(days = monWedFri).dayLabel())
+    }
+
+    /**
+     * The bug the schedule exists for. Two supplements, one daily and one Mon/Wed/Fri: on a
+     * Tuesday only the daily one has a row, so ticking it is a full day — not the half it read as
+     * when every supplement was seeded onto every date.
+     */
+    @Test
+    fun `a day is scored against what was due on it, not the whole list`() {
+        val tuesday = monday + 1
+        val days = listOf(
+            SupplementDay(monday, supplementId = 1, taken = 1, dueTimes = 1),
+            SupplementDay(monday, supplementId = 2, taken = 1, dueTimes = 1),
+            SupplementDay(tuesday, supplementId = 1, taken = 1, dueTimes = 1),
+        )
+        assertEquals(listOf(monday to 1f, tuesday to 1f), days.adherenceByDay())
     }
 
     private fun scanned(id: Long, vitaminDUg: Int = 0, calciumMg: Int = 0) = Supplement(

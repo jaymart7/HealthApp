@@ -181,6 +181,11 @@ internal val STEPS: Map<Int, List<String>> = mapOf(
         "ALTER TABLE `supplement` ADD COLUMN `potassiumMg` INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE `supplement` ADD COLUMN `panel` TEXT NOT NULL DEFAULT ''",
     ),
+    38 to listOf(
+        // 127 is `EVERY_DAY`, the Kotlin default: every row written before a supplement could
+        // carry a schedule was due daily, and reads that way afterwards.
+        "ALTER TABLE `supplement` ADD COLUMN `days` INTEGER NOT NULL DEFAULT 127",
+    ),
 )
 
 internal val MIGRATIONS: Array<Migration> =

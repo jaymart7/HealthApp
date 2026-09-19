@@ -1,8 +1,9 @@
 package ph.mart.healthapp.core.data.exercise
 
-import java.text.DateFormatSymbols
-import java.util.Calendar
+import ph.mart.healthapp.core.data.DAYS_IN_WEEK
+import ph.mart.healthapp.core.data.hasWeekday
 import ph.mart.healthapp.core.data.weekdayIndex
+import ph.mart.healthapp.core.data.weekdayLabel
 
 /*
  * The weekly training plan: which routines are planned for which weekdays, and how the current
@@ -14,6 +15,10 @@ import ph.mart.healthapp.core.data.weekdayIndex
  * is [Routine.days], and everything below is a fold over the routines and the workouts that were
  * already being read.
  *
+ * The mask itself — the bit positions, the toggle, the Monday-first names — is `Weekday.kt` in the
+ * module root, because a supplement's schedule is written in the same vocabulary and a training
+ * plan is not where that belongs.
+ *
  * The one judgement call is what counts as trained: a day holding any workout **with sets**, not
  * "the planned routine was performed". Nothing links a logged workout back to the routine that
  * seeded it, and this feature deliberately does not add that link.
@@ -21,35 +26,12 @@ import ph.mart.healthapp.core.data.weekdayIndex
  * ponytail: so a freestyle session on a Push day ticks the Push day. A `routineId` on
  * `exercise_entry` is the upgrade path if that ever misleads someone.
  */
-const val DAYS_IN_WEEK = 7
-
-/** What the picker prints in its seven cells, Monday first. */
-fun weekdayInitials(): List<String> = weekdayShort().map { it.take(1) }
-
-/** What the card prints, Monday first — one vocabulary, so the picker and the card can never
- * disagree about which cell is which day. */
-fun weekdayShort(): List<String> = mondayFirst(DateFormatSymbols.getInstance().shortWeekdays)
-
-fun weekdayNames(): List<String> = mondayFirst(DateFormatSymbols.getInstance().weekdays)
-
-/** [DateFormatSymbols] indexes by [Calendar.SUNDAY]..[Calendar.SATURDAY] with a blank at 0; this
- * app counts from Monday, which is what every weekday bitmask in [Routine.days] means. */
-private fun mondayFirst(names: Array<String>): List<String> = listOf(
-    Calendar.MONDAY, Calendar.TUESDAY, Calendar.WEDNESDAY, Calendar.THURSDAY,
-    Calendar.FRIDAY, Calendar.SATURDAY, Calendar.SUNDAY,
-).map { names[it] }
-
-/** The mask with [index]'s bit flipped — the picker's whole write. */
-fun Int.toggleWeekday(index: Int): Int = this xor (1 shl index)
-
-fun Int.hasWeekday(index: Int): Boolean = this and (1 shl index) != 0
 
 fun Routine.isPlannedOn(epochDay: Long): Boolean = days.hasWeekday(weekdayIndex(epochDay))
 
 /** "Mon · Wed · Fri", and empty for an unscheduled routine — the row and the card both say so in
  * their own words rather than printing this blank. */
-fun Routine.dayLabel(): String =
-    weekdayShort().filterIndexed { index, _ -> days.hasWeekday(index) }.joinToString(" · ")
+fun Routine.dayLabel(): String = days.weekdayLabel()
 
 fun List<Routine>.plannedOn(epochDay: Long): List<Routine> = filter { it.isPlannedOn(epochDay) }
 

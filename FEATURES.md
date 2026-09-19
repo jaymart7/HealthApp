@@ -515,11 +515,14 @@ panes at ≥840dp.
   in the library and routines — and Delete lives at the foot of that sheet, below a rule in
   `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
   any of the three can log, tick or start anything.
-- Supplements: name, dose label, times per day, and **what one dose carries** — the seven graded
-  nutrients, typable behind a "What's in a dose" disclosure that opens itself when there is
-  something in it, with a µg/IU toggle on vitamin D because bottles print either. A→Z,
-  times-per-day as the row's marker tile, a docked bar that never scrolls away carrying Add beside
-  **Scan label**, edit and delete.
+- Supplements: name, dose label, times per day, **which weekdays** — the same seven-cell picker the
+  routine editor draws, defaulting to every day and refusing to be emptied — and **what one dose
+  carries**: the seven graded nutrients, typable behind a "What's in a dose" disclosure that opens
+  itself when there is something in it, with a µg/IU toggle on vitamin D because bottles print
+  either. A→Z, times-per-day as the row's marker tile, a narrowed schedule spelled out on the row's
+  figure line ("twice a day · Mon · Wed · Fri"), a docked bar that never scrolls away carrying Add
+  beside **Scan label**, edit and delete. Home's checklist shows only what is due today, and the
+  adherence chart prices each day against what was due on it.
 - Supplement-label scan — photograph the Supplement Facts panel and a model transcribes it into
   the same edit sheet, seeded: the product name, the serving as the label words it ("2 capsules")
   as the dose, the frequency where the directions state one, and every declared line listed back

@@ -33,8 +33,8 @@ import ph.mart.healthapp.core.data.exercise.dayLabel
 import ph.mart.healthapp.core.data.exercise.plannedSoFar
 import ph.mart.healthapp.core.data.exercise.totalSets
 import ph.mart.healthapp.core.data.exercise.trainedSoFar
-import ph.mart.healthapp.core.data.exercise.weekdayInitials
-import ph.mart.healthapp.core.data.exercise.weekdayNames
+import ph.mart.healthapp.core.data.weekdayInitials
+import ph.mart.healthapp.core.data.weekdayNames
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme

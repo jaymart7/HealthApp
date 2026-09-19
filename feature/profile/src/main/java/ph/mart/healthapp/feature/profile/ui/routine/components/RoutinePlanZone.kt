@@ -16,11 +16,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.data.exercise.DAYS_IN_WEEK
-import ph.mart.healthapp.core.data.exercise.hasWeekday
+import ph.mart.healthapp.core.data.DAYS_IN_WEEK
+import ph.mart.healthapp.core.data.hasWeekday
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.profile.R
+import ph.mart.healthapp.feature.profile.ui.shared.components.WeekdayPicker
 
 /**
  * A routine's week, inside its card under a full-bleed rule.

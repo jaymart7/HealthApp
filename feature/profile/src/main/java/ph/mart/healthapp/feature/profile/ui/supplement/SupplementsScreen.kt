@@ -195,6 +195,9 @@ private fun SupplementsScreenPreview() {
                 supplements = listOf(
                     Supplement(id = 3, name = "Magnesium"),
                     Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2),
+                    // Mon · Wed · Fri — the narrowed schedule, so the row's second figure has
+                    // something to say in the preview.
+                    Supplement(id = 4, name = "Iron", dose = "18 mg", days = 0b0010101),
                     Supplement(id = 1, name = "Vitamin D", dose = "2000 IU"),
                 ),
                 loaded = true,

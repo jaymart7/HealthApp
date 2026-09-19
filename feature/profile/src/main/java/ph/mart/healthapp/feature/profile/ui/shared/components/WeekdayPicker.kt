@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.profile.ui.routine.components
+package ph.mart.healthapp.feature.profile.ui.shared.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -29,11 +29,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import ph.mart.healthapp.core.data.exercise.DAYS_IN_WEEK
-import ph.mart.healthapp.core.data.exercise.hasWeekday
-import ph.mart.healthapp.core.data.exercise.toggleWeekday
-import ph.mart.healthapp.core.data.exercise.weekdayInitials
-import ph.mart.healthapp.core.data.exercise.weekdayNames
+import ph.mart.healthapp.core.data.DAYS_IN_WEEK
+import ph.mart.healthapp.core.data.hasWeekday
+import ph.mart.healthapp.core.data.toggleWeekday
+import ph.mart.healthapp.core.data.weekdayInitials
+import ph.mart.healthapp.core.data.weekdayNames
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 
@@ -44,7 +44,11 @@ private val CellTouchHeight = 48.dp
 private val CellShape = RoundedCornerShape(12.dp)
 
 /**
- * Which weekdays a routine is planned for. Seven cells sharing the width equally — the
+ * Which weekdays something happens on — a routine's plan, a supplement's schedule. It is in
+ * `shared/` because two flows draw it, and it knows about neither: it takes the mask and hands one
+ * back.
+ *
+ * Seven cells sharing the width equally — the
  * `SegmentedToggle` argument, and the one row in the app whose labels genuinely cannot be
  * shortened further.
  *
@@ -56,9 +60,11 @@ private val CellShape = RoundedCornerShape(12.dp)
  * the whole thing to grey, as a high-contrast scheme nearly does, and the thickened baseline still
  * says which days are chosen.
  *
- * An **unscheduled** routine — [days] of 0, the state everything saved before the plan existed is
- * in — draws all seven cells with a dashed border. "Nothing chosen" becomes a different shape
- * rather than only a different sentence, and the plan zone above says what to do about it.
+ * A [days] of 0 draws all seven cells with a dashed border. "Nothing chosen" becomes a different
+ * shape rather than only a different sentence, and the plan zone above says what to do about it.
+ * That is a routine's state — everything saved before the plan existed is in it. A supplement
+ * cannot reach it: something due on no day is not a supplement, so its caller refuses the toggle
+ * that would empty the mask and this branch never fires there.
  *
  * Chips rather than switches: the whole point is reading the week at a glance, and seven rows of
  * switches is a screen, not a row.
@@ -77,7 +83,7 @@ internal fun WeekdayPicker(days: Int, onDaysChange: (Int) -> Unit, modifier: Mod
         (0 until DAYS_IN_WEEK).forEach { index ->
             val selected = days.hasWeekday(index)
             // Resolved outside the semantics lambda, which cannot read a resource.
-            val spoken = if (selected) stringResource(R.string.profile_weekday_planned, names[index]) else names[index]
+            val spoken = if (selected) stringResource(R.string.profile_weekday_selected, names[index]) else names[index]
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.weight(1f).height(CellTouchHeight),

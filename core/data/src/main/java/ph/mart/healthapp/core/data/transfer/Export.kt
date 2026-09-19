@@ -27,6 +27,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.supplement.EVERY_DAY
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
@@ -239,6 +240,9 @@ internal data class ExportSupplement(
     val ironUg: Int = 0,
     val potassiumMg: Int = 0,
     val panel: String = "",
+    /** The weekday mask, defaulted to every day: a file written before schedules existed holds
+     * supplements that were due daily, which is what the default says. */
+    val days: Int = EVERY_DAY,
 )
 
 /** [dueTimes] is the day's own snapshot of the target, not today's — restoring it is what stops a
@@ -319,6 +323,7 @@ fun buildExportJson(
                 ironUg = it.nutrients.ironUg,
                 potassiumMg = it.nutrients.potassiumMg,
                 panel = it.panel,
+                days = it.days,
             )
         },
         supplementDays = supplementDays.map {
@@ -389,6 +394,7 @@ fun parseExport(text: String): Result<ImportData> = runCatching {
                     potassiumMg = it.potassiumMg,
                 ),
                 panel = it.panel,
+                days = it.days,
             )
         },
         supplementDays = export.supplementDays.map {

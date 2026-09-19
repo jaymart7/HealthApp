@@ -4,6 +4,7 @@ import androidx.room3.Embedded
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.data.supplement.EVERY_DAY
 
 /** The user's own list. [deleted] is the soft delete — the row stays so past `supplement_day`
  * rows keep a name to render. */
@@ -20,4 +21,7 @@ internal data class SupplementEntity(
     @Embedded val nutrients: Nutrients = Nutrients(),
     /** The panel as printed. Empty for every supplement nobody scanned. */
     val panel: String = "",
+    /** The Monday-first weekday mask — see [ph.mart.healthapp.core.data.supplement.Supplement.days].
+     * Defaulted so the migration's `DEFAULT 127` and a fresh row agree. */
+    val days: Int = EVERY_DAY,
 )

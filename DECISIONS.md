@@ -3957,6 +3957,37 @@ rather than needing a counter patched.
 
 ### Supplements
 
+- **A supplement carries a weekday mask, and `EVERY_DAY` is its empty state, not 0.** The list was
+  uniformly daily: `timesPerDay` and nothing else, with `setTakenOn` seeding a row for *every*
+  active supplement on any date anything was ticked. That is fine until one row isn't daily — a
+  weekly B12 then contributed a `dueTimes` of 1 on all seven days and could only ever be hit once,
+  so the Progress page reported a shortfall the user never had, and Home's checklist graded them
+  against doses they were never supposed to take. `Supplement.days` is the same Monday-first mask
+  `Routine.days` is written in, moved out to `:core:data/Weekday.kt` so `supplement/` does not have
+  to import `exercise/` to read it.
+  **0 means something for a routine and nothing for a supplement.** An unscheduled routine is a
+  real state — it is on no plan yet, and the picker's dashed cells say so. A supplement due on no
+  day cannot be taken, ticked or charted, so 0 is unreachable: the edit sheet drops the toggle that
+  would empty the mask and `toEntity()` normalises anything that arrives anyway, beside the
+  `timesPerDay` clamp that was already there. Every row written before the field existed reads
+  `EVERY_DAY`, which is exactly what it was — the migration's `DEFAULT 127` is that same Kotlin
+  default, the rule `Migrations.kt`'s header states.
+- **The schedule is not snapshotted onto the day row, because the absent row already is one.**
+  `dueTimes` has to be copied because a day that read "2 of 2" must not become "2 of 1"; a schedule
+  needs no equivalent, since a day a supplement isn't due on simply gets no row and the chart
+  already draws an absent row as a gap rather than a miss. Narrowing a schedule next month
+  therefore leaves every past day exactly as it was, by construction rather than by a second
+  snapshot field. `adherenceByDay()`, the chart and the Progress page are all untouched.
+- **`setTakenOn` seeds what is due, *plus the id being ticked*.** The filter is the fix; the `||
+  it.id == id` beside it is the guard. `setTaken` is an UPDATE, so a write aimed at a row the seed
+  skipped would silently do nothing, and a caller that is not Home's card — the coach's
+  `log_supplement`, an import, whatever comes next — should not have to know the schedule to land a
+  tick. It also softens the *ponytail* below: a supplement added later the same day still starts
+  counting tomorrow, but ticking one directly now always writes.
+- **`observeToday()` filters, so there is one answer to "due today".** Home's card, the supplements
+  reminder and the coach's context block all read that flow, and all three would otherwise have
+  needed their own copy of the rule. The reminder going quiet on a day nothing is due and the coach
+  being unable to tick something off-schedule both fall out of the filter rather than being wired.
 - **`supplement_day.dueTimes` is snapshotted at write time and never re-read.** Dropping a
   supplement from twice daily to once next month must not turn a past day that read "2 of 2" into
   "2 of 1" — the rule `fast_session.goalHours` and `step_day.burnedKcal` already follow. The

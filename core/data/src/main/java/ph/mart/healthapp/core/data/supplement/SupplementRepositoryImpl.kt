@@ -19,11 +19,16 @@ internal class SupplementRepositoryImpl(private val dao: SupplementDao) : Supple
      * The join happens here rather than in the two feature ViewModels: both of their `combine`
      * blocks are already at the five-flow arity the typed overloads stop at, and a supplement
      * without today's count is not a thing either screen wants.
+     *
+     * The schedule is filtered here too, for the same reason and one more: Home, the reminder and
+     * the coach all read this flow, and "due today" is one answer they must not be able to give
+     * three different versions of.
      */
     override fun observeToday(): Flow<List<SupplementToday>> = forToday { today ->
         combine(dao.observeActive(), dao.observeForDate(today)) { supplements, days ->
             val taken = days.associate { it.supplementId to it.taken }
             supplements.map { SupplementToday(it.toSupplement(), taken[it.id] ?: 0) }
+                .filter { it.supplement.isDueOn(today) }
         }
     }
 
@@ -94,6 +99,7 @@ private fun SupplementEntity.toSupplement() = Supplement(
     createdAt = createdAt,
     nutrients = nutrients,
     panel = panel,
+    days = days,
 )
 
 private fun Supplement.toEntity(createdAt: Long = this.createdAt) = SupplementEntity(
@@ -105,6 +111,9 @@ private fun Supplement.toEntity(createdAt: Long = this.createdAt) = SupplementEn
     createdAt = createdAt,
     nutrients = nutrients,
     panel = panel,
+    // A mask of 0 is a supplement due on no day, which is not a thing — normalised here beside the
+    // `timesPerDay` clamp rather than trusted from the caller, the same way an import is.
+    days = if (days == 0) EVERY_DAY else days,
 )
 
 private fun SupplementDayEntity.toSupplementDay() = SupplementDay(

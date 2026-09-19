@@ -7,6 +7,8 @@ import androidx.room3.Query
 import androidx.room3.Transaction
 import androidx.room3.Upsert
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.hasWeekday
+import ph.mart.healthapp.core.data.weekdayIndex
 
 @Dao
 internal interface SupplementDao {
@@ -54,14 +56,22 @@ internal interface SupplementDao {
     suspend fun softDelete(id: Long)
 
     /**
-     * One transaction so the day can never be half-seeded: every active supplement gets a row for
-     * [date] before the tapped one is set. Without the seed the adherence chart's denominator
-     * would be only whatever was ticked, and someone who took 1 of 3 would chart 100%.
+     * One transaction so the day can never be half-seeded: every supplement **due on [date]** gets
+     * a row before the tapped one is set. Without the seed the adherence chart's denominator would
+     * be only whatever was ticked, and someone who took 1 of 3 would chart 100%; with the whole
+     * list seeded regardless of schedule, a Monday-only supplement would be counted as missed on
+     * the other six days.
+     *
+     * [id] is seeded whether or not it is due, so an explicit write can never land on a row that
+     * was never inserted — `setTaken` is an UPDATE and would silently do nothing.
      */
     @Transaction
     suspend fun setTakenOn(date: Long, id: Long, taken: Int) {
+        val weekday = weekdayIndex(date)
         insertDaysIfAbsent(
-            active().map { SupplementDayEntity(date, it.id, taken = 0, dueTimes = it.timesPerDay) },
+            active()
+                .filter { it.days.hasWeekday(weekday) || it.id == id }
+                .map { SupplementDayEntity(date, it.id, taken = 0, dueTimes = it.timesPerDay) },
         )
         setTaken(date, id, taken)
     }

@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.data.toggleWeekday
 import ph.mart.healthapp.core.data.weekdayIndex
 
 private fun routine(name: String, days: Int) =

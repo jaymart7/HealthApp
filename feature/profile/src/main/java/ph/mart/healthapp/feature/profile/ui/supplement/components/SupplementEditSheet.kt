@@ -3,6 +3,9 @@ package ph.mart.healthapp.feature.profile.ui.supplement.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -26,6 +29,7 @@ import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.SheetDeleteAction
+import ph.mart.healthapp.feature.profile.ui.shared.components.WeekdayPicker
 
 /**
  * Adds a supplement or edits one, seeded from [supplement] — `id == 0` is the add. One sheet for
@@ -48,6 +52,12 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.SheetDeleteAction
  * Times-per-day is the read-only [NumericStepperField], not the typable one: the range is 1–6, so
  * a keyboard would be a heavier gesture than the two taps it replaces — the same call the water
  * goal and a recipe's servings count make.
+ *
+ * Under it, *which days* — [WeekdayPicker], the row the routine editor already draws. The two
+ * answer different halves of one question and sit together for that reason: how many times, and on
+ * which days. **The mask can never be emptied here.** A routine with no days is unscheduled and
+ * says so; a supplement with no days could not be taken at all, so the last selected cell refuses
+ * to turn itself off rather than saving a row nothing could ever tick.
  */
 @Composable
 internal fun SupplementEditSheet(
@@ -62,6 +72,7 @@ internal fun SupplementEditSheet(
     // The whole value rather than seven fields: a cell writes only its own, so a figure the user
     // never touched survives a save it was only rounded for display.
     var nutrients by remember(supplement) { mutableStateOf(supplement.nutrients) }
+    var days by remember(supplement) { mutableIntStateOf(supplement.days) }
 
     AppBottomSheet(
         title = stringResource(
@@ -102,6 +113,16 @@ internal fun SupplementEditSheet(
                     timesPerDay = (timesPerDay - 1).coerceAtLeast(SUPPLEMENT_TIMES_PER_DAY.first)
                 },
             )
+            Text(
+                text = stringResource(R.string.profile_supplements_which_days),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp),
+            )
+            // The guard, and the whole of it: a toggle that would leave nothing selected is
+            // dropped, so the cell the user taps twice stays on rather than the sheet having to
+            // explain itself afterwards.
+            WeekdayPicker(days = days, onDaysChange = { if (it != 0) days = it })
             PrimaryButton(
                 label = stringResource(R.string.profile_save),
                 onClick = {
@@ -111,6 +132,7 @@ internal fun SupplementEditSheet(
                             dose = dose,
                             timesPerDay = timesPerDay,
                             nutrients = nutrients,
+                            days = days,
                         ),
                     )
                 },
@@ -157,7 +179,13 @@ private fun SupplementEditSheetScannedPreview() {
 private fun SupplementEditSheetEditPreview() {
     AppTheme {
         SupplementEditSheet(
-            supplement = Supplement(id = 1, name = "Creatine", dose = "5 g", timesPerDay = 2),
+            supplement = Supplement(
+                id = 1,
+                name = "Creatine",
+                dose = "5 g",
+                timesPerDay = 2,
+                days = 0b0010101,
+            ),
             onDismiss = {},
             onSave = {},
         )

@@ -1,6 +1,6 @@
 package ph.mart.healthapp.core.data.food
 
-import ph.mart.healthapp.core.data.exercise.DAYS_IN_WEEK
+import ph.mart.healthapp.core.data.DAYS_IN_WEEK
 import ph.mart.healthapp.core.data.exercise.budgetKcal
 import ph.mart.healthapp.core.data.exercise.weekStart
 import ph.mart.healthapp.core.data.health.BurnDay

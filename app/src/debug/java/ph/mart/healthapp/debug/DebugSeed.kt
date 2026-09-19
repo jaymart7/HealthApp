@@ -38,6 +38,7 @@ import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
+import ph.mart.healthapp.core.data.supplement.isDueOn
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.epochDayStartMillis
@@ -283,14 +284,24 @@ private suspend fun SupplementRepository.seedSupplements(today: Long) {
             panel = "Vitamin D 50 µg\nCalcium 120 mg\nVitamin K2 75 µg",
         ),
         Supplement(id = 2, name = "Creatine", dose = "5 g", timesPerDay = 2, createdAt = 2),
-        Supplement(id = 3, name = "Magnesium", dose = "300 mg", timesPerDay = 1, createdAt = 3),
+        // Mon · Wed · Fri, so the narrowed schedule is reachable without typing one.
+        Supplement(
+            id = 3,
+            name = "Magnesium",
+            dose = "300 mg",
+            timesPerDay = 1,
+            createdAt = 3,
+            days = 0b0010101,
+        ),
     )
     supplements.forEach { upsertSupplement(it) }
 
     val random = Random(seed = 23)
     for (daysAgo in 19 downTo 0) {
         if (daysAgo == 8) continue
-        supplements.forEach { supplement ->
+        // A day a supplement isn't due on gets no row, which is what `setTakenOn` writes and what
+        // the chart's denominator reads — seeding one anyway would chart a miss that never was.
+        supplements.filter { it.isDueOn(today - daysAgo) }.forEach { supplement ->
             val due = if (supplement.id == 2L && daysAgo >= 12) 3 else supplement.timesPerDay
             upsertDay(
                 SupplementDay(

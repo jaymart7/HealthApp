@@ -50,6 +50,8 @@ class SupplementsViewModel(
             dose = supplement.dose.trim(),
             timesPerDay = supplement.timesPerDay.coerceIn(SUPPLEMENT_TIMES_PER_DAY),
         )
+        // `days` needs no cleaning here: the sheet cannot empty the mask and the repository
+        // normalises whatever does arrive, so `copy` carries it untouched.
         if (cleaned.name.isBlank()) return@intent
         if (cleaned.id == 0L) {
             supplementRepository.addSupplement(cleaned)

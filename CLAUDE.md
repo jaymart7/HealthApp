@@ -186,9 +186,11 @@ behind them are `DECISIONS.md` → **Localization**.
   coroutine or a permission callback is the exception, and reads through `LocalContext`.
 - **A semantics lambda cannot read a resource**, so every `contentDescription` inside
   `clearAndSetSemantics {}` is resolved one line above it.
-- **Weekday names come from `DateFormatSymbols`** (`:core:data/exercise/TrainingPlan.kt`), never
-  a resource array. They index from Sunday and this app counts from Monday — `WeekdayNamesTest`
-  is the guard.
+- **Weekday names come from `DateFormatSymbols`** (`:core:data/Weekday.kt`, beside `weekdayIndex`
+  in `EpochDay.kt`), never a resource array. They index from Sunday and this app counts from Monday
+  — `WeekdayNamesTest` is the guard. That file holds the whole weekday vocabulary — the mask, its
+  toggle, the names and `weekdayLabel()` — because three domains write in it now: a routine's plan,
+  a supplement's schedule and the week budget.
 - **Every decimal a user sees is ASCII, and there is one formatter.**
   `formatOneDecimal` / `formatDecimals` in `:core:designsystem/component/NumberFormat.kt`, both
   pinned to `Locale.US`; `formatLoad` in `:core:data/exercise/Strength.kt` is the one copy that
@@ -341,7 +343,8 @@ are next open.
   `PhotoOverlayLabel` and `Note`),
   `:feature:profile` (`profile`, `settings`, `health`, `library`, `routine`, `supplement`, `layout`, plus a
   `shared/` holding the row primitives — `AppListRow`, `IconTile`, `SectionHeader`, `StepperRow`
-  — beside the saved-thing row family all three "Your stuff" lists draw: `SavedThingRow`,
+  — and `WeekdayPicker`, which the routine editor and the supplement sheet both draw, beside the
+  saved-thing row family all three "Your stuff" lists draw: `SavedThingRow`,
   `FigureText`, `RowOverflowMenu`, `DeleteConfirmDialog` and `RenameSheet`) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
   owning screen: `RecipePanel` sits under `recipe/` though `FoodScreen` renders it, and

@@ -182,7 +182,7 @@
     <string name="profile_layout_move_down">Move down</string>
 
     <!-- Weekday picker -->
-    <string name="profile_weekday_planned">%1$s, planned</string>
+    <string name="profile_weekday_selected">%1$s, selected</string>
 
     <!-- Routines -->
     <string name="profile_routines_empty_heading">No routines yet</string>
@@ -221,6 +221,7 @@
     <string name="profile_supplements_once_daily">once a day</string>
     <string name="profile_supplements_twice_daily">twice a day</string>
     <string name="profile_supplements_times_daily">%1$d times a day</string>
+    <string name="profile_supplements_which_days">Which days</string>
     <!-- The frequency marker prints "{n}×"; this is what it reads as. -->
     <string name="profile_supplements_times_a11y">%1$d times a day</string>
     <plurals name="profile_supplements_times_a_day">

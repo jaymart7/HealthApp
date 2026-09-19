@@ -2,7 +2,9 @@ package ph.mart.healthapp.feature.profile.ui.supplement
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import ph.mart.healthapp.core.data.supplement.EVERY_DAY
 import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.dayLabel
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.Figure
 
@@ -40,11 +42,19 @@ internal fun Supplement.figures(): List<Figure> =
 internal fun Supplement.noDoseLine(): String =
     "${stringResource(R.string.profile_supplements_no_dose)} · ${scheduleWords()}"
 
+/**
+ * "twice a day · Mon · Wed · Fri" — how often, then on which days. The second half is absent on a
+ * supplement due daily rather than spelled out: "once a day" already says every day, and seven
+ * abbreviations in a row would be the row's longest line saying the least.
+ */
 @Composable
-private fun Supplement.scheduleWords(): String = when (timesPerDay) {
-    1 -> stringResource(R.string.profile_supplements_once_daily)
-    2 -> stringResource(R.string.profile_supplements_twice_daily)
-    else -> stringResource(R.string.profile_supplements_times_daily, timesPerDay)
+private fun Supplement.scheduleWords(): String {
+    val often = when (timesPerDay) {
+        1 -> stringResource(R.string.profile_supplements_once_daily)
+        2 -> stringResource(R.string.profile_supplements_twice_daily)
+        else -> stringResource(R.string.profile_supplements_times_daily, timesPerDay)
+    }
+    return if (days == EVERY_DAY) often else "$often · ${dayLabel()}"
 }
 
 sealed interface SupplementsEvent {
