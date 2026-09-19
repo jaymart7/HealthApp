@@ -15,6 +15,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.designsystem.component.HealthDisclosureActions
 import ph.mart.healthapp.core.designsystem.component.HealthDisclosurePanel
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -70,17 +71,29 @@ private fun HealthConnectContent(
     onSkip: () -> Unit,
     onBack: () -> Unit,
 ) {
+    val skip = stringResource(R.string.onboarding_health_skip)
     OnboardingStep(
         step = 5,
         mascotState = MascotState.Idle,
         line = stringResource(R.string.onboarding_health_bubble),
         headline = stringResource(R.string.onboarding_health_title),
         onBack = onBack,
+        // The disclosure is long enough to scroll on a short screen, and a way forward that has
+        // to be scrolled to is the one thing this step cannot afford.
+        bottomBar = {
+            HealthDisclosureActions(
+                onConnect = onConnect,
+                onDismiss = onSkip,
+                dismissLabel = skip,
+                connectEnabled = canConnect,
+                declined = declined,
+            )
+        },
     ) {
         HealthDisclosurePanel(
             onConnect = onConnect,
             onDismiss = onSkip,
-            dismissLabel = stringResource(R.string.onboarding_health_skip),
+            dismissLabel = skip,
             // The step chrome already carries the headline; a second one inside the panel would
             // say the same thing twice.
             title = null,
@@ -88,6 +101,7 @@ private fun HealthConnectContent(
             declined = declined,
             message = message?.let { stringResource(it) },
             messageIsError = messageIsError,
+            actions = false,
         )
     }
 }

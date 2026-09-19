@@ -70,6 +70,10 @@ private val ASSURANCES = listOf(
  * without implying they got it wrong. [connectEnabled] false is the other half of that — the
  * device cannot offer the grant at all, which is not the user's mistake either, so neither state
  * uses an error colour anywhere.
+ *
+ * [actions] is false where the caller pins the two buttons itself — onboarding's step puts them in
+ * its bottom bar and draws [HealthDisclosureActions] there. Profile cannot: its copy of the panel
+ * is one of several in a scroll, and the screen has no bottom bar to pin anything to.
  */
 @Composable
 fun HealthDisclosurePanel(
@@ -82,6 +86,7 @@ fun HealthDisclosurePanel(
     declined: Boolean = false,
     message: String? = null,
     messageIsError: Boolean = false,
+    actions: Boolean = true,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = modifier.fillMaxWidth()) {
         if (title != null) {
@@ -177,15 +182,38 @@ fun HealthDisclosurePanel(
                 )
             }
         }
-        // "Skip for now" implies a choice the user still has. Once the grant is impossible or
-        // already refused, the only honest label on the way out is "Continue" — the panel
-        // substitutes it rather than making both callers work it out.
-        val dismiss = if (connectEnabled && !declined) {
-            dismissLabel
-        } else {
-            stringResource(R.string.ds_health_continue)
+        if (actions) {
+            HealthDisclosureActions(
+                onConnect = onConnect,
+                onDismiss = onDismiss,
+                dismissLabel = dismissLabel,
+                connectEnabled = connectEnabled,
+                declined = declined,
+            )
         }
-        val connect = stringResource(R.string.ds_health_connect)
+    }
+}
+
+/** The panel's two buttons, separable so a screen with a bottom bar can pin them to it. */
+@Composable
+fun HealthDisclosureActions(
+    onConnect: () -> Unit,
+    onDismiss: () -> Unit,
+    dismissLabel: String,
+    modifier: Modifier = Modifier,
+    connectEnabled: Boolean = true,
+    declined: Boolean = false,
+) {
+    // "Skip for now" implies a choice the user still has. Once the grant is impossible or already
+    // refused, the only honest label on the way out is "Continue" — this substitutes it rather
+    // than making both callers work it out.
+    val dismiss = if (connectEnabled && !declined) {
+        dismissLabel
+    } else {
+        stringResource(R.string.ds_health_continue)
+    }
+    val connect = stringResource(R.string.ds_health_connect)
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier.fillMaxWidth()) {
         if (declined) {
             PrimaryButton(label = dismiss, onClick = onDismiss, modifier = Modifier.fillMaxWidth())
             TextButton(label = connect, onClick = onConnect, modifier = Modifier.fillMaxWidth())

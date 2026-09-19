@@ -4207,6 +4207,14 @@ form, three cards against the top of a 915dp screen and twenty-six taps to set a
   already taught the reader what required looks like. The selected state is the same
   `primaryContainer` + 2dp border as everywhere else: *optional* applies to the question, not to
   the answer. `TonalButton` exists for this one place.
+- **Step 5's two buttons are pinned, not scrolled.** The disclosure is four scope rows, three
+  assurances and sometimes a message — long enough to scroll on a short screen or a large font,
+  and a way forward that has to be scrolled to is the one thing a consent step cannot afford. The
+  buttons left `HealthDisclosurePanel` for `HealthDisclosureActions`, which the step draws in
+  `OnboardingStep`'s `bottomBar`; the panel still draws them inline by default, because Profile's
+  copy is one of several panels in a scroll on a screen with no bottom bar to pin to. The label
+  and weight logic — "Skip for now" becoming "Continue", the declined swap — moved with the
+  buttons rather than being duplicated at the new call site.
 - **Step 6 leads with the number and shows its working.** The calorie figure at 57sp on its own
   card, and under it "1,961 kcal maintenance − 500 for steady loss". The derivation is the part
   that earns the size: it turns the number from an assertion into a calculation the reader can
