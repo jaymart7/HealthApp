@@ -36,17 +36,23 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * twice and drifting apart: different type for the name, figures rendered as grey captions, and
  * two 44dp icon buttons with delete sitting 4dp from rename.
  *
- * Four slots, always in this order, on all three screens. What changes per screen is the [marker]
+ * Three slots, always in this order, on all three screens. What changes per screen is the [marker]
  * and what [figures] counts — never the geometry.
+ *
+ * **[onClick] is the row's only control**, and the row carries nothing on its right. The two icon
+ * buttons became one overflow menu and the menu is now gone too: its first item opened the same
+ * sheet the row already opens, and its second belongs *inside* that sheet, under the thing it
+ * would destroy. No chevron either — see below.
  *
  * **Still no way to use anything.** Logging a meal needs a meal slot and a day, starting a routine
  * needs a workout in progress, and ticking a supplement needs a day — Profile has none of those.
- * [onClick] opens an edit affordance or is null; it never logs, ticks or starts.
+ * [onClick] opens an edit sheet; it never logs, ticks or starts. That is also why there is no
+ * trailing chevron: this row does not *go* anywhere, and the card's own ripple is what says it
+ * takes a tap.
  *
  * The card sits a step down at `surfaceContainerLow`. `surfaceContainerHighest` sat too close to
  * the figures' own ink; one step down lets a number carry `onSurface` instead of grey, and frees
- * `surfaceContainerHighest` for the markers, the open-menu anchor and the once-daily frequency
- * tile.
+ * `surfaceContainerHighest` for the markers and the once-daily frequency tile.
  *
  * [detail] is one line and never wraps — the contents on saved meals, recipes and routines, so a
  * row isn't deleted blind. [detailContent] is the same slot for the one caller whose detail is not
@@ -54,9 +60,6 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  *
  * [footer] is drawn full-bleed under a 1dp rule, and is how a routine's plan zone belongs to the
  * routine rather than hanging off the bottom of it. Null by default.
- *
- * The right padding is 8dp against the left's 16 on purpose: it keeps [menu]'s full 48dp touch box
- * inside the card while the glyph still reads as inset.
  *
  * [highlight] is the run a search matched, marked in [name] and [detail] so the reason a row is in
  * a result is visible rather than guessed at. Empty for every row that is not a search result,
@@ -67,7 +70,6 @@ internal fun SavedThingRow(
     name: String,
     marker: @Composable () -> Unit,
     figures: @Composable () -> Unit,
-    menu: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     detail: String? = null,
     detailContent: (@Composable () -> Unit)? = null,
@@ -79,7 +81,9 @@ internal fun SavedThingRow(
         Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 8.dp, bottom = 12.dp),
+                // Symmetric now that nothing sits on the right. The 8dp this used to end on was
+                // the overflow menu's touch box hanging off the edge of its glyph.
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 marker()
                 Column(
@@ -114,7 +118,6 @@ internal fun SavedThingRow(
                     }
                     detailContent?.invoke()
                 }
-                menu()
             }
             if (footer != null) {
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -200,7 +203,7 @@ private fun SavedThingRowPreview() {
                 marker = { RowMarker(icon = AppIcons.Food.outlined, contentDescription = null) },
                 figures = { FigureRow(Figure("3", "items"), Figure("540", "kcal")) },
                 detail = "Greek yogurt, Oats, Black coffee",
-                menu = { RowOverflowMenu(name = "Usual breakfast", primaryLabel = "Rename", onPrimary = {}, onDelete = {}) },
+                onClick = {},
                 modifier = Modifier.padding(16.dp),
             )
         }
@@ -218,7 +221,7 @@ private fun SavedThingRowFooterPreview() {
                 marker = { RowMarker(icon = AppIcons.Dumbbell, contentDescription = null) },
                 figures = { FigureRow(Figure("3", "lifts"), Figure("9", "sets")) },
                 detail = "Bench press 3×8, Overhead press 3×8, Dip 2×10",
-                menu = { RowOverflowMenu(name = "Push day", primaryLabel = "Rename", onPrimary = {}, onDelete = {}) },
+                onClick = {},
                 footer = {
                     Text(
                         text = "Plan zone",

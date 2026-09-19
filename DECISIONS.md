@@ -4286,16 +4286,34 @@ consequence of that.
   frees `surfaceContainerHighest` for the markers, the once-daily frequency tile and the
   open-menu anchor. The name went `bodyMedium` → `titleMedium` in the same move: a saved thing's
   name is a heading for the figures under it.
-- **Two 44dp icon buttons became one 48dp overflow, and the point is not the tap count.** Delete
-  sat one thumb-width from rename, same tint, same weight. It exists only inside the menu now,
-  below a rule, in `error` with an `error` glyph — and the ~96dp the pair took goes back to the
-  figures. Four of the nine 44dp sites the Backlog tracks went with them.
+- **Two 44dp icon buttons became one 48dp overflow, and then the overflow went too.** Delete used
+  to sit one thumb-width from rename, same tint, same weight; the menu fixed that and freed the
+  ~96dp the pair took. What it could not fix is that it held **two items and needed neither**: its
+  first opened the sheet the row's own tap already opens, and its second belongs *inside* that
+  sheet, under the fields it would destroy. A menu with one real item is not a menu. So
+  `SavedThingRow` now carries nothing on its right, the card is the tap target, `RowOverflowMenu`
+  is deleted rather than kept for later, and the row's padding goes symmetric again — the 8dp on
+  the right existed only to hold a 48dp touch box inside the card. Four of the nine 44dp sites the
+  Backlog tracks had already gone with the icon buttons.
+- **The food library's rows became tappable in the same move**, and were the one place in the app
+  where a row was not: supplements and routines already opened their sheet on tap, so the menu was
+  doing a job two of the three screens did without it.
 - **No swipe-to-delete, deliberately.** That gesture already means "delete a diary *entry*".
   Reusing it where the same swipe destroys a reusable definition is the wrong muscle memory, and
-  it is why the menu is the row's only control.
-- **The menu's first item is `Rename` in the library and `Edit` on supplements.** Not a wording
-  slip: a saved food's fields are corrected by re-saving from the add-entry sheet, so a menu that
-  said Edit would promise a form that does not exist. Supplements have one.
+  it is why the row's tap is its only control.
+- **No trailing chevron either.** The row family has never had one and still does not: a chevron
+  says "this goes somewhere", and this row opens a sheet over itself rather than navigating. The
+  card's own ripple is what says it takes a tap.
+- **The sheet the row opens is `Rename` in the library and `Edit` on supplements.** Not a wording
+  slip, and it survived the menu that used to carry the two words: a saved food's fields are
+  corrected by re-saving from the add-entry sheet, so a library sheet offering Edit would promise a
+  form that does not exist. Supplements have one.
+- **Delete keeps the rule it had in the menu — below a divider, in `error`, with an `error`
+  glyph** — now as `SheetDeleteAction` at the foot of both sheets. It is drawn only where there is
+  something to delete: `SupplementEditSheet` hides it on `id == 0`, which is the add *and* the
+  scan flow's confirmation, both of which hold a row Room has never seen. Tapping it **dismisses
+  the sheet and raises the dialog** rather than confirming in place: one scrim at a time, and
+  "a saved thing asks before it goes" stays answered in the one component that asks.
 - **`DeleteConfirmDialog` puts Keep in the confirm slot.** It replaced `DiscardConfirmDialog` on
   all three screens, whose *confirm* is the destructive answer because it guards a back gesture
   out of an edited form. Here Keep is rightmost and `primary` — the thumb's default landing spot

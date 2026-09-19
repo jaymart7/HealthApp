@@ -510,9 +510,11 @@ panes at ≥840dp.
   About you — no save button, and the result card reprices as you nudge.
 - Light / dark / follow-device; mascot character row and a colour row opening the 35-swatch sheet.
 - One row family across all three "Your stuff" lists — supplements, food library, routines: a
-  marker tile, a title-weight name, the figures drawn as data, a one-line contents summary, and a
-  single 48dp overflow whose Delete sits below a rule in `error`. No swipe, no drag, no
-  multi-select, and nothing on any of the three can log, tick or start anything.
+  marker tile, a title-weight name, the figures drawn as data, a one-line contents summary, and
+  nothing on the right at all. The card itself opens the row's sheet — Edit on supplements, Rename
+  in the library and routines — and Delete lives at the foot of that sheet, below a rule in
+  `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
+  any of the three can log, tick or start anything.
 - Supplements: name, dose label, times per day, and **what one dose carries** — the seven graded
   nutrients, typable behind a "What's in a dose" disclosure that opens itself when there is
   something in it, with a µg/IU toggle on vitamin D because bottles print either. A→Z,

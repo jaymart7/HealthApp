@@ -37,7 +37,6 @@ import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.DeleteConfirmDialog
 import ph.mart.healthapp.feature.profile.ui.shared.components.FigureRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.QuietFigureLine
-import ph.mart.healthapp.feature.profile.ui.shared.components.RowOverflowMenu
 import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
 import ph.mart.healthapp.feature.profile.ui.supplement.components.FrequencyMarker
 import ph.mart.healthapp.feature.profile.ui.supplement.components.SupplementEditSheet
@@ -76,7 +75,6 @@ private fun SupplementsContent(
     // at.
     var editing by remember { mutableStateOf<Supplement?>(null) }
     var pendingDelete by remember { mutableStateOf<Supplement?>(null) }
-    val editLabel = stringResource(R.string.profile_edit)
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -129,14 +127,6 @@ private fun SupplementsContent(
                                     }
                                 },
                                 onClick = { editing = supplement },
-                                menu = {
-                                    RowOverflowMenu(
-                                        name = supplement.name,
-                                        primaryLabel = editLabel,
-                                        onPrimary = { editing = supplement },
-                                        onDelete = { pendingDelete = supplement },
-                                    )
-                                },
                             )
                         }
                     }
@@ -184,6 +174,12 @@ private fun SupplementsContent(
             onDismiss = { editing = null },
             onSave = { saved ->
                 onEvent(SupplementsEvent.OnSave(saved))
+                editing = null
+            },
+            // The sheet closes and the dialog takes over: one scrim at a time, and the question
+            // is asked in the one place that already asks it.
+            onDelete = {
+                pendingDelete = supplement
                 editing = null
             },
         )

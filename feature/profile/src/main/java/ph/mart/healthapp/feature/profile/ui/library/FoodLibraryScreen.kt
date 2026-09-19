@@ -46,7 +46,6 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.DeleteConfirmDialo
 import ph.mart.healthapp.feature.profile.ui.shared.components.FigureRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 import ph.mart.healthapp.feature.profile.ui.shared.components.RowMarker
-import ph.mart.healthapp.feature.profile.ui.shared.components.RowOverflowMenu
 import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
 
 /**
@@ -119,7 +118,6 @@ private fun FoodLibraryContent(
                 query = query,
                 total = uiState.total,
                 onRename = { renaming = it },
-                onDelete = { pendingDelete = it },
             )
         }
     }
@@ -163,6 +161,10 @@ private fun FoodLibraryContent(
                 )
                 renaming = null
             },
+            onDelete = {
+                pendingDelete = target
+                renaming = null
+            },
         )
     }
 }
@@ -173,9 +175,7 @@ private fun LibraryList(
     query: String,
     total: Int,
     onRename: (Target) -> Unit,
-    onDelete: (Target) -> Unit,
 ) {
-    val renameLabel = stringResource(R.string.profile_rename)
     val myFoodsLabel = stringResource(R.string.profile_library_my_foods)
     val savedMealsLabel = stringResource(R.string.profile_library_saved_meals)
     val recipesLabel = stringResource(R.string.profile_library_recipes)
@@ -220,14 +220,10 @@ private fun LibraryList(
                 detailContent = {
                     MacroTriplet(proteinG = food.proteinG, carbsG = food.carbsG, fatG = food.fatG)
                 },
-                menu = {
-                    RowOverflowMenu(
-                        name = food.name,
-                        primaryLabel = renameLabel,
-                        onPrimary = { onRename(Target.Food(food.name)) },
-                        onDelete = { onDelete(Target.Food(food.name)) },
-                    )
-                },
+                // The row is the control now that the overflow menu is gone. These three lists
+                // were the one place a row was not tappable — the menu was doing the job — so
+                // this is what they gain rather than lose.
+                onClick = { onRename(Target.Food(food.name)) },
             )
         }
         librarySection(
@@ -242,14 +238,7 @@ private fun LibraryList(
                 marker = { RowMarker(icon = AppIcons.Food.outlined, contentDescription = null) },
                 figures = { FigureRow(*meal.figures().toTypedArray()) },
                 detail = meal.items.contents().ifEmpty { null },
-                menu = {
-                    RowOverflowMenu(
-                        name = meal.name,
-                        primaryLabel = renameLabel,
-                        onPrimary = { onRename(Target.Meal(meal.id, meal.name)) },
-                        onDelete = { onDelete(Target.Meal(meal.id, meal.name)) },
-                    )
-                },
+                onClick = { onRename(Target.Meal(meal.id, meal.name)) },
             )
         }
         librarySection(
@@ -272,14 +261,7 @@ private fun LibraryList(
                     }
                 },
                 detail = recipe.items.contents().ifEmpty { null },
-                menu = {
-                    RowOverflowMenu(
-                        name = recipe.name,
-                        primaryLabel = renameLabel,
-                        onPrimary = { onRename(Target.Dish(recipe.id, recipe.name)) },
-                        onDelete = { onDelete(Target.Dish(recipe.id, recipe.name)) },
-                    )
-                },
+                onClick = { onRename(Target.Dish(recipe.id, recipe.name)) },
             )
         }
     }

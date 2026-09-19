@@ -25,11 +25,16 @@ import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
+import ph.mart.healthapp.feature.profile.ui.shared.components.SheetDeleteAction
 
 /**
  * Adds a supplement or edits one, seeded from [supplement] — `id == 0` is the add. One sheet for
  * both, the same way `RenameSheet` is seeded with the name it is about to change — and one sheet
  * for the scan too, which seeds it from a panel a model read rather than from a row.
+ *
+ * It is also where a supplement is deleted, now that the row's overflow menu is gone: below the
+ * fields, under a rule, and only on a row that exists. [SheetDeleteAction] argues the placement;
+ * the screen is what asks before anything goes.
  *
  * The draft lives here rather than in the screen: it is discarded on dismiss, and there is nothing
  * on the other side of Save that needs to have seen it. Back dismisses the sheet rather than the
@@ -49,6 +54,7 @@ internal fun SupplementEditSheet(
     supplement: Supplement,
     onDismiss: () -> Unit,
     onSave: (Supplement) -> Unit,
+    onDelete: () -> Unit = {},
 ) {
     var name by remember(supplement) { mutableStateOf(supplement.name) }
     var dose by remember(supplement) { mutableStateOf(supplement.dose) }
@@ -113,6 +119,9 @@ internal fun SupplementEditSheet(
                 enabled = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             )
+            // The same `id == 0` the title branches on: an add has nothing to delete, and neither
+            // does the scan flow's confirmation, which seeds a row Room has never seen.
+            if (supplement.id != 0L) SheetDeleteAction(onDelete = onDelete)
         }
     }
 }

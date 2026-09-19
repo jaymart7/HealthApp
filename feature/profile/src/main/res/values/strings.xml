@@ -7,9 +7,6 @@
     <string name="profile_name">Name</string>
     <string name="profile_rename">Rename</string>
     <string name="profile_edit">Edit</string>
-    <!-- The row overflow. Deliberately two words for two powers: the food library can only
-         rename, supplements have a real edit form. -->
-    <string name="profile_row_more">More options for %1$s</string>
     <string name="profile_delete_title">Delete %1$s?</string>
 
     <string name="profile_title">Profile</string>

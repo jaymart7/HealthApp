@@ -24,12 +24,17 @@ import ph.mart.healthapp.feature.profile.R
  *
  * The draft lives here rather than in the screen: it is discarded on dismiss, and there is nothing
  * on the other side of Save that needs to have seen it.
+ *
+ * [onDelete] is the row's delete, which lives here now that the overflow menu is gone — see
+ * [SheetDeleteAction]. It does not delete anything itself: the screen dismisses this sheet and
+ * raises [DeleteConfirmDialog], which is the one place that asks.
  */
 @Composable
 internal fun RenameSheet(
     currentName: String,
     onDismiss: () -> Unit,
     onRename: (String) -> Unit,
+    onDelete: () -> Unit,
 ) {
     var name by remember(currentName) { mutableStateOf(currentName) }
     AppBottomSheet(title = stringResource(R.string.profile_rename), onDismiss = onDismiss) {
@@ -43,6 +48,7 @@ internal fun RenameSheet(
                 enabled = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             )
+            SheetDeleteAction(onDelete = onDelete)
         }
     }
 }
@@ -51,6 +57,6 @@ internal fun RenameSheet(
 @Composable
 private fun RenameSheetPreview() {
     AppTheme {
-        RenameSheet(currentName = "Usual breakfast", onDismiss = {}, onRename = {})
+        RenameSheet(currentName = "Usual breakfast", onDismiss = {}, onRename = {}, onDelete = {})
     }
 }

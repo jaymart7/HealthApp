@@ -32,7 +32,6 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.DeleteConfirmDialo
 import ph.mart.healthapp.feature.profile.ui.shared.components.FigureRow
 import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 import ph.mart.healthapp.feature.profile.ui.shared.components.RowMarker
-import ph.mart.healthapp.feature.profile.ui.shared.components.RowOverflowMenu
 import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
 
 /**
@@ -63,7 +62,6 @@ private fun RoutinesContent(
     // process death would reopen asking about a row the user has stopped looking at.
     var pendingDelete by remember { mutableStateOf<Routine?>(null) }
     var renaming by remember { mutableStateOf<Routine?>(null) }
-    val renameLabel = stringResource(R.string.profile_rename)
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         if (!uiState.loaded) {
@@ -88,14 +86,6 @@ private fun RoutinesContent(
                     figures = { FigureRow(*routine.figures().toTypedArray()) },
                     detail = routine.lifts.contents().ifEmpty { null },
                     onClick = { renaming = routine },
-                    menu = {
-                        RowOverflowMenu(
-                            name = routine.name,
-                            primaryLabel = renameLabel,
-                            onPrimary = { renaming = routine },
-                            onDelete = { pendingDelete = routine },
-                        )
-                    },
                     footer = {
                         RoutinePlanZone(
                             days = routine.days,
@@ -127,6 +117,10 @@ private fun RoutinesContent(
             onDismiss = { renaming = null },
             onRename = { name ->
                 onEvent(RoutinesEvent.OnRename(routine.id, name))
+                renaming = null
+            },
+            onDelete = {
+                pendingDelete = routine
                 renaming = null
             },
         )
