@@ -16,7 +16,14 @@ import ph.mart.healthapp.feature.onboarding.R
 @StringRes private val DECLINED = R.string.onboarding_health_declined
 
 data class OnboardingHealthUiState(
-    val canConnect: Boolean = false,
+    /**
+     * Optimistic until the Play services round trip says otherwise. Starting it false made the
+     * step open on a disabled Connect **and** a way out relabelled "Continue" — the screen said
+     * the grant was impossible for as long as the check took, then changed its mind.
+     */
+    val canConnect: Boolean = true,
+    /** A Play services round trip, a consent sheet or a sync is in flight. */
+    val busy: Boolean = false,
     @StringRes val message: Int? = null,
     val messageIsError: Boolean = false,
     /** The consent sheet was raised and refused. The screen swaps its two actions' weight on
@@ -52,11 +59,22 @@ class OnboardingHealthViewModel(
             }
         }
 
+    /**
+     * Everything past the tap is a round trip — Play services, then either the consent Activity or
+     * a first sync — so `busy` goes up here and only comes down on a path that leaves the user on
+     * this screen. The consent branch deliberately leaves it up: the sheet is what happens next,
+     * and [onConsentResult] is what lowers it.
+     *
+     * The re-entrancy guard is not the disabled button's job. A second tap dispatched in the same
+     * frame is already in flight before the first recomposition lands.
+     */
     fun connect() = intent {
+        if (state.busy) return@intent
+        reduce { state.copy(busy = true, message = null) }
         when (val connection = repository.connection()) {
             is HealthConnection.Disconnected -> connection.pendingIntent
                 ?.let { postSideEffect(OnboardingHealthSideEffect.LaunchConsent(it)) }
-                ?: reduce { state.copy(message = UNAVAILABLE, messageIsError = true) }
+                ?: reduce { state.copy(busy = false, message = UNAVAILABLE, messageIsError = true) }
 
             // The grant already exists — a reinstall, say. Sync and move on.
             is HealthConnection.Connected -> {
@@ -64,8 +82,11 @@ class OnboardingHealthViewModel(
                 postSideEffect(OnboardingHealthSideEffect.Connected)
             }
 
-            HealthConnection.Checking, HealthConnection.Unavailable ->
-                reduce { state.copy(canConnect = false, message = UNAVAILABLE, messageIsError = true) }
+            // Checking is the screen's own placeholder in Profile and is never returned here;
+            // the branch exists because the `when` is exhaustive.
+            HealthConnection.Checking, HealthConnection.Unavailable -> reduce {
+                state.copy(busy = false, canConnect = false, message = UNAVAILABLE, messageIsError = true)
+            }
         }
     }
 
@@ -74,7 +95,7 @@ class OnboardingHealthViewModel(
             repository.sync()
             postSideEffect(OnboardingHealthSideEffect.Connected)
         } else {
-            reduce { state.copy(message = DECLINED, messageIsError = false, declined = true) }
+            reduce { state.copy(busy = false, message = DECLINED, messageIsError = false, declined = true) }
         }
     }
 }

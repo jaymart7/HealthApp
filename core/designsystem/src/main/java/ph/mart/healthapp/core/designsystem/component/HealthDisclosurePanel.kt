@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -87,6 +91,7 @@ fun HealthDisclosurePanel(
     message: String? = null,
     messageIsError: Boolean = false,
     actions: Boolean = true,
+    busy: Boolean = false,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = modifier.fillMaxWidth()) {
         if (title != null) {
@@ -189,12 +194,20 @@ fun HealthDisclosurePanel(
                 dismissLabel = dismissLabel,
                 connectEnabled = connectEnabled,
                 declined = declined,
+                busy = busy,
             )
         }
     }
 }
 
-/** The panel's two buttons, separable so a screen with a bottom bar can pin them to it. */
+/**
+ * The panel's two buttons, separable so a screen with a bottom bar can pin them to it.
+ *
+ * [connectEnabled] is whether the device can offer the grant **at all**; [busy] is a round trip
+ * already in flight. They are separate because only the first says anything about the way out —
+ * conflated, a sync started from this screen relabelled "Not now" to "Continue" for as long as it
+ * ran, which reads as the choice having been taken away.
+ */
 @Composable
 fun HealthDisclosureActions(
     onConnect: () -> Unit,
@@ -203,6 +216,7 @@ fun HealthDisclosureActions(
     modifier: Modifier = Modifier,
     connectEnabled: Boolean = true,
     declined: Boolean = false,
+    busy: Boolean = false,
 ) {
     // "Skip for now" implies a choice the user still has. Once the grant is impossible or already
     // refused, the only honest label on the way out is "Continue" — this substitutes it rather
@@ -214,17 +228,49 @@ fun HealthDisclosureActions(
     }
     val connect = stringResource(R.string.ds_health_connect)
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier.fillMaxWidth()) {
+        if (busy) {
+            val working = stringResource(R.string.ds_health_connecting)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 24.dp).semantics {
+                    contentDescription = working
+                },
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                Text(
+                    text = working,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         if (declined) {
-            PrimaryButton(label = dismiss, onClick = onDismiss, modifier = Modifier.fillMaxWidth())
-            TextButton(label = connect, onClick = onConnect, modifier = Modifier.fillMaxWidth())
+            PrimaryButton(
+                label = dismiss,
+                onClick = onDismiss,
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TextButton(
+                label = connect,
+                onClick = onConnect,
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth(),
+            )
         } else {
             PrimaryButton(
                 label = connect,
                 onClick = onConnect,
-                enabled = connectEnabled,
+                enabled = connectEnabled && !busy,
                 modifier = Modifier.fillMaxWidth(),
             )
-            SecondaryButton(label = dismiss, onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+            SecondaryButton(
+                label = dismiss,
+                onClick = onDismiss,
+                enabled = !busy,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -256,6 +302,23 @@ private fun HealthDisclosurePanelUnavailablePreview() {
                 connectEnabled = false,
                 message = "Google Health needs Google Play services and a signed-in Google account.",
                 messageIsError = true,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** Mid-round-trip: both buttons out, and something on screen saying why. */
+@PreviewLightDark
+@Composable
+private fun HealthDisclosurePanelBusyPreview() {
+    AppTheme {
+        Surface {
+            HealthDisclosurePanel(
+                onConnect = {},
+                onDismiss = {},
+                dismissLabel = "Skip for now",
+                busy = true,
                 modifier = Modifier.padding(16.dp),
             )
         }

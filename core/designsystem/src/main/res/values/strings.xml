@@ -117,6 +117,7 @@
     <string name="ds_health_assure_undo">Disconnect and delete it any time from Profile.</string>
     <string name="ds_health_continue">Continue</string>
     <string name="ds_health_connect">Connect Google Health</string>
+    <string name="ds_health_connecting">Connecting…</string>
 
     <!-- Shared image (ShareImageSheet) -->
     <string name="ds_share">Share</string>

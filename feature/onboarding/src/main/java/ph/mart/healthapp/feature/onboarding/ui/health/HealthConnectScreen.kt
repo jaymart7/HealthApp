@@ -45,13 +45,15 @@ internal fun HealthConnectScreen(
         when (effect) {
             is OnboardingHealthSideEffect.LaunchConsent ->
                 consentLauncher.launch(IntentSenderRequest.Builder(effect.pendingIntent.intentSender).build())
-            // Connected and the first sync is away — nothing to wait for, keep the wizard moving.
+            // The grant is in and the first sync has landed — whatever it returned. A sync that
+            // came back empty or offline is not a reason to hold the wizard on a consent screen.
             OnboardingHealthSideEffect.Connected -> onNext()
         }
     }
 
     HealthConnectContent(
         canConnect = uiState.canConnect,
+        busy = uiState.busy,
         message = uiState.message,
         messageIsError = uiState.messageIsError,
         declined = uiState.declined,
@@ -64,6 +66,7 @@ internal fun HealthConnectScreen(
 @Composable
 private fun HealthConnectContent(
     canConnect: Boolean,
+    busy: Boolean,
     @StringRes message: Int?,
     messageIsError: Boolean,
     declined: Boolean,
@@ -87,6 +90,7 @@ private fun HealthConnectContent(
                 dismissLabel = skip,
                 connectEnabled = canConnect,
                 declined = declined,
+                busy = busy,
             )
         },
     ) {
@@ -113,6 +117,7 @@ private fun HealthConnectScreenPreview() {
         Surface(color = MaterialTheme.colorScheme.surface) {
             HealthConnectContent(
                 canConnect = true,
+                busy = false,
                 message = null,
                 messageIsError = false,
                 declined = false,
@@ -132,6 +137,7 @@ private fun HealthConnectScreenUnavailablePreview() {
         Surface(color = MaterialTheme.colorScheme.surface) {
             HealthConnectContent(
                 canConnect = false,
+                busy = false,
                 message = R.string.onboarding_health_unavailable,
                 messageIsError = true,
                 declined = false,
@@ -151,6 +157,7 @@ private fun HealthConnectScreenDeclinedPreview() {
         Surface(color = MaterialTheme.colorScheme.surface) {
             HealthConnectContent(
                 canConnect = true,
+                busy = false,
                 message = R.string.onboarding_health_declined,
                 messageIsError = false,
                 declined = true,

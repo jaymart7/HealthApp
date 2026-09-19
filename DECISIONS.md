@@ -4215,6 +4215,17 @@ form, three cards against the top of a 915dp screen and twenty-six taps to set a
   copy is one of several panels in a scroll on a screen with no bottom bar to pin to. The label
   and weight logic — "Skip for now" becoming "Continue", the declined swap — moved with the
   buttons rather than being duplicated at the new call site.
+- **Step 5 is optimistic while it checks, and says so while it works.** `canConnect` starts
+  *true*. False meant the step opened on a disabled Connect and a way out already relabelled
+  "Continue" — for the length of a Play services round trip the screen claimed the grant was
+  impossible, then changed its mind. Nothing is actionable during the check anyway, so the
+  optimistic default is never a promise that gets broken. After the tap, `busy` carries the
+  consent round trip and the first sync: both buttons out, a spinner and "Connecting…" above them.
+  `busy` is separate from `connectEnabled` in `HealthDisclosureActions` because only the second
+  says anything about the way out — folded together, as Profile had them, a sync started from the
+  disclosure relabelled "Not now" to "Continue" for as long as it ran. The re-entrancy guard in
+  `connect()` is not the disabled button's job: a second tap dispatched in the same frame is in
+  flight before the first recomposition lands.
 - **Step 6 leads with the number and shows its working.** The calorie figure at 57sp on its own
   card, and under it "1,961 kcal maintenance − 500 for steady loss". The derivation is the part
   that earns the size: it turns the number from an assertion into a calculation the reader can

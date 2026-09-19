@@ -175,7 +175,11 @@ private fun HealthConnectionContent(
                     onConnect = onConnect,
                     onDismiss = onBack,
                     dismissLabel = stringResource(R.string.profile_health_not_now),
-                    connectEnabled = !uiState.busy && connection is HealthConnection.Disconnected,
+                    // `busy` rather than folding the sync into `connectEnabled`: that one says
+                    // whether the device can offer the grant at all, and it is what decides
+                    // whether the way out reads "Not now" or "Continue".
+                    connectEnabled = connection is HealthConnection.Disconnected,
+                    busy = uiState.busy,
                     message = message,
                     messageIsError = uiState.messageIsError,
                 )
