@@ -45,7 +45,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 
 /** Flip to false to leave a fresh debug install empty. Debug source set only — nothing to guard
  * against in release, where [seedDebugData] is already a no-op. */
-private const val SEED_DATA = true
+private const val SEED_DATA = false
 
 /**
  * Fills a fresh debug install with one varied dataset so every data-driven screen — Home's rings,

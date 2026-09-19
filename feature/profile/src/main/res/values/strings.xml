@@ -213,7 +213,7 @@
         <item quantity="other">%1$d supplements · A to Z</item>
     </plurals>
     <string name="profile_supplements_no_dose">No dose set</string>
-    <string name="profile_supplements_add">Add supplement</string>
+    <string name="profile_supplements_add">Add</string>
     <string name="profile_supplements_edit">Edit supplement</string>
     <string name="profile_supplements_delete_body">It leaves your daily list. Days you already ticked keep their record.</string>
     <string name="profile_supplements_dose">Dose (optional)</string>
