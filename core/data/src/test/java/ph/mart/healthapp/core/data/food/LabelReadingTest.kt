@@ -60,4 +60,24 @@ class LabelReadingTest {
         assertEquals(400, ironUgFrom(ironMg = 0.4))
         assertEquals(0, ironUgFrom(ironMg = null))
     }
+
+    /** The supplement sheet puts a stored figure back in a typable box, so the pair has to come
+     * back where it started — a bottle printing 2000 IU must still read 2000 IU after a save. */
+    @Test
+    fun `vitamin D round-trips through international units`() {
+        assertEquals(2000, vitaminDIuFrom(vitaminDUg = 50))
+        assertEquals(50, vitaminDUgFrom(vitaminDUg = null, vitaminDIu = vitaminDIuFrom(50)))
+        assertEquals(0, vitaminDIuFrom(vitaminDUg = 0))
+    }
+
+    /** Whole milligrams both ways, which is every iron supplement ever sold. The sub-milligram
+     * case is the documented ceiling: 400 µg reads as nothing in a box measured in mg. */
+    @Test
+    fun `iron round-trips through milligrams, and rounds below one`() {
+        assertEquals(18, ironMgFrom(ironUg = 18_000))
+        assertEquals(18_000, ironUgFrom(ironMg = ironMgFrom(18_000).toDouble()))
+        assertEquals(1, ironMgFrom(ironUg = 1200))
+        assertEquals(0, ironMgFrom(ironUg = 400))
+        assertEquals(0, ironMgFrom(ironUg = 0))
+    }
 }

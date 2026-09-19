@@ -513,14 +513,19 @@ panes at ≥840dp.
   marker tile, a title-weight name, the figures drawn as data, a one-line contents summary, and a
   single 48dp overflow whose Delete sits below a rule in `error`. No swipe, no drag, no
   multi-select, and nothing on any of the three can log, tick or start anything.
-- Supplements: name, dose label, times per day; A→Z, times-per-day as the row's marker tile, a
-  docked bar that never scrolls away carrying Add beside **Scan label**, edit and delete.
+- Supplements: name, dose label, times per day, and **what one dose carries** — the seven graded
+  nutrients, typable behind a "What's in a dose" disclosure that opens itself when there is
+  something in it, with a µg/IU toggle on vitamin D because bottles print either. A→Z,
+  times-per-day as the row's marker tile, a docked bar that never scrolls away carrying Add beside
+  **Scan label**, edit and delete.
 - Supplement-label scan — photograph the Supplement Facts panel and a model transcribes it into
   the same edit sheet, seeded: the product name, the serving as the label words it ("2 capsules")
   as the dose, the frequency where the directions state one, and every declared line listed back
   read-only. The four this app grades (vitamin D, calcium, iron, potassium) are kept as figures and
-  count toward the day; the rest — vitamin C, B12, zinc, magnesium — are kept as printed text,
-  shown and never graded, because there is no field or target for them. Nothing is estimated.
+  count toward the day and land in the same typable fields, so a misread digit is corrected rather
+  than re-scanned; the rest — vitamin C, B12, zinc, magnesium — are kept as printed text, shown and
+  never graded, because there is no field or target for them. The transcript stays as it was read
+  even after a correction. Nothing is estimated.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything). The food library adds a persistent search over
   names *and* contents lines, with match highlighting, and sticky counted section headers; My

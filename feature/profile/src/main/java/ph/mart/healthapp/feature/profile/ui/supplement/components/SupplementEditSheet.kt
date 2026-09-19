@@ -36,6 +36,10 @@ import ph.mart.healthapp.feature.profile.R
  * screen under it — that comes from [AppBottomSheet]'s `ModalBottomSheet`, so there is no separate
  * handler to wire.
  *
+ * The dose *label* and the dose's *figures* are two different fields and always have been: the
+ * label is what the user would say out loud ("2000 IU") and nothing parses it, while
+ * [DoseNutrientFields] below it holds what actually counts toward the day.
+ *
  * Times-per-day is the read-only [NumericStepperField], not the typable one: the range is 1–6, so
  * a keyboard would be a heavier gesture than the two taps it replaces — the same call the water
  * goal and a recipe's servings count make.
@@ -49,6 +53,9 @@ internal fun SupplementEditSheet(
     var name by remember(supplement) { mutableStateOf(supplement.name) }
     var dose by remember(supplement) { mutableStateOf(supplement.dose) }
     var timesPerDay by remember(supplement) { mutableIntStateOf(supplement.timesPerDay) }
+    // The whole value rather than seven fields: a cell writes only its own, so a figure the user
+    // never touched survives a save it was only rounded for display.
+    var nutrients by remember(supplement) { mutableStateOf(supplement.nutrients) }
 
     AppBottomSheet(
         title = stringResource(
@@ -69,10 +76,14 @@ internal fun SupplementEditSheet(
                 onValueChange = { if (it.length <= SUPPLEMENT_DOSE_MAX) dose = it },
                 placeholder = stringResource(R.string.profile_supplements_dose),
             )
-            // What the panel said, when a panel was read. The figures themselves are carried on
-            // [supplement] and are not editable: they were copied off a bottle, and a typed
-            // correction to a number nobody typed is a worse claim than the reading. Re-scan to
-            // change them, or clear them by adding the supplement by hand.
+            // What one dose carries, and the only way to get it without a camera. Typing the
+            // four this app grades is the exception to a rule that holds everywhere else —
+            // [DoseNutrientFields] argues it.
+            DoseNutrientFields(nutrients = nutrients, onChange = { nutrients = it })
+            // What the panel said, when a panel was read: the transcript, not the figures. It is
+            // read-only and stays that way — a correction belongs in the fields above, and the
+            // two are allowed to differ afterwards, which is exactly the case this sheet exists
+            // to serve. Absent on every supplement nobody scanned.
             PanelReadout(panel = supplement.panel)
             NumericStepperField(
                 label = stringResource(R.string.profile_supplements_how_often),
@@ -88,7 +99,14 @@ internal fun SupplementEditSheet(
             PrimaryButton(
                 label = stringResource(R.string.profile_save),
                 onClick = {
-                    onSave(supplement.copy(name = name, dose = dose, timesPerDay = timesPerDay))
+                    onSave(
+                        supplement.copy(
+                            name = name,
+                            dose = dose,
+                            timesPerDay = timesPerDay,
+                            nutrients = nutrients,
+                        ),
+                    )
                 },
                 // A nameless supplement is unidentifiable, and unlike a diary entry it has no
                 // calorie figure to stand in for one — the same guard `RenameSheet` applies.

@@ -90,6 +90,26 @@ fun vitaminDUgFrom(vitaminDUg: Double?, vitaminDIu: Int?): Int = when {
 fun ironUgFrom(ironMg: Double?): Int =
     if (ironMg != null && ironMg > 0) (ironMg * UG_PER_MG).roundToInt() else 0
 
+/**
+ * The inverses, for the one place a stored figure has to go back in a typable box: a supplement's
+ * per-dose fields, where the user is holding the bottle these units were printed on.
+ *
+ * Beside the forward pair rather than in `:feature:profile` because they share these two constants,
+ * and a conversion written twice is a conversion that drifts. [LabelReadingTest] round-trips both.
+ */
+fun vitaminDIuFrom(vitaminDUg: Int): Int =
+    if (vitaminDUg > 0) (vitaminDUg * IU_PER_UG_VITAMIN_D).roundToInt() else 0
+
+/**
+ * Micrograms in, milligrams out — what [ironUgFrom] undoes, and what the panel prints.
+ *
+ * ponytail: whole milligrams, so a stored iron under 500 µg reads 0 in the cell. Nothing is lost —
+ * a cell the user does not touch never writes back — but the display rounds. A decimal field is
+ * the upgrade path if a supplement ever declares a fraction of a milligram.
+ */
+fun ironMgFrom(ironUg: Int): Int =
+    if (ironUg > 0) (ironUg.toDouble() / UG_PER_MG).roundToInt() else 0
+
 private const val IU_PER_UG_VITAMIN_D = 40.0
 
 private const val UG_PER_MG = 1000

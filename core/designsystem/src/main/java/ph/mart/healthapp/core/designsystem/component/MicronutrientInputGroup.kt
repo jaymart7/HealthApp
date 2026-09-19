@@ -42,6 +42,12 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * never typed — nobody hand-corrects a calcium figure — so there is no stepper for them here. All
  * seven are shown where they are graded, in `NutrientPanel`.
  *
+ * **A supplement is the one exception, and it does not live here.** `DoseNutrientFields` in
+ * `:feature:profile` offers all seven, because a bottle is the opposite case to a plate in every
+ * respect: the figure is printed rather than estimated, there are one or two of them, and the user
+ * is holding the thing it is printed on. That component is feature-local precisely so this one can
+ * go on offering exactly three to the four food callers that draw it.
+ *
  * These three carry **no colour**. Protein = `primary`, carbs = `tertiary`, fat = `secondary` are
  * fixed everywhere in the app because those three share a bar; nothing in this group appears in
  * that bar, so borrowing a dot would claim a relationship that isn't there.

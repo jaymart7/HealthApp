@@ -3977,10 +3977,11 @@ rather than needing a counter patched.
   meaning "add" is what keeps the add and the edit on one save path.
 - **A scanned supplement carries per-dose figures, and they are snapshotted like `dueTimes`.**
   `Supplement.nutrients` is what one *serving* declares, because one tick is one serving, and it is
-  written once by the scan and never re-read from anywhere. Rescanning a reformulated bottle next
-  year changes what tomorrow's ticks contribute and leaves every past day exactly as it was — the
-  rule `supplement_day.dueTimes` already follows one field over, and the reason both live on the
-  row rather than being derived at read time.
+  read from nowhere but the row. Rescanning a reformulated bottle next year changes what tomorrow's
+  ticks contribute and leaves every past day exactly as it was — the rule `supplement_day.dueTimes`
+  already follows one field over, and the reason both live on the row rather than being derived at
+  read time. The snapshot is **editable**, which does not weaken it: a typed correction is another
+  write to the same field, with the same forward-only effect.
 
 - **Four of a panel's lines are graded; the rest are text, and that split is deliberate.**
   `Nutrients` holds seven figures and a multivitamin declares twenty — vitamin A, C, E, B12, zinc,
@@ -3992,6 +3993,32 @@ rather than needing a counter patched.
   still could not say anything about. `PanelReadout` shows the printed lines rather than the stored
   ones for the same reason: a bottle saying "Vitamin D3 2000 IU" has to read that way under a
   supplement whose stored figure is 50 µg.
+
+- **A supplement's seven figures are typable, and that is the app's one exception to "the four are
+  never typed".** `MicronutrientInputGroup` offers fiber, sugar and sodium and refuses vitamin D,
+  calcium, iron and potassium on the argument that nobody hand-corrects a calcium figure. That
+  argument is about a *plate*, where a micronutrient is an estimate nobody can check against
+  anything. A bottle inverts every term of it: the figure is printed, there are one or two rather
+  than seven, and the user is holding the thing it is printed on. Left read-only, the scan was the
+  only way to get a figure at all — so a bottle that photographs badly carried nothing, and a model
+  that misread a digit could not be corrected, which is the one case a figure is most likely wrong.
+  `DoseNutrientFields` is therefore feature-local rather than a widening of the shared component:
+  the food rule stands unchanged for its four callers, and both KDocs now name the other.
+  **The scanned `panel` stays read-only beside the fields**, as the transcript rather than the
+  figures. The two are allowed to disagree after a correction; that disagreement *is* the record of
+  one, and rewriting the transcript to match would erase what the bottle actually said.
+
+- **Vitamin D is the only field in the app with a unit toggle, and iron rounds to whole
+  milligrams.** A US bottle prints "2000 IU" and a European one "50 µg" for the same tablet, so a
+  µg-only box turns the commoner label into a silent 40× overstatement — and unlike a mistyped
+  calcium, this one is then graded against a target on the day's panel. The toggle is a
+  `SegmentedToggle` beside the cell and the conversion is `vitaminDUgFrom`/`vitaminDIuFrom` in
+  `:core:data`, where `LabelReadingTest` round-trips it; no arithmetic happens in the composable.
+  Iron is the mirror case and takes the cheaper answer: `Nutrients` stores micrograms because a
+  0.4 mg *food* would round to nothing, but no supplement declares a fraction of a milligram, so
+  the box is whole mg. *ponytail: a stored iron under 500 µg reads 0 in that box. Nothing is lost —
+  a cell the user does not touch is never written back, which is also why the sheet's draft is a
+  whole `Nutrients` rather than seven fields — but the display rounds.*
 
 - **Supplements join the day's *nutrient panel* and nothing else on the diary.** A ticked
   multivitamin genuinely supplied its vitamin D and a panel that ignored it reports a shortfall the

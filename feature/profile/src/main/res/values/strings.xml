@@ -231,13 +231,20 @@
         <item quantity="other">times a day</item>
     </plurals>
 
+    <!-- What a dose carries, typed -->
+    <string name="profile_supplements_dose_nutrients">What\'s in a dose</string>
+    <string name="profile_supplements_dose_nutrients_hint">One dose, as the label prints it. FitPulse counts these toward your day when you tick it.</string>
+    <string name="profile_supplements_dose_nutrients_optional">Optional</string>
+    <string name="profile_supplements_dose_nutrients_show">Show what\'s in a dose</string>
+    <string name="profile_supplements_dose_nutrients_hide">Hide what\'s in a dose</string>
+
     <!-- Supplement label scan -->
     <string name="profile_supplements_scan">Scan label</string>
     <string name="profile_supplements_scan_frame">Fit the Supplement Facts panel in frame</string>
     <string name="profile_supplements_scan_reading">Reading the label…</string>
     <string name="profile_supplements_scan_reading_body">Copying what the panel says so you don\'t have to type it.</string>
     <string name="profile_supplements_scan_chip">AI read this</string>
-    <string name="profile_supplements_scan_panel_caveat">Straight off the label — check it against the bottle. FitPulse counts the ones it tracks toward your day.</string>
+    <string name="profile_supplements_scan_panel_caveat">Straight off the label — check it against the bottle. Correct anything wrong in the fields above; this stays as it was read.</string>
     <string name="profile_supplements_scan_unreadable">We couldn\'t find a panel</string>
     <string name="profile_supplements_scan_unreadable_body">Point the camera at the Supplement Facts panel on the back of the bottle, or add it by hand.</string>
     <string name="profile_supplements_scan_failed">That didn\'t work</string>

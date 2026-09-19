@@ -30,6 +30,12 @@ import ph.mart.healthapp.feature.profile.R
  * Read-only, and the chip is what says a model was involved at all. The four this app *does* grade
  * appear in this list too, so the user checks one thing against the bottle rather than two.
  *
+ * **It is the transcript, not the figures.** `DoseNutrientFields` above it is what the supplement
+ * actually carries and what the day counts, and a user who corrects a misread digit there leaves
+ * this list saying what the model read. That is the point rather than a defect: the two disagreeing
+ * is the record of a correction, and overwriting the transcript to match would erase the evidence
+ * of what was on the bottle.
+ *
  * Absent when [panel] is blank, which is every supplement typed by hand.
  */
 @Composable
