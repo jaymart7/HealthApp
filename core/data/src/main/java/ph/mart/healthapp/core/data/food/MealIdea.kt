@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.food
 
+import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.data.profile.DietaryPreference
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.stripMarkdown
@@ -23,6 +24,7 @@ import ph.mart.healthapp.core.data.stripMarkdown
  * [remainingKcal] and the three macro gaps may be negative on a day already over target; the
  * screen doesn't offer the button then, but the type doesn't pretend it can't happen.
  */
+@Serializable
 data class MealIdeaRequest(
     val goal: Goal,
     val mealType: MealType,

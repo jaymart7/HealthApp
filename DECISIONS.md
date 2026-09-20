@@ -600,9 +600,10 @@ rather than needing a counter patched.
 - **Searching *across* days is a route, not a third meaning for that field.** The header filter
   narrows the open day and `FoodSearchPanel` searches foods-you-could-log; neither can answer "when
   did I last eat that", and the add-entry sheet's recents cap at five names. `FoodHistoryRoute`
-  does, and it is a route rather than an overlay for the reason meal ideas is an overlay: ideas are
-  folded out of state the diary already holds, while this has its own query, its own Room read and
-  its own ViewModel — which is what `CLAUDE.md` says earns a flow package. The door sits at the
+  does, and it is a route because it has its own query, its own Room read and its own ViewModel —
+  which is what `CLAUDE.md` says earns a flow package. (Meal ideas was the overlay this was once
+  contrasted against; it is a route too now, for the chrome rather than for a ViewModel — see
+  **Meal ideas & talk-to-log**.) The door sits at the
   foot of the scroll beside "Share the day", and unlike that one it is drawn on an **empty** day
   too: a day with nothing on it is exactly when you want to look backwards. It carries
   `FoodScreenState.searchQuery` along, so a word already typed into the header isn't typed twice.
@@ -3291,14 +3292,21 @@ rather than needing a counter patched.
   and the field is defaulted so a v13 file still imports. Google Health is import-only for exercise
   and has no shape for a set, so nothing changed there.
 
-- **Meal ideas is the one screen that answers "what should I eat?", and it is an overlay, not a
-  route.** Everything it needs — the day's gap, the recents, the recipes — is already combined by
-  the diary underneath, so `MealIdeasScreen` reads `FoodUiState` and folds `mealIdeaRequest()`
-  itself, exactly as `RecapScreen` and `TimelapseScreen` read `ProgressUiState`: a route would have
-  earned its own `ViewModelStoreOwner` and with it a second copy of `FoodViewModel`'s five
-  repositories to draw a screen that writes nothing. `MealIdeasViewModel` therefore takes two
-  dependencies — the model call and `NetworkMonitor` — and it wires its own `NavigationBackHandler`,
-  or back would leave the Food tab. **Picking an idea seeds the add-entry sheet, it does not log**:
+- **Meal ideas is the one screen that answers "what should I eat?", and it is a route.** It was an
+  overlay first, on the argument `RecapScreen` and `TimelapseScreen` made — everything it shows is
+  already combined by the diary underneath, and a route earns its own `ViewModelStoreOwner`. What
+  that argument left out is the chrome: an overlay drawn inside the tab's entry still has the bottom
+  bar and the docked FAB over it, and it has to hand-roll a `NavigationBackHandler` to stop back
+  leaving the tab. Both recap surfaces have since become routes for exactly that, and this followed
+  them. **The request rides the key** — `MealIdeasRoute(request: MealIdeaRequest)`, computed by the
+  diary before the push — so the second copy of `FoodViewModel`'s five repositories never happens;
+  `MealIdeasViewModel` gained one dependency, `FoodRepository`, read once per failure for the
+  offline fallback the diary used to hand down. Two Room reads is the whole price of the move.
+  **The pick travels back through `:app`.** The diary is a back-stack entry below now, so
+  `AppScaffold` holds a `pendingIdea` beside the sheet arguments it already holds, pops the route
+  and hands the idea down to `FoodScreen`, which feeds it to the `selectIdea` that has always
+  seeded the sheet. `FoodScreenState.ideasFor` stayed: it is the memo of which meal asked, and it
+  is already in the saver. **Picking an idea seeds the add-entry sheet, it does not log**:
   an estimate has to be repriceable by the portion stepper, and the sheet is the landing a recipe, a
   recent and a search hit already have, so the feature adds no write path at all. The button sits
   *above* the sheet's four panels because it answers a different question — they are faster ways to

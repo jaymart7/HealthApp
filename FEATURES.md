@@ -196,8 +196,10 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   chart, in no recap, on no shared picture and in no copied day.
 - Share the day — a PNG card of the day's summary bar and its per-meal totals, from a link at
   the foot of the diary. Absolute date, no food names.
-- Meal ideas — AI suggestions sized to the day's remaining calories, with an offline fallback
-  built from the user's own recents and recipes; picking one seeds the add sheet, never logs.
+- Meal ideas — a route above the tab (no bottom bar, no FAB), reached from the add-entry sheet:
+  AI suggestions sized to the day's remaining calories, with an offline fallback built from the
+  user's own recents and recipes; picking one returns to the diary and seeds the add sheet,
+  never logs.
 
 ## Camera, barcode & the label
 

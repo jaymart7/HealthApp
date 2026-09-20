@@ -3,8 +3,8 @@ package ph.mart.healthapp.feature.food.ui.ideas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,22 +14,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
-import ph.mart.healthapp.core.data.food.FoodSuggestion
 import ph.mart.healthapp.core.data.food.MealIdea
 import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.MealType
-import ph.mart.healthapp.core.data.food.Recipe
-import ph.mart.healthapp.core.data.food.localMealIdeas
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.designsystem.component.AIChip
 import ph.mart.healthapp.core.designsystem.component.AIChipVariant
@@ -45,23 +38,23 @@ import ph.mart.healthapp.feature.food.ui.shared.components.ThinkingState
 /**
  * The one screen in FitPulse that answers "what should I eat?" rather than "what did I eat?".
  *
- * A full-screen overlay inside the Food tab, not a route — `RecapScreen`'s call, and for its
- * reason: everything it shows (the day's gap, the recents, the recipes) is already combined by the
- * diary underneath, and a route would have earned its own `ViewModelStoreOwner` and a second copy
- * of that observer to draw a screen that writes nothing. [MealIdeasViewModel] therefore holds the
- * model call alone.
+ * A route ([MealIdeasRoute][ph.mart.healthapp.feature.food.ui.MealIdeasRoute]), which is what gets
+ * it the three things it was hand-rolling as an overlay: no bottom bar, no FAB, and a back press
+ * that leaves rather than closes. `AppScaffold` draws its toolbar — there is no `actions` slot to
+ * fill, so nothing here has to.
+ *
+ * The day's gap rides the route key, already worked out by the diary, so [MealIdeasViewModel] still
+ * holds no copy of that observer: the model call, and the user's own foods to fall back on.
  *
  * Tapping an idea seeds the add-entry sheet rather than logging it: an estimate has to be
  * adjustable, and the sheet is where every other seeded path — a recipe, a recent, a search hit —
- * already lands.
+ * already lands. The diary is a back-stack entry below by then, so the pick travels back through
+ * `:app`, which pops this route and hands the diary the idea.
  */
 @Composable
 internal fun MealIdeasScreen(
     request: MealIdeaRequest,
-    suggestions: List<FoodSuggestion>,
-    recipes: List<Recipe>,
     onSelect: (MealIdea) -> Unit,
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MealIdeasViewModel = koinViewModel(),
 ) {
@@ -69,11 +62,8 @@ internal fun MealIdeasScreen(
     MealIdeasContent(
         uiState = uiState,
         request = request,
-        suggestions = suggestions,
-        recipes = recipes,
         onEvent = viewModel::handleEvent,
         onSelect = onSelect,
-        onClose = onClose,
         modifier = modifier,
     )
 }
@@ -82,11 +72,8 @@ internal fun MealIdeasScreen(
 private fun MealIdeasContent(
     uiState: MealIdeasUiState,
     request: MealIdeaRequest,
-    suggestions: List<FoodSuggestion>,
-    recipes: List<Recipe>,
     onEvent: (MealIdeasEvent) -> Unit,
     onSelect: (MealIdea) -> Unit,
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Asked once, on the request the screen opened with. The budget under it moves whenever
@@ -94,20 +81,11 @@ private fun MealIdeasContent(
     // recomposition would spend a model call per frame.
     LaunchedEffect(Unit) { onEvent(MealIdeasEvent.OnRequest(request)) }
 
-    // An overlay, not a route: back closes it rather than leaving the Food tab.
-    val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
-    NavigationBackHandler(state = navigationState, onBackCompleted = onClose)
-
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                text = stringResource(R.string.food_ideas_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
             Text(
                 text = request.remainingLine(),
                 style = MaterialTheme.typography.bodyMedium,
@@ -125,9 +103,7 @@ private fun MealIdeasContent(
                         onSelect = onSelect,
                     )
                     is MealIdeasUiState.Failed -> {
-                        val own = remember(suggestions, recipes, request.remainingKcal) {
-                            localMealIdeas(suggestions, recipes, request.remainingKcal)
-                        }
+                        val own = uiState.own
                         if (own.isEmpty()) {
                             NothingToSuggest(offline = uiState.offline)
                         } else {
@@ -149,15 +125,14 @@ private fun MealIdeasContent(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (uiState is MealIdeasUiState.Failed) {
-                    SecondaryButton(
-                        label = stringResource(R.string.food_try_again),
-                        onClick = { onEvent(MealIdeasEvent.OnRequest(request)) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                SecondaryButton(label = stringResource(R.string.food_close), onClick = onClose, modifier = Modifier.weight(1f))
+            // Retry alone: closing is the toolbar's arrow now, and a second button saying what
+            // back already says is one more thing to aim at.
+            if (uiState is MealIdeasUiState.Failed) {
+                SecondaryButton(
+                    label = stringResource(R.string.food_try_again),
+                    onClick = { onEvent(MealIdeasEvent.OnRequest(request)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
@@ -231,11 +206,8 @@ private fun MealIdeasScreenPreview() {
         MealIdeasContent(
             uiState = MealIdeasUiState.Ideas(PREVIEW_IDEAS),
             request = PREVIEW_REQUEST,
-            suggestions = emptyList(),
-            recipes = emptyList(),
             onEvent = {},
             onSelect = {},
-            onClose = {},
         )
     }
 }
@@ -247,11 +219,8 @@ private fun MealIdeasLoadingPreview() {
         MealIdeasContent(
             uiState = MealIdeasUiState.Loading,
             request = PREVIEW_REQUEST,
-            suggestions = emptyList(),
-            recipes = emptyList(),
             onEvent = {},
             onSelect = {},
-            onClose = {},
         )
     }
 }
@@ -262,16 +231,16 @@ private fun MealIdeasLoadingPreview() {
 private fun MealIdeasOfflinePreview() {
     AppTheme {
         MealIdeasContent(
-            uiState = MealIdeasUiState.Failed(offline = true),
-            request = PREVIEW_REQUEST,
-            suggestions = listOf(
-                FoodSuggestion("Greek yogurt", 1.0, "cup", 150, 20, 8, 4, isFavorite = true),
-                FoodSuggestion("Chicken salad", 1.0, "serving", 380, 35, 12, 20, isFavorite = false),
+            uiState = MealIdeasUiState.Failed(
+                offline = true,
+                own = listOf(
+                    MealIdea("Greek yogurt", 1.0, "cup", 150, 20, 8, 4),
+                    MealIdea("Chicken salad", 1.0, "serving", 380, 35, 12, 20),
+                ),
             ),
-            recipes = emptyList(),
+            request = PREVIEW_REQUEST,
             onEvent = {},
             onSelect = {},
-            onClose = {},
         )
     }
 }
@@ -282,13 +251,10 @@ private fun MealIdeasOfflinePreview() {
 private fun MealIdeasEmptyPreview() {
     AppTheme {
         MealIdeasContent(
-            uiState = MealIdeasUiState.Failed(offline = true),
+            uiState = MealIdeasUiState.Failed(offline = true, own = emptyList()),
             request = PREVIEW_REQUEST,
-            suggestions = emptyList(),
-            recipes = emptyList(),
             onEvent = {},
             onSelect = {},
-            onClose = {},
         )
     }
 }

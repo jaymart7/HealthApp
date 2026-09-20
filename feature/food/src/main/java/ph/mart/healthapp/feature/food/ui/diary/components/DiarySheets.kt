@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import kotlinx.coroutines.launch
+import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
@@ -30,7 +31,6 @@ import ph.mart.healthapp.feature.food.ui.diary.mealIdeaRequest
 import ph.mart.healthapp.feature.food.ui.diary.rememberFoodScreenState
 import ph.mart.healthapp.feature.food.ui.diary.toAddEntryForm
 import ph.mart.healthapp.feature.food.ui.diary.toSavedMealItem
-import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasScreen
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.isSaveableFood
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
@@ -50,6 +50,9 @@ internal fun DiarySheets(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onNewRecipe: () -> Unit,
+    /** "Get ideas" is a route above the tab now, so the diary hands the gap up rather than drawing
+     * the screen over itself. The sheet closes first, the handover "New recipe" already makes. */
+    onGetIdeas: (MealIdeaRequest) -> Unit,
     /** The diary's host, because a row thrown away from the edit sheet raises the same undo the
      * swipe does — and it is the diary the sheet has just closed onto that shows it. */
     snackbarHostState: SnackbarHostState,
@@ -137,11 +140,14 @@ internal fun DiarySheets(
             onToggleFavorite = { suggestion, favorite ->
                 onEvent(FoodEvent.OnToggleFavorite(suggestion, favorite))
             },
-            onGetIdeas = if (editingId == null && uiState.mealIdeaRequest(activeMealSheet) != null) {
-                { state.openIdeas(activeMealSheet) }
-            } else {
-                null
-            },
+            onGetIdeas = uiState.mealIdeaRequest(activeMealSheet)
+                ?.takeIf { editingId == null }
+                ?.let { request ->
+                    {
+                        state.openIdeas(activeMealSheet)
+                        onGetIdeas(request)
+                    }
+                },
             // One level at a time — Search → Browse, Form → Browse — and the sheet only closes once
             // there is no level left. `backFromSheet` owns that ladder so the arrow in the form's
             // top bar and the system gesture cannot disagree about it.
@@ -182,22 +188,6 @@ internal fun DiarySheets(
                     Unit
                 }
             },
-        )
-    }
-
-    // A full-screen overlay over the diary, drawn last so it covers it — the shape the recap
-    // and the timelapse use over the Progress tab, and the reason neither is a route. The request
-    // is rebuilt from the live state each time, so a day that moved while the overlay was opening
-    // asks against what is actually left.
-    val ideasFor = state.ideasFor
-    val ideasRequest = ideasFor?.let { uiState.mealIdeaRequest(it) }
-    if (ideasRequest != null) {
-        MealIdeasScreen(
-            request = ideasRequest,
-            suggestions = uiState.suggestions,
-            recipes = uiState.recipes,
-            onSelect = state::selectIdea,
-            onClose = state::closeIdeas,
         )
     }
 
@@ -319,6 +309,7 @@ private fun DiarySheetsPreview() {
                 state = rememberFoodScreenState().apply { calendarOpen = true },
                 onEvent = {},
                 onNewRecipe = {},
+                onGetIdeas = {},
                 snackbarHostState = SnackbarHostState(),
             )
         }

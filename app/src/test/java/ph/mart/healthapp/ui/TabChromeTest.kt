@@ -10,6 +10,10 @@ import ph.mart.healthapp.core.navigation.route.ProgressRoute
 import ph.mart.healthapp.feature.coach.ui.CoachRoute
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.LabelScanRoute
+import ph.mart.healthapp.feature.food.ui.MealIdeasRoute
+import ph.mart.healthapp.core.data.food.MealIdeaRequest
+import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
 import ph.mart.healthapp.feature.profile.ui.HealthConnectionRoute
 import ph.mart.healthapp.feature.profile.ui.SettingsRoute
@@ -89,6 +93,26 @@ class TabChromeTest {
             assertFalse(showsTabChrome(current = route, beneath = FoodRoute, twoPane = true))
         }
         assertFalse(showsTabChrome(current = LabelScanRoute(0), beneath = BarcodeScanRoute(0), twoPane = true))
+    }
+
+    /** Meal ideas stopped being an overlay drawn inside the diary and became a route, which is
+     * the whole point of the move: the bar and the FAB it used to be drawn over are gone at either
+     * width. Nothing in [showsTabChrome] names it — that is what this pins. */
+    @Test
+    fun `the meal-ideas route wears no chrome at either width`() {
+        val route = MealIdeasRoute(
+            MealIdeaRequest(
+                goal = Goal.Lose,
+                mealType = MealType.Dinner,
+                remainingKcal = 640,
+                remainingProteinG = 48,
+                remainingCarbsG = 70,
+                remainingFatG = 20,
+                diet = null,
+            ),
+        )
+        assertFalse(showsTabChrome(current = route, beneath = FoodRoute, twoPane = false))
+        assertFalse(showsTabChrome(current = route, beneath = FoodRoute, twoPane = true))
     }
 
     @Test

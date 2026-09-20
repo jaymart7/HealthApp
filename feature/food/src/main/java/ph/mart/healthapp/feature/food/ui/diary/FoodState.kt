@@ -202,15 +202,12 @@ internal class FoodScreenState(
     }
 
     /** Straight from the add-entry sheet, which closes behind it — the handover "New recipe" and
-     * "Log sets instead" both make, so back from the overlay lands on the diary rather than
-     * reopening a form the user has walked away from. */
+     * "Log sets instead" both make, so back from the ideas route lands on the diary rather than
+     * reopening a form the user has walked away from. [ideasFor] is the memo of which meal asked,
+     * which is what an idea coming back off that route is seeded into. */
     fun openIdeas(mealType: MealType) {
         closeSheet()
         ideasFor = mealType
-    }
-
-    fun closeIdeas() {
-        ideasFor = null
     }
 
     /**

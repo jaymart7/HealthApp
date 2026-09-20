@@ -12,13 +12,15 @@ import ph.mart.healthapp.core.data.food.MealIdeaRequest
  * [Failed] carries no reason, for [MealIdeaResult][ph.mart.healthapp.core.data.food.MealIdeaResult]'s
  * reason — offline and a model with nothing to say land on the same fallback, the user's own
  * foods. Whether the radio is off only changes what the screen *says* above that list, which is
- * why [offline] rides the state rather than being asked again at draw time.
+ * why [offline] rides the state rather than being asked again at draw time. The fallback list
+ * rides it too: as a route this screen has no diary above it handing down the recents and the
+ * recipes, so the ViewModel reads them and folds them through `localMealIdeas` on the way in.
  */
 sealed interface MealIdeasUiState {
     data object Idle : MealIdeasUiState
     data object Loading : MealIdeasUiState
     data class Ideas(val ideas: List<MealIdea>) : MealIdeasUiState
-    data class Failed(val offline: Boolean) : MealIdeasUiState
+    data class Failed(val offline: Boolean, val own: List<MealIdea>) : MealIdeasUiState
 }
 
 sealed interface MealIdeasEvent {

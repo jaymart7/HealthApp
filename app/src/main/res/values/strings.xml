@@ -36,6 +36,7 @@
     <string name="app_title_new_recipe">New recipe</string>
     <string name="app_title_edit_workout">Edit workout</string>
     <string name="app_title_strength_workout">Strength workout</string>
+    <string name="app_title_meal_ideas">Meal ideas</string>
     <string name="app_title_voice_log">Say what you ate</string>
     <string name="app_title_google_health">Google Health</string>
     <string name="app_title_food_library">Food library</string>

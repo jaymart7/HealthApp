@@ -4,10 +4,13 @@ import androidx.compose.foundation.ScrollState
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import ph.mart.healthapp.core.data.food.MealIdea
+import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.navigation.route.FoodRoute
 import ph.mart.healthapp.feature.food.ui.barcode.BarcodeScanScreen
 import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
 import ph.mart.healthapp.feature.food.ui.history.FoodHistoryScreen
+import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasScreen
 import ph.mart.healthapp.feature.food.ui.label.LabelScanScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
@@ -45,6 +48,18 @@ data class LabelScanRoute(val dateEpochDay: Long) : NavKey
 @Serializable
 data class FoodHistoryRoute(val dateEpochDay: Long, val query: String) : NavKey
 
+/**
+ * What fits in the rest of the day. Carries the whole [MealIdeaRequest] rather than a day and a
+ * meal: the diary has already combined the targets, the day's totals and the earned calories to
+ * answer the question, and rebuilding that here would be a second copy of its whole observer for a
+ * screen that writes nothing.
+ *
+ * A route rather than the overlay it started as, for the reason `RecapRoute` is one: no bottom bar,
+ * no FAB, and back that leaves rather than closes — all three are what a route already is.
+ */
+@Serializable
+data class MealIdeasRoute(val request: MealIdeaRequest) : NavKey
+
 /** Authoring a recipe — reached from the add-entry sheet, and carrying nothing: a recipe belongs
  * to no day, so unlike [BarcodeScanRoute] it has no date to pass. */
 @Serializable
@@ -79,6 +94,15 @@ fun EntryProviderScope<NavKey>.foodEntries(
     onCapturePhoto: (Long) -> Unit,
     onOpenHistory: (Long, String) -> Unit,
     onNewRecipe: () -> Unit,
+    /** The gap the diary worked out, carried to [MealIdeasRoute] — `:app` pushes it. */
+    onGetIdeas: (MealIdeaRequest) -> Unit,
+    /** An idea picked on that route. It seeds the diary's add-entry sheet rather than logging, so
+     * it travels back down through [pendingIdea] once `:app` has popped the route. */
+    onSelectIdea: (MealIdea) -> Unit,
+    /** The idea on its way back to the diary, held by `:app` for the one recomposition between the
+     * pop and the sheet reopening. Null the rest of the time. */
+    pendingIdea: MealIdea? = null,
+    onIdeaConsumed: () -> Unit = {},
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
     /** The day's own question, carried to the coach — which lives above this tab, so like
@@ -95,12 +119,16 @@ fun EntryProviderScope<NavKey>.foodEntries(
             onCapturePhoto = onCapturePhoto,
             onOpenHistory = onOpenHistory,
             onNewRecipe = onNewRecipe,
+            onGetIdeas = onGetIdeas,
+            pendingIdea = pendingIdea,
+            onIdeaConsumed = onIdeaConsumed,
             onOpenStrength = onOpenStrength,
             onLogExercise = onLogExercise,
             onAskCoach = onAskCoach,
         )
     }
     entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }
+    entry<MealIdeasRoute> { key -> MealIdeasScreen(request = key.request, onSelect = onSelectIdea) }
     entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key ->
         BarcodeScanScreen(

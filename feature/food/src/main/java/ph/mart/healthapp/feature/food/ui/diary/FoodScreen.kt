@@ -36,6 +36,8 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodSuggestion
+import ph.mart.healthapp.core.data.food.MealIdea
+import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
@@ -66,9 +68,14 @@ fun FoodScreen(
     onCapturePhoto: (Long) -> Unit,
     onOpenHistory: (Long, String) -> Unit,
     onNewRecipe: () -> Unit,
+    onGetIdeas: (MealIdeaRequest) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
     onAskCoach: (question: String, source: String) -> Unit,
+    /** An idea picked on the meal-ideas route, handed back down once `:app` has popped it. It
+     * seeds the add-entry sheet — the landing every other picked food already has. */
+    pendingIdea: MealIdea? = null,
+    onIdeaConsumed: () -> Unit = {},
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
     viewModel: FoodViewModel = koinViewModel(),
@@ -84,9 +91,12 @@ fun FoodScreen(
         onCapturePhoto = onCapturePhoto,
         onOpenHistory = onOpenHistory,
         onNewRecipe = onNewRecipe,
+        onGetIdeas = onGetIdeas,
         onOpenStrength = onOpenStrength,
         onLogExercise = onLogExercise,
         onAskCoach = onAskCoach,
+        pendingIdea = pendingIdea,
+        onIdeaConsumed = onIdeaConsumed,
         scrollState = scrollState,
         twoPane = twoPane,
     )
@@ -102,12 +112,25 @@ private fun FoodContent(
     onCapturePhoto: (Long) -> Unit,
     onOpenHistory: (Long, String) -> Unit,
     onNewRecipe: () -> Unit,
+    onGetIdeas: (MealIdeaRequest) -> Unit,
     onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
     onAskCoach: (question: String, source: String) -> Unit,
+    pendingIdea: MealIdea? = null,
+    onIdeaConsumed: () -> Unit = {},
     scrollState: ScrollState = rememberScrollState(),
     twoPane: Boolean = false,
 ) {
+    // The meal-ideas route's answer, arriving after it has been popped: it reopens the sheet it
+    // was asked from, seeded, which is what `selectIdea` has always done — the pick just travels
+    // through `:app` now rather than through a composable drawn over this one.
+    LaunchedEffect(pendingIdea) {
+        pendingIdea?.let {
+            state.selectIdea(it)
+            onIdeaConsumed()
+        }
+    }
+
     // Back off a past day returns to today rather than leaving the tab — one level, same rule the
     // sheets and the calendar swap-in follow. On today no handler is registered at all.
     if (uiState.selectedDate != uiState.today) {
@@ -192,6 +215,7 @@ private fun FoodContent(
                 state = state,
                 onEvent = onEvent,
                 onNewRecipe = onNewRecipe,
+                onGetIdeas = onGetIdeas,
                 snackbarHostState = snackbarHostState,
             )
 
@@ -270,6 +294,7 @@ private fun FoodScreenPreview() {
             onCapturePhoto = {},
             onOpenHistory = { _, _ -> },
             onNewRecipe = {},
+            onGetIdeas = {},
             onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
             onAskCoach = { _, _ -> },
@@ -292,6 +317,7 @@ private fun FoodScreenTwoPanePreview() {
             onCapturePhoto = {},
             onOpenHistory = { _, _ -> },
             onNewRecipe = {},
+            onGetIdeas = {},
             onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
             onAskCoach = { _, _ -> },

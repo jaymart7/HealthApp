@@ -38,6 +38,7 @@ import ph.mart.healthapp.R
 import ph.mart.healthapp.ShortcutAction
 import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
 import ph.mart.healthapp.core.data.exercise.earnedSavedLine
+import ph.mart.healthapp.core.data.food.MealIdea
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavItem
@@ -56,6 +57,7 @@ import ph.mart.healthapp.feature.coach.ui.coachEntries
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.LabelScanRoute
+import ph.mart.healthapp.feature.food.ui.MealIdeasRoute
 import ph.mart.healthapp.feature.food.ui.FoodHistoryRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
 import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
@@ -104,6 +106,7 @@ private fun NavKey?.title(): String = when (this) {
         if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
     )
     is VoiceLogRoute -> stringResource(R.string.app_title_voice_log)
+    is MealIdeasRoute -> stringResource(R.string.app_title_meal_ideas)
     HealthConnectionRoute -> stringResource(R.string.app_title_google_health)
     FoodLibraryRoute -> stringResource(R.string.app_title_food_library)
     RoutinesRoute -> stringResource(R.string.app_title_routines)
@@ -243,6 +246,13 @@ fun AppScaffold(
     // wants corrected by id, and the sheet resolves it. 0/0 is a new activity, today.
     var sheetDate by rememberSaveable { mutableStateOf(0L) }
     var sheetEditingId by rememberSaveable { mutableStateOf(0L) }
+    // An idea picked on [MealIdeasRoute], on its way to the diary's add-entry sheet — the seed
+    // cannot be handed down the back stack, so it is handed across up here, beside the sheet
+    // arguments above. The diary consumes it on its next composition and clears it.
+    // ponytail: plain remember, not rememberSaveable — MealIdea has no Saver and the value lives
+    // for the one frame between the pop and the sheet reopening. Write one if a rotation ever
+    // manages to land inside that frame.
+    var pendingIdea by remember { mutableStateOf<MealIdea?>(null) }
 
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val rail = windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
@@ -461,6 +471,16 @@ fun AppScaffold(
                                 topLevelBackStack.add(FoodHistoryRoute(date, query))
                             },
                             onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
+                            // The gap is worked out by the diary and rides the key — see
+                            // [MealIdeasRoute]. Picking an idea pops the route and hands the seed
+                            // back through [pendingIdea]; backing out hands back nothing.
+                            onGetIdeas = { request -> topLevelBackStack.add(MealIdeasRoute(request)) },
+                            onSelectIdea = { idea ->
+                                pendingIdea = idea
+                                topLevelBackStack.removeLast()
+                            },
+                            pendingIdea = pendingIdea,
+                            onIdeaConsumed = { pendingIdea = null },
                             onOpenStrength = { date, editingId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
                             },

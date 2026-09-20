@@ -1,27 +1,34 @@
 package ph.mart.healthapp.feature.food.ui.ideas
 
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.MealIdeaResult
+import ph.mart.healthapp.core.data.food.localMealIdeas
 import ph.mart.healthapp.core.data.network.NetworkMonitor
 
 /**
- * Two dependencies, and deliberately not one more.
+ * Three dependencies, and deliberately not one more.
  *
- * The day's numbers, the recents and the recipes all reach the screen from [FoodUiState][ph.mart.healthapp.feature.food.ui.diary.FoodUiState],
- * which the diary underneath has already combined — injecting `FoodRepository`, `ProfileRepository`,
- * `ExerciseRepository` and `StepsRepository` here to rebuild them would be a second copy of the
- * diary's whole observer to render a screen that writes nothing. That is the call the Progress
- * recap made when it chose an overlay over a route.
+ * The day's numbers do not appear here at all: the diary combined them before pushing
+ * [MealIdeasRoute][ph.mart.healthapp.feature.food.ui.MealIdeasRoute], and the request rides the
+ * key — injecting `ProfileRepository`, `ExerciseRepository` and `StepsRepository` to rebuild what
+ * the screen was handed would be a second copy of the diary's whole observer.
  *
- * So this holds the model call and nothing else. No side effects: picking an idea seeds the
- * add-entry sheet, which is the diary's own state.
+ * [foodRepository] is the one thing the route did cost: the fallback list used to come down from
+ * the diary's state, and two Room reads is a smaller price than keeping this screen inside the
+ * tab's chrome. It is read once per failure, not observed — the list is what the screen shows
+ * *instead* of ideas, not something that has to stay live under them.
+ *
+ * No side effects: picking an idea seeds the add-entry sheet, which is the diary's own state.
  */
 class MealIdeasViewModel(
     private val mealIdeaRepository: MealIdeaRepository,
+    private val foodRepository: FoodRepository,
     private val networkMonitor: NetworkMonitor,
 ) : ViewModel(), OrbitContainerHost<MealIdeasUiState, MealIdeasUiState, MealIdeasSideEffect> {
 
@@ -38,16 +45,26 @@ class MealIdeasViewModel(
      * `FirebaseAIException` cannot tell the two apart. */
     private fun request(request: MealIdeaRequest) = intent {
         if (!networkMonitor.isOnline()) {
-            reduce { MealIdeasUiState.Failed(offline = true) }
+            val own = fallback(request.remainingKcal)
+            reduce { MealIdeasUiState.Failed(offline = true, own = own) }
             return@intent
         }
         reduce { MealIdeasUiState.Loading }
         val newState = when (val result = mealIdeaRepository.ideas(request)) {
             is MealIdeaResult.Success -> MealIdeasUiState.Ideas(result.ideas)
-            MealIdeaResult.Failed -> MealIdeasUiState.Failed(offline = false)
+            MealIdeaResult.Failed ->
+                MealIdeasUiState.Failed(offline = false, own = fallback(request.remainingKcal))
         }
         reduce { newState }
     }
+
+    /** The user's own foods that still fit — the same two lists the diary's add-entry sheet browses,
+     * folded by the pure `localMealIdeas`. Both Room-backed, so this answers with the radio off. */
+    private suspend fun fallback(remainingKcal: Int) = localMealIdeas(
+        suggestions = foodRepository.observeSuggestions().first(),
+        recipes = foodRepository.observeRecipes().first(),
+        remainingKcal = remainingKcal,
+    )
 }
 
 /** None — the screen hands the picked idea straight to the diary, the shape
