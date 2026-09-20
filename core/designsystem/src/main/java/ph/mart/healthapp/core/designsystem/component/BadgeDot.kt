@@ -54,8 +54,9 @@ val BADGE_DOT_SIZE = 32.dp
  * down with it rather than being a second parameter — a three-digit badge is what has to survive
  * the shrink, and there is one threshold, not a scale.
  *
- * [size] is a *minimum*, not a fixed width: a label wider than the circle stretches it into a pill
- * rather than running into its own edge, which is what `Badge` itself does past one character. A
+ * [size] is a *minimum width*, and the only dimension a caller sets: a label wider than the circle
+ * stretches it into a pill rather than running into its own edge, which is what `Badge` itself does
+ * past one character, and the height is 4dp of padding around whatever the label's line box is. A
  * one-digit badge is still a circle, and so is every label that fits inside one.
  */
 @Composable
@@ -93,10 +94,10 @@ fun BadgeDot(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .defaultMinSize(minWidth = size, minHeight = size)
+            .defaultMinSize(minWidth = size)
             .clip(CircleShape)
             .background(container)
-            .padding(horizontal = 4.dp)
+            .padding(4.dp)
             .clearAndSetSemantics {
                 contentDescription = spoken
             },
