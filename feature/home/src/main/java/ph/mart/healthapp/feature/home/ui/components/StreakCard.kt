@@ -53,12 +53,7 @@ fun StreakCard(
         modifier = modifier,
         onClick = onClick,
     ) {
-        // A "100" dot is wider than 22dp, so the paired card spends its slack on the gaps rather
-        // than on a fixed 4dp that would push the fifth dot off the card.
-        Row(
-            horizontalArrangement = if (wide) Arrangement.spacedBy(4.dp) else Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             StreakBadge.entries.forEach { badge ->
                 BadgeDot(
                     label = badge.days.toString(),
