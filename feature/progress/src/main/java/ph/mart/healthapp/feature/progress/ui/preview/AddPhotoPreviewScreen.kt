@@ -113,10 +113,11 @@ private fun AddPhotoPreviewContent(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                // The Scaffold's insets do not union the IME; the weight stepper's keyboard
-                // avoidance is this line.
+                // The Scaffold's insets do not union the IME, and this sits *before* the scroll so
+                // the viewport shrinks with the keyboard — after it, the padding would just scroll
+                // away and the weight field would stay buried.
                 .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 24.dp),
         ) {
