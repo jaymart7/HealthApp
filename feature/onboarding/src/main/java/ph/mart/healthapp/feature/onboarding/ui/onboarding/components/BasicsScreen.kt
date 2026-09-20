@@ -37,7 +37,7 @@ import ph.mart.healthapp.feature.onboarding.ui.shared.components.reflowed
 
 /** What each ruler will accept, in the unit it is drawn in. Age is the one the profile itself
  * bounds; the other two are the range a scale can usefully show rather than a medical limit. */
-private val AGE_YEARS = 13.0..100.0
+private val AGE_YEARS = 13.0..70.0
 private val HEIGHT_CM = 120.0..220.0
 private val HEIGHT_IN = 48.0..86.0
 private val WEIGHT_KG = 30.0..250.0
