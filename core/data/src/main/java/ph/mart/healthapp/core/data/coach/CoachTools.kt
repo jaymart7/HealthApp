@@ -70,6 +70,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.fromDisplay
 import ph.mart.healthapp.core.data.progress.range
+import ph.mart.healthapp.core.data.recap.REPORT_DAYS
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_TIMES_PER_DAY
@@ -81,7 +82,7 @@ import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
- * The coach's tools: three the app *runs*, ten it only ever *drafts*.
+ * The coach's tools: three the app *runs*, eleven it only ever *drafts*, and one that draws.
  *
  * The split is the whole design. A read is a local Room query with no user-visible effect, so it
  * executes the moment the model asks for it and the answer goes straight back into the same turn.
@@ -94,6 +95,14 @@ import ph.mart.healthapp.core.data.water.WaterRepository
  * fasting widened what [formatDay] and [formatHistory] *answer with* rather than earning
  * declarations of their own — a question is still about one day or one span, and a third and
  * fourth function are two more things for the model to pick wrong.
+ *
+ * [TOOL_SHOW_REPORT] is the third kind and the newest. It is not a read — nothing goes back into
+ * the answer — and not a draft, because there is nothing to agree to: it puts a **report card** in
+ * the transcript, folded by `recap()` from the same Room rows the Progress tab folds. The model
+ * picks the window and writes one sentence over it; every figure on the card is the app's. That is
+ * `log_exercise`'s rule (the app supplies what a model would otherwise invent) taken to its end,
+ * and it is why the model is not handed the report's contents: it cannot misquote a figure it was
+ * never given.
  *
  * Tool names, descriptions and schema text stay in Kotlin: they are model prompts, which the
  * localization rules exempt exactly as they exempt the system instruction below them.
@@ -168,6 +177,9 @@ internal const val TOOL_LOG_FAST = "log_fast"
 internal const val FAST_START = "start"
 internal const val FAST_END = "end"
 internal const val TOOL_START_ROUTINE = "start_routine"
+
+/** The tool that neither reads nor drafts: it draws. See this file's header. */
+internal const val TOOL_SHOW_REPORT = "show_report"
 
 /** The ones the model may call but the app never executes. Kept as a set rather than a `when` so
  * [CoachRepositoryImpl]'s loop can ask the question without knowing what any of them does. */
@@ -423,8 +435,36 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 ),
             ),
         ),
+        FunctionDeclaration(
+            name = TOOL_SHOW_REPORT,
+            description = "Put an interactive report card on screen summarising the user's last " +
+                "7 or 30 days — their calories and macros, their weight, their training and " +
+                "their steps, with charts they can open. Call this when they ask for a report, " +
+                "a summary, an overview, or how their week or month went. The card carries every " +
+                "figure itself, so you are not given them: introduce it in one short sentence " +
+                "and state no numbers. For a specific question about a span, use get_history " +
+                "instead, and never call both in one turn.",
+            parameters = mapOf(
+                "days" to Schema.integer(
+                    description = "The window to report on: ${REPORT_DAYS.joinToString(" or ")}.",
+                ),
+            ),
+        ),
     ),
 )
+
+/**
+ * The window a `show_report` call asks for, or null for anything else.
+ *
+ * [parseAction]'s rule on a tool that makes no [CoachAction]: null fails the whole turn rather
+ * than falling back to a window nobody asked for. A card headed "Last 7 days" that the user asked
+ * a month of is worse than an apology, because nothing on it says so.
+ *
+ * Deliberately not clamped to the nearest legal window — see [REPORT_DAYS]. A model that answers
+ * 14 has misread the schema, and rounding that to 7 or 30 invents an intent.
+ */
+internal fun parseShowReport(args: Map<String, JsonElement>): Int? =
+    args.int("days")?.takeIf { it in REPORT_DAYS }
 
 // region The trust boundary
 

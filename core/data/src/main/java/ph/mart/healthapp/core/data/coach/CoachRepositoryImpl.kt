@@ -35,6 +35,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.fromDisplay
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.recap.REPORT_DAYS
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.todayEpochDay
@@ -140,6 +141,9 @@ internal class CoachRepositoryImpl(
         val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
         val raw = StringBuilder()
         var message: Content = content(role = "user") { text(question) }
+        // The window a `show_report` round asked for, carried to `finish` and written on the
+        // answer row. Null on every other turn, which is nearly all of them.
+        var reportDays: Int? = null
 
         repeat(MAX_TOOL_ROUNDS) {
             val calls = mutableListOf<FunctionCallPart>()
@@ -154,7 +158,7 @@ internal class CoachRepositoryImpl(
             }
 
             // Nothing asked for: the model has said its piece and this is an ordinary answer.
-            if (calls.isEmpty()) return@flow finish(question, raw.toString())
+            if (calls.isEmpty()) return@flow finish(question, raw.toString(), reportDays)
 
             // A write call ends the turn here, unpersisted. It is a draft, and the user is the one
             // who decides whether it becomes a row — so `settle` is what writes, not this.
@@ -165,6 +169,10 @@ internal class CoachRepositoryImpl(
             // each call clears the same boundary it always did, one at a time.
             val writes = calls.filter { it.name in WRITE_TOOLS }
             if (writes.isNotEmpty()) {
+                // One card, one kind — `routineDraftStandsAlone()`'s rule, one tool earlier. A
+                // draft and a report in the same round are two cards under one answer, and the
+                // report would be the one silently dropped: the write branch returns from here.
+                if (calls.any { it.name == TOOL_SHOW_REPORT }) return@flow emit(CoachReply.Failed)
                 // One bad call fails the whole turn, the rule a lone bad call already followed: a
                 // meal missing the row that would not parse is a meal the user logs without
                 // noticing. Same for a draft past the row ceiling — rejected, never truncated.
@@ -204,9 +212,24 @@ internal class CoachRepositoryImpl(
             raw.setLength(0)
             emit(CoachReply.Partial(""))
 
+            // A report is neither a read nor a draft: nothing of it goes into the answer and
+            // there is nothing to confirm. The window is stamped here and the card is drawn from
+            // Room once `finish` has written the row — so what goes back to the model is an
+            // instruction, not data. It cannot misquote a figure it was never handed, and the one
+            // sentence it writes has the whole of MAX_REPLY_CHARS to itself.
+            //
+            // A malformed window fails the turn rather than picking one, `parseAction`'s rule.
+            calls.firstOrNull { it.name == TOOL_SHOW_REPORT }?.let { call ->
+                reportDays = parseShowReport(call.args) ?: return@flow emit(CoachReply.Failed)
+            }
+
             // Reads run now and go straight back into the same turn. Run before the builder, not
             // inside it: `content {}` takes a plain lambda and a tool read is suspending.
-            val results = calls.map { it to (toolbox.runTool(it.name, it.args) ?: UNKNOWN_TOOL) }
+            val results = calls.map {
+                val answer = if (it.name == TOOL_SHOW_REPORT) REPORT_DRAWN
+                else toolbox.runTool(it.name, it.args) ?: UNKNOWN_TOOL
+                it to answer
+            }
             // The role is "user", not "function": the SDK's `Chat.assertComesFromUser` accepts
             // only "user" and logs the 'function' role as deprecated and due for removal.
             message = content(role = "user") {
@@ -218,7 +241,7 @@ internal class CoachRepositoryImpl(
 
         // Out of rounds with the model still reaching for tools. Whatever prose it produced on the
         // way is either a real answer or nothing, and `finish` already treats nothing as a failure.
-        finish(question, raw.toString())
+        finish(question, raw.toString(), reportDays)
     }.catch { e ->
         // `catch` rather than a `try` around the loop: wrapping an `emit` in `catch (e: Exception)`
         // swallows the CancellationException downstream cancellation throws back through it.
@@ -228,9 +251,13 @@ internal class CoachRepositoryImpl(
 
     /** The ordinary ending: sanitize, write the pair, say nothing more — flow completion is the
      * success signal, which is why there is no `Answered` variant to emit here. */
-    private suspend fun FlowCollector<CoachReply>.finish(question: String, raw: String) {
+    private suspend fun FlowCollector<CoachReply>.finish(
+        question: String,
+        raw: String,
+        reportDays: Int? = null,
+    ) {
         val answer = sanitizeReply(raw) ?: return emit(CoachReply.Failed)
-        writeExchange(question, answer)
+        writeExchange(question, answer, report = reportDays)
     }
 
     /**
@@ -245,6 +272,7 @@ internal class CoachRepositoryImpl(
         answer: String,
         actions: List<CoachAction>,
         receipt: String?,
+        report: Int?,
     ) {
         actions.foodEntries().takeIf { it.isNotEmpty() }?.let { foodRepository.addEntries(it) }
 
@@ -342,12 +370,17 @@ internal class CoachRepositoryImpl(
             if (it.ending) fastingRepository.stop() else fastingRepository.start(it.goalHours)
         }
 
-        writeExchange(question, answer, receipt)
+        writeExchange(question, answer, receipt, report)
     }
 
     /** The one write, shared by both endings, so "a question is only persisted once it has been
      * answered" stays one rule with one implementation. */
-    private suspend fun writeExchange(question: String, answer: String, receipt: String? = null) {
+    private suspend fun writeExchange(
+        question: String,
+        answer: String,
+        receipt: String? = null,
+        report: Int? = null,
+    ) {
         val now = System.currentTimeMillis()
         dao.addExchange(
             question = ChatMessageEntity(fromUser = true, text = question, sentAtMillis = now),
@@ -360,6 +393,11 @@ internal class CoachRepositoryImpl(
                 // Only ever on the answer: a receipt is about what the coach's turn did, and the
                 // question row is the user's own words.
                 receipt = receipt,
+                // The same reading one column over, and the same reason it is a column rather
+                // than something the answer carries: the card is the app reporting, not the coach
+                // talking. Storing the *window* and not the figures is what lets a report reopened
+                // next week be re-folded against the rows as they are then.
+                report = report,
             ),
         )
     }
@@ -370,6 +408,12 @@ internal class CoachRepositoryImpl(
 /** What a read tool answers when the model invents a name. Stays in Kotlin: it is prompt text the
  * user never sees. */
 private const val UNKNOWN_TOOL = "That tool does not exist."
+
+/** What `show_report` answers with. Deliberately an instruction and not data — see the call site.
+ * Stays in Kotlin for [UNKNOWN_TOOL]'s reason: the user never sees it. */
+private const val REPORT_DRAWN =
+    "The report card is now on screen and carries every figure itself. Introduce it in one short " +
+        "sentence and state no numbers from it."
 
 /** [ChatMessageDao.recent] returns newest-first so `LIMIT` takes the end of the conversation;
  * the model wants it in the order it was said. */
@@ -501,6 +545,16 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "routines, say so and leave it there.",
     )
     appendLine(
+        "When they ask for a report, a summary, an overview, or how their week or month has " +
+            "gone overall, call show_report with ${REPORT_DAYS.joinToString(" or ")} rather than " +
+            "answering in prose. It puts a card on screen carrying their calories and macros, " +
+            "their weight, their training and their steps for that window, with charts they can " +
+            "open — so introduce it in one short sentence and do not state any figures, because " +
+            "you have not been given the ones on it. A specific question about a span is still " +
+            "get_history. Never call both in the same turn, and never call show_report in a turn " +
+            "where you are also logging something.",
+    )
+    appendLine(
         "Reply in plain conversational text, in the second person. Keep it to three short " +
             "sentences, or up to six short lines when a list genuinely answers the question " +
             "better — one item per line, starting with \"- \". No markdown, no headings, no bold, " +
@@ -520,4 +574,5 @@ private fun ChatMessageEntity.toMessage() = ChatMessage(
     text = text,
     sentAtMillis = sentAtMillis,
     receipt = receipt,
+    report = report,
 )

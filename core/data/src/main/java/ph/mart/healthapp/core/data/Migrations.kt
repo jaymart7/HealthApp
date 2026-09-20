@@ -186,6 +186,11 @@ internal val STEPS: Map<Int, List<String>> = mapOf(
         // carry a schedule was due daily, and reads that way afterwards.
         "ALTER TABLE `supplement` ADD COLUMN `days` INTEGER NOT NULL DEFAULT 127",
     ),
+    39 to listOf(
+        // Nullable, so unlike every entry above it this one needs no DEFAULT: a message written
+        // before the coach could draw a report drew none, and null is what that reads as.
+        "ALTER TABLE `chat_message` ADD COLUMN `report` INTEGER",
+    ),
 )
 
 internal val MIGRATIONS: Array<Migration> =

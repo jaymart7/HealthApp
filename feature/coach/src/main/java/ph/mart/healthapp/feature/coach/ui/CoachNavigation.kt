@@ -41,10 +41,17 @@ data class CoachRoute(val question: String? = null, val source: String? = null) 
  * `StrengthWorkoutRoute` is `:feature:training`'s and features never name each other's. It carries
  * the routine's id, which is all the back stack ever carries — the row is resolved by the screen.
  * Confirming a drafted routine is what calls it; every other draft writes and stays.
+ *
+ * [onOpenSection] is the third, from a section of a report card through to the Progress page that
+ * owns it. It carries a `ReportSection`'s `name` — a plain String, `onStartRoutine`'s rule one
+ * type along, since the four pages are `:feature:progress`'s and `:app` is the only module that
+ * can see both ends. Pushed above the coach, so back returns to the conversation with the card
+ * where it was.
  */
 fun EntryProviderScope<NavKey>.coachEntries(
     onOpenDiary: () -> Unit,
     onStartRoutine: (Long) -> Unit,
+    onOpenSection: (String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<CoachRoute> { route ->
@@ -53,6 +60,7 @@ fun EntryProviderScope<NavKey>.coachEntries(
             source = route.source,
             onOpenDiary = onOpenDiary,
             onStartRoutine = onStartRoutine,
+            onOpenSection = onOpenSection,
             onExitFlow = onExitFlow,
         )
     }

@@ -52,15 +52,18 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
-import ph.mart.healthapp.feature.progress.ui.shared.BestDay
-import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.core.data.recap.BestDay
+import ph.mart.healthapp.core.data.recap.Recap
 import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
 
 /**
  * The rolling window at a glance — it spans nutrition, weight and consistency, so it belongs to no
  * single tab. Every number is derived in
- * [ph.mart.healthapp.feature.progress.ui.progress.recap]; this only formats.
+ * [ph.mart.healthapp.core.data.recap.recap]; this only formats.
+
+ * [period] is the window's *name*, which the fold no longer carries: `Recap` holds a plain day
+ * count so `:feature:coach` can draw one too, and the three headings are this tab's words.
  *
  * The weight colour comes from the shared [goalRelativeTrend], never a green-for-loss default,
  * and reads neutral below [TREND_ARROW_DEADBAND_KG] where the movement is too small to call.
@@ -78,6 +81,7 @@ import ph.mart.healthapp.feature.progress.ui.weight.components.StatCell
 @Composable
 fun RecapCard(
     recap: Recap,
+    period: RecapPeriod,
     goal: Goal?,
     unit: UnitSystem,
     projection: GoalProjection?,
@@ -90,7 +94,7 @@ fun RecapCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = stringResource(recap.period.label),
+                text = stringResource(period.label),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -107,7 +111,7 @@ fun RecapCard(
         // own datum is missing, so a sparse week reports two honest figures rather than four with
         // zeros in them — and the grid closes up around them.
         val cells: List<@Composable () -> Unit> = listOfNotNull(
-            { GridCell(label = stringResource(R.string.progress_recap_days_logged), value = "${recap.daysLogged}", secondary = stringResource(R.string.progress_recap_days_of, recap.period.days)) },
+            { GridCell(label = stringResource(R.string.progress_recap_days_logged), value = "${recap.daysLogged}", secondary = stringResource(R.string.progress_recap_days_of, period.days)) },
             if (recap.averages.daysLogged > 0) {
                 {
                     GridCell(
@@ -140,7 +144,7 @@ fun RecapCard(
                 if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
         }
-        if (recap.period != RecapPeriod.Week) {
+        if (period != RecapPeriod.Week) {
             // Three cells, not four: "12,450 kg" is a wider value than anything in the row above,
             // and volume reads as a note rather than a headline anyway.
             Row(
@@ -167,7 +171,7 @@ fun RecapCard(
             if (recap.weightTrend?.hasPrior != true) {
                 Note(stringResource(R.string.progress_recap_need_days))
             }
-            if (recap.period != RecapPeriod.Week) {
+            if (period != RecapPeriod.Week) {
                 recap.topLift?.let { Note(topLiftLine(it, unit)) }
                 if (recap.strength.workouts > 0) Note(volumeLine(recap.strength, unit))
             }
@@ -328,8 +332,9 @@ private fun RecapCardPreview() {
                 modifier = Modifier.padding(16.dp),
             ) {
                 RecapCard(
+                    period = RecapPeriod.Week,
                     recap = Recap(
-                        period = RecapPeriod.Week,
+                        days = 7,
                         daysLogged = 7,
                         averages = NutritionAverages(1940, 141, 196, 68, daysLogged = 7),
                         targets = PREVIEW_TARGETS,
@@ -348,8 +353,9 @@ private fun RecapCardPreview() {
                 )
                 // A month, with the movement row the week never draws.
                 RecapCard(
+                    period = RecapPeriod.Month,
                     recap = Recap(
-                        period = RecapPeriod.Month,
+                        days = 30,
                         daysLogged = 24,
                         averages = NutritionAverages(1885, 138, 189, 64, daysLogged = 21),
                         targets = PREVIEW_TARGETS,
@@ -376,8 +382,9 @@ private fun RecapCardPreview() {
                 // Sparse week: water-only days pad the count, and nothing has been weighed — so
                 // there is nothing to fit a rate over either.
                 RecapCard(
+                    period = RecapPeriod.Week,
                     recap = Recap(
-                        period = RecapPeriod.Week,
+                        days = 7,
                         daysLogged = 4,
                         averages = NutritionAverages(1720, 118, 170, 61, daysLogged = 2),
                         targets = PREVIEW_TARGETS,

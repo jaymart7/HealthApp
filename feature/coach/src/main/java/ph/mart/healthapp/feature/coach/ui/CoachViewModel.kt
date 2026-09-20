@@ -7,26 +7,38 @@ import kotlinx.coroutines.flow.flowOf
 import org.orbitmvi.orbit.OrbitContainer
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.CoachReply
 import ph.mart.healthapp.core.data.coach.CoachRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
 import ph.mart.healthapp.core.data.insight.observeInsightRequest
+import ph.mart.healthapp.core.data.health.StepsRepository
+import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.recap.Report
+import ph.mart.healthapp.core.data.recap.observeReports
 import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
- * The five repositories are here only to build the day's payload — the screen reads none of them
- * directly. `observeInsightRequest` does the combining in `:core:data` so this and Home describe
- * the same day to the same model without either owning that knowledge.
+ * The seven repositories are here only to build what the screen is *told* — the day's payload and
+ * the report windows. The screen reads none of them directly. `observeInsightRequest` and
+ * `observeReports` do the combining in `:core:data`, so this and Home describe the same day to the
+ * same model, and this and the Progress recap fold the same window the same way, without any of
+ * the three owning that knowledge.
  *
- * The conversation and the payload are combined rather than snapshotted, for the reason Home
- * combines everything: a meal logged in another tab must be in the next answer, not in the next
- * cold start.
+ * Mood and steps are the two the payload never needed: a report covers them and an insight does
+ * not. Seven is what `RecapViewModel` takes to fold the identical thing, which is the point —
+ * both call the same function.
+ *
+ * The conversation, the payload and the reports are combined rather than snapshotted, for the
+ * reason Home combines everything: a meal logged in another tab must be in the next answer and on
+ * the card already on screen, not in the next cold start.
  */
 class CoachViewModel(
     private val coachRepository: CoachRepository,
@@ -36,6 +48,8 @@ class CoachViewModel(
     private val progressRepository: ProgressRepository,
     waterRepository: WaterRepository,
     exerciseRepository: ExerciseRepository,
+    moodRepository: MoodRepository,
+    stepsRepository: StepsRepository,
 ) : ViewModel(), OrbitContainerHost<CoachUiState, CoachUiState, Nothing> {
 
     override val container: OrbitContainer<CoachUiState, CoachUiState, Nothing> =
@@ -44,6 +58,8 @@ class CoachViewModel(
                 profileRepository,
                 waterRepository,
                 exerciseRepository,
+                moodRepository,
+                stepsRepository,
             )
         }
 
@@ -73,6 +89,8 @@ class CoachViewModel(
         profileRepository: ProfileRepository,
         waterRepository: WaterRepository,
         exerciseRepository: ExerciseRepository,
+        moodRepository: MoodRepository,
+        stepsRepository: StepsRepository,
     ) = intent {
         combine(
             coachRepository.observeMessages(),
@@ -88,12 +106,28 @@ class CoachViewModel(
             // as an answer to a question asked once. `isOnline()` is untouched and is still what
             // decides whether a send calls the model at all.
             networkMonitor.observe(),
+            // The fourth, and the only one collected for something already on screen rather than
+            // for the next send: a report card is re-folded from Room every time it is drawn, so a
+            // meal logged in another tab moves the average on a card the user is looking at. Both
+            // windows always — see `CoachUiState.reports`.
+            observeReports(
+                profileRepository,
+                foodRepository,
+                progressRepository,
+                waterRepository,
+                exerciseRepository,
+                moodRepository,
+                stepsRepository,
+            ),
             // Tupled rather than folded here: `state` inside a `combine` transform is read when
             // the transform runs, so building the new state there would carry a snapshot of the
             // in-flight turn from before whatever arrived since.
-        ) { messages, request, online -> Triple(messages, request, online) }
-            .collect { (messages, request, online) ->
-                reduce { state.withMessages(messages, request).copy(offline = !online) }
+        ) { messages, request, online, reports -> Conversation(messages, request, online, reports) }
+            .collect { (messages, request, online, reports) ->
+                reduce {
+                    state.withMessages(messages, request)
+                        .copy(offline = !online, reports = reports)
+                }
             }
     }
 
@@ -105,6 +139,16 @@ class CoachViewModel(
      * The clearing is its own intent because a cancelled one cannot reduce — the same reason
      * [onSettle]'s empty-answer branch exists.
      */
+    /** A `Triple` grew a fourth member. Private and structural — it never leaves this file, and
+     * it exists for the reason the tuple did: folding inside the transform would read `state`
+     * before whatever arrived since. */
+    private data class Conversation(
+        val messages: List<ChatMessage>,
+        val request: InsightRequest?,
+        val online: Boolean,
+        val reports: Map<Int, Report>,
+    )
+
     private fun onStop() {
         sendJob?.cancel()
         intent { reduce { state.withTurnAbandoned(stopped = true) } }

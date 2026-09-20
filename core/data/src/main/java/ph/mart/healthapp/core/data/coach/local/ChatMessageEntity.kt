@@ -15,6 +15,11 @@ import androidx.room3.PrimaryKey
  * turn came back out of Room — it drew as one paragraph on reload while the live turn drew it under
  * a rule with a check beside it, so the same answer looked different depending on when you read it.
  * Null on every message that logged nothing, which is nearly all of them.
+ *
+ * [report] is the *window* of the report card that turn drew, in days, and it is a column for
+ * [receipt]'s reason — the card is the app reporting, not the coach talking. Only the window is
+ * stored: every figure on the card is re-folded from Room at render, so a report read next week
+ * is folded against the rows as they are then rather than showing a number that has moved.
  */
 @Entity(tableName = "chat_message")
 internal data class ChatMessageEntity(
@@ -24,4 +29,5 @@ internal data class ChatMessageEntity(
     val sentAtMillis: Long,
     val isDeleted: Boolean = false,
     val receipt: String? = null,
+    val report: Int? = null,
 )

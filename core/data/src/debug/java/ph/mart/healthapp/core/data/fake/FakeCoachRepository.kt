@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
 import ph.mart.healthapp.core.data.progress.MeasurementPart
+import ph.mart.healthapp.core.data.recap.REPORT_DAYS
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
@@ -54,6 +55,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
  * | `what did I eat yesterday?`, `how did 3 days ago go?` | a `get_day` round: preface, thinking mascot, then the day |
  * | `how has my week gone?`, `what's my average this month?` | `get_history` at 7 and at 30 days |
  * | `what have I saved recently?` | `get_library` |
+ * | `give me a report`, `show me a summary of my month` | the report card, at 7 or at 30 days |
  * | `log a glass of water` | the single-row card |
  * | `log a 45 minute run` | the same card, its burn priced off the real weigh-in |
  * | `log my weight 82.4` | the weigh-in card, in the profile's unit, with its change line |
@@ -126,6 +128,14 @@ internal class FakeCoachRepository(
                 val answer = stream(script.text(request))
                 real.settle(question, answer, emptyList())
             }
+
+            // No tool round and no card in the reply: the window is written onto the answer row
+            // and the screen folds the card from Room — the real path's whole shape, minus the
+            // model. Which is why the card arrives *after* the sentence here too.
+            is FakeScript.Report -> {
+                val answer = stream(script.preamble)
+                real.settle(question, answer, emptyList(), report = script.days)
+            }
         }
     }
 
@@ -170,6 +180,11 @@ internal sealed interface FakeScript {
     /** [text] takes the day's payload because the generic answer should still quote real numbers;
      * with no profile there are none, and it says so. */
     data class Say(val text: (InsightRequest?) -> String) : FakeScript
+
+    /** The card, and the one sentence over it. No figures in [preamble] — the real prompt forbids
+     * them and the model is not handed any, so a fake that quoted some would be showing a bubble
+     * the shipping coach cannot produce. */
+    data class Report(val days: Int, val preamble: String) : FakeScript
 }
 
 /**
@@ -319,6 +334,17 @@ internal fun fakeCoachScript(question: String): FakeScript {
         }
     }
 
+    // Above both read routes, because a report asks about a week or a month by definition and
+    // `HISTORY_WORDS` would otherwise claim every one of these sentences for `get_history` — which
+    // is exactly the confusion the real prompt's "never call both" clause is written against.
+    if (REPORT_WORDS.any { it in asked }) {
+        val days = if ("month" in asked) REPORT_DAYS.last() else REPORT_DAYS.first()
+        return FakeScript.Report(
+            days = days,
+            preamble = "Here's how your last $days days have gone — have a look:",
+        )
+    }
+
     // Before the history words, because "what have I saved recently?" is a library question and
     // "recently" is one of theirs.
     if (LIBRARY_WORDS.any { it in asked }) {
@@ -368,6 +394,7 @@ private val LOG_WORDS = listOf("log ", "add ", "i ate", "i had", "i drank", "i w
 private val WATER_WORDS = listOf("water", "glass")
 private val HISTORY_WORDS = listOf("week", "month", "trend", "average", "lately", "recently")
 private val LIBRARY_WORDS = listOf("saved", "recipe", "library", "usual")
+private val REPORT_WORDS = listOf("report", "summary", "summarise", "summarize", "overview", "overall")
 
 /**
  * What makes a sentence about a supplement. The seed's three names are in here so the common case

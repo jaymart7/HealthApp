@@ -25,7 +25,7 @@ import ph.mart.healthapp.feature.progress.ui.cycle.LogCycleSheet
 import ph.mart.healthapp.feature.progress.ui.pressure.LogBloodPressureSheet
 import ph.mart.healthapp.feature.progress.ui.progress.components.ProgressOverview
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
-import ph.mart.healthapp.feature.progress.ui.shared.recap
+import ph.mart.healthapp.core.data.recap.recap
 
 /**
  * The tab itself: the overview, and the two log sheets its empty-card hints can raise.
@@ -74,7 +74,7 @@ private fun ProgressContent(
     // all-zero one on day one — and takes the share door with it, since there is then nothing to
     // report. Always the week here; the longer periods are the recap screen's, which folds its own.
     val weekRecap = recap(
-        period = DEFAULT_RECAP_PERIOD,
+        days = DEFAULT_RECAP_PERIOD.days,
         dailyNutrition = uiState.dailyNutrition,
         activeDays = uiState.activeDays,
         weightEntries = uiState.weightEntries,

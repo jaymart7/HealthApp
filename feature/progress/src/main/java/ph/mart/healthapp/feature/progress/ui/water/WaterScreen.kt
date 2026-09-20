@@ -44,8 +44,8 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
-import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
+import ph.mart.healthapp.core.designsystem.component.DayBar
+import ph.mart.healthapp.core.designsystem.component.DayBarChart
 
 /** Glasses a day over the picked window — a route of its own, `FastingScreen`'s shape. Logging a
  * glass is Home's card and the diary's row, so this page only reads. */

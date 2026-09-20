@@ -375,7 +375,9 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   Derived, never stored, never sent to a model, and drawn only once the log can support one.
 - Recap: rolling 7/30/365-day summary, shareable as a single-card PNG, and — on the week and
   the month, never the year — a door to the coach carrying that period's question, since
-  `get_history` reads a span of at most a month.
+  `get_history` reads a span of at most a month. The fold itself (`Recap`, `recap()`) lives in
+  `:core:data/recap/`, because the coach's report card draws the same one; `RecapPeriod` and the
+  card stayed here.
 - Energy check-in: maintenance calories measured from 28 days of logged intake against the real
   weight trend, with a one-tap adjustment of the calorie target (in the Weight page's insight card,
   opening a full overlay that shows its working).
@@ -429,6 +431,16 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   a removable ✕ and a total underneath. Removing a row recounts the title, the total, the macro
   legend and the button label, and leaves an undo line inside the card. Taking every row out is not
   a dismissal: the card says so and the confirm goes quiet.
+- Coach reports — asked for a report, a summary or how a week or month went, the coach calls
+  `show_report` and the app draws an **interactive report card** in the transcript instead of
+  narrating figures. Four sections — Nutrition, Steps, Training, Weight — each collapsed to one
+  headline figure, one open at a time, each with a row through to its Progress page. Chips switch
+  between 7 and 30 days in place. Nutrition and Steps carry a `DayBarChart` against their target;
+  Weight (an arc between two weigh-ins) and Training (a set of totals) carry none, because neither
+  is a daily count. **The model is handed none of the figures** — it picks the window and writes
+  one sentence over the card. Persisted as the *window* alone on the answer row, so a report
+  reopened later is re-folded from the rows as they are then; the chips are view state and change
+  nothing. It is the same `recap()` the Progress tab folds, moved to `:core:data/recap/`.
 - Coach bands, not coach verdicts — a blood-pressure reading reaches the model **with the AHA band
   `categoryOf()` put it in**, the same label the Blood pressure card shows. The prompt lets it
   repeat that band and forbids it deriving one, calling a reading good or bad, or saying what a
@@ -666,6 +678,9 @@ each one is argued in `CLAUDE.md`.
 - **No hard deletes** anywhere except an unfinished fast and a superseded workout's sets.
 - **The watch has no database**, and the tile never writes.
 - **No planned meals** — the diary never steps past today.
+- **A year-long coach report, and a PNG share of one.** `show_report` offers 7 and 30 only, the
+  windows `get_history` can then discuss — the recap's own rule. Sharing is the recap route's job;
+  a chat answer already long-presses to share as text.
 
 ## Open backlog
 

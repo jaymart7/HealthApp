@@ -4,7 +4,7 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
-import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.core.data.recap.Recap
 import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 
 /**

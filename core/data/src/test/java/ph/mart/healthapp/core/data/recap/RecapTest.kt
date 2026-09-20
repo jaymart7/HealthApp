@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.shared
+package ph.mart.healthapp.core.data.recap
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -32,7 +32,7 @@ private fun weekOf(
     moodDays: List<MoodDay> = emptyList(),
     targets: DailyTargets? = TARGETS,
 ) = recap(
-    period = RecapPeriod.Week,
+    days = 7,
     dailyNutrition = nutrition,
     activeDays = activeDays,
     weightEntries = weightEntries,
@@ -243,7 +243,7 @@ private fun monthOf(
     stepDays: List<StepDay> = emptyList(),
     photos: List<ProgressPhoto> = emptyList(),
 ) = recap(
-    period = RecapPeriod.Month,
+    days = 30,
     dailyNutrition = nutrition,
     activeDays = activeDays,
     weightEntries = weightEntries,

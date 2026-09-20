@@ -244,4 +244,43 @@
         <item quantity="one">Logged: %1$d item, %2$d kcal.</item>
         <item quantity="other">Logged: %1$d items, %2$d kcal.</item>
     </plurals>
+    <!-- The report card. Its figures are the app's own fold, never the model's words. -->
+    <string name="coach_report_title">Last %1$d days</string>
+    <string name="coach_report_period">%1$d days</string>
+    <string name="coach_report_days_logged">%1$d of %2$d days logged</string>
+    <string name="coach_report_empty">Nothing was logged in the last %1$d days.</string>
+    <string name="coach_report_none">\u2014</string>
+    <string name="coach_report_fact">%1$s, %2$s</string>
+
+    <string name="coach_report_nutrition">Nutrition</string>
+    <string name="coach_report_steps">Steps</string>
+    <string name="coach_report_training">Training</string>
+    <string name="coach_report_weight">Weight</string>
+
+    <string name="coach_report_open_nutrition">Open Nutrition</string>
+    <string name="coach_report_open_steps">Open Activity</string>
+    <string name="coach_report_open_training">Open Strength</string>
+    <string name="coach_report_open_weight">Open Weight</string>
+
+    <string name="coach_report_kcal">%1$d kcal</string>
+    <string name="coach_report_kcal_avg">%1$d kcal avg</string>
+    <string name="coach_report_steps_avg">%1$s avg</string>
+    <string name="coach_report_workouts">%1$d workouts</string>
+    <string name="coach_report_weight_down">\u2212%1$s %2$s</string>
+    <string name="coach_report_weight_up">+%1$s %2$s</string>
+    <string name="coach_report_weight_value">%1$s %2$s</string>
+
+    <string name="coach_report_protein">Protein</string>
+    <string name="coach_report_carbs">Carbs</string>
+    <string name="coach_report_fat">Fat</string>
+    <string name="coach_report_best_day">Closest to target</string>
+    <string name="coach_report_best_steps">Best day</string>
+    <string name="coach_report_goal_days">Goal hit</string>
+    <string name="coach_report_of_days">%1$d of %2$d</string>
+    <string name="coach_report_sets">Sets</string>
+    <string name="coach_report_burned">Burned</string>
+    <string name="coach_report_top_lift">Top lift</string>
+    <string name="coach_report_start">Start</string>
+    <string name="coach_report_end">End</string>
+    <string name="coach_report_seven_day">Last 7 days</string>
 </resources>

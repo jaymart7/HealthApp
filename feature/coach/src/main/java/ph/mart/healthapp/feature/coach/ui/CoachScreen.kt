@@ -50,6 +50,7 @@ import ph.mart.healthapp.feature.coach.ui.components.OfflineStrip
 import ph.mart.healthapp.feature.coach.ui.components.StoppedMarker
 import ph.mart.healthapp.feature.coach.ui.components.FollowUpRow
 import ph.mart.healthapp.feature.coach.ui.components.ProposalCard
+import ph.mart.healthapp.feature.coach.ui.components.ReportCard
 import ph.mart.healthapp.feature.coach.ui.components.StreamingBubble
 
 @Composable
@@ -58,6 +59,7 @@ fun CoachScreen(
     source: String? = null,
     onOpenDiary: () -> Unit = {},
     onStartRoutine: (Long) -> Unit = {},
+    onOpenSection: (String) -> Unit = {},
     onExitFlow: () -> Unit = {},
     viewModel: CoachViewModel = koinViewModel(),
 ) {
@@ -81,6 +83,7 @@ fun CoachScreen(
         source = source?.takeUnless { state.chipDismissed },
         onOpenDiary = onOpenDiary,
         onStartRoutine = onStartRoutine,
+        onOpenSection = onOpenSection,
         onExitFlow = onExitFlow,
     )
 }
@@ -105,6 +108,7 @@ private fun CoachContent(
     source: String? = null,
     onOpenDiary: () -> Unit = {},
     onStartRoutine: (Long) -> Unit = {},
+    onOpenSection: (String) -> Unit = {},
     onExitFlow: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
@@ -200,6 +204,22 @@ private fun CoachContent(
                             // defers because filling the field is its side effect, not its point.
                             onEdit = { state.draft = message.text },
                         )
+                        // Under the answer that introduced it and inside its own item, the day
+                        // separator's placement and for its reason: the card belongs to that
+                        // message, and a list item of its own would need a second key and would
+                        // drift out of `itemCount` above. It is drawn from a Room emission rather
+                        // than mid-stream, so it lands a beat after the sentence finishes — which
+                        // is what a report having no Confirm buys, and no `CoachReply` variant.
+                        uiState.reportAt(index)?.let { report ->
+                            ReportCard(
+                                reports = uiState.reports,
+                                drafted = report.days,
+                                // The enum's `name` and not the enum: `:feature:*` modules never
+                                // import each other, so `:app` is what turns this into a route.
+                                onOpenSection = { onOpenSection(it.name) },
+                                modifier = Modifier.padding(top = 8.dp, start = AnswerIndent),
+                            )
+                        }
                     }
                     // The turn in flight, neither half of it in Room yet: the question is on screen
                     // from the tap, and the answer grows under it in place.

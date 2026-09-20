@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.progress.ui.shared.components
+package ph.mart.healthapp.core.designsystem.component
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
@@ -24,10 +24,12 @@ data class DayBar(val dateEpochDay: Long, val value: Int)
  * `outlineVariant`, slots taken from the *window* rather than the list so a stretch with no data
  * stays a visible gap.
  *
- * Shared by the Sleep, Fasting and Activity tabs, which is why it lives in `ui/shared/` beside
- * [RangeBarChart] — the floating-bar chart Heart and Blood pressure draw, which is deliberately
- * *not* zero-based. Mood, Nutrition and Supplements keep their own canvases: two series with a
- * legend, a target line over a dense series, and percentages respectively.
+ * Seven Progress tabs draw one, and so does the coach's report card — two features, which is the
+ * rule that moved it out of `:feature:progress/ui/shared/components/` and down here. `RangeBarChart`
+ * stayed behind: it is the floating-bar chart Heart and Blood pressure draw, deliberately *not*
+ * zero-based, and nothing outside that tab wants one. Mood, Nutrition and Supplements keep their
+ * own canvases: two series with a legend, a target line over a dense series, and percentages
+ * respectively.
  *
  * [minAxisValue] is the height the y-axis never shrinks below — a full night, a full day — so a run
  * of small figures reads as small rather than filling the canvas the way an auto-ranged axis would

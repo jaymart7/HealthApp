@@ -6,6 +6,7 @@ import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.coach.CoachAction
 import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.insight.InsightRequest
+import ph.mart.healthapp.core.data.recap.Report
 import ph.mart.healthapp.feature.coach.R
 
 /**
@@ -53,6 +54,14 @@ data class CoachUiState(
      * is still a recheck at the moment of the send, because that is the only answer that matters to
      * a request about to be spent. */
     val offline: Boolean = false,
+    /** Every window a report card can be drawn at, folded from Room and keyed by
+     * [Report.days] — `REPORT_DAYS`, and both of them always, because the card's period chips
+     * switch between them with no round trip. Empty until the first emission.
+     *
+     * It is *not* per message: two reports in one conversation at the same window are the same
+     * fold, and holding a copy on each would be a second answer to the same question. What a
+     * message carries is only which window it asked for. */
+    val reports: Map<Int, Report> = emptyMap(),
     /** Whether the last thing that happened to this conversation was the user stopping a turn.
      * UI-only and never persisted, for [failure]'s reason: a stopped turn wrote no rows, so there
      * is nothing in Room for it to describe. Cleared by the next send. */
@@ -132,6 +141,19 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
  */
 internal fun List<CoachAction>.routineIdToStart(): Long? =
     (singleOrNull() as? CoachAction.StartRoutine)?.routineId?.takeIf { it > 0 }
+
+/**
+ * The report to draw under the message at [index], or null where there is none.
+ *
+ * Three ways to be null, and they are different: the message drew no report, the window it drew
+ * has not been folded yet (the first frame, before the flow emits), or the model asked for a
+ * window that is no longer one this app offers — a conversation outlives a change to
+ * `REPORT_DAYS`, and a card headed with a window nobody folds is a card that would draw zeros.
+ * The screen draws nothing in all three cases and the answer above it still reads correctly,
+ * which is the whole reason the *window* is stored and never the figures.
+ */
+internal fun CoachUiState.reportAt(index: Int): Report? =
+    messages.getOrNull(index)?.report?.let(reports::get)
 
 /**
  * A Room emission folded in.

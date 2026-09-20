@@ -79,6 +79,7 @@ import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
 import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
 import ph.mart.healthapp.feature.progress.ui.RecapRoute
 import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
+import ph.mart.healthapp.core.data.recap.ReportSection
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progressEntries
 import ph.mart.healthapp.feature.progress.ui.route
@@ -455,6 +456,13 @@ fun AppScaffold(
                             onStartRoutine = { routineId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
                             },
+                            // A report section through to the page that owns it. Pushed above the
+                            // coach rather than switching tabs — the diary door switches because
+                            // the diary *is* a tab, while these four are routes, and back has to
+                            // return to the conversation with the card still on it.
+                            onOpenSection = { section ->
+                                reportSectionRoute(section)?.let { topLevelBackStack.add(it) }
+                            },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )
                         foodEntries(
@@ -596,4 +604,25 @@ fun AppScaffold(
                 .padding(bottom = DockedFabContentPadding),
         )
     }
+}
+
+/**
+ * A report-card section, to the Progress page that owns it.
+ *
+ * `:app` is the only module that can see both ends — `ReportSection` is `:core:data`'s and the
+ * four pages are `:feature:progress`'s — which is why the coach hands out a `name` and this is
+ * where it becomes a route. Through [Subject] and its existing `route()` rather than naming the
+ * four `NavKey`s directly, so this cannot drift out of step with `ProgressSubjectRoutes`.
+ *
+ * Null only on a name from a build that knew a section this one does not. The card would have to
+ * come from a transcript written by a newer install, which no path produces today — but a crash
+ * is the wrong answer to it either way, and nothing happening is the same shrug the diary door
+ * already gives a draft it cannot honestly point at.
+ */
+private fun reportSectionRoute(section: String): NavKey? = when (section) {
+    ReportSection.Nutrition.name -> Subject.Nutrition.route()
+    ReportSection.Steps.name -> Subject.Activity.route()
+    ReportSection.Training.name -> Subject.Strength.route()
+    ReportSection.Weight.name -> Subject.Weight.route()
+    else -> null
 }

@@ -11,9 +11,9 @@ import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.designsystem.component.ShareImageSheet
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.feature.progress.ui.shared.BestDay
+import ph.mart.healthapp.core.data.recap.BestDay
 import ph.mart.healthapp.feature.progress.ui.shared.components.RecapCard
-import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.core.data.recap.Recap
 import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 
 /**
@@ -27,13 +27,14 @@ import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 @Composable
 internal fun ShareRecapSheet(
     recap: Recap,
+    period: RecapPeriod,
     goal: Goal?,
     unit: UnitSystem,
     projection: GoalProjection?,
     onDismiss: () -> Unit,
 ) {
     ShareImageSheet(fileName = "fitpulse-recap.png", onDismiss = onDismiss) {
-        RecapCard(recap = recap, goal = goal, unit = unit, projection = projection)
+        RecapCard(recap = recap, period = period, goal = goal, unit = unit, projection = projection)
     }
 }
 
@@ -42,8 +43,9 @@ internal fun ShareRecapSheet(
 private fun ShareRecapSheetPreview() {
     AppTheme {
         ShareRecapSheet(
+            period = RecapPeriod.Week,
             recap = Recap(
-                period = RecapPeriod.Week,
+                days = 7,
                 daysLogged = 6,
                 averages = NutritionAverages(1940, 141, 196, 68, daysLogged = 5),
                 targets = DailyTargets(calories = 2000, proteinG = 150, carbsG = 200, fatG = 67, floor = 1500),

@@ -1662,6 +1662,18 @@ rather than needing a counter patched.
   all — `food_entry.loggedAt` is already stored. It is left for its own pass, because it is a
   `Patterns.kt` change (raw entries into `PatternInputs`, which today takes aggregated
   `DayNutrition`) and not part of putting a clock on four pickers.
+- **`recap()` moved to `:core:data`; `RecapPeriod` and `RecapCard` stayed.** The coach's report
+  card folds the same window this tab does, and `:feature:*` modules never import each other —
+  `MealType.labelRes`' move, for its reason. What went down is the derivation: `Recap`, `recap()`
+  and `BestDay`, into a domain that owns no table beside `insight/` and `streak/`. What stayed is
+  the *naming*: `RecapPeriod` is three string resources and a coach question, which is a feature's
+  business, so `Recap.period` became a plain `Recap.days` and `RecapCard` took the period as a
+  parameter. Moving the enum would have dragged six strings and a dozen files for nothing —
+  `recap()` only ever needed the day count. `DayBarChart` went to `:core:designsystem` in the same
+  pass under the plain ≥2-screens rule; `RangeBarChart` stayed, since nothing outside Heart and
+  Blood pressure draws a floating bar. `observeReports()` in `:core:data/recap/` is
+  `observeInsightRequest`'s shape one domain over: the coach has no folded state of its own, this
+  tab does, and neither should own the knowledge of how a report is assembled.
 
 ### Saved meals, recipes & the food library
 
@@ -2742,6 +2754,65 @@ rather than needing a counter patched.
   shows a chip or a pill" — its own comment. So it moved onto the enum, the shape `ExerciseType`
   and `MoodLevel` already have, and the nine call sites lost a pair of parentheses. The `name` is
   untouched, as always: that is what the Room row, the export and the Google Health push carry.
+- **A report is a column on the answer row, not a `CoachReply` variant.** The coach can now put an
+  interactive report card in the transcript, and the obvious build was a third reply kind beside
+  `Partial` and `Proposal`. It is a column instead — `chat_message.report`, holding the window in
+  days — for the reason `receipt` is one, one column over: both are *the app reporting* rather than
+  the coach talking, and only a column lets a reopened conversation still tell them apart. Three
+  things fell out of that for free. The card **survives a reopen** with no extra state. It is
+  **re-folded from Room every time it is drawn**, so a meal logged in the Food tab moves the
+  average on a card already on screen and a report read next week is folded against the rows as
+  they are then — which is why the *window* is stored and never the figures. And `send()` needed
+  no new ending: `finish()` writes the pair as it always did, one argument wider. The cost is that
+  the card lands a beat after the sentence finishes rather than mid-stream, because Room's
+  emission is what draws it. That is the right trade for a surface with no Confirm — a proposal
+  has to be on screen the instant it exists because the turn is blocked on it, and a report blocks
+  nothing.
+- **The model is not handed the report's figures.** `show_report` answers with an *instruction* —
+  the card is on screen, introduce it in one sentence, state no numbers — and not with the fold.
+  It cannot misquote a figure it was never given, which is `log_exercise`'s rule (the app supplies
+  what a model would otherwise invent) taken as far as it goes: here the app supplies the whole
+  answer and the model supplies only the sentence over it. It also keeps the whole of
+  `MAX_REPLY_CHARS` for that sentence instead of spending it re-narrating a table the user can
+  read. A specific question about a span is still `get_history`, and the prompt forbids both in
+  one turn — as does the loop, which fails a round holding a report call beside a write for
+  `routineDraftStandsAlone()`'s reason: one card, one kind.
+- **`show_report` is a third kind of tool.** Not a read — nothing of it reaches the answer — and
+  not a draft, because there is nothing to agree to and no Confirm to press. So it is not in
+  `WRITE_TOOLS` and `parseAction` has no branch for it; `parseShowReport` is its whole boundary,
+  and it rejects a window that is not 7 or 30 rather than rounding to the nearer one. Rounding 14
+  to 7 invents an intent, and a card headed with a window nobody asked for says nothing about
+  being wrong. `REPORT_DAYS` is the two, and it lives in `:core:data/recap/` rather than beside
+  the tool because three things read it: the schema, the parse, and the card's own chips.
+- **The report card's period chips are view state, not a write.** Switching a card to 7 days
+  changes what is drawn, not what the turn asked for: the transcript is a record of what was said,
+  and a tap on a card is not a second question — which is also why the sentence above it is left
+  alone, having introduced the window the coach chose. The state lives in `ReportCard` itself
+  rather than in `CoachScreenState`, and the transcript's own list is what makes that the cheaper
+  half: a `LazyColumn` item scopes `rememberSaveable` to the item key, which is the message id, so
+  each card keeps its own chip and its own open section across a scroll and a rotation with no map
+  keyed by message anywhere. Both windows are folded always, in `CoachUiState.reports`, so a chip
+  costs no round trip — the subscription is the expense and it is the same one either way.
+- **The report card is not `RecapCard`, and only two of its four sections carry a chart.** The
+  recap's card is a 395-line full-width grid built to become a share-PNG; a chat bubble wants four
+  collapsed rows, one open at a time, above an input bar. What is shared is the *derivation* and
+  the *chart*, which is the honest half — see the Progress entry below. And the chart is
+  `DayBarChart`, zero-based bars over a daily count, which is what calories and steps are: a
+  weight arc is two ends of a window and a training block is a set of totals, so drawing either as
+  daily bars would be a chart that lies, and a line chart for one section is a second chart idiom
+  to keep in step across the app. Two sections showing figures alone is the truthful shape, not a
+  gap to fill.
+- **An expanding section wires no `NavigationEventHandler`.** Predictive back steps through
+  sub-levels, and a disclosure inside a list item is not one — it is the diary's sections, not a
+  sheet or a swapped-in sub-view. Back from a report leaves the coach, which is the level the user
+  is actually on. Written down because the rule reads like it should apply and the next pass would
+  otherwise "fix" it.
+- **`CoachRepository.settle` grew a `report` argument it does not need.** The real path writes a
+  report through `finish()`, never here. It is on the interface because `settle` is the public way
+  to end a turn and write the pair, and `FakeCoachRepository` — which is `CoachRepository by real`
+  and replaces only `send` — has no other door onto the write. A debug build that could not reach
+  the card would leave the whole surface untestable without a live model, which is the thing that
+  fake exists to prevent.
 - **The coach is not exported, not a streak domain, has no reminder and no widget surface.** The
   backup file is a record of what the user *did*; a conversation about one day's numbers has no
   meaning restored on another device — `health_link`'s reasoning. And talking to a coach is not

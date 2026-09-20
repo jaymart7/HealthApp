@@ -150,9 +150,10 @@ weighted — is `DECISIONS.md` → **Adaptive layout**.
   repository interface by constructor injection and never touch `AppDatabase`,
   a DAO, or an Entity. Domains: `food`, `profile`, `progress`, `water`,
   `exercise` (logged activity *and* the routines that seed one), `mood`, `cycle`, `health`,
-  `fasting`, `supplement`, `bloodpressure`, `coach`, plus two that keep the shape without
-  owning a table — `insight/` (the cached daily line) and `transfer/` (export, import and
-  the local backups). Two non-domains sit beside them: `network/` (a `NetworkMonitor`
+  `fasting`, `supplement`, `bloodpressure`, `coach`, plus three that keep the shape without
+  owning a table — `insight/` (the cached daily line), `recap/` (the folded window the Progress
+  recap and the coach's report card both draw, plus `observeReports`) and `transfer/` (export,
+  import and the local backups). Two non-domains sit beside them: `network/` (a `NetworkMonitor`
   that answers both ways — `isOnline()` is the recheck every AI call site makes at the
   moment it is about to spend a request, and `observe()` is the `Flow` the coach's
   pinned offline strip needs because *that* one is a state) and `streak/`, which is

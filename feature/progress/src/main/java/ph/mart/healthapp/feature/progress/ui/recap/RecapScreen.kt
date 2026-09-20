@@ -56,8 +56,8 @@ import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.shared.components.Note
 import ph.mart.healthapp.feature.progress.ui.recap.components.ShareRecapSheet
-import ph.mart.healthapp.feature.progress.ui.shared.BestDay
-import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.core.data.recap.BestDay
+import ph.mart.healthapp.core.data.recap.Recap
 import ph.mart.healthapp.feature.progress.ui.shared.RecapPeriod
 import ph.mart.healthapp.feature.progress.ui.shared.components.RecapCard
 import ph.mart.healthapp.feature.progress.ui.shared.components.sampleFrames
@@ -124,6 +124,7 @@ private fun RecapContent(
             ) {
                 RecapCard(
                     recap = report,
+                    period = uiState.period,
                     goal = uiState.goal,
                     unit = uiState.unit,
                     projection = uiState.projection,
@@ -144,6 +145,7 @@ private fun RecapContent(
     if (state.sharing && report != null) {
         ShareRecapSheet(
             recap = report,
+            period = uiState.period,
             goal = uiState.goal,
             unit = uiState.unit,
             projection = uiState.projection,
@@ -328,7 +330,7 @@ private fun RecapScreenPreview() {
         RecapContent(
             uiState = RecapUiState(
                 report = Recap(
-                    period = RecapPeriod.Month,
+                    days = 30,
                     daysLogged = 26,
                     averages = NutritionAverages(1940, 141, 196, 68, daysLogged = 24),
                     targets = DailyTargets(calories = 2000, proteinG = 150, carbsG = 200, fatG = 67, floor = 1500),

@@ -24,6 +24,10 @@ data class ChatMessage(
      * so the screen can draw it as the app reporting rather than as the coach talking. Null on
      * every turn that logged nothing. */
     val receipt: String? = null,
+    /** The window, in days, of the report card that turn drew — one of `REPORT_DAYS`. Null on
+     * every turn that drew none. The *figures* are not here and never were: the screen folds them
+     * from Room, so a report is re-derived every time it is read. */
+    val report: Int? = null,
 )
 
 /**
@@ -345,12 +349,18 @@ interface CoachRepository {
      * appended to [answer]: the two are different kinds of sentence — one is the coach and one is
      * the app — and only a separate column lets a reopened conversation still tell them apart.
      * Null on a dismissal, and on the one confirm that writes nothing (a routine opens a form).
+     *
+     * [report] is the window of a report card the turn drew, and it is here rather than only on
+     * [send]'s own ending for one reason: this is the public way to end a turn and write the pair,
+     * so an implementation that is not [CoachRepositoryImpl] — the debug fake — can reach it. A
+     * real report turn never stops on a proposal and goes out through [send].
      */
     suspend fun settle(
         question: String,
         answer: String,
         actions: List<CoachAction>,
         receipt: String? = null,
+        report: Int? = null,
     )
 
     /** Soft-deletes the whole conversation. Room's rows stay, like every other domain's. */

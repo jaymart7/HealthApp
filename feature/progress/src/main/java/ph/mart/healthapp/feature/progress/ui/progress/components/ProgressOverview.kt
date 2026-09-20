@@ -47,7 +47,8 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressScreenState
 import ph.mart.healthapp.feature.progress.ui.progress.ProgressUiState
-import ph.mart.healthapp.feature.progress.ui.shared.Recap
+import ph.mart.healthapp.core.data.recap.Recap
+import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
 import ph.mart.healthapp.feature.progress.ui.shared.components.RecapCard
 import ph.mart.healthapp.feature.progress.ui.progress.patterns
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
@@ -143,6 +144,7 @@ internal fun ProgressOverview(
         if (weekRecap != null) {
             RecapCard(
                 recap = weekRecap,
+                period = DEFAULT_RECAP_PERIOD,
                 goal = uiState.goal,
                 unit = uiState.preferredUnit,
                 // The projection has its own card here, so the recap doesn't repeat the line.

@@ -44,8 +44,8 @@ import ph.mart.healthapp.feature.progress.ui.progress.components.HeroValue
 import ph.mart.healthapp.feature.progress.ui.progress.components.LegendEntry
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRow
 import ph.mart.healthapp.feature.progress.ui.progress.components.StatRowsCard
-import ph.mart.healthapp.feature.progress.ui.shared.components.DayBar
-import ph.mart.healthapp.feature.progress.ui.shared.components.DayBarChart
+import ph.mart.healthapp.core.designsystem.component.DayBar
+import ph.mart.healthapp.core.designsystem.component.DayBarChart
 
 /** A fast is read against the day it sits in, not against the longest one in the window. */
 private const val FULL_DAY_MINUTES = 24 * 60

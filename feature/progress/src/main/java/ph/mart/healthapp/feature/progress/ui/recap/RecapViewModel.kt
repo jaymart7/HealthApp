@@ -25,7 +25,7 @@ import ph.mart.healthapp.core.data.streak.loggedDays
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.feature.progress.ui.shared.DEFAULT_RECAP_PERIOD
-import ph.mart.healthapp.feature.progress.ui.shared.recap
+import ph.mart.healthapp.core.data.recap.recap
 
 /**
  * The recap flow's container. It writes nothing: the seven repositories are read so the report is
@@ -109,7 +109,7 @@ class RecapViewModel(
             val today = todayEpochDay()
             RecapUiState(
                 report = recap(
-                    period = window,
+                    days = window.days,
                     dailyNutrition = dailyNutrition,
                     activeDays = days,
                     weightEntries = entries.weightEntries,
