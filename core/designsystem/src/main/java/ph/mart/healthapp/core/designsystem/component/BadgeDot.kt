@@ -6,8 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -53,6 +53,10 @@ val BADGE_DOT_SIZE = 32.dp
  * where five 32dp dots do not fit inside 126dp of content on a 360dp screen. The label style steps
  * down with it rather than being a second parameter — a three-digit badge is what has to survive
  * the shrink, and there is one threshold, not a scale.
+ *
+ * [size] is a *minimum*, not a fixed width: a label wider than the circle stretches it into a pill
+ * rather than running into its own edge, which is what `Badge` itself does past one character. A
+ * one-digit badge is still a circle, and so is every label that fits inside one.
  */
 @Composable
 fun BadgeDot(
@@ -89,9 +93,10 @@ fun BadgeDot(
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
-            .size(size)
+            .defaultMinSize(minWidth = size, minHeight = size)
             .clip(CircleShape)
             .background(container)
+            .padding(horizontal = 4.dp)
             .clearAndSetSemantics {
                 contentDescription = spoken
             },
@@ -103,8 +108,6 @@ fun BadgeDot(
             } else {
                 MaterialTheme.typography.labelMedium.tabularNums
             },
-            // A dot is narrower than its own label at large font scales: "14" in a 22dp circle
-            // wraps to two lines unless line breaking is off outright.
             maxLines = 1,
             softWrap = false,
             color = content,
