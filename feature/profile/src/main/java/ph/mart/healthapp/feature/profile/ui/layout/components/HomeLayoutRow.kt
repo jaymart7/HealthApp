@@ -13,6 +13,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -63,6 +65,13 @@ internal fun HomeLayoutRow(
     // Resolved here, not in the semantics lambda, which cannot read a resource.
     val moveUp = stringResource(R.string.profile_layout_move_up)
     val moveDown = stringResource(R.string.profile_layout_move_down)
+    // `pointerInput(Unit)` never restarts, so the gesture block below would keep the lambdas from
+    // this row's first composition — and those close over a list index every reorder invalidates.
+    // Keying the block on the lambdas instead would cancel the gesture mid-drag, which is the one
+    // thing worse than a stale index.
+    val dragStart by rememberUpdatedState(onDragStart)
+    val drag by rememberUpdatedState(onDrag)
+    val dragEnd by rememberUpdatedState(onDragEnd)
     Surface(
         color = if (dragging) {
             MaterialTheme.colorScheme.surfaceContainerHigh
@@ -100,12 +109,12 @@ internal fun HomeLayoutRow(
                     .padding(10.dp)
                     .pointerInput(Unit) {
                         detectDragGestures(
-                            onDragStart = { onDragStart() },
-                            onDragEnd = { onDragEnd() },
-                            onDragCancel = { onDragEnd() },
+                            onDragStart = { dragStart() },
+                            onDragEnd = { dragEnd() },
+                            onDragCancel = { dragEnd() },
                             onDrag = { change, amount ->
                                 change.consume()
-                                onDrag(amount.y)
+                                drag(amount.y)
                             },
                         )
                     },
