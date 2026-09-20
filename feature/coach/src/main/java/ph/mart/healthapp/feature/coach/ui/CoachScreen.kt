@@ -64,7 +64,7 @@ fun CoachScreen(
     val uiState by viewModel.collectAsState()
     val state = rememberCoachScreenState()
     // Fills the field and stops — the mic's rule, and for its reason: a send is a model call and a
-    // persisted pair of rows, and a question arrived at by tapping an icon is a starting point.
+    // persisted pair of rows, and a question arrived at by tapping an icon is a startinzg point.
     // `prefilled` is saved, so a rotation cannot re-fill a field the user has since cleared.
     LaunchedEffect(question) {
         if (question != null && !state.prefilled) {
@@ -189,6 +189,9 @@ private fun CoachContent(
                             // reply reach a screen reader at all, and marking every bubble would
                             // re-announce the whole conversation.
                             announce = !message.fromUser && message.id == uiState.messages.last().id,
+                            // What that turn's confirmed draft wrote, drawn inside the answer.
+                            // `ChatBubble` ignores it on the user's side, where it is always null.
+                            receipt = message.receipt,
                             onAskAgain = question?.let { { onEvent(CoachEvent.OnSend(it)) } },
                             // Drawn on the user's own bubbles only — `ChatBubble` ignores it on the
                             // other side. It **replaces** the draft rather than deferring to it, the

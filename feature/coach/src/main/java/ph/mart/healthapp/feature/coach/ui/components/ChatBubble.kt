@@ -118,7 +118,14 @@ internal fun ChatBubble(
         ) {
             MascotAvatar(state = MascotState.Idle, size = 32.dp)
             BubbleActions(
-                menu = { dismiss -> AnswerMenu(text = text, onAskAgain = onAskAgain, dismiss = dismiss) },
+                menu = { dismiss ->
+                    AnswerMenu(
+                        text = text,
+                        receipt = receipt,
+                        onAskAgain = onAskAgain,
+                        dismiss = dismiss,
+                    )
+                },
             ) { open, raised ->
                 CoachBubble(
                     text = text,
@@ -176,16 +183,25 @@ private fun BubbleActions(
  * replacement is a suspending API with a moving shape, while two lines of `ClipData` have been
  * stable for a decade. Android 13 and up show their own "copied" confirmation, which is why nothing
  * here raises a snackbar.
+ *
+ * Both take the bubble as it is *read*, receipt included: the one turn with no prose at all is the
+ * one a confirmed draft wrote, and copying it used to hand over an empty string.
  */
 @Composable
-private fun AnswerMenu(text: String, onAskAgain: (() -> Unit)?, dismiss: () -> Unit) {
+private fun AnswerMenu(
+    text: String,
+    receipt: String?,
+    onAskAgain: (() -> Unit)?,
+    dismiss: () -> Unit,
+) {
     val context = LocalContext.current
+    val payload = listOfNotNull(text.takeIf(String::isNotBlank), receipt).joinToString("\n\n")
     DropdownMenuItem(
         text = { Text(stringResource(R.string.coach_bubble_copy)) },
         leadingIcon = { Icon(AppIcons.Copy, contentDescription = null) },
         onClick = {
             context.getSystemService(ClipboardManager::class.java)
-                ?.setPrimaryClip(ClipData.newPlainText(null, text))
+                ?.setPrimaryClip(ClipData.newPlainText(null, payload))
             dismiss()
         },
     )
@@ -193,7 +209,7 @@ private fun AnswerMenu(text: String, onAskAgain: (() -> Unit)?, dismiss: () -> U
         text = { Text(stringResource(R.string.coach_bubble_share)) },
         leadingIcon = { Icon(AppIcons.Share, contentDescription = null) },
         onClick = {
-            shareText(context, text)
+            shareText(context, payload)
             dismiss()
         },
     )

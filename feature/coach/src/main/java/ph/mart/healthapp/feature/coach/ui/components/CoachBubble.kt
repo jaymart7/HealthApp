@@ -57,8 +57,10 @@ private val BubbleMax = 480.dp
 @Composable
 internal fun CoachBubble(text: String, modifier: Modifier = Modifier, receipt: String? = null) {
     CoachBubbleShell(modifier = modifier) {
-        BubbleText(text = text, color = MaterialTheme.colorScheme.onSurface)
-        if (receipt != null) Receipt(line = receipt)
+        // Blank is a real answer, not a missing one: a draft confirmed on a turn the model spent
+        // entirely on a tool call has no prose at all, and its receipt is the whole bubble.
+        if (text.isNotBlank()) BubbleText(text = text, color = MaterialTheme.colorScheme.onSurface)
+        if (receipt != null) Receipt(line = receipt, divided = text.isNotBlank())
     }
 }
 
@@ -149,11 +151,17 @@ private fun BubbleText(text: String, color: Color, modifier: Modifier = Modifier
  * of the bubble is the coach talking and this is the app reporting. The check is `primary` and the
  * words say "Logged" — colour never carries it alone, which is the rule the draft card's own
  * "nothing logged yet" follows from the other side.
+ *
+ * [divided] is false when there is no prose above it: a rule under nothing is a bubble that looks
+ * like it lost its first line. The row's own top padding is the same 10dp [BubbleText] would have
+ * had, so the bubble keeps its shape either way.
  */
 @Composable
-private fun Receipt(line: String, modifier: Modifier = Modifier) {
+private fun Receipt(line: String, modifier: Modifier = Modifier, divided: Boolean = true) {
     Column(modifier = modifier.padding(horizontal = 16.dp).padding(bottom = 10.dp)) {
-        HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        if (divided) {
+            HorizontalDivider(thickness = 1.dp, color = MaterialTheme.colorScheme.outlineVariant)
+        }
         Row(
             modifier = Modifier.padding(top = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -192,6 +200,9 @@ private fun CoachBubblePreview() {
                     text = "Done — two scrambled eggs for breakfast.",
                     receipt = "Logged: Scrambled eggs, 220 kcal.",
                 )
+                // The turn the model spent on a tool call and nothing else: no prose, no rule,
+                // the receipt alone.
+                CoachBubble(text = "", receipt = "Logged: Workout, 10 min.")
             }
         }
     }
