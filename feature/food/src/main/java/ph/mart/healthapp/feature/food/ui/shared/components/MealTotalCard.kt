@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -95,22 +97,33 @@ internal fun MealTotalCard(total: MealTotal, modifier: Modifier = Modifier) {
     }
 }
 
+/** Figure under the name, the same shape Progress's average card draws, and for the same reason:
+ * three of these side by side are wider than a narrow phone, and a `Row` squeezes rather than
+ * wraps, so each one broke into lines of its own. */
 @Composable
 private fun MacroLegend(label: String, grams: Int, color: Color) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    val spoken = stringResource(R.string.food_macro_spoken_plain, label, grams)
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
     ) {
-        Surface(color = color, shape = CircleShape, modifier = Modifier.size(8.dp)) {}
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Surface(color = color, shape = CircleShape, modifier = Modifier.size(8.dp)) {}
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
             text = stringResource(R.string.food_review_grams, grams),
             style = MaterialTheme.typography.bodySmall.tabularNums.copy(fontWeight = FontWeight.Medium),
             color = MaterialTheme.colorScheme.onSurface,
+            // Under the name, not under the dot: 8dp dot + the 4dp gap above.
+            modifier = Modifier.padding(start = 12.dp),
         )
     }
 }

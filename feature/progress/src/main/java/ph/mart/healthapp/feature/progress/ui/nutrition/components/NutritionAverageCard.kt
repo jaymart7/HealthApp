@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.progress.ui.nutrition.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.NutrientReading
@@ -100,18 +103,44 @@ fun NutritionAverageCard(
     }
 }
 
+/**
+ * Two lines, not one: three "Protein 131/146g" labels side by side are wider than a narrow phone,
+ * and a `Row` squeezes rather than wraps, so each one broke into three or four lines of its own.
+ * Stacking the figure under the name keeps the strip a single row at every phone width. The
+ * diary's summary bar answers the same problem with a `FlowRow` — a bar can afford a second row
+ * where a card's legend cannot.
+ */
 @Composable
 private fun MacroLegend(label: String, averageG: Int, goalG: Int?, color: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(8.dp).background(color, RoundedCornerShape(2.dp)))
+    // Resolved above the semantics lambda, which cannot read a resource. The two lines are one
+    // phrase to a screen reader, which is what the single Text used to give it for free.
+    val spoken = if (goalG != null) {
+        stringResource(R.string.progress_macro_of_goal, label, averageG, goalG)
+    } else {
+        stringResource(R.string.progress_macro_plain, label, averageG)
+    }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.clearAndSetSemantics { contentDescription = spoken },
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(8.dp).background(color, RoundedCornerShape(2.dp)))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Text(
             text = if (goalG != null) {
-                stringResource(R.string.progress_macro_of_goal, label, averageG, goalG)
+                stringResource(R.string.progress_macro_figure, averageG, goalG)
             } else {
-                stringResource(R.string.progress_macro_plain, label, averageG)
+                stringResource(R.string.progress_macro_figure_plain, averageG)
             },
             style = MaterialTheme.typography.labelMedium.tabularNums,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // Under the name, not under the dot: 8dp dot + the 4dp gap above.
+            modifier = Modifier.padding(start = 12.dp),
         )
     }
 }

@@ -1779,6 +1779,18 @@ rather than needing a counter patched.
   that draws the panel resolves three strings, the way each already writes its own `MacroLegend`.
   It expands **in place**, not into a sheet: a disclosure is not a level, so there is no back
   handler and nothing for predictive back to do.
+- **The macro legend stacks its figure under its name, and the strip stays one row.** Three
+  "Protein 131/146g" labels side by side are wider than a narrow phone, and a `Row` squeezes its
+  children rather than wrapping them, so each label broke into three or four lines of its own —
+  a one-line legend became a block. Both cards that draw the legend as a strip, Progress's
+  nutrition average and the review screen's meal total, now put the dot and the name on one line
+  and the grams on the next, indented 12dp to sit under the name. **The diary summary bar keeps
+  its `FlowRow`** and is not the odd one out by accident: a bar spanning the screen can afford to
+  break onto a second row, where a card's legend cannot without pushing the nutrient panel down.
+  Splitting one `Text` into two costs a screen reader a second stop, so each legend speaks as one
+  phrase through `clearAndSetSemantics` — which is what the single `Text` used to give for free,
+  and why `progress_macro_of_goal` and `food_macro_spoken_plain` survive alongside the figure-only
+  strings the two lines draw.
 - **`MicronutrientInputGroup` was left alone.** The four new nutrients are seeded by a scan or a
   picked food, repriced with the portion and logged, but there is no stepper for them and no
   read-only echo in the five sheets that draw that component. Nobody hand-corrects a calcium figure,

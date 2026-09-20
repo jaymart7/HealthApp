@@ -40,6 +40,7 @@
     <string name="food_macro_fat">Fat</string>
     <string name="food_macro_legend">%1$s %2$d/%3$dg</string>
     <string name="food_macro_spoken">%1$s %2$d of %3$d grams</string>
+    <string name="food_macro_spoken_plain">%1$s %2$d grams</string>
     <string name="food_kcal_over_spoken">%1$d kilocalories over</string>
     <string name="food_kcal_left_spoken">%1$d kilocalories left</string>
 

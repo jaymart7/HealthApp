@@ -212,8 +212,12 @@
     <string name="progress_macro_protein">Protein</string>
     <string name="progress_macro_carbs">Carbs</string>
     <string name="progress_macro_fat">Fat</string>
+    <!-- The legend draws the figure on its own line under the name; the two above are what it
+         speaks, as one phrase. -->
     <string name="progress_macro_of_goal">%1$s %2$d/%3$dg</string>
     <string name="progress_macro_plain">%1$s %2$dg</string>
+    <string name="progress_macro_figure">%1$d/%2$dg</string>
+    <string name="progress_macro_figure_plain">%1$dg</string>
 
     <!-- Sleep, heart, activity, fasting, mood, strength, cycle pages -->
     <string name="progress_sleep_hero">average night</string>
