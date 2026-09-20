@@ -9,10 +9,15 @@ private val WATCH_NOTE = R.string.ds_card_note_watch
 /**
  * Every card on Home the user can move or hide, in the order an untouched install renders them.
  *
- * The declaration order **is** the default layout. It is ordered so that the half-width cards fall
- * into adjacent pairs on an untouched install (`homeRows()` in `:feature:home` does the pairing) —
- * but that is a *default*, not a contract: any order the user drags them into pairs just as well,
- * which is why no card may depend on its position or its neighbour.
+ * The declaration order **is** the default layout, and it is a *ranking of the day*, not a grouping
+ * by kind: the loop the app exists for first (Calories, Macros, Water), then the two body numbers
+ * a day is checked against, then the cards you act on, and last the readouts a week or a month
+ * asks for. It falls out that all eight half-width cards land in adjacent pairs (`homeRows()` in
+ * `:feature:home` does the pairing) — Fasting leads its pair on purpose, so a running fast, which
+ * takes the whole row, orphans Streak, the one card of the pair that already draws wide.
+ *
+ * All of that is a *default*, not a contract: any order the user drags them into pairs just as
+ * well, which is why no card may depend on its position or its neighbour.
  *
  * The mascot greeting and the AI insight are deliberately absent: the greeting is the app's only
  * door to the coach, and the insight owns an expand/collapse whose exit is what stops the cards
@@ -28,20 +33,20 @@ private val WATCH_NOTE = R.string.ds_card_note_watch
  */
 enum class HomeCard(@StringRes val label: Int, @StringRes val note: Int? = null) {
     Calories(R.string.ds_card_calories),
-    Water(R.string.ds_card_water),
     Macros(R.string.ds_card_macros),
-    WeekBudget(R.string.ds_card_week_budget),
-    Streak(R.string.ds_card_streak),
-    Weight(R.string.ds_card_weight),
+    Water(R.string.ds_card_water),
     Steps(R.string.ds_card_steps, WATCH_NOTE),
+    Weight(R.string.ds_card_weight),
+    Fasting(R.string.ds_card_fasting),
+    Streak(R.string.ds_card_streak),
+    Workout(R.string.ds_card_workout, R.string.ds_card_note_workout),
+    Supplements(R.string.ds_card_supplements, R.string.ds_card_note_supplements),
+    Mood(R.string.ds_card_mood),
     Sleep(R.string.ds_card_sleep, WATCH_NOTE),
     Heart(R.string.ds_card_heart, WATCH_NOTE),
-    BloodPressure(R.string.ds_card_blood_pressure, R.string.ds_card_note_blood_pressure),
-    Fasting(R.string.ds_card_fasting),
-    Mood(R.string.ds_card_mood),
-    Supplements(R.string.ds_card_supplements, R.string.ds_card_note_supplements),
+    WeekBudget(R.string.ds_card_week_budget),
     Cycle(R.string.ds_card_cycle, R.string.ds_card_note_cycle),
-    Workout(R.string.ds_card_workout, R.string.ds_card_note_workout),
+    BloodPressure(R.string.ds_card_blood_pressure, R.string.ds_card_note_blood_pressure),
     ProgressPhoto(R.string.ds_card_progress_photo),
 }
 

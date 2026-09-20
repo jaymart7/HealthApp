@@ -58,15 +58,15 @@ class HomeRowsTest {
         val rows = homeRows(all.filterNot { it in gone }, fastRunning = false)
         assertEquals(
             listOf(
-                // Water, Mood and Supplements are full width; Streak and Weight close up around
-                // the four gated cards that used to sit between them.
+                // Water, Supplements and Mood are full width. Weight's default partner is the
+                // gated Steps, so it re-pairs with Fasting rather than drawing a hole.
                 listOf(HomeCard.Water),
-                listOf(HomeCard.Streak, HomeCard.Weight),
-                // Fasting is a half with a full-width neighbour, so it takes the whole row
-                // rather than leaving a gap beside it. Same for the photo card at the end.
-                listOf(HomeCard.Fasting),
-                listOf(HomeCard.Mood),
+                listOf(HomeCard.Weight, HomeCard.Fasting),
+                // Which leaves Streak the odd half: both its neighbours here are full width, so
+                // it takes the whole row. Same for the photo card, whose partner is gated too.
+                listOf(HomeCard.Streak),
                 listOf(HomeCard.Supplements),
+                listOf(HomeCard.Mood),
                 listOf(HomeCard.ProgressPhoto),
             ),
             rows,

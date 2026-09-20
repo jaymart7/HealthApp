@@ -15,13 +15,17 @@ import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.streak.StreakBadge
 import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.streak.earnedBadges
-import ph.mart.healthapp.core.designsystem.component.BADGE_DOT_SIZE
 import ph.mart.healthapp.core.designsystem.component.BadgeDot
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.home.R
 
-/** Five badges have to fit inside a paired card's 126dp of content on a 360dp screen. */
-private val PairedBadgeSize = 22.dp
+/**
+ * Five badges have to fit inside a paired card's 126dp of content on a 360dp screen — and inside
+ * the 120dp `MetricCard` gives a *wide* card's meta column, which is the tighter of the two. Five
+ * 32dp dots want 176dp there, and `Row` answers by handing the fourth what is left and the fifth
+ * nothing, so the badges are this size in both arrangements.
+ */
+private val BadgeSize = 22.dp
 
 /**
  * Consistency, not today's numbers. Every value is derived in `:core:data/streak` — this card only
@@ -53,13 +57,13 @@ fun StreakCard(
         modifier = modifier,
         onClick = onClick,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             StreakBadge.entries.forEach { badge ->
                 BadgeDot(
                     label = badge.days.toString(),
                     earned = badge in earned,
                     description = stringResource(R.string.home_streak_badge_desc, badge.days),
-                    size = if (wide) BADGE_DOT_SIZE else PairedBadgeSize,
+                    size = BadgeSize,
                 )
             }
         }

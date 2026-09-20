@@ -1193,6 +1193,25 @@ rather than needing a counter patched.
   full width rather than leaving a hole beside it, which is why **no card may depend on its position
   or its neighbour**: `MetricCard(wide)` is one composable with two arrangements and the same
   content in both. `HomeRowsTest` is the guard.
+- **The default order is a ranking of the day, and it only ever moves an untouched install.** The
+  declaration order used to group cards by *kind* — the nutrition block, then every half, then the
+  input cards — which read as a filing system rather than as an answer to what Home is opened for:
+  Water split Calories from Macros, the week's calorie bank sat fourth while today's workout sat
+  fourteenth, and two of the eight halves (Fasting, Progress photo) had a full-width neighbour and
+  orphaned, against the KDoc's own claim that the order paired them. It is now the loop the app
+  exists for (Calories, Macros, Water), then the two numbers a day is checked against
+  (Steps | Weight), then where today stands (Fasting | Streak), then the three cards you *act* on
+  (Workout, Supplements, Mood), then what the watch filled in overnight (Sleep | Heart), and last
+  what a week or a month asks (Week budget, Cycle, Blood pressure | Progress photo). All eight
+  halves pair. **Fasting leads its pair on purpose**: a running fast takes the whole row, so the
+  orphan falls on Streak, the one of the two that already has a `wide` arrangement — one orphan
+  under a running fast is unavoidable with seven fixed halves and is not worth contorting the order
+  for. Nothing migrates and nothing needed to: `homeLayout` is the user's answer and
+  `homeCardLayout()` appends what a string doesn't mention rather than re-sorting it, so a saved
+  layout is untouched and only `null` — an untouched install, or one that just pressed "Reset to
+  default" — reads the new order. The strip's `STRIP_PRIORITY` deliberately did **not** move with
+  it: it is still the guess its own comment says it is, and `stripCell()` has branches for those
+  five cards only, so re-ranking it would mean authoring new cells rather than reordering a list.
 - **Gating runs *before* pairing, not inside each `when` branch.** That is the one thing the
   redesign moved rather than kept: every data gate is now `HomeCard.hasData(uiState)`, applied to
   the layout before `homeRows()`, because a card hidden for want of data would otherwise still claim

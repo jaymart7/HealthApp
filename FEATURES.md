@@ -67,8 +67,9 @@ slide between them and back never clearing a thing.
 
 A pinned header block, then sixteen reorderable/hideable cards laid out in paired rows:
 
-Calories (hero ring) · Water · Macros · Week budget · Streak · Weight · Steps · Sleep · Heart rate ·
-Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · Progress photo.
+Calories (hero ring) · Macros · Water · Steps · Weight · Fasting · Streak · Today's workout ·
+Supplements · Mood · Sleep · Heart rate · Week budget · Cycle · Blood pressure · Progress photo —
+ranked by the daily loop, not grouped by kind.
 
 - Pinned header block — mascot greeting + the app's one door to the coach, a two-or-three-cell
   Today strip mirroring visible cards, and the AI insight as a dismissible inset band (with a
