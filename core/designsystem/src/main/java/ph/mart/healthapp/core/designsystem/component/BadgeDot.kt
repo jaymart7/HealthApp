@@ -103,6 +103,10 @@ fun BadgeDot(
             } else {
                 MaterialTheme.typography.labelMedium.tabularNums
             },
+            // A dot is narrower than its own label at large font scales: "14" in a 22dp circle
+            // wraps to two lines unless line breaking is off outright.
+            maxLines = 1,
+            softWrap = false,
             color = content,
         )
     }
