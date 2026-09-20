@@ -6,10 +6,19 @@ import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.nowMinuteOfDay
 import ph.mart.healthapp.core.data.todayEpochDay
 
-/** [photos] is only ever read for the calendar's marked dates — the set is the Photos page's job. */
+/** What a blank weight stepper opens on before there is a weigh-in or a profile to read. */
+internal const val FALLBACK_WEIGHT_KG = 70.0
+
+/**
+ * [photos] is only ever read for the calendar's marked dates — the set is the Photos page's job.
+ *
+ * [currentWeightKg] is what the untouched weight stepper steps off: the latest weigh-in, or the
+ * profile's own figure until there is one.
+ */
 data class AddPhotoPreviewUiState(
     val photos: List<ProgressPhoto> = emptyList(),
     val preferredUnit: UnitSystem = UnitSystem.Metric,
+    val currentWeightKg: Double = FALLBACK_WEIGHT_KG,
 )
 
 /** [minuteOfDay] opens at now, and the shot is filed under it — when a progress photo was taken

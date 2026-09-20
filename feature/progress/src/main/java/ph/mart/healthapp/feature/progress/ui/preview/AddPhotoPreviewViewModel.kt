@@ -25,8 +25,20 @@ class AddPhotoPreviewViewModel(
     }
 
     private fun observePhotos(progressRepository: ProgressRepository, profileRepository: ProfileRepository) = intent {
-        combine(progressRepository.observePhotos(), profileRepository.observeProfile()) { photos, profile ->
-            AddPhotoPreviewUiState(photos = photos, preferredUnit = profile?.preferredUnit ?: UnitSystem.Metric)
+        combine(
+            progressRepository.observePhotos(),
+            progressRepository.observeWeightEntries(),
+            profileRepository.observeProfile(),
+        ) { photos, weights, profile ->
+            AddPhotoPreviewUiState(
+                photos = photos,
+                preferredUnit = profile?.preferredUnit ?: UnitSystem.Metric,
+                // The latest weigh-in ahead of the profile: logging a weight does not write back to
+                // the profile, so the entries are the fresher of the two.
+                currentWeightKg = weights.maxByOrNull { it.dateEpochDay }?.weightKg
+                    ?: profile?.weightKg
+                    ?: FALLBACK_WEIGHT_KG,
+            )
         }.collect { newState -> reduce { newState } }
     }
 

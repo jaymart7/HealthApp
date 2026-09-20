@@ -144,6 +144,7 @@ private fun AddPhotoPreviewContent(
                 WeightField(
                     form = state.form,
                     unit = uiState.preferredUnit,
+                    currentWeightKg = uiState.currentWeightKg,
                     onFormChange = { state.form = it },
                     modifier = Modifier.padding(top = 12.dp),
                 )
@@ -164,14 +165,23 @@ private fun AddPhotoPreviewContent(
 }
 
 @Composable
-private fun WeightField(form: AddPhotoPreviewForm, unit: UnitSystem, onFormChange: (AddPhotoPreviewForm) -> Unit, modifier: Modifier = Modifier) {
+private fun WeightField(
+    form: AddPhotoPreviewForm,
+    unit: UnitSystem,
+    currentWeightKg: Double,
+    onFormChange: (AddPhotoPreviewForm) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val step = 0.5
+    // An untouched field steps off what the user currently weighs, not off zero: the figure being
+    // filed with a progress photo is a nudge away from the last weigh-in, never typed up from nothing.
+    val base = form.weightKg ?: currentWeightKg
     NumericStepperField(
         label = stringResource(R.string.progress_photo_weight),
         value = form.weightKg?.let { formatOneDecimal(it.kgToDisplayUnit(unit)) } ?: stringResource(R.string.progress_none),
         unitSuffix = unit.weightUnitLabel(),
-        onIncrement = { onFormChange(form.copy(weightKg = ((form.weightKg ?: 0.0) + step.displayUnitToKg(unit)))) },
-        onDecrement = { onFormChange(form.copy(weightKg = (((form.weightKg ?: step) - step.displayUnitToKg(unit)).coerceAtLeast(20.0)))) },
+        onIncrement = { onFormChange(form.copy(weightKg = base + step.displayUnitToKg(unit))) },
+        onDecrement = { onFormChange(form.copy(weightKg = (base - step.displayUnitToKg(unit)).coerceAtLeast(20.0))) },
         // An emptied field is no weight recorded, not a weight of zero — this one is optional.
         onValueChange = { onFormChange(form.copy(weightKg = it.toDoubleOrNull()?.displayUnitToKg(unit))) },
         decimal = true,
