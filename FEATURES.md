@@ -464,6 +464,14 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   the timer Home's card drives. A start while a fast is already running, or an end while none is,
   fails the turn rather than offering a Confirm that would do nothing. Never backdated, never
   suggested, and it earns no diary door.
+- Coach notes — "note that today was a rough one" drafts the day's note in the user's own words,
+  and the tap writes it at the foot of the diary. `log_weight`'s rule applied to prose: the
+  sentence is theirs, the coach never writes one unasked and never composes its own. Dated like a
+  food rather than today-only — up to a month back, with the day on the card — because a note
+  belongs to the day it is about. A day holds one note, so a draft onto a day that already has one
+  draws what it replaces under what it writes; a blank or over-long note fails the turn rather
+  than clearing or truncating the day. The button says "Note it", and today's note earns the diary
+  door.
 - Coach door out — once a confirmed draft has put rows in **today's** diary, an outlined row under
   that answer names where they went ("View it in Breakfast") and switches to the Food tab. It lasts until the next
   question. A weigh-in, a supplement or a backdated draft gets none: the diary opens on today and

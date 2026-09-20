@@ -21,6 +21,7 @@ import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.recap.REPORT_DAYS
+import ph.mart.healthapp.core.data.note.NOTE_MAX_CHARS
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
@@ -220,6 +221,23 @@ internal fun fakeCoachScript(question: String): FakeScript {
                 ),
             )
         }
+    }
+
+    // Above the log block for `FAST_WORD`'s reason, and on its own verbs: "note that today was
+    // rough" carries none of `LOG_WORDS` but "note down" does, so keeping both here is what stops
+    // one phrasing drafting a note and the other falling through to the food matcher. The text is
+    // sliced out of the *original* question rather than `asked`, because a note is the user's own
+    // sentence and lowercasing it would be the fake editing their words.
+    noteIn(question)?.let { text ->
+        return FakeScript.Propose(
+            actions = listOf(
+                CoachAction.LogNote(
+                    text = text,
+                    dateEpochDay = daysAgoIn(asked)?.takeIf { it > 0 }?.let { todayEpochDay() - it } ?: 0L,
+                ),
+            ),
+            preamble = preamble(asked, "Here's what I'd write on that day:"),
+        )
     }
 
     if (LOG_WORDS.any { it in asked }) {
@@ -531,6 +549,30 @@ private fun supplementNameIn(asked: String): String? {
         .trim(' ', '.', ',', '?')
         .takeIf { it.isNotEmpty() }
 }
+
+/**
+ * The sentence a note draft writes, taken from after the verb that asked for one.
+ *
+ * Out of [question] rather than the lowercased copy: the whole rule for a note is that the words
+ * are the user's, and a fake that returned "rough day" for "Rough day" would be the one place in
+ * this file where the faked model rewrites them. Null when nothing follows the verb, which falls
+ * through to the routing below rather than drafting an empty note the parse would reject anyway.
+ */
+private fun noteIn(question: String): String? {
+    val asked = question.lowercase()
+    val start = NOTE_VERBS.firstNotNullOfOrNull { verb ->
+        asked.indexOf(verb).takeIf { it >= 0 }?.plus(verb.length)
+    } ?: return null
+    return question.substring(start)
+        .removePrefix("that ")
+        .trim(' ', '.', ',', '?')
+        .take(NOTE_MAX_CHARS)
+        .takeIf { it.isNotEmpty() }
+}
+
+/** Verbs, never the bare word: "what's my note for today?" is a question about one, and slicing
+ * the rest of that sentence into a draft would write "for today" onto the day. */
+private val NOTE_VERBS = listOf("note that ", "note down ", "jot down ", "make a note ", "add a note ")
 
 /** Only the calendar words, not a general number — "log 2 eggs" must not read as "two days ago". */
 private fun daysAgoIn(asked: String): Int? = when {

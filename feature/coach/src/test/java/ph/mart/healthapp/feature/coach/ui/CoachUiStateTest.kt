@@ -126,6 +126,9 @@ class CoachUiStateTest {
         // shrug the coach's subject actions are written against.
         assertFalse(listOf(CoachAction.LogWeight(weight = 82.0)).opensTheDiary())
         assertFalse(listOf(CoachAction.LogSupplement("Creatine", 1, 2)).opensTheDiary())
+        // The diary's foot rather than a meal section, but the same screen: today's note is
+        // there to go and look at.
+        assertTrue(listOf(CoachAction.LogNote(text = "Rough day")).opensTheDiary())
         // Nothing was written at all — the tap opened a form the user has yet to save.
         assertFalse(listOf(routine()).opensTheDiary())
         // Home's timer and Progress's page: no diary row exists to go and look at.
@@ -224,6 +227,12 @@ class CoachUiStateTest {
     @Test
     fun `a backdated draft earns no door`() {
         assertFalse(listOf(food().copy(dateEpochDay = todayEpochDay() - 1)).opensTheDiary())
+        // A note is dated like a food, so it takes the same half of the rule: yesterday's note is
+        // written on a day the diary is not showing.
+        assertFalse(
+            listOf(CoachAction.LogNote(text = "Ate out", dateEpochDay = todayEpochDay() - 1))
+                .opensTheDiary(),
+        )
         // A mixed draft never reaches a card — `send()` refuses one whose rows disagree about
         // the day — so this is this function's own rule rather than a state the screen reaches:
         // a row that landed today is a row the diary is showing.

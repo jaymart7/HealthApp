@@ -27,6 +27,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
@@ -274,6 +275,9 @@ private fun UndoLine(name: String, onUndo: () -> Unit) {
 @StringRes
 internal fun confirmLabelFor(single: CoachAction?): Int = when {
     single is CoachAction.StartRoutine -> R.string.coach_proposal_start
+    // A note is written rather than logged: "Log it" under a sentence in the user's own voice
+    // reads as though the app were about to count it.
+    single is CoachAction.LogNote -> R.string.coach_proposal_note_confirm
     single is CoachAction.SetFast && single.ending -> R.string.coach_proposal_end
     single is CoachAction.SetFast -> R.string.coach_proposal_start
     else -> R.string.coach_proposal_confirm
@@ -429,6 +433,23 @@ private fun SingleProposal(action: CoachAction) {
             }
         }
 
+        is CoachAction.LogNote -> {
+            ProposalKicker(stringResource(R.string.coach_proposal_note_title))
+            ReceiptPanel {
+                ReceiptProse(action.text)
+                // What the tap is about to overwrite, because `setNote` replaces rather than
+                // appends. Two lines of it, under a label: enough to recognise the sentence being
+                // lost, not so much that it competes with the one being written.
+                if (action.replaces.isNotEmpty()) {
+                    ReceiptLine(
+                        label = stringResource(R.string.coach_proposal_note_replaces),
+                        value = null,
+                    )
+                    ReceiptProse(action.replaces, maxLines = 2, muted = true)
+                }
+            }
+        }
+
         is CoachAction.StartRoutine -> {
             ProposalKicker(stringResource(R.string.coach_proposal_routine_title))
             ProposalHeadline(action.name)
@@ -559,6 +580,23 @@ private fun ReceiptLine(label: String, value: String?) {
     }
 }
 
+/**
+ * Prose on the receipt panel, where every other line is a label against a figure.
+ *
+ * A note is the one drafted thing that is not a number, so it wraps instead of sitting on a
+ * baseline beside one. [maxLines] and [muted] are what let the note this draft is about to
+ * *replace* sit under it as context rather than competing with the sentence that gets written.
+ */
+@Composable
+private fun ReceiptProse(text: String, maxLines: Int = Int.MAX_VALUE, muted: Boolean = false) = Text(
+    text = text,
+    style = MaterialTheme.typography.bodyMedium,
+    color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant
+    else MaterialTheme.colorScheme.onSurface,
+    maxLines = maxLines,
+    overflow = TextOverflow.Ellipsis,
+)
+
 /** Where this is going — the meal a food joins, or the weigh-in it becomes. A kicker over the
  * title rather than a title in its own right: the *thing* is the headline and the destination
  * qualifies it. The day no longer rides here; it is a chip in [DraftHeader], where a qualifier on
@@ -617,6 +655,9 @@ private fun actionName(action: CoachAction): String = when (action) {
     is CoachAction.LogBloodPressure ->
         formatBloodPressure(action.systolic, action.diastolic)
     is CoachAction.LogMeasurement -> stringResource(action.part.label)
+    // The sentence itself: there is nothing else to call a note, and the row it sits in is the
+    // one place it can be read before the tap.
+    is CoachAction.LogNote -> action.text
     // Never drawn in a list — `routineDraftStandsAlone()` is what guarantees a routine is the
     // whole draft — but the name is the right answer if that ever stops being true.
     is CoachAction.StartRoutine -> action.name
@@ -643,6 +684,9 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.LogMood -> null
     is CoachAction.LogBloodPressure -> bandLine(action)
     is CoachAction.LogMeasurement -> measurementAmount(action)
+    // The text already is the row, and what it replaces is the card's business rather than a
+    // figure to put on the right.
+    is CoachAction.LogNote -> null
     is CoachAction.StartRoutine -> routineLifts(action)
     is CoachAction.SetFast -> if (action.ending) fastElapsed(action) else fastGoal(action)
 }
@@ -678,6 +722,10 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
             stringResource(single.part.label),
             measurementAmount(single),
         )
+        // Not the note itself: a receipt is one line under a reopened answer, and five hundred
+        // characters of the user's own sentence is the card again rather than a line about it.
+        single is CoachAction.LogNote ->
+            stringResource(R.string.coach_proposal_logged_note)
         // Nothing was logged: the tap opened a form the user has not saved yet, and a "Logged:"
         // line under the answer would be a claim the app cannot stand behind. The turn is
         // persisted with the coach's own prose, exactly as a dismissal is.
@@ -1023,6 +1071,43 @@ private fun ProposalCardMeasurementPreview() {
                         part = MeasurementPart.Waist,
                         value = 82.5,
                         unit = UnitSystem.Metric,
+                    ),
+                ),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** The sentence is the user's own, and the card is the only place it can be read before the tap. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardNotePreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(CoachAction.LogNote(text = "Rough day — slept badly and skipped the gym.")),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** A day that already has a note: what the tap replaces is drawn under what it writes. */
+@PreviewLightDark
+@Composable
+private fun ProposalCardNoteReplacesPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(
+                    CoachAction.LogNote(
+                        text = "Felt much better after the walk.",
+                        replaces = "Rough day — slept badly and skipped the gym.",
                     ),
                 ),
                 onConfirm = { _, _ -> },

@@ -31,6 +31,7 @@ import ph.mart.healthapp.core.data.health.SleepNight
 import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
+import ph.mart.healthapp.core.data.note.NOTE_MAX_CHARS
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
@@ -447,6 +448,64 @@ class CoachToolsTest {
     @Test
     fun `a draft with no mood folds to nothing`() {
         assertNull(listOf(CoachAction.LogWater(glasses = 1)).moodToSet())
+    }
+
+    // endregion
+
+    // region A note on the day
+
+    /** The one drafted thing with no figure in it: the user's own sentence, trimmed, on a day. */
+    @Test
+    fun `a well-formed note call becomes an action`() {
+        val action = parseAction(
+            TOOL_LOG_NOTE,
+            args("text" to "  Rough day, slept badly.  "),
+        ) as CoachAction.LogNote
+        assertEquals("Rough day, slept badly.", action.text)
+        assertEquals(0L, action.dateEpochDay)
+        // Stamped by `resolve` against Room, never by the parse.
+        assertEquals("", action.replaces)
+    }
+
+    /** Dated like a food and unlike a mood: the diary's own rule, since a sentence about Tuesday
+     * typed on Thursday is Tuesday's. */
+    @Test
+    fun `a note can be backdated inside the window`() {
+        val note = parseAction(TOOL_LOG_NOTE, args("text" to "Ate out", "days_ago" to 3))
+                as CoachAction.LogNote
+        assertEquals(TODAY - 3, note.dateEpochDay)
+        assertEquals(TODAY - 3, note.draftedOn)
+        assertNull(parseAction(TOOL_LOG_NOTE, args("text" to "Ate out", "days_ago" to MAX_DRAFT_DAYS_AGO + 1)))
+    }
+
+    /**
+     * Blank is how a note is *deleted*, so a blank draft is a Confirm button that quietly removes
+     * what the user wrote; and past the cap `NoteRepositoryImpl` would trim on the way in, which
+     * would leave the card showing a sentence the tap does not write.
+     */
+    @Test
+    fun `a blank or over-long note fails the draft`() {
+        assertNull(parseAction(TOOL_LOG_NOTE, args("text" to "   ")))
+        assertNull(parseAction(TOOL_LOG_NOTE, emptyMap()))
+        assertNull(parseAction(TOOL_LOG_NOTE, args("text" to "a".repeat(NOTE_MAX_CHARS + 1))))
+        assertEquals(
+            NOTE_MAX_CHARS,
+            (parseAction(TOOL_LOG_NOTE, args("text" to "a".repeat(NOTE_MAX_CHARS)))
+                    as CoachAction.LogNote).text.length,
+        )
+    }
+
+    /** `moodToSet`'s fold without its per-column care: a day holds one note, so the last one the
+     * user agreed to is the one that lands. */
+    @Test
+    fun `two notes fold to the last one`() {
+        val folded = listOf(
+            CoachAction.LogNote(text = "First"),
+            CoachAction.LogWater(glasses = 1),
+            CoachAction.LogNote(text = "Second"),
+        ).noteToWrite()
+        assertEquals("Second", folded?.text)
+        assertNull(listOf(CoachAction.LogWater(glasses = 1)).noteToWrite())
     }
 
     // endregion

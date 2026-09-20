@@ -57,6 +57,7 @@ import ph.mart.healthapp.core.data.health.StepsRepository
 import ph.mart.healthapp.core.data.health.formatBpm
 import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.data.health.formatSteps
+import ph.mart.healthapp.core.data.note.NOTE_MAX_CHARS
 import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
@@ -170,6 +171,7 @@ internal const val TOOL_LOG_SUPPLEMENT = "log_supplement"
 internal const val TOOL_LOG_MOOD = "log_mood"
 internal const val TOOL_LOG_BLOOD_PRESSURE = "log_blood_pressure"
 internal const val TOOL_LOG_MEASUREMENT = "log_measurement"
+internal const val TOOL_LOG_NOTE = "log_note"
 internal const val TOOL_LOG_FAST = "log_fast"
 
 /** The only two values `log_fast` takes. Stays in Kotlin like every other word the model
@@ -193,6 +195,7 @@ internal val WRITE_TOOLS = setOf(
     TOOL_LOG_MOOD,
     TOOL_LOG_BLOOD_PRESSURE,
     TOOL_LOG_MEASUREMENT,
+    TOOL_LOG_NOTE,
     // The one that writes no row at all: its confirm flips the fasting timer, which is a state
     // and not a row. See [CoachAction.SetFast].
     TOOL_LOG_FAST,
@@ -409,6 +412,22 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             ),
         ),
         FunctionDeclaration(
+            name = TOOL_LOG_NOTE,
+            description = "Propose writing the user's own note on a day — what they said about " +
+                "it, in their words. This does NOT save it: they see the sentence and tap to " +
+                "confirm. Only when they ask you to note, jot or remember something about a " +
+                "day — never write one they did not ask for, and never turn your own summary of " +
+                "their day into one. Keep their wording and keep it under $NOTE_MAX_CHARS " +
+                "characters. A day holds one note, so this replaces anything already written " +
+                "on that day.",
+            parameters = mapOf(
+                "text" to Schema.string(
+                    description = "What to write on the day, in the user's own words.",
+                ),
+                "days_ago" to draftDaysAgoSchema,
+            ),
+        ),
+        FunctionDeclaration(
             name = TOOL_LOG_FAST,
             description = "Propose starting the user's fasting timer, or ending the fast they " +
                 "have running. This does NOT do it: they see what you proposed and tap to " +
@@ -501,6 +520,7 @@ internal fun parseAction(
     TOOL_LOG_MOOD -> parseLogMood(args)
     TOOL_LOG_BLOOD_PRESSURE -> parseLogBloodPressure(args)
     TOOL_LOG_MEASUREMENT -> parseLogMeasurement(args)
+    TOOL_LOG_NOTE -> parseLogNote(args, today)
     // A verb and nothing else. Which of the two is legal depends on whether a fast is running,
     // and that is [resolve]'s question — this stays pure, with no clock and no Room.
     TOOL_LOG_FAST -> when (args.string("action")?.trim()?.lowercase()) {
@@ -583,6 +603,24 @@ private fun parseLogMeasurement(args: Map<String, JsonElement>): CoachAction.Log
         ?: return null
     val value = args.double("value")?.takeIf { it > 0 && it <= MAX_ACTION_WEIGHT } ?: return null
     return CoachAction.LogMeasurement(part = part, value = round1(value))
+}
+
+/**
+ * The user's own sentence and the day it is about — the one parse here with no figure in it at all.
+ *
+ * **Over [NOTE_MAX_CHARS] fails rather than being cut.** `NoteRepositoryImpl` caps on the way into
+ * the table, so a longer draft would put a sentence on the card that the tap does not write — and
+ * half a sentence reads as a bug, [MAX_REPLY_CHARS]' own argument. The trim is the same one
+ * `toNoteText` makes, applied early so the length checked here is the length that lands.
+ *
+ * Blank fails too: an empty note is how a note is *deleted*, and a Confirm button that quietly
+ * removes what the user wrote is not what "note this" asked for.
+ */
+private fun parseLogNote(args: Map<String, JsonElement>, today: Long): CoachAction.LogNote? {
+    val text = args.string("text")?.trim()?.takeIf { it.isNotEmpty() && it.length <= NOTE_MAX_CHARS }
+        ?: return null
+    val date = draftDay(args, today) ?: return null
+    return CoachAction.LogNote(text = text, dateEpochDay = date)
 }
 
 /**
@@ -1435,6 +1473,13 @@ internal class CoachToolbox(
     suspend fun latestWeighInKg(): Double? =
         progressRepository.observeWeightEntries().first().maxByOrNull { it.dateEpochDay }?.weightKg
 
+    /** What a drafted note is about to replace, blank on a day nobody has written about — the one
+     * thing a card has to say that the model is not allowed to supply. Zero is today, the reading
+     * [CoachAction.draftedOn] gives it. */
+    suspend fun existingNote(dateEpochDay: Long): String =
+        noteRepository.observeForDate(dateEpochDay.takeIf { it > 0 } ?: todayEpochDay())
+            .first().text
+
     private suspend fun getDay(daysAgo: Int): String {
         val today = todayEpochDay()
         val date = today - daysAgo
@@ -1541,6 +1586,9 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
     // own row, and a name that is in no library fails the turn rather than opening the nearest
     // workout.
     is CoachAction.StartRoutine -> toolbox.routineToStart(name)?.let(::listOf)
+    // Never null: a day with nothing written still drafts, it simply draws no replaces line.
+    // The old text is read here and nowhere else — the write does not need it, only the card does.
+    is CoachAction.LogNote -> listOf(copy(replaces = toolbox.existingNote(dateEpochDay)))
     // The only branch that resolves against a *state* rather than a row. Null when the timer
     // disagrees with the draft — a start against an open fast, an end against none — which fails
     // the turn rather than drawing a Confirm that would be one of the repository's no-ops.
@@ -1629,6 +1677,17 @@ internal fun List<CoachAction>.moodToSet(): CoachAction.LogMood? {
         energy = moods.lastOrNull { it.energy > 0 }?.energy ?: 0,
     )
 }
+
+/**
+ * The one note a settled draft writes, or null when it holds none.
+ *
+ * [moodToSet]'s fold with none of its per-column care: a day holds one note and a note is
+ * absolute, so the last one the user agreed to is the one that lands. Two in a draft is a model
+ * repeating itself rather than two things to write, and writing both would leave the first
+ * invisible behind the second anyway.
+ */
+internal fun List<CoachAction>.noteToWrite(): CoachAction.LogNote? =
+    filterIsInstance<CoachAction.LogNote>().lastOrNull()
 
 /** The envelope the SDK requires around a [String] result. One key, because the result is prose
  * and prose has no fields. */

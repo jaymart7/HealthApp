@@ -201,6 +201,30 @@ class FakeCoachScriptTest {
      * the food match — "log my magnesium" names nothing in `COMMON_FOODS` and would otherwise fall
      * through to a plain answer.
      */
+    /** The words are the user's, in their own casing, and the verb is not part of them. */
+    @Test
+    fun `a note verb drafts the sentence after it`() {
+        val script = fakeCoachScript("Note that today was Rough") as FakeScript.Propose
+        assertEquals(
+            CoachAction.LogNote(text = "today was Rough"),
+            script.actions.single(),
+        )
+        val jotted = fakeCoachScript("jot down slept badly again") as FakeScript.Propose
+        assertEquals("slept badly again", (jotted.actions.single() as CoachAction.LogNote).text)
+        // A day the sentence names rides along, the rule a food draft already follows.
+        val yesterday = fakeCoachScript("note that yesterday was better") as FakeScript.Propose
+        assertEquals(
+            todayEpochDay() - 1,
+            (yesterday.actions.single() as CoachAction.LogNote).dateEpochDay,
+        )
+    }
+
+    /** The bare word is a question about a note, not an instruction to write one. */
+    @Test
+    fun `asking about a note drafts nothing`() {
+        assertTrue(fakeCoachScript("what's my note for today?") !is FakeScript.Propose)
+    }
+
     @Test
     fun `a named supplement is drafted`() {
         val script = fakeCoachScript("log my creatine") as FakeScript.Propose

@@ -30,6 +30,7 @@ import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.dayNumbersBlock
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.ProgressRepository
@@ -116,6 +117,9 @@ internal class CoachRepositoryImpl(
     // The eighth, and the only one whose write is a *state transition* rather than a row: a
     // confirmed fast draft starts or stops the timer Home's card and the widget already drive.
     private val fastingRepository: FastingRepository,
+    // The ninth, and the only one the coach could already *read* before it could write: `get_day`
+    // has handed the model the day's note since the note shipped.
+    private val noteRepository: NoteRepository,
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
@@ -361,6 +365,14 @@ internal class CoachRepositoryImpl(
             )
         }
 
+        // Folded before the write for `moodToSet()`'s reason and half of it: a day holds one
+        // note, so the last one the user agreed to is the one that lands. `setNote` is the sheet's
+        // own call, so the trim and the 500-character cap stay in `NoteRepositoryImpl` — and the
+        // day is the card's, which is the day the note is *about* rather than the day it was said.
+        actions.noteToWrite()?.let {
+            noteRepository.setNote(it.dateEpochDay.takeIf { d -> d > 0 } ?: todayEpochDay(), it.text)
+        }
+
         // The one settled action that writes no row at all: it flips the timer Home's card and
         // the widget drive. Both calls already no-op against a state that has moved — `start()`
         // while a fast is open, `stop()` while none is — so a card left on screen while the user
@@ -482,7 +494,7 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
     appendLine(
         "If the user asks you to log something, call log_food, log_water, log_exercise, " +
             "log_saved_meal, log_weight, log_supplement, log_mood, log_blood_pressure, " +
-            "log_measurement or log_fast. These " +
+            "log_measurement, log_note or log_fast. These " +
             "do not log anything themselves: the user sees what you drafted and taps to confirm " +
             "it, so say what you are proposing in the same reply. Call log_food once per food: a " +
             "meal of three things is three calls in the same turn, and they are drafted together " +
@@ -499,7 +511,8 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "on the same call — 1 for yesterday, up to $MAX_DRAFT_DAYS_AGO — and say which day " +
             "you are proposing; every row of one draft has to be for the same day, so draft two " +
             "days as two separate turns. A weigh-in, a supplement, a mood, a blood-pressure " +
-            "reading and a measurement are always today. You " +
+            "reading and a measurement are always today; a note can name an earlier day, " +
+            "the way a food can. You " +
             "cannot edit or delete anything — point them at the Food tab's diary for that.",
     )
     appendLine(
@@ -514,6 +527,14 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "measurement, call log_measurement with the figure exactly as they gave it and do not " +
             "convert it; one call per site, and never state a measurement you were not told in " +
             "this conversation.",
+    )
+    appendLine(
+        "A note on a day is that rule again, in words rather than numbers. If they ask you to " +
+            "note, jot down or remember something about a day, call log_note with what they " +
+            "said, in their own wording — you are writing their sentence down, not summarising " +
+            "their day in yours. Never write one they did not ask for, and never suggest one. A " +
+            "day holds one note, so it replaces whatever is already written there; use days_ago " +
+            "for an earlier day, and keep it to a sentence or two.",
     )
     appendLine(
         "Fasting is a timer rather than a log. If they say they are starting a fast, call " +

@@ -142,6 +142,9 @@
          the conversion happens on the write. -->
     <string name="coach_proposal_measurement_title">Add %1$s</string>
     <string name="coach_proposal_measurement_body">%1$s %2$s</string>
+    <string name="coach_proposal_note_title">Write it on your day</string>
+    <string name="coach_proposal_note_replaces">Replaces what you wrote</string>
+    <string name="coach_proposal_note_confirm">Note it</string>
 
     <!-- A draft the coach backdated. The day sits as a chip at the end of the card's header row;
          a draft for today shows none at all, which is almost every draft. -->
@@ -238,6 +241,7 @@
     <string name="coach_proposal_logged_mood">Recorded: %1$s.</string>
     <string name="coach_proposal_logged_bp">Logged: %1$s.</string>
     <string name="coach_proposal_logged_measurement">Logged: %1$s, %2$s.</string>
+    <string name="coach_proposal_logged_note">Written on your day.</string>
     <string name="coach_proposal_logged_fast_started">Started a %1$d-hour fast.</string>
     <string name="coach_proposal_logged_fast_ended">Fast ended after %1$s.</string>
     <plurals name="coach_proposal_logged_items">

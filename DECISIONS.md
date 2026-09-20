@@ -3080,6 +3080,42 @@ rather than needing a counter patched.
   the end is stamped at the tap and it keeps growing while the card sits there — which is why the
   string says *"so far"*.
 
+- **The coach can write the day's note, and it is the first drafted thing that is not a number.**
+  `get_day` has handed the model the user's own sentence about a day since the note shipped — the
+  one line in a day payload the *user* composed — while asking the same coach to write one ended
+  in prose and a point at the Food tab. `log_note` closes it on `log_weight`'s rule, which is the
+  rule every volunteered kind follows: the words are theirs, the model reads them back, and it
+  never writes one unasked. Consequences worth writing down.
+  **It is dated, unlike the mood, the cuff reading and the measurement.** Those three carry no
+  `days_ago` at all because a check-in is about now; a note is about a *day*, and `note_day` is
+  dated for that reason already — a sentence about Tuesday typed on Thursday is Tuesday's. So it
+  joins `log_food`, `log_water`, `log_exercise` and `log_saved_meal` as the fifth call taking the
+  offset, bounded by `MAX_DRAFT_DAYS_AGO` and failing rather than clamping outside it, and
+  `draftedOn` returns its day so `draftDay()`'s one-day-per-card rule covers a note riding beside
+  rows without a new guard.
+  **The card says what the tap will replace.** `setNote` overwrites — clearing the field is how a
+  note is deleted, so there is no append to fall back on — and a card that quietly overwrote a
+  sentence the user wrote themselves would break the one promise this surface makes. So `resolve`
+  stamps `LogNote.replaces` with the day's existing text, read through `CoachToolbox.existingNote`,
+  and the card draws it under the new text, muted, at two lines. It is the app's figure in
+  `LogExercise.burnedKcal`'s sense — the model never supplies it, nothing is derived from it and
+  the write never reads it; it exists so the user can recognise what they are about to lose.
+  Failing the draft instead was the alternative and is the deflection the `days_ago` round already
+  ruled against: "change my note to…" is a sentence the coach should be able to answer.
+  **Blank fails and over-long fails.** A blank note is how a note is *removed*, so a Confirm button
+  that silently deletes what they wrote is not what "note this" asked for; and past `NOTE_MAX_CHARS`
+  the draft fails rather than being cut, because `NoteRepositoryImpl` caps on the way into the table
+  and a card showing six hundred characters that writes five hundred is the card lying. That is
+  `MAX_REPLY_CHARS`' argument, not the numeric rounds' — the trim is the same `toNoteText` makes,
+  applied at the parse so the length checked is the length that lands.
+  **One note per draft, and it says "Note it".** `noteToWrite()` is `moodToSet()`'s fold without
+  the per-column care — a day holds one note, so the last one the user agreed to wins — and the
+  confirm verb is its own, because "Log it" under a sentence in the user's own voice reads as
+  though the app were about to count it. **It earns the diary door** where the other volunteered
+  kinds do not: a note is drawn at the foot of the diary, which is the screen the door opens, so
+  today's note qualifies under `opensTheDiary()`'s existing today-only half and a backdated one
+  does not.
+
 - **The coach's bubble stopped being the mascot's, and the failures stopped being bubbles at all.**
   The design handoff's whole argument is that this screen had one shape doing three jobs, and both
   halves of that were true. `MascotSpeechBubble` is right on Home and in onboarding — centred text

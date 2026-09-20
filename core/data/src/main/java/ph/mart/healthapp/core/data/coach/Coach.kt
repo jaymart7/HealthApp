@@ -191,6 +191,36 @@ sealed interface CoachAction {
     ) : CoachAction
 
     /**
+     * What the user said about a day, in their own words.
+     *
+     * [LogWeight]'s rule applied to prose: the sentence is the *user's* and the model's only job
+     * is to read it back. It is the one drafted thing that is not a figure at all, which is why
+     * its guardrail is about whose words they are rather than about a range — a model that
+     * summarises the day in its own voice has written someone else's note.
+     *
+     * **Dated, unlike the three that shipped beside the mood.** `note_day` is dated by design —
+     * a sentence about Tuesday typed on Thursday is Tuesday's — and the coach can already *read*
+     * any day of the month `get_history` reaches, so this carries `days_ago` on [LogFood]'s rule
+     * rather than [LogMood]'s today-only one.
+     *
+     * [replaces] is the note already written on that day, stamped by [resolve] and never the
+     * model's — [LogExercise.burnedKcal]'s rule. `NoteRepository.setNote` *replaces*, and a card
+     * that quietly overwrote a sentence the user wrote themselves is the one lie this surface
+     * cannot tell. It is the card's disclosure and nothing else: the write never reads it, and it
+     * is empty on the days nobody has written about, which is most of them.
+     *
+     * Over [ph.mart.healthapp.core.data.note.NOTE_MAX_CHARS] fails the draft rather than being
+     * capped, [MAX_REPLY_CHARS]' reason: `NoteRepositoryImpl` would trim it on the way into the
+     * table, and a card showing six hundred characters that writes five hundred is a card lying
+     * about the one thing it promises.
+     */
+    data class LogNote(
+        val text: String,
+        val dateEpochDay: Long = 0,
+        val replaces: String = "",
+    ) : CoachAction
+
+    /**
      * One of the user's own workout routines, about to be started.
      *
      * **The one action that commits nothing**, and it is not an exception to the coach-never-writes
@@ -265,6 +295,9 @@ val CoachAction.draftedOn: Long?
         is CoachAction.LogWater -> dateEpochDay
         is CoachAction.LogExercise -> dateEpochDay
         is CoachAction.LogSavedMeal -> dateEpochDay
+        // The fifth dated kind, and the only one that is not a row of figures: a note belongs to
+        // the day it is about, which is the diary's own rule for it.
+        is CoachAction.LogNote -> dateEpochDay
         is CoachAction.LogWeight,
         is CoachAction.LogSupplement,
         is CoachAction.LogMood,
