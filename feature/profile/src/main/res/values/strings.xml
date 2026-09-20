@@ -243,6 +243,12 @@
     <string name="profile_supplements_scan_reading_body">Copying what the panel says so you don\'t have to type it.</string>
     <string name="profile_supplements_scan_chip">AI read this</string>
     <string name="profile_supplements_scan_panel_caveat">Straight off the label — check it against the bottle. Correct anything wrong in the fields above; this stays as it was read.</string>
+    <string name="profile_supplements_lookup">Fill in from the name</string>
+    <string name="profile_supplements_lookup_chip">AI estimate</string>
+    <string name="profile_supplements_lookup_caveat">From the name you typed, not read off a label — check it against the bottle before you save.</string>
+    <string name="profile_supplements_lookup_unknown">We don\'t know that one — type what\'s on the bottle.</string>
+    <string name="profile_supplements_lookup_failed">That didn\'t work. Try again, or type it in.</string>
+    <string name="profile_supplements_lookup_offline">You\'re offline — type it in, or try again on a connection.</string>
     <string name="profile_supplements_scan_unreadable">We couldn\'t find a panel</string>
     <string name="profile_supplements_scan_unreadable_body">Point the camera at the Supplement Facts panel on the back of the bottle, or add it by hand.</string>
     <string name="profile_supplements_scan_failed">That didn\'t work</string>

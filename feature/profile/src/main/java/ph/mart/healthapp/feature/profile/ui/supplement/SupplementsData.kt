@@ -1,9 +1,11 @@
 package ph.mart.healthapp.feature.profile.ui.supplement
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import ph.mart.healthapp.core.data.supplement.EVERY_DAY
 import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.SupplementLabelReading
 import ph.mart.healthapp.core.data.supplement.dayLabel
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.Figure
@@ -23,6 +25,9 @@ data class SupplementsUiState(
      * ph.mart.healthapp.feature.profile.ui.library.FoodLibraryUiState] uses: both are an empty
      * list on the first frame, and a mascot that flashes before the rows arrive reads as a bug. */
     val loaded: Boolean = false,
+    /** A name lookup is in flight. State rather than a side effect because it is one: the sheet's
+     * sparkle is a spinner for as long as it holds, and a second tap must not spend a second call. */
+    val lookingUp: Boolean = false,
 )
 
 /**
@@ -60,4 +65,22 @@ private fun Supplement.scheduleWords(): String {
 sealed interface SupplementsEvent {
     data class OnSave(val supplement: Supplement) : SupplementsEvent
     data class OnDelete(val id: Long) : SupplementsEvent
+
+    /** The name as typed in the sheet — bounded by [ph.mart.healthapp.core.data.supplement.SUPPLEMENT_NAME_MAX]
+     * at the field, which is the only cap the call needs. */
+    data class OnLookUp(val name: String) : SupplementsEvent
+}
+
+/**
+ * The lookup's two answers. The screen's other three writes report themselves through the list
+ * they change; this one lands in a sheet that is already open, which is the skill's
+ * "loading a record to edit" shape — the one `SupplementScanViewModel` cites for the same reading.
+ *
+ * [LookupFailed] carries an id and not words: a ViewModel names a string and a composable resolves
+ * it. Offline, unrecognised and failed are three different sentences and one type, because the
+ * screen does the same thing with all three — puts them under the field that was typed in.
+ */
+sealed interface SupplementsSideEffect {
+    data class LookedUp(val reading: SupplementLabelReading) : SupplementsSideEffect
+    data class LookupFailed(@StringRes val messageRes: Int) : SupplementsSideEffect
 }

@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementLabelReading
+import ph.mart.healthapp.core.data.supplement.appliedTo
 
 /**
  * [Unreadable] is the photo with no panel in it and [Retry] is the call that didn't work — kept
@@ -31,19 +32,15 @@ internal class SupplementScanScreenState(flow: SupplementFlow = SupplementFlow.C
      * this flow only ever adds. */
     var reading: Supplement? by mutableStateOf(null)
 
+    /**
+     * Over a blank row, because this flow only ever adds — `appliedTo` in `:core:data` is the
+     * mapping itself, shared with the name lookup and tested there. What it leaves standing is what
+     * the blank row already says: a panel photographed on its own prints no product name, so the
+     * name stays empty and typable, and a bottle whose directions state no frequency keeps the
+     * app's default of once.
+     */
     fun applyReading(read: SupplementLabelReading) {
-        reading = Supplement(
-            // A panel photographed on its own prints no product name. Empty and typable is the
-            // honest seed — the sheet already refuses to save a nameless supplement.
-            name = read.name.orEmpty(),
-            dose = read.dose.orEmpty(),
-            // The label's own directions where it states them, and the app's default of once
-            // where it doesn't. Not a guess either way: a bottle that says nothing about
-            // frequency is a supplement the user will set themselves.
-            timesPerDay = read.timesPerDay ?: 1,
-            nutrients = read.nutrients,
-            panel = read.panel,
-        )
+        reading = read.appliedTo(Supplement(name = ""))
         flow = SupplementFlow.Confirmation
     }
 

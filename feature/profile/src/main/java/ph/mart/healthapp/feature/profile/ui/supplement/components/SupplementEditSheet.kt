@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.food.Nutrients
@@ -26,6 +31,7 @@ import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.SheetDeleteAction
@@ -53,6 +59,14 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.WeekdayPicker
  * a keyboard would be a heavier gesture than the two taps it replaces — the same call the water
  * goal and a recipe's servings count make.
  *
+ * **[onLookUp] is the third way figures get in here**, and the only one that needs nothing but the
+ * name already being typed: the field grows a sparkle, the model is asked what that product
+ * declares, and the answer re-seeds every field below. It is a parameter and defaults to null, so
+ * the scan flow's confirmation — which got its figures off a panel — draws no sparkle at all. The
+ * caller owns the call and its message; this sheet owns the gesture. [estimated] is what the
+ * readout below is told, and the difference it makes there is the difference between a transcript
+ * and a recollection.
+ *
  * Under it, *which days* — [WeekdayPicker], the row the routine editor already draws. The two
  * answer different halves of one question and sit together for that reason: how many times, and on
  * which days. **The mask can never be emptied here.** A routine with no days is unscheduled and
@@ -65,6 +79,10 @@ internal fun SupplementEditSheet(
     onDismiss: () -> Unit,
     onSave: (Supplement) -> Unit,
     onDelete: () -> Unit = {},
+    onLookUp: ((String) -> Unit)? = null,
+    lookingUp: Boolean = false,
+    lookupError: String? = null,
+    estimated: Boolean = false,
 ) {
     var name by remember(supplement) { mutableStateOf(supplement.name) }
     var dose by remember(supplement) { mutableStateOf(supplement.dose) }
@@ -81,10 +99,38 @@ internal fun SupplementEditSheet(
         onDismiss = onDismiss,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // The lookup is offered on a name there is something to look up, and never twice at
+            // once: the same two conditions gate the button and the keyboard's own key, so the
+            // return key can't do what the sparkle refuses to.
+            val canLookUp = onLookUp != null && name.isNotBlank() && !lookingUp
             AppTextField(
                 value = name,
                 onValueChange = { if (it.length <= SUPPLEMENT_NAME_MAX) name = it },
                 placeholder = stringResource(R.string.profile_name),
+                error = lookupError,
+                imeAction = if (onLookUp != null) ImeAction.Search else ImeAction.Default,
+                onImeAction = if (canLookUp) ({ onLookUp?.invoke(name) }) else null,
+                trailing = if (onLookUp == null) {
+                    null
+                } else {
+                    {
+                        if (lookingUp) {
+                            CircularProgressIndicator(
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        } else {
+                            IconButton(onClick = { onLookUp(name) }, enabled = canLookUp) {
+                                Icon(
+                                    imageVector = AppIcons.AiSparkle,
+                                    contentDescription = stringResource(R.string.profile_supplements_lookup),
+                                    tint = MaterialTheme.colorScheme.tertiary,
+                                )
+                            }
+                        }
+                    }
+                },
             )
             // Free text, never parsed: "2000 IU", "5 g", "one scoop" are all the same kind of
             // answer, and there is no target on the profile to price any of them against.
@@ -101,7 +147,7 @@ internal fun SupplementEditSheet(
             // read-only and stays that way — a correction belongs in the fields above, and the
             // two are allowed to differ afterwards, which is exactly the case this sheet exists
             // to serve. Absent on every supplement nobody scanned.
-            PanelReadout(panel = supplement.panel)
+            PanelReadout(panel = supplement.panel, estimated = estimated)
             NumericStepperField(
                 label = stringResource(R.string.profile_supplements_how_often),
                 value = "$timesPerDay",
@@ -170,6 +216,26 @@ private fun SupplementEditSheetScannedPreview() {
             ),
             onDismiss = {},
             onSave = {},
+        )
+    }
+}
+
+/** The typed shape: a name and a sparkle, with nothing looked up yet. */
+@PreviewLightDark
+@Composable
+private fun SupplementEditSheetLookupPreview() {
+    AppTheme {
+        SupplementEditSheet(
+            supplement = Supplement(
+                name = "Centrum Adults",
+                dose = "1 tablet",
+                nutrients = Nutrients(vitaminDUg = 25, calciumMg = 210),
+                panel = "Vitamin D 25 µg\nCalcium 210 mg\nVitamin A 900 µg\nZinc 11 mg",
+            ),
+            onDismiss = {},
+            onSave = {},
+            onLookUp = {},
+            estimated = true,
         )
     }
 }

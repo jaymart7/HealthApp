@@ -59,6 +59,53 @@ sealed interface SupplementScanResult {
     data object Failed : SupplementScanResult
 }
 
+/**
+ * A bottle's figures, from either end.
+ *
+ * One interface because it is one question — *what does one dose of this carry?* — and one wire
+ * shape, [SUPPLEMENT_LABEL_SCHEMA], answering it. What differs is **trust**, and it is the whole
+ * distance between the two calls: [read] transcribes a panel that is in frame, [lookUp] recalls a
+ * product from its name. A transcription can be checked against the bottle the user is holding; a
+ * recollection cannot, which is why the lookup's prompt is told to answer with nothing rather than
+ * from a similar product, and why the sheet it seeds says out loud that the figures are an
+ * estimate. Neither call writes anything: Save does, on fields the user has read.
+ */
 interface SupplementScanRepository {
     suspend fun read(photo: Bitmap): SupplementScanResult
+
+    /**
+     * [name] as the user typed it — a product ("Centrum Adults"), or just a nutrient and a strength
+     * ("vitamin D3 2000 IU"). Bounded by [SUPPLEMENT_NAME_MAX] at the field it is typed in, so
+     * there is no cap here.
+     *
+     * [SupplementScanResult.NoLabelFound] is "I don't know that product" on this path. The same
+     * case rather than a fourth one: both mean *the model had nothing to say about what you showed
+     * it*, and the two callers already word their own dead ends.
+     */
+    suspend fun lookUp(name: String): SupplementScanResult
 }
+
+/**
+ * The reading applied to a supplement — one mapping from a panel to a row, and both flows use it.
+ *
+ * [existing] is what it is layered over: `Supplement(name = "")` from the scan, whose confirmation
+ * only ever adds, and the sheet's own draft from the lookup, which may be a row Room already has.
+ * So the figures are overwritten and everything identifying the row — `id`, `createdAt`, `days`,
+ * `deleted` — is left alone. Filling in the figures of a supplement typed in last month must not
+ * renumber it or rewrite its schedule.
+ *
+ * **A field the reading doesn't carry leaves the existing one standing**, which is the same
+ * sentence from both ends. A panel photographed on its own prints no product name, and there
+ * `existing.name` is empty and typable — the sheet already refuses to save a nameless supplement.
+ * A lookup that read the strength off "vitamin D3 2000 IU" without naming a product leaves the
+ * words the user typed. Same for the dose, and for [SupplementLabelReading.timesPerDay]: a label
+ * that states no frequency has not answered the question, so whatever was already set stands —
+ * which on an add is the app's default of once.
+ */
+fun SupplementLabelReading.appliedTo(existing: Supplement): Supplement = existing.copy(
+    name = name ?: existing.name,
+    dose = dose ?: existing.dose,
+    timesPerDay = timesPerDay ?: existing.timesPerDay,
+    nutrients = nutrients,
+    panel = panel,
+)

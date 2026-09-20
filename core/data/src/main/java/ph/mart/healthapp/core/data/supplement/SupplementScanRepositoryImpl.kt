@@ -51,6 +51,51 @@ all, return an object with no fields set.
 """.trimIndent()
 
 /**
+ * The same figures asked for from the other end, and the opposite instruction in one respect only.
+ *
+ * [PROMPT] above says *read what is in frame and nothing else*; there is no frame here, so the
+ * guard has to be the product's identity instead: answer for **this** product or answer with
+ * nothing. The failure this is written against is the plausible one — asked about a multivitamin it
+ * has never seen, a model will happily return a typical multivitamin, and the user then ticks a
+ * formula nobody published into their day's nutrient panel. An empty object is a dead end the
+ * screen has words for; an invented panel is a figure that looks read.
+ *
+ * Everything else is deliberately [PROMPT]'s: per serving, unchanged, the named fields for what
+ * maps and otherNutrients for the rest, the same two unit hedges. The reading is the same type and
+ * the same schema parses it, so a difference here would be a difference the rest of the flow could
+ * not see.
+ */
+private val LOOKUP_PROMPT = """
+You are identifying a supplement for a health-tracking app from the name the user typed.
+
+Report only what this specific product's Supplement Facts panel declares, as its manufacturer
+prints it. If you do not know this exact product, return an object with no fields set. Do not answer
+from a similar product, from the same brand's other products, or from what a supplement of this kind
+typically contains. Never write 0 for a line you are unsure of — leave the field out.
+
+If the name is a nutrient and a strength rather than a product ("vitamin D3 2000 IU"), report that
+much and leave the rest out.
+
+The panel declares its figures against one serving. Report them per serving, unchanged, and set
+servingSize to that serving in the label's own words ("2 capsules", "1 scoop"). Do not convert
+anything to a per-capsule or per-day amount.
+
+Fill the named fields for the nutrients that have one. Put every other line the panel declares —
+vitamins, minerals, herbs, a proprietary blend — in otherNutrients, with its amount as printed, in
+the order the panel prints them.
+
+Units: if the panel declares salt rather than sodium, fill saltG and leave sodiumMg out. If vitamin
+D is printed in international units, fill vitaminDIu and leave vitaminDUg out. Never fill both forms
+of either.
+
+Set timesPerDay only if the product's directions state how many times a day to take it. Set name to
+the product's full name as it is printed. Give no medical advice, no diagnosis, and no dosage or
+supplement recommendations.
+
+The name the user typed:
+""".trimIndent()
+
+/**
  * Higher than the nutrition label's 500: that panel is seven lines and a multivitamin is thirty,
  * each one an object of two short strings. Still well inside the recognition call's headroom.
  */
@@ -86,6 +131,27 @@ internal class SupplementScanRepositoryImpl : SupplementScanRepository {
         throw e
     } catch (e: Exception) {
         logAiFailure("supplement scan", e)
+        SupplementScanResult.Failed
+    }
+
+    /**
+     * The same model instance, because the configuration is the same one: same schema, same
+     * thinking floor, same ceiling. Only the prompt differs, and a second `generativeModel` built
+     * from identical settings would be a second thing to keep in step.
+     *
+     * [SupplementLabelReading.readable] is the gate here for the reason it is above, with the
+     * halves swapped: there, a name and nothing else is the front of the bottle rather than the
+     * panel; here it is the model repeating the user's own words back with no figures behind them.
+     * Either way it is not an answer worth seeding a sheet with.
+     */
+    override suspend fun lookUp(name: String): SupplementScanResult = try {
+        val response = model.generateContent(content { text("$LOOKUP_PROMPT\n$name") })
+        val reading = parseSupplementLabel(response.text)
+        if (reading.readable()) SupplementScanResult.Found(reading) else SupplementScanResult.NoLabelFound
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        logAiFailure("supplement lookup", e)
         SupplementScanResult.Failed
     }
 }

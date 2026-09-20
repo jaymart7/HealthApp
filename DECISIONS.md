@@ -4088,6 +4088,51 @@ rather than needing a counter patched.
   table. Its confirmation is `SupplementEditSheet` — seeded rather than blank, the same sheet and
   the same save the list uses, which is what keeps `id == 0 means add` the only add path there is.
 
+- **Looking a supplement up by name is a sparkle in the sheet, not a fourth route — and it shares
+  the scan's repository.** The scan is a route because a viewfinder is full-bleed and there is
+  nowhere smaller to put one; a name is a text field, and the field it belongs in is the one the
+  add sheet already opens with. So `SupplementEditSheet` grew four defaulted parameters — the
+  lookup lambda, the in-flight flag, the message and whether the seed was estimated — and the scan
+  flow's own call passes none of them, which is what keeps that confirmation exactly as it shipped.
+  No route, no ViewModel, no flow package: `SupplementsViewModel` gained one intent, which is the
+  rule this repo already states — *what earns a flow package is a second ViewModel*.
+  The call sits on `SupplementScanRepository` rather than a repository of its own because it is one
+  question ("what does one dose of this carry?") with one wire shape answering it:
+  `SUPPLEMENT_LABEL_SCHEMA`, `parseSupplementLabel` and `readable()` are all reused whole, and even
+  the model instance is, since only the prompt differs. A second interface would have been a second
+  schema and a second parse to keep in step with the first.
+- **The lookup is recall, the scan is transcription, and three things carry that difference.**
+  `SupplementScanRepositoryImpl`'s existing prompt exists to stop the model completing a panel from
+  what it knows about the product; a lookup has nothing else to go on, so the guard moves to the
+  product's identity instead — **answer for this product or answer with nothing**, never from a
+  similar one or from what a supplement of this kind typically contains. An empty object is a dead
+  end the sheet has words for; an invented formula is a figure that looks read. Second,
+  `PanelReadout` takes an `estimated` flag that swaps its chip and its caveat — "AI estimate · from
+  the name you typed" rather than "AI read this · straight off the label", because calling a
+  recollection a transcript would be the readout claiming evidence it does not have. Third, nothing
+  is written until Save, on fields the user is looking at. That is the same trust boundary the
+  review screen draws over a parsed meal, and it is why the figures are allowed to reach
+  `Supplement.nutrients` at all — they are snapshotted onto the row like any other, and a
+  correction is another write to the same field.
+- **`SupplementLabelReading.appliedTo(existing)` is the one mapping from a reading to a row.** It
+  was `SupplementScanScreenState.applyReading`'s body, which only ever had to cope with an add. The
+  lookup can land on a row Room already has, so the mapper overwrites the figures and leaves
+  everything that identifies the row — `id`, `createdAt`, `days`, `deleted` — alone: filling in the
+  figures of a supplement typed in last month must not renumber it or rewrite its schedule. A field
+  the reading does not carry leaves the existing one standing, which reads correctly from both
+  ends — a panel photographed on its own prints no product name and the blank row's empty name
+  stays, and a lookup that read a strength off "vitamin D3 2000 IU" without naming a product leaves
+  the words the user typed. It lives in `:core:data` beside `readable()` for that file's reason:
+  it is pure, so `SupplementLabelTest` can hold it.
+- **The sparkle's result lands in the open sheet, so `editing` moved up a level.**
+  `SupplementsScreen` collects the side effect and holds the draft; `SupplementsContent` takes it as
+  a parameter, the shape the previews were already passing nothing for. `editing?.let` around the
+  result is the guard as much as the read — a lookup that returns after the sheet was dismissed is
+  dropped rather than reopening it, which is the cheapest cancellation this flow needs given the
+  call spends nothing further. The `lookingUp` flag is state rather than a side effect because it
+  is one: it is what the sparkle draws as a spinner, and what stops a second tap spending a second
+  request.
+
 - **`CaptureScreen` and `ViewfinderActions` moved to `:core:designsystem`.** The supplement scan is
   their third caller and the first outside `:feature:food`, and a feature never imports another
   feature's types — the move `CameraPermissionScreen` already made when it hit the same wall. Four

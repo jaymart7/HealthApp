@@ -3,20 +3,30 @@ package ph.mart.healthapp.feature.profile.ui.supplement
 import androidx.lifecycle.ViewModel
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_TIMES_PER_DAY
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
+import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
+import ph.mart.healthapp.core.data.supplement.SupplementScanResult
+import ph.mart.healthapp.feature.profile.R
 
 /**
- * Reads the list and writes the three things this screen can do to it. No side effects: an add, an
- * edit and a delete are all writes the flow reports back on its own — same shape as
- * [ph.mart.healthapp.feature.profile.ui.library.FoodLibraryViewModel].
+ * Reads the list and writes the three things this screen can do to it, plus the one thing it asks
+ * a model. The add, the edit and the delete still report themselves through the list they change —
+ * [ph.mart.healthapp.feature.profile.ui.library.FoodLibraryViewModel]'s shape — and the lookup is
+ * why there are side effects at all: its answer lands in a sheet rather than in the list.
+ *
+ * It reaches for `SupplementScanRepository` rather than a repository of its own, because a name and
+ * a photograph are the same question with different evidence — that interface argues the split.
  */
 class SupplementsViewModel(
     private val supplementRepository: SupplementRepository,
-) : ViewModel(), OrbitContainerHost<SupplementsUiState, SupplementsUiState, Nothing> {
+    private val supplementScanRepository: SupplementScanRepository,
+    private val networkMonitor: NetworkMonitor,
+) : ViewModel(), OrbitContainerHost<SupplementsUiState, SupplementsUiState, SupplementsSideEffect> {
 
-    override val container = orbitContainer<SupplementsUiState, Nothing>(SupplementsUiState()) {
+    override val container = orbitContainer<SupplementsUiState, SupplementsSideEffect>(SupplementsUiState()) {
         observeSupplements()
     }
 
@@ -24,7 +34,38 @@ class SupplementsViewModel(
         when (event) {
             is SupplementsEvent.OnSave -> onSave(event.supplement)
             is SupplementsEvent.OnDelete -> onDelete(event.id)
+            is SupplementsEvent.OnLookUp -> onLookUp(event.name)
         }
+    }
+
+    /**
+     * The online recheck is here rather than in the repository for the reason every AI call site in
+     * this app makes it: `isOnline()` is asked at the moment a request is about to be spent, and the
+     * answer is a sentence the user reads rather than a failure to retry.
+     *
+     * `NoLabelFound` is the model declining to invent a formula it does not know, which is what the
+     * prompt asks for and the one answer worth having from a name it has never seen.
+     */
+    private fun onLookUp(name: String) = intent {
+        val typed = name.trim()
+        if (typed.isBlank() || state.lookingUp) return@intent
+        if (!networkMonitor.isOnline()) {
+            postSideEffect(SupplementsSideEffect.LookupFailed(R.string.profile_supplements_lookup_offline))
+            return@intent
+        }
+        reduce { state.copy(lookingUp = true) }
+        val result = supplementScanRepository.lookUp(typed)
+        reduce { state.copy(lookingUp = false) }
+        postSideEffect(
+            when (result) {
+                is SupplementScanResult.Found -> SupplementsSideEffect.LookedUp(result.reading)
+                SupplementScanResult.NoLabelFound ->
+                    SupplementsSideEffect.LookupFailed(R.string.profile_supplements_lookup_unknown)
+
+                SupplementScanResult.Failed ->
+                    SupplementsSideEffect.LookupFailed(R.string.profile_supplements_lookup_failed)
+            },
+        )
     }
 
     /** Sorted here rather than in the DAO: the order is this screen's presentation choice, and

@@ -23,7 +23,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.supplement.Supplement
+import ph.mart.healthapp.core.data.supplement.appliedTo
 import ph.mart.healthapp.core.designsystem.component.DockedActionBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
@@ -61,19 +63,60 @@ fun SupplementsScreen(
     viewModel: SupplementsViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
-    SupplementsContent(uiState = uiState, onEvent = viewModel::handleEvent, onOpenScan = onOpenScan)
+    // Hoisted out of the content below, unlike `FoodLibraryScreen`'s: the lookup's answer arrives
+    // as a side effect and lands *in* the open sheet, so the sheet's seed has to be reachable from
+    // where side effects are collected. Still plain `remember` and still for that screen's reason —
+    // a sheet that survived process death would reopen on a row the user has stopped looking at.
+    var editing by remember { mutableStateOf<Supplement?>(null) }
+    var lookupError by remember { mutableStateOf<Int?>(null) }
+    var estimated by remember { mutableStateOf(false) }
+
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            // `editing?.let` is the guard as well as the read: a result that lands after the sheet
+            // was dismissed is dropped rather than reopening it. Layering it over the draft is what
+            // keeps an edit's id, schedule and created-at intact — `appliedTo` argues that.
+            is SupplementsSideEffect.LookedUp -> editing?.let { draft ->
+                editing = effect.reading.appliedTo(draft)
+                estimated = true
+            }
+
+            is SupplementsSideEffect.LookupFailed -> lookupError = effect.messageRes
+        }
+    }
+
+    SupplementsContent(
+        uiState = uiState,
+        editing = editing,
+        // Opening or closing the sheet clears both: the message was about the last name looked up,
+        // and the chip belongs to the seed it came with.
+        onEditingChange = {
+            editing = it
+            lookupError = null
+            estimated = false
+        },
+        lookupError = lookupError?.let { stringResource(it) },
+        onLookUp = { name ->
+            lookupError = null
+            viewModel.handleEvent(SupplementsEvent.OnLookUp(name))
+        },
+        estimated = estimated,
+        onEvent = viewModel::handleEvent,
+        onOpenScan = onOpenScan,
+    )
 }
 
 @Composable
 private fun SupplementsContent(
     uiState: SupplementsUiState,
+    editing: Supplement?,
+    onEditingChange: (Supplement?) -> Unit,
+    lookupError: String?,
+    onLookUp: (String) -> Unit,
+    estimated: Boolean,
     onEvent: (SupplementsEvent) -> Unit,
     onOpenScan: () -> Unit,
 ) {
-    // Local rather than in a saveable holder, for the same reason `FoodLibraryScreen` keeps its
-    // own: a sheet that survived process death would reopen on a row the user has stopped looking
-    // at.
-    var editing by remember { mutableStateOf<Supplement?>(null) }
     var pendingDelete by remember { mutableStateOf<Supplement?>(null) }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
@@ -126,7 +169,7 @@ private fun SupplementsContent(
                                         FigureRow(*figures.toTypedArray())
                                     }
                                 },
-                                onClick = { editing = supplement },
+                                onClick = { onEditingChange(supplement) },
                             )
                         }
                     }
@@ -134,7 +177,8 @@ private fun SupplementsContent(
             }
             // Two doors to the same table, and the camera is second on purpose: typing three
             // fields is not a job worth a photo, and the scan earns its place on the bottle the
-            // user cannot be bothered to transcribe. Both land in the same sheet.
+            // user cannot be bothered to transcribe. Both land in the same sheet — where the name
+            // field's sparkle is the third way in, on the bottle that isn't in the room.
             DockedActionBar {
                 SecondaryButton(
                     label = stringResource(R.string.profile_supplements_scan),
@@ -146,7 +190,7 @@ private fun SupplementsContent(
                     label = stringResource(R.string.profile_supplements_add),
                     // A blank row with id 0 — the sheet reads that as the add, so there is one
                     // sheet and one save path rather than two of each.
-                    onClick = { editing = Supplement(name = "") },
+                    onClick = { onEditingChange(Supplement(name = "")) },
                     icon = AppIcons.Add,
                     modifier = Modifier.weight(1f),
                 )
@@ -171,17 +215,21 @@ private fun SupplementsContent(
     editing?.let { supplement ->
         SupplementEditSheet(
             supplement = supplement,
-            onDismiss = { editing = null },
+            onDismiss = { onEditingChange(null) },
             onSave = { saved ->
                 onEvent(SupplementsEvent.OnSave(saved))
-                editing = null
+                onEditingChange(null)
             },
             // The sheet closes and the dialog takes over: one scrim at a time, and the question
             // is asked in the one place that already asks it.
             onDelete = {
                 pendingDelete = supplement
-                editing = null
+                onEditingChange(null)
             },
+            onLookUp = onLookUp,
+            lookingUp = uiState.lookingUp,
+            lookupError = lookupError,
+            estimated = estimated,
         )
     }
 }
@@ -202,6 +250,11 @@ private fun SupplementsScreenPreview() {
                 ),
                 loaded = true,
             ),
+            editing = null,
+            onEditingChange = {},
+            lookupError = null,
+            onLookUp = {},
+            estimated = false,
             onEvent = {},
             onOpenScan = {},
         )
@@ -212,6 +265,15 @@ private fun SupplementsScreenPreview() {
 @Composable
 private fun SupplementsScreenEmptyPreview() {
     AppTheme {
-        SupplementsContent(uiState = SupplementsUiState(loaded = true), onEvent = {}, onOpenScan = {})
+        SupplementsContent(
+            uiState = SupplementsUiState(loaded = true),
+            editing = null,
+            onEditingChange = {},
+            lookupError = null,
+            onLookUp = {},
+            estimated = false,
+            onEvent = {},
+            onOpenScan = {},
+        )
     }
 }

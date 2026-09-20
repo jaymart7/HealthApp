@@ -30,6 +30,12 @@ import ph.mart.healthapp.feature.profile.R
  * Read-only, and the chip is what says a model was involved at all. The four this app *does* grade
  * appear in this list too, so the user checks one thing against the bottle rather than two.
  *
+ * [estimated] swaps both the chip and the caveat, and it is the whole of the difference between the
+ * two ways figures get here. A scan transcribed a panel that was in frame; a name lookup recalled a
+ * product, and calling that "straight off the label" would be the readout claiming an evidence it
+ * does not have. Same surface, same lines, two sentences — a second component would be a second set
+ * of rules for a box that is otherwise identical.
+ *
  * **It is the transcript, not the figures.** `DoseNutrientFields` above it is what the supplement
  * actually carries and what the day counts, and a user who corrects a misread digit there leaves
  * this list saying what the model read. That is the point rather than a defect: the two disagreeing
@@ -39,7 +45,7 @@ import ph.mart.healthapp.feature.profile.R
  * Absent when [panel] is blank, which is every supplement typed by hand.
  */
 @Composable
-internal fun PanelReadout(panel: String, modifier: Modifier = Modifier) {
+internal fun PanelReadout(panel: String, modifier: Modifier = Modifier, estimated: Boolean = false) {
     val lines = panel.lines().filter { it.isNotBlank() }
     if (lines.isEmpty()) return
 
@@ -54,11 +60,19 @@ internal fun PanelReadout(panel: String, modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AIChip(
-                label = stringResource(R.string.profile_supplements_scan_chip),
+                label = stringResource(
+                    if (estimated) R.string.profile_supplements_lookup_chip else R.string.profile_supplements_scan_chip,
+                ),
                 variant = AIChipVariant.Default,
             )
             Text(
-                text = stringResource(R.string.profile_supplements_scan_panel_caveat),
+                text = stringResource(
+                    if (estimated) {
+                        R.string.profile_supplements_lookup_caveat
+                    } else {
+                        R.string.profile_supplements_scan_panel_caveat
+                    },
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -539,6 +539,12 @@ panes at ≥840dp.
   than re-scanned; the rest — vitamin C, B12, zinc, magnesium — are kept as printed text, shown and
   never graded, because there is no field or target for them. The transcript stays as it was read
   even after a correction. Nothing is estimated.
+- Supplement lookup by name — type the product into the add sheet's name field and tap the sparkle
+  in it, and a model fills the same fields the scan does: the serving as the dose, the frequency
+  where the directions state one, the four graded figures and the rest of the panel listed back.
+  The readout says **AI estimate** rather than "AI read this", because this half is recalled rather
+  than transcribed — the model is asked to answer with nothing for a product it does not know, and
+  nothing is written until Save. Offline, unrecognised and failed each say so under the field.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything). The food library adds a persistent search over
   names *and* contents lines, with match highlighting, and sticky counted section headers; My

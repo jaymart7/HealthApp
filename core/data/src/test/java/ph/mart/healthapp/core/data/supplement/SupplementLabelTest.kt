@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.supplement
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,5 +35,56 @@ class SupplementLabelTest {
     @Test
     fun `an empty reading is not readable`() {
         assertFalse(SupplementLabelReading().readable())
+    }
+
+    /** What the scan's confirmation does: layered over a blank row, so the figures are the
+     * reading's and the row is still an add. */
+    @Test
+    fun `a reading applied to a blank supplement is the reading`() {
+        val reading = SupplementLabelReading(
+            name = "Daily Multivitamin",
+            dose = "2 tablets",
+            timesPerDay = 2,
+            nutrients = Nutrients(vitaminDUg = 25),
+            panel = "Vitamin D 25 µg",
+        )
+        val applied = reading.appliedTo(Supplement(name = ""))
+        assertEquals("Daily Multivitamin", applied.name)
+        assertEquals("2 tablets", applied.dose)
+        assertEquals(2, applied.timesPerDay)
+        assertEquals(25, applied.nutrients.vitaminDUg)
+        assertEquals("Vitamin D 25 µg", applied.panel)
+        assertEquals(0L, applied.id)
+    }
+
+    /** The lookup's case: the row already exists, and filling in its figures must not renumber it
+     * or rewrite the schedule the user set. */
+    @Test
+    fun `applying a reading keeps what identifies the row`() {
+        val existing = Supplement(
+            id = 7,
+            name = "Multi",
+            createdAt = 1_700_000_000_000,
+            days = 0b0010101,
+        )
+        val applied = SupplementLabelReading(
+            name = "Daily Multivitamin",
+            nutrients = Nutrients(calciumMg = 210),
+        ).appliedTo(existing)
+        assertEquals(7L, applied.id)
+        assertEquals(1_700_000_000_000, applied.createdAt)
+        assertEquals(0b0010101, applied.days)
+        assertEquals(210, applied.nutrients.calciumMg)
+    }
+
+    /** A panel that states no frequency has not answered the question, so whatever was already set
+     * stands — the app's default of once on an add, the user's own figure on an edit. */
+    @Test
+    fun `a reading with no frequency leaves the existing one`() {
+        val existing = Supplement(id = 1, name = "Creatine", dose = "5 g", timesPerDay = 3)
+        val applied = SupplementLabelReading(panel = "Creatine 5 g").appliedTo(existing)
+        assertEquals(3, applied.timesPerDay)
+        assertEquals("Creatine", applied.name)
+        assertEquals("5 g", applied.dose)
     }
 }

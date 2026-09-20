@@ -138,33 +138,48 @@ internal class FakeLabelScanRepository : LabelScanRepository {
  * Hand-written rather than read from something the app ships, unlike the other six — there is no
  * local table of supplement formulas to read, and inventing one for the fake alone would be a
  * fixture pretending to be data. The photo seeds a [SupplementScanResult.NoLabelFound] every fifth
- * shot, the way [FakeLabelScanRepository] does, so the dead end is reachable too.
+ * shot, the way [FakeLabelScanRepository] does, so the dead end is reachable too — and so does a
+ * typed name, on its own rule below.
  */
 internal class FakeSupplementScanRepository : SupplementScanRepository {
     override suspend fun read(photo: Bitmap): SupplementScanResult {
         delay(FAKE_LATENCY_MS)
         if ((photo.width * 31 + photo.height) % 5 == 0) return SupplementScanResult.NoLabelFound
-        return SupplementScanResult.Found(
-            SupplementLabelReading(
-                name = "Daily Multivitamin",
-                dose = "2 tablets",
-                timesPerDay = 1,
-                nutrients = Nutrients(vitaminDUg = 25, calciumMg = 210, ironUg = 18_000, potassiumMg = 80),
-                panel = listOf(
-                    "Vitamin D 25 µg",
-                    "Calcium 210 mg",
-                    "Iron 18 mg",
-                    "Potassium 80 mg",
-                    "Vitamin A 900 µg",
-                    "Vitamin C 90 mg",
-                    "Vitamin E 15 mg",
-                    "Vitamin B12 2.4 µg",
-                    "Zinc 11 mg",
-                    "Magnesium 100 mg",
-                ).joinToString("\n"),
-            ),
-        )
+        return SupplementScanResult.Found(multivitamin())
     }
+
+    /**
+     * The same bottle, named back with whatever was typed — which is what the real call does when
+     * it recognises a product, and what makes the seeded sheet obviously a response to the name
+     * rather than a fixture. A name whose length is a multiple of five answers
+     * [SupplementScanResult.NoLabelFound], so "I don't know that one" is reachable without waiting
+     * for the real model to not know something.
+     */
+    override suspend fun lookUp(name: String): SupplementScanResult {
+        delay(FAKE_LATENCY_MS)
+        val typed = name.trim()
+        if (typed.isEmpty() || typed.length % 5 == 0) return SupplementScanResult.NoLabelFound
+        return SupplementScanResult.Found(multivitamin().copy(name = typed))
+    }
+
+    private fun multivitamin() = SupplementLabelReading(
+        name = "Daily Multivitamin",
+        dose = "2 tablets",
+        timesPerDay = 1,
+        nutrients = Nutrients(vitaminDUg = 25, calciumMg = 210, ironUg = 18_000, potassiumMg = 80),
+        panel = listOf(
+            "Vitamin D 25 µg",
+            "Calcium 210 mg",
+            "Iron 18 mg",
+            "Potassium 80 mg",
+            "Vitamin A 900 µg",
+            "Vitamin C 90 mg",
+            "Vitamin E 15 mg",
+            "Vitamin B12 2.4 µg",
+            "Zinc 11 mg",
+            "Magnesium 100 mg",
+        ).joinToString("\n"),
+    )
 }
 
 /**
