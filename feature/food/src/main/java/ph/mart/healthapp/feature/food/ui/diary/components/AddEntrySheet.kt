@@ -29,7 +29,9 @@ import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.component.TonalButton
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.AddEntryView
@@ -98,6 +100,10 @@ internal fun AddEntrySheet(
     editing: Boolean = false,
     /** When the row being corrected was logged, for the subtitle that says which row it is. */
     loggedAt: Long? = null,
+    /** Throwing the row away from the sheet that is correcting it. Null while adding — there is no
+     * row yet — and it raises the same undoable snackbar the diary's swipe does, which is why it
+     * asks nothing first. */
+    onDelete: (() -> Unit)? = null,
 ) {
     // One handler, always mounted, dispatching on the state — the shape the photo and voice flows
     // use. `onBack` steps a level and falls through to `onDismiss` when there is none left.
@@ -133,6 +139,7 @@ internal fun AddEntrySheet(
                     saveMyFood = saveMyFood,
                     onSaveMyFoodChange = onSaveMyFoodChange,
                     onAdd = onAdd,
+                    onDelete = onDelete,
                 )
                 // The search draws its own count-and-escape bar at the foot of its list.
                 AddEntryView.Search -> Unit
@@ -214,6 +221,12 @@ private fun BrowseActionBar(onAddYourself: () -> Unit) {
  * **One button, and it is the commit.** The docked Cancel went when the form's bar grew the ✕ every
  * other sheet closes with — the same trade the app made ten times over, a control for a decision
  * nobody is making when the corner, the drag handle, the scrim and back all dismiss.
+ *
+ * A correction gets a second one under it: [onDelete], in the slot the keep-this-food switch
+ * vacates. Text, `error`, below the commit — the review row's Remove, which is the only other
+ * destructive word in this feature. No confirmation, because the delete lands in the diary's undo
+ * snackbar exactly as the swipe does, and a dialog in front of an undoable action is a tap for a
+ * decision already reversible.
  */
 @Composable
 private fun FormActionBar(
@@ -222,6 +235,7 @@ private fun FormActionBar(
     saveMyFood: Boolean,
     onSaveMyFoodChange: (Boolean) -> Unit,
     onAdd: () -> Unit,
+    onDelete: (() -> Unit)?,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // Absent while correcting a row, for the reason Browse is: it keeps a *new* food.
@@ -245,6 +259,15 @@ private fun FormActionBar(
                 enabled = form.isValid(),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
             )
+            if (editing && onDelete != null) {
+                TextButton(
+                    label = stringResource(R.string.food_delete_entry),
+                    onClick = onDelete,
+                    color = MaterialTheme.colorScheme.error,
+                    icon = AppIcons.Delete,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }
@@ -437,6 +460,7 @@ private fun AddEntrySheetEditPreview() {
             onAdd = {},
             editing = true,
             loggedAt = 1_757_925_720_000,
+            onDelete = {},
         )
     }
 }

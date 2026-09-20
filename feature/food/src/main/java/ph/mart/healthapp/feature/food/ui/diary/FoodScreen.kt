@@ -192,6 +192,7 @@ private fun FoodContent(
                 state = state,
                 onEvent = onEvent,
                 onNewRecipe = onNewRecipe,
+                snackbarHostState = snackbarHostState,
             )
 
             // Above the docked FAB, so an Undo is never the thing hidden behind it.

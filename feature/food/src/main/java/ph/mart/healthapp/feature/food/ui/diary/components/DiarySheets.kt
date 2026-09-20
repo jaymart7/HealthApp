@@ -2,14 +2,20 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import kotlinx.coroutines.launch
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
@@ -44,7 +50,12 @@ internal fun DiarySheets(
     state: FoodScreenState,
     onEvent: (FoodEvent) -> Unit,
     onNewRecipe: () -> Unit,
+    /** The diary's host, because a row thrown away from the edit sheet raises the same undo the
+     * swipe does — and it is the diary the sheet has just closed onto that shows it. */
+    snackbarHostState: SnackbarHostState,
 ) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var pendingDeleteSavedMeal by remember { mutableStateOf<SavedMeal?>(null) }
     var pendingDeleteRecipe by remember { mutableStateOf<Recipe?>(null) }
 
@@ -71,6 +82,7 @@ internal fun DiarySheets(
     val activeMealSheet = state.activeMealSheet
     if (activeMealSheet != null) {
         val editingId = state.editingEntryId
+        val editingEntry = editingId?.let { id -> uiState.entries.firstOrNull { it.id == id } }
         AddEntrySheet(
             mealType = activeMealSheet,
             form = state.addForm,
@@ -152,7 +164,24 @@ internal fun DiarySheets(
                 state.closeSheet()
             },
             editing = editingId != null,
-            loggedAt = editingId?.let { id -> uiState.entries.firstOrNull { it.id == id }?.loggedAt },
+            loggedAt = editingEntry?.loggedAt,
+            // Soft delete with an undo, the diary swipe's contract to the letter — the sheet closes
+            // first so the snackbar lands on the day, not behind the scrim.
+            onDelete = editingEntry?.let { entry ->
+                {
+                    onEvent(FoodEvent.OnDeleteEntry(entry.id))
+                    state.closeSheet()
+                    scope.launch {
+                        val undone = snackbarHostState.showSnackbar(
+                            message = context.getString(R.string.food_deleted, entry.name),
+                            actionLabel = context.getString(R.string.food_undo),
+                            duration = SnackbarDuration.Short,
+                        ) == SnackbarResult.ActionPerformed
+                        if (undone) onEvent(FoodEvent.OnRestoreEntry(entry))
+                    }
+                    Unit
+                }
+            },
         )
     }
 
@@ -290,6 +319,7 @@ private fun DiarySheetsPreview() {
                 state = rememberFoodScreenState().apply { calendarOpen = true },
                 onEvent = {},
                 onNewRecipe = {},
+                snackbarHostState = SnackbarHostState(),
             )
         }
     }

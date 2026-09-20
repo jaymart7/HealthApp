@@ -3,6 +3,7 @@
     <string name="food_cancel">Cancel</string>
     <string name="food_save">Save</string>
     <string name="food_delete">Delete</string>
+    <string name="food_delete_entry">Delete entry</string>
     <string name="food_keep">Keep</string>
     <string name="food_discard">Discard</string>
     <string name="food_keep_editing">Keep editing</string>

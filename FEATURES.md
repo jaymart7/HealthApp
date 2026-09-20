@@ -131,7 +131,9 @@ Blood pressure · Fasting · Mood · Supplements · Cycle · Today's workout · 
   logged from the camera wears a 40dp thumbnail, shown again on the edit sheet as a labelled row
   that says the photo survives the correction — and opens full-screen, pinch-zoomable. The edit
   sheet opens straight into the form, subtitled with the meal and the time the row was logged,
-  and drops every door that would write a *new* log.
+  and drops every door that would write a *new* log. Under the Save button it carries a `Delete
+  entry` — text, `error`, in the slot the keep-this-food switch vacates — raising the same Undo
+  snackbar the swipe does, so it asks nothing first.
 - Swipe to delete with Undo snackbar.
 - Local text filter over the day's logged entries.
 - Search your diary — a route above the tab searching every food ever logged, by name, newest
