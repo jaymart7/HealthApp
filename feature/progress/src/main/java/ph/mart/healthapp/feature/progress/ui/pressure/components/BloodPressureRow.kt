@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -83,7 +82,7 @@ internal fun BloodPressureRow(
                     textAlign = TextAlign.End,
                 )
             }
-            IconButton(onClick = onDelete, modifier = Modifier.size(44.dp)) {
+            IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = AppIcons.Delete,
                     contentDescription = stringResource(R.string.progress_bp_delete),

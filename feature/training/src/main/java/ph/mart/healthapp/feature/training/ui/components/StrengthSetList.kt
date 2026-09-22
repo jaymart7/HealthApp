@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -93,7 +92,7 @@ internal fun StrengthSetList(
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { onRemove(index) }, modifier = Modifier.size(44.dp)) {
+                        IconButton(onClick = { onRemove(index) }) {
                             Icon(
                                 imageVector = AppIcons.Delete,
                                 contentDescription = stringResource(R.string.training_strength_remove_set, position + 1, name),

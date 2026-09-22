@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -128,6 +129,13 @@ private fun buildMonthGrid(monthCalendar: Calendar): List<Long?> {
     return grid + List((7 - grid.size % 7) % 7) { null }
 }
 
+/**
+ * Fills its cell rather than sitting at a fixed size inside it, so the tap target is the whole
+ * square the grid gave it and the ripple stays round. That square is a seventh of the panel's
+ * width — about 47dp in a sheet on a 360dp phone, more on anything wider, and short of the 48dp
+ * rule on a narrow one. Seven columns cannot each hold 48dp in 328dp; this is the most the
+ * geometry allows.
+ */
 @Composable
 private fun DayCell(
     epochDay: Long,
@@ -145,7 +153,7 @@ private fun DayCell(
     }
     Box(
         modifier = Modifier
-            .size(44.dp)
+            .fillMaxSize()
             .clip(CircleShape)
             .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
             .then(

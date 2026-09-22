@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -220,7 +219,7 @@ private fun IngredientList(ingredients: List<SavedMealItem>, onRemove: (Int) -> 
                     fatG = ingredient.fatG,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = { onRemove(index) }, modifier = Modifier.size(44.dp)) {
+                IconButton(onClick = { onRemove(index) }) {
                     Icon(
                         imageVector = AppIcons.Delete,
                         contentDescription = stringResource(R.string.food_remove, ingredient.name),

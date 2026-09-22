@@ -105,8 +105,8 @@ internal fun HomeLayoutRow(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
-                    .size(44.dp)
-                    .padding(10.dp)
+                    .size(48.dp)
+                    .padding(12.dp)
                     .pointerInput(Unit) {
                         detectDragGestures(
                             onDragStart = { dragStart() },

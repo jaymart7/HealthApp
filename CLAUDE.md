@@ -282,20 +282,6 @@ a second thing to keep in step.
 **Final mascot illustration.** The geometric placeholders (Rui, Gel, Mart, Alo, Lala) are used
 throughout; a commissioned set replaces the five drawings, not the picker around them.
 
-**A 44dp tap target, five times, against the app's own 48dp rule.** `IconButton(modifier =
-Modifier.size(44.dp))` appears at five sites across five files — the strength set list, the recipe
-builder's ingredient list, the blood-pressure row, the home-layout row and `CalendarPanel`'s day
-cell — plus `MetricCard`'s named `TapTargetMin = 44.dp` for Home's cells. It is below the target `DECISIONS.md` → **Profile &
-Settings** states for the stepper ("the 48dp-touch / 40dp-visual button split"), and it really is
-44: `IconButton` applies `minimumInteractiveComponentSize()` *after* the caller's modifier, so an
-outer `.size(44.dp)` caps what the minimum could otherwise expand. Either raise the five to a 48dp
-touch box over a 40dp visual (the split the stepper already ships) or write the entry saying why
-rows are the exception. There were eleven more: the add-entry sheet's redesign deleted the three
-panels they lived in and rebuilt those rows at 48 — see `DECISIONS.md` → **The add-entry sheet** —
-the diary history's re-log button went with the whole `+`, the card's own body being the tap now,
-and the Your-stuff redesign collapsed the library's and the supplements' two-button pairs into one
-48dp overflow apiece (`DECISIONS.md` → **Your stuff**).
-
 **Health-derived rows ride cloud Auto Backup.** `backup_rules.xml` and `data_extraction_rules.xml`
 are exclude-only and exclude just the two photo directories, so `fitpulse.db` — every row synced
 from Health Connect and Google Health, plus the cycle table — goes to the cloud copy. Both files

@@ -31,7 +31,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
 /** The floor every tappable cell on Home holds — glasses, mood steps, flow steps, week cells, pills. */
-internal val TapTargetMin = 44.dp
+internal val TapTargetMin = 48.dp
 
 /** What a meta bar or button is given when the card is unpaired and its value sits to the left. */
 private val MetaWideWidth = 120.dp

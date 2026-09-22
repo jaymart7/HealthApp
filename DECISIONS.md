@@ -13,7 +13,7 @@ entry · Fasting · Export, backup & reminder plumbing · Launcher shortcuts & t
 sheet · Reminders & notifications · Widget & Wear · AI — the coach & the daily insight ·
 Training, strength & routines · Meal ideas & talk-to-log · Blood pressure, BMI & measurements ·
 Cycle · Progress photos & timelapse · Supplements · Steps, activity & charts · Adaptive layout ·
-Onboarding · Profile & Settings · Health Connect · Google Health · Localization.
+Tap targets · Onboarding · Profile & Settings · Health Connect · Google Health · Localization.
 
 ---
 
@@ -4472,8 +4472,11 @@ is `CLAUDE.md` → **Window width**. These are the calls behind it.
   `FoodScreenState.calendarOpen` opens in a sheet was named as the pane that would earn one, and it
   has: at expanded width `FoodContent` draws `CalendarPanel` beside the day rather than over it.
   Fixed width is where this departs from Progress's weights, and the reason is what is *in* the
-  pane — a month grid is seven fixed 44dp cells, so every weighted pixel goes into spreading them
-  apart, while Progress's card grid and its charts both use what they are given. The day itself is
+  pane — a month grid is seven columns whatever the width, so every weighted pixel goes into the
+  cells themselves, while Progress's card grid and its charts both use what they are given. (The
+  cells were fixed 44dp squares when this was written and now fill their column; that changes the
+  pixels from spreading the cells apart to swelling them, and 320dp is still the width where a day
+  reads as a day.) The day itself is
   unchanged at both widths: still one scrolling column, still one `FoodViewModel`, no route, nothing
   new saved. Two consequences that are not optional — `DiaryDateHeader` takes a **nullable**
   `onOpenCalendar` and drops the chevron with the tap target when the pane is drawn (a door onto
@@ -4483,6 +4486,34 @@ is `CLAUDE.md` → **Window width**. These are the calls behind it.
   a second card order to author and `Profile.homeLayout` stores one; `fullBleed` is unchanged,
   because a viewfinder beside a list is not a viewfinder. Single columns are **not** width-capped
   either — that is a visual-design decision and this work is layout only.
+
+### Tap targets
+
+The rule is 48dp, and the shape that meets it is `StepperButton`'s: a 48dp touch box over a
+smaller visual. A control that *looks* 48dp is not the goal — a 40dp circle inside a 48dp target
+is, because a finger is not a cursor and the thing it aims at is bigger than the thing it sees.
+
+- **`.size(44.dp)` on an `IconButton` is a cap, not a floor**, and that is how five of them ended
+  up under the rule. `IconButton` applies `minimumInteractiveComponentSize()` *after* the caller's
+  modifier, so an outer `.size(44.dp)` shrinks what the minimum would otherwise have expanded to
+  48. The fix is to delete the modifier, not to raise it: the default already is 48 over 40. Three
+  rows carried one — the strength set list, the recipe builder's ingredients, the blood-pressure
+  row — and all three now pass the modifier nothing.
+- **The home-layout drag handle is an `Icon`, not an `IconButton`**, so nothing expands it for
+  free and it carries its own box: `.size(48.dp).padding(12.dp)`, the same 24dp glyph it always
+  drew. A `pointerInput` on a bare `Icon` is exactly the case where the platform minimum does not
+  apply, which is why it was the one site that needed a number rather than a deletion.
+- **Home's `TapTargetMin` is 48dp and so is `SupplementCatchUpCard`'s — two constants, on
+  purpose.** They sit in `:feature:home` and `:feature:progress`, and a feature never imports
+  another feature's type. One shared dp does not earn an export from `:core:designsystem`; if a
+  third appears, that is when it does.
+- **`CalendarPanel`'s day cell is the exception, and the reason is arithmetic.** Seven columns of
+  48dp need 336dp and a 360dp phone offers 328dp inside its gutters. The cell cannot be 48dp on the
+  device most people hold, so it takes everything it can instead: the circle fills the column the
+  grid gave it — about 47dp in a sheet, more at any wider width — rather than sitting at a fixed
+  44dp inside it. The ripple stays round because the circle grew rather than the hit area
+  squaring off, and the selected day is 3dp wider than it was. On a 320dp phone the cell is 41dp
+  and there is nothing to be done about it short of a smaller month.
 
 ### Onboarding
 
