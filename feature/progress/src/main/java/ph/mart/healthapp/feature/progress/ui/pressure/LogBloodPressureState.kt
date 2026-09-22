@@ -22,9 +22,9 @@ internal class LogBloodPressureState(form: BloodPressureForm = BloodPressureForm
             restore = { saved ->
                 LogBloodPressureState(
                     form = BloodPressureForm(
-                        systolic = saved[0] as Int,
-                        diastolic = saved[1] as Int,
-                        pulseBpm = saved[2] as Int,
+                        systolic = saved[0],
+                        diastolic = saved[1],
+                        pulseBpm = saved[2],
                     ),
                 )
             },

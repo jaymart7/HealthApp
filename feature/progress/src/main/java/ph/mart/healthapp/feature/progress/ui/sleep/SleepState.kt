@@ -30,7 +30,7 @@ internal class SleepState(range: ChartRange = DEFAULT_CHART_RANGE) {
         fun Saver(): Saver<SleepState, Any> = listSaver(
             // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
             save = { listOf(it.range.name) },
-            restore = { saved -> SleepState(ChartRange.valueOf(saved[0] as String)) },
+            restore = { saved -> SleepState(ChartRange.valueOf(saved[0])) },
         )
     }
 }

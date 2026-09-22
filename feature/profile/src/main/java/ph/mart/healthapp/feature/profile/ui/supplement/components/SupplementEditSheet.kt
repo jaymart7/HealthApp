@@ -109,7 +109,7 @@ internal fun SupplementEditSheet(
                 placeholder = stringResource(R.string.profile_name),
                 error = lookupError,
                 imeAction = if (onLookUp != null) ImeAction.Search else ImeAction.Default,
-                onImeAction = if (canLookUp) ({ onLookUp?.invoke(name) }) else null,
+                onImeAction = if (canLookUp) ({ onLookUp(name) }) else null,
                 trailing = if (onLookUp == null) {
                     null
                 } else {

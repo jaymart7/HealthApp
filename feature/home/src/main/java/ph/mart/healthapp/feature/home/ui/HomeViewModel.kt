@@ -268,7 +268,7 @@ class HomeViewModel(
                         nutrition = active.nutrition,
                         burn = burnSeries(training.stepDays, training.recent),
                         targets = targets,
-                        addExerciseToBudget = state.profile?.addExerciseToBudget != false,
+                        addExerciseToBudget = state.profile.addExerciseToBudget,
                         todayEpochDay = today,
                     )
                 },

@@ -96,8 +96,8 @@ internal class VoiceLogScreenState(
             save = { listOf(it.text, it.mealType.name) },
             restore = { saved ->
                 VoiceLogScreenState(
-                    text = saved[0] as String,
-                    mealType = MealType.valueOf(saved[1] as String),
+                    text = saved[0],
+                    mealType = MealType.valueOf(saved[1]),
                 )
             },
         )

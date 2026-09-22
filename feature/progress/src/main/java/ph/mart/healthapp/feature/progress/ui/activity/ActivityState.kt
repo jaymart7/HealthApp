@@ -24,7 +24,7 @@ internal class ActivityState(range: ChartRange = DEFAULT_CHART_RANGE) {
         fun Saver(): Saver<ActivityState, Any> = listSaver(
             // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
             save = { listOf(it.range.name) },
-            restore = { saved -> ActivityState(ChartRange.valueOf(saved[0] as String)) },
+            restore = { saved -> ActivityState(ChartRange.valueOf(saved[0])) },
         )
     }
 }

@@ -24,7 +24,7 @@ internal class HeartState(range: ChartRange = DEFAULT_CHART_RANGE) {
         fun Saver(): Saver<HeartState, Any> = listSaver(
             // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
             save = { listOf(it.range.name) },
-            restore = { saved -> HeartState(ChartRange.valueOf(saved[0] as String)) },
+            restore = { saved -> HeartState(ChartRange.valueOf(saved[0])) },
         )
     }
 }

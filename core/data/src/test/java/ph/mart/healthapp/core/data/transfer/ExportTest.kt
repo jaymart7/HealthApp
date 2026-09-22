@@ -393,9 +393,10 @@ class ExportTest {
             .replace(Regex(",\\s*\"recapReminderOn\": (true|false)"), "")
         val payload = parseExport(v15).getOrThrow()
 
-        assertFalse(payload.profile!!.workoutRemindersOn)
-        assertFalse(payload.profile!!.recapReminderOn)
-        assertEquals(12_000, payload.profile!!.stepGoal)
+        val profile = payload.profile!!
+        assertFalse(profile.workoutRemindersOn)
+        assertFalse(profile.recapReminderOn)
+        assertEquals(12_000, profile.stepGoal)
     }
 
     @Test

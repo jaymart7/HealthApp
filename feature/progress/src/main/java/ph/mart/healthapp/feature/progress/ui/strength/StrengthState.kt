@@ -24,7 +24,7 @@ internal class StrengthState(range: ChartRange = DEFAULT_CHART_RANGE) {
         fun Saver(): Saver<StrengthState, Any> = listSaver(
             // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
             save = { listOf(it.range.name) },
-            restore = { saved -> StrengthState(ChartRange.valueOf(saved[0] as String)) },
+            restore = { saved -> StrengthState(ChartRange.valueOf(saved[0])) },
         )
     }
 }

@@ -13,7 +13,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
@@ -255,7 +255,10 @@ fun AppScaffold(
     // manages to land inside that frame.
     var pendingIdea by remember { mutableStateOf<MealIdea?>(null) }
 
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    // V2 for the L and XL width classes the V1 form cannot report. It changes nothing below,
+    // because the two questions asked of it are breakpoint comparisons against the actual
+    // width — a 1400dp window answered yes to both before it had a class of its own.
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
     val rail = windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
     val twoPane = windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
 

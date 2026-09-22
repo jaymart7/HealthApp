@@ -24,7 +24,7 @@ internal class FastingState(range: ChartRange = DEFAULT_CHART_RANGE) {
         fun Saver(): Saver<FastingState, Any> = listSaver(
             // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
             save = { listOf(it.range.name) },
-            restore = { saved -> FastingState(ChartRange.valueOf(saved[0] as String)) },
+            restore = { saved -> FastingState(ChartRange.valueOf(saved[0])) },
         )
     }
 }

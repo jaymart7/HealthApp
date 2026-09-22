@@ -20,7 +20,7 @@ internal class HomeScreenState(insightDismissed: Boolean = false) {
     companion object {
         fun Saver(): Saver<HomeScreenState, Any> = listSaver(
             save = { listOf(it.insightDismissed) },
-            restore = { saved -> HomeScreenState(insightDismissed = saved[0] as Boolean) },
+            restore = { saved -> HomeScreenState(insightDismissed = saved[0]) },
         )
     }
 }

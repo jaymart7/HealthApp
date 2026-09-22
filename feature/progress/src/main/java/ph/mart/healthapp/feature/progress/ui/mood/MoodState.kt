@@ -24,7 +24,7 @@ internal class MoodState(range: ChartRange = DEFAULT_CHART_RANGE) {
         fun Saver(): Saver<MoodState, Any> = listSaver(
             // Appended, never renumbered — the rule `ProgressScreenState`'s saver keeps.
             save = { listOf(it.range.name) },
-            restore = { saved -> MoodState(ChartRange.valueOf(saved[0] as String)) },
+            restore = { saved -> MoodState(ChartRange.valueOf(saved[0])) },
         )
     }
 }

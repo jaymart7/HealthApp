@@ -290,16 +290,17 @@ storing HC-derived data off-device. Settle it with the two items above rather th
 the answer is either that the user's own Auto Backup is in scope, or a `<cloud-backup>` exclusion
 for the database.
 
-**Five deprecations the compiler already reports**, none urgent, all cheap to lose track of:
-`rememberSwipeToDismissBoxState(confirmValueChange = …)` is deprecated *without replacement*
-(`DiarySection.kt:60`) and that callback is load-bearing — `DECISIONS.md` → **The diary & sharing
-a day** argues the delete happens *in* it; the replacement is dynamic anchors, so that entry needs
-rewriting, not just the call. `currentWindowAdaptiveInfo()` wants its V2 form for the L and XL
-width classes (`AppScaffold.kt:204`), which is the **Adaptive layout** section's business.
-`LocalLifecycleOwner` moved to `androidx.lifecycle.compose` (three sites).
-`View.announceForAccessibility` is deprecated (`OnboardingScreen.kt:102,159`). And thirteen "No
-cast needed" plus two unnecessary `!!` in `ExportTest` are one cleanup pass whenever those files
-are next open.
+**Two deprecations the compiler still reports**, neither urgent, both needing a decision rather
+than a call swap. `rememberSwipeToDismissBoxState(confirmValueChange = …)` is deprecated *without
+replacement* (`DiarySection.kt:60`) and that callback is load-bearing — `DECISIONS.md` → **The
+diary & sharing a day** argues the delete happens *in* it; the replacement is dynamic anchors, so
+that entry needs rewriting, not just the call. `View.announceForAccessibility`
+(`OnboardingScreen.kt:102,159`) has no Compose replacement either — `androidx.compose.ui` 1.12
+offers `liveRegion` and nothing else, so the two announcements become a live region or they become
+nothing, and which one is an accessibility call. The rest of that list is gone: the adaptive info
+reads `currentWindowAdaptiveInfoV2()`, `LocalLifecycleOwner` comes from `androidx.lifecycle.compose`
+at all three sites, and the redundant casts, the stray `!!`s and two unnecessary safe calls went
+with them.
 
 ## Composable structure & previews
 

@@ -185,7 +185,6 @@ internal fun DiarySheets(
                         ) == SnackbarResult.ActionPerformed
                         if (undone) onEvent(FoodEvent.OnRestoreEntry(entry))
                     }
-                    Unit
                 }
             },
         )

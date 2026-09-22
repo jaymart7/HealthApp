@@ -63,7 +63,7 @@ class FoodLibraryDataTest {
 
     /** The empty state must not flash before the first Room emission lands. */
     @Test
-    fun `an empty state is not "loaded"`() {
+    fun `an empty state is not 'loaded'`() {
         assertFalse(FoodLibraryUiState().loaded)
         assertTrue(FoodLibraryUiState(savedMeals = listOf(meal(item("Oats", 230)))).loaded)
         assertTrue(
