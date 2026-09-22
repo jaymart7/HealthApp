@@ -14,6 +14,10 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -23,6 +27,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.first
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
@@ -43,9 +48,13 @@ private val SwipeThreshold = 96.dp
  * Swipe an entry away to delete it. One implementation for both the meal sections and the exercise
  * section, which carried a byte-identical copy of this chrome each.
  *
- * Deleting from `confirmValueChange` is deliberate: the row leaves the list because the repository
- * flow re-emits without it, so the dismissal and the delete are the same event rather than an
- * animation waiting on a callback. The screen behind this raises an undo snackbar.
+ * The delete is read off the state rather than handed to a callback: the effect waits for
+ * `currentValue` to reach `EndToStart` — the moment the deprecated `confirmValueChange` hook used
+ * to be consulted — and the row then leaves the list because the repository flow re-emits without
+ * it. The dismissal and the delete stay the same event rather than an animation waiting on a
+ * callback. That hook existed to *veto* a change and this never vetoed one, which is why its
+ * replacement (an anchor set that omits the disallowed anchor) has nothing to say about a row
+ * that always dismisses. The screen behind this raises an undo snackbar.
  *
  * The reveal is `errorContainer`/`onErrorContainer` rather than `error`/`onError` — this is the one
  * place on the diary the error role appears at all, and a full-strength `error` field sliding out
@@ -57,13 +66,12 @@ private val SwipeThreshold = 96.dp
 internal fun SwipeToDeleteRow(onDelete: () -> Unit, content: @Composable () -> Unit) {
     val deleteLabel = stringResource(R.string.food_delete)
     val threshold = with(LocalDensity.current) { SwipeThreshold.toPx() }
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onDelete()
-            true
-        },
-        positionalThreshold = { threshold },
-    )
+    val dismissState = rememberSwipeToDismissBoxState(positionalThreshold = { threshold })
+    val currentOnDelete by rememberUpdatedState(onDelete)
+    LaunchedEffect(dismissState) {
+        snapshotFlow { dismissState.currentValue }.first { it == SwipeToDismissBoxValue.EndToStart }
+        currentOnDelete()
+    }
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = false,

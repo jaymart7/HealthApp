@@ -290,17 +290,14 @@ storing HC-derived data off-device. Settle it with the two items above rather th
 the answer is either that the user's own Auto Backup is in scope, or a `<cloud-backup>` exclusion
 for the database.
 
-**Two deprecations the compiler still reports**, neither urgent, both needing a decision rather
-than a call swap. `rememberSwipeToDismissBoxState(confirmValueChange = …)` is deprecated *without
-replacement* (`DiarySection.kt:60`) and that callback is load-bearing — `DECISIONS.md` → **The
-diary & sharing a day** argues the delete happens *in* it; the replacement is dynamic anchors, so
-that entry needs rewriting, not just the call. `View.announceForAccessibility`
-(`OnboardingScreen.kt:102,159`) has no Compose replacement either — `androidx.compose.ui` 1.12
-offers `liveRegion` and nothing else, so the two announcements become a live region or they become
-nothing, and which one is an accessibility call. The rest of that list is gone: the adaptive info
-reads `currentWindowAdaptiveInfoV2()`, `LocalLifecycleOwner` comes from `androidx.lifecycle.compose`
-at all three sites, and the redundant casts, the stray `!!`s and two unnecessary safe calls went
-with them.
+**One deprecation the compiler still reports**, not urgent, needing a decision rather than a call
+swap. `View.announceForAccessibility` (`OnboardingScreen.kt:102,159`) has no Compose replacement —
+`androidx.compose.ui` 1.12 offers `liveRegion` and nothing else, so the two announcements become a
+hidden live-region node or they become nothing, and which one is an accessibility call rather than
+a cleanup. The rest of that list is gone: the adaptive info reads `currentWindowAdaptiveInfoV2()`,
+`LocalLifecycleOwner` comes from `androidx.lifecycle.compose` at all three sites, the swipe-to-delete
+row reads its dismissal off `currentValue` instead of `confirmValueChange`, and the redundant casts,
+the stray `!!`s and two unnecessary safe calls went with them.
 
 ## Composable structure & previews
 
