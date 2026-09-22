@@ -150,6 +150,8 @@
     <!-- Data -->
     <string name="profile_export">Export data (JSON)</string>
     <string name="profile_export_sub">Photos are not included in exports</string>
+    <string name="profile_export_csv">Export as CSV</string>
+    <string name="profile_export_csv_sub">A zip of spreadsheet files. For reading, not for restoring.</string>
     <string name="profile_import">Import data (JSON)</string>
     <string name="profile_import_sub">Replaces your current profile and food entries</string>
     <string name="profile_export_saved">Export saved.</string>

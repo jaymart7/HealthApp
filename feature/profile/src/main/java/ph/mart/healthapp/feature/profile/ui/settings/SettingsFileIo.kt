@@ -8,8 +8,8 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 
 /**
- * The screen owns the picker Uri and the file IO — the ViewModel only ever sees a JSON string.
- * These three are what that ownership costs, kept out of SettingsScreen.kt so the composable file
+ * The screen owns the picker Uri and the file IO — the ViewModel only ever sees the bytes.
+ * These four are what that ownership costs, kept out of SettingsScreen.kt so the composable file
  * holds composables.
  */
 internal fun Context.canPostNotifications(): Boolean =
@@ -19,6 +19,12 @@ internal fun Context.canPostNotifications(): Boolean =
 
 internal fun Context.writeText(uri: Uri, text: String): Result<Unit> = runCatching {
     contentResolver.openOutputStream(uri)?.use { it.write(text.toByteArray()) }
+        ?: error("No output stream")
+}
+
+/** [writeText]'s twin for the CSV zip, which is bytes rather than a string. */
+internal fun Context.writeBytes(uri: Uri, bytes: ByteArray): Result<Unit> = runCatching {
+    contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
         ?: error("No output stream")
 }
 

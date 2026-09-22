@@ -269,12 +269,70 @@ internal data class ExportBloodPressureReading(
     val pulseBpm: Int = 0,
 )
 
-private val json = Json {
+internal val json = Json {
     prettyPrint = true
     ignoreUnknownKeys = true
     encodeDefaults = true
 }
 
+/**
+ * The thirteen domains flattened into the wire types, one step short of a file.
+ *
+ * Split out of [buildExportJson] so the CSV zip can render the *same* DTOs — see
+ * [buildExportCsvZip]. That is what stops the two formats drifting: a field added at the next
+ * schema version is one edit here and it appears in both.
+ */
+internal fun buildExport(data: ImportData): FitPulseExport = FitPulseExport(
+    profile = data.profile?.toExport(),
+    foodEntries = data.foodEntries.map { it.toExport() },
+    weightEntries = data.weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note, it.minuteOfDay) },
+    measurements = data.measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.value, it.minuteOfDay) },
+    waterDays = data.waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
+    exercises = data.exercises.map { entry ->
+        ExportExercise(
+            entry.dateEpochDay, entry.type.name, entry.name, entry.minutes, entry.burnedKcal, entry.steps,
+            sets = entry.sets.map { ExportStrengthSet(it.exerciseName, it.reps, it.weightKg) },
+        )
+    },
+    moodDays = data.moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
+    dayNotes = data.dayNotes.map { ExportDayNote(it.dateEpochDay, it.text) },
+    fastSessions = data.fastSessions.mapNotNull { session ->
+        session.endMillis?.let { ExportFastSession(session.startMillis, it, session.goalHours) }
+    },
+    supplements = data.supplements.map {
+        ExportSupplement(
+            id = it.id,
+            name = it.name,
+            dose = it.dose,
+            timesPerDay = it.timesPerDay,
+            deleted = it.deleted,
+            createdAt = it.createdAt,
+            fiberG = it.nutrients.fiberG,
+            sugarG = it.nutrients.sugarG,
+            sodiumMg = it.nutrients.sodiumMg,
+            vitaminDUg = it.nutrients.vitaminDUg,
+            calciumMg = it.nutrients.calciumMg,
+            ironUg = it.nutrients.ironUg,
+            potassiumMg = it.nutrients.potassiumMg,
+            panel = it.panel,
+            days = it.days,
+        )
+    },
+    supplementDays = data.supplementDays.map {
+        ExportSupplementDay(it.dateEpochDay, it.supplementId, it.taken, it.dueTimes)
+    },
+    bloodPressure = data.bloodPressure.map {
+        ExportBloodPressureReading(it.takenAtMillis, it.systolic, it.diastolic, it.pulseBpm)
+    },
+    cycleDays = data.cycleDays.map {
+        ExportCycleDay(it.dateEpochDay, it.flow, encodeCycleSymptoms(it.symptoms), it.minuteOfDay)
+    },
+)
+
+fun buildExportJson(data: ImportData): String = json.encodeToString(buildExport(data))
+
+/** The argument-at-a-time form, kept because `ExportTest` is written in it — every fixture from
+ * v1 onwards names the domains it is exercising. It moves no byte of the file format. */
 fun buildExportJson(
     profile: Profile?,
     foodEntries: List<FoodEntry>,
@@ -289,52 +347,10 @@ fun buildExportJson(
     bloodPressure: List<BloodPressureReading>,
     cycleDays: List<CycleDay>,
     dayNotes: List<DayNote>,
-): String = json.encodeToString(
-    FitPulseExport(
-        profile = profile?.toExport(),
-        foodEntries = foodEntries.map { it.toExport() },
-        weightEntries = weightEntries.map { ExportWeightEntry(it.dateEpochDay, it.weightKg, it.note, it.minuteOfDay) },
-        measurements = measurements.map { ExportMeasurement(it.part.name, it.dateEpochDay, it.value, it.minuteOfDay) },
-        waterDays = waterDays.map { ExportWaterDay(it.dateEpochDay, it.glasses) },
-        exercises = exercises.map { entry ->
-            ExportExercise(
-                entry.dateEpochDay, entry.type.name, entry.name, entry.minutes, entry.burnedKcal, entry.steps,
-                sets = entry.sets.map { ExportStrengthSet(it.exerciseName, it.reps, it.weightKg) },
-            )
-        },
-        moodDays = moodDays.map { ExportMoodDay(it.dateEpochDay, it.mood, it.energy) },
-        dayNotes = dayNotes.map { ExportDayNote(it.dateEpochDay, it.text) },
-        fastSessions = fastSessions.mapNotNull { session ->
-            session.endMillis?.let { ExportFastSession(session.startMillis, it, session.goalHours) }
-        },
-        supplements = supplements.map {
-            ExportSupplement(
-                id = it.id,
-                name = it.name,
-                dose = it.dose,
-                timesPerDay = it.timesPerDay,
-                deleted = it.deleted,
-                createdAt = it.createdAt,
-                fiberG = it.nutrients.fiberG,
-                sugarG = it.nutrients.sugarG,
-                sodiumMg = it.nutrients.sodiumMg,
-                vitaminDUg = it.nutrients.vitaminDUg,
-                calciumMg = it.nutrients.calciumMg,
-                ironUg = it.nutrients.ironUg,
-                potassiumMg = it.nutrients.potassiumMg,
-                panel = it.panel,
-                days = it.days,
-            )
-        },
-        supplementDays = supplementDays.map {
-            ExportSupplementDay(it.dateEpochDay, it.supplementId, it.taken, it.dueTimes)
-        },
-        bloodPressure = bloodPressure.map {
-            ExportBloodPressureReading(it.takenAtMillis, it.systolic, it.diastolic, it.pulseBpm)
-        },
-        cycleDays = cycleDays.map {
-            ExportCycleDay(it.dateEpochDay, it.flow, encodeCycleSymptoms(it.symptoms), it.minuteOfDay)
-        },
+): String = buildExportJson(
+    ImportData(
+        profile, foodEntries, weightEntries, measurements, waterDays, exercises, moodDays,
+        fastSessions, supplements, supplementDays, bloodPressure, cycleDays, dayNotes,
     ),
 )
 

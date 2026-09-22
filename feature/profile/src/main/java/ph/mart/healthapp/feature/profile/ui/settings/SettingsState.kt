@@ -70,8 +70,14 @@ internal fun Profile.withReminder(kind: ReminderKind, enabled: Boolean): Profile
 }
 
 /** File IO stays in the composable, which owns the picker `Uri`; the ViewModel only ever produces
- * or consumes a JSON string. */
+ * or consumes the bytes. */
 sealed interface SettingsSideEffect {
     data class ExportReady(val json: String) : SettingsSideEffect
+
+    /** The CSV zip. Bytes rather than a string because it is a zip, and a side effect rather than
+     * state because nothing draws it — it goes straight to the picker's `Uri`. Not a `data class`:
+     * an array's generated `equals` compares identity, which would be a lie on this one. */
+    class ExportCsvReady(val zip: ByteArray) : SettingsSideEffect
+
     data class ImportFinished(val error: String?) : SettingsSideEffect
 }

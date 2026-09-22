@@ -2003,11 +2003,39 @@ rather than needing a counter patched.
   boundary, and every DTO stays `internal`. The move changed no byte of the file format — the
   version gate, the defaults and the v1-onwards fixtures moved verbatim into `:core:data`'s own
   `ExportTest`, which is what proves it.
-- **`exportJson()` is the one list of reads, and it is still not the `exportAll` that was ruled
-  out.** Profile's export button and the worker want the identical twelve arguments, and two
-  copies of that list is two places to edit at the next schema version. It adds no repository
-  method and no transaction — reading stays a set of independent `all*()` calls, each on its own
-  domain's repository, which is the property that made a twin unnecessary in the first place.
+- **`collectExport()` is the one list of reads, and it is still not the `exportAll` that was ruled
+  out.** Profile's two export buttons and the worker want the identical eleven repositories, and
+  three copies of that list is three places to edit at the next schema version. It adds no
+  repository method and no transaction — reading stays a set of independent `all*()` calls, each on
+  its own domain's repository, which is the property that made a twin unnecessary in the first
+  place. It returns an `ImportData`, which was already the whole dataset flat — named for the half
+  that came first rather than for the only thing it does.
+- **The CSV export is one-way, and it renders the *same* DTOs the JSON does.** A nested JSON
+  document is the right shape for the importer that reads it back and the wrong shape for someone
+  who wants to chart a year of weigh-ins, so `Export as CSV` writes one zip from one SAF pick,
+  holding one file per exported table. Two calls it is worth having argued:
+  - **No CSV importer.** A flat table cannot hold `ExportExercise.sets`, and a second
+    all-or-nothing write path is a second transaction to get right for a format nobody restores
+    from. The row's sublabel says so rather than leaving it to be discovered. Auto Backup,
+    `BackupWorker` and the picker-fed import are all untouched, and `EXPORT_SCHEMA_VERSION` does
+    not move — this adds a renderer, not a format.
+  - **Driven by the serializers, not by a column list.** `Csv.kt` walks `buildExport()`'s own
+    `Export*` types through `KSerializer.descriptor`, so a field added at schema 23 appears in both
+    files from one edit and the two can never disagree. The header comes from the descriptor rather
+    than from the first row, which is what makes an empty table one readable line instead of zero
+    bytes. That split is why `buildExportJson` grew an `ImportData` overload: the argument-at-a-time
+    form stayed as a one-line adapter, so `ExportTest`'s v1-onwards fixtures prove the file format
+    did not shift under the refactor.
+  - Three conversions are name-driven and they are the point of the format: `dateEpochDay` becomes
+    an ISO `date`, a `*Millis` becomes a date and a clock, `minuteOfDay` becomes `time`. A column
+    reading `20714` is not a date to anything that opens a CSV. `SimpleDateFormat` over
+    `epochDayStartMillis`, not `java.time` — minSdk is 24 with no desugaring, the constraint
+    `EpochDay.kt` already carries. An absent value writes an **empty** cell, never `0`, which is the
+    diary's em-dash rule applied to a file: a weigh-in with no recorded time must not claim midnight.
+  - `strength_sets.csv` is the fourteenth file for the thirteenth domain, and the one place the
+    generic writer is bypassed: a list does not fit a cell, so the sets leave `exercises.csv` and
+    join back on `workout`, the row's index in it. Both files are written from the same list in the
+    same order, which is what makes that index a key rather than a hope.
 - **Backups are written to internal storage, three files deep, and are never restored
   automatically.** SAF needs a picker, a picker needs a user, and a user is the thing a background
   job does not have; `filesDir` is also what Android's own backup covers, so one write serves both

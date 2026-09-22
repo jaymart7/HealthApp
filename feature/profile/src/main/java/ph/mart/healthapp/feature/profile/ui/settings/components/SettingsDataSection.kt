@@ -25,6 +25,9 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.NavChevron
 /** Export and import are the only destructive-ish controls in Settings, so each says exactly what
  * it does in its sublabel. [message] carries an import failure, or a confirmation.
  *
+ * [onExportCsv] writes the same data as a zip of spreadsheet files, and its sublabel earns its
+ * line: the whole difference between the two export rows is that nothing reads this one back.
+ *
  * [backups] is what the weekly job has on disk. The rows are absent rather than empty when there
  * is nothing yet — the job has simply not run, which is not a state worth a line of copy — and
  * they only ever *point* the existing import at a file: restoring is manual, because a job that
@@ -36,6 +39,7 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.NavChevron
 @Composable
 internal fun SettingsDataSection(
     onExport: () -> Unit,
+    onExportCsv: () -> Unit,
     onImport: () -> Unit,
     modifier: Modifier = Modifier,
     backups: List<LocalBackup> = emptyList(),
@@ -50,6 +54,13 @@ internal fun SettingsDataSection(
                 sublabel = stringResource(R.string.profile_export_sub),
                 trailing = { NavChevron() },
                 modifier = Modifier.clickable(onClick = onExport),
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            AppListRow(
+                label = stringResource(R.string.profile_export_csv),
+                sublabel = stringResource(R.string.profile_export_csv_sub),
+                trailing = { NavChevron() },
+                modifier = Modifier.clickable(onClick = onExportCsv),
             )
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             AppListRow(
@@ -95,6 +106,7 @@ private fun SettingsDataSectionPreview() {
         Surface(color = MaterialTheme.colorScheme.surface) {
             SettingsDataSection(
                 onExport = {},
+                onExportCsv = {},
                 onImport = {},
                 backups = listOf(
                     LocalBackup("fitpulse-1.json", System.currentTimeMillis() - 2 * 86_400_000L),

@@ -574,7 +574,10 @@ panes at ≥840dp.
   foods rows draw their macros in the fixed P/C/F colours.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a
   week", or a prompt and seven dashed cells when nothing is set yet.
-- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 21, import is all-or-nothing.
+- Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 22, import is all-or-nothing.
+- Export as CSV — the same thirteen tables as a zip of spreadsheet files from one picker, dates
+  rendered ISO and times as a clock. A strength session's sets get a file of their own, joined on
+  the workout's row. One-way: nothing reads it back, and the row says so.
 - Automatic local backup — the same JSON, written weekly to app-private storage, newest three
   kept. Listed under Data with a confirm-first restore that runs the ordinary import. Android
   Auto Backup covers the database and those files; progress photos are excluded from the cloud

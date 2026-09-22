@@ -51,9 +51,10 @@ import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsReminder
 import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsUnitsSection
 import ph.mart.healthapp.feature.profile.ui.shared.components.SectionHeader
 
-// Stays in Kotlin, with the "application/json" MIME types below: a filename and a wire type,
-// not copy.
+// Stays in Kotlin, with the "application/json" and "application/zip" MIME types below: filenames
+// and wire types, not copy.
 private const val EXPORT_FILE_NAME = "fitpulse-export.json"
+private const val EXPORT_CSV_FILE_NAME = "fitpulse-export.zip"
 
 /**
  * Everything about the app rather than about the person: how it renders, when it interrupts, what
@@ -74,8 +75,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // The screen owns the picker Uri and the file IO; the ViewModel only ever sees a JSON string.
+    // The screen owns the picker Uri and the file IO; the ViewModel only ever sees the bytes.
     var pendingExport by remember { mutableStateOf<String?>(null) }
+    var pendingCsvExport by remember { mutableStateOf<ByteArray?>(null) }
 
     // A restore replaces everything and is one tap from a settings list, unlike the import, where
     // picking the file in SAF is itself the confirmation.
@@ -91,6 +93,25 @@ fun SettingsScreen(
         if (uri == null || json == null) return@rememberLauncherForActivityResult
         scope.launch {
             withContext(Dispatchers.IO) { context.writeText(uri, json) }
+                .onSuccess {
+                    message = context.getString(R.string.profile_export_saved)
+                    messageIsError = false
+                }
+                .onFailure {
+                    message = context.getString(R.string.profile_export_failed)
+                    messageIsError = true
+                }
+        }
+    }
+
+    val exportCsvLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        val zip = pendingCsvExport
+        pendingCsvExport = null
+        if (uri == null || zip == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            withContext(Dispatchers.IO) { context.writeBytes(uri, zip) }
                 .onSuccess {
                     message = context.getString(R.string.profile_export_saved)
                     messageIsError = false
@@ -121,6 +142,10 @@ fun SettingsScreen(
             is SettingsSideEffect.ExportReady -> {
                 pendingExport = effect.json
                 exportLauncher.launch(EXPORT_FILE_NAME)
+            }
+            is SettingsSideEffect.ExportCsvReady -> {
+                pendingCsvExport = effect.zip
+                exportCsvLauncher.launch(EXPORT_CSV_FILE_NAME)
             }
             is SettingsSideEffect.ImportFinished -> {
                 message = effect.error ?: context.getString(R.string.profile_import_done)
@@ -154,6 +179,7 @@ fun SettingsScreen(
         onSelectMascot = viewModel::setMascot,
         onSelectMascotPalette = viewModel::setMascotPalette,
         onExport = viewModel::buildExport,
+        onExportCsv = viewModel::buildCsvExport,
         onImport = { importLauncher.launch(arrayOf("application/json")) },
         onOpenHomeLayout = onOpenHomeLayout,
         onOpenReminders = onOpenReminders,
@@ -173,6 +199,7 @@ private fun SettingsContent(
     onSelectMascot: (MascotCharacter) -> Unit,
     onSelectMascotPalette: (MascotPalette) -> Unit,
     onExport: () -> Unit,
+    onExportCsv: () -> Unit,
     onImport: () -> Unit,
     onOpenHomeLayout: () -> Unit,
     onOpenReminders: () -> Unit,
@@ -213,6 +240,7 @@ private fun SettingsContent(
             SectionHeader(label = stringResource(R.string.profile_section_data))
             SettingsDataSection(
                 onExport = onExport,
+                onExportCsv = onExportCsv,
                 onImport = onImport,
                 backups = backups,
                 onRestore = onRestore,
@@ -249,6 +277,7 @@ private fun SettingsScreenPreview() {
             onSelectMascot = {},
             onSelectMascotPalette = {},
             onExport = {},
+            onExportCsv = {},
             onImport = {},
             onOpenHomeLayout = {},
             onOpenReminders = {},

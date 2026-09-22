@@ -19,6 +19,10 @@ import ph.mart.healthapp.core.data.water.WaterDay
  * [parseExport] owns the on-disk DTOs and the version gate, and hands the validated domain types
  * over here.
  *
+ * It travels the other way too: [collectExport] reads the thirteen domains into one of these, and
+ * both file formats render it. So this is "the whole dataset, flat", named for the half that came
+ * first rather than for the only thing it does.
+ *
  * It lives in `:core:data` rather than in `:feature:profile` because the write is a transaction
  * across ten domains, and a `:feature:*` module never touches `AppDatabase`.
  */

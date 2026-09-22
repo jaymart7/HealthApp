@@ -17,6 +17,7 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.transfer.DataTransferRepository
 import ph.mart.healthapp.core.data.transfer.LocalBackups
+import ph.mart.healthapp.core.data.transfer.exportCsvZip
 import ph.mart.healthapp.core.data.transfer.exportJson
 import ph.mart.healthapp.core.data.transfer.parseExport
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -91,10 +92,22 @@ class SettingsViewModel(
      * makes exactly the same ones — two copies of that list is two places to edit at the next
      * schema version. */
     fun buildExport() = intent {
-        postSideEffect(SettingsSideEffect.ExportReady(collectExport()))
+        postSideEffect(SettingsSideEffect.ExportReady(collectJson()))
     }
 
-    private suspend fun collectExport(): String = exportJson(
+    /** The same reads, rendered as a zip of CSVs instead. One-way — nothing imports it — which is
+     * why it shares the read list and none of the parse half. */
+    fun buildCsvExport() = intent {
+        postSideEffect(SettingsSideEffect.ExportCsvReady(collectCsvZip()))
+    }
+
+    private suspend fun collectJson(): String = exportJson(
+        profileRepository, foodRepository, progressRepository, waterRepository, exerciseRepository,
+        moodRepository, cycleRepository, fastingRepository, supplementRepository,
+        bloodPressureRepository, noteRepository,
+    )
+
+    private suspend fun collectCsvZip(): ByteArray = exportCsvZip(
         profileRepository, foodRepository, progressRepository, waterRepository, exerciseRepository,
         moodRepository, cycleRepository, fastingRepository, supplementRepository,
         bloodPressureRepository, noteRepository,
