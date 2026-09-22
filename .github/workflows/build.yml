@@ -1,0 +1,40 @@
+# Builds the app and runs the JVM tests. No emulator: an instrumented run in CI is a large,
+# slow, flaky dependency for a solo project, and the JVM tests are where the derivation logic
+# lives.
+#
+# Nothing here supplies `fdcApiKey` or the signing properties. Both live in an untracked
+# `~/.gradle/gradle.properties` outside the repo, so a fresh checkout simply has neither — which
+# is the point: the build must pass without them. Keep it that way rather than adding a secret.
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Caches the Gradle user home and validates the wrapper's checksum.
+      - uses: gradle/actions/setup-gradle@v4
+
+      # `gradle.properties` caps the daemon at 2048m, which is enough locally and tight here for
+      # fourteen modules of Compose + KSP + Room.
+      - run: ./gradlew assembleDebug testDebugUnitTest -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8"
+
+      # A red run otherwise leaves only a stack trace in the log.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/'
+          if-no-files-found: ignore

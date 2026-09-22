@@ -701,6 +701,6 @@ each one is argued in `CLAUDE.md`.
 ## Open backlog
 
 `CLAUDE.md` → **Backlog** holds the outstanding work (FDC key proxy, Google Health verification
-and the unpinned response fields, the final mascot illustration, the missing CI workflow and
-instrumented tests). Inline `ponytail:` comments
+and the unpinned response fields, the final mascot illustration and the missing instrumented
+tests; CI itself now runs in `.github/workflows/build.yml`). Inline `ponytail:` comments
 mark known ceilings and their upgrade paths.
