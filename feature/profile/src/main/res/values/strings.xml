@@ -301,6 +301,7 @@
     <string name="profile_health_disconnected">Disconnected.</string>
     <string name="profile_health_deleted_imported">" Imported data was deleted from this device."</string>
     <string name="profile_health_deleted_sent">" What FitPulse sent was deleted from Google Health."</string>
+    <string name="profile_health_delete_sent_failed">" What FitPulse sent could not be deleted from Google Health — you can remove it from your Google Health account."</string>
     <string name="profile_health_up_to_date">Up to date.</string>
     <string name="profile_health_imported">Imported %1$d items.</string>
     <string name="profile_health_not_now">Not now</string>

@@ -63,7 +63,10 @@ private fun HealthMessage.resolve(): String = when (this) {
     is HealthMessage.Disconnected -> buildString {
         append(stringResource(R.string.profile_health_disconnected))
         if (deletedImported) append(stringResource(R.string.profile_health_deleted_imported))
-        if (deletedSent) append(stringResource(R.string.profile_health_deleted_sent))
+        // The claim and its retraction are never both made: `deletedSent` is what was asked for,
+        // `sentDeleteFailed` what came of it.
+        if (deletedSent && !sentDeleteFailed) append(stringResource(R.string.profile_health_deleted_sent))
+        if (sentDeleteFailed) append(stringResource(R.string.profile_health_delete_sent_failed))
     }
 }
 

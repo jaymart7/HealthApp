@@ -21,7 +21,14 @@ import ph.mart.healthapp.feature.profile.R
 sealed interface HealthMessage {
     data class Text(@StringRes val id: Int) : HealthMessage
     data class Imported(val items: Int) : HealthMessage
-    data class Disconnected(val deletedImported: Boolean, val deletedSent: Boolean) : HealthMessage
+    /** [sentDeleteFailed] is the remote half reporting it could not do what was ticked — the
+     * disconnect still happened, so this is a qualification on the sentence rather than a second
+     * one. */
+    data class Disconnected(
+        val deletedImported: Boolean,
+        val deletedSent: Boolean,
+        val sentDeleteFailed: Boolean = false,
+    ) : HealthMessage
 }
 
 private val UNAVAILABLE = HealthMessage.Text(R.string.profile_health_unavailable)
@@ -193,14 +200,17 @@ class HealthConnectionViewModel(
 
     fun disconnect(deleteImported: Boolean, deleteSent: Boolean) = intent {
         reduce { state.copy(busy = true, confirmingDisconnect = false, message = null) }
-        repository.disconnect(deleteImported = deleteImported, deleteSent = deleteSent)
+        val sentDeleted = repository.disconnect(deleteImported = deleteImported, deleteSent = deleteSent)
+        val sentDeleteFailed = deleteSent && !sentDeleted
         val connection = repository.connection()
         reduce {
             state.copy(
                 connection = connection,
                 busy = false,
-                message = HealthMessage.Disconnected(deleteImported, deleteSent),
-                messageIsError = false,
+                message = HealthMessage.Disconnected(deleteImported, deleteSent, sentDeleteFailed),
+                // The disconnect itself worked; what failed is a deletion the user asked for, and
+                // that is the half worth colouring.
+                messageIsError = sentDeleteFailed,
             )
         }
     }

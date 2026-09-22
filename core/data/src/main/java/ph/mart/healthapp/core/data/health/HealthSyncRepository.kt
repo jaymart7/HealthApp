@@ -95,6 +95,11 @@ interface HealthSyncRepository {
      * [deleteSent] removes the meals and water it sent out. Both are the user's call, and both
      * default to on in the UI: an integration that leaves data behind on either side after being
      * switched off is exactly what the security assessment looks for.
+     *
+     * Returns whether the *remote* half did what it was asked — false when [deleteSent] was on and
+     * a request for it failed. The local half has no answer to give: it is this app's own database
+     * and the disconnect completes regardless. The screen has to be told, because rows left behind
+     * on Google's side after the user ticked the box is the one outcome it must not report as done.
      */
-    suspend fun disconnect(deleteImported: Boolean, deleteSent: Boolean)
+    suspend fun disconnect(deleteImported: Boolean, deleteSent: Boolean): Boolean
 }

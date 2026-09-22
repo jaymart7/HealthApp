@@ -4930,6 +4930,22 @@ Connect.
 - **Two ViewModels, not one shared.** `:feature:onboarding` and `:feature:profile` each own their
   slice of `HealthSyncRepository`; `:feature:*` modules never import each other, and only the
   disclosure UI is genuinely common.
+- **The 401 retry belongs to the leg, not to whichever call was written with it.** `post()` in
+  `HealthSyncRepositoryImpl` is the single POST path and the only place a write refreshes
+  `cachedToken`. It exists because `batchDelete` was originally written beside `create()` rather
+  than through it and so had no retry at all: `cachedToken` lives as long as the process and a
+  Google access token does not, so *any* call can be the one that meets an expired one. On
+  `pushDeletions` that cost a sync cycle. On `disconnect` it meant the batch delete 401'd, the
+  response was dropped, and `links.clear()` then threw away the only handle to rows the user had
+  just asked us to remove. A new POST call site goes through `post()`.
+- **`disconnect()` returns whether the remote half actually happened.** The local half is this
+  app's own database and always succeeds, so it has no answer to give; the remote half does. The
+  links are still cleared and the token still revoked on a failure — the disconnect is what was
+  asked for, and a link with nothing left to authorise is not a retry handle — so the failure is
+  *reported* rather than stored: `messageIsError`, and a sentence naming the account the rows are
+  still in. **Rows left behind on Google's side after the user ticked the box is the one outcome
+  the screen must not report as done**, which is exactly what the CASA assessment looks for and
+  what the code did before.
 
 ### Localization
 

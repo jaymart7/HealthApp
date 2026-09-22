@@ -601,7 +601,7 @@ internal class HealthSyncRepositoryImpl(
         var result = Push.Ok
         orphans.chunked(BATCH_DELETE_SIZE).forEach { chunk ->
             val names = chunk.map { it.remoteName }
-            when (healthPost(batchDeleteUrl(NUTRITION_LOG), token, batchDeleteBody(names))) {
+            when (post(token, batchDeleteUrl(NUTRITION_LOG), batchDeleteBody(names))) {
                 is HealthResponse.Ok -> links.delete(names)
                 HealthResponse.AccountNotLinked -> return Push.NotLinked
                 else -> result = Push.Failed
@@ -708,14 +708,17 @@ internal class HealthSyncRepositoryImpl(
     }
 
     /**
-     * One `dataPoints.create`, with the same single 401 retry the reads get.
+     * Every POST the cloud leg makes, with the single 401 retry the reads get — [cachedToken]
+     * lives as long as the process and a Google access token does not, so *any* call can be the
+     * one that meets an expired one.
      *
-     * It hands back the response rather than a name-or-null: the callers need to tell a body the
-     * API refused from an account it refused from a round trip that never landed, and collapsing
-     * all three into `null` is what made every failure cost two requests instead of one.
+     * It is the one place a write refreshes the token, which is what makes the retry a property of
+     * the leg rather than of whichever call happened to be written with it. `batchDelete` had none
+     * for exactly that reason: it was written beside [create] rather than through it, so a stale
+     * token failed the deletion outright — on `disconnect`, against rows the user had just asked us
+     * to remove.
      */
-    private suspend fun create(token: String, dataType: String, body: String): HealthResponse {
-        val url = createDataPointUrl(dataType)
+    private suspend fun post(token: String, url: String, body: String): HealthResponse {
         val first = healthPost(url, token, body)
         if (first != HealthResponse.Unauthorized) return first
         val refreshed = (auth.authorize() as? HealthAuthResult.Granted)?.accessToken
@@ -723,6 +726,16 @@ internal class HealthSyncRepositoryImpl(
         cachedToken = refreshed
         return healthPost(url, refreshed, body)
     }
+
+    /**
+     * One `dataPoints.create`.
+     *
+     * It hands back the response rather than a name-or-null: the callers need to tell a body the
+     * API refused from an account it refused from a round trip that never landed, and collapsing
+     * all three into `null` is what made every failure cost two requests instead of one.
+     */
+    private suspend fun create(token: String, dataType: String, body: String): HealthResponse =
+        post(token, createDataPointUrl(dataType), body)
 
     /**
      * The paging loop every data type shares: window from the cursor, page until the API stops,
@@ -812,15 +825,23 @@ internal class HealthSyncRepositoryImpl(
         return latest - SYNC_OVERLAP_MILLIS
     }
 
-    override suspend fun disconnect(deleteImported: Boolean, deleteSent: Boolean) {
+    override suspend fun disconnect(deleteImported: Boolean, deleteSent: Boolean): Boolean {
+        // Whether the remote rows actually went. The local half below always succeeds — it is this
+        // app's own database — so this is the only leg with an answer worth returning, and the
+        // screen says "Disconnected" either way without it.
+        var sentDeleted = true
         if (deleteSent) {
             val token = cachedToken ?: (auth.authorize() as? HealthAuthResult.Granted)?.accessToken
-            if (token != null) {
+            if (token == null) {
+                sentDeleted = false
+            } else {
                 links.links(pushed = true)
                     .groupBy { it.dataType }
                     .forEach { (dataType, group) ->
                         group.chunked(BATCH_DELETE_SIZE).forEach { chunk ->
-                            healthPost(batchDeleteUrl(dataType), token, batchDeleteBody(chunk.map { it.remoteName }))
+                            val response =
+                                post(token, batchDeleteUrl(dataType), batchDeleteBody(chunk.map { it.remoteName }))
+                            if (response !is HealthResponse.Ok) sentDeleted = false
                         }
                     }
             }
@@ -833,10 +854,14 @@ internal class HealthSyncRepositoryImpl(
             heartDao.clear()
         }
         // The links go either way: keeping them would make a later reconnect skip data the user
-        // asked us to forget, and keeping them without the rows would point at nothing.
+        // asked us to forget, and keeping them without the rows would point at nothing. That holds
+        // even when the remote delete failed — the disconnect is what the user asked for, the token
+        // is revoked below, and a link with nothing left to authorise is not a retry handle. Which
+        // is why the failure is *reported* rather than stored: see the return value.
         links.clear()
         cachedToken?.let { auth.revoke(it) }
         cachedToken = null
+        return sentDeleted
     }
 
     /**

@@ -32,6 +32,18 @@ class MigrationsTest {
         }
     }
 
+    /** Index name -> the table it is on, for one exported version. */
+    private fun indices(version: Int): Map<String, String> {
+        val db = Json.parseToJsonElement(File(schemaDir, "$version.json").readText())
+            .jsonObject.getValue("database").jsonObject
+        return db.getValue("entities").jsonArray.flatMap { entity ->
+            val table = entity.jsonObject.getValue("tableName").jsonPrimitive.content
+            entity.jsonObject["indices"]?.jsonArray.orEmpty().map {
+                it.jsonObject.getValue("name").jsonPrimitive.content to table
+            }
+        }.toMap()
+    }
+
     private val latest: Int =
         schemaDir.listFiles().orEmpty().mapNotNull { it.nameWithoutExtension.toIntOrNull() }.max()
 
@@ -62,6 +74,25 @@ class MigrationsTest {
                         created.any { it.contains("`$column`") }
                     assertTrue("$from -> ${from + 1}: $table.$column is never added", added)
                 }
+            }
+        }
+    }
+
+    /**
+     * The gap the two tests above leave. `ALTER TABLE ... ADD COLUMN` cannot carry an index, so an
+     * index added to a table that already exists needs its own `CREATE INDEX` — and without one
+     * Room's own validation throws on open, long after this suite was green. A brand-new table is
+     * exempt: its `CREATE TABLE` step brings the indices with it.
+     */
+    @Test
+    fun `each step creates the indices that version added`() {
+        for ((from, sql) in STEPS) {
+            val before = indices(from)
+            val existingTables = schema(from).keys
+            for ((name, table) in indices(from + 1)) {
+                if (name in before || table !in existingTables) continue
+                val created = sql.any { it.contains("INDEX") && it.contains("`$name`") }
+                assertTrue("$from -> ${from + 1}: index $name on $table is never created", created)
             }
         }
     }
