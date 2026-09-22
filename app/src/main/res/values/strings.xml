@@ -56,6 +56,10 @@
     <string name="app_fasting_goal_title">%1$d-hour fast complete</string>
     <string name="app_fasting_goal_body">You\'ve been fasting %1$s. End it when you\'re ready.</string>
 
+    <!-- Play in-app update -->
+    <string name="app_update_ready">Update downloaded</string>
+    <string name="app_update_restart">Restart</string>
+
     <!-- Home-screen widget -->
     <string name="widget_onboarding">Set up FitPulse to see today\'s numbers.</string>
     <string name="widget_today">Today</string>

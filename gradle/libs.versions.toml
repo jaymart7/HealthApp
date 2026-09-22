@@ -30,6 +30,7 @@ glance = "1.2.0"
 healthConnect = "1.1.0"
 playServicesAuth = "22.0.0"
 playServicesWearable = "20.0.1"
+playAppUpdate = "2.1.0"
 wearCompose = "1.7.0-rc01"
 wearToolingPreview = "1.0.0"
 wearTiles = "1.6.2"
@@ -96,6 +97,8 @@ androidx-health-connect-client = { module = "androidx.health.connect:connect-cli
 # can be built beside the client and handed to :feature:profile as a framework type.
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activityCompose" }
 play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+# The -ktx artifact, not the base one: it carries the coroutine Flow the update prompt collects.
+play-app-update-ktx = { module = "com.google.android.play:app-update-ktx", version.ref = "playAppUpdate" }
 
 androidx-wear-compose-material3 = { module = "androidx.wear.compose:compose-material3", version.ref = "wearCompose" }
 androidx-wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "wearCompose" }

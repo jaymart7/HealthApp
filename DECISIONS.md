@@ -5077,6 +5077,21 @@ The rules that bind are `CLAUDE.md` → **Localization**. These are the argument
   `waterGoalGlasses` 8 — so an upgraded row is indistinguishable from a new one. Room's
   validation compares a default only when the entity declared one, which is why the extra
   `DEFAULT` in the DDL does not fail the identity check.
+- **The update check is flexible, silent when it fails, and borrows the shell's snackbar.**
+  Play's in-app update API is the only supported way to ask "is there a newer version of me?",
+  and it offers two flows. Immediate is a full-screen block the user cannot leave until the
+  install finishes — right for a release that fixes something dangerous, far heavier than a
+  calorie tracker's ordinary release, and it would land on every user of every version bump. So
+  flexible: Play draws the dialog, the download runs behind whatever screen they were on, and the
+  only thing this app owns is the restart at the end. The failure path says *nothing* rather than
+  reporting an error, because failing is the normal case off Play — a debug build, a sideload, a
+  device without the Play Store and an offline one all raise `InstallException`, and a message
+  there would be a launch-time apology for a feature the user never asked about. And the restart
+  prompt is the app shell's existing snackbar, given its second sender: an update belongs to the
+  app rather than to any one screen, so there is no screen whose host it could ask for, and a
+  second `SnackbarHost` would be two things competing for the same strip above the FAB. It is
+  indefinite with a dismiss — the download is already paid for, so it should not slide away
+  mid-scroll, and a dismissed one returns on the next launch.
 - **`MigrationsTest` is a JVM test against the schema files, not a `MigrationTestHelper`.** The
   real helper needs an emulator this project has decided not to run in CI. What a JVM test can
   still do is read `schemas/` and catch the mistake that actually happens — a version bumped and

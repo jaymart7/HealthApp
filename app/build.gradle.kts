@@ -81,6 +81,8 @@ dependencies {
     implementation(libs.androidx.glance.material3)
     // The phone half of the watch companion: pushes today, receives the wrist's two writes.
     implementation(libs.play.services.wearable)
+    // Play in-app updates — AppUpdatePrompt is its only caller, and it is silent off Play.
+    implementation(libs.play.app.update.ktx)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

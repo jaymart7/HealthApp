@@ -40,6 +40,11 @@ as a Nav3 list-detail scene, and the Food tab draws the calendar as a fixed 320d
 day. Narrower than 600dp is unchanged. Home, Progress and the camera flows stay one pane at every
 width.
 
+**Play in-app update** (`:app/ui/AppUpdatePrompt.kt`): one check per launch. Play draws its own
+"Update available" dialog and downloads flexibly behind the app; the shell's snackbar then offers
+**Restart**. Silent on anything not installed from Play — a debug build, a sideload, no Play Store
+or no network all show nothing.
+
 **Onboarding** is not in the nav graph — `AppRoot` swaps it out once a profile is written.
 
 ---

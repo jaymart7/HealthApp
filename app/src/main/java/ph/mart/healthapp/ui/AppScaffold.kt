@@ -365,9 +365,11 @@ fun AppScaffold(
             scope.launch { currentScroll.animateScrollTo(0) }
         }
     }
-    // The app shell's only snackbar, and it has exactly one sender: a saved workout. It lives here
-    // rather than on a screen because the sheet and the strength route that raise it are both
-    // hosted here, and the surface they close onto is whichever tab happens to be underneath.
+    // The app shell's snackbar, and it has two senders: a saved workout and a downloaded update.
+    // It lives here rather than on a screen because the sheet and the strength route that raise it
+    // are both hosted here, and the surface they close onto is whichever tab happens to be
+    // underneath — and an update belongs to the app rather than to any one screen, so it has no
+    // other host to ask for.
     val snackbarHostState = remember { SnackbarHostState() }
     // A confirmation of something the user just did, so it is silent when there is nothing to
     // confirm: the profile's credit switch is off, the save was a correction, or the burn is under
@@ -603,6 +605,8 @@ fun AppScaffold(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = DockedFabContentPadding),
         )
+
+        AppUpdatePrompt(snackbarHostState)
     }
 }
 
