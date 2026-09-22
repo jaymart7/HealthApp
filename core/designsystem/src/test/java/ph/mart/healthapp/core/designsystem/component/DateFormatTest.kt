@@ -30,18 +30,29 @@ class DateFormatTest {
         Locale.setDefault(originalLocale)
     }
 
+    /**
+     * Local midnight *plus the DST offset*, divided by a day. The offset is not decoration: without
+     * it the quotient is not injective in a zone whose standard offset is UTC+0 and which observes
+     * DST, which is what `a local day is one key, and the next day is the next key` pins.
+     */
     private fun epochDayOfContract(millis: Long): Long = Calendar.getInstance().apply {
         timeInMillis = millis
         set(Calendar.HOUR_OF_DAY, 0)
         set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0)
         set(Calendar.MILLISECOND, 0)
-    }.timeInMillis / 86_400_000L
+    }.let { (it.timeInMillis + it.get(Calendar.DST_OFFSET)) / 86_400_000L }
 
     private fun localDate(millis: Long): String =
         SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(java.util.Date(millis))
 
-    private val zones = listOf("UTC", "Asia/Manila", "America/New_York", "Asia/Kathmandu")
+    /**
+     * `Europe/London` is the one that matters and the one that was missing: a collision needs a
+     * *standard* offset of exactly UTC+0 plus DST, so UTC, Manila, Kathmandu and New York all
+     * passed while 2026-03-29 and 2026-03-30 in London shared a key.
+     */
+    private val zones =
+        listOf("UTC", "Asia/Manila", "America/New_York", "Asia/Kathmandu", "Europe/London")
 
     /**
      * Deliberately not `assertEquals(epochDayOfContract(now), todayEpochDay())`: at UTC+8 the old
@@ -118,6 +129,35 @@ class DateFormatTest {
                 // Whitespace-normalised: JDK 20+ separates the AM/PM marker with U+202F, and
                 // which space it is is not what this test is about.
                 assertEquals("$id minute $minute", clock, formatMinuteOfDay(minute).replace('\u202f', ' ').replace('\u00a0', ' '))
+            }
+        }
+    }
+
+    /**
+     * The property every dated table in the app rests on: **one local day is one key, and the next
+     * local day is the next key.** Every row keyed on a day — `weight_entry`'s primary key is
+     * literally `date` — is lost or overwritten the moment two days share one.
+     *
+     * Walked a day at a time with [Calendar.add] across a whole year, so both transitions are
+     * inside it. At noon, because that is the one hour of the day that exists in every zone on
+     * every date.
+     */
+    @Test
+    fun `a local day is one key, and the next day is the next key`() {
+        zones.forEach { id ->
+            TimeZone.setDefault(TimeZone.getTimeZone(id))
+            val day = Calendar.getInstance().apply {
+                clear()
+                set(2026, Calendar.JANUARY, 1, 12, 0)
+            }
+            var previous = day.toEpochDay()
+            repeat(365) {
+                day.add(Calendar.DAY_OF_YEAR, 1)
+                val key = day.toEpochDay()
+                assertEquals("$id at ${localDate(day.timeInMillis)}", previous + 1, key)
+                // And the file's own two entry points agree with each other on that key.
+                assertEquals("$id contract", epochDayOfContract(day.timeInMillis), key)
+                previous = key
             }
         }
     }

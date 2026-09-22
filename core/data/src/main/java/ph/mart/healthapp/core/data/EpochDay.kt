@@ -46,6 +46,19 @@ fun minuteOfDayOf(millis: Long): Int = Calendar.getInstance().apply { timeInMill
 /**
  * The same conversion for an arbitrary instant — an imported workout carries a UTC timestamp and
  * has to land on the local day the user actually trained.
+ *
+ * **The DST offset is added before the divide, and that is load-bearing.** Local midnight is not
+ * a fixed distance from a UTC day boundary: it moves an hour at a transition. In a zone whose
+ * *standard* offset is UTC+0 and which observes DST — Europe/London, Dublin, Lisbon, the Canaries,
+ * Casablanca — that hour crosses the boundary, and the plain quotient stops being injective: in
+ * London, 2026-03-29 and 2026-03-30 both answered 20541, so a weigh-in on the 30th overwrote the
+ * 29th's row, `weight_entry` being keyed on `date`. October skipped a key the other way.
+ *
+ * Adding [Calendar.DST_OFFSET] normalises every local midnight onto its *standard-time* UTC
+ * instant. A zone's standard offset is constant, so the key then advances by exactly one per
+ * calendar day in every zone. It is a no-op wherever the offset is zero, which is every non-DST
+ * zone and every winter day everywhere — no existing key east or west of UTC moves except the
+ * summer ones in a UTC+0 zone, which were already ambiguous.
  */
 fun epochDayOf(millis: Long): Long {
     val calendar = Calendar.getInstance().apply {
@@ -55,7 +68,7 @@ fun epochDayOf(millis: Long): Long {
         set(Calendar.SECOND, 0)
         set(Calendar.MILLISECOND, 0)
     }
-    return calendar.timeInMillis / 86_400_000L
+    return (calendar.timeInMillis + calendar.get(Calendar.DST_OFFSET)) / 86_400_000L
 }
 
 /**

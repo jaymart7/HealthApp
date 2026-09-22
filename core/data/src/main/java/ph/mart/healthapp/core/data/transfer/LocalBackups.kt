@@ -16,6 +16,10 @@ private const val BACKUP_DIR = "backups"
 private const val BACKUP_PREFIX = "fitpulse-"
 private const val BACKUP_SUFFIX = ".json"
 
+/** Deliberately *after* [BACKUP_SUFFIX], so a staged file fails `endsWith` and is invisible to
+ * both the listing and the rotation until the rename lands. */
+private const val STAGING_SUFFIX = ".tmp"
+
 /**
  * The weekly backup's store: app-private, rotated, and readable with no picker.
  *
@@ -35,15 +39,40 @@ class LocalBackups(private val context: Context) {
 
     fun read(name: String): String = File(dir, File(name).name).readText()
 
-    /** Writes one and drops everything past the newest [BACKUP_KEEP]. */
+    /**
+     * Writes one and drops everything past the newest [BACKUP_KEEP].
+     *
+     * Written to a `.tmp` name and renamed into place, because a half-written file here is worse
+     * than no file: the weekly backup runs under WorkManager and can be stopped mid-write, and a
+     * truncated one keeps its stamped name — so it sorts *newest*, fails to restore, and the
+     * rotation below evicts a good backup to make room for it. `.tmp` does not end in
+     * [BACKUP_SUFFIX], so the listing filter already hides it from both the list and the
+     * rotation; a rename inside one directory is atomic.
+     */
     fun write(json: String) {
-        File(dir, "$BACKUP_PREFIX${System.currentTimeMillis()}$BACKUP_SUFFIX").writeText(json)
-        staleBackups(names()).forEach { File(dir, it).delete() }
+        val backupDir = dir
+        val target = File(backupDir, "$BACKUP_PREFIX${System.currentTimeMillis()}$BACKUP_SUFFIX")
+        val staging = File(backupDir, "${target.name}$STAGING_SUFFIX")
+        staging.writeText(json)
+        // A failed rename leaves the previous set untouched, which is the right answer: the next
+        // run is a week away and three good files are still there.
+        if (!staging.renameTo(target)) {
+            staging.delete()
+            return
+        }
+        staleBackups(names()).forEach { File(backupDir, it).delete() }
     }
 
-    private fun names(): List<String> =
-        dir.list().orEmpty().filter { it.startsWith(BACKUP_PREFIX) && it.endsWith(BACKUP_SUFFIX) }
+    private fun names(): List<String> = dir.list().orEmpty().filter(::isBackupName)
 }
+
+/**
+ * A finished backup, as opposed to a [STAGING_SUFFIX] file [LocalBackups.write] has not renamed
+ * yet — which is the whole reason the staging suffix goes *after* [BACKUP_SUFFIX] rather than
+ * replacing it. A pure function so `LocalBackupsTest` can hold that without a Context.
+ */
+internal fun isBackupName(name: String): Boolean =
+    name.startsWith(BACKUP_PREFIX) && name.endsWith(BACKUP_SUFFIX)
 
 /**
  * The names to delete: everything but the newest [keep].

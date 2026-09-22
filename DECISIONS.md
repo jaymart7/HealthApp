@@ -150,6 +150,28 @@ rather than needing a counter patched.
 
 ### The diary & sharing a day
 
+- **An epoch day is local midnight *plus the DST offset*, divided by a day in millis — and the
+  offset is the whole entry.** Every dated table is keyed on this; `weight_entry`'s primary key
+  literally *is* `date`. Local midnight is not a fixed distance from a UTC day boundary, because it
+  moves an hour at a transition, so the plain `localMidnight / 86_400_000` that shipped first was
+  not injective in a zone whose *standard* offset is UTC+0 and which observes DST — Europe/London,
+  Dublin, Lisbon, the Canaries, Casablanca. In London, 2026-03-29 and 2026-03-30 both answered
+  20541, so a weigh-in on the 30th silently overwrote the 29th's row, and October skipped 20751 the
+  other way. Adding `Calendar.DST_OFFSET` before the divide puts every local midnight on its
+  *standard-time* UTC instant, and a zone's standard offset is constant, so the key advances by
+  exactly one per calendar day everywhere.
+  - **It is a no-op wherever the offset is zero** — every non-DST zone, and every winter day in the
+    ones that aren't. That is why no migration ships: the only keys it moves are summer rows in a
+    UTC+0 zone, and those were already ambiguous. Nothing in Asia/Manila changes at all.
+  - `epochDayStartMillis` and `epochDayToCalendar` were always correct and are untouched: both step
+    with `Calendar.add(DAY_OF_YEAR, …)` rather than multiplying out, which is why the *pair*
+    disagreed rather than both being wrong. They are exact inverses again under the corrected key.
+  - The definition is stated twice — `core.data.epochDayOf` and `:core:designsystem`'s
+    `DateFormat.kt`, which cannot depend on `:core:data` — so `DateFormatTest` restates the
+    contract and `EpochDayTest` holds the same property in the module that owns it. Both zone lists
+    now include `Europe/London`, and the reason they didn't is why this survived: UTC, Manila,
+    Kathmandu and New York all pass without the offset, because a collision needs a standard offset
+    of exactly UTC+0. **A zone list without a UTC+0 DST zone in it is not a guard.**
 - **Diary date navigation:** forward stepping stops at today (there are no
   planned meals), and system back from a past day returns to today rather than
   leaving the tab.
@@ -2007,6 +2029,16 @@ rather than needing a counter patched.
   database. The one exclusion is `progress_photos/` from the cloud copy — the only thing that can
   blow the 25 MB cap, and the thing the export has never carried either. `device-transfer` is
   absent on purpose: it has no cap, so the photos should ride along.
+- **The weekly backup is staged and renamed, never written in place.** `BackupWorker` runs under
+  WorkManager and can be stopped mid-write, and a full diary export is not an instant flush. A
+  truncated file keeps its stamped name, so it sorts *newest* — it fails to restore, **and** the
+  rotation immediately evicts one of the three good files to make room for it, which is the half
+  that makes this worse than a no-op. `write` puts the JSON in `<name>.tmp` first and only rotates
+  once `renameTo` has landed; a failed rename deletes the staging file and leaves the previous set
+  alone, because the next run is a week away and three good files are still there. The suffix goes
+  *after* `.json` on purpose — that is what makes the staging file fail `isBackupName`, so it is
+  invisible to both the listing and the rotation without a second filter to keep in step.
+  `LocalBackupsTest` pins that name, which is the whole guard.
 
 ### Launcher shortcuts & the quick-action sheet
 
