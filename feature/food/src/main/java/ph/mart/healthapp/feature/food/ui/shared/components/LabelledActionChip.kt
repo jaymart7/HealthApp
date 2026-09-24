@@ -34,8 +34,9 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * matched it would be a second primary action competing with it. Transparent on `surface` with an
  * `outlineVariant` border is the quietest container the system has that is still a container.
  *
- * Feature-local rather than in `:core:designsystem`: one screen draws it. It moves there the day a
- * second one does, per the ≥2-screens rule — not on the promise of one.
+ * Feature-local rather than in `:core:designsystem`: the diary and the FAB's quick log both draw
+ * it, and both are `:feature:food` — the `ui/shared/` middle case. It moves there the day another
+ * feature does, not on the promise of one.
  */
 @Composable
 internal fun LabelledActionChip(

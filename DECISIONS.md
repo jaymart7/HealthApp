@@ -453,8 +453,8 @@ rather than needing a counter patched.
   through a null-returning accessor rather than `optInt`'s zero default: a line the panel does not
   carry reaches the form as nothing, and prints an em dash. The photo and voice schemas are
   unchanged and stay at three — they estimate, and nothing here reopens that.
-- **The label is the answer to a dead end, not a fourth food door.** The diary's chip row and the
-  FAB sheet each carry three ways to log food, and a fourth would have to earn a place beside them
+- **The label is the answer to a dead end, not a fourth food door.** The diary's chip row carries
+  three ways to log food and the FAB sheet a field plus two, and a fourth would have to earn a place beside them
   on every surface plus the launcher shortcuts. It cannot: nobody opens the app wanting to read a
   label — they want to log a packet, and the barcode is the faster way to do that whenever it
   works. The label is what is left when it does not, which is why the only doors onto it are
@@ -861,7 +861,7 @@ rather than needing a counter patched.
   column, because a sheet tall enough to scroll must not be able to scroll its own escape off the
   top — and because `ShareImageSheet` captures its content to a `Picture`, so a header inside that
   column would print the ✕ into the shared PNG. Its gutter is a fixed 16dp and does **not** follow
-  `horizontalPadding`: the quick-action sheet passes `0.dp` there so its rows' pressed state runs
+  `horizontalPadding`: the add-entry sheet passes `0.dp` there so its rows' pressed state runs
   full width, and a close icon flush against the screen edge is not a target. And it is 48dp, not
   the 44 the Backlog tracks — a sheet's one explicit escape is not where to undershoot.
   `showClose = false` has exactly one caller, the add-entry sheet: each of its three states already
@@ -2080,28 +2080,52 @@ rather than needing a counter patched.
   re-point it the way a second notification does. `shortcutActionOf` takes the extra's **String**
   rather than the `Intent` for the reason `mascotCharacterOf` does — it is the pure half a JVM test
   can reach, and an unknown name (a shortcut pinned by an older build) degrades to null.
-- **The FAB sheet's rule sits at 3|4 because rows 1–3 *are* the diary's chip row.** *Say what you
-  ate*, *Scan a barcode* and *Log food* route to `VoiceLogRoute`, `BarcodeScanRoute` and
-  `FoodCaptureRoute` — the same three destinations `DiaryBody`'s `LabelledActionChip` row sends,
-  in the same order, drawing the same three `AppIcons`. So *Log food* is the **camera**, which the
-  launcher shortcut's long label ("Photograph a meal") has always said, and *Add photo* is a
-  **body progress shot** (`:feature:progress`'s `AddPhotoSheet`) with no AI and no plate in it.
-  A redesign handoff read those two backwards — it had *Log food* as manual search and *Add photo*
-  as plate recognition, which strands the third food door below the split and needs a `tertiary`
-  glyph to mark it back up again. Read correctly the two kinds are contiguous, the rule is a
-  straight line between them, and the exception disappears: three `tertiaryContainer` badges above,
-  three bare `onSurfaceVariant` glyphs below. The leading slot is 40dp in **both** cases — a badge
-  and a bare glyph share one optical column, or the labels stop lining up across the rule.
-- **The quick-action sheet is the one caller passing `AppBottomSheet(horizontalPadding = 0.dp)`.**
+- **The FAB sheet is one AI field, not six rows.** It used to be a list of doors — say, scan,
+  photograph, exercise, body photo, weigh-in — and every one of them asked the user to decide what
+  kind of thing they were logging before saying what it was. `QuickLogSheet` reads a sentence about
+  either kind: one `QuickLogRepository` call returns foods *and* activities, because a
+  classify-then-parse pair would spend two requests on every log and the FAB cannot know which the
+  user is about to type. What it keeps from the two single-sentence parses it generalises is their
+  whole trust boundary — foods through `loggable()`, activities through `parsedExercise()` and a
+  schema with nowhere to put a burn, which `estimateBurnedKcal()` prices off the latest weigh-in in
+  the ViewModel. `quickLogResult()` is the pure judgement and `QuickLogTest` holds it.
+- **It asks back, twice at most.** A sentence that leaves out what the estimate turns on — how much
+  rice, how long a run — gets one short question rather than a guessed serving, because a guess the
+  user never sees is a wrong number in the diary. The model is only *allowed* to ask while
+  `mayAsk()` (fewer than `MAX_FOLLOW_UPS` of its own turns): past that the prompt tells it to
+  estimate and mark the guess `low`, and a question it asks anyway is ignored for its lists. Two is
+  the ceiling because a third round is the app refusing to log. Every call sends the whole
+  conversation, so a correction typed on the review ("make it two cups") re-reads everything.
+- **The confirmation is inline, and corrections are words.** The review is the diary's own
+  `FoodItemRow` plus an activity row, each with a remove ✕, a meal-slot chip row when there is food,
+  and Log — no per-row portion editor, because the field is right there and the model is better at
+  "make it two" than a stepper is at being found. Talk-to-log keeps its full editor for anyone who
+  wants one. Logging reports the credited burn to `AppScaffold`'s snackbar, the same line the
+  log-exercise sheet raises.
+- **Photo and barcode stay as chips; the rest left the FAB.** A plate and a barcode are not
+  sentences, so they keep a door under the field — until a conversation starts, when the space is
+  the review's. Log weight, the body progress photo and manual log exercise were removed: weight is
+  logged on its Progress page and by the "Weigh in" shortcut, the body shot from Home's photo card
+  and Progress, and manual or strength exercise from the diary's exercise block (which is why
+  `ActiveSheet.LogExercise` and `.LogWeight` survive in `AppScaffold` with no FAB row behind them).
+- **The keyboard is up when the sheet lands**, and down when a result does. The field requests
+  focus in a `LaunchedEffect`, `SearchViewBar`'s rule; the hide reads `LocalSoftwareKeyboardController`
+  *inside* the sheet's content, because a `ModalBottomSheet` is its own window and the controller
+  read outside it belongs to the Activity's — which has no field and hides nothing.
+- **The send circle is `SendStopButton` in `:core:designsystem` now**, lifted out of the coach's
+  `ChatInputBar` when the quick log became the second composer that sends to a model. It stops a
+  call in flight for the same reason in both: a spinner that cannot be pressed costs the user the
+  words they typed.
+- **The add-entry sheet is the one caller passing `AppBottomSheet(horizontalPadding = 0.dp)`.**
   Every other sheet takes the 16dp default. A list row's pressed state layer that stops 16dp short
-  of each edge reads as a button rather than a row, so these rows take the gutter themselves and
-  the ripple runs the sheet's full width. The rule keeps the 16dp, because a full-bleed divider
-  reads as a seam between two sheets instead of one inside a list.
-- **`EXTRA_ACTION`'s vocabulary is the FAB sheet's rows, and water is its one exception.** A
-  shortcut is `QuickActionSheet` with the tap pre-made, so *Say what you ate*, *Log food* and
-  *Weigh in* resolve to the same `topLevelBackStack.add(…)` or the same `ActiveSheet` value that
-  sheet's own row does, each carrying day `0` — a launcher tap has no diary date, the reason the
-  FAB itself passes `0`. **Add water has neither**: water is an inline `WaterGlassRow` on a Home
+  of each edge reads as a button rather than a row, so its rows take the gutter themselves and the
+  ripple runs the sheet's full width. The old FAB sheet was the other caller, for the same reason.
+- **`EXTRA_ACTION`'s vocabulary outlived the FAB-sheet rows it mirrored, and water is its one
+  exception.** The shortcuts began as the sheet's rows with the tap pre-made; the sheet became one
+  field and the shortcuts did not follow, because a launcher tap is a person who already knows
+  which kind of thing they are logging. *Say what you ate*, *Log food* and *Weigh in* still resolve
+  to `VoiceLogRoute`, `FoodCaptureRoute` and `ActiveSheet.LogWeight`, each carrying day `0` — a
+  launcher tap has no diary date, the reason the FAB itself passes `0`. **Add water has neither**: water is an inline `WaterGlassRow` on a Home
   card, and that card can be hidden by `Profile.homeLayout`, so a navigational shortcut could land
   on a screen with no water on it. It is therefore handled in `MainActivity` as a *write* — the
   shared `addGlass()`, then Home so the card shows the new count — and `AppScaffold`'s `when` says
@@ -3433,8 +3457,8 @@ rather than needing a counter patched.
   *that* is what `:feature:training` is — it owns the log-exercise sheet and the strength screen,
   and nothing else moved. A `Train` **tab** was built on top and then removed, because every block
   on it already shipped somewhere better: today's plan is Home's Workout card, today's sessions are
-  the diary's exercise block (which also deletes and edits them), "Log activity" is the FAB sheet's
-  own row, and the history with its charts is Progress. The one thing it had that nothing else does
+  the diary's exercise block (which also deletes and edits them), "Log activity" was the FAB
+  sheet's own row (its AI field now), and the history with its charts is Progress. The one thing it had that nothing else does
   was a one-tap door to the strength screen — a row in a sheet, not a screen, and not yet worth
   adding. *A pillar earns a module when its code has no home; it earns a tab only when it has a
   surface no other tab is already drawing.*

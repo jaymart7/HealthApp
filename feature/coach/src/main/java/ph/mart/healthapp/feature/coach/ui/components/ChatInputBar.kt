@@ -3,15 +3,12 @@ package ph.mart.healthapp.feature.coach.ui.components
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +24,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppTextField
+import ph.mart.healthapp.core.designsystem.component.SendStopButton
 import ph.mart.healthapp.core.designsystem.component.rememberSpeechAvailable
 import ph.mart.healthapp.core.designsystem.component.speechIntent
 import ph.mart.healthapp.core.designsystem.component.spokenPhrase
@@ -124,63 +122,16 @@ internal fun ChatInputBar(
                             }
                         },
                     )
-                    ActionCircle(
+                    SendStopButton(
                         sending = sending,
                         canSend = canSend(draft, sending),
                         onSend = onSend,
                         onStop = onStop,
+                        sendLabel = stringResource(R.string.coach_input_send),
+                        stopLabel = stringResource(R.string.coach_input_stop),
                     )
                 }
             }
-        }
-    }
-}
-
-/**
- * One 48dp circle in three states, and it is one composable rather than three so it cannot move
- * between them. The fill carries whether a send is available and the glyph carries what the tap
- * does; the spinner is the ring *around* the control rather than the control itself, which is what
- * lets a running turn still be stopped.
- */
-@Composable
-private fun ActionCircle(sending: Boolean, canSend: Boolean, onSend: () -> Unit, onStop: () -> Unit) {
-    val filled = !sending && canSend
-    Box(contentAlignment = Alignment.Center) {
-        Surface(
-            onClick = if (sending) onStop else onSend,
-            enabled = sending || canSend,
-            shape = CircleShape,
-            color = if (filled) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHighest
-            },
-            modifier = Modifier.size(48.dp),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = if (sending) AppIcons.Stop else AppIcons.ArrowUp,
-                    contentDescription = stringResource(
-                        if (sending) R.string.coach_input_stop else R.string.coach_input_send,
-                    ),
-                    tint = when {
-                        sending -> MaterialTheme.colorScheme.onSurface
-                        filled -> MaterialTheme.colorScheme.onPrimary
-                        else -> MaterialTheme.colorScheme.outline
-                    },
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
-        // Drawn over the circle rather than beside it, so the control keeps its 48dp and the arc
-        // rides its own perimeter. It takes no pointer events, so the stop underneath still works.
-        if (sending) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(48.dp),
-                strokeWidth = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.outlineVariant,
-            )
         }
     }
 }

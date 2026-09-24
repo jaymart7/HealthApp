@@ -62,6 +62,7 @@ import ph.mart.healthapp.feature.food.ui.FoodHistoryRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
 import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
 import ph.mart.healthapp.feature.food.ui.foodEntries
+import ph.mart.healthapp.feature.food.ui.quicklog.QuickLogSheet
 import ph.mart.healthapp.feature.home.ui.homeEntries
 import ph.mart.healthapp.feature.profile.ui.AboutYouRoute
 import ph.mart.healthapp.feature.profile.ui.FoodLibraryRoute
@@ -190,15 +191,18 @@ private fun TopLevelDestination.icon(): DualStateIcon = when (this) {
     TopLevelDestination.Profile -> AppIcons.Profile
 }
 
-/** The FAB's overlay sheet — Log exercise and Log weight are real [ph.mart.healthapp.core.designsystem.component.AppBottomSheet]s
- * shown here (same shape as [QuickActionSheet] itself), not [androidx.navigation3.runtime.NavKey]
- * routes: predictive back needs to close the sheet without replacing the screen underneath it.
- * Add photo used to be the third and is [AddPhotoRoute] now — a flow that opens on a viewfinder
- * wants the window, which is the one thing a sheet cannot hand it. */
+/** The sheets hosted here, over whichever tab is showing — real
+ * [ph.mart.healthapp.core.designsystem.component.AppBottomSheet]s, not
+ * [androidx.navigation3.runtime.NavKey] routes: predictive back needs to close the sheet without
+ * replacing the screen underneath it. [QuickAction] is the FAB's [QuickLogSheet]; Log exercise is
+ * the diary's (its exercise block opens it with a day and a row), and Log weight is the "Weigh in"
+ * launcher shortcut's — neither is a row on the FAB's sheet any more. Add photo used to be a sheet
+ * here and is [AddPhotoRoute] now — a flow that opens on a viewfinder wants the window, which is
+ * the one thing a sheet cannot hand it. */
 private enum class ActiveSheet { None, QuickAction, LogExercise, LogWeight }
 
 /**
- * Tab navigation (4 tabs) + docked FAB + quick-action sheet. This is the only place in the app that
+ * Tab navigation (4 tabs) + docked FAB + its quick-log sheet. This is the only place in the app that
  * depends on every `:feature:*` module and `:core:navigation` at once, so it's the only place
  * real navigation wiring can live — see the Phase 2 plan's "flagged architectural decision."
  *
@@ -277,10 +281,10 @@ fun AppScaffold(
         backNavigationBehavior = BackNavigationBehavior.PopLatest,
     )
 
-    // A launcher shortcut is the FAB's sheet with the tap already made, so every branch here is a
-    // line QuickActionSheet's own wiring already runs — day 0 included, for the reason the FAB
-    // passes it. Cleared on consumption like [tabRequest], which is what lets the same shortcut
-    // land twice.
+    // A launcher shortcut is a door with the tap already made. They began as the FAB sheet's own
+    // rows and outlived them when that sheet became one AI field: each still lands where its row
+    // used to — day 0 included, for the reason the FAB passes it. Cleared on consumption like
+    // [tabRequest], which is what lets the same shortcut land twice.
     LaunchedEffect(shortcutRequest) {
         when (shortcutRequest) {
             ShortcutAction.SpeakFood -> topLevelBackStack.add(VoiceLogRoute(0))
@@ -549,32 +553,19 @@ fun AppScaffold(
         }
 
         when (activeSheet) {
-            ActiveSheet.QuickAction -> QuickActionSheet(
+            ActiveSheet.QuickAction -> QuickLogSheet(
                 onDismiss = { activeSheet = ActiveSheet.None },
                 // Day 0 is today — the FAB carries no diary date, the convention
                 // StrengthWorkoutRoute already uses from here.
-                onSpeakFood = {
+                onCapturePhoto = {
                     activeSheet = ActiveSheet.None
-                    topLevelBackStack.add(VoiceLogRoute(0))
+                    topLevelBackStack.add(FoodCaptureRoute(0))
                 },
                 onScanBarcode = {
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(BarcodeScanRoute(0))
                 },
-                onLogFood = {
-                    activeSheet = ActiveSheet.None
-                    topLevelBackStack.add(FoodCaptureRoute(0))
-                },
-                onLogExercise = {
-                    sheetDate = 0
-                    sheetEditingId = 0
-                    activeSheet = ActiveSheet.LogExercise
-                },
-                onLogWeight = { activeSheet = ActiveSheet.LogWeight },
-                onAddPhoto = {
-                    activeSheet = ActiveSheet.None
-                    topLevelBackStack.add(AddPhotoRoute)
-                },
+                onSaved = onWorkoutSaved,
             )
             ActiveSheet.LogExercise -> LogExerciseSheet(
                 onDismiss = {
@@ -583,9 +574,8 @@ fun AppScaffold(
                     sheetEditingId = 0
                 },
                 onSaved = onWorkoutSaved,
-                // The FAB's sheet carries no day, so the workout screen it opens gets 0 too —
-                // which the repository stamps as today, exactly as the sheet's own save would.
-                // The diary's does carry one, and the row being corrected rides with it.
+                // The diary opens this sheet on its selected day, and the workout screen inherits
+                // it — along with the row being corrected, when there is one.
                 onOpenStrength = { date ->
                     val editingId = sheetEditingId
                     activeSheet = ActiveSheet.None

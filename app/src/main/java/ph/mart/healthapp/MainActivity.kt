@@ -33,9 +33,9 @@ const val EXTRA_ACTION = "ph.mart.healthapp.shortcut.ACTION"
  * Every request that reaches the app as an *intent* rather than as a tap, and the whole vocabulary
  * [EXTRA_ACTION] can carry.
  *
- * The first four are the launcher shortcuts, and they are the FAB's quick-action rows rather than a
- * list of their own — a shortcut is [ph.mart.healthapp.ui.QuickActionSheet] with the tap pre-made,
- * so each resolves to the same route or the same sheet that sheet's row does. [AddWater] is the one
+ * The first four are the launcher shortcuts. They began as the FAB sheet's rows with the tap
+ * pre-made and outlived them when that sheet became one AI field, so each still resolves to the
+ * route or the sheet its row used to open. [AddWater] is the one
  * exception and is handled here rather than in `AppScaffold`: water is an inline glass row on a
  * Home card, not a sheet or a route, so there is nothing to navigate to.
  *

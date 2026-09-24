@@ -52,10 +52,12 @@ internal const val MAX_FOOD_LIST_TOKENS = 1400
  * An empty list is a real answer — "nothing edible here" — which is why there is no `foodDetected`
  * flag in the schema above. A flag on a list would have to be answered item by item.
  */
-internal fun parseRecognizedFoods(json: String?): List<RecognizedFood> {
-    if (json == null) return emptyList()
-    val array = JSONArray(json)
-    return (0 until array.length()).map { index ->
+internal fun parseRecognizedFoods(json: String?): List<RecognizedFood> =
+    if (json == null) emptyList() else parseRecognizedFoods(JSONArray(json))
+
+/** The same read over an array already parsed — the quick log's reply nests one under `foods`. */
+internal fun parseRecognizedFoods(array: JSONArray): List<RecognizedFood> =
+    (0 until array.length()).map { index ->
         val body = array.getJSONObject(index)
         RecognizedFood(
             name = body.optString("name"),
@@ -86,4 +88,3 @@ internal fun parseRecognizedFoods(json: String?): List<RecognizedFood> {
             uncertainAbout = body.optString("uncertainAbout").ifBlank { null },
         )
     }
-}

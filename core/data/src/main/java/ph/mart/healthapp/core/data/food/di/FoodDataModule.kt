@@ -6,6 +6,7 @@ import ph.mart.healthapp.core.data.AppDatabase
 import ph.mart.healthapp.core.data.debugMealIdeas
 import ph.mart.healthapp.core.data.debugLabelScan
 import ph.mart.healthapp.core.data.debugMealParse
+import ph.mart.healthapp.core.data.debugQuickLog
 import ph.mart.healthapp.core.data.debugRecognition
 import ph.mart.healthapp.core.data.food.BarcodeLookupRepository
 import ph.mart.healthapp.core.data.food.BarcodeLookupRepositoryImpl
@@ -21,8 +22,10 @@ import ph.mart.healthapp.core.data.food.MealParseRepository
 import ph.mart.healthapp.core.data.food.MealParseRepositoryImpl
 import ph.mart.healthapp.core.data.food.ProductSearchRepository
 import ph.mart.healthapp.core.data.food.ProductSearchRepositoryImpl
+import ph.mart.healthapp.core.data.food.QuickLogRepository
+import ph.mart.healthapp.core.data.food.QuickLogRepositoryImpl
 
-/** The four `debugX()` calls are a source-set pair and are null in release — see `DebugAi.kt`. */
+/** The five `debugX()` calls are a source-set pair and are null in release — see `DebugAi.kt`. */
 val foodDataModule = module {
     single { get<AppDatabase>().foodEntryDao() }
     single { get<AppDatabase>().favoriteFoodDao() }
@@ -35,5 +38,6 @@ val foodDataModule = module {
     single<LabelScanRepository> { debugLabelScan() ?: LabelScanRepositoryImpl() }
     single<MealIdeaRepository> { debugMealIdeas() ?: MealIdeaRepositoryImpl() }
     single<MealParseRepository> { debugMealParse() ?: MealParseRepositoryImpl() }
+    single<QuickLogRepository> { debugQuickLog() ?: QuickLogRepositoryImpl() }
     single<ProductSearchRepository> { ProductSearchRepositoryImpl() }
 }

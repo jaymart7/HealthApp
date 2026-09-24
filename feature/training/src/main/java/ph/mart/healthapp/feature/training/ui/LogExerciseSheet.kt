@@ -33,8 +33,8 @@ import ph.mart.healthapp.feature.training.R
 import ph.mart.healthapp.feature.training.ui.components.DescribeExerciseField
 import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
 
-/** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; the FAB's
- * quick-action sheet leaves it 0, which the repository stamps as today.
+/** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; 0 is today,
+ * which the repository stamps.
  *
  * [editingId] names the logged activity being corrected, `0` for a new one — the same sheet,
  * seeded and saving over that row instead of adding one. An **id**, not the row: `AppScaffold` is

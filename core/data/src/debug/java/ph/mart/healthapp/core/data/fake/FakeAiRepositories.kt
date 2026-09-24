@@ -27,6 +27,11 @@ import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.loggable
 import ph.mart.healthapp.core.data.food.searchCommonFoods
 import ph.mart.healthapp.core.data.food.Nutrients
+import ph.mart.healthapp.core.data.food.QuickLogRepository
+import ph.mart.healthapp.core.data.food.QuickLogResult
+import ph.mart.healthapp.core.data.food.QuickLogTurn
+import ph.mart.healthapp.core.data.food.mayAsk
+import ph.mart.healthapp.core.data.food.quickLogResult
 import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
@@ -35,7 +40,7 @@ import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
 import ph.mart.healthapp.core.data.supplement.SupplementScanResult
 
 /**
- * The seven smaller AI features, faked off local data. The coach is next door in
+ * The eight smaller AI features, faked off local data. The coach is next door in
  * [FakeCoachRepository], because it is the only one with a state machine worth faking carefully.
  *
  * Every one of these reuses something the app already ships, and that is the design rather than an
@@ -309,6 +314,31 @@ internal fun fakeExerciseParse(text: String): ParsedExercise? {
     // plausible duration, and half an hour is this fake's version of that.
     val minutes = FIRST_NUMBER.find(text)?.value?.toIntOrNull() ?: 30
     return parsedExercise(type = type.name, name = text.trim(), minutes = minutes)
+}
+
+internal class FakeQuickLogRepository : QuickLogRepository {
+    override suspend fun parse(turns: List<QuickLogTurn>): QuickLogResult {
+        delay(FAKE_LATENCY_MS)
+        return fakeQuickLog(turns)
+    }
+}
+
+/**
+ * The two fakes above over everything the user has said, so an answer to a question simply
+ * extends the sentence. It asks the one question the real prompt is most often expected to —
+ * how long, when an activity came with no number — and falls back to a generic one when nothing
+ * matched at all, so both the follow-up and its cap can be walked through in a debug build.
+ */
+internal fun fakeQuickLog(turns: List<QuickLogTurn>): QuickLogResult {
+    val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
+    val foods = fakeParse(said)
+    val activity = fakeExerciseParse(said)
+    val question = when {
+        activity != null && !FIRST_NUMBER.containsMatchIn(said) -> "How long did it last?"
+        activity == null && foods.isEmpty() -> "What did you eat, or what did you do?"
+        else -> null
+    }
+    return quickLogResult(question, foods, listOf(activity), turns.mayAsk())
 }
 
 /** Below this a "word" matches half the table — "an" is in "banana", "pan" and "pancake". */

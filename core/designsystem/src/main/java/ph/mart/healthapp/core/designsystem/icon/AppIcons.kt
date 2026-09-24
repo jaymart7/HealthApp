@@ -97,7 +97,7 @@ object AppIcons {
     val Balance: ImageVector = Icons.Filled.Balance
     val Bedtime: ImageVector = Icons.Outlined.Bedtime
     /** The progress photo, wherever it has to read as a body shot rather than a plate —
-     * [Camera] is the plate, and the FAB's sheet draws both. */
+     * [Camera] is the plate. */
     val AddPhoto: ImageVector = Icons.Outlined.AddAPhoto
     /** Onward to the place a thing landed — the coach's door into the meal it just wrote to.
      * Auto-mirrored, because "forward" is the reading direction and not a compass point. */

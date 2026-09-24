@@ -48,7 +48,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * a lazy list: this hands its children unbounded height.
  *
  * [horizontalPadding] is the content column's gutter and is 16dp for every sheet but one. The
- * quick-action sheet passes `0.dp` and pads each of its rows instead, so a row's pressed state
+ * add-entry sheet passes `0.dp` and pads each of its rows instead, so a row's pressed state
  * layer runs the sheet's full width rather than stopping short of it — a list row's ripple that
  * leaves a 16dp margin either side reads as a button, not a row.
  *
@@ -70,7 +70,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * that replaced ten Cancel buttons. It draws **outside** the scrolling column — a sheet tall enough
  * to scroll must not be able to scroll its own escape off the top, and in `ShareImageSheet` it has
  * to land outside the Column being captured or the ✕ would end up in the shared PNG. Its 16dp gutter
- * is its own and does *not* follow [horizontalPadding]: the quick-action sheet passes `0.dp` there
+ * is its own and does *not* follow [horizontalPadding]: the add-entry sheet passes `0.dp` there
  * for its rows, and a close icon flush against the screen edge is not a target. [showClose] is false
  * for exactly one sheet — the add-entry sheet, whose three states each draw their own chrome.
  *

@@ -31,9 +31,8 @@ import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 import ph.mart.healthapp.feature.food.ui.shared.toSuggestion
 
-/** No side effects: the add-entry sheet dismisses itself optimistically in [FoodScreen], same
- * pattern [ph.mart.healthapp.ui.QuickActionSheet] already uses — nothing here needs to round-trip
- * through a SideEffect. */
+/** No side effects: the add-entry sheet dismisses itself optimistically in [FoodScreen] — nothing
+ * here needs to round-trip through a SideEffect. */
 sealed interface FoodSideEffect
 
 class FoodViewModel(

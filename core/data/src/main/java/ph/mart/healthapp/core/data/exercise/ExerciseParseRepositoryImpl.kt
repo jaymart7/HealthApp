@@ -42,7 +42,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
     override suspend fun parse(text: String): ExerciseParseResult = try {
         val prompt = promptFor(text.take(MAX_EXERCISE_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
-        val activity = readActivity(response.text)
+        val activity = response.text?.let { readActivity(JSONObject(it)) }
         // Null means the sentence named nothing physical — a real answer with its own line on the
         // sheet, not a failure to retry.
         if (activity == null) ExerciseParseResult.NoActivityFound else ExerciseParseResult.Success(activity)
@@ -66,7 +66,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
  * `type` is an enumeration over [ExerciseType]'s own entry names rather than a free string, which
  * is what makes `Other` a *choice* the model makes instead of the bucket a typo falls into.
  */
-private val PARSED_EXERCISE_SCHEMA = Schema.obj(
+internal val PARSED_EXERCISE_SCHEMA = Schema.obj(
     mapOf(
         "type" to Schema.enumeration(
             values = ExerciseType.entries.map { it.name },
@@ -93,16 +93,16 @@ private const val MAX_ACTIVITY_TOKENS = 80
 /**
  * The object in, an activity out. Every read is an `opt*` with a default and the judgement is
  * [parsedExercise]'s, which is the thing that decides whether this was a workout at all.
+ *
+ * Takes the object rather than the response text because the quick log reads the same shape out
+ * of an array nested in its own reply.
  */
-private fun readActivity(json: String?): ParsedExercise? {
-    if (json == null) return null
-    val body = JSONObject(json)
-    return parsedExercise(
+internal fun readActivity(body: JSONObject): ParsedExercise? =
+    parsedExercise(
         type = body.optString("type"),
         name = body.optString("name"),
         minutes = body.optInt("minutes"),
     )
-}
 
 /**
  * A sentence in, one activity out. Two of `promptFor`'s constraints plus the one this call needs:

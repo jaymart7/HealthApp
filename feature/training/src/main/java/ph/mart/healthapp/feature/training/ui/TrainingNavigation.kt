@@ -24,7 +24,7 @@ data class StrengthWorkoutRoute(
  * One route, no tab. This module owns the *doing* of training — the log-exercise sheet and the
  * strength screen — but draws no surface of its own: today's plan is Home's card, today's sessions
  * are the diary's exercise block, and the history is the Progress tab's. [LogExerciseSheet] is not
- * here because `AppScaffold` hosts it directly, the way it hosts every other FAB sheet.
+ * here because `AppScaffold` hosts it directly, the way it hosts the FAB's own sheet.
  */
 fun EntryProviderScope<NavKey>.trainingEntries(
     onExitFlow: () -> Unit,

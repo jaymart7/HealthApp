@@ -371,4 +371,20 @@
     <string name="food_label_permission_grant">Grant camera access to read a nutrition label, or go back and enter it by hand.</string>
     <string name="food_label_permission_settings">Camera access is off for FitPulse. Turn it on in Settings to read a label, or go back and enter it by hand.</string>
     <string name="food_label_discard_title">Discard this item?</string>
+
+    <!-- FAB quick log -->
+    <string name="food_quick_prompt">What did you eat or do?</string>
+    <string name="food_quick_placeholder">e.g. \"two eggs and toast\" or \"30 min run\"</string>
+    <string name="food_quick_answer_placeholder">Your answer…</string>
+    <string name="food_quick_change_placeholder">Anything to change?</string>
+    <string name="food_quick_speak">Speak</string>
+    <string name="food_quick_send">Send</string>
+    <string name="food_quick_cancel">Cancel</string>
+    <string name="food_quick_log">Log</string>
+    <string name="food_quick_remove">Remove %1$s</string>
+    <string name="food_quick_burned">%1$d kcal burned</string>
+    <string name="food_quick_total">Total · %1$d kcal</string>
+    <string name="food_quick_nothing">Nothing to log in that one — name a food or an activity.</string>
+    <string name="food_quick_failed">That didn\'t work. Your words are still there — try again.</string>
+    <string name="food_quick_offline">Reading a sentence needs a connection. The Food tab\'s own add button works offline.</string>
 </resources>

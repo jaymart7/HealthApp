@@ -25,14 +25,18 @@ photo timelapse · photo comparison slider · meal-photo gallery · meal ideas.
 **Off-phone surfaces:** Glance home-screen widget (`:app/widget/`) · Wear OS app (`:wear`) ·
 Wear tile · WorkManager notifications (`:app/reminder/`).
 
-**FAB quick-action sheet** (`:app/ui/QuickActionSheet.kt`): six rows split by a rule. Above it,
-the diary chip row's three food doors — say what you ate · scan a barcode · log food (the camera)
-— each with a `tertiaryContainer`-badged glyph. Below it, log exercise · add photo (a body
-progress shot) · log weight, bare glyphs. Three rows carry a supporting line.
+**FAB quick log** (`:feature:food/ui/quicklog/QuickLogSheet.kt`, hosted by `AppScaffold`): one AI
+field, focused with the keyboard up the moment the sheet opens, reading what the user ate *or* did —
+food rows priced by the model, activities priced on-device off the latest weigh-in, both from one
+sentence. When the sentence leaves out what the estimate turns on (how much rice, how long a run) it
+asks back in an AI-accent bubble, at most twice, then estimates. The confirmation is inline: rows
+with a remove ✕, a meal-slot chip row when there is food, and Log; corrections are typed as another
+message. Mic inside the field, a send/stop circle beside it, and Photo · Scan chips under it until a
+conversation starts. Back steps: in flight → cancel, question/review → start over.
 
 **Launcher shortcuts** (`@xml/shortcuts`, static): Say what you ate · Log food · Add water ·
-Weigh in. The first three of those are the FAB sheet's own rows; water writes a glass and lands
-on Home.
+Weigh in. The first three outlived the FAB-sheet rows they mirrored and still land on talk-to-log,
+the camera and the weigh-in sheet; water writes a glass and lands on Home.
 
 **Window width** (`AppScaffold`, the app's one reader of it): at ≥600dp the bottom bar becomes a
 `NavRail` with the FAB in it; at ≥840dp the Profile tab draws its eight sub-routes beside Profile
@@ -694,6 +698,10 @@ each one is argued in `CLAUDE.md`.
 - **No hard deletes** anywhere except an unfinished fast and a superseded workout's sets.
 - **The watch has no database**, and the tile never writes.
 - **No planned meals** — the diary never steps past today.
+- **Log weight, add photo and manual log exercise on the FAB.** The sheet is one AI field plus
+  photo and barcode. Weight is logged from its Progress page (and the "Weigh in" shortcut), the body
+  shot from Home's photo card and Progress, manual and strength exercise from the diary's exercise
+  block and Home's plan card.
 - **A year-long coach report, and a PNG share of one.** `show_report` offers 7 and 30 only, the
   windows `get_history` can then discuss — the recap's own rule. Sharing is the recap route's job;
   a chat answer already long-presses to share as text.

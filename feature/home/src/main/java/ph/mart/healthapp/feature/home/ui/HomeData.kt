@@ -110,7 +110,7 @@ data class HomeUiState(
 
 /** All Home writes: today's glass count, today's mood/energy, the fasting timer and today's
  * supplement ticks. Everything
- * else on the screen is read-only — the FAB's sheets own every other write path. A level of 0
+ * else on the screen is read-only — the FAB's sheet and the other tabs own every other write path. A level of 0
  * clears that row. */
 sealed interface HomeEvent {
     data class OnSetSupplementTaken(val id: Long, val taken: Int) : HomeEvent

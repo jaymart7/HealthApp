@@ -132,7 +132,8 @@ internal fun DiaryBody(
             // They scroll rather than pinning, and they are labelled rather than bare glyphs: as
             // three unlabelled icons in the pinned area they asked the user to know what a
             // microphone did to a diary before tapping it, and they cost the screen a third pinned
-            // block. Once they scroll away the FAB's sheet holds all three.
+            // block. Once they scroll away the FAB's sheet still has scan and photo, and its field
+            // reads the sentence the first one would have.
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 LabelledActionChip(
                     label = stringResource(R.string.food_chip_say),

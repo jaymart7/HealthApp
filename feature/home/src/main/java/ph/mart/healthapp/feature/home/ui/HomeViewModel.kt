@@ -48,7 +48,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 
 /**
  * Near-read-only container: the water glasses, the day's mood/energy, the fasting timer and the
- * supplement ticks are the only things this screen writes. The FAB's sheets own every other write path.
+ * supplement ticks are the only things this screen writes. The FAB's sheet and the other tabs own every other write path.
  *
  * All five flows are combined rather than snapshotted: this is what stops Home from drifting from
  * the rest of the app (the prototype's Home briefly read a hardcoded profile instead of the shared
