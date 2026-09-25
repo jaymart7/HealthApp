@@ -267,7 +267,10 @@
 
     <!-- Food library -->
     <string name="profile_library_empty_heading">Nothing saved yet</string>
-    <string name="profile_library_empty_body">Save a food or a meal from the diary, or build a recipe, and it shows up here.</string>
+    <string name="profile_library_empty_body">Tap Add to make a food or a recipe, or save a meal from the diary, and it shows up here.</string>
+    <string name="profile_library_add">Add</string>
+    <string name="profile_library_new_food">New food</string>
+    <string name="profile_library_new_recipe">New recipe</string>
     <string name="profile_library_my_foods">My foods</string>
     <string name="profile_library_saved_meals">Saved meals</string>
     <string name="profile_library_recipes">Recipes</string>

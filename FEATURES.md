@@ -15,7 +15,7 @@ either. `DECISIONS.md` also holds what was weighed and deferred.
 
 **Routes above a tab** (own back toolbar, no bottom bar/FAB):
 `CoachRoute` · `FoodCaptureRoute(dateEpochDay)` · `BarcodeScanRoute(dateEpochDay)` ·
-`LabelScanRoute(dateEpochDay)` · `VoiceLogRoute(dateEpochDay)` · `RecipeBuilderRoute` ·
+`LabelScanRoute(dateEpochDay)` · `VoiceLogRoute(dateEpochDay)` · `RecipeBuilderRoute` · `NewFoodRoute` ·
 `StrengthWorkoutRoute` · `HealthConnectionRoute` · `FoodLibraryRoute` · `RoutinesRoute` ·
 `SupplementsRoute` · `HomeLayoutRoute`.
 
@@ -555,7 +555,7 @@ panes at ≥840dp.
   in the library and routines — and Delete lives at the foot of that sheet, below a rule in
   `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
   any of the three can log, tick or start anything — routines' New routine only opens the strength
-  screen, which does the logging.
+  screen, which does the logging, and the library's Add only authors.
 - Supplements: name, dose label, times per day, **which weekdays** — the same seven-cell picker the
   routine editor draws, defaulting to every day and refusing to be emptied — and **what one dose
   carries**: the seven graded nutrients, typable behind a "What's in a dose" disclosure that opens
@@ -579,7 +579,9 @@ panes at ≥840dp.
   than transcribed — the model is asked to answer with nothing for a product it does not know, and
   nothing is written until Save. Offline, unrecognised and failed each say so under the field.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
-  delete (neither can log or start anything). The food library adds a persistent search over
+  delete (neither can log or start anything). The food library has an **Add** FAB whose menu opens
+  **New food** (name, portion, calories, macros and fiber/sugar/sodium, saved as one of your foods)
+  or **New recipe** (the recipe builder). It also has a persistent search over
   names *and* contents lines, with match highlighting, and sticky counted section headers; My
   foods rows draw their macros in the fixed P/C/F colours.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a

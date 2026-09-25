@@ -257,6 +257,11 @@
     <string name="food_review_check_this">Check this</string>
     <string name="food_review_rough_guess">Unsure: %1$s</string>
 
+    <!-- New food (reached from Profile → Food library) -->
+    <string name="food_new_food_save">Save food</string>
+    <string name="food_new_food_discard_title">Discard this food?</string>
+    <string name="food_new_food_not_saved">It hasn\'t been saved yet.</string>
+
     <!-- Recipe builder -->
     <string name="food_recipe_label">Recipe</string>
     <string name="food_recipe_placeholder">Name this dish</string>

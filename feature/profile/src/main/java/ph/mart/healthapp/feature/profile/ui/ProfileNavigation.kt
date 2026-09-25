@@ -105,6 +105,8 @@ fun EntryProviderScope<NavKey>.profileEntries(
     onOpenReminders: () -> Unit,
     onOpenHealth: () -> Unit,
     onOpenLibrary: () -> Unit,
+    onNewFood: () -> Unit,
+    onNewRecipe: () -> Unit,
     onOpenRoutines: () -> Unit,
     onNewRoutine: () -> Unit,
     onOpenSupplements: () -> Unit,
@@ -129,7 +131,9 @@ fun EntryProviderScope<NavKey>.profileEntries(
     }
     val detail = ListDetailSceneStrategy.detailPane()
     entry<HealthConnectionRoute>(metadata = detail) { HealthConnectionScreen(onBack = onExitFlow) }
-    entry<FoodLibraryRoute>(metadata = detail) { FoodLibraryScreen() }
+    entry<FoodLibraryRoute>(metadata = detail) {
+        FoodLibraryScreen(onNewFood = onNewFood, onNewRecipe = onNewRecipe)
+    }
     entry<RoutinesRoute>(metadata = detail) { RoutinesScreen(onNewRoutine = onNewRoutine) }
     entry<SupplementsRoute>(metadata = detail) { SupplementsScreen(onOpenScan = onOpenSupplementScan) }
     // No pane metadata: see [SupplementScanRoute].

@@ -312,7 +312,7 @@ the stray `!!`s and two unnecessary safe calls went with them.
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `label`, `history`,
-  `recipe`, `search`, `ideas`, `voice`, `quicklog` — the FAB's sheet, `shared`), `:feature:progress` (`progress` — the overview and
+  `recipe`, `myfood` — New food, reached from the library, `search`, `ideas`, `voice`, `quicklog` — the FAB's sheet, `shared`), `:feature:progress` (`progress` — the overview and
   the detail chrome — plus `weight`, `measurement`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's charts;

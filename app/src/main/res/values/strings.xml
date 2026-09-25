@@ -21,6 +21,7 @@
 
     <!-- Toolbar titles for the routes a level above a tab -->
     <string name="app_title_new_recipe">New recipe</string>
+    <string name="app_title_new_food">New food</string>
     <string name="app_title_edit_workout">Edit workout</string>
     <string name="app_title_strength_workout">Strength workout</string>
     <string name="app_title_meal_ideas">Meal ideas</string>

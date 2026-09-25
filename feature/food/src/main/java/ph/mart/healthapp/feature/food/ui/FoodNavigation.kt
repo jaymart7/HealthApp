@@ -12,6 +12,7 @@ import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
 import ph.mart.healthapp.feature.food.ui.history.FoodHistoryScreen
 import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasScreen
 import ph.mart.healthapp.feature.food.ui.label.LabelScanScreen
+import ph.mart.healthapp.feature.food.ui.myfood.NewFoodScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
 import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 import ph.mart.healthapp.feature.food.ui.voice.VoiceLogScreen
@@ -60,10 +61,17 @@ data class FoodHistoryRoute(val dateEpochDay: Long, val query: String) : NavKey
 @Serializable
 data class MealIdeasRoute(val request: MealIdeaRequest) : NavKey
 
-/** Authoring a recipe — reached from the add-entry sheet, and carrying nothing: a recipe belongs
- * to no day, so unlike [BarcodeScanRoute] it has no date to pass. */
+/** Authoring a recipe — reached from the add-entry sheet and from Profile → Food library, and
+ * carrying nothing: a recipe belongs to no day, so unlike [BarcodeScanRoute] it has no date to
+ * pass. */
 @Serializable
 data object RecipeBuilderRoute : NavKey
+
+/** Authoring a food the user owns — reached from Profile → Food library, which cannot import this
+ * module, so `:app` pushes it. Carries nothing for [RecipeBuilderRoute]'s reason: a food belongs to
+ * no day. */
+@Serializable
+data object NewFoodRoute : NavKey
 
 /** Logging a meal by saying or typing a sentence. Carries the day like [BarcodeScanRoute], and
  * for the same reason — a meal described while reviewing a past day belongs to that day; `0` is
@@ -74,10 +82,10 @@ data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
 /** [twoPane] comes from `AppScaffold`, the one place in the app that reads the window's width, so
  * this tab is told rather than asking — which is also why `:feature:food` needs no adaptive
  * dependency of its own. It reaches the diary and nothing else: the camera flows are full-bleed at
- * every width, and the recipe screen is a form.
+ * every width, and the recipe and new-food screens are forms.
  *
- * [onExitFlow] is the toolbar arrow for the six routes that draw their own: the four camera-side
- * flows, the recipe builder, and the history search, which took its bar over when the review screen
+ * [onExitFlow] is the toolbar arrow for the seven routes that draw their own: the four camera-side
+ * flows, the recipe builder, the new-food screen, and the history search, which took its bar over when the review screen
  * behind a result brought one of its own.
  *
  * [onOpenStrength] and [onLogExercise] leave this module entirely — the strength screen and the
@@ -128,6 +136,7 @@ fun EntryProviderScope<NavKey>.foodEntries(
         )
     }
     entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }
+    entry<NewFoodRoute> { NewFoodScreen(onExit = onExitFlow) }
     entry<MealIdeasRoute> { key -> MealIdeasScreen(request = key.request, onSelect = onSelectIdea) }
     entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key ->

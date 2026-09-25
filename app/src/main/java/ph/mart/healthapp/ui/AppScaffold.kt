@@ -59,6 +59,7 @@ import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.LabelScanRoute
 import ph.mart.healthapp.feature.food.ui.MealIdeasRoute
 import ph.mart.healthapp.feature.food.ui.FoodHistoryRoute
+import ph.mart.healthapp.feature.food.ui.NewFoodRoute
 import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
 import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
 import ph.mart.healthapp.feature.food.ui.foodEntries
@@ -104,6 +105,7 @@ private fun TopLevelDestination.label(): Int = when (this) {
 @Composable
 private fun NavKey?.title(): String = when (this) {
     RecipeBuilderRoute -> stringResource(R.string.app_title_new_recipe)
+    NewFoodRoute -> stringResource(R.string.app_title_new_food)
     is StrengthWorkoutRoute -> stringResource(
         if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
     )
@@ -538,6 +540,10 @@ fun AppScaffold(
                             onOpenReminders = { topLevelBackStack.add(RemindersRoute) },
                             onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },
                             onOpenLibrary = { topLevelBackStack.add(FoodLibraryRoute) },
+                            // Both leave Profile for `:feature:food`'s authoring screens, which
+                            // take the whole window at every width — neither is a Profile pane.
+                            onNewFood = { topLevelBackStack.add(NewFoodRoute) },
+                            onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
                             onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },
                             // Day 0 is today. A blank session, not a builder: "Save as routine"
                             // on that screen is still the one way a routine is authored.

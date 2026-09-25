@@ -1732,8 +1732,9 @@ rather than needing a counter patched.
   in neither place. The old name stays as an `isFavorite = 0` tombstone keeping its macros, which
   is what the table has always done; renaming onto a name that already exists overwrites it,
   because name *is* the identity here. That identity is also why saving the same name twice from
-  the sheet is an **edit** — which is the whole of "edit a food later", and why the library screen
-  renames and deletes but never opens a form of its own.
+  the sheet is an **edit** — which is the whole of "edit a food later", and why the library's row
+  opens Rename rather than a form. (The library *does* reach a form now, for a new food; see "The
+  library adds now" below.)
 - **"Save as my food" is one button on the sheet that already holds every field.** `AddEntryForm`
   carries the portion, the macros, the micronutrients and `withPortionAmount()` repricing, so
   authoring is a button rather than a second screen. Hidden until there is a name *and* calories
@@ -1765,10 +1766,25 @@ rather than needing a counter patched.
   sixth saved meal used to be out of view *and* out of reach of its own delete button, which is the
   bug that screen exists to fix. Both windows share one join helper per type in
   `FoodRepositoryImpl`, so the panel's list and the library's cannot drift apart in grouping or
-  order. The library renames and deletes and **cannot log**: logging needs a meal slot and a day,
-  and Profile has neither. Rename is one column (`SavedMealDao.rename`) precisely because a recipe
+  order. The library renames, deletes and — since the Add FAB, below — adds, and **cannot log**:
+  logging needs a meal slot and a day, and Profile has neither. Rename is one column (`SavedMealDao.rename`) precisely because a recipe
   and a saved meal are the same row shape and `servings` is what tells them apart. The Profile row
   carries no count, for the same reason the Connections row caches no connection state.
+- **The library adds now, through a FAB menu, and still cannot log.** Add opens two doors: **New
+  food** and **New recipe**. New recipe is the existing `RecipeBuilderRoute`. New food is
+  `NewFoodRoute`, a small `:feature:food` screen (`ui/myfood/`) that draws the scan review's
+  `SubjectCard`, macro tiles and `MicronutrientInputGroup` without its meal chips and Log button, and
+  saves through `toSuggestion()` → `setFavorite()`, the "Save as my food" write. So there is still one
+  form and one write path, and the reversal is of *where* it can be reached, not of how many exist.
+  Both routes are `:feature:food`'s, so `:app` pushes them from callbacks — the `onOpenCoach` shape —
+  and neither is a Profile pane: at ≥840dp each takes the window, like `SupplementScanRoute`.
+  Consequences taken knowingly: saving under a name that exists **replaces** that food, because the
+  name is the row's identity (the sheet's rule, unchanged); **saved meals are not offered**, because
+  one is a copy of a diary section and there is no diary here; and it is a **screen `DockedFab`**
+  where Supplements docks a bar, so at ≥840dp it sits beside the rail's collapsed FAB — the call
+  Workout routines made one screen over, and on a phone the pane has no tab chrome to collide with.
+  A menu rather than two FABs: one primary action per screen. The FAB stays expanded because
+  `rememberFabExpanded` reads a `ScrollState` and this list is lazy.
 - **Changing a portion reprices the entry.** `AddEntryForm.withPortionAmount()` (and its
   `SavedMealItem` twin) scale calories, all three macros and the three micronutrients by the
   portion ratio, because every
@@ -4741,7 +4757,9 @@ consequence of that.
   screen-level FAB would land beside the app's own at two-pane width; a top-bar action would put
   the pane's primary action in the chrome above it. A bar docked to the bottom of the pane is the
   only one of the three that stays in its own column. It is `DockedActionBar`, promoted from
-  `:feature:food` to `:core:designsystem` on the ≥2-consumers rule rather than copied.
+  `:feature:food` to `:core:designsystem` on the ≥2-consumers rule rather than copied. The food
+  library and the routines went the other way — screen FABs, by the user's choice, accepting the
+  two-pane collision this bullet avoided; see "The library adds now" and "New routine door".
 - **Frequency is the supplement row's marker, and it is never a checkbox.** Times-per-day was the
   tail of a grey caption and invisible unless read; a scan down the list now shows which rows owe
   a second dose. `primaryContainer` at two or more, quiet at one, and the figure is printed
