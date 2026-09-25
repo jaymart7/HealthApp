@@ -68,9 +68,9 @@ import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.LabelledActionChip
 
-/** Three lines before it scrolls — `DescribeExerciseField`'s figure, for a sentence of the same
- * length. */
-private const val SENTENCE_LINES = 3
+/** Two lines even when blank, so the field reads as a place for a sentence; four before it scrolls. */
+private const val SENTENCE_MIN_LINES = 2
+private const val SENTENCE_MAX_LINES = 4
 
 /**
  * The field, the send circle, and under them the ways in that are not sentences.
@@ -151,7 +151,8 @@ internal fun QuickLogInputBar(
                     value = text,
                     onValueChange = onTextChange,
                     placeholder = placeholder,
-                    maxLines = SENTENCE_LINES,
+                    maxLines = SENTENCE_MAX_LINES,
+                    minLines = SENTENCE_MIN_LINES,
                     imeAction = ImeAction.Send,
                     onImeAction = onSend.takeIf { canSend },
                     shape = RoundedCornerShape(24.dp),

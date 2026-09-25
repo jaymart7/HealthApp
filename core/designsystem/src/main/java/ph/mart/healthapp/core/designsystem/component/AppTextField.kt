@@ -82,6 +82,7 @@ fun AppTextField(
     imeAction: ImeAction = ImeAction.Default,
     onImeAction: (() -> Unit)? = null,
     maxLines: Int = 1,
+    minLines: Int = 1,
     trailing: @Composable (() -> Unit)? = null,
     shape: Shape = RoundedCornerShape(12.dp),
     color: Color = Color.Transparent,
@@ -130,6 +131,7 @@ fun AppTextField(
                         imeAction = imeAction,
                         onImeAction = onImeAction,
                         maxLines = maxLines,
+                        minLines = minLines,
                     )
                 }
                 if (trailing != null) {
@@ -159,8 +161,10 @@ private fun FieldContent(
     imeAction: ImeAction,
     onImeAction: (() -> Unit)?,
     maxLines: Int,
+    minLines: Int,
 ) {
-    Box(contentAlignment = Alignment.CenterStart) {
+    // Top, so a field taller than its placeholder (a [minLines] floor) shows it on the first line.
+    Box(contentAlignment = Alignment.TopStart) {
         if (value.isEmpty()) {
             Crossfade(
                 targetState = placeholder,
@@ -182,6 +186,7 @@ private fun FieldContent(
             // Not `singleLine = true` beside a maxLines above 1 — BasicTextField rejects the pair.
             singleLine = maxLines == 1,
             maxLines = maxLines,
+            minLines = minLines,
             keyboardOptions = KeyboardOptions(imeAction = imeAction),
             // One handler for all of them: the key the IME shows is `imeAction`'s, so whichever
             // callback fires is the one the caller asked for.
