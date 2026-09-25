@@ -1,7 +1,9 @@
 package ph.mart.healthapp.core.data.coach
 
 import kotlinx.coroutines.flow.Flow
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.food.MealType
@@ -277,6 +279,65 @@ sealed interface CoachAction {
      * cannot see a feature's `NavKey` — `:app` is what turns it into one.
      */
     data class OpenScreen(val screen: CoachScreen) : CoachAction
+
+    /**
+     * A change to a food already in the diary, named by the id `get_day` handed out.
+     *
+     * The model supplies the id, the day it read it on and only the fields to change; [resolve]
+     * loads the row as it stands into [before] and builds [after] from it — the pair the card
+     * draws and the one row `settle` writes. **A portion-only change is repriced by the app**
+     * (`FoodEntry.withPortionAmount`, the portion stepper's own rule), which is [LogExercise]'s
+     * rule — the app supplies what a model would invent — and a figure the model did give
+     * overrides the repriced one. Both are null until resolved, which never reaches a card.
+     */
+    data class EditFood(
+        val entryId: Long,
+        val dateEpochDay: Long = 0,
+        val name: String? = null,
+        val mealType: MealType? = null,
+        val portionAmount: Double? = null,
+        val calories: Int? = null,
+        val proteinG: Int? = null,
+        val carbsG: Int? = null,
+        val fatG: Int? = null,
+        val before: FoodEntry? = null,
+        val after: FoodEntry? = null,
+    ) : CoachAction
+
+    /** [EditFood] for an activity. A changed type or duration is repriced by `estimateBurnedKcal`
+     * off the latest weigh-in, [LogExercise]'s rule, so an edited run and a logged one agree. */
+    data class EditExercise(
+        val entryId: Long,
+        val dateEpochDay: Long = 0,
+        val type: ExerciseType? = null,
+        val name: String? = null,
+        val minutes: Int? = null,
+        val before: ExerciseEntry? = null,
+        val after: ExerciseEntry? = null,
+    ) : CoachAction
+
+    /** A food soft-deleted from the diary — the only kind of delete this app has. [entry] is the row
+     * as it stands, stamped by [resolve], so the card names what goes rather than an id. */
+    data class DeleteFood(
+        val entryId: Long,
+        val dateEpochDay: Long = 0,
+        val entry: FoodEntry? = null,
+    ) : CoachAction
+
+    /** [DeleteFood] for an activity. */
+    data class DeleteExercise(
+        val entryId: Long,
+        val dateEpochDay: Long = 0,
+        val entry: ExerciseEntry? = null,
+    ) : CoachAction
+
+    /** The day's water as a **new total**, where [LogWater] adds — "I only had five". [previous]
+     * is what it replaces, stamped by [resolve] for the card and never the model's. */
+    data class SetWater(
+        val glasses: Int,
+        val dateEpochDay: Long = 0,
+        val previous: Int = 0,
+    ) : CoachAction
 }
 
 /**
@@ -316,6 +377,12 @@ val CoachAction.draftedOn: Long?
         // The fifth dated kind, and the only one that is not a row of figures: a note belongs to
         // the day it is about, which is the diary's own rule for it.
         is CoachAction.LogNote -> dateEpochDay
+        // A change lands on the day the row is on, which is the day the model read it from.
+        is CoachAction.EditFood -> dateEpochDay
+        is CoachAction.EditExercise -> dateEpochDay
+        is CoachAction.DeleteFood -> dateEpochDay
+        is CoachAction.DeleteExercise -> dateEpochDay
+        is CoachAction.SetWater -> dateEpochDay
         is CoachAction.LogWeight,
         is CoachAction.LogSupplement,
         is CoachAction.LogMood,

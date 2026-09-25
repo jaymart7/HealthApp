@@ -281,6 +281,26 @@ internal class CoachRepositoryImpl(
     ) {
         actions.foodEntries().takeIf { it.isNotEmpty() }?.let { foodRepository.addEntries(it) }
 
+        // Changes to rows already there, through the calls the diary's own edit sheet and swipe
+        // make — so a coach-made correction is indistinguishable from a hand-made one, and a
+        // delete is the same soft delete. `resolve` built each `after` from the row as it stood.
+        actions.forEach {
+            when (it) {
+                is CoachAction.EditFood -> it.after?.let { entry -> foodRepository.updateEntry(entry) }
+                is CoachAction.DeleteFood -> foodRepository.deleteEntry(it.entryId)
+                is CoachAction.EditExercise -> it.after?.let { entry -> exerciseRepository.updateEntry(entry) }
+                is CoachAction.DeleteExercise -> exerciseRepository.deleteEntry(it.entryId)
+                else -> Unit
+            }
+        }
+
+        // A corrected total goes down *before* any glasses are added, so "I had five, and one more
+        // just now" lands as six rather than as five.
+        actions.filterIsInstance<CoachAction.SetWater>().lastOrNull()?.let {
+            val day = it.dateEpochDay.takeIf { d -> d > 0 } ?: todayEpochDay()
+            waterRepository.upsertDay(WaterDay(dateEpochDay = day, glasses = it.glasses))
+        }
+
         // Added to the day, never assigned: a coach that proposes "one glass" must not wipe the
         // six already there. `observeDay`/`upsertDay` rather than `setToday`, which is that pair
         // with today baked in — one path now that a draft can name a past day.
@@ -520,8 +540,17 @@ private fun systemPromptFor(
             "you are proposing; every row of one draft has to be for the same day, so draft two " +
             "days as two separate turns. A weigh-in, a supplement, a mood, a blood-pressure " +
             "reading and a measurement are always today; a note can name an earlier day, " +
-            "the way a food can. You " +
-            "cannot edit or delete anything — point them at the Food tab's diary for that.",
+            "the way a food can.",
+    )
+    appendLine(
+        "You can also change what is already logged. Call get_day for that day first — every " +
+            "food and activity in it carries an id like #123 — then call edit_food, " +
+            "edit_exercise or delete_entry with that id and the same days_ago, up to " +
+            "$MAX_DRAFT_DAYS_AGO days back. Never guess an id. Pass only what they asked to " +
+            "change; for a different amount of a food pass portion_amount alone and the app " +
+            "reprices it, and never set the calories burned for an activity. To correct a day's " +
+            "water to a total they give you, call set_water; to add glasses, log_water. Nothing " +
+            "changes until they confirm, so say what you are proposing.",
     )
     appendLine(
         "Three of those record something they told you about themselves, and all three follow " +

@@ -3471,6 +3471,22 @@ rather than needing a counter patched.
   list, and `CoachScreenRouteTest` holds every one to a route. The report card's `onOpenSection`
   became `onOpenScreen` and `reportSectionRoute` became `coachScreenRoute`: one door out, one
   mapper. A tab is switched to; everything else is pushed above the coach.
+- **The coach can change and remove what is logged — still as a draft the user confirms.** The
+  prompt used to say *"you cannot edit or delete anything — point them at the Food tab's diary"*;
+  the owner asked for a coach that can update everything, and chose to keep every change behind
+  the tap. So `edit_food`, `edit_exercise`, `delete_entry` and `set_water` are drafts like the rest,
+  and the ids that make them possible ride on `get_day`'s lines (`#123`, omitted for an unsaved row).
+  **The model names a row and the fields to change; `resolve` does the rest.** It loads the row on
+  the day the model read it from — a missing or already-deleted row, or an id from another day,
+  fails the turn — and builds `after` from it: a portion-only edit is repriced by
+  `FoodEntry.withPortionAmount` (the portion stepper's rule, moved down from `:feature:food` so
+  there is one rounding), a figure the model did give overrides the repriced one, and a changed
+  activity is re-priced by `estimateBurnedKcal` exactly as a drafted one is. An edit that changes
+  nothing fails rather than drawing a no-op, and a field that is present and invalid fails the draft
+  rather than being dropped — a card that silently ignored "make it 900" draws an edit nobody asked
+  for. `settle` writes through `updateEntry` and the ordinary soft delete, so a coach correction is
+  indistinguishable from the edit sheet's. `set_water` is a total where `log_water` adds, and goes
+  down first so "I had five, and one more now" lands as six.
 
 ### Training, strength & routines
 

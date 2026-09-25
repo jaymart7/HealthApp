@@ -13,6 +13,8 @@ import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.servingGrams
+import ph.mart.healthapp.core.data.food.portionFactor
+import ph.mart.healthapp.core.data.food.scaledBy
 import ph.mart.healthapp.core.data.food.times
 
 /** What the user is actively editing in the add-entry sheet — seeded fresh (not from a loaded
@@ -256,11 +258,7 @@ fun SavedMealItem.withPortionAmount(amount: Double): SavedMealItem {
     )
 }
 
-/** Null when there is nothing to scale from or to — the caller then moves the amount alone. */
-private fun portionFactor(from: Double, to: Double): Double? =
-    if (from <= 0.0 || to < 0.0) null else to / from
-
-private fun scale(value: Int, factor: Double): Int = (value * factor).roundToInt()
+private fun scale(value: Int, factor: Double): Int = value.scaledBy(factor)
 
 @JvmName("scaleNullable")
 private fun scale(value: Int?, factor: Double): Int? = value?.let { scale(it, factor) }

@@ -498,6 +498,12 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   draws what it replaces under what it writes; a blank or over-long note fails the turn rather
   than clearing or truncating the day. The button says "Note it", and today's note earns the diary
   door.
+- Coach corrections — "make that rice half a cup", "delete the coffee", "I only had five glasses":
+  `get_day` hands every food and activity out with its id, and `edit_food` / `edit_exercise` /
+  `delete_entry` / `set_water` draft a change against that row. The card draws the row before and
+  after — a portion-only edit repriced by the app, a changed activity re-priced off the latest
+  weigh-in — and "Update it" / "Remove it" writes through the diary's own update and soft delete.
+  Up to a month back, one day per card, today's earning the diary door.
 - Coach screens — "show me my sleep" / "open my food library" drafts an `open_screen` card naming
   one of `CoachScreen`'s 24 places (the four tabs, Profile's lists and settings, every Progress
   subject); "Open it" goes there, above the coach so back returns to the chat. It writes nothing

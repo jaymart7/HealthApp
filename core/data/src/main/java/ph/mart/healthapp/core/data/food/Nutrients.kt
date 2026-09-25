@@ -81,3 +81,28 @@ val Nutrients.isEmpty: Boolean
  * so counting them would report full coverage for a day with no vitamin data at all. */
 val Nutrients.hasMicronutrients: Boolean
     get() = vitaminDUg > 0 || calciumMg > 0 || ironUg > 0 || potassiumMg > 0
+
+/**
+ * What a portion change scales every figure by. Null when there is nothing to scale from or to — a
+ * zero or absent starting portion has no price per unit — and the caller then moves the amount
+ * alone. Here rather than beside the add-entry form because the coach reprices a logged row with
+ * the same rule, and a second copy would be a second rounding to keep in step.
+ */
+fun portionFactor(from: Double, to: Double): Double? =
+    if (from <= 0.0 || to < 0.0) null else to / from
+
+fun Int.scaledBy(factor: Double): Int = (this * factor).roundToInt()
+
+/** A logged row at a new portion, every figure repriced — `AddEntryForm.withPortionAmount`'s twin
+ * for a row that is already in the diary. */
+fun FoodEntry.withPortionAmount(amount: Double): FoodEntry {
+    val factor = portionFactor(from = portionAmount, to = amount) ?: return copy(portionAmount = amount)
+    return copy(
+        portionAmount = amount,
+        calories = calories.scaledBy(factor),
+        proteinG = proteinG.scaledBy(factor),
+        carbsG = carbsG.scaledBy(factor),
+        fatG = fatG.scaledBy(factor),
+        nutrients = nutrients * factor,
+    )
+}

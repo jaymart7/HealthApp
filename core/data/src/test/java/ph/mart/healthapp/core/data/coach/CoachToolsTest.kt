@@ -18,6 +18,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.exercise.weekStart
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
@@ -1635,6 +1636,111 @@ class CoachToolsTest {
         assertNull(parseAction(TOOL_OPEN_SCREEN, mapOf("screen" to JsonPrimitive("Settings menu")), 0))
         assertNull(parseAction(TOOL_OPEN_SCREEN, emptyMap(), 0))
     }
+
+    // region Edits and deletes
+
+    private val rice = FoodEntry(
+        id = 42,
+        name = "Rice",
+        dateEpochDay = 20_000,
+        mealType = MealType.Lunch,
+        portionAmount = 1.0,
+        portionUnit = "cup",
+        calories = 200,
+        proteinG = 4,
+        carbsG = 44,
+        fatG = 0,
+    )
+
+    @Test
+    fun `an edit call carries only the fields it names`() {
+        val edit = parseAction(
+            TOOL_EDIT_FOOD,
+            mapOf("entry_id" to JsonPrimitive(42), "portion_amount" to JsonPrimitive(0.5), "days_ago" to JsonPrimitive(1)),
+            today = 20_001,
+        )
+        assertEquals(
+            CoachAction.EditFood(entryId = 42, dateEpochDay = 20_000, portionAmount = 0.5),
+            edit,
+        )
+    }
+
+    /** A field that is there and wrong is an edit the user did not ask for — never dropped. */
+    @Test
+    fun `an edit with a bad field or no id fails the draft`() {
+        assertNull(parseAction(TOOL_EDIT_FOOD, mapOf("entry_id" to JsonPrimitive(42), "calories" to JsonPrimitive(90_000)), 0))
+        assertNull(parseAction(TOOL_EDIT_FOOD, mapOf("entry_id" to JsonPrimitive(42), "meal" to JsonPrimitive("Brunch")), 0))
+        assertNull(parseAction(TOOL_EDIT_FOOD, mapOf("calories" to JsonPrimitive(100)), 0))
+        assertNull(parseAction(TOOL_EDIT_FOOD, mapOf("entry_id" to JsonPrimitive(42), "days_ago" to JsonPrimitive(90)), 0))
+    }
+
+    @Test
+    fun `a portion edit is repriced by the app, and a stated figure wins`() {
+        val halved = editedFood(CoachAction.EditFood(entryId = 42, portionAmount = 0.5), rice)!!
+        assertEquals(0.5, halved.portionAmount, 0.0)
+        assertEquals(100, halved.calories)
+        assertEquals(22, halved.carbsG)
+        assertEquals(42, halved.id)
+        assertEquals(20_000, halved.dateEpochDay)
+
+        val stated = editedFood(CoachAction.EditFood(entryId = 42, portionAmount = 0.5, calories = 130), rice)!!
+        assertEquals(130, stated.calories)
+        assertEquals(22, stated.carbsG)
+    }
+
+    @Test
+    fun `an edit that changes nothing fails rather than drawing a no-op`() {
+        assertNull(editedFood(CoachAction.EditFood(entryId = 42, calories = 200), rice))
+    }
+
+    @Test
+    fun `an activity edit reprices the burn, and fails with no weight to price it`() {
+        val run = ExerciseEntry(id = 7, type = ExerciseType.Run, minutes = 30, burnedKcal = 300)
+        val longer = editedExercise(CoachAction.EditExercise(entryId = 7, minutes = 45), run, weightKg = 70.0)!!
+        assertEquals(45, longer.minutes)
+        assertEquals(estimateBurnedKcal(ExerciseType.Run, 45, 70.0), longer.burnedKcal)
+        assertNull(editedExercise(CoachAction.EditExercise(entryId = 7, minutes = 45), run, weightKg = null))
+        // A rename alone keeps the burn, and needs no weight.
+        assertEquals(300, editedExercise(CoachAction.EditExercise(entryId = 7, name = "Park run"), run, null)!!.burnedKcal)
+    }
+
+    @Test
+    fun `a delete names its kind, and an unknown kind fails`() {
+        assertEquals(
+            CoachAction.DeleteFood(entryId = 42),
+            parseAction(TOOL_DELETE_ENTRY, mapOf("kind" to JsonPrimitive("food"), "entry_id" to JsonPrimitive(42)), 0),
+        )
+        assertEquals(
+            CoachAction.DeleteExercise(entryId = 7),
+            parseAction(TOOL_DELETE_ENTRY, mapOf("kind" to JsonPrimitive("exercise"), "entry_id" to JsonPrimitive(7)), 0),
+        )
+        assertNull(parseAction(TOOL_DELETE_ENTRY, mapOf("kind" to JsonPrimitive("water"), "entry_id" to JsonPrimitive(7)), 0))
+    }
+
+    /** Zero is a correction here, where `log_water` refuses it. */
+    @Test
+    fun `set water takes a total, zero included`() {
+        assertEquals(
+            CoachAction.SetWater(glasses = 0),
+            parseAction(TOOL_SET_WATER, mapOf("glasses" to JsonPrimitive(0)), 0),
+        )
+        assertNull(parseAction(TOOL_SET_WATER, mapOf("glasses" to JsonPrimitive(-1)), 0))
+    }
+
+    @Test
+    fun `a day hands out the ids an edit needs`() {
+        val text = formatDay(
+            label = "Today",
+            foods = listOf(rice),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = listOf(ExerciseEntry(id = 7, type = ExerciseType.Run, name = "Run", minutes = 30, burnedKcal = 300)),
+        )
+        assertTrue(text, "- #42 Rice (Lunch): 200 kcal, 4P/44C/0F, 1 cup" in text)
+        assertTrue(text, "- Activity: #7 Run, 30 min, 300 kcal burned" in text)
+    }
+
+    // endregion
 
     /** An open-screen Confirm leaves the chat, the routine's reason for standing alone. */
     @Test

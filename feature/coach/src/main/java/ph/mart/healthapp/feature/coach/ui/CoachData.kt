@@ -98,11 +98,16 @@ internal fun List<CoachAction>.diaryDestination(): Int? = firstNotNullOfOrNull {
     when (action) {
         is CoachAction.LogFood -> action.mealType.labelRes.takeIf { action.draftedOn == null }
         is CoachAction.LogSavedMeal -> action.mealType.labelRes.takeIf { action.draftedOn == null }
+        is CoachAction.EditFood -> action.after?.mealType?.labelRes?.takeIf { action.draftedOn == null }
         is CoachAction.LogWater,
         is CoachAction.LogExercise,
         // The diary's foot rather than a meal section, but the same screen and the same rule:
         // the door is worth it for today's note and would open the wrong day for any other.
         is CoachAction.LogNote,
+        is CoachAction.EditExercise,
+        is CoachAction.DeleteFood,
+        is CoachAction.DeleteExercise,
+        is CoachAction.SetWater,
         -> R.string.coach_destination_diary.takeIf { action.draftedOn == null }
         else -> null
     }
@@ -121,6 +126,12 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
         is CoachAction.LogExercise,
         is CoachAction.LogSavedMeal,
         is CoachAction.LogNote,
+        // A change lands in the diary like a new row does, and earns the door on today's rule.
+        is CoachAction.EditFood,
+        is CoachAction.EditExercise,
+        is CoachAction.DeleteFood,
+        is CoachAction.DeleteExercise,
+        is CoachAction.SetWater,
         -> it.draftedOn == null
         is CoachAction.LogWeight,
         is CoachAction.LogSupplement,

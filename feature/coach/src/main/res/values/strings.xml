@@ -220,6 +220,33 @@
     <string name="coach_proposal_routine_caveat">Opens the workout screen. Nothing is written until you finish it there.</string>
     <string name="coach_proposal_start">Start it</string>
 
+    <!-- A change to something already logged. The card shows the row before and after, so the
+         tap agrees to a correction the user has read. A delete is the app's soft delete. -->
+    <string name="coach_proposal_edit_title">Change in your diary</string>
+    <string name="coach_proposal_delete_title">Remove from your diary</string>
+    <string name="coach_proposal_set_water_title">Set the day\'s water</string>
+    <string name="coach_receipt_before">Before</string>
+    <string name="coach_receipt_after">After</string>
+    <string name="coach_proposal_food_line">%1$d kcal · %2$s %3$s</string>
+    <string name="coach_proposal_edit_row">%1$d → %2$d kcal</string>
+    <string name="coach_proposal_edit_minutes_row">%1$d → %2$d min</string>
+    <string name="coach_proposal_delete_row">Remove</string>
+    <string name="coach_proposal_was">was %1$s</string>
+    <string name="coach_proposal_update">Update it</string>
+    <string name="coach_proposal_remove_confirm">Remove it</string>
+    <plurals name="coach_proposal_apply_items">
+        <item quantity="one">Apply %1$d change</item>
+        <item quantity="other">Apply %1$d changes</item>
+    </plurals>
+    <string name="coach_proposal_changed_food">Changed: %1$s, %2$d kcal.</string>
+    <string name="coach_proposal_changed_exercise">Changed: %1$s, %2$d min.</string>
+    <string name="coach_proposal_removed_entry">Removed: %1$s.</string>
+    <string name="coach_proposal_changed_water">Water set to %1$s.</string>
+    <plurals name="coach_proposal_changed_items">
+        <item quantity="one">Changed %1$d item.</item>
+        <item quantity="other">Changed %1$d items.</item>
+    </plurals>
+
     <!-- A screen the coach offers to open. Writes nothing, so no "Logged:" line follows it. -->
     <string name="coach_proposal_open_title">Open in the app</string>
     <string name="coach_proposal_open">Open it</string>

@@ -6,6 +6,7 @@ import com.google.firebase.ai.type.Tool
 import java.util.Locale
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
@@ -55,6 +56,7 @@ import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.food.dietLine
 import ph.mart.healthapp.core.data.food.perServing
 import ph.mart.healthapp.core.data.food.totalKcal
+import ph.mart.healthapp.core.data.food.withPortionAmount
 import ph.mart.healthapp.core.data.health.HeartDay
 import ph.mart.healthapp.core.data.health.HeartRepository
 import ph.mart.healthapp.core.data.health.SleepNight
@@ -194,6 +196,14 @@ internal const val FAST_END = "end"
 internal const val TOOL_START_ROUTINE = "start_routine"
 
 internal const val TOOL_OPEN_SCREEN = "open_screen"
+internal const val TOOL_EDIT_FOOD = "edit_food"
+internal const val TOOL_EDIT_EXERCISE = "edit_exercise"
+internal const val TOOL_DELETE_ENTRY = "delete_entry"
+internal const val TOOL_SET_WATER = "set_water"
+
+/** The two kinds `delete_entry` takes. Schema text, compared against rather than shown. */
+internal const val ENTRY_FOOD = "food"
+internal const val ENTRY_EXERCISE = "exercise"
 
 /** The tool that neither reads nor drafts: it draws. See this file's header. */
 internal const val TOOL_SHOW_REPORT = "show_report"
@@ -219,6 +229,12 @@ internal val WRITE_TOOLS = setOf(
     TOOL_START_ROUTINE,
     // The routine's kind with no form behind it: the tap opens a screen. [CoachAction.OpenScreen].
     TOOL_OPEN_SCREEN,
+    // Changes to rows already written. Drafts like the rest: the card shows the row before and
+    // after, and the user's tap is the write. See [CoachAction.EditFood].
+    TOOL_EDIT_FOOD,
+    TOOL_EDIT_EXERCISE,
+    TOOL_DELETE_ENTRY,
+    TOOL_SET_WATER,
 )
 
 /**
@@ -486,6 +502,77 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             ),
         ),
         FunctionDeclaration(
+            name = TOOL_EDIT_FOOD,
+            description = "Propose changing a food already in their diary. Call get_day first " +
+                "and use the entry id it shows (#123) with the same days_ago; never guess an id. " +
+                "Pass only what should change. For a different amount pass portion_amount alone " +
+                "and the app reprices it. This does NOT change anything until they confirm.",
+            parameters = mapOf(
+                "entry_id" to Schema.integer(description = "The food's id from get_day."),
+                "days_ago" to draftDaysAgoSchema,
+                "name" to Schema.string(description = "A corrected name.", nullable = true),
+                "meal" to Schema.enumeration(
+                    values = MealType.entries.map { it.name },
+                    description = "A different meal to move it to.",
+                    nullable = true,
+                ),
+                "portion_amount" to Schema.double(
+                    description = "A new amount, in the unit it was logged in.",
+                    nullable = true,
+                ),
+                "calories" to Schema.integer(description = "Corrected calories.", nullable = true),
+                "protein_g" to Schema.integer(description = "Corrected protein in grams.", nullable = true),
+                "carbs_g" to Schema.integer(description = "Corrected carbohydrates in grams.", nullable = true),
+                "fat_g" to Schema.integer(description = "Corrected fat in grams.", nullable = true),
+            ),
+            optionalParameters = listOf(
+                "days_ago", "name", "meal", "portion_amount", "calories", "protein_g", "carbs_g", "fat_g",
+            ),
+        ),
+        FunctionDeclaration(
+            name = TOOL_EDIT_EXERCISE,
+            description = "Propose changing an activity already logged. Call get_day first and " +
+                "use the activity's id (#123) with the same days_ago. Pass only what should " +
+                "change; the app works out the calories burned again itself.",
+            parameters = mapOf(
+                "entry_id" to Schema.integer(description = "The activity's id from get_day."),
+                "days_ago" to draftDaysAgoSchema,
+                "minutes" to Schema.integer(description = "A corrected duration.", nullable = true),
+                "type" to Schema.enumeration(
+                    values = ExerciseType.entries.map { it.name },
+                    description = "A corrected kind of activity.",
+                    nullable = true,
+                ),
+                "name" to Schema.string(description = "A corrected name.", nullable = true),
+            ),
+            optionalParameters = listOf("days_ago", "minutes", "type", "name"),
+        ),
+        FunctionDeclaration(
+            name = TOOL_DELETE_ENTRY,
+            description = "Propose removing a food or an activity from their diary. Call get_day " +
+                "first and use its id (#123) with the same days_ago. Nothing is removed until " +
+                "they confirm.",
+            parameters = mapOf(
+                "kind" to Schema.enumeration(
+                    values = listOf(ENTRY_FOOD, ENTRY_EXERCISE),
+                    description = "Whether the id is a food or an activity.",
+                ),
+                "entry_id" to Schema.integer(description = "The id from get_day."),
+                "days_ago" to draftDaysAgoSchema,
+            ),
+            optionalParameters = listOf("days_ago"),
+        ),
+        FunctionDeclaration(
+            name = TOOL_SET_WATER,
+            description = "Propose correcting a day's water to a new total, when they say how " +
+                "much they actually had. To add glasses, use log_water instead.",
+            parameters = mapOf(
+                "glasses" to Schema.integer(description = "The day's new total, 0 to $MAX_ACTION_GLASSES."),
+                "days_ago" to draftDaysAgoSchema,
+            ),
+            optionalParameters = listOf("days_ago"),
+        ),
+        FunctionDeclaration(
             name = TOOL_SHOW_REPORT,
             description = "Put an interactive report card on screen summarising the user's last " +
                 "7 or 30 days — their calories and macros, their weight, their training and " +
@@ -568,7 +655,87 @@ internal fun parseAction(
     TOOL_OPEN_SCREEN -> args.string("screen")?.trim()
         ?.let { screen -> CoachScreen.entries.firstOrNull { it.name.equals(screen, ignoreCase = true) } }
         ?.let(CoachAction::OpenScreen)
+    TOOL_EDIT_FOOD -> parseEditFood(args, today)
+    TOOL_EDIT_EXERCISE -> parseEditExercise(args, today)
+    TOOL_DELETE_ENTRY -> {
+        val id = args.int("entry_id")?.toLong()?.takeIf { it > 0 }
+        val date = draftDay(args, today)
+        if (id == null || date == null) null
+        else when (args.string("kind")?.trim()?.lowercase()) {
+            ENTRY_FOOD -> CoachAction.DeleteFood(entryId = id, dateEpochDay = date)
+            ENTRY_EXERCISE -> CoachAction.DeleteExercise(entryId = id, dateEpochDay = date)
+            else -> null
+        }
+    }
+    // Zero is a real total here, unlike `log_water`'s: "I didn't drink any" is a correction.
+    TOOL_SET_WATER -> args.int("glasses")
+        ?.takeIf { it in 0..MAX_ACTION_GLASSES }
+        ?.let { glasses ->
+            draftDay(args, today)?.let { CoachAction.SetWater(glasses = glasses, dateEpochDay = it) }
+        }
     else -> null
+}
+
+/**
+ * The fields of an edit, each optional and each held to `log_food`'s own bounds — but a field that
+ * is *present and wrong* fails the draft rather than being dropped, because a card that silently
+ * ignored "make it 900 kcal" would be drawing an edit the user did not ask for.
+ */
+private fun parseEditFood(args: Map<String, JsonElement>, today: Long): CoachAction.EditFood? {
+    val id = args.int("entry_id")?.toLong()?.takeIf { it > 0 } ?: return null
+    val date = draftDay(args, today) ?: return null
+    val name = args.optional("name") { string("name")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS } }
+        ?: return null
+    val meal = args.optional("meal") {
+        string("meal")?.let { raw -> MealType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
+    } ?: return null
+    val amount = args.optional("portion_amount") { double("portion_amount")?.takeIf { it > 0 && it <= MAX_PORTION_AMOUNT } }
+        ?: return null
+    val calories = args.optional("calories") { int("calories")?.takeIf { it in 0..MAX_ACTION_CALORIES } } ?: return null
+    val protein = args.optional("protein_g") { macro("protein_g") } ?: return null
+    val carbs = args.optional("carbs_g") { macro("carbs_g") } ?: return null
+    val fat = args.optional("fat_g") { macro("fat_g") } ?: return null
+    return CoachAction.EditFood(
+        entryId = id,
+        dateEpochDay = date,
+        name = name.value,
+        mealType = meal.value,
+        portionAmount = amount.value,
+        calories = calories.value,
+        proteinG = protein.value,
+        carbsG = carbs.value,
+        fatG = fat.value,
+    )
+}
+
+private fun parseEditExercise(args: Map<String, JsonElement>, today: Long): CoachAction.EditExercise? {
+    val id = args.int("entry_id")?.toLong()?.takeIf { it > 0 } ?: return null
+    val date = draftDay(args, today) ?: return null
+    val minutes = args.optional("minutes") { int("minutes")?.takeIf { it in 1..MAX_ACTION_MINUTES } } ?: return null
+    val type = args.optional("type") {
+        string("type")?.let { raw -> ExerciseType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
+    } ?: return null
+    val name = args.optional("name") { string("name")?.trim()?.takeIf { it.length <= MAX_NAME_CHARS } } ?: return null
+    return CoachAction.EditExercise(
+        entryId = id,
+        dateEpochDay = date,
+        type = type.value,
+        name = name.value,
+        minutes = minutes.value,
+    )
+}
+
+/** An optional field's reading: [value] null when the model left it out (or sent JSON null), and
+ * the whole thing null when it was sent and failed [read] — which fails the draft. */
+private class Optional<T>(val value: T?)
+
+private fun <T> Map<String, JsonElement>.optional(
+    key: String,
+    read: Map<String, JsonElement>.() -> T?,
+): Optional<T>? {
+    val raw = this[key]
+    if (raw == null || raw is JsonNull) return Optional(null)
+    return read()?.let { Optional(it) }
 }
 
 /**
@@ -831,8 +998,9 @@ internal fun formatDay(
     } else {
         foods.forEach {
             appendLine(
-                "- ${it.name} (${it.mealType.name}): ${it.calories} kcal, " +
-                    "${it.proteinG}P/${it.carbsG}C/${it.fatG}F",
+                "- ${idTag(it.id)}${it.name} (${it.mealType.name}): ${it.calories} kcal, " +
+                    "${it.proteinG}P/${it.carbsG}C/${it.fatG}F, ${it.portionAmount.formatPortion()} " +
+                    it.portionUnit,
             )
         }
         val totals = foods.dailyTotals()
@@ -848,7 +1016,7 @@ internal fun formatDay(
     } else {
         exercise.forEach {
             val name = it.name.ifEmpty { it.type.name }
-            appendLine("- Activity: $name, ${it.minutes} min, ${it.burnedKcal} kcal burned")
+            appendLine("- Activity: ${idTag(it.id)}$name, ${it.minutes} min, ${it.burnedKcal} kcal burned")
         }
     }
     // The four that are *omitted* rather than reported empty. Food, water and activity are things
@@ -923,6 +1091,10 @@ private fun MoodDay.describe(): String? {
     )
     return parts.takeIf { it.isNotEmpty() }?.joinToString(", ", prefix = "Felt: ")
 }
+
+/** The handle `edit_food`, `edit_exercise` and `delete_entry` take back. Omitted for an unsaved row
+ * (id 0), which only a test or a preview builds. */
+private fun idTag(id: Long): String = if (id > 0) "#$id " else ""
 
 /** A stored kilogram figure in the unit the user reads it in, the one the app shows them. */
 private fun weightFigure(kg: Double, unit: UnitSystem): String =
@@ -1604,6 +1776,21 @@ internal class CoachToolbox(
     suspend fun latestWeighInKg(): Double? =
         progressRepository.observeWeightEntries().first().maxByOrNull { it.dateEpochDay }?.weightKg
 
+    /** A live row on the day the model read it from. Null when it is not there — deleted, or an id
+     * from another day — which fails the draft. Zero is today, [CoachAction.draftedOn]'s reading. */
+    suspend fun foodEntry(id: Long, dateEpochDay: Long): FoodEntry? =
+        foodRepository.observeEntries(dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()).first()
+            .firstOrNull { it.id == id }
+
+    /** [foodEntry] for an activity. */
+    suspend fun exerciseEntry(id: Long, dateEpochDay: Long): ExerciseEntry? =
+        exerciseRepository.observeEntries(dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()).first()
+            .firstOrNull { it.id == id }
+
+    /** The day's glasses, for what a `set_water` card replaces. */
+    suspend fun waterOn(dateEpochDay: Long): Int =
+        waterRepository.observeDay(dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()).first()
+
     /** What a drafted note is about to replace, blank on a day nobody has written about — the one
      * thing a card has to say that the model is not allowed to supply. Zero is today, the reading
      * [CoachAction.draftedOn] gives it. */
@@ -1734,7 +1921,59 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
     // disagrees with the draft — a start against an open fast, an end against none — which fails
     // the turn rather than drawing a Confirm that would be one of the repository's no-ops.
     is CoachAction.SetFast -> toolbox.fastDraft(ending)?.let(::listOf)
+    // A change is drawn against the row as it stands, so the row has to exist — on the day the
+    // model said, and not already deleted. Null fails the turn rather than editing the nearest row.
+    is CoachAction.EditFood -> toolbox.foodEntry(entryId, dateEpochDay)
+        ?.let { before -> editedFood(this, before)?.let { listOf(copy(before = before, after = it)) } }
+    is CoachAction.EditExercise -> toolbox.exerciseEntry(entryId, dateEpochDay)
+        ?.let { before -> editedExercise(this, before, toolbox.weightKg())?.let { listOf(copy(before = before, after = it)) } }
+    is CoachAction.DeleteFood -> toolbox.foodEntry(entryId, dateEpochDay)?.let { listOf(copy(entry = it)) }
+    is CoachAction.DeleteExercise -> toolbox.exerciseEntry(entryId, dateEpochDay)?.let { listOf(copy(entry = it)) }
+    is CoachAction.SetWater -> listOf(copy(previous = toolbox.waterOn(dateEpochDay)))
+        // The total they already have is not a correction.
+        .takeIf { it.single().previous != glasses }
     else -> listOf(this)
+}
+
+/**
+ * The row an edit writes: [before] with only the drafted fields changed, or **null when nothing
+ * changes**, which fails the turn rather than drawing a card whose Confirm is a no-op.
+ *
+ * A new portion is repriced first and any figure the model gave is applied over it, so "half a cup,
+ * and it was 150 kcal" writes 150 while the macros follow the portion.
+ */
+internal fun editedFood(edit: CoachAction.EditFood, before: FoodEntry): FoodEntry? {
+    val repriced = edit.portionAmount?.let(before::withPortionAmount) ?: before
+    val after = repriced.copy(
+        name = edit.name ?: repriced.name,
+        mealType = edit.mealType ?: repriced.mealType,
+        calories = edit.calories ?: repriced.calories,
+        proteinG = edit.proteinG ?: repriced.proteinG,
+        carbsG = edit.carbsG ?: repriced.carbsG,
+        fatG = edit.fatG ?: repriced.fatG,
+    )
+    return after.takeIf { it != before }
+}
+
+/**
+ * [editedFood] for an activity. A changed type or duration is repriced off [weightKg], and null
+ * when there is no weight to price it with — `LogExercise`'s rule, rather than keeping a burn that
+ * no longer describes the row.
+ */
+internal fun editedExercise(
+    edit: CoachAction.EditExercise,
+    before: ExerciseEntry,
+    weightKg: Double?,
+): ExerciseEntry? {
+    val type = edit.type ?: before.type
+    val minutes = edit.minutes ?: before.minutes
+    val burned = if (type == before.type && minutes == before.minutes) {
+        before.burnedKcal
+    } else {
+        estimateBurnedKcal(type, minutes, weightKg ?: return null)
+    }
+    val after = before.copy(type = type, minutes = minutes, name = edit.name ?: before.name, burnedKcal = burned)
+    return after.takeIf { it != before }
 }
 
 /**
