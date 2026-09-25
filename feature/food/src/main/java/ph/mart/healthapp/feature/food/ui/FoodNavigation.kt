@@ -12,9 +12,8 @@ import ph.mart.healthapp.feature.food.ui.diary.FoodScreen
 import ph.mart.healthapp.feature.food.ui.history.FoodHistoryScreen
 import ph.mart.healthapp.feature.food.ui.ideas.MealIdeasScreen
 import ph.mart.healthapp.feature.food.ui.label.LabelScanScreen
-import ph.mart.healthapp.feature.food.ui.myfood.NewFoodScreen
+import ph.mart.healthapp.feature.food.ui.library.LibraryItemScreen
 import ph.mart.healthapp.feature.food.ui.photo.PhotoCaptureScreen
-import ph.mart.healthapp.feature.food.ui.recipe.RecipeBuilderScreen
 import ph.mart.healthapp.feature.food.ui.voice.VoiceLogScreen
 
 /** The photo-logging flow — the real 6(+1)-state one (Phase 5). Carries the day like
@@ -61,17 +60,15 @@ data class FoodHistoryRoute(val dateEpochDay: Long, val query: String) : NavKey
 @Serializable
 data class MealIdeasRoute(val request: MealIdeaRequest) : NavKey
 
-/** Authoring a recipe — reached from the add-entry sheet and from Profile → Food library, and
- * carrying nothing: a recipe belongs to no day, so unlike [BarcodeScanRoute] it has no date to
- * pass. */
+/**
+ * Adding to the food library, or editing one thing in it — reached from Profile → Food library
+ * (which cannot import this module, so `:app` pushes it) and from the add-entry sheet's recipes.
+ * Both null is a new item, which opens on the AI box. [savedMealId] names a recipe or a saved meal,
+ * which share an id space; [foodName] names a food, whose name is its key. No date: nothing in the
+ * library belongs to a day, so unlike [BarcodeScanRoute] there is none to pass.
+ */
 @Serializable
-data object RecipeBuilderRoute : NavKey
-
-/** Authoring a food the user owns — reached from Profile → Food library, which cannot import this
- * module, so `:app` pushes it. Carries nothing for [RecipeBuilderRoute]'s reason: a food belongs to
- * no day. */
-@Serializable
-data object NewFoodRoute : NavKey
+data class LibraryItemRoute(val savedMealId: Long? = null, val foodName: String? = null) : NavKey
 
 /** Logging a meal by saying or typing a sentence. Carries the day like [BarcodeScanRoute], and
  * for the same reason — a meal described while reviewing a past day belongs to that day; `0` is
@@ -82,10 +79,10 @@ data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
 /** [twoPane] comes from `AppScaffold`, the one place in the app that reads the window's width, so
  * this tab is told rather than asking — which is also why `:feature:food` needs no adaptive
  * dependency of its own. It reaches the diary and nothing else: the camera flows are full-bleed at
- * every width, and the recipe and new-food screens are forms.
+ * every width, and the library's add-and-edit screen is a form.
  *
- * [onExitFlow] is the toolbar arrow for the seven routes that draw their own: the four camera-side
- * flows, the recipe builder, the new-food screen, and the history search, which took its bar over when the review screen
+ * [onExitFlow] is what a flow calls when it is finished: the four camera-side flows, the library's
+ * add-and-edit screen, and the history search, which took its bar over when the review screen
  * behind a result brought one of its own.
  *
  * [onOpenStrength] and [onLogExercise] leave this module entirely — the strength screen and the
@@ -135,8 +132,9 @@ fun EntryProviderScope<NavKey>.foodEntries(
             onAskCoach = onAskCoach,
         )
     }
-    entry<RecipeBuilderRoute> { RecipeBuilderScreen(onExit = onExitFlow) }
-    entry<NewFoodRoute> { NewFoodScreen(onExit = onExitFlow) }
+    entry<LibraryItemRoute> { key ->
+        LibraryItemScreen(savedMealId = key.savedMealId, foodName = key.foodName, onExit = onExitFlow)
+    }
     entry<MealIdeasRoute> { key -> MealIdeasScreen(request = key.request, onSelect = onSelectIdea) }
     entry<FoodCaptureRoute> { key -> PhotoCaptureScreen(dateEpochDay = key.dateEpochDay, onExit = onExitFlow) }
     entry<BarcodeScanRoute> { key ->

@@ -15,7 +15,7 @@ either. `DECISIONS.md` also holds what was weighed and deferred.
 
 **Routes above a tab** (own back toolbar, no bottom bar/FAB):
 `CoachRoute` · `FoodCaptureRoute(dateEpochDay)` · `BarcodeScanRoute(dateEpochDay)` ·
-`LabelScanRoute(dateEpochDay)` · `VoiceLogRoute(dateEpochDay)` · `RecipeBuilderRoute` · `NewFoodRoute` ·
+`LabelScanRoute(dateEpochDay)` · `VoiceLogRoute(dateEpochDay)` · `LibraryItemRoute(savedMealId, foodName)` ·
 `StrengthWorkoutRoute` · `HealthConnectionRoute` · `FoodLibraryRoute` · `RoutinesRoute` ·
 `SupplementsRoute` · `HomeLayoutRoute`.
 
@@ -190,9 +190,9 @@ ranked by the daily loop, not grouped by kind.
 - Your own foods — keep what's in the add-entry form as a food ("Save as my food"), and it leads
   every later food search ahead of the built-in list, replacing the built-in row of the same name.
 - Saved meals — snapshot a diary section, re-log as separate rows.
-- Recipes — a saved meal with servings; logs as one priced row. The builder opens on an AI field:
-  describe the dish or paste its ingredients and the name, servings and every ingredient fill in
-  for review; tap a row to correct it, or add ingredients by hand.
+- Recipes — a saved meal with servings; logs as one priced row. Made from the library's one AI
+  box: describe the dish or paste its ingredients, and the name, servings and every ingredient fill
+  in for review; tap a row to correct it in a sheet, or add ingredients by hand.
 - Food search — the user's own foods first, then a built-in list of ~120 common foods, offline
   and instant; the empty field lists all of them, eight rows at a time in a box that appends the
   next eight when it is scrolled to its bottom. Behind both, an Open Food
@@ -598,9 +598,9 @@ panes at ≥840dp.
 - Light / dark / follow-device; mascot character row and a colour row opening the 35-swatch sheet.
 - One row family across all three "Your stuff" lists — supplements, food library, routines: a
   marker tile, a title-weight name, the figures drawn as data, a one-line contents summary, and
-  nothing on the right at all. The card itself opens the row's sheet — Edit on supplements, Rename
-  in the library and routines — and Delete lives at the foot of that sheet, below a rule in
-  `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
+  nothing on the right at all. The card itself opens the thing — the Edit sheet on supplements, the
+  add-and-edit screen in the library, Rename on routines — and Delete lives at the foot of it, below
+  a rule in `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
   any of the three can log, tick or start anything — routines' New routine only opens the strength
   screen, which does the logging, and the library's Add only authors.
 - Supplements: name, dose label, times per day, **which weekdays** — the same seven-cell picker the
@@ -626,12 +626,15 @@ panes at ≥840dp.
   than transcribed — the model is asked to answer with nothing for a product it does not recognise
   (or a bare category like "magnesium"), and nothing is written until Save. What was already typed
   stays where the reply is silent. Offline, unrecognised and failed each say so under the field.
-- Food library — your own foods, saved meals and recipes — and routine library: rename and
-  delete (neither can log or start anything). The food library has an **Add** FAB whose menu opens
-  **New food** (name, portion, calories, macros and fiber/sugar/sodium, saved as one of your foods)
-  or **New recipe** (the recipe builder, AI-filled from a description). It also has a persistent search over
-  names *and* contents lines, with match highlighting, and sticky counted section headers; My
-  foods rows draw their macros in the fixed P/C/F colours.
+- Food library — your own foods, saved meals and recipes as **one A→Z list**, narrowed by chips
+  (All · Foods · Recipes · Meals, each drawn only when there are two kinds to choose between) and
+  searched by name behind an icon at the end of the chip row (back closes it). Each row is its
+  name and one figure line. Tapping a row opens it: a recipe's or a saved meal's ingredients, a
+  food's figures — all editable, renamed by editing the name, and deletable at the foot. **Add**
+  opens one AI box, "What do you want to save?": the model decides whether the answer is a food
+  or a recipe and fills in a short review wearing an "AI estimate" chip; "Type in a food" and
+  "Build a recipe by hand" under the box are the manual and offline path. Nothing here logs.
+  The routine library renames and deletes, and cannot start anything.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a
   week", or a prompt and seven dashed cells when nothing is set yet. A **New routine** FAB opens a
   blank strength screen for today, where "Save as routine" authors it.

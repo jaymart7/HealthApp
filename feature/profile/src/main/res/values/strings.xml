@@ -267,33 +267,25 @@
 
     <!-- Food library -->
     <string name="profile_library_empty_heading">Nothing saved yet</string>
-    <string name="profile_library_empty_body">Tap Add to make a food or a recipe, or save a meal from the diary, and it shows up here.</string>
+    <string name="profile_library_empty_body">Tap Add and describe a food or a recipe. AI fills in the rest. Meals you save from the diary show up here too.</string>
     <string name="profile_library_add">Add</string>
-    <string name="profile_library_new_food">New food</string>
-    <string name="profile_library_new_recipe">New recipe</string>
-    <string name="profile_library_my_foods">My foods</string>
-    <string name="profile_library_saved_meals">Saved meals</string>
-    <string name="profile_library_recipes">Recipes</string>
-    <string name="profile_library_noun_food">food</string>
-    <string name="profile_library_noun_meal">saved meal</string>
-    <string name="profile_library_noun_recipe">recipe</string>
-    <string name="profile_library_delete_body">This %1$s is removed for good. Anything already logged from it stays in your diary.</string>
     <!-- Units only: the figure line prints the number itself, tabular, in its own colour. -->
     <plurals name="profile_library_items_unit">
         <item quantity="one">item</item>
         <item quantity="other">items</item>
     </plurals>
-    <string name="profile_library_per_serving">kcal per serving</string>
-    <string name="profile_library_makes">makes %1$d</string>
-    <string name="profile_library_macro_protein">P %1$dg</string>
-    <string name="profile_library_macro_carbs">C %1$dg</string>
-    <string name="profile_library_macro_fat">F %1$dg</string>
-    <string name="profile_library_search">Search %1$d saved items</string>
-    <string name="profile_library_search_clear">Clear search</string>
-    <plurals name="profile_library_matches">
-        <item quantity="one">%1$d match in %2$d saved items</item>
-        <item quantity="other">%1$d matches in %2$d saved items</item>
+    <plurals name="profile_library_servings_unit">
+        <item quantity="one">serving</item>
+        <item quantity="other">servings</item>
     </plurals>
+    <string name="profile_library_per_serving">kcal per serving</string>
+    <string name="profile_library_search">Search your library</string>
+    <string name="profile_library_search_close">Close search</string>
+    <string name="profile_library_no_matches">Nothing here by that name.</string>
+    <string name="profile_library_filter_all">All</string>
+    <string name="profile_library_filter_foods">Foods</string>
+    <string name="profile_library_filter_recipes">Recipes</string>
+    <string name="profile_library_filter_meals">Meals</string>
 
     <!-- Google Health -->
     <string name="profile_health_unavailable">Google Health needs Google Play services and a Google account on this device.</string>

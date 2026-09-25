@@ -59,10 +59,9 @@ import ph.mart.healthapp.feature.coach.ui.coachEntries
 import ph.mart.healthapp.feature.food.ui.BarcodeScanRoute
 import ph.mart.healthapp.feature.food.ui.FoodCaptureRoute
 import ph.mart.healthapp.feature.food.ui.LabelScanRoute
+import ph.mart.healthapp.feature.food.ui.LibraryItemRoute
 import ph.mart.healthapp.feature.food.ui.MealIdeasRoute
 import ph.mart.healthapp.feature.food.ui.FoodHistoryRoute
-import ph.mart.healthapp.feature.food.ui.NewFoodRoute
-import ph.mart.healthapp.feature.food.ui.RecipeBuilderRoute
 import ph.mart.healthapp.feature.food.ui.VoiceLogRoute
 import ph.mart.healthapp.feature.food.ui.foodEntries
 import ph.mart.healthapp.feature.food.ui.quicklog.QuickLogSheet
@@ -107,8 +106,9 @@ private fun TopLevelDestination.label(): Int = when (this) {
 
 @Composable
 private fun NavKey?.title(): String = when (this) {
-    RecipeBuilderRoute -> stringResource(R.string.app_title_new_recipe)
-    NewFoodRoute -> stringResource(R.string.app_title_new_food)
+    is LibraryItemRoute -> stringResource(
+        if (savedMealId == null && foodName == null) R.string.app_title_add_to_library else R.string.app_title_edit,
+    )
     is StrengthWorkoutRoute -> stringResource(
         if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
     )
@@ -512,7 +512,7 @@ fun AppScaffold(
                             onOpenHistory = { date, query ->
                                 topLevelBackStack.add(FoodHistoryRoute(date, query))
                             },
-                            onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
+                            onNewRecipe = { topLevelBackStack.add(LibraryItemRoute()) },
                             // The gap is worked out by the diary and rides the key — see
                             // [MealIdeasRoute]. Picking an idea pops the route and hands the seed
                             // back through [pendingIdea]; backing out hands back nothing.
@@ -563,10 +563,11 @@ fun AppScaffold(
                             onOpenReminders = { topLevelBackStack.add(RemindersRoute) },
                             onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },
                             onOpenLibrary = { topLevelBackStack.add(FoodLibraryRoute) },
-                            // Both leave Profile for `:feature:food`'s authoring screens, which
-                            // take the whole window at every width — neither is a Profile pane.
-                            onNewFood = { topLevelBackStack.add(NewFoodRoute) },
-                            onNewRecipe = { topLevelBackStack.add(RecipeBuilderRoute) },
+                            // All three leave Profile for `:feature:food`'s add-and-edit screen,
+                            // which takes the whole window at every width — it is not a Profile pane.
+                            onAddToLibrary = { topLevelBackStack.add(LibraryItemRoute()) },
+                            onOpenSavedMeal = { id -> topLevelBackStack.add(LibraryItemRoute(savedMealId = id)) },
+                            onOpenFood = { name -> topLevelBackStack.add(LibraryItemRoute(foodName = name)) },
                             onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },
                             // Day 0 is today. A blank session, not a builder: "Save as routine"
                             // on that screen is still the one way a routine is authored.

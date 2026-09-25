@@ -173,8 +173,11 @@ internal class FoodRepositoryImpl(
         savedMealDao.softDelete(id)
     }
 
-    override suspend fun renameSavedMeal(id: Long, name: String) {
-        savedMealDao.rename(id, name)
+    override suspend fun updateSavedMeal(id: Long, name: String, servings: Int?, items: List<SavedMealItem>) {
+        savedMealDao.replace(
+            id,
+            SavedMealEntity(name = name, createdAt = System.currentTimeMillis(), servings = servings),
+        ) { mealId -> items.map { it.toEntity(mealId) } }
     }
 
     override fun observeRecipes(): Flow<List<Recipe>> = recipes(MAX_RECIPES)
@@ -197,11 +200,6 @@ internal class FoodRepositoryImpl(
      * holding, so the recipe UI doesn't read like it's deleting a meal. */
     override suspend fun deleteRecipe(id: Long) {
         savedMealDao.softDelete(id)
-    }
-
-    /** Same one-column update as [renameSavedMeal], named for what the caller is holding. */
-    override suspend fun renameRecipe(id: Long, name: String) {
-        savedMealDao.rename(id, name)
     }
 
     // Anchored on today here, not in the feature layer: todayEpochDay() is internal to this

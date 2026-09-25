@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Stands in for a real sub-route (`RecipeBuilderRoute`, `BarcodeScanRoute`, …). Those live in
+/** Stands in for a real sub-route (`LibraryItemRoute`, `BarcodeScanRoute`, …). Those live in
  * `:feature:*`, which this leaf module can't see — and all this class cares about is that a key
  * is *not* one of the four tab roots. */
 @Serializable

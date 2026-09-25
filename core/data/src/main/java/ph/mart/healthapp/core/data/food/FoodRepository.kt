@@ -325,7 +325,13 @@ interface FoodRepository {
 
     suspend fun deleteSavedMeal(id: Long)
 
-    suspend fun renameSavedMeal(id: Long, name: String)
+    /**
+     * Rewrites a saved meal or a recipe — name, yield and every item — from the food library's
+     * editor. [servings] null keeps it a saved meal; the two share a table and an id space. The
+     * edit is a new row (`SavedMealDao.replace`), so the id changes and the edited one becomes the
+     * newest in the add-entry sheet's window.
+     */
+    suspend fun updateSavedMeal(id: Long, name: String, servings: Int?, items: List<SavedMealItem>)
 
     /** The newest [MAX_RECIPES] recipes, each with its ingredients. Recipes and saved meals share
      * a table but never a list — see `SavedMealDao`. */
@@ -337,8 +343,6 @@ interface FoodRepository {
     fun observeAllRecipes(): Flow<List<Recipe>>
 
     suspend fun deleteRecipe(id: Long)
-
-    suspend fun renameRecipe(id: Long, name: String)
 
     /** The meals that still have their photo, newest first, capped at [MAX_MEAL_PHOTOS] — the
      * meal-photo history on the Progress tab's Food page. */

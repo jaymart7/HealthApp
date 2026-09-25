@@ -7,8 +7,8 @@ import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.food.FoodRepository
 
 /**
- * Reads all three unlimited lists and writes the two things this screen can do to any of them. No
- * side effects: a rename and a delete are both writes the flows report back on their own.
+ * Reads all three unlimited lists, and that is all: a row opens `:feature:food`'s add-and-edit
+ * screen, which is where a rename, an edit or a delete happens now.
  */
 class FoodLibraryViewModel(
     private val foodRepository: FoodRepository,
@@ -16,17 +16,6 @@ class FoodLibraryViewModel(
 
     override val container = orbitContainer<FoodLibraryUiState, Nothing>(FoodLibraryUiState()) {
         observeLibrary()
-    }
-
-    fun handleEvent(event: FoodLibraryEvent) {
-        when (event) {
-            is FoodLibraryEvent.OnDeleteMyFood -> onDeleteMyFood(event.name)
-            is FoodLibraryEvent.OnRenameMyFood -> onRenameMyFood(event.oldName, event.newName)
-            is FoodLibraryEvent.OnDeleteSavedMeal -> onDeleteSavedMeal(event.id)
-            is FoodLibraryEvent.OnDeleteRecipe -> onDeleteRecipe(event.id)
-            is FoodLibraryEvent.OnRenameSavedMeal -> onRenameSavedMeal(event.id, event.name)
-            is FoodLibraryEvent.OnRenameRecipe -> onRenameRecipe(event.id, event.name)
-        }
     }
 
     private fun observeLibrary() = intent {
@@ -38,31 +27,5 @@ class FoodLibraryViewModel(
             .collect { (myFoods, savedMeals, recipes) ->
                 reduce { state.copy(myFoods = myFoods, savedMeals = savedMeals, recipes = recipes) }
             }
-    }
-
-    private fun onDeleteMyFood(name: String) = intent {
-        foodRepository.deleteMyFood(name)
-    }
-
-    private fun onRenameMyFood(oldName: String, newName: String) = intent {
-        foodRepository.renameMyFood(oldName, newName.trim())
-    }
-
-    private fun onDeleteSavedMeal(id: Long) = intent {
-        foodRepository.deleteSavedMeal(id)
-    }
-
-    private fun onDeleteRecipe(id: Long) = intent {
-        foodRepository.deleteRecipe(id)
-    }
-
-    /** Blank is rejected at the sheet's Save button; trimming here is what stops a stray space
-     * becoming a name nothing else in the app would have accepted. */
-    private fun onRenameSavedMeal(id: Long, name: String) = intent {
-        foodRepository.renameSavedMeal(id, name.trim())
-    }
-
-    private fun onRenameRecipe(id: Long, name: String) = intent {
-        foodRepository.renameRecipe(id, name.trim())
     }
 }

@@ -1741,9 +1741,8 @@ rather than needing a counter patched.
   in neither place. The old name stays as an `isFavorite = 0` tombstone keeping its macros, which
   is what the table has always done; renaming onto a name that already exists overwrites it,
   because name *is* the identity here. That identity is also why saving the same name twice from
-  the sheet is an **edit** — which is the whole of "edit a food later", and why the library's row
-  opens Rename rather than a form. (The library *does* reach a form now, for a new food; see "The
-  library adds now" below.)
+  the sheet is an **edit**, and it is how the library's editor saves one: a changed name is moved
+  first (`renameMyFood`), then the figures are written under it through the same `setFavorite()`.
 - **"Save as my food" is one button on the sheet that already holds every field.** `AddEntryForm`
   carries the portion, the macros, the micronutrients and `withPortionAmount()` repricing, so
   authoring is a button rather than a second screen. Hidden until there is a name *and* calories
@@ -1752,13 +1751,23 @@ rather than needing a counter patched.
   form: keeping a food and logging it are two intentions and the user may want both. No
   confirmation toast — the saved-meal rule — because the food appears starred in the suggestion
   panel directly above it the moment Room emits.
-- **Profile → Food library holds three lists now and still cannot log.** The foods list is drawn
-  first (it is the one authored deliberately, and the one search leads with), on the same shared
-  `LibraryRow` and `RenameSheet` the saved meals, recipes and routines use, with the same
-  ask-first delete a user-authored thing gets. `FoodLibraryViewModel` reaches the foods by name —
-  `deleteMyFood(name)` and `renameMyFood(old, new)` rather than a `FoodSuggestion` it would have
-  to fabricate, since `:feature:profile` cannot import `:feature:food`'s converters. The screen's
-  title moved from "Saved meals & recipes" to **"Food library"** in its three literal sites.
+- **Profile → Food library is one list, and a row opens the thing.** It used to be three sticky,
+  counted sections whose row only opened Rename — so a recipe's ingredients, once saved, could never
+  be seen or changed again, and the user found the screen too hard to understand. Now it is one
+  A→Z list with a chip per kind and a name search behind an icon, and a tap opens `:feature:food`'s
+  add-and-edit screen (`LibraryItemRoute`), where anything in it can be edited or deleted:
+  - **A→Z, not newest first.** `favorite_food` is keyed by name and carries no date, and a column
+    for one would wipe every install under `fallbackToDestructiveMigration`.
+  - **A chip is drawn only when there is a choice.** One per kind the user has, behind All, and
+    none when there is only one kind — a chip that can only ever show everything is chrome.
+  - **Search is behind an icon at the end of the chip row, not in the top bar.** `AppScaffold`
+    draws that bar and spans it across both panes at ≥840dp, so a screen-owned action there would
+    fight the scene. Search matches **names only**, because the contents line went with the
+    simplification — a hit on a line nobody can see reads as a wrong answer. Back closes it.
+  - **The row is its name and one figure line**, calories first on every kind, so the column
+    scans: the macro triplet, the yield pill and the contents line are gone.
+  - **Still cannot log**: logging needs a meal slot and a day, and Profile has neither.
+  `FoodLibraryViewModel` only reads now; every write is the editor's.
 - **A recipe is a saved meal with a servings count, and logs as one row.** Both live in
   `saved_meal`/`saved_meal_item`; `servings IS NULL` *is* the discriminator, and two DAO queries
   keep the lists apart so neither can evict the other from its own newest-5 window. The difference
@@ -1775,47 +1784,58 @@ rather than needing a counter patched.
   sixth saved meal used to be out of view *and* out of reach of its own delete button, which is the
   bug that screen exists to fix. Both windows share one join helper per type in
   `FoodRepositoryImpl`, so the panel's list and the library's cannot drift apart in grouping or
-  order. The library renames, deletes and — since the Add FAB, below — adds, and **cannot log**:
-  logging needs a meal slot and a day, and Profile has neither. Rename is one column (`SavedMealDao.rename`) precisely because a recipe
-  and a saved meal are the same row shape and `servings` is what tells them apart. The Profile row
-  carries no count, for the same reason the Connections row caches no connection state.
-- **The library adds now, through a FAB menu, and still cannot log.** Add opens two doors: **New
-  food** and **New recipe**. New recipe is the existing `RecipeBuilderRoute`. New food is
-  `NewFoodRoute`, a small `:feature:food` screen (`ui/myfood/`) that draws the scan review's
-  `SubjectCard`, macro tiles and `MicronutrientInputGroup` without its meal chips and Log button, and
-  saves through `toSuggestion()` → `setFavorite()`, the "Save as my food" write. So there is still one
-  form and one write path, and the reversal is of *where* it can be reached, not of how many exist.
-  Both routes are `:feature:food`'s, so `:app` pushes them from callbacks — the `onOpenCoach` shape —
-  and neither is a Profile pane: at ≥840dp each takes the window, like `SupplementScanRoute`.
-  Consequences taken knowingly: saving under a name that exists **replaces** that food, because the
-  name is the row's identity (the sheet's rule, unchanged); **saved meals are not offered**, because
-  one is a copy of a diary section and there is no diary here; and it is a **screen `DockedFab`**
-  where Supplements docks a bar, so at ≥840dp it sits beside the rail's collapsed FAB — the call
-  Workout routines made one screen over, and on a phone the pane has no tab chrome to collide with.
-  A menu rather than two FABs: one primary action per screen. The FAB stays expanded because
-  `rememberFabExpanded` reads a `ScrollState` and this list is lazy.
-- **The recipe builder is AI-first: describe or paste, and the model fills the form.** A
-  "Describe your recipe" field heads the screen, sent with the quick log's `SendStopButton`; the
-  model returns a name, servings and every ingredient priced for the amount the *whole* recipe
-  uses (`perServing()` does the dividing). It is a separate `RecipeParseRepository`, not the meal
-  parse with another prompt, because all three of that parse's rules break here: a pasted list is
-  longer than `MAX_PARSE_CHARS`, a recipe has more parts than `MAX_PARSED_FOODS`, and "chicken
-  adobo" alone has to *become* its ingredients where the meal parse is told to invent nothing. A
-  listed recipe is still taken as given. The payload is that parse's — the user's text, nothing
-  from the profile — and the schema is `RECOGNIZED_FOOD_SCHEMA` nested under one key, the quick
-  log's shape. `recipeParseResult()` is the trust boundary and deliberately **not** `loggable()`:
-  salt, water and spices are real 0-kcal ingredients and salt is where the sodium is, so only a
-  blank name is dropped; servings clamp to `1..MAX_RECIPE_SERVINGS`. Around it:
-  - **A fill replaces the list, and asks first over a non-empty one.** The description stays in
-    the field, so a correction is an edit and a resend — appending would duplicate every row on
-    the second try. The name is filled only when blank; one the user typed is theirs.
-  - **The manual editor is behind "Add ingredient manually", and a tapped row opens it.** The
-    AI field is the way in, so the search-plus-fields form stops being the page. Tapping a row
-    moves it into the editor (adding a named draft first, so nothing is lost) and scrolls it into
-    view — the one way to correct an AI estimate without deleting and retyping it. Offline, the
-    field says so and the editor is one tap away, which is the whole manual fallback.
-  - **Back mid-fill stops the call**, one level, the photo flow's Analyzing rule; otherwise it
-    is the dirty-builder discard it always was, and a typed description now counts as dirty.
+  order. The Profile row carries no count, for the same reason the Connections row caches no
+  connection state.
+- **Add is one AI box that decides food or recipe.** It was a FAB menu of two doors — New food, a
+  manual form with no AI at all, and New recipe, one long page that drew the name, a "Makes 1"
+  stepper, "0 kcal per serving" and an empty list before the user had typed a word. Both are now
+  one route, `LibraryItemRoute`, one ViewModel and one screen in `:feature:food`'s `ui/library/`,
+  opening on "What do you want to save?". Its answer goes to the recipe parse, whose schema gained a
+  `kind`: one thing eaten as-is — a product, a single ingredient, a dish given its nutrition per
+  portion — comes back as a **food**, anything else as a **recipe**, and the review is shaped by
+  the answer. Around it:
+  - **`recipeParseResult()` trusts the kind only when the shape agrees** — a "food" with three
+    items is a recipe, because a food has one set of figures to save. A food is named for what the
+    user wrote before the model's ingredient name ("Mum's adobo", not "Pork adobo").
+  - **A wrong guess is fixed by going back and resending**, not by a toggle on the review. Back
+    from a new item's review returns to the box with its words in it; a resend over a review
+    asks first ("Start over?"), because a fill replaces rather than appends.
+  - **"Type in a food" and "Build a recipe by hand" sit under the box** and are the whole manual
+    path — so also the whole offline one. Offline, unrecognised and failed each say so under the
+    field, the online check asked at the moment the request is about to be spent.
+  - **Every figure a model filled wears an "AI estimate" chip** at the head of the review.
+  - **Saved meals still cannot be added here** — one is a copy of a diary section, and there is no
+    diary here to copy — but they open and edit like the rest.
+  - **One screen, not a Profile pane**: at ≥840dp it takes the window, like `SupplementScanRoute`.
+    `:feature:profile` cannot import it, so `:app` pushes it from three callbacks.
+- **The editor opens an existing item on its review, and an edit is a soft-delete and a
+  reinsert.** A recipe or a saved meal is rewritten whole by `FoodRepository.updateSavedMeal` →
+  `SavedMealDao.replace`: the old row soft-deleted and the new one inserted with its items in one
+  `@Transaction`, `FoodEntryDao.replace`'s rule, so the library never emits a frame with it in
+  neither place. Items carry no delete flag and go out of view with their parent. Consequence taken
+  knowingly: the id changes and `createdAt` is now, so an edited recipe becomes the newest in the
+  add-entry sheet's window. A null yield keeps a saved meal a saved meal. Rename is the name field
+  — `renameSavedMeal`, `renameRecipe` and `SavedMealDao.rename` went with the Rename sheet. The
+  record is read by scanning the unbounded lists once (`ponytail:` in the ViewModel); back asks
+  only once the form differs from what was opened, so looking and leaving never asks, and Delete
+  lives at the foot, asking first.
+- **The review's ingredients edit in a sheet, in place.** A tapped row opens its fields — the food
+  search, the editable row, macros and micros — in a bottom sheet, and Done writes it back where
+  it was; dismissing loses nothing, because the row stays in the list until Done. This replaced the
+  inline editor, which moved a tapped row out of the list and needed a scroll-into-view key to find
+  it again at the foot of the page. A recipe plus its editor still doesn't fit above a keyboard;
+  the sheet is how the recipe stays the page while the fields come and go.
+- **The recipe parse is its own repository.** The model returns a name, servings and every
+  ingredient priced for the amount the *whole* recipe uses (`perServing()` does the dividing). It is
+  a separate `RecipeParseRepository`, not the meal parse with another prompt, because all three of
+  that parse's rules break here: a pasted list is longer than `MAX_PARSE_CHARS`, a recipe has more
+  parts than `MAX_PARSED_FOODS`, and "chicken adobo" alone has to *become* its ingredients where the
+  meal parse is told to invent nothing. A listed recipe is still taken as given. The payload is that
+  parse's — the user's text, nothing from the profile — and the schema is `RECOGNIZED_FOOD_SCHEMA`
+  nested under one key, the quick log's shape. `recipeParseResult()` is the trust boundary and
+  deliberately **not** `loggable()`: salt, water and spices are real 0-kcal ingredients and salt is
+  where the sodium is, so only a blank name is dropped; servings clamp to `1..MAX_RECIPE_SERVINGS`.
+  Mid-fill, back stops the call, one level — the photo flow's Analyzing rule.
 - **Changing a portion reprices the entry.** `AddEntryForm.withPortionAmount()` (and its
   `SavedMealItem` twin) scale calories, all three macros and the three micronutrients by the
   portion ratio, because every
@@ -1968,7 +1988,7 @@ rather than needing a counter patched.
 - **The edit sheet hides the add sheet's four shortcut panels.** Recipes, saved meals, recents and
   search all seed a *new* log, and two of them write rows the moment they're tapped — which is not
   a thing that can happen while one row is being corrected. Same sheet, `editing` flag, one `if`.
-- **The `RecipeBuilderRoute` carries no bottom nav and no FAB.** It gets that for free by not
+- **The `LibraryItemRoute` carries no bottom nav and no FAB.** It gets that for free by not
   being a tab — `AppScaffold`'s `showsTabChrome` is true for a top-level route, or a Profile
   detail drawn beside its own tab, and nothing else — but the reason it is a route rather than a
   level inside one is its own: it is an authoring screen with its own Save, and leaving the tab
@@ -4960,8 +4980,9 @@ consequence of that.
 - **One `SavedThingRow`, in `ui/shared/components/`, not `:core:designsystem`.** The handoff asked
   for the promotion; every consumer is a flow inside `:feature:profile`, which is the same
   `ui/shared/` case `AppListRow` and `RenameSheet` already sit in. `FigureText` and
-  `RowOverflowMenu` go with it. `FrequencyMarker`, `MacroTriplet`, `LibrarySearchField`,
-  `LibrarySectionHeader` and `RecipeYieldPill` are screen-local and stay that way.
+  `RowOverflowMenu` go with it. `FrequencyMarker` and `LibrarySearchField` are screen-local and
+  stay that way; the library's `MacroTriplet`, `LibrarySectionHeader` and `RecipeYieldPill` went
+  when it became one list.
 - **The card dropped a step to `surfaceContainerLow`, and that is what let the figures be data.**
   `surfaceContainerHighest` sat too close to the figures' own ink, so every number was a grey
   caption. One step down lets a figure carry `onSurface` with only its unit staying quiet, and

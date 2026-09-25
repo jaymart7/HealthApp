@@ -37,6 +37,7 @@ import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QuickLogRepository
 import ph.mart.healthapp.core.data.food.QuickLogResult
 import ph.mart.healthapp.core.data.food.QuickLogTurn
+import ph.mart.healthapp.core.data.food.PARSE_KIND_FOOD
 import ph.mart.healthapp.core.data.food.RecipeParseRepository
 import ph.mart.healthapp.core.data.food.RecipeParseResult
 import ph.mart.healthapp.core.data.food.mayAsk
@@ -311,12 +312,20 @@ private val SERVINGS_SAID = Regex("""(?:for|serves|makes)\s+(\d+)""", RegexOptio
  * as Chili, four portions, beef and beans. It ends on [recipeParseResult] so the caps and the clamp
  * are exercised rather than bypassed. A dish named with no listed ingredient the table knows finds
  * nothing, which is this fake's way of reaching that branch.
+ *
+ * One known food and no yield said is a food, so "banana" saves as a food and "Chili for 4, beef"
+ * as a recipe — both halves of the library's review are reachable without a model.
  */
-internal fun fakeRecipeParse(text: String): RecipeParseResult = recipeParseResult(
-    name = text.split(',', ':', '\n').first().split(Regex("""\s+for\s+""", RegexOption.IGNORE_CASE)).first(),
-    servings = SERVINGS_SAID.find(text)?.groupValues?.get(1)?.toIntOrNull() ?: 1,
-    ingredients = fakeParse(text),
-)
+internal fun fakeRecipeParse(text: String): RecipeParseResult {
+    val ingredients = fakeParse(text)
+    val servingsSaid = SERVINGS_SAID.find(text)?.groupValues?.get(1)?.toIntOrNull()
+    return recipeParseResult(
+        name = text.split(',', ':', '\n').first().split(Regex("""\s+for\s+""", RegexOption.IGNORE_CASE)).first(),
+        servings = servingsSaid ?: 1,
+        ingredients = ingredients,
+        kind = if (ingredients.size == 1 && servingsSaid == null) PARSE_KIND_FOOD else "recipe",
+    )
+}
 
 internal class FakeQuickLogRepository : QuickLogRepository {
     override suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap?): QuickLogResult {

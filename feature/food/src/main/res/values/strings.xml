@@ -257,13 +257,9 @@
     <string name="food_review_check_this">Check this</string>
     <string name="food_review_rough_guess">Unsure: %1$s</string>
 
-    <!-- New food (reached from Profile → Food library) -->
+    <!-- Food library: add and edit a food, a recipe or a saved meal (LibraryItemScreen), plus the
+         diary's recipe row. Several food_recipe_* keys predate the merge and are shared by both. -->
     <string name="food_new_food_save">Save food</string>
-    <string name="food_new_food_discard_title">Discard this food?</string>
-    <string name="food_new_food_not_saved">It hasn\'t been saved yet.</string>
-
-    <!-- Recipe builder -->
-    <string name="food_recipe_label">Recipe</string>
     <string name="food_recipe_placeholder">Name this dish</string>
     <string name="food_recipe_makes">Makes</string>
     <plurals name="food_recipe_servings">
@@ -271,31 +267,41 @@
         <item quantity="other">servings</item>
     </plurals>
     <string name="food_recipe_save">Save recipe</string>
-    <string name="food_recipe_discard_title">Discard this recipe?</string>
     <string name="food_recipe_not_saved">It hasn\'t been saved yet.</string>
     <string name="food_recipe_per_serving">%1$d kcal per serving</string>
     <string name="food_recipe_macro_line">P %1$dg · C %2$dg · F %3$dg</string>
-    <string name="food_recipe_no_ingredients">No ingredients yet.</string>
     <string name="food_recipe_add_ingredient_title">Add an ingredient</string>
     <string name="food_recipe_add_ingredient">Add ingredient</string>
     <string name="food_recipe_summary">%1$d kcal per serving · makes %2$d</string>
     <string name="food_recipe_delete">Delete recipe %1$s</string>
     <string name="food_recipe_use">Use %1$s</string>
-    <string name="food_recipe_describe_label">Describe your recipe</string>
-    <string name="food_recipe_describe_placeholder">e.g. Chicken adobo for 4, or paste the ingredients</string>
-    <string name="food_recipe_describe_hint">AI estimates each ingredient. Check the amounts before saving.</string>
     <string name="food_recipe_fill">Fill in with AI</string>
     <string name="food_recipe_fill_stop">Stop filling in</string>
-    <string name="food_recipe_fill_offline">You\'re offline. Add ingredients by hand below.</string>
-    <string name="food_recipe_fill_nothing">Couldn\'t find a recipe in that. Name the dish or list its ingredients.</string>
     <string name="food_recipe_fill_failed">Couldn\'t fill it in. Try again.</string>
-    <string name="food_recipe_replace_title">Replace the ingredients?</string>
-    <plurals name="food_recipe_replace_body">
-        <item quantity="one">Filling in again replaces the %1$d ingredient on this recipe.</item>
-        <item quantity="other">Filling in again replaces the %1$d ingredients on this recipe.</item>
-    </plurals>
     <string name="food_recipe_replace">Replace</string>
-    <string name="food_recipe_add_manually">Add ingredient manually</string>
+    <string name="food_library_describe_title">What do you want to save?</string>
+    <string name="food_library_describe_body">Describe a food or a recipe, and AI fills in the rest.</string>
+    <string name="food_library_describe_placeholder">e.g. Chicken adobo for 4, or a 30 g scoop of whey, 120 kcal</string>
+    <string name="food_library_type_food">Type in a food</string>
+    <string name="food_library_build_recipe">Build a recipe by hand</string>
+    <string name="food_library_resume">Back to the review</string>
+    <string name="food_library_fill_offline">You\'re offline. Type it in yourself below.</string>
+    <string name="food_library_fill_nothing">Couldn\'t find a food in that. Name it, or list what\'s in it.</string>
+    <string name="food_library_ai_estimate">AI estimate · check the amounts</string>
+    <string name="food_library_name">Name</string>
+    <string name="food_library_contents">What\'s in it</string>
+    <string name="food_library_add_food">Add food</string>
+    <string name="food_library_in_total">%1$d kcal in total</string>
+    <string name="food_library_edit_ingredient">Edit ingredient</string>
+    <string name="food_library_done">Done</string>
+    <string name="food_library_save_meal">Save meal</string>
+    <string name="food_library_discard_title">Discard changes?</string>
+    <string name="food_library_replace_title">Start over?</string>
+    <string name="food_library_replace_body">Sending this replaces what\'s been filled in.</string>
+    <string name="food_library_delete_title">Delete %1$s?</string>
+    <string name="food_library_delete_body">It leaves your library for good. Anything already logged from it stays in your diary.</string>
+    <string name="food_library_delete">Delete</string>
+    <string name="food_library_keep">Keep</string>
     <string name="food_recipe_edit">Edit %1$s</string>
 
     <!-- Exercise -->

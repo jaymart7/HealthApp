@@ -57,9 +57,21 @@ internal interface SavedMealDao {
     @Query("UPDATE saved_meal SET isDeleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)
 
-    /** Only the name. A recipe and a saved meal are the same row shape here, and `servings` is
-     * what tells them apart — an upsert of the whole entity would be one typo away from turning
-     * a recipe into a saved meal. */
-    @Query("UPDATE saved_meal SET name = :name WHERE id = :id")
-    suspend fun rename(id: Long, name: String)
+    /**
+     * An edit from the food library: the old row is soft-deleted and the new one inserted with its
+     * items, in one transaction — `FoodEntryDao.replace`'s rule, so the library never emits a frame
+     * with the recipe in neither place. Items carry no delete flag of their own; the old ones go
+     * out of view with their parent through [observeItems]'s subquery.
+     *
+     * The caller passes `servings` through unchanged, so a saved meal stays a saved meal.
+     */
+    @Transaction
+    suspend fun replace(
+        id: Long,
+        meal: SavedMealEntity,
+        items: (mealId: Long) -> List<SavedMealItemEntity>,
+    ): Long {
+        softDelete(id)
+        return insertMealWithItems(meal, items)
+    }
 }

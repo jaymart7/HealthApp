@@ -7,13 +7,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,10 +27,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.Recipe
@@ -42,321 +46,216 @@ import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
-import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.library.components.LibrarySearchField
-import ph.mart.healthapp.feature.profile.ui.library.components.LibrarySectionHeader
-import ph.mart.healthapp.feature.profile.ui.library.components.MacroTriplet
-import ph.mart.healthapp.feature.profile.ui.library.components.RecipeYieldPill
-import ph.mart.healthapp.feature.profile.ui.shared.components.DeleteConfirmDialog
 import ph.mart.healthapp.feature.profile.ui.shared.components.FigureRow
-import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 import ph.mart.healthapp.feature.profile.ui.shared.components.RowMarker
 import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
 
 /**
  * Everything the user owns in the food domain — their own foods, their saved meals, their recipes —
- * one Nav3 level above Profile. It is the only screen that can reach past the newest-N windows the
- * add-entry sheet's panels read: without it a sixth saved meal, or a starred food that has slipped
- * out of the suggestion panel, is out of view *and* out of reach of its own delete button.
+ * one Nav3 level above Profile, as **one list**: A→Z, a chip per kind to narrow it, and a search
+ * behind an icon. It is the only screen that can reach past the newest-N windows the add-entry
+ * sheet's panels read.
  *
- * A row opens **Rename**, not Edit, on purpose: a food's *fields* are corrected by saving the same
- * name again, from the add-entry sheet or from New food. Nothing here logs — logging needs a meal
- * slot and a day, which Profile has neither of.
+ * A row opens the thing itself — `:feature:food`'s add-and-edit screen, where a recipe's
+ * ingredients can be seen and changed, a food's figures corrected, and either renamed or deleted.
+ * Nothing here logs: logging needs a meal slot and a day, which Profile has neither of.
  *
- * The Add FAB is a menu of two doors, both `:feature:food`'s authoring screens, which this module
- * cannot import — so [onNewFood] and [onNewRecipe] are resolved in `AppScaffold`. Saved meals are
- * not on it: one is a copy of a diary section, and there is no diary here to copy. A screen FAB
- * where Supplements docks a bar, by choice, as on Workout routines — `DECISIONS.md` → **Saved
- * meals, recipes & the food library** has the call.
+ * Add is one door now: the same screen, opened on its AI box, which works out whether what was
+ * described is a food or a recipe. This module cannot import that screen, so [onAdd],
+ * [onOpenSavedMeal] and [onOpenFood] are resolved in `AppScaffold`. Saved meals cannot be added
+ * here — one is a copy of a diary section, and there is no diary here to copy — but they open and
+ * edit like the rest. `DECISIONS.md` → **Saved meals, recipes & the food library** has the calls.
  */
 @Composable
 fun FoodLibraryScreen(
-    onNewFood: () -> Unit,
-    onNewRecipe: () -> Unit,
+    onAdd: () -> Unit,
+    onOpenSavedMeal: (Long) -> Unit,
+    onOpenFood: (String) -> Unit,
     viewModel: FoodLibraryViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
     FoodLibraryContent(
         uiState = uiState,
-        onEvent = viewModel::handleEvent,
-        onNewFood = onNewFood,
-        onNewRecipe = onNewRecipe,
+        onAdd = onAdd,
+        onOpenSavedMeal = onOpenSavedMeal,
+        onOpenFood = onOpenFood,
     )
-}
-
-/** What a confirm dialog or the rename sheet is currently pointed at. Local rather than in a
- * `rememberSaveable` holder for the same reason `FoodScreen` keeps its own: a dialog that survives
- * process death would reopen asking about a row the user has stopped looking at. */
-private sealed interface Target {
-    val name: String
-
-    /** A food has no id — its name *is* its key in `favorite_food`, which is why renaming one is
-     * a move rather than an update. */
-    data class Food(override val name: String) : Target
-    data class Meal(val id: Long, override val name: String) : Target
-    data class Dish(val id: Long, override val name: String) : Target
 }
 
 @Composable
 private fun FoodLibraryContent(
     uiState: FoodLibraryUiState,
-    onEvent: (FoodLibraryEvent) -> Unit,
-    onNewFood: () -> Unit,
-    onNewRecipe: () -> Unit,
-    initialQuery: String = "",
+    onAdd: () -> Unit,
+    onOpenSavedMeal: (Long) -> Unit,
+    onOpenFood: (String) -> Unit,
+    initialQuery: String? = null,
 ) {
-    var pendingDelete by remember { mutableStateOf<Target?>(null) }
-    var renaming by remember { mutableStateOf<Target?>(null) }
-    // The query survives a rotation and nothing else: it is not persisted, never reaches the
-    // ViewModel, and never reaches Room. All three lists are already in memory, so filtering is
-    // what a keystroke costs — which is also why there is no debounce here and one in the food
-    // history's field, where every keystroke is a query.
+    // UI-only and saveable: none of it is persisted, reaches the ViewModel or reaches Room. A null
+    // query is search closed; "" is search open with nothing typed yet.
+    var filter by rememberSaveable { mutableStateOf(LibraryFilter.All) }
     var query by rememberSaveable { mutableStateOf(initialQuery) }
+
+    // Search is a level of its own: back closes it before it leaves the screen.
+    if (query != null) {
+        val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
+        NavigationBackHandler(state = navigationState, onBackCompleted = { query = null })
+    }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
             if (!uiState.loaded) {
-                // No search field: a box that can only ever return nothing is chrome. The FAB below
-                // is the call to action, and the body names it.
+                // No chips and no search: a box that can only ever return nothing is chrome. Add
+                // below is the call to action, and the body names it.
                 FullScreenState(
                     icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                     heading = stringResource(R.string.profile_library_empty_heading),
                     body = stringResource(R.string.profile_library_empty_body),
                 )
             } else {
-                val results = remember(uiState, query) { uiState.filter(query) }
+                // A chip whose kind emptied out (the last recipe deleted) no longer draws, so the
+                // list falls back to All rather than to a filter nobody can see or undo.
+                val filters = uiState.filters()
+                val shown = if (filter in filters) filter else LibraryFilter.All
+                val entries = remember(uiState, shown, query) { uiState.entries(shown, query.orEmpty()) }
                 Column(modifier = Modifier.fillMaxSize()) {
-                    LibrarySearchField(
-                        value = query,
-                        onValueChange = { query = it },
-                        totalItems = uiState.total,
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 12.dp),
-                    )
+                    val barModifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 12.dp)
+                    val current = query
+                    if (current != null) {
+                        LibrarySearchField(
+                            value = current,
+                            onValueChange = { query = it },
+                            onClose = { query = null },
+                            modifier = barModifier,
+                        )
+                    } else {
+                        FilterBar(
+                            filters = filters,
+                            selected = shown,
+                            onSelect = { filter = it },
+                            onSearch = { query = "" },
+                            modifier = barModifier,
+                        )
+                    }
                     LibraryList(
-                        results = results,
-                        query = query,
-                        total = uiState.total,
-                        onRename = { renaming = it },
+                        entries = entries,
+                        query = query.orEmpty(),
+                        onOpenSavedMeal = onOpenSavedMeal,
+                        onOpenFood = onOpenFood,
                     )
                 }
             }
-            AddMenuFab(
-                onNewFood = onNewFood,
-                onNewRecipe = onNewRecipe,
+            DockedFab(
+                onClick = onAdd,
+                label = stringResource(R.string.profile_library_add),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp),
             )
         }
     }
+}
 
-    // A saved meal is something the user built, so its delete asks first rather than deleting with
-    // an undo the way a swiped diary row does. Keep is the confirm slot; see DeleteConfirmDialog.
-    pendingDelete?.let { target ->
-        val noun = when (target) {
-            is Target.Food -> stringResource(R.string.profile_library_noun_food)
-            is Target.Meal -> stringResource(R.string.profile_library_noun_meal)
-            is Target.Dish -> stringResource(R.string.profile_library_noun_recipe)
+/** The chips, and the search icon at the row's end. The chips scroll sideways rather than wrap, so
+ * the bar is one row at any font scale and the icon never leaves its corner. */
+@Composable
+private fun FilterBar(
+    filters: List<LibraryFilter>,
+    selected: LibraryFilter,
+    onSelect: (LibraryFilter) -> Unit,
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .weight(1f)
+                .horizontalScroll(rememberScrollState()),
+        ) {
+            filters.forEach { filter ->
+                FilterChip(
+                    selected = filter == selected,
+                    onClick = { onSelect(filter) },
+                    label = { Text(stringResource(filter.label())) },
+                )
+            }
         }
-        DeleteConfirmDialog(
-            name = target.name,
-            body = stringResource(R.string.profile_library_delete_body, noun),
-            onDelete = {
-                onEvent(
-                    when (target) {
-                        is Target.Food -> FoodLibraryEvent.OnDeleteMyFood(target.name)
-                        is Target.Meal -> FoodLibraryEvent.OnDeleteSavedMeal(target.id)
-                        is Target.Dish -> FoodLibraryEvent.OnDeleteRecipe(target.id)
-                    },
-                )
-                pendingDelete = null
-            },
-            onKeep = { pendingDelete = null },
-        )
+        IconButton(onClick = onSearch) {
+            Icon(
+                imageVector = AppIcons.Search,
+                contentDescription = stringResource(R.string.profile_library_search),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
+}
 
-    renaming?.let { target ->
-        RenameSheet(
-            currentName = target.name,
-            onDismiss = { renaming = null },
-            onRename = { name ->
-                onEvent(
-                    when (target) {
-                        is Target.Food -> FoodLibraryEvent.OnRenameMyFood(target.name, name)
-                        is Target.Meal -> FoodLibraryEvent.OnRenameSavedMeal(target.id, name)
-                        is Target.Dish -> FoodLibraryEvent.OnRenameRecipe(target.id, name)
-                    },
-                )
-                renaming = null
-            },
-            onDelete = {
-                pendingDelete = target
-                renaming = null
-            },
-        )
-    }
+private fun LibraryFilter.label(): Int = when (this) {
+    LibraryFilter.All -> R.string.profile_library_filter_all
+    LibraryFilter.Foods -> R.string.profile_library_filter_foods
+    LibraryFilter.Recipes -> R.string.profile_library_filter_recipes
+    LibraryFilter.Meals -> R.string.profile_library_filter_meals
 }
 
 @Composable
 private fun LibraryList(
-    results: LibraryResults,
+    entries: List<LibraryEntry>,
     query: String,
-    total: Int,
-    onRename: (Target) -> Unit,
+    onOpenSavedMeal: (Long) -> Unit,
+    onOpenFood: (String) -> Unit,
 ) {
-    val myFoodsLabel = stringResource(R.string.profile_library_my_foods)
-    val savedMealsLabel = stringResource(R.string.profile_library_saved_meals)
-    val recipesLabel = stringResource(R.string.profile_library_recipes)
-    // Lazy, unlike the other Profile lists: this screen is the one that reads *past* the
-    // newest-N windows — `observeAllSavedMeals` and `observeAllRecipes` are unbounded — so
-    // "how many rows can there be" has no answer, and a scrolling Column would compose every
-    // one of them on open and keep them composed. `FoodHistoryScreen` is the same call.
+    // Lazy, unlike the other Profile lists: `observeAllSavedMeals` and `observeAllRecipes` are
+    // unbounded, so "how many rows can there be" has no answer, and a scrolling Column would compose
+    // every one of them on open. `FoodHistoryScreen` is the same call.
     LazyColumn(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         // The last row comes to rest clear of the FAB rather than under it.
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp + DockedFabContentPadding),
         modifier = Modifier.fillMaxSize(),
     ) {
-        if (query.isNotBlank()) {
-            // The denominator stays in view so a two-hit result never reads as a broken library.
-            item(key = "matches") {
+        if (entries.isEmpty()) {
+            item(key = "none") {
                 Text(
-                    text = pluralStringResource(
-                        R.plurals.profile_library_matches,
-                        results.total,
-                        results.total,
-                        total,
-                    ),
-                    style = MaterialTheme.typography.bodySmall.tabularNums,
+                    text = stringResource(R.string.profile_library_no_matches),
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.fillMaxWidth().padding(start = 4.dp, top = 4.dp),
                 )
             }
         }
-        // First: it is the list the user authored deliberately, and the one the food search
-        // leads with.
-        librarySection(
-            label = myFoodsLabel,
-            rows = results.myFoods,
-            first = true,
-            key = { "food-${it.name}" },
-        ) { food ->
-            SavedThingRow(
-                name = food.name,
-                highlight = query,
-                marker = { RowMarker(icon = AppIcons.Egg, contentDescription = null) },
-                figures = { FigureRow(*food.figures().toTypedArray()) },
-                detailContent = {
-                    MacroTriplet(proteinG = food.proteinG, carbsG = food.carbsG, fatG = food.fatG)
-                },
-                // The row is the control now that the overflow menu is gone. These three lists
-                // were the one place a row was not tappable — the menu was doing the job — so
-                // this is what they gain rather than lose.
-                onClick = { onRename(Target.Food(food.name)) },
-            )
-        }
-        librarySection(
-            label = savedMealsLabel,
-            rows = results.savedMeals,
-            first = results.myFoods.isEmpty(),
-            key = { "meal-${it.id}" },
-        ) { meal ->
-            SavedThingRow(
-                name = meal.name,
-                highlight = query,
-                marker = { RowMarker(icon = AppIcons.Food.outlined, contentDescription = null) },
-                figures = { FigureRow(*meal.figures().toTypedArray()) },
-                detail = meal.items.contents().ifEmpty { null },
-                onClick = { onRename(Target.Meal(meal.id, meal.name)) },
-            )
-        }
-        librarySection(
-            label = recipesLabel,
-            rows = results.recipes,
-            first = results.myFoods.isEmpty() && results.savedMeals.isEmpty(),
-            key = { "recipe-${it.id}" },
-        ) { recipe ->
-            SavedThingRow(
-                name = recipe.name,
-                highlight = query,
-                marker = { RowMarker(icon = AppIcons.Book, contentDescription = null) },
-                figures = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        FigureRow(*recipe.figures().toTypedArray())
-                        RecipeYieldPill(
-                            servings = recipe.servings,
-                            modifier = Modifier.padding(start = 8.dp),
-                        )
-                    }
-                },
-                detail = recipe.items.contents().ifEmpty { null },
-                onClick = { onRename(Target.Dish(recipe.id, recipe.name)) },
-            )
+        items(entries, key = { it.key }) { entry ->
+            when (entry) {
+                is LibraryEntry.Food -> SavedThingRow(
+                    name = entry.name,
+                    highlight = query,
+                    marker = { RowMarker(icon = AppIcons.Egg, contentDescription = null) },
+                    figures = { FigureRow(*entry.food.figures().toTypedArray()) },
+                    onClick = { onOpenFood(entry.food.name) },
+                )
+                is LibraryEntry.Dish -> SavedThingRow(
+                    name = entry.name,
+                    highlight = query,
+                    marker = { RowMarker(icon = AppIcons.Book, contentDescription = null) },
+                    figures = { FigureRow(*entry.recipe.figures().toTypedArray()) },
+                    onClick = { onOpenSavedMeal(entry.recipe.id) },
+                )
+                is LibraryEntry.Meal -> SavedThingRow(
+                    name = entry.name,
+                    highlight = query,
+                    marker = { RowMarker(icon = AppIcons.Food.outlined, contentDescription = null) },
+                    figures = { FigureRow(*entry.meal.figures().toTypedArray()) },
+                    onClick = { onOpenSavedMeal(entry.meal.id) },
+                )
+            }
         }
     }
-}
-
-/**
- * Add, and the two things it can add. A menu rather than two FABs: one primary action per screen,
- * and the choice only matters once the user has said they want to add something. Always expanded —
- * [rememberFabExpanded][ph.mart.healthapp.core.designsystem.component.rememberFabExpanded] reads a
- * `ScrollState` and this list is lazy. The popup closes itself on back.
- */
-@Composable
-private fun AddMenuFab(
-    onNewFood: () -> Unit,
-    onNewRecipe: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var open by remember { mutableStateOf(false) }
-    Box(modifier = modifier) {
-        DockedFab(onClick = { open = true }, label = stringResource(R.string.profile_library_add))
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.profile_library_new_food)) },
-                leadingIcon = { Icon(imageVector = AppIcons.Egg, contentDescription = null) },
-                onClick = {
-                    open = false
-                    onNewFood()
-                },
-            )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.profile_library_new_recipe)) },
-                leadingIcon = { Icon(imageVector = AppIcons.Book, contentDescription = null) },
-                onClick = {
-                    open = false
-                    onNewRecipe()
-                },
-            )
-        }
-    }
-}
-
-/**
- * A sticky header and its rows, or nothing at all when the section is empty — which is the same
- * rule whether it was empty to begin with or a search emptied it. A heading over nothing is noise
- * either way.
- *
- * [first] is what keeps the spacing honest: every header but the leading one owes 16dp of air
- * above it, and the leading one owes nothing.
- *
- * [key] is per-row and prefixed, because saved meals and recipes are the same table and so share
- * an id space; without the prefix a meal and a recipe could collide and Lazy would reuse the wrong
- * slot.
- */
-private fun <T> LazyListScope.librarySection(
-    label: String,
-    rows: List<T>,
-    first: Boolean,
-    key: (T) -> Any,
-    row: @Composable (T) -> Unit,
-) {
-    if (rows.isEmpty()) return
-    stickyHeader(key = "header-$label") {
-        LibrarySectionHeader(label = label, count = rows.size, first = first)
-    }
-    items(rows, key = key) { row(it) }
 }
 
 private val PREVIEW_STATE = FoodLibraryUiState(
@@ -372,11 +271,6 @@ private val PREVIEW_STATE = FoodLibraryUiState(
                 SavedMealItem("Greek yogurt", 1.0, "cup", 150, 20, 8, 4),
                 SavedMealItem("Oats", 60.0, "g", 230, 8, 40, 4),
             ),
-        ),
-        SavedMeal(
-            id = 2,
-            name = "Post-gym shake",
-            items = listOf(SavedMealItem("Whey shake", 1.0, "scoop", 120, 24, 3, 1)),
         ),
     ),
     recipes = listOf(
@@ -395,31 +289,30 @@ private val PREVIEW_STATE = FoodLibraryUiState(
 @PreviewLightDark
 @Composable
 private fun FoodLibraryPreview() {
-    AppTheme { FoodLibraryContent(uiState = PREVIEW_STATE, onEvent = {}, onNewFood = {}, onNewRecipe = {}) }
+    AppTheme { FoodLibraryContent(uiState = PREVIEW_STATE, onAdd = {}, onOpenSavedMeal = {}, onOpenFood = {}) }
 }
 
-/** Searching: the headers re-count, a section with no matches loses its header, and the matched
- * run is marked so the reason a row is in the result is visible. */
+/** Searching: the chips give way to the field, and the matched run is marked. */
 @PreviewLightDark
 @Composable
 private fun FoodLibrarySearchPreview() {
     AppTheme {
         FoodLibraryContent(
             uiState = PREVIEW_STATE,
-            onEvent = {},
-            onNewFood = {},
-            onNewRecipe = {},
-            initialQuery = "oat",
+            onAdd = {},
+            onOpenSavedMeal = {},
+            onOpenFood = {},
+            initialQuery = "ch",
         )
     }
 }
 
 /** Nothing saved: the row in Profile still opens, so this state has to say what to do next — and
- * the FAB is how. */
+ * Add is how. */
 @PreviewLightDark
 @Composable
 private fun FoodLibraryEmptyPreview() {
     AppTheme {
-        FoodLibraryContent(uiState = FoodLibraryUiState(), onEvent = {}, onNewFood = {}, onNewRecipe = {})
+        FoodLibraryContent(uiState = FoodLibraryUiState(), onAdd = {}, onOpenSavedMeal = {}, onOpenFood = {})
     }
 }

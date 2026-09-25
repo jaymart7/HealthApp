@@ -55,7 +55,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.diary.BrowseTab
-import ph.mart.healthapp.feature.food.ui.recipe.components.RecipeRow
+import ph.mart.healthapp.feature.food.ui.library.components.RecipeRow
 
 /** Roughly the height five rows would have taken, so the empty state sits where the list does
  * rather than collapsing the sheet around it. */

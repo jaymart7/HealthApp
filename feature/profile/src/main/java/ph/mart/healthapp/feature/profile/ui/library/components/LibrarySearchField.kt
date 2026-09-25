@@ -18,14 +18,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -39,16 +43,15 @@ import ph.mart.healthapp.feature.profile.R
 private val FieldShape = RoundedCornerShape(24.dp)
 
 /**
- * The library's search, **pinned under the top bar and above the scroll** rather than hidden
- * behind a top-bar icon. At two hundred saved items search is not the occasional intent, it is
- * the common one, and a mode you have to open first costs a tap on it every time.
+ * The library's search, opened from the icon at the end of the chip row and drawn in the chips'
+ * place — the list is short enough to scan now that it is one list with filters, so search is
+ * the occasional intent and does not earn a permanent row. It opens focused, and its ✕ closes it,
+ * query and all; back does the same.
  *
  * Not [ph.mart.healthapp.core.designsystem.component.AppTextField], for the reason
  * `HistorySearchField` gives one flow over: that component is the app's *form* field — bordered,
  * square-ish, drawn in every sheet in the product — and growing a pill radius and a pair of icons
- * onto it to serve one screen would push both into every form. This is `HistorySearchField`'s
- * twin without the progress line: nothing here is waiting on a network or on Room, so there is
- * nothing to report the wait for.
+ * onto it to serve one screen would push both into every form.
  *
  * It lives in this flow's `components/` because one screen draws it. The day a second one wants
  * the same box, the two merge in `:core:designsystem` — not before.
@@ -57,14 +60,17 @@ private val FieldShape = RoundedCornerShape(24.dp)
 internal fun LibrarySearchField(
     value: String,
     onValueChange: (String) -> Unit,
-    totalItems: Int,
+    onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Drawn rather than inferred: BasicTextField has no container of its own, so without this
     // nothing on screen would say the keyboard is pointed here.
     var focused by remember { mutableStateOf(false) }
-    val placeholder = stringResource(R.string.profile_library_search, totalItems)
-    val clearLabel = stringResource(R.string.profile_library_search_clear)
+    val focusRequester = remember { FocusRequester() }
+    val inspection = LocalInspectionMode.current
+    LaunchedEffect(Unit) { if (!inspection) focusRequester.requestFocus() }
+    val placeholder = stringResource(R.string.profile_library_search)
+    val closeLabel = stringResource(R.string.profile_library_search_close)
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = FieldShape,
@@ -109,21 +115,18 @@ internal fun LibrarySearchField(
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .focusRequester(focusRequester)
                         .onFocusChanged { focused = it.isFocused }
                         .semantics { contentDescription = placeholder },
                 )
             }
-            if (value.isNotEmpty()) {
-                IconButton(onClick = { onValueChange("") }, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        imageVector = AppIcons.Close,
-                        contentDescription = clearLabel,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            } else {
-                Box(modifier = Modifier.size(12.dp))
+            IconButton(onClick = onClose, modifier = Modifier.size(48.dp)) {
+                Icon(
+                    imageVector = AppIcons.Close,
+                    contentDescription = closeLabel,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
             }
         }
     }
@@ -135,11 +138,11 @@ private fun LibrarySearchFieldPreview() {
     AppTheme {
         Surface {
             Column(modifier = Modifier.padding(16.dp)) {
-                LibrarySearchField(value = "", onValueChange = {}, totalItems = 214)
+                LibrarySearchField(value = "", onValueChange = {}, onClose = {})
                 LibrarySearchField(
                     value = "oat",
                     onValueChange = {},
-                    totalItems = 214,
+                    onClose = {},
                     modifier = Modifier.padding(top = 12.dp),
                 )
             }

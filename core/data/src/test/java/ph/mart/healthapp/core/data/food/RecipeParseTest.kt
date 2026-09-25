@@ -1,6 +1,7 @@
 package ph.mart.healthapp.core.data.food
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -53,5 +54,18 @@ class RecipeParseTest {
     fun `no ingredients is nothing found`() {
         assertEquals(RecipeParseResult.NothingFound, recipeParseResult("Stew", 4, emptyList()))
         assertTrue(recipeParseResult(null, 4, listOf(food("", 10))) is RecipeParseResult.NothingFound)
+    }
+
+    @Test
+    fun `a food is one item the model called a food`() {
+        assertTrue(parsed(recipeParseResult("Whey", 1, listOf(food("Whey", 120)), PARSE_KIND_FOOD)).isFood)
+    }
+
+    @Test
+    fun `the shape outranks the kind`() {
+        val many = listOf(food("Beef", 250), food("Beans", 120))
+        assertFalse(parsed(recipeParseResult("Chili", 4, many, PARSE_KIND_FOOD)).isFood)
+        assertFalse(parsed(recipeParseResult("Toast", 1, listOf(food("Bread", 80)), "recipe")).isFood)
+        assertFalse(parsed(recipeParseResult("Toast", 1, listOf(food("Bread", 80)), null)).isFood)
     }
 }

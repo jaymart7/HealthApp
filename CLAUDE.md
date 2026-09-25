@@ -321,7 +321,7 @@ the stray `!!`s and two unnecessary safe calls went with them.
   genuinely used by two or more flows goes in `ui/shared/` (or
   `ui/shared/components/`) rather than being left in whichever flow happened to
   declare it first. `:feature:food` (`diary`, `photo`, `barcode`, `label`, `history`,
-  `recipe`, `myfood` — New food, reached from the library, `search`, `ideas`, `voice`, `quicklog` — the FAB's sheet, `shared`), `:feature:progress` (`progress` — the overview and
+  `library` — add and edit a food, a recipe or a saved meal, `search`, `ideas`, `voice`, `quicklog` — the FAB's sheet, `shared`), `:feature:progress` (`progress` — the overview and
   the detail chrome — plus `weight`, `measurement`, `nutrition`, `activity`,
   `strength`, `mood`, `cycle`, `sleep`, `heart`, `fasting`, `supplement`, `pressure`, `energy` and
   `achievement`, one per subject holding that subject's charts;
@@ -343,7 +343,7 @@ the stray `!!`s and two unnecessary safe calls went with them.
   saved-thing row family all three "Your stuff" lists draw: `SavedThingRow`,
   `FigureText`, `RowOverflowMenu`, `DeleteConfirmDialog` and `RenameSheet`) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
-  owning screen: `RecipePanel` sits under `recipe/` though `FoodScreen` renders it, and
+  owning screen: `RecipeRow` sits under `library/` though the diary's add sheet renders it, and
   Progress's fourteen subject pages sit with the charts they draw rather than with the shell
   that dispatches them. The one entry that reads against the rule is `ExerciseSection`, which
   stayed in `ui/diary/components/` when the rest of the exercise UI left for `:feature:training`

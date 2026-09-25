@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.recipe.components
+package ph.mart.healthapp.feature.food.ui.library.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Surface
@@ -24,7 +24,7 @@ import ph.mart.healthapp.feature.food.ui.diary.components.SheetRow
  * serving into the form where the portion stepper can halve it. The chevron says the row leads
  * somewhere; the absence of the filled button says there is nothing here that writes.
  *
- * It lives beside the recipe builder rather than with the sheet's other rows because grouping in
+ * It lives beside the library's editor rather than with the sheet's other rows because grouping in
  * this app is by *subject* — the same reason `RecipePanel` was here before it became this row.
  */
 @Composable

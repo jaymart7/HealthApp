@@ -35,6 +35,7 @@ internal class RecipeParseRepositoryImpl : RecipeParseRepository {
             name = body.optString("name"),
             servings = body.optInt("servings", 1),
             ingredients = parseRecognizedFoods(body.optJSONArray("ingredients") ?: JSONArray()),
+            kind = body.optString("kind"),
         )
     } catch (e: CancellationException) {
         // Back out of the fill cancels the call — the rule every other parse here follows.
@@ -47,6 +48,7 @@ internal class RecipeParseRepositoryImpl : RecipeParseRepository {
 
 private val RECIPE_SCHEMA = Schema.obj(
     mapOf(
+        "kind" to Schema.enumeration(listOf(PARSE_KIND_FOOD, "recipe")),
         "name" to Schema.string(description = "the dish, as a person would name it"),
         "servings" to Schema.integer(description = "how many portions the whole recipe makes"),
         "ingredients" to Schema.array(RECOGNIZED_FOOD_SCHEMA),
@@ -63,9 +65,17 @@ private const val MAX_RECIPE_TOKENS = MAX_FOOD_LIST_TOKENS * MAX_RECIPE_INGREDIE
  */
 private fun promptFor(text: String): String = buildString {
     appendLine(
-        "You are a recipe assistant for a nutrition app. The user has described a dish or pasted " +
-            "a recipe. Turn it into a recipe: its name, how many servings it makes, and its " +
-            "ingredients with estimated nutrition.",
+        "You are a recipe assistant for a nutrition app. The user has described a food, a dish or " +
+            "pasted a recipe to save. Turn it into a recipe: its name, how many servings it makes, " +
+            "and its ingredients with estimated nutrition.",
+    )
+    appendLine()
+    appendLine(
+        "First decide the kind. If they described one thing eaten as-is — a packaged product, a " +
+            "single ingredient, or a dish they gave the nutrition of per portion — set kind to " +
+            "\"$PARSE_KIND_FOOD\", servings to 1, and return exactly one ingredient: that thing, " +
+            "for one portion, with the figures they gave where they gave them. Otherwise set kind " +
+            "to \"recipe\" and follow the rules below.",
     )
     appendLine()
     appendLine("What they wrote:")

@@ -45,16 +45,6 @@ class FoodLibraryDataTest {
     }
 
     @Test
-    fun `contents names the items`() {
-        assertEquals("Oats, Yogurt", listOf(item("Oats", 230), item("Yogurt", 150)).contents())
-    }
-
-    @Test
-    fun `no items means no third line at all, not a blank one`() {
-        assertEquals("", emptyList<SavedMealItem>().contents())
-    }
-
-    @Test
     fun `a food's portion drops a trailing zero but keeps a real fraction`() {
         assertEquals("100", ScannedProduct("Chicken breast", 100.0, "g", 165, 31, 0, 4).portionLabel())
         assertEquals("1", ScannedProduct("Adobo", 1.0, "serving", 420, 28, 12, 28).portionLabel())
