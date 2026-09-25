@@ -215,9 +215,10 @@ private fun CollapsedRow(item: AddEntryForm, expanded: Boolean, onToggleExpanded
 }
 
 /** The AI accent, at row scale. Nothing else in either review flow draws on `tertiaryContainer`
- * except the header chip and the batch notice, which are the same claim at other sizes. */
+ * except the header chip and the batch notice, which are the same claim at other sizes. The FAB's
+ * quick log draws it under its rows too, for the same doubt. */
 @Composable
-private fun ConfidenceChip(label: String) {
+internal fun ConfidenceChip(label: String) {
     Text(
         text = label,
         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),

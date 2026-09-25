@@ -30,8 +30,10 @@ field, focused with the keyboard up the moment the sheet opens, reading what the
 food rows priced by the model, activities priced on-device off the latest weigh-in, both from one
 sentence. When the sentence leaves out what the estimate turns on (how much rice, how long a run) it
 asks back in an AI-accent bubble, at most twice, then estimates. The confirmation is inline: rows
-with a remove ✕, a meal-slot chip row when there is food, and Log; corrections are typed as another
-message. Mic inside the field, a send/stop circle beside it, and Photo · Scan chips under it until a
+with a remove ✕ and, on a guess, talk-to-log's "Rough guess · …" tag; tapping a food row opens the
+shared portion stepper, which reprices it; a meal-slot chip row (pre-set when the sentence names the
+meal) and Log. Corrections are typed as another message. Under a blank field, the last three
+sentences that became meals — the same list talk-to-log offers — fill the field on a tap. Mic inside the field, a send/stop circle beside it, and Photo · Scan chips under it until a
 conversation starts. Back steps: in flight → cancel, question/review → start over.
 
 **Launcher shortcuts** (`@xml/shortcuts`, static): Say what you ate · Log food · Add water ·

@@ -31,6 +31,7 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
+import ph.mart.healthapp.feature.food.ui.shared.components.RecentSentences
 
 private val EXAMPLE = R.string.food_voice_example
 
@@ -140,7 +141,7 @@ internal fun VoiceInputScreen(
                 )
 
                 if (text.isBlank() && recentSentences.isNotEmpty()) {
-                    VoiceRecentSentences(sentences = recentSentences, onSelect = onTextChange)
+                    RecentSentences(sentences = recentSentences, onSelect = onTextChange)
                 }
 
                 MealTypeChipRow(selected = mealType, onSelect = onMealTypeSelect)

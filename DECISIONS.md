@@ -2112,11 +2112,24 @@ rather than needing a counter patched.
   estimate and mark the guess `low`, and a question it asks anyway is ignored for its lists. Two is
   the ceiling because a third round is the app refusing to log. Every call sends the whole
   conversation, so a correction typed on the review ("make it two cups") re-reads everything.
-- **The confirmation is inline, and corrections are words.** The review is the diary's own
-  `FoodItemRow` plus an activity row, each with a remove ✕, a meal-slot chip row when there is food,
-  and Log — no per-row portion editor, because the field is right there and the model is better at
-  "make it two" than a stepper is at being found. Talk-to-log keeps its full editor for anyone who
-  wants one. Logging reports the credited burn to `AppScaffold`'s snackbar, the same line the
+- **The confirmation is inline, corrections are words, and the portion is the one lever.** The
+  review is the diary's own `FoodItemRow` plus an activity row, each with a remove ✕, a meal-slot
+  chip row when there is food, and Log. Most corrections are typed ("make it two"), because the field
+  is right there and the model reads them against everything said. The portion is the exception:
+  tapping a food row opens the shared `PortionControl`, and `withPortionAmount` reprices it with no
+  request — which is why the rows are `AddEntryForm`s rather than the model's items. Its caveat is
+  replaced ("enter the values" is wrong where nothing is entered) and its base is the amount on
+  screen, so no "×1.5" is printed against a seed that was never per 100 g. A `Low` row carries
+  talk-to-log's own `ConfidenceChip`; hiding the doubt the model admitted would make the fastest
+  path the least honest one.
+- **A slot the user names beats the clock.** "for lunch" sets the chip; a sentence that names no
+  meal keeps `defaultMealTypeForNow()`. The schema's `mealType` is an optional enumeration, and
+  `quickLogResult` matches it against `MealType`'s names so an invented slot is no slot.
+- **The recents strip is talk-to-log's list, recorded only for meals.** Both screens read
+  `observeRecentSentences(3)`; the quick log records `userSentence` — every user turn joined, so an
+  answer rides with the sentence it answered and a re-send skips the question — but only when the
+  log was food and nothing else. Talk-to-log offers the list under a *food* field, where "30 min run"
+  can only fail. *ponytail: no recents for workouts; they need their own store (a Room migration).* Logging reports the credited burn to `AppScaffold`'s snackbar, the same line the
   log-exercise sheet raises.
 - **Photo and barcode stay as chips; the rest left the FAB.** A plate and a barcode are not
   sentences, so they keep a door under the field — until a conversation starts, when the space is

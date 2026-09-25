@@ -10,6 +10,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
+import ph.mart.healthapp.core.data.food.MAX_PARSE_CHARS
 import ph.mart.healthapp.core.data.food.QuickLogRepository
 import ph.mart.healthapp.core.data.food.QuickLogResult
 import ph.mart.healthapp.core.data.food.QuickLogTurn
@@ -28,6 +29,9 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
  * The sheet is hosted by `AppScaffold`, outside any nav entry, so this outlives it — which is why
  * dismissing sends [QuickLogEvent.OnCancel], or a late answer would land on the next blank sheet.
  */
+/** The strip's length — `VoiceLogViewModel`'s three, since it is the same strip. */
+private const val RECENT_SENTENCES = 3
+
 class QuickLogViewModel(
     private val quickLogRepository: QuickLogRepository,
     private val foodRepository: FoodRepository,
@@ -39,6 +43,7 @@ class QuickLogViewModel(
 
     override val container = orbitContainer<QuickLogUiState, QuickLogSideEffect>(QuickLogUiState()) {
         observeWeight(profileRepository, progressRepository)
+        observeRecentSentences()
     }
 
     /** Cancelled by back, by dismissing the sheet, and by the next send. */
@@ -51,7 +56,7 @@ class QuickLogViewModel(
         when (event) {
             is QuickLogEvent.OnSend -> onSend(event.turns)
             QuickLogEvent.OnCancel -> sendJob?.cancel()
-            is QuickLogEvent.OnLog -> onLog(event.foods, event.exercises)
+            is QuickLogEvent.OnLog -> onLog(event.foods, event.exercises, event.sentence)
         }
     }
 
@@ -74,6 +79,13 @@ class QuickLogViewModel(
         }
     }
 
+    /** Talk-to-log's list, read here too — one store of "sentences that became meals". */
+    private fun observeRecentSentences() = intent {
+        foodRepository.observeRecentSentences(RECENT_SENTENCES).collect { sentences ->
+            reduce { state.copy(recentSentences = sentences) }
+        }
+    }
+
     private fun onSend(turns: List<QuickLogTurn>) {
         sendJob?.cancel()
         sendJob = intent {
@@ -89,6 +101,7 @@ class QuickLogViewModel(
                             burnedKcal = estimateBurnedKcal(activity.type, activity.minutes, state.weightKg),
                         )
                     },
+                    mealType = result.mealType,
                 )
                 QuickLogResult.NothingFound -> QuickLogSideEffect.NothingFound
                 QuickLogResult.Failed -> QuickLogSideEffect.Failed
@@ -97,10 +110,19 @@ class QuickLogViewModel(
         }
     }
 
-    /** Day 0 on both — the FAB is today-only, and both repositories stamp it. */
-    private fun onLog(foods: List<FoodEntry>, exercises: List<ExerciseEntry>) = intent {
+    /**
+     * Day 0 on both — the FAB is today-only, and both repositories stamp it.
+     *
+     * The sentence is remembered only for a meal and nothing else: talk-to-log offers the same list
+     * back under a *food* field, and "30 min run" there is a sentence that can only fail. After the
+     * write, `VoiceLogViewModel.logMeal`'s order — a log that never happened proves nothing.
+     */
+    private fun onLog(foods: List<FoodEntry>, exercises: List<ExerciseEntry>, sentence: String) = intent {
         if (foods.isNotEmpty()) foodRepository.addEntries(foods)
         exercises.forEach { exerciseRepository.addEntry(it) }
+        if (foods.isNotEmpty() && exercises.isEmpty() && sentence.isNotBlank()) {
+            foodRepository.recordSentence(sentence.take(MAX_PARSE_CHARS))
+        }
         val credited = if (state.addExerciseToBudget) exercises.sumOf { it.burnedKcal } else 0
         postSideEffect(QuickLogSideEffect.Logged(credited))
     }

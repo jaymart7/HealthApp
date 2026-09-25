@@ -27,7 +27,13 @@ data class QuickLogTurn(val fromUser: Boolean, val text: String)
  */
 sealed interface QuickLogResult {
     data class Question(val text: String) : QuickLogResult
-    data class Parsed(val foods: List<RecognizedFood>, val activities: List<ParsedExercise>) : QuickLogResult
+    /** [mealType] is the slot the user named ("for lunch"), null when they named none — the
+     * sheet then keeps its time-of-day guess. */
+    data class Parsed(
+        val foods: List<RecognizedFood>,
+        val activities: List<ParsedExercise>,
+        val mealType: MealType? = null,
+    ) : QuickLogResult
     data object NothingFound : QuickLogResult
     data object Failed : QuickLogResult
 }
@@ -63,6 +69,7 @@ fun quickLogResult(
     foods: List<RecognizedFood>,
     activities: List<ParsedExercise?>,
     mayAsk: Boolean,
+    mealType: String? = null,
 ): QuickLogResult {
     val asked = question?.let { stripMarkdown(it).trim().take(MAX_QUESTION_CHARS).trim() }
     if (mayAsk && !asked.isNullOrEmpty()) return QuickLogResult.Question(asked)
@@ -71,6 +78,8 @@ fun quickLogResult(
     return if (eaten.isEmpty() && done.isEmpty()) {
         QuickLogResult.NothingFound
     } else {
-        QuickLogResult.Parsed(eaten, done)
+        // Only against the enum's own names — the schema's enumeration — so a slot the model made
+        // up is no slot, not a crash.
+        QuickLogResult.Parsed(eaten, done, MealType.entries.firstOrNull { it.name.equals(mealType, ignoreCase = true) })
     }
 }

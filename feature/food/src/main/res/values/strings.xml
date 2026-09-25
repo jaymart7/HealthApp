@@ -389,6 +389,8 @@
     <string name="food_quick_remove">Remove %1$s</string>
     <string name="food_quick_burned">%1$d kcal burned</string>
     <string name="food_quick_total">Total · %1$d kcal</string>
+    <string name="food_quick_adjust">Adjust portion</string>
+    <string name="food_quick_portion_caveat">The estimate rescales with the portion.</string>
     <string name="food_quick_nothing">Nothing to log in that one — name a food or an activity.</string>
     <string name="food_quick_failed">That didn\'t work. Your words are still there — try again.</string>
     <string name="food_quick_offline">Reading a sentence needs a connection. The Food tab\'s own add button works offline.</string>

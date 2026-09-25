@@ -68,6 +68,23 @@ class QuickLogTest {
     }
 
     @Test
+    fun `a named meal slot rides the parse`() {
+        val result = quickLogResult(null, listOf(food("Toast", 80)), emptyList(), mayAsk = true, mealType = "lunch")
+
+        assertEquals(MealType.Lunch, (result as QuickLogResult.Parsed).mealType)
+    }
+
+    /** The schema is an enumeration, but a slot the model made up must be no slot, not a crash. */
+    @Test
+    fun `an unknown or absent meal slot is none`() {
+        val made = quickLogResult(null, listOf(food("Toast", 80)), emptyList(), mayAsk = true, mealType = "Brunch")
+        val absent = quickLogResult(null, listOf(food("Toast", 80)), emptyList(), mayAsk = true, mealType = "")
+
+        assertEquals(null, (made as QuickLogResult.Parsed).mealType)
+        assertEquals(null, (absent as QuickLogResult.Parsed).mealType)
+    }
+
+    @Test
     fun `the model may ask twice and no more`() {
         val sentence = QuickLogTurn(fromUser = true, text = "rice")
         val asked = QuickLogTurn(fromUser = false, text = "How much?")

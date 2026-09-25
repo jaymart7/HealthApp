@@ -1,4 +1,4 @@
-package ph.mart.healthapp.feature.food.ui.voice.components
+package ph.mart.healthapp.feature.food.ui.shared.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,12 +46,17 @@ import ph.mart.healthapp.feature.food.R
  * Two lines rather than one ellipsised. A sentence cut off at "two scrambled eggs, a slice of…" is
  * exactly the sentence you cannot tell apart from the other one that starts the same way, which is
  * the whole job of the row.
+ *
+ * Shared by talk-to-log and the FAB's quick log, which read the same list. [rowColor] is the one
+ * difference: the quick log sits on a sheet that is already `surfaceContainerLow`, where the
+ * default fill would be no fill at all.
  */
 @Composable
-internal fun VoiceRecentSentences(
+internal fun RecentSentences(
     sentences: List<String>,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
+    rowColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -65,16 +71,16 @@ internal fun VoiceRecentSentences(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         sentences.forEach { sentence ->
-            RecentSentenceRow(sentence = sentence, onSelect = { onSelect(sentence) })
+            RecentSentenceRow(sentence = sentence, color = rowColor, onSelect = { onSelect(sentence) })
         }
     }
 }
 
 @Composable
-private fun RecentSentenceRow(sentence: String, onSelect: () -> Unit) {
+private fun RecentSentenceRow(sentence: String, color: Color, onSelect: () -> Unit) {
     Surface(
         onClick = onSelect,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        color = color,
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
@@ -105,10 +111,10 @@ private fun RecentSentenceRow(sentence: String, onSelect: () -> Unit) {
 
 @PreviewLightDark
 @Composable
-private fun VoiceRecentSentencesPreview() {
+private fun RecentSentencesPreview() {
     AppTheme {
         Surface {
-            VoiceRecentSentences(
+            RecentSentences(
                 sentences = listOf(
                     "two scrambled eggs, a slice of toast and a black coffee",
                     "chicken breast, rice and steamed broccoli",
@@ -125,10 +131,10 @@ private fun VoiceRecentSentencesPreview() {
  * word that tells it apart from the one above it. */
 @PreviewLightDark
 @Composable
-private fun VoiceRecentSentencesLongPreview() {
+private fun RecentSentencesLongPreview() {
     AppTheme {
         Surface {
-            VoiceRecentSentences(
+            RecentSentences(
                 sentences = listOf(
                     "two scrambled eggs, a slice of wholemeal toast with butter and a black coffee",
                     "two scrambled eggs, a slice of wholemeal toast and a flat white",

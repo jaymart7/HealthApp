@@ -12,7 +12,9 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.QuickLogTurn
 import ph.mart.healthapp.core.data.food.RecognizedFood
+import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
+import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
 enum class QuickLogPhase { Input, Thinking, Review }
 
@@ -45,14 +47,24 @@ internal class QuickLogState(
     @get:StringRes
     var message: Int? by mutableStateOf(null)
 
-    var foods: List<RecognizedFood> by mutableStateOf(emptyList())
+    /** Forms rather than the model's items, so a nudged portion reprices through the same
+     * `withPortionAmount` every other review uses. */
+    var foods: List<AddEntryForm> by mutableStateOf(emptyList())
     var exercises: List<ExerciseEntry> by mutableStateOf(emptyList())
+
+    /** The food row whose portion is open — one at a time, talk-to-log's rule. */
+    var expandedIndex: Int? by mutableStateOf(null)
 
     /** The follow-up waiting for an answer: the model's turn, when it is the last one. */
     val question: String? get() = turns.lastOrNull()?.takeIf { !it.fromUser }?.text
 
     /** What the user said last, shown above the question it prompted. */
     val lastSaid: String? get() = turns.lastOrNull { it.fromUser }?.text
+
+    /** Everything the user said, as one sentence — what the recents strip offers back. Answers
+     * join the sentence they answer ("rice and adobo, two cups"), which is exactly what a re-send
+     * needs to skip the question. */
+    val userSentence: String get() = turns.filter { it.fromUser }.joinToString(", ") { it.text }
 
     val hasResult: Boolean get() = foods.isNotEmpty() || exercises.isNotEmpty()
 
@@ -78,10 +90,26 @@ internal class QuickLogState(
         phase = QuickLogPhase.Input
     }
 
-    fun applyParsed(foods: List<RecognizedFood>, exercises: List<ExerciseEntry>) {
-        this.foods = foods
+    /** A slot the user named wins over the time-of-day guess; the chips still win over both. */
+    fun applyParsed(foods: List<RecognizedFood>, exercises: List<ExerciseEntry>, mealType: MealType?) {
+        mealType?.let { this.mealType = it }
+        this.foods = foods.map { it.toAddEntryForm(this.mealType) }
         this.exercises = exercises
+        expandedIndex = null
         phase = QuickLogPhase.Review
+    }
+
+    fun selectMealType(mealType: MealType) {
+        this.mealType = mealType
+        foods = foods.map { it.copy(mealType = mealType) }
+    }
+
+    fun updateFood(index: Int, form: AddEntryForm) {
+        foods = foods.mapIndexed { i, existing -> if (i == index) form else existing }
+    }
+
+    fun toggleExpanded(index: Int) {
+        expandedIndex = if (expandedIndex == index) null else index
     }
 
     /** The last send came to nothing: its words go back in the field, and whatever was on screen
@@ -102,12 +130,14 @@ internal class QuickLogState(
         turns = emptyList()
         foods = emptyList()
         exercises = emptyList()
+        expandedIndex = null
         message = null
         phase = QuickLogPhase.Input
     }
 
     fun removeFood(index: Int) {
         foods = foods.filterIndexed { i, _ -> i != index }
+        expandedIndex = null
     }
 
     fun removeExercise(index: Int) {

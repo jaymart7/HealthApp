@@ -18,6 +18,7 @@ import ph.mart.healthapp.core.data.food.MealIdea
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.MealIdeaResult
+import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.MealParseRepository
 import ph.mart.healthapp.core.data.food.MealParseResult
 import ph.mart.healthapp.core.data.food.RecognitionConfidence
@@ -338,7 +339,9 @@ internal fun fakeQuickLog(turns: List<QuickLogTurn>): QuickLogResult {
         activity == null && foods.isEmpty() -> "What did you eat, or what did you do?"
         else -> null
     }
-    return quickLogResult(question, foods, listOf(activity), turns.mayAsk())
+    // "snack" for Snacks — the one slot whose name is not the word people say.
+    val slot = MealType.entries.firstOrNull { said.contains(it.name.removeSuffix("s"), ignoreCase = true) }
+    return quickLogResult(question, foods, listOf(activity), turns.mayAsk(), slot?.name)
 }
 
 /** Below this a "word" matches half the table — "an" is in "banana", "pan" and "pancake". */

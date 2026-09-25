@@ -4,7 +4,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -15,6 +17,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
+import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -27,7 +30,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.quicklog.components.QuickLogConversation
 import ph.mart.healthapp.feature.food.ui.quicklog.components.QuickLogInputBar
-import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
+import ph.mart.healthapp.feature.food.ui.shared.components.RecentSentences
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
@@ -54,12 +57,13 @@ fun QuickLogSheet(
     onSaved: (creditedKcal: Int) -> Unit,
     viewModel: QuickLogViewModel = koinViewModel(),
 ) {
+    val uiState by viewModel.collectAsState()
     val state = rememberQuickLogState()
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is QuickLogSideEffect.Asked -> state.applyQuestion(effect.question)
-            is QuickLogSideEffect.Parsed -> state.applyParsed(effect.foods, effect.exercises)
+            is QuickLogSideEffect.Parsed -> state.applyParsed(effect.foods, effect.exercises, effect.mealType)
             QuickLogSideEffect.NothingFound -> state.restoreLast(R.string.food_quick_nothing)
             QuickLogSideEffect.Failed -> state.restoreLast(R.string.food_quick_failed)
             // Reported before the dismiss — `LogExerciseSheet`'s order, for its reason.
@@ -76,6 +80,7 @@ fun QuickLogSheet(
 
     QuickLogContent(
         state = state,
+        recentSentences = uiState.recentSentences,
         onDismiss = {
             cancel()
             onDismiss()
@@ -96,8 +101,9 @@ fun QuickLogSheet(
         onLog = {
             viewModel.handleEvent(
                 QuickLogEvent.OnLog(
-                    foods = state.foods.map { it.toAddEntryForm(state.mealType).toFoodEntry() },
+                    foods = state.foods.map { it.toFoodEntry() },
                     exercises = state.exercises,
+                    sentence = state.userSentence,
                 ),
             )
         },
@@ -115,6 +121,7 @@ fun QuickLogSheet(
 @Composable
 private fun QuickLogContent(
     state: QuickLogState,
+    recentSentences: List<String>,
     onDismiss: () -> Unit,
     onSend: () -> Unit,
     onCancel: () -> Unit,
@@ -178,16 +185,28 @@ private fun QuickLogContent(
                 },
             )
         }
+        // Only before anything is typed or sent — `RecentSentences`' own rule — and a tap fills the
+        // field rather than sending: a remembered sentence is worth correcting before a request.
+        if (state.turns.isEmpty() && state.text.isBlank() && recentSentences.isNotEmpty()) {
+            RecentSentences(
+                sentences = recentSentences,
+                onSelect = { state.text = it },
+                rowColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            )
+        }
         QuickLogConversation(
             lastSaid = state.lastSaid,
             question = state.question,
             foods = state.foods,
             exercises = state.exercises,
             mealType = state.mealType,
+            expandedIndex = state.expandedIndex,
             message = state.message?.let { stringResource(it) },
+            onToggleFood = state::toggleExpanded,
+            onFoodChange = state::updateFood,
             onRemoveFood = state::removeFood,
             onRemoveExercise = state::removeExercise,
-            onMealTypeSelect = { state.mealType = it },
+            onMealTypeSelect = state::selectMealType,
         )
     }
 }
@@ -198,6 +217,7 @@ private fun QuickLogSheetPreview() {
     AppTheme {
         QuickLogContent(
             state = QuickLogState(),
+            recentSentences = emptyList(),
             onDismiss = {},
             onSend = {},
             onCancel = {},
@@ -219,6 +239,7 @@ private fun QuickLogSheetQuestionPreview() {
                     QuickLogTurn(fromUser = false, text = "How long did it last?"),
                 )
             },
+            recentSentences = emptyList(),
             onDismiss = {},
             onSend = {},
             onCancel = {},
@@ -242,8 +263,29 @@ private fun QuickLogSheetReviewPreview() {
                         RecognizedFood("Wholemeal toast", 1.0, "slice", 80, 4, 14, 1, confidence = RecognitionConfidence.High),
                     ),
                     exercises = listOf(ExerciseEntry(type = ExerciseType.Run, minutes = 30, burnedKcal = 343)),
+                    mealType = null,
                 )
             },
+            recentSentences = emptyList(),
+            onDismiss = {},
+            onSend = {},
+            onCancel = {},
+            onLog = {},
+            onCapturePhoto = {},
+            onScanBarcode = {},
+        )
+    }
+}
+
+/** A blank start with meals behind it: the strip is the whole difference, and it is gone the moment
+ * a key is pressed. */
+@PreviewLightDark
+@Composable
+private fun QuickLogSheetRecentPreview() {
+    AppTheme {
+        QuickLogContent(
+            state = QuickLogState(),
+            recentSentences = listOf("chicken adobo and rice, two cups", "two eggs and toast"),
             onDismiss = {},
             onSend = {},
             onCancel = {},

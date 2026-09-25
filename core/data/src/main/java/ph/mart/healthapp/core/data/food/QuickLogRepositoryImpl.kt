@@ -46,6 +46,7 @@ internal class QuickLogRepositoryImpl : QuickLogRepository {
                 (0 until array.length()).map { readActivity(array.getJSONObject(it)) }
             }.orEmpty(),
             mayAsk = mayAsk,
+            mealType = body.optString("mealType"),
         )
     } catch (e: CancellationException) {
         // Dismissing the sheet cancels the call — the rule every other parse here follows.
@@ -56,8 +57,8 @@ internal class QuickLogRepositoryImpl : QuickLogRepository {
     }
 }
 
-/** Both lists are required and may be empty; the question is the one optional field, for
- * `uncertainAbout`'s reason — required, a model with nothing to ask asks something anyway. */
+/** Both lists are required and may be empty; the question and the meal slot are optional, for
+ * `uncertainAbout`'s reason — required, a model with nothing to say there says something anyway. */
 private val QUICK_LOG_SCHEMA = Schema.obj(
     mapOf(
         "question" to Schema.string(
@@ -65,8 +66,12 @@ private val QUICK_LOG_SCHEMA = Schema.obj(
         ),
         "foods" to Schema.array(RECOGNIZED_FOOD_SCHEMA),
         "activities" to Schema.array(PARSED_EXERCISE_SCHEMA),
+        "mealType" to Schema.enumeration(
+            values = MealType.entries.map { it.name },
+            description = "Only when they named the meal, e.g. \"for lunch\"",
+        ),
     ),
-    optionalProperties = listOf("question"),
+    optionalProperties = listOf("question", "mealType"),
 )
 
 /** A full food list plus a few activities and a question. */
@@ -105,7 +110,8 @@ private fun promptFor(turns: List<QuickLogTurn>, mayAsk: Boolean): String = buil
             "set uncertainAbout to their words you could not pin down. " +
             "Activities: pick the closest type from the list, with the duration in minutes as " +
             "they gave it; set name to a short note in their own words, or leave it out. Do not " +
-            "estimate calories burned — the app works that out from their own weight.",
+            "estimate calories burned — the app works that out from their own weight. " +
+            "Set mealType only if they said which meal it was.",
     )
     appendLine()
     if (mayAsk) {
