@@ -43,6 +43,9 @@ class WaterActionReceiver : BroadcastReceiver(), KoinComponent {
                 // left in the shade with an updated count would be a second surface reporting
                 // today's water, and the widget is that.
                 if (id >= 0) NotificationManagerCompat.from(context).cancel(id)
+            } catch (_: Exception) {
+                // A bare scope has no handler, so a failed write here took the process down from
+                // the shade. The nudge stays up instead, which is the truth: nothing was added.
             } finally {
                 pending.finish()
             }

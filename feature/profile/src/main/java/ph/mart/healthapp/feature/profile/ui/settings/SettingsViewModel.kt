@@ -129,11 +129,13 @@ class SettingsViewModel(
         postSideEffect(SettingsSideEffect.ImportFinished(error))
     }
 
-    /** null when it worked; the message to show when it didn't. */
-    private suspend fun applyImport(text: String): String? = parseExport(text).fold(
-        onSuccess = { dataTransferRepository.replaceAll(it); null },
-        onFailure = { it.message ?: FALLBACK_IMPORT_ERROR },
-    )
+    /** null when it worked; the message to show when it didn't. The write is guarded too: a throw
+     * out of `onSuccess` escapes the fold and the intent, and the transaction has already rolled
+     * back, so the honest answer to a full disk is the import's own error line, not a crash. */
+    private suspend fun applyImport(text: String): String? = parseExport(text)
+        .mapCatching { dataTransferRepository.replaceAll(it) }
+        .exceptionOrNull()
+        ?.let { it.message ?: FALLBACK_IMPORT_ERROR }
 }
 
 // The fallback stays in Kotlin beside the `require()` message it stands in for — see

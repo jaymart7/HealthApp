@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import ph.mart.healthapp.core.designsystem.component.AppCard
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.progress.PATTERN_WINDOW_DAYS
@@ -79,7 +80,8 @@ internal fun PatternsCard(patterns: List<Pattern>, modifier: Modifier = Modifier
 private fun formatOutcome(value: Double, unit: PatternUnit): String = when (unit) {
     PatternUnit.Kcal -> stringResource(R.string.progress_kcal, value.roundToInt())
     PatternUnit.Grams -> stringResource(R.string.progress_recap_grams, value.roundToInt())
-    PatternUnit.Score -> stringResource(R.string.progress_patterns_score, value)
+    // Fixed at one place — "4.0 / 5" — and ASCII, the one formatter every decimal goes through.
+    PatternUnit.Score -> stringResource(R.string.progress_patterns_score, formatDecimals(value, 1))
 }
 
 private val PREVIEW_PATTERNS = listOf(
