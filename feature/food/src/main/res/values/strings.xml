@@ -419,4 +419,8 @@
     <string name="food_quick_failed">That didn\'t work. Your words are still there — try again.</string>
     <string name="food_quick_offline">You\'re offline, and nothing in that matched your foods or the built-in list. The Food tab\'s add button works offline.</string>
     <string name="food_quick_offline_matched">Offline — matched from your foods and the built-in list. Check the portions.</string>
+    <!-- The door from a started quick log to the coach: what was said goes into its field, unsent. -->
+    <string name="food_quick_ask_coach">Ask coach</string>
+    <!-- What the coach's context chip names as the source of that pre-filled question. -->
+    <string name="food_quick_coach_source">Quick log</string>
 </resources>

@@ -595,6 +595,12 @@ fun AppScaffold(
                     topLevelBackStack.add(BarcodeScanRoute(0))
                 },
                 onLogged = onQuickLogged,
+                // The diary's coach door, reached mid-conversation: the sheet closes the way Scan
+                // closes it, and back from the coach lands on the tab rather than the sheet.
+                onAskCoach = { question, source ->
+                    activeSheet = ActiveSheet.None
+                    topLevelBackStack.add(CoachRoute(question, source))
+                },
             )
             ActiveSheet.LogExercise -> LogExerciseSheet(
                 onDismiss = {

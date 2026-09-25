@@ -80,6 +80,20 @@ internal class QuickLogState(
     val userSentence: String
         get() = turns.filter { it.fromUser && it.text.isNotBlank() }.joinToString(", ") { it.text }
 
+    /**
+     * What "Ask coach" carries into the coach's field: everything the user said plus whatever is in
+     * the field now. Null before anything was sent — the door is for a conversation that started —
+     * and when there are no words to carry, since a photo alone is nothing the coach can read.
+     *
+     * `message` counts as started because a dead end on the *first* send runs [restoreLast], which
+     * empties [turns] and hands the words back to the field — and that dead end is where the coach
+     * is most worth asking. The model's question and the parsed rows stay behind: the coach asks
+     * its own and drafts its own, and a second price for the same plate is a second number.
+     */
+    val coachQuestion: String?
+        get() = listOf(userSentence, text.trim()).filter { it.isNotBlank() }.joinToString(", ")
+            .takeIf { it.isNotBlank() && (turns.isNotEmpty() || message != null) }
+
     val hasResult: Boolean
         get() = foods.isNotEmpty() || exercises.isNotEmpty() || waterGlasses != null || weightKg != null
 

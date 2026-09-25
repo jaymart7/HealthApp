@@ -65,6 +65,9 @@ import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
  * it was opened over — and hosted by `AppScaffold`, so everything leaving it is a callback:
  * [onScanBarcode] pushes its route (day 0, the FAB is today-only), and [onLogged] hands the host the credited burn for its snackbar and the `undo` that reverses the
  * whole log — the host owns the snackbar, and this sheet is gone by the time anyone taps it.
+ * [onAskCoach] is the diary's coach door in the same shape: once a conversation has started, what
+ * the user said goes to the coach's field unsent, under a chip naming the quick log — the coach can
+ * draft the log itself from there, so there is no door back.
  *
  * Back steps through the conversation before it leaves: a call in flight is cancelled with its
  * words handed back, a question or a review starts over from the first sentence, and only a blank
@@ -77,6 +80,7 @@ fun QuickLogSheet(
     onDismiss: () -> Unit,
     onScanBarcode: () -> Unit,
     onLogged: (creditedKcal: Int, undo: () -> Unit) -> Unit,
+    onAskCoach: (question: String, source: String) -> Unit,
     viewModel: QuickLogViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
@@ -120,6 +124,7 @@ fun QuickLogSheet(
     // The ViewModel outlives this sheet, so an answer still in flight would otherwise land on the
     // next one the FAB opens.
     val cancel = { viewModel.handleEvent(QuickLogEvent.OnCancel) }
+    val coachSource = stringResource(R.string.food_quick_coach_source)
 
     QuickLogContent(
         state = state,
@@ -157,6 +162,12 @@ fun QuickLogSheet(
             cancel()
             onScanBarcode()
         },
+        onContinueInCoach = state.coachQuestion?.let { question ->
+            {
+                cancel()
+                onAskCoach(question, coachSource)
+            }
+        },
     )
 }
 
@@ -172,6 +183,7 @@ private fun QuickLogContent(
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,
     onScanBarcode: () -> Unit,
+    onContinueInCoach: (() -> Unit)? = null,
 ) {
     val placeholder = stringResource(
         when {
@@ -215,6 +227,7 @@ private fun QuickLogContent(
                     onScanBarcode = onScanBarcode,
                     photo = state.photo?.asImageBitmap(),
                     onRemovePhoto = { state.photo = null },
+                    onContinueInCoach = onContinueInCoach,
                 )
             }
         },
@@ -301,6 +314,7 @@ private fun QuickLogSheetQuestionPreview() {
             onTakePhoto = {},
             onPickPhoto = {},
             onScanBarcode = {},
+            onContinueInCoach = {},
         )
     }
 }

@@ -41,7 +41,10 @@ sentences that became meals — the same list talk-to-log offers — fill the fi
 conversation starts. Photo offers the system camera or the gallery and attaches the plate as a
 thumbnail above the field, so words typed next refine it ("only half the rice"); one call reads
 both, and the photo is stored with the logged meal. The full-screen camera stays on the diary's
-Photo chip. Back steps: in flight → cancel, question/review → start over.
+Photo chip. Back steps: in flight → cancel, question/review → start over. Once a conversation
+has started — a question, the review, or a first send that came to nothing — an **Ask coach** chip
+sits under the field: it closes the sheet and opens the coach with everything the user said in its
+field, unsent, under a "Quick log" chip.
 
 **Launcher shortcuts** (`@xml/shortcuts`, static): Say what you ate · Log food · Add water ·
 Weigh in. The first three outlived the FAB-sheet rows they mirrored and still land on talk-to-log,
@@ -548,7 +551,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   mood, heart, blood pressure) carry an
   "ask the coach" action. It opens the chat with that day's or that subject's question **in the
   field, unsent**, with a chip above the field naming where it came from. Dismissing the chip
-  leaves the text.
+  leaves the text. The FAB's quick log is the third door: mid-conversation, it carries what the
+  user said rather than a question of its own.
 - Coach stop — the send button becomes a stop button while an answer is streaming. The turn is
   abandoned, nothing is written, and the question goes back into the field.
 - Coach voice — a mic inside the chat field dictates the question through the system's own speech

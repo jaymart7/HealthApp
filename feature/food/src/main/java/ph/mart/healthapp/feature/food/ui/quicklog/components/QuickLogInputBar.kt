@@ -66,6 +66,10 @@ private const val SENTENCE_LINES = 3
  * The camera and barcode chips go once a conversation starts — at that point the user has chosen
  * to type, and the space is the review's. Back to a blank start brings them back.
  *
+ * [onContinueInCoach] is the door out to the coach, drawn in that same row whenever it is non-null
+ * — alone once the conversation has the space, or third beside Photo · Scan after a first send that
+ * came to nothing. `LabelledActionChip` grows rather than clipping, so a third of the row holds it.
+ *
  * **Photo attaches rather than leaving.** It offers the system camera or the gallery, and the
  * picture lands above the field as a thumbnail with its own ✕, so the words typed next are *about*
  * it — "only half the rice". The full-screen camera flow stays on the diary's own Photo chip.
@@ -86,6 +90,7 @@ internal fun QuickLogInputBar(
     modifier: Modifier = Modifier,
     photo: ImageBitmap? = null,
     onRemovePhoto: () -> Unit = {},
+    onContinueInCoach: (() -> Unit)? = null,
     speechAvailable: Boolean = rememberSpeechAvailable(),
 ) {
     val prompt = stringResource(R.string.food_quick_prompt)
@@ -140,15 +145,25 @@ internal fun QuickLogInputBar(
                 stopLabel = stringResource(R.string.food_quick_cancel),
             )
         }
-        if (showShortcuts) {
+        if (showShortcuts || onContinueInCoach != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PhotoChip(onTakePhoto = onTakePhoto, onPickPhoto = onPickPhoto, modifier = Modifier.weight(1f))
-                LabelledActionChip(
-                    label = stringResource(R.string.food_chip_scan),
-                    icon = AppIcons.Barcode,
-                    onClick = onScanBarcode,
-                    modifier = Modifier.weight(1f),
-                )
+                if (showShortcuts) {
+                    PhotoChip(onTakePhoto = onTakePhoto, onPickPhoto = onPickPhoto, modifier = Modifier.weight(1f))
+                    LabelledActionChip(
+                        label = stringResource(R.string.food_chip_scan),
+                        icon = AppIcons.Barcode,
+                        onClick = onScanBarcode,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (onContinueInCoach != null) {
+                    LabelledActionChip(
+                        label = stringResource(R.string.food_quick_ask_coach),
+                        icon = AppIcons.AiSparkle,
+                        onClick = onContinueInCoach,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
     }
@@ -250,6 +265,32 @@ private fun QuickLogInputBarThinkingPreview() {
                 onTakePhoto = {},
                 onPickPhoto = {},
                 onScanBarcode = {},
+                speechAvailable = true,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** Mid-conversation: the shortcuts have gone and the coach door has the row to itself. */
+@PreviewLightDark
+@Composable
+private fun QuickLogInputBarCoachPreview() {
+    AppTheme {
+        Surface {
+            QuickLogInputBar(
+                text = "",
+                placeholder = stringResource(R.string.food_quick_answer_placeholder),
+                thinking = false,
+                canSend = false,
+                showShortcuts = false,
+                onTextChange = {},
+                onSend = {},
+                onCancel = {},
+                onTakePhoto = {},
+                onPickPhoto = {},
+                onScanBarcode = {},
+                onContinueInCoach = {},
                 speechAvailable = true,
                 modifier = Modifier.padding(16.dp),
             )

@@ -2208,6 +2208,18 @@ rather than needing a counter patched.
   `ChatInputBar` when the quick log became the second composer that sends to a model. It stops a
   call in flight for the same reason in both: a spinner that cannot be pressed costs the user the
   words they typed.
+- **The quick log hands over to the coach, one way, and only the user's words travel.** A
+  conversation that turns into a question ("what should I eat tonight?") or stalls has nowhere to
+  go in a sheet built to log, so once one has started an **Ask coach** chip takes the row Photo ·
+  Scan gave up. It is the diary's coach door with the sheet's words in it: `CoachRoute(question,
+  source)`, **prefilled and never sent** — the door rule, for its reason — and `QuickLogState.coachQuestion`
+  is the one place the carry is decided (`QuickLogStateTest`). "Started" includes a first send that
+  came to nothing, because `restoreLast` empties the turns there and that dead end is where the coach
+  is most worth asking. The model's follow-up question stays behind (the coach asks its own), so do
+  the parsed rows (the coach drafts its own, and two prices for one plate is two numbers) and the
+  photo (the coach reads no images). An in-flight call is cancelled first, `onScanBarcode`'s rule.
+  **No door back**: the coach already drafts foods, water, activities and a weigh-in as cards to
+  confirm, so a way from the chat into the sheet would be a second way to do the same thing.
 - **The add-entry sheet is the one caller passing `AppBottomSheet(horizontalPadding = 0.dp)`.**
   Every other sheet takes the 16dp default. A list row's pressed state layer that stops 16dp short
   of each edge reads as a button rather than a row, so its rows take the gutter themselves and the
