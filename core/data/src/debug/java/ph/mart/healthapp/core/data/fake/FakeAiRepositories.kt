@@ -6,7 +6,6 @@ import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseParseResult
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.ParsedExercise
-import ph.mart.healthapp.core.data.exercise.parsedExercise
 import ph.mart.healthapp.core.data.food.COMMON_FOODS
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.LabelBasis
@@ -18,7 +17,6 @@ import ph.mart.healthapp.core.data.food.MealIdea
 import ph.mart.healthapp.core.data.food.MealIdeaRepository
 import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.MealIdeaResult
-import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.MealParseRepository
 import ph.mart.healthapp.core.data.food.MealParseResult
 import ph.mart.healthapp.core.data.food.RecognitionConfidence
@@ -26,13 +24,15 @@ import ph.mart.healthapp.core.data.food.RecognitionResult
 import ph.mart.healthapp.core.data.food.RecognizedFood
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.food.loggable
-import ph.mart.healthapp.core.data.food.searchCommonFoods
+import ph.mart.healthapp.core.data.food.offlineActivity
+import ph.mart.healthapp.core.data.food.offlineFoods
+import ph.mart.healthapp.core.data.food.offlineQuickLog
+import ph.mart.healthapp.core.data.food.toRecognized
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QuickLogRepository
 import ph.mart.healthapp.core.data.food.QuickLogResult
 import ph.mart.healthapp.core.data.food.QuickLogTurn
 import ph.mart.healthapp.core.data.food.mayAsk
-import ph.mart.healthapp.core.data.food.quickLogResult
 import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
@@ -230,36 +230,8 @@ internal class FakeMealParseRepository : MealParseRepository {
     }
 }
 
-/** Pulled out of the class so the routing is a pure function a JVM test can reach — the reason
- * `sanitizeReply` and `parseAction` are ones. */
-internal fun fakeParse(text: String): List<RecognizedFood> = text
-    .split(' ', ',', '.', '\n')
-    .mapNotNull { commonFoodFor(it) }
-    .distinctBy { it.name }
-    .map { it.toRecognized() }
-    .loggable()
-
-/**
- * One word against the built-in table, **singularised on a miss.**
- *
- * `searchCommonFoods` asks whether the food's *name* contains the query, and every row in
- * `COMMON_FOODS` is singular — "Egg, whole, boiled", "Banana". People say "eggs" and "two bananas",
- * so a literal match finds nothing for the most common sentence either fake will ever see. Dropping
- * a trailing "s" on the second pass is the whole fix; it is wrong for "hummus" and "couscous",
- * which is why it is only ever a *fallback* after the exact match has already failed.
- *
- * Shared by the voice parse and the coach's proposal routing because they are the same trick, and
- * a second copy would be a second place for the plural bug to come back.
- */
-internal fun commonFoodFor(word: String): ScannedProduct? {
-    val term = word.trim().lowercase()
-    if (term.length < MIN_MATCH_CHARS) return null
-    searchCommonFoods(term).firstOrNull()?.let { return it }
-    val singular = term.removeSuffix("es").takeIf { it.length >= MIN_MATCH_CHARS }
-        ?: term.removeSuffix("s")
-    return searchCommonFoods(term.removeSuffix("s")).firstOrNull()
-        ?: searchCommonFoods(singular).firstOrNull()
-}
+/** The offline matcher's food half, which is what this fake always was. */
+internal fun fakeParse(text: String): List<RecognizedFood> = offlineFoods(text)
 
 /**
  * The sentence against [ExerciseType]'s own names, and the first number in it as the duration.
@@ -281,41 +253,11 @@ internal class FakeExerciseParseRepository : ExerciseParseRepository {
     }
 }
 
-/**
- * The words people actually use for four of the eight types. The enum's own names cover the rest
- * ("yoga", "swim", "walk"), so this is only the gap between what a type is called and what it is
- * said as — and [ExerciseType.Other] is deliberately absent, because nobody says "other".
- */
-private val FAKE_SYNONYMS = mapOf(
-    "jog" to ExerciseType.Run,
-    "ran" to ExerciseType.Run,
-    "bike" to ExerciseType.Cycle,
-    "cycling" to ExerciseType.Cycle,
-    "gym" to ExerciseType.Strength,
-    "lift" to ExerciseType.Strength,
-    "weights" to ExerciseType.Strength,
-)
+/** The offline matcher's activity half, with half an hour standing in for the model's "shortest
+ * plausible duration" when none was said. */
+internal fun fakeExerciseParse(text: String): ParsedExercise? = offlineActivity(text, defaultMinutes = FAKE_MINUTES)
 
-private val FIRST_NUMBER = Regex("""\d+""")
-
-/**
- * Pulled out of the class so the routing is a pure function a JVM test can reach — [fakeParse]'s
- * reason, and the same reason `parsedExercise` is the last line of it: the caps and the
- * blank-name rule are exercised here rather than bypassed.
- *
- * The whole sentence becomes the note, which is what the real parse is asked for too — a short
- * phrase in the user's own words.
- */
-internal fun fakeExerciseParse(text: String): ParsedExercise? {
-    val words = text.lowercase().split(' ', ',', '.', '\n')
-    val type = words.firstNotNullOfOrNull { word ->
-        ExerciseType.entries.firstOrNull { it.name.lowercase() == word } ?: FAKE_SYNONYMS[word]
-    } ?: return null
-    // No number said is not no workout: the real model is asked to estimate the shortest
-    // plausible duration, and half an hour is this fake's version of that.
-    val minutes = FIRST_NUMBER.find(text)?.value?.toIntOrNull() ?: 30
-    return parsedExercise(type = type.name, name = text.trim(), minutes = minutes)
-}
+private const val FAKE_MINUTES = 30
 
 internal class FakeQuickLogRepository : QuickLogRepository {
     override suspend fun parse(turns: List<QuickLogTurn>): QuickLogResult {
@@ -325,48 +267,23 @@ internal class FakeQuickLogRepository : QuickLogRepository {
 }
 
 /**
- * The two fakes above over everything the user has said, so an answer to a question simply
- * extends the sentence. It asks the one question the real prompt is most often expected to —
- * how long, when an activity came with no number — and falls back to a generic one when nothing
- * matched at all, so both the follow-up and its cap can be walked through in a debug build.
+ * [offlineQuickLog] over everything the user has said, so an answer simply extends the sentence,
+ * plus the model's two usual questions: how long, when an activity came with no duration, and a
+ * generic one when nothing matched at all — so the follow-up and its cap can both be walked through
+ * in a debug build. Past the cap it answers what the offline parse found, which is the model's
+ * "estimate and flag it" with nothing to estimate from.
  */
 internal fun fakeQuickLog(turns: List<QuickLogTurn>): QuickLogResult {
     val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
-    val foods = fakeParse(said)
-    val activity = fakeExerciseParse(said)
-    val glasses = FAKE_GLASSES.find(said)?.groupValues?.get(1)?.toIntOrNull()
-    val weight = FAKE_WEIGHT.find(said)?.groupValues?.get(1)?.toDoubleOrNull()
+    val found = offlineQuickLog(said)
     val question = when {
-        activity != null && !FIRST_NUMBER.containsMatchIn(said) -> "How long did it last?"
-        activity == null && foods.isEmpty() && glasses == null && weight == null ->
-            "What did you eat, or what did you do?"
+        offlineActivity(said, defaultMinutes = null) == null && fakeExerciseParse(said) != null ->
+            "How long did it last?"
+        found == QuickLogResult.NothingFound -> "What did you eat, or what did you do?"
         else -> null
     }
-    // "snack" for Snacks — the one slot whose name is not the word people say.
-    val slot = MealType.entries.firstOrNull { said.contains(it.name.removeSuffix("s"), ignoreCase = true) }
-    return quickLogResult(question, foods, listOf(activity), turns.mayAsk(), slot?.name, glasses, weight)
+    return if (question != null && turns.mayAsk()) QuickLogResult.Question(question) else found
 }
-
-/** "3 glasses", "two glasses" is past a fake's reach — a digit is what a debug walk-through types. */
-private val FAKE_GLASSES = Regex("""(\d+)\s*glass""", RegexOption.IGNORE_CASE)
-
-/** "weighed 80", "weigh 72.4", "weight 150". */
-private val FAKE_WEIGHT = Regex("""weigh\w*\s+(\d+(?:\.\d+)?)""", RegexOption.IGNORE_CASE)
-
-/** Below this a "word" matches half the table — "an" is in "banana", "pan" and "pancake". */
-private const val MIN_MATCH_CHARS = 3
-
-private fun ScannedProduct.toRecognized() = RecognizedFood(
-    name = name,
-    portionAmount = portionAmount,
-    portionUnit = portionUnit,
-    calories = calories,
-    proteinG = proteinG,
-    carbsG = carbsG,
-    fatG = fatG,
-    nutrients = nutrients,
-    confidence = RecognitionConfidence.Low,
-)
 
 private fun ScannedProduct.toIdea() = MealIdea(
     name = name,

@@ -70,8 +70,13 @@ sealed interface QuickLogSideEffect {
         val waterGlasses: Int? = null,
         /** Already converted from the profile's unit — the ViewModel's arithmetic, like the burn. */
         val weightKg: Double? = null,
+        /** Matched on the phone with no model — the review says so, over rows that are all guesses. */
+        val offline: Boolean = false,
     ) : QuickLogSideEffect
-    data object NothingFound : QuickLogSideEffect
+
+    /** [offline] changes what the line says: "nothing edible in that" and "nothing I could match
+     * without a connection" are different answers. */
+    data class NothingFound(val offline: Boolean = false) : QuickLogSideEffect
     data object Failed : QuickLogSideEffect
 
     /** `LogExerciseSideEffect.Saved`'s figure — what the host's snackbar congratulates — and the

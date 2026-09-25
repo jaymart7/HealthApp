@@ -14,6 +14,7 @@ import ph.mart.healthapp.core.data.food.MAX_PARSE_CHARS
 import ph.mart.healthapp.core.data.food.QuickLogRepository
 import ph.mart.healthapp.core.data.food.QuickLogResult
 import ph.mart.healthapp.core.data.food.QuickLogTurn
+import ph.mart.healthapp.core.data.food.offlineQuickLog
 import ph.mart.healthapp.core.data.network.NetworkMonitor
 import ph.mart.healthapp.core.data.nowMinuteOfDay
 import ph.mart.healthapp.core.data.profile.ProfileRepository
@@ -56,9 +57,6 @@ class QuickLogViewModel(
     /** Cancelled by back, by dismissing the sheet, and by the next send. */
     private var sendJob: Job? = null
 
-    /** Asked at the moment of the tap, not observed — `LogExerciseViewModel.isOnline`'s reason. */
-    fun isOnline(): Boolean = networkMonitor.isOnline()
-
     fun handleEvent(event: QuickLogEvent) {
         when (event) {
             is QuickLogEvent.OnSend -> onSend(event.turns)
@@ -95,10 +93,23 @@ class QuickLogViewModel(
         }
     }
 
+    /**
+     * Online, the model. Offline — asked at the moment of the send, the rule every AI call site
+     * follows — the phone's own word match over everything the user said, against their own foods
+     * first: the offline-first rule, applied to the one AI surface that can still do something
+     * without the model. It asks nothing, and every row it finds is a tagged guess.
+     */
     private fun onSend(turns: List<QuickLogTurn>) {
         sendJob?.cancel()
         sendJob = intent {
-            val effect = when (val result = quickLogRepository.parse(turns)) {
+            val online = networkMonitor.isOnline()
+            val result = if (online) {
+                quickLogRepository.parse(turns)
+            } else {
+                val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
+                offlineQuickLog(said, foodRepository.observeMyFoods().first())
+            }
+            val effect = when (result) {
                 is QuickLogResult.Question -> QuickLogSideEffect.Asked(result.text)
                 is QuickLogResult.Parsed -> QuickLogSideEffect.Parsed(
                     foods = result.foods,
@@ -115,8 +126,9 @@ class QuickLogViewModel(
                     // The number the user said, in their own unit — `CoachRepositoryImpl`'s one
                     // conversion, made here for the same reason: the model never picks the unit.
                     weightKg = result.weight?.displayUnitToKg(state.unit),
+                    offline = !online,
                 )
-                QuickLogResult.NothingFound -> QuickLogSideEffect.NothingFound
+                QuickLogResult.NothingFound -> QuickLogSideEffect.NothingFound(offline = !online)
                 QuickLogResult.Failed -> QuickLogSideEffect.Failed
             }
             postSideEffect(effect)

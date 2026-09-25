@@ -65,9 +65,12 @@ fun QuickLogSheet(
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is QuickLogSideEffect.Asked -> state.applyQuestion(effect.question)
-            is QuickLogSideEffect.Parsed ->
+            is QuickLogSideEffect.Parsed -> {
                 state.applyParsed(effect.foods, effect.exercises, effect.mealType, effect.waterGlasses, effect.weightKg)
-            QuickLogSideEffect.NothingFound -> state.restoreLast(R.string.food_quick_nothing)
+                if (effect.offline) state.message = R.string.food_quick_offline_matched
+            }
+            is QuickLogSideEffect.NothingFound ->
+                state.restoreLast(if (effect.offline) R.string.food_quick_offline else R.string.food_quick_nothing)
             QuickLogSideEffect.Failed -> state.restoreLast(R.string.food_quick_failed)
             // Reported before the dismiss — `LogExerciseSheet`'s order, for its reason.
             // The ViewModel outlives the sheet, so the undo still reaches it after the dismiss.
@@ -90,15 +93,8 @@ fun QuickLogSheet(
             cancel()
             onDismiss()
         },
-        onSend = {
-            // Checked at the tap, before the words leave the field — `startParse`'s rule: "you're
-            // offline" and "that didn't work" are different things to say.
-            if (viewModel.isOnline()) {
-                viewModel.handleEvent(QuickLogEvent.OnSend(state.send()))
-            } else {
-                state.message = R.string.food_quick_offline
-            }
-        },
+        // Offline is the ViewModel's call now: it matches on the phone rather than refusing.
+        onSend = { viewModel.handleEvent(QuickLogEvent.OnSend(state.send())) },
         onCancel = {
             cancel()
             state.restoreLast(null)

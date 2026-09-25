@@ -395,5 +395,6 @@
     <string name="food_quick_weight">Weight</string>
     <string name="food_quick_nothing">Nothing to log in that one — name a food or an activity.</string>
     <string name="food_quick_failed">That didn\'t work. Your words are still there — try again.</string>
-    <string name="food_quick_offline">Reading a sentence needs a connection. The Food tab\'s own add button works offline.</string>
+    <string name="food_quick_offline">You\'re offline, and nothing in that matched your foods or the built-in list. The Food tab\'s add button works offline.</string>
+    <string name="food_quick_offline_matched">Offline — matched from your foods and the built-in list. Check the portions.</string>
 </resources>

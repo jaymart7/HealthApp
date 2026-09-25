@@ -2138,6 +2138,18 @@ rather than needing a counter patched.
   agree. The weight is the number the user said **in the profile's unit**, converted by the
   ViewModel: the model is never asked which unit a figure was in, `CoachAction.LogWeight`'s rule.
   This is also how a weigh-in came back to the FAB after its row left.
+- **Offline, the quick log matches on the phone instead of refusing.** The offline-first rule says an
+  AI feature degrades to a manual path; this one has a better fallback than a message, because the
+  debug fakes had been proving for months that a word match against `COMMON_FOODS` gets breakfast
+  right. So that matcher moved from the debug source set into `food/OfflineQuickLog.kt` and every
+  fake now calls it — one copy of the plural rule. Becoming real exposed two bugs the fakes could
+  live with: "contains" read "ran" as *Orange* (now a word of the name must *start* with the term,
+  the rule the coach fake already applied on top) and "water" as *Tuna, canned in water* (plain
+  water is excluded as a food, and the glasses phrase is read and removed first). The user's own
+  foods match before the table. It never asks — a question with no model behind it is a form
+  pretending to be a conversation — every row is `Low`, and an activity with no duration said is
+  dropped, since offline there is nothing to estimate one from. The ViewModel decides at the send;
+  the sheet no longer blocks it.
 - **Every quick log gets Undo, and the undo carries its own batch.** A sentence can write five
   things the user never typed field by field, so the shell's snackbar always follows a quick log —
   the earned line when there is a burn worth it, "Logged" otherwise — with Undo and
