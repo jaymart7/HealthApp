@@ -392,6 +392,12 @@
     <string name="food_quick_adjust">Adjust portion</string>
     <string name="food_quick_portion_caveat">The estimate rescales with the portion.</string>
     <string name="food_quick_water">Water</string>
+    <string name="food_quick_take_photo">Take photo</string>
+    <string name="food_quick_pick_photo">Choose from gallery</string>
+    <string name="food_quick_photo_attached">Attached photo of your meal</string>
+    <string name="food_quick_remove_photo">Remove photo</string>
+    <string name="food_quick_photo_placeholder">Anything to add? (optional)</string>
+    <string name="food_quick_camera_denied">Camera access is off. Choose a photo from the gallery instead.</string>
     <string name="food_quick_weight">Weight</string>
     <string name="food_quick_nothing">Nothing to log in that one — name a food or an activity.</string>
     <string name="food_quick_failed">That didn\'t work. Your words are still there — try again.</string>

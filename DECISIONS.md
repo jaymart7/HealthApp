@@ -2128,7 +2128,8 @@ rather than needing a counter patched.
 - **The recents strip is talk-to-log's list, recorded only for meals.** Both screens read
   `observeRecentSentences(3)`; the quick log records `userSentence` — every user turn joined, so an
   answer rides with the sentence it answered and a re-send skips the question — but only when the
-  log was food and nothing else. Talk-to-log offers the list under a *food* field, where "30 min run"
+  log was food and nothing else (no activity, water or weigh-in) and had no photo, whose words were
+  never the whole meal. Talk-to-log offers the list under a *food* field, where "30 min run"
   can only fail. *ponytail: no recents for workouts; they need their own store (a Room migration).* Logging reports the credited burn to `AppScaffold`'s snackbar, the same line the
   log-exercise sheet raises.
 - **Water and a weigh-in ride the same sentence, under the coach's rules.** "3 glasses and weighed
@@ -2158,6 +2159,19 @@ rather than needing a counter patched.
   the rows, restores the count, and puts the old weigh-in back (or deletes the new one — weigh-ins
   are keyed by day, and the weigh-in sheet's delete is already a hard one). The batch rides the
   event rather than living in the ViewModel, so a stale snackbar can only undo its own log.
+- **The Photo chip attaches the plate to the conversation instead of leaving for the camera.** A
+  photo and a sentence about it are one question — "this, but only half the rice" — and the
+  full-screen camera flow could only ever answer the photo. So the chip offers the system camera
+  (`TakePicture` into `cacheDir/capture/`, the second path `file_paths.xml` shares; `CAMERA` is
+  asked for first because the manifest declares it, and a refusal points at the gallery) or the
+  photo picker, and both decode through `decodeRotatedBitmap` at the size a capture gets. The
+  thumbnail sits above the field with its own ✕; the photo is re-sent with every turn (the model
+  is stateless) through a second model configured exactly like plate recognition —
+  `ThinkingLevel.LOW` with the headroom it needs — and stored on the logged meal the way the camera
+  flow stores it. A photo alone can be sent, but only as the first turn. Offline, a photo cannot be
+  read at all, so only the words are matched. The diary keeps the full-screen camera on its own
+  chip. *ponytail: the bitmap is not saved state, so a rotation (or the camera app evicting this
+  one) drops it — write it to the cache and save the path if that is reported.*
 - **Photo and barcode stay as chips; the rest left the FAB.** A plate and a barcode are not
   sentences, so they keep a door under the field — until a conversation starts, when the space is
   the review's. Log weight, the body progress photo and manual log exercise were removed: weight is

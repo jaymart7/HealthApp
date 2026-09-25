@@ -38,7 +38,10 @@ with a remove ✕ and, on a guess, talk-to-log's "Rough guess · …" tag; tappi
 shared portion stepper, which reprices it; a meal-slot chip row (pre-set when the sentence names the
 meal) and Log. Corrections are typed as another message. Under a blank field, the last three
 sentences that became meals — the same list talk-to-log offers — fill the field on a tap. Mic inside the field, a send/stop circle beside it, and Photo · Scan chips under it until a
-conversation starts. Back steps: in flight → cancel, question/review → start over.
+conversation starts. Photo offers the system camera or the gallery and attaches the plate as a
+thumbnail above the field, so words typed next refine it ("only half the rice"); one call reads
+both, and the photo is stored with the logged meal. The full-screen camera stays on the diary's
+Photo chip. Back steps: in flight → cancel, question/review → start over.
 
 **Launcher shortcuts** (`@xml/shortcuts`, static): Say what you ate · Log food · Add water ·
 Weigh in. The first three outlived the FAB-sheet rows they mirrored and still land on talk-to-log,
@@ -709,7 +712,7 @@ each one is argued in `CLAUDE.md`.
 - **The watch has no database**, and the tile never writes.
 - **No planned meals** — the diary never steps past today.
 - **Log weight, add photo and manual log exercise on the FAB.** The sheet is one AI field plus
-  photo and barcode. Weight is logged from its Progress page (and the "Weigh in" shortcut), the body
+  photo and barcode (a weigh-in can still be *said*: "weighed 72"). Weight is logged from its Progress page (and the "Weigh in" shortcut), the body
   shot from Home's photo card and Progress, manual and strength exercise from the diary's exercise
   block and Home's plan card.
 - **A year-long coach report, and a PNG share of one.** `show_report` offers 7 and 30 only, the

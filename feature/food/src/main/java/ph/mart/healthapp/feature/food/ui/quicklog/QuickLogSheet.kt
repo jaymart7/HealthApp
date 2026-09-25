@@ -1,24 +1,40 @@
 package ph.mart.healthapp.feature.food.ui.quicklog
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import java.io.File
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.camera.decodeRotatedBitmap
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.QuickLogTurn
@@ -36,13 +52,18 @@ import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
  * The FAB's sheet: one field that reads what the user ate or did, asks back when the sentence left
- * out the thing the estimate turns on, and logs both kinds from one confirmation. The camera and
- * the barcode sit under the field as the two ways in that are not sentences.
+ * out the thing the estimate turns on, and logs both kinds from one confirmation. A photo of the
+ * plate can ride with the words, and the barcode sits under the field as the one way in that is not
+ * about the meal at all.
+ *
+ * The photo is taken or picked here rather than on the camera route: the system camera
+ * (`TakePicture` into a cache file the app's FileProvider shares, `CAMERA` asked for first because
+ * the manifest declares it) or the photo picker, both decoded by `:core:camera`'s
+ * `decodeRotatedBitmap` at the size a capture gets.
  *
  * A sheet rather than a route for the reason every FAB sheet is one — back closes it onto the tab
  * it was opened over — and hosted by `AppScaffold`, so everything leaving it is a callback:
- * [onCapturePhoto] and [onScanBarcode] push their routes (day 0, the FAB is today-only), and
- * [onLogged] hands the host the credited burn for its snackbar and the `undo` that reverses the
+ * [onScanBarcode] pushes its route (day 0, the FAB is today-only), and [onLogged] hands the host the credited burn for its snackbar and the `undo` that reverses the
  * whole log — the host owns the snackbar, and this sheet is gone by the time anyone taps it.
  *
  * Back steps through the conversation before it leaves: a call in flight is cancelled with its
@@ -54,13 +75,28 @@ import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 @Composable
 fun QuickLogSheet(
     onDismiss: () -> Unit,
-    onCapturePhoto: () -> Unit,
     onScanBarcode: () -> Unit,
     onLogged: (creditedKcal: Int, undo: () -> Unit) -> Unit,
     viewModel: QuickLogViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
     val state = rememberQuickLogState()
+
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val attach: (Uri) -> Unit = { uri ->
+        scope.launch { decodeRotatedBitmap(context, uri)?.let { state.photo = it } }
+    }
+    val captureUri = remember { captureUri(context) }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
+        if (taken) attach(captureUri)
+    }
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) camera.launch(captureUri) else state.message = R.string.food_quick_camera_denied
+    }
+    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let(attach)
+    }
 
     viewModel.collectSideEffect { effect ->
         when (effect) {
@@ -94,7 +130,7 @@ fun QuickLogSheet(
             onDismiss()
         },
         // Offline is the ViewModel's call now: it matches on the phone rather than refusing.
-        onSend = { viewModel.handleEvent(QuickLogEvent.OnSend(state.send())) },
+        onSend = { viewModel.handleEvent(QuickLogEvent.OnSend(state.send(), state.photo)) },
         onCancel = {
             cancel()
             state.restoreLast(null)
@@ -107,13 +143,16 @@ fun QuickLogSheet(
                     sentence = state.userSentence,
                     waterGlasses = state.waterGlasses,
                     weightKg = state.weightKg,
+                    photo = state.photo,
                 ),
             )
         },
-        onCapturePhoto = {
-            cancel()
-            onCapturePhoto()
+        onTakePhoto = {
+            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
+            if (granted) camera.launch(captureUri) else cameraPermission.launch(Manifest.permission.CAMERA)
         },
+        onPickPhoto = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onScanBarcode = {
             cancel()
             onScanBarcode()
@@ -130,13 +169,15 @@ private fun QuickLogContent(
     onSend: () -> Unit,
     onCancel: () -> Unit,
     onLog: () -> Unit,
-    onCapturePhoto: () -> Unit,
+    onTakePhoto: () -> Unit,
+    onPickPhoto: () -> Unit,
     onScanBarcode: () -> Unit,
 ) {
     val placeholder = stringResource(
         when {
             state.question != null -> R.string.food_quick_answer_placeholder
             state.hasResult -> R.string.food_quick_change_placeholder
+            state.photo != null -> R.string.food_quick_photo_placeholder
             else -> R.string.food_quick_placeholder
         },
     )
@@ -169,8 +210,11 @@ private fun QuickLogContent(
                     onTextChange = { state.text = it },
                     onSend = onSend,
                     onCancel = onCancel,
-                    onCapturePhoto = onCapturePhoto,
+                    onTakePhoto = onTakePhoto,
+                    onPickPhoto = onPickPhoto,
                     onScanBarcode = onScanBarcode,
+                    photo = state.photo?.asImageBitmap(),
+                    onRemovePhoto = { state.photo = null },
                 )
             }
         },
@@ -191,7 +235,7 @@ private fun QuickLogContent(
         }
         // Only before anything is typed or sent — `RecentSentences`' own rule — and a tap fills the
         // field rather than sending: a remembered sentence is worth correcting before a request.
-        if (state.turns.isEmpty() && state.text.isBlank() && recentSentences.isNotEmpty()) {
+        if (state.turns.isEmpty() && state.text.isBlank() && state.photo == null && recentSentences.isNotEmpty()) {
             RecentSentences(
                 sentences = recentSentences,
                 onSelect = { state.text = it },
@@ -231,7 +275,8 @@ private fun QuickLogSheetPreview() {
             onSend = {},
             onCancel = {},
             onLog = {},
-            onCapturePhoto = {},
+            onTakePhoto = {},
+            onPickPhoto = {},
             onScanBarcode = {},
         )
     }
@@ -253,7 +298,8 @@ private fun QuickLogSheetQuestionPreview() {
             onSend = {},
             onCancel = {},
             onLog = {},
-            onCapturePhoto = {},
+            onTakePhoto = {},
+            onPickPhoto = {},
             onScanBarcode = {},
         )
     }
@@ -280,7 +326,8 @@ private fun QuickLogSheetReviewPreview() {
             onSend = {},
             onCancel = {},
             onLog = {},
-            onCapturePhoto = {},
+            onTakePhoto = {},
+            onPickPhoto = {},
             onScanBarcode = {},
         )
     }
@@ -299,8 +346,19 @@ private fun QuickLogSheetRecentPreview() {
             onSend = {},
             onCancel = {},
             onLog = {},
-            onCapturePhoto = {},
+            onTakePhoto = {},
+            onPickPhoto = {},
             onScanBarcode = {},
         )
     }
+}
+
+/**
+ * The file the system camera writes into — `cacheDir/capture/`, the one directory `file_paths.xml`
+ * shares for it, and one fixed name: a second photo replaces the first, and nothing outlives the
+ * log that reads it.
+ */
+private fun captureUri(context: Context): Uri {
+    val file = File(context.cacheDir, "capture").apply { mkdirs() }.resolve("quicklog.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 }

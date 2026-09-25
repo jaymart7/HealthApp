@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The one shared directory. Everything written here is a rendered card the user asked to
-     share; nothing in filesDir (progress photos, the Room database) is reachable through it. -->
+<!-- Two shared directories, both in the cache. share/ holds a rendered card the user asked to
+     share; capture/ is the one file the system camera writes a quick-log plate into. Nothing in
+     filesDir (progress photos, meal photos, the Room database) is reachable through either. -->
 <paths>
     <cache-path name="share" path="share/" />
+    <cache-path name="capture" path="capture/" />
 </paths>

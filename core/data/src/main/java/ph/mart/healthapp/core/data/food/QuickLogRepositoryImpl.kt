@@ -7,6 +7,9 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
+import android.graphics.Bitmap
+import com.google.firebase.ai.type.ThinkingLevel
+import com.google.firebase.ai.type.thinkingConfig
 import org.json.JSONArray
 import org.json.JSONObject
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
@@ -35,9 +38,33 @@ internal class QuickLogRepositoryImpl : QuickLogRepository {
         },
     )
 
-    override suspend fun parse(turns: List<QuickLogTurn>): QuickLogResult = try {
+    /**
+     * The plate's model: `FoodRecognitionRepositoryImpl`'s configuration exactly — the one call
+     * site on [ThinkingLevel.LOW], because reading a plate is estimating rather than stating, and
+     * thinking spends from the output budget, so the budget carries the headroom. Held beside the
+     * text model rather than replacing it: a sentence alone does not need to pay for the thinking.
+     */
+    private val photoModel = Firebase.ai(
+        backend = GenerativeBackend.googleAI(),
+        useLimitedUseAppCheckTokens = true,
+    ).generativeModel(
+        modelName = AI_MODEL_NAME,
+        generationConfig = generationConfig {
+            thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.LOW }
+            maxOutputTokens = MAX_QUICK_LOG_PHOTO_TOKENS
+            responseMimeType = "application/json"
+            responseSchema = QUICK_LOG_SCHEMA
+        },
+    )
+
+    override suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap?): QuickLogResult = try {
         val mayAsk = turns.mayAsk()
-        val response = model.generateContent(content { text(promptFor(turns, mayAsk)) })
+        val prompt = promptFor(turns, mayAsk, hasPhoto = photo != null)
+        val response = if (photo == null) {
+            model.generateContent(content { text(prompt) })
+        } else {
+            photoModel.generateContent(content { image(photo); text(prompt) })
+        }
         val body = JSONObject(response.text ?: "{}")
         quickLogResult(
             question = body.optString("question"),
@@ -86,11 +113,14 @@ private val QUICK_LOG_SCHEMA = Schema.obj(
 /** A full food list plus a few activities and a question. */
 private const val MAX_QUICK_LOG_TOKENS = MAX_FOOD_LIST_TOKENS + 400
 
+/** The same answer plus the thinking headroom plate recognition carries — see [photoModel]. */
+private const val MAX_QUICK_LOG_PHOTO_TOKENS = MAX_QUICK_LOG_TOKENS + 400
+
 /**
  * The first turn is the meal, so it is always kept; the rest are the latest, where the answers and
  * corrections are. Each is cut to [MAX_PARSE_CHARS] for that constant's reason.
  */
-private fun promptFor(turns: List<QuickLogTurn>, mayAsk: Boolean): String = buildString {
+private fun promptFor(turns: List<QuickLogTurn>, mayAsk: Boolean, hasPhoto: Boolean): String = buildString {
     appendLine(
         "You are a logging assistant for a nutrition and fitness app. The user has typed what " +
             "they ate, what exercise they did, or both. Turn it into foods with estimated " +
@@ -105,7 +135,17 @@ private fun promptFor(turns: List<QuickLogTurn>, mayAsk: Boolean): String = buil
     }
     kept.forEach { turn ->
         append(if (turn.fromUser) "User: " else "You asked: ")
-        appendLine(turn.text.take(MAX_PARSE_CHARS))
+        // A photo sent with no words is still a turn — the plate is what they said.
+        appendLine(turn.text.take(MAX_PARSE_CHARS).ifBlank { "(sent the photo)" })
+    }
+    if (hasPhoto) {
+        appendLine()
+        appendLine(
+            "They attached a photo of what they ate. Identify every food in it and estimate each " +
+                "portion from what you can see; their words correct or add to it — \"only half " +
+                "the rice\" halves the rice, \"plus a coffee\" adds one. Only when the photo shows " +
+                "no food, go by their words alone.",
+        )
     }
     appendLine()
     appendLine(

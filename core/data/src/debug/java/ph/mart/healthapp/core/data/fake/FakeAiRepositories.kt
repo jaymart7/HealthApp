@@ -27,6 +27,7 @@ import ph.mart.healthapp.core.data.food.loggable
 import ph.mart.healthapp.core.data.food.offlineActivity
 import ph.mart.healthapp.core.data.food.offlineFoods
 import ph.mart.healthapp.core.data.food.offlineQuickLog
+import ph.mart.healthapp.core.data.food.quickLogResult
 import ph.mart.healthapp.core.data.food.toRecognized
 import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QuickLogRepository
@@ -88,13 +89,18 @@ internal class FakeInsightRepository : InsightRepository {
 internal class FakeRecognitionRepository : FoodRecognitionRepository {
     override suspend fun recognize(photo: Bitmap): RecognitionResult {
         delay(FAKE_LATENCY_MS)
-        val seed = photo.width * 31 + photo.height
-        if (seed % 7 == 0) return RecognitionResult.NoFoodDetected
-        val count = seed.mod(3) + 1
-        val foods = (0 until count).map { offset ->
-            COMMON_FOODS[(seed + offset).mod(COMMON_FOODS.size)].toRecognized()
-        }
-        return RecognitionResult.Success(foods)
+        val foods = fakePlate(photo)
+        return if (foods.isEmpty()) RecognitionResult.NoFoodDetected else RecognitionResult.Success(foods)
+    }
+}
+
+/** One to three foods picked by the bitmap's own dimensions, and one photo in seven with none —
+ * shared by the camera flow's fake and the quick log's, which reads the same plate. */
+internal fun fakePlate(photo: Bitmap): List<RecognizedFood> {
+    val seed = photo.width * 31 + photo.height
+    if (seed % 7 == 0) return emptyList()
+    return (0 until seed.mod(3) + 1).map { offset ->
+        COMMON_FOODS[(seed + offset).mod(COMMON_FOODS.size)].toRecognized()
     }
 }
 
@@ -260,9 +266,22 @@ internal fun fakeExerciseParse(text: String): ParsedExercise? = offlineActivity(
 private const val FAKE_MINUTES = 30
 
 internal class FakeQuickLogRepository : QuickLogRepository {
-    override suspend fun parse(turns: List<QuickLogTurn>): QuickLogResult {
+    override suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap?): QuickLogResult {
         delay(FAKE_LATENCY_MS)
-        return fakeQuickLog(turns)
+        if (photo == null) return fakeQuickLog(turns)
+        // The plate the camera fake would have seen, plus whatever the words add; a photo is never
+        // met with "what did you eat?", which is the question it just answered.
+        val words = offlineQuickLog(turns.filter { it.fromUser }.joinToString(" ") { it.text })
+            as? QuickLogResult.Parsed
+        return quickLogResult(
+            question = null,
+            foods = (fakePlate(photo) + words?.foods.orEmpty()).distinctBy { it.name },
+            activities = words?.activities.orEmpty(),
+            mayAsk = false,
+            mealType = words?.mealType?.name,
+            waterGlasses = words?.waterGlasses,
+            weight = words?.weight,
+        )
     }
 }
 

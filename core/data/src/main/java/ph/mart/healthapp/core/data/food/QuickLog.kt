@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.food
 
+import android.graphics.Bitmap
 import ph.mart.healthapp.core.data.coach.MAX_ACTION_GLASSES
 import ph.mart.healthapp.core.data.coach.MAX_ACTION_WEIGHT
 import ph.mart.healthapp.core.data.coach.MIN_ACTION_WEIGHT
@@ -19,7 +20,9 @@ import ph.mart.healthapp.core.data.stripMarkdown
  * [ParsedExercise], which has nowhere to put one.
  */
 interface QuickLogRepository {
-    suspend fun parse(turns: List<QuickLogTurn>): QuickLogResult
+    /** [photo] is the plate, when the user attached one — sent with every turn of that
+     * conversation, since the model is stateless and the words are about it. */
+    suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap? = null): QuickLogResult
 }
 
 /** One line of the conversation — the user's words, or a question the model asked back. */

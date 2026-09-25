@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.food.ui.quicklog
 
+import android.graphics.Bitmap
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
@@ -27,7 +28,7 @@ private const val DEFAULT_WEIGHT_KG = 70.0
 sealed interface QuickLogEvent {
     /** The whole conversation, every time — the model is stateless and the corrections only mean
      * something beside what they correct. */
-    data class OnSend(val turns: List<QuickLogTurn>) : QuickLogEvent
+    data class OnSend(val turns: List<QuickLogTurn>, val photo: Bitmap? = null) : QuickLogEvent
     data object OnCancel : QuickLogEvent
 
     /** Both kinds in one event, so a "toast and a run" lands in the diary at once. [sentence] is
@@ -38,6 +39,8 @@ sealed interface QuickLogEvent {
         val sentence: String,
         val waterGlasses: Int? = null,
         val weightKg: Double? = null,
+        /** Stored with the meal the way the camera flow stores its plate. */
+        val photo: Bitmap? = null,
     ) : QuickLogEvent
 
     /** Carries the batch it reverses, so a snackbar left over from an earlier log can only ever

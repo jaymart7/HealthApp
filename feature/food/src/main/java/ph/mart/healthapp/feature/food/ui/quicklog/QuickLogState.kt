@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.food.ui.quicklog
 
+import android.graphics.Bitmap
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,6 +56,13 @@ internal class QuickLogState(
     /** The food row whose portion is open — one at a time, talk-to-log's rule. */
     var expandedIndex: Int? by mutableStateOf(null)
 
+    /**
+     * The plate, when one is attached — sent with every turn of the conversation and stored with
+     * the meal. ponytail: not saved, so a rotation (or the camera app evicting this one) drops it;
+     * write it to the cache and save the path if that is ever reported.
+     */
+    var photo: Bitmap? by mutableStateOf(null)
+
     /** Glasses to add, and a weigh-in already in kilograms — null when the sentence said neither. */
     var waterGlasses: Int? by mutableStateOf(null)
     var weightKg: Double? by mutableStateOf(null)
@@ -62,18 +70,23 @@ internal class QuickLogState(
     /** The follow-up waiting for an answer: the model's turn, when it is the last one. */
     val question: String? get() = turns.lastOrNull()?.takeIf { !it.fromUser }?.text
 
-    /** What the user said last, shown above the question it prompted. */
-    val lastSaid: String? get() = turns.lastOrNull { it.fromUser }?.text
+    /** What the user said last, shown above the question it prompted — a photo sent with no words
+     * said nothing to quote. */
+    val lastSaid: String? get() = turns.lastOrNull { it.fromUser && it.text.isNotBlank() }?.text
 
     /** Everything the user said, as one sentence — what the recents strip offers back. Answers
      * join the sentence they answer ("rice and adobo, two cups"), which is exactly what a re-send
      * needs to skip the question. */
-    val userSentence: String get() = turns.filter { it.fromUser }.joinToString(", ") { it.text }
+    val userSentence: String
+        get() = turns.filter { it.fromUser && it.text.isNotBlank() }.joinToString(", ") { it.text }
 
     val hasResult: Boolean
         get() = foods.isNotEmpty() || exercises.isNotEmpty() || waterGlasses != null || weightKg != null
 
-    val canSend: Boolean get() = text.isNotBlank() && phase != QuickLogPhase.Thinking
+    /** A photo is enough on its own for the first send — the plate is what they are saying. After
+     * that it rides every turn, and an empty field has nothing new to send. */
+    val canSend: Boolean
+        get() = (text.isNotBlank() || (photo != null && turns.isEmpty())) && phase != QuickLogPhase.Thinking
 
     /** Whether back has a level to step down — a call in flight, or a conversation to drop. */
     val canStepBack: Boolean get() = phase == QuickLogPhase.Thinking || turns.isNotEmpty()

@@ -103,7 +103,8 @@
         </service>
 
         <!-- Grants a read on one rendered PNG at a time so the share chooser's target can open
-             it; scoped to cacheDir/share (see @xml/file_paths), never filesDir. -->
+             it, and a write on the one file the system camera fills for the quick log; scoped to
+             cacheDir/share and cacheDir/capture (see @xml/file_paths), never filesDir. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

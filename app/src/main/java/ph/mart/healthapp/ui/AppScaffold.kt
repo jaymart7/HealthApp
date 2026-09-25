@@ -582,11 +582,8 @@ fun AppScaffold(
             ActiveSheet.QuickAction -> QuickLogSheet(
                 onDismiss = { activeSheet = ActiveSheet.None },
                 // Day 0 is today — the FAB carries no diary date, the convention
-                // StrengthWorkoutRoute already uses from here.
-                onCapturePhoto = {
-                    activeSheet = ActiveSheet.None
-                    topLevelBackStack.add(FoodCaptureRoute(0))
-                },
+                // StrengthWorkoutRoute already uses from here. The photo is taken inside the
+                // sheet now; the full-screen camera stays on the diary's own chip.
                 onScanBarcode = {
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(BarcodeScanRoute(0))

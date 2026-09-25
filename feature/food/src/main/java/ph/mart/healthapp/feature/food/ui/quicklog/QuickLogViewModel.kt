@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.food.ui.quicklog
 
+import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
@@ -59,7 +60,7 @@ class QuickLogViewModel(
 
     fun handleEvent(event: QuickLogEvent) {
         when (event) {
-            is QuickLogEvent.OnSend -> onSend(event.turns)
+            is QuickLogEvent.OnSend -> onSend(event.turns, event.photo)
             QuickLogEvent.OnCancel -> sendJob?.cancel()
             is QuickLogEvent.OnLog -> onLog(event)
             is QuickLogEvent.OnUndo -> onUndo(event.batch)
@@ -99,12 +100,13 @@ class QuickLogViewModel(
      * first: the offline-first rule, applied to the one AI surface that can still do something
      * without the model. It asks nothing, and every row it finds is a tagged guess.
      */
-    private fun onSend(turns: List<QuickLogTurn>) {
+    private fun onSend(turns: List<QuickLogTurn>, photo: Bitmap?) {
         sendJob?.cancel()
         sendJob = intent {
             val online = networkMonitor.isOnline()
+            // Offline, a photo cannot be read at all — the words are all there is to match.
             val result = if (online) {
-                quickLogRepository.parse(turns)
+                quickLogRepository.parse(turns, photo)
             } else {
                 val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
                 offlineQuickLog(said, foodRepository.observeMyFoods().first())
@@ -139,13 +141,13 @@ class QuickLogViewModel(
      * Day 0 on both — the FAB is today-only, and both repositories stamp it.
      *
      * The sentence is remembered only for a meal and nothing else: talk-to-log offers the same list
-     * back under a *food* field, and "30 min run" there is a sentence that can only fail. After the
+     * back under a *food* field, where "30 min run" or "a glass of water" can only fail. After the
      * write, `VoiceLogViewModel.logMeal`'s order — a log that never happened proves nothing.
      */
     private fun onLog(event: QuickLogEvent.OnLog) = intent {
         val foods = event.foods
         val exercises = event.exercises
-        val foodIds = if (foods.isNotEmpty()) foodRepository.addEntries(foods) else emptyList()
+        val foodIds = if (foods.isNotEmpty()) foodRepository.addEntries(foods, event.photo) else emptyList()
         val exerciseIds = exercises.map { exerciseRepository.addEntry(it) }
         // Added to the day, never assigned — the coach's water rule — and the count before is kept
         // so Undo can put it back exactly.
@@ -162,7 +164,10 @@ class QuickLogViewModel(
                 )
             }
         }
-        if (foods.isNotEmpty() && exercises.isEmpty() && event.sentence.isNotBlank()) {
+        // A meal and nothing else — no activity, no water, no weigh-in — and not with a photo: the
+        // words alone were never the whole meal, so offering them back would offer half of one.
+        val mealOnly = exercises.isEmpty() && event.waterGlasses == null && event.weightKg == null
+        if (foods.isNotEmpty() && mealOnly && event.photo == null && event.sentence.isNotBlank()) {
             foodRepository.recordSentence(event.sentence.take(MAX_PARSE_CHARS))
         }
         val credited = if (state.addExerciseToBudget) exercises.sumOf { it.burnedKcal } else 0
