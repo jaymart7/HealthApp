@@ -69,6 +69,7 @@ class LogExerciseViewModel(
             is LogExerciseEvent.OnOpenStrength -> onOpenStrength(event.editingId, event.routineId)
             is LogExerciseEvent.OnSaveRoutine -> onSaveRoutine(event.name, event.lifts)
             is LogExerciseEvent.OnParse -> onParse(event.text)
+            is LogExerciseEvent.OnParseSets -> onParseSets(event.text)
             LogExerciseEvent.OnCancelParse -> onCancelParse()
         }
     }
@@ -155,6 +156,17 @@ class LogExerciseViewModel(
             val result = exerciseParseRepository.parse(text)
             reduce { state.copy(parsing = false) }
             postSideEffect(LogExerciseSideEffect.Parsed(result))
+        }
+    }
+
+    /** [onParse] on the same job and flag. The unit is the one the screen draws loads in, applied
+     * on-device to a load said without one — it is never sent. */
+    private fun onParseSets(text: String) {
+        parseJob = intent {
+            reduce { state.copy(parsing = true) }
+            val result = exerciseParseRepository.parseSets(text, state.preferredUnit)
+            reduce { state.copy(parsing = false) }
+            postSideEffect(LogExerciseSideEffect.SetsParsed(result))
         }
     }
 

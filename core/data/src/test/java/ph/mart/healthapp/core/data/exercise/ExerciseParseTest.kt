@@ -2,7 +2,10 @@ package ph.mart.healthapp.core.data.exercise
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.profile.KG_PER_LB
+import ph.mart.healthapp.core.data.profile.UnitSystem
 
 /**
  * [parsedExercise] is the whole trust boundary on what a model says a workout was, and it is pure
@@ -63,5 +66,64 @@ class ExerciseParseTest {
     fun `a blank note is kept blank`() {
         assertEquals("", parsedExercise("Swim", null, 30)?.name)
         assertEquals("", parsedExercise("Swim", "   ", 30)?.name)
+    }
+
+    // parsedSets — the strength screen's boundary.
+
+    private fun row(lift: String? = "Bench", sets: Int? = 3, reps: Int? = 8, weight: Double? = 60.0, unit: String? = null) =
+        ParsedLiftRow(lift, sets, reps, weight, unit)
+
+    @Test
+    fun `a set count expands into that many identical sets`() {
+        val sets = parsedSets(listOf(row()), UnitSystem.Metric)
+        assertEquals(List(3) { StrengthSet("Bench", 8, 60.0) }, sets)
+    }
+
+    @Test
+    fun `a missing count is one set`() {
+        assertEquals(1, parsedSets(listOf(row(sets = null)), UnitSystem.Metric).size)
+    }
+
+    /** The unit is never sent, so a load with none is the user's own unit, not the model's guess. */
+    @Test
+    fun `a named unit wins and a missing one is the user's`() {
+        assertEquals(100 * KG_PER_LB, parsedSets(listOf(row(sets = 1, weight = 100.0, unit = "lb")), UnitSystem.Metric)[0].weightKg, 1e-9)
+        assertEquals(100.0, parsedSets(listOf(row(sets = 1, weight = 100.0, unit = "KG")), UnitSystem.Imperial)[0].weightKg, 1e-9)
+        assertEquals(100 * KG_PER_LB, parsedSets(listOf(row(sets = 1, weight = 100.0)), UnitSystem.Imperial)[0].weightKg, 1e-9)
+    }
+
+    /** Zero is bodyweight here, a real value — "pull-ups 3x10" says nothing more. */
+    @Test
+    fun `no weight is bodyweight`() {
+        assertEquals(0.0, parsedSets(listOf(row(weight = null)), UnitSystem.Metric)[0].weightKg, 0.0)
+        assertEquals(0.0, parsedSets(listOf(row(weight = -5.0)), UnitSystem.Metric)[0].weightKg, 0.0)
+    }
+
+    @Test
+    fun `an unusable row is dropped and the rest kept`() {
+        val sets = parsedSets(
+            listOf(
+                row(lift = "  "),
+                row(reps = 0),
+                row(reps = MAX_PARSED_REPS + 1),
+                row(sets = MAX_PARSED_SET_COUNT + 1),
+                row(weight = MAX_PARSED_LOAD_KG + 1),
+                row(lift = "**Squat**", sets = 1),
+            ),
+            UnitSystem.Metric,
+        )
+        assertEquals(listOf(StrengthSet("Squat", 8, 60.0)), sets)
+    }
+
+    @Test
+    fun `the session is capped`() {
+        val rows = List(10) { row(sets = MAX_PARSED_SET_COUNT) }
+        assertEquals(MAX_PARSED_SETS, parsedSets(rows, UnitSystem.Metric).size)
+    }
+
+    @Test
+    fun `nothing usable is empty`() {
+        assertTrue(parsedSets(listOf(row(reps = null)), UnitSystem.Metric).isEmpty())
+        assertTrue(parsedSets(emptyList(), UnitSystem.Metric).isEmpty())
     }
 }

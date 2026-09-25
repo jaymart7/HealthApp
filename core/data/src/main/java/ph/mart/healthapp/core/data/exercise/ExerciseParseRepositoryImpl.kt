@@ -11,6 +11,7 @@ import org.json.JSONObject
 import ph.mart.healthapp.core.data.AI_MODEL_NAME
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.profile.UnitSystem
 
 /**
  * JSON out and [org.json.JSONObject] in, the call every other parse in this app makes: three flat
@@ -39,6 +40,21 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
         },
     )
 
+    /** The strength screen's parse: a different schema and a longer answer, so a second held
+     * model rather than a per-call config — still nothing about the user in it. */
+    private val setsModel = Firebase.ai(
+        backend = GenerativeBackend.googleAI(),
+        useLimitedUseAppCheckTokens = true,
+    ).generativeModel(
+        modelName = AI_MODEL_NAME,
+        generationConfig = generationConfig {
+            thinkingConfig = AI_THINKING
+            maxOutputTokens = MAX_SETS_TOKENS
+            responseMimeType = "application/json"
+            responseSchema = PARSED_SETS_SCHEMA
+        },
+    )
+
     override suspend fun parse(text: String): ExerciseParseResult = try {
         val prompt = promptFor(text.take(MAX_EXERCISE_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
@@ -55,6 +71,19 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
         logAiFailure("exercise parse", e)
         // Offline, throttled, App Check refused — all the same to the caller.
         ExerciseParseResult.Failed
+    }
+
+    override suspend fun parseSets(text: String, unit: UnitSystem): StrengthParseResult = try {
+        val prompt = setsPromptFor(text.take(MAX_STRENGTH_PARSE_CHARS))
+        val response = setsModel.generateContent(content { text(prompt) })
+        val sets = response.text?.let { parsedSets(readLifts(JSONObject(it)), unit) }.orEmpty()
+        if (sets.isEmpty()) StrengthParseResult.NoLiftsFound else StrengthParseResult.Success(sets)
+    } catch (e: CancellationException) {
+        // [parse]'s reason: a withdrawn request is not a failure to log.
+        throw e
+    } catch (e: Exception) {
+        logAiFailure("strength parse", e)
+        StrengthParseResult.Failed
     }
 }
 
@@ -130,5 +159,84 @@ private fun promptFor(sentence: String): String = buildString {
             "said nothing beyond the activity. If they named no physical activity at all, set " +
             "minutes to 0. Do not estimate calories burned — the app works that out from their " +
             "own weight. Give no medical advice, no diagnosis, and no training-safety judgements.",
+    )
+}
+
+/**
+ * One object per lift at one load, and — like [PARSED_EXERCISE_SCHEMA] — no calorie field
+ * anywhere in it. `sets` is a count rather than a row per set, because "3x8" is how a session is
+ * said and expanding it is [parsedSets]' job, not the model's tokens.
+ *
+ * `unit` is the one optional property: a model made to give one for "bench at 60" guesses, and a
+ * guessed unit is a 2.2× error. Absent, it is the user's own unit, applied on-device.
+ */
+internal val PARSED_SETS_SCHEMA = Schema.obj(
+    mapOf(
+        "lifts" to Schema.array(
+            Schema.obj(
+                mapOf(
+                    "lift" to Schema.string(description = "The exercise, as they named it."),
+                    "sets" to Schema.integer(description = "How many sets of this lift at this load."),
+                    "reps" to Schema.integer(description = "Reps in each of those sets."),
+                    "weight" to Schema.double(
+                        description = "The load, as they said it. 0 for bodyweight or when they gave none.",
+                    ),
+                    "unit" to Schema.enumeration(
+                        values = listOf("kg", "lb"),
+                        description = "The unit they said. Omit it if they said none.",
+                    ),
+                ),
+                optionalProperties = listOf("unit"),
+            ),
+            description = "Every lift they named, in order. Empty if they named none.",
+        ),
+    ),
+)
+
+/** Up to a dozen small objects — [MAX_ACTIVITY_TOKENS]' rule, scaled to a list. */
+private const val MAX_SETS_TOKENS = 600
+
+/** Every read an `opt*` with a default; [parsedSets] decides what survives. */
+internal fun readLifts(body: JSONObject): List<ParsedLiftRow> {
+    val lifts = body.optJSONArray("lifts") ?: return emptyList()
+    return (0 until lifts.length()).mapNotNull { i ->
+        lifts.optJSONObject(i)?.let {
+            ParsedLiftRow(
+                lift = it.optString("lift"),
+                sets = it.optInt("sets", 1),
+                reps = it.optInt("reps"),
+                weight = it.optDouble("weight", 0.0),
+                unit = it.optString("unit").takeIf { unit -> unit.isNotEmpty() },
+            )
+        }
+    }
+}
+
+/**
+ * A sentence in, a session out. [promptFor]'s constraints, for lifts:
+ * - **Only what they said** — no lift, set or load they didn't name. Rounding a session up is
+ *   the same invention as rounding a walk into a jog.
+ * - **"NxM" is sets × reps**, the convention every programme is written in, stated so the model
+ *   doesn't have to guess which way round.
+ * - **No unit they didn't say**, for [PARSED_SETS_SCHEMA]'s reason.
+ * - **No medical advice or training-safety judgements**, as everywhere else.
+ */
+private fun setsPromptFor(sentence: String): String = buildString {
+    appendLine(
+        "You are a workout-logging assistant for a fitness app. The user has said or typed the " +
+            "strength training they just did. Turn it into a list of lifts.",
+    )
+    appendLine()
+    appendLine("What they said:")
+    appendLine(sentence)
+    appendLine()
+    appendLine(
+        "Give one entry per lift at one load, in the order they said them. Read \"3x8\" as 3 sets " +
+            "of 8 reps. If they gave reps but no set count, that is 1 set. Give the weight exactly " +
+            "as they said it, and 0 for bodyweight or when they gave no weight. Set unit only if " +
+            "they said kg or lb (or pounds, kilos); otherwise leave it out. Do not add lifts, sets, " +
+            "reps or weights they did not say. If they named no lifts at all, return an empty " +
+            "list. Do not estimate calories burned. Give no medical advice, no diagnosis, and no " +
+            "training-safety judgements.",
     )
 }

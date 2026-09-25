@@ -7,6 +7,7 @@ import ph.mart.healthapp.core.data.exercise.LiftPerformance
 import ph.mart.healthapp.core.data.exercise.ParsedExercise
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.StrengthParseResult
 import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -154,6 +155,10 @@ sealed interface LogExerciseEvent {
      * the recheck-at-the-moment-of-the-call rule `NetworkMonitor.isOnline` is written for. */
     data class OnParse(val text: String) : LogExerciseEvent
 
+    /** [OnParse] for the strength screen: a session, parsed into sets. The same `isOnline()` check
+     * comes first, and [OnCancelParse] withdraws it too. */
+    data class OnParseSets(val text: String) : LogExerciseEvent
+
     /** Back, or the cancel button, while a parse is in flight. It abandons the call and leaves the
      * sentence in the field — a model can hang, and a spinner with no way out would cost the user
      * what they typed. */
@@ -182,4 +187,8 @@ sealed interface LogExerciseSideEffect {
      * reduced onto it.
      */
     data class Parsed(val result: ExerciseParseResult) : LogExerciseSideEffect
+
+    /** [Parsed]'s twin for the strength screen, handed over for the same reason: the sets land in
+     * the screen's form, not on the container. */
+    data class SetsParsed(val result: StrengthParseResult) : LogExerciseSideEffect
 }

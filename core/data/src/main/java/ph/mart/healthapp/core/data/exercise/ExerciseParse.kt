@@ -1,5 +1,7 @@
 package ph.mart.healthapp.core.data.exercise
 
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.stripMarkdown
 
 /**
@@ -13,6 +15,13 @@ import ph.mart.healthapp.core.data.stripMarkdown
  */
 interface ExerciseParseRepository {
     suspend fun parse(text: String): ExerciseParseResult
+
+    /**
+     * A sentence about a lifting session in, its sets out — the strength screen's describe panel.
+     * Still only the sentence goes out: [unit] is **not sent**. It is applied on-device to a load
+     * the sentence gave no unit for, which is what "bench at 60" means to the person who typed it.
+     */
+    suspend fun parseSets(text: String, unit: UnitSystem): StrengthParseResult
 }
 
 /**
@@ -86,3 +95,67 @@ fun parsedExercise(type: String?, name: String?, minutes: Int?): ParsedExercise?
         minutes = duration,
     )
 }
+
+/** [ExerciseParseResult]'s three answers, for a list of sets rather than one activity. */
+sealed interface StrengthParseResult {
+    data class Success(val sets: List<StrengthSet>) : StrengthParseResult
+    data object NoLiftsFound : StrengthParseResult
+    data object Failed : StrengthParseResult
+}
+
+/** A session lists several lifts, so twice what one activity is allowed. */
+const val MAX_STRENGTH_PARSE_CHARS = 400
+
+/** Past any real set, short enough that a misread "3x800" cannot seed one. */
+const val MAX_PARSED_REPS = 100
+
+/** Sets of one lift at one load. "3x8" is the common case; ten already covers a warm-up ladder. */
+const val MAX_PARSED_SET_COUNT = 10
+
+/** Above every raw world record, so a real load always fits and a unit mix-up that turns 225 lb
+ * into 225 × something does not. */
+const val MAX_PARSED_LOAD_KG = 500.0
+
+/** One session's worth. The list and its editor are reviewed before saving, and thirty rows is
+ * already a long scroll. */
+const val MAX_PARSED_SETS = 30
+
+/** One lift as the model gave it — every field raw, so the judgement stays in [parsedSets]. */
+internal data class ParsedLiftRow(
+    val lift: String?,
+    val sets: Int?,
+    val reps: Int?,
+    val weight: Double?,
+    val unit: String?,
+)
+
+/**
+ * The whole trust boundary on a parsed session — [parsedExercise]'s job for the strength screen,
+ * and pure for the same reason: the `org.json` read around it is stubbed on the JVM.
+ *
+ * A row is dropped rather than repaired when a figure is out of range: a set the user never did
+ * is worse than a set they have to add by hand. Weight is the exception, because a missing or
+ * negative one is bodyweight — 0 kg, a real value here — and "pull-ups 3x10" says nothing more.
+ * A unit the model did not give is [preferred]'s.
+ *
+ * Each row becomes that many identical sets, which is what "3x8" means and what the set list
+ * draws; the total is capped at [MAX_PARSED_SETS]. Empty is
+ * [StrengthParseResult.NoLiftsFound].
+ */
+internal fun parsedSets(rows: List<ParsedLiftRow>, preferred: UnitSystem): List<StrengthSet> =
+    rows.flatMap { row ->
+        val name = stripMarkdown(row.lift.orEmpty()).trim().take(MAX_EXERCISE_NAME_CHARS).trim()
+        val reps = row.reps?.takeIf { it in 1..MAX_PARSED_REPS }
+        val count = (row.sets ?: 1).takeIf { it in 1..MAX_PARSED_SET_COUNT }
+        val unit = when (row.unit?.lowercase()) {
+            "kg" -> UnitSystem.Metric
+            "lb" -> UnitSystem.Imperial
+            else -> preferred
+        }
+        val kg = (row.weight ?: 0.0).coerceAtLeast(0.0).displayUnitToKg(unit)
+        if (name.isEmpty() || reps == null || count == null || kg > MAX_PARSED_LOAD_KG) {
+            emptyList()
+        } else {
+            List(count) { StrengthSet(exerciseName = name, reps = reps, weightKg = kg) }
+        }
+    }.take(MAX_PARSED_SETS)

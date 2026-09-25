@@ -11,7 +11,10 @@ import ph.mart.healthapp.core.data.coach.TOOL_GET_DAY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_HISTORY
 import ph.mart.healthapp.core.data.coach.TOOL_GET_LIBRARY
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.profile.KG_PER_LB
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 
 /**
@@ -358,5 +361,17 @@ class FakeCoachScriptTest {
             "egg rice bacon salmon chicken bread milk cheese apple banana potato pasta yogurt",
         )
         assertTrue("${many.size} foods", many.size <= 8)
+    }
+
+    /** The debug build's describe-your-sets path: counts expand, a said unit wins, bodyweight is 0. */
+    @Test
+    fun `the fake strength parse reads a session`() {
+        val sets = fakeStrengthParse("Bench 3x8 at 60, squats 5x5 and pull-ups 2x10, curls 1x12 @ 30 lb", UnitSystem.Metric)
+        assertEquals(List(3) { StrengthSet("Bench", 8, 60.0) }, sets.take(3))
+        assertEquals(List(5) { StrengthSet("squats", 5, 0.0) }, sets.subList(3, 8))
+        assertEquals(List(2) { StrengthSet("pull-ups", 10, 0.0) }, sets.subList(8, 10))
+        assertEquals(30 * KG_PER_LB, sets.last().weightKg, 1e-9)
+        assertEquals(11, sets.size)
+        assertTrue(fakeStrengthParse("two eggs and toast", UnitSystem.Metric).isEmpty())
     }
 }

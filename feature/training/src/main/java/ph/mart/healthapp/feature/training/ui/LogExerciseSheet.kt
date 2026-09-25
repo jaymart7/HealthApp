@@ -97,6 +97,10 @@ fun LogExerciseSheet(
                 ExerciseParseResult.Failed ->
                     describe.message = R.string.training_exercise_describe_failed
             }
+
+            // The strength screen's parse; this sheet has no set list to put one in. Named rather
+            // than swept into an `else`, the rule the strength screen follows for `Parsed`.
+            is LogExerciseSideEffect.SetsParsed -> Unit
         }
     }
 
@@ -128,9 +132,10 @@ fun LogExerciseSheet(
 }
 
 /** Panel open, sentence and message — screen state, not the container's, the rule
- * [LogExerciseState] already documents. Saveable so a rotation mid-sentence keeps it. */
+ * [LogExerciseState] already documents. Saveable so a rotation mid-sentence keeps it. Internal
+ * because the strength screen's describe panel holds one too. */
 @Composable
-private fun rememberDescribeState(): DescribeState = rememberSaveable(saver = DescribeState.Saver) {
+internal fun rememberDescribeState(): DescribeState = rememberSaveable(saver = DescribeState.Saver) {
     DescribeState()
 }
 

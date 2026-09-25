@@ -31,6 +31,11 @@
     <!-- Strength workout -->
     <string name="training_strength_repeat">Repeat last workout</string>
     <string name="training_strength_start_routine">Start a routine</string>
+    <string name="training_strength_describe">Describe your sets</string>
+    <string name="training_strength_describe_prompt">What did you lift?</string>
+    <string name="training_strength_describe_placeholder">Bench 3x8 at 60, squats 5x5 at 100</string>
+    <string name="training_strength_describe_submit">Add the sets</string>
+    <string name="training_strength_describe_none">No lifts in that one. Try the lift, sets × reps and the weight.</string>
     <string name="training_strength_save_routine">Save as routine</string>
     <string name="training_strength_saved_routine">Saved as \"%1$s\"</string>
     <string name="training_strength_save_workout">Save workout</string>

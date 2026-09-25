@@ -6,6 +6,10 @@ import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseParseResult
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.ParsedExercise
+import ph.mart.healthapp.core.data.exercise.ParsedLiftRow
+import ph.mart.healthapp.core.data.exercise.StrengthParseResult
+import ph.mart.healthapp.core.data.exercise.StrengthSet
+import ph.mart.healthapp.core.data.exercise.parsedSets
 import ph.mart.healthapp.core.data.food.COMMON_FOODS
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.LabelBasis
@@ -37,6 +41,7 @@ import ph.mart.healthapp.core.data.food.mayAsk
 import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.supplement.SupplementLabelReading
 import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
 import ph.mart.healthapp.core.data.supplement.SupplementScanResult
@@ -257,7 +262,30 @@ internal class FakeExerciseParseRepository : ExerciseParseRepository {
             ExerciseParseResult.Success(activity)
         }
     }
+
+    override suspend fun parseSets(text: String, unit: UnitSystem): StrengthParseResult {
+        delay(FAKE_LATENCY_MS)
+        val sets = fakeStrengthParse(text, unit)
+        return if (sets.isEmpty()) StrengthParseResult.NoLiftsFound else StrengthParseResult.Success(sets)
+    }
 }
+
+/** "bench 3x8 at 60 kg" — a name, sets × reps, then an optional load and unit. */
+private val FAKE_LIFT = Regex("""(?i)^\s*(.*?)\s+(\d+)\s*x\s*(\d+)(?:\s*(?:at|@)?\s*(\d+(?:\.\d+)?)\s*(kg|lb)?)?""")
+
+/**
+ * One lift per comma or "and", read by [FAKE_LIFT] and handed to [parsedSets] — the real parse's
+ * last line, so the caps and the unit fallback run here rather than being bypassed.
+ */
+internal fun fakeStrengthParse(text: String, unit: UnitSystem): List<StrengthSet> =
+    parsedSets(
+        text.split(',', '\n').flatMap { it.split(" and ") }.mapNotNull { chunk ->
+            FAKE_LIFT.find(chunk)?.destructured?.let { (lift, sets, reps, weight, liftUnit) ->
+                ParsedLiftRow(lift, sets.toIntOrNull(), reps.toIntOrNull(), weight.toDoubleOrNull(), liftUnit)
+            }
+        },
+        unit,
+    )
 
 /** The offline matcher's activity half, with half an hour standing in for the model's "shortest
  * plausible duration" when none was said. */

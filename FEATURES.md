@@ -283,6 +283,10 @@ see `DECISIONS.md`.
   switch off, on a correction to a past row, and under a 50 kcal floor.
 - Strength workouts: a full set editor (lift name, reps, weight in the user's unit), lift-name
   chips from recent sessions, last-lifted load shown per lift.
+- **Describe your sets** — a sentence on the strength screen, typed or dictated ("bench 3x8 at
+  60, squats 5x5 at 100"), becomes sets appended to the list. A load said with no unit is in the
+  user's own unit, applied on-device — only the sentence is sent. Offered while correcting a
+  logged workout too, since it only adds; back steps out of the panel one level.
 - Bodyweight sets (0 kg) are a real value.
 - "Repeat last workout" seeds the whole set list.
 - Routines: save a session as a routine (modal reps), start one to seed sets at last-lifted loads.

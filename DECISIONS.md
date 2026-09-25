@@ -3628,8 +3628,8 @@ rather than needing a counter patched.
   CLAUDE.md says earns a flow package — `:feature:training` would have stopped being flat to draw
   one text field. So `LogExerciseViewModel` took the parse repository and `NetworkMonitor` as two
   more constructor arguments and the module's DI did not change at all. The strength screen shares
-  that container and names the new side effect to ignore it, rather than growing an `else` that
-  would swallow the next one too.
+  that container and names the activity side effect to ignore it (it has its own, below), rather
+  than growing an `else` that would swallow the next one too.
 - **It is absent when correcting a logged activity.** The panel draws only for `editingId == null`.
   Every figure on an edit form is already the user's own, and a parse that rewrote the type and
   duration of a row they opened to fix a typo is noise on the one path where there is nothing left
@@ -3645,6 +3645,22 @@ rather than needing a counter patched.
   sentence, back again closes the panel, back again dismisses the sheet. Dismissing the sheet fires
   the same cancel — this ViewModel outlives the sheet, so a spinner abandoned mid-parse would still
   be up the next time the FAB opened a blank one.
+- **The strength screen describes sets, and the sentence is still all that is sent.** The screen
+  used to ignore the parse on the argument that a sentence cannot say what was on the bar — but
+  "bench 3x8 at 60" says exactly that. `parseSets()` is a second method on the same
+  `ExerciseParseRepository` (one AI binding per domain, one fake), and `PARSED_SETS_SCHEMA` has
+  lift, set count, reps, weight and an **optional** unit — and still no burn. The user's unit is
+  passed to the repository but **not to the model**: `parsedSets()` applies it on-device to a load
+  said without one, because a model made to pick a unit for "at 60" guesses, and a guessed unit
+  is a 2.2× error. `parsedSets()` is the trust boundary and it drops rather than repairs a row out
+  of range (reps 1–100, a count of 1–10, ≤ 500 kg, 30 sets a session) — except weight, where
+  missing is bodyweight, a real value here. **It appends, never replaces**, which is why it is
+  offered at any time, editing included, where Repeat and the routine chips are offered only on an
+  empty list and the sheet's panel is absent from an edit: adding sets rewrites nothing the user
+  already typed. **It starts no rest** — `commit()` stays the one place a rest begins, and parsed
+  sets were lifted before anyone typed them. Back runs through one handler — parse, then panel,
+  then the discard question — so the order cannot depend on which condition turned true first, and
+  leaving the route by any path cancels a parse in flight, because this ViewModel may outlive it.
 - **The third mic in the app moved the helper to `:core:designsystem`.** `SpeechInput.kt` holds
   `rememberSpeechAvailable()`, `speechIntent()` and `spokenPhrase()`; the coach's composer and
   talk-to-log's input deleted their copies. What did *not* move is what each screen decides for

@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -39,6 +40,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.LiftPerformance
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.StrengthParseResult
 import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.exercise.liftKey
 import ph.mart.healthapp.core.data.exercise.toRoutineLifts
@@ -52,6 +54,7 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.training.R
+import ph.mart.healthapp.feature.training.ui.components.DescribeExerciseField
 import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
 import ph.mart.healthapp.feature.training.ui.components.NO_REST
 import ph.mart.healthapp.feature.training.ui.components.NameChipRow
@@ -91,20 +94,10 @@ fun StrengthWorkoutScreen(
     LaunchedEffect(editingId, routineId) {
         viewModel.handleEvent(LogExerciseEvent.OnOpenStrength(editingId, routineId))
     }
-    viewModel.collectSideEffect { effect ->
-        when (effect) {
-            // [onExit] stays a bare pop, so the back and discard paths below are untouched — only
-            // a *save* has a figure to report, and it reports it here.
-            is LogExerciseSideEffect.Saved -> {
-                onSaved(effect.creditedKcal)
-                onExit()
-            }
-
-            // This screen shares the sheet's container and has no describe field — the type is
-            // Strength by definition here, and a sentence cannot say what was on the bar. Named
-            // rather than swept into an `else`, so adding a third side effect still fails here.
-            is LogExerciseSideEffect.Parsed -> Unit
-        }
+    // Every way off this route — save, discard, a clean back — lands here, so a parse still in
+    // flight cannot leave `parsing` up on a ViewModel the log sheet may go on to share.
+    DisposableEffect(Unit) {
+        onDispose { viewModel.handleEvent(LogExerciseEvent.OnCancelParse) }
     }
 
     // Held back until the load answers. `rememberLogExerciseState` keys its saveable on the seed,
@@ -115,13 +108,78 @@ fun StrengthWorkoutScreen(
         return
     }
 
+    // Held here rather than in the content, the sheet's shape: a parse's sets arrive as a side
+    // effect, and the form they land in has to be in reach of the collector.
+    val seed = remember(uiState.editing, uiState.seedRoutine) { uiState.strengthSeed() }
+    val state = rememberLogExerciseState(seed)
+    val describe = rememberDescribeState()
+
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            // [onExit] stays a bare pop, so the back and discard paths below are untouched — only
+            // a *save* has a figure to report, and it reports it here.
+            is LogExerciseSideEffect.Saved -> {
+                onSaved(effect.creditedKcal)
+                onExit()
+            }
+
+            // Appended, never replacing what is down — and no rest starts, because `commit()` is
+            // the one place that does and these sets were lifted before anyone typed them.
+            is LogExerciseSideEffect.SetsParsed -> when (val result = effect.result) {
+                is StrengthParseResult.Success -> {
+                    state.form = state.form.copy(sets = state.form.sets + result.sets)
+                    describe.close()
+                }
+
+                // Both keep the sentence, the sheet's rule: correcting it beats retyping it.
+                StrengthParseResult.NoLiftsFound ->
+                    describe.message = R.string.training_strength_describe_none
+
+                StrengthParseResult.Failed ->
+                    describe.message = R.string.training_exercise_describe_failed
+            }
+
+            // The sheet's activity parse. The type is Strength by definition here, so this screen
+            // asks for sets instead. Named rather than swept into an `else`, so adding another
+            // side effect still fails here.
+            is LogExerciseSideEffect.Parsed -> Unit
+        }
+    }
+
     StrengthWorkoutContent(
         uiState = uiState,
         dateEpochDay = dateEpochDay,
         editingId = editingId.takeIf { it > 0 },
         onExit = onExit,
         onEvent = viewModel::handleEvent,
+        seed = seed,
+        state = state,
+        describe = describe,
+        onDescribe = {
+            describe.message = null
+            if (viewModel.isOnline()) {
+                viewModel.handleEvent(LogExerciseEvent.OnParseSets(describe.text))
+            } else {
+                // The set editor below is the manual path; saying so is the whole degrade.
+                describe.message = R.string.training_exercise_describe_offline
+            }
+        },
     )
+}
+
+/**
+ * Strength whatever it arrived as: this screen draws no type chips, and it can be reached from the
+ * edit sheet with a cardio row already seeded in it. Saving sets against a Run is the one outcome
+ * the missing chip row makes possible.
+ *
+ * A started routine seeds the same form the chip row would have — one seeding path, so an
+ * opened-from-Home workout and a chip-tapped one are the same workout.
+ */
+private fun LogExerciseUiState.strengthSeed(): LogExerciseForm {
+    val form = editing?.toLogExerciseForm()
+        ?: seedRoutine?.let { LogExerciseForm(name = it.name, sets = it.toSets(lastLoads)) }
+        ?: LogExerciseForm()
+    return form.copy(type = ExerciseType.Strength)
 }
 
 @Composable
@@ -131,21 +189,13 @@ private fun StrengthWorkoutContent(
     editingId: Long?,
     onExit: () -> Unit,
     onEvent: (LogExerciseEvent) -> Unit,
+    // Defaulted for the previews, which have no ViewModel to hold them — the sheet's `describe`
+    // and `onEstimate` defaults, for the same reason.
+    seed: LogExerciseForm = uiState.strengthSeed(),
+    state: LogExerciseState = rememberLogExerciseState(seed),
+    describe: DescribeState = DescribeState(),
+    onDescribe: () -> Unit = {},
 ) {
-    // Strength whatever it arrived as: this screen draws no type chips, and it can be reached
-    // from the edit sheet with a cardio row already seeded in it. Saving sets against a Run is
-    // the one outcome the missing chip row makes possible.
-    //
-    // A started routine seeds the same form the chip row below would have — one seeding path, so
-    // an opened-from-Home workout and a chip-tapped one are the same workout.
-    val seed = remember(uiState.editing, uiState.seedRoutine) {
-        val started = uiState.seedRoutine
-        val form = uiState.editing?.toLogExerciseForm()
-            ?: started?.let { LogExerciseForm(name = it.name, sets = it.toSets(uiState.lastLoads)) }
-            ?: LogExerciseForm()
-        form.copy(type = ExerciseType.Strength)
-    }
-    val state = rememberLogExerciseState(seed)
     val form = state.form.withEstimate(uiState.weightKg)
 
     // The in-progress set. Three primitives rather than a saver: each is Bundle-native on its own,
@@ -180,12 +230,21 @@ private fun StrengthWorkoutContent(
 
     // Back out of a half-written workout is the one destructive gesture here, so it only
     // intercepts once there is something to lose — an untouched screen pops like any other route.
+    // The describe panel is a sub-level above that: back abandons a parse in flight, then closes
+    // the panel, and only then asks about the workout. One handler rather than two, so which one
+    // wins can't depend on which condition happened to become true first.
     val isDirty = state.form != seed || draft.canAdd()
-    if (isDirty) {
+    if (describe.open || isDirty) {
         val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
         NavigationBackHandler(
             state = navigationState,
-            onBackCompleted = { discardOpen = true },
+            onBackCompleted = {
+                when {
+                    describe.open && uiState.parsing -> onEvent(LogExerciseEvent.OnCancelParse)
+                    describe.open -> describe.close()
+                    else -> discardOpen = true
+                }
+            },
         )
     }
 
@@ -239,6 +298,29 @@ private fun StrengthWorkoutContent(
                         )
                     }
                 }
+
+                // Appends rather than replaces, so unlike the two rows above it is offered whatever
+                // is already down — correcting a logged workout included, where "and I forgot the
+                // curls" is the likeliest sentence.
+                DescribeExerciseField(
+                    open = describe.open,
+                    text = describe.text,
+                    parsing = uiState.parsing,
+                    onOpen = { describe.open = true },
+                    onClose = describe::close,
+                    onTextChange = {
+                        describe.text = it
+                        describe.message = null
+                    },
+                    onEstimate = onDescribe,
+                    onCancel = { onEvent(LogExerciseEvent.OnCancelParse) },
+                    message = describe.message?.let { stringResource(it) },
+                    labelRes = R.string.training_strength_describe,
+                    promptRes = R.string.training_strength_describe_prompt,
+                    placeholderRes = R.string.training_strength_describe_placeholder,
+                    submitRes = R.string.training_strength_describe_submit,
+                    modifier = Modifier.fillMaxWidth(),
+                )
 
                 StrengthSetList(
                     sets = form.sets,

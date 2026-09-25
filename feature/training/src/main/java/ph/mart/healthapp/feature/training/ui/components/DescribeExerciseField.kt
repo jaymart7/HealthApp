@@ -2,6 +2,7 @@ package ph.mart.healthapp.feature.training.ui.components
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -49,6 +50,9 @@ import ph.mart.healthapp.feature.training.R
  * [speechAvailable] is hoisted only so the previews can draw the mic: the preview renderer has no
  * recognizer installed, and a component preview that can't show its own control is worth one
  * default argument — `ChatInputBar`'s reason, for the same glyph.
+ *
+ * The four `@StringRes` parameters default to the log sheet's copy; the strength screen passes
+ * its own, because a set list is asked for differently from a run.
  */
 @Composable
 internal fun DescribeExerciseField(
@@ -62,11 +66,15 @@ internal fun DescribeExerciseField(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
     message: String? = null,
+    @StringRes labelRes: Int = R.string.training_exercise_describe,
+    @StringRes promptRes: Int = R.string.training_exercise_describe_prompt,
+    @StringRes placeholderRes: Int = R.string.training_exercise_describe_placeholder,
+    @StringRes submitRes: Int = R.string.training_exercise_describe_estimate,
     speechAvailable: Boolean = rememberSpeechAvailable(),
 ) {
     if (!open) {
         SecondaryButton(
-            label = stringResource(R.string.training_exercise_describe),
+            label = stringResource(labelRes),
             onClick = onOpen,
             icon = AppIcons.AiSparkle,
             modifier = modifier,
@@ -77,7 +85,7 @@ internal fun DescribeExerciseField(
     // The field's own placeholder is not the dialog's prompt here, the way it is on the coach's
     // composer: the placeholder is an example sentence and the prompt is the question. Saying
     // "45 minute run along the river" out loud to a dialog asking it back would be absurd.
-    val prompt = stringResource(R.string.training_exercise_describe_prompt)
+    val prompt = stringResource(promptRes)
     val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         // Replaces rather than appends — `VoiceInputScreen`'s rule, and for its reason: this is a
         // say-the-workout field, not a composer being added to phrase by phrase.
@@ -90,7 +98,7 @@ internal fun DescribeExerciseField(
             label = prompt,
             value = text,
             onValueChange = onTextChange,
-            placeholder = stringResource(R.string.training_exercise_describe_placeholder),
+            placeholder = stringResource(placeholderRes),
             // A sentence wraps rather than scrolling sideways — the one parameter talk-to-log's
             // field already asks for, and this field holds the same kind of content.
             maxLines = 3,
@@ -131,7 +139,7 @@ internal fun DescribeExerciseField(
             }
         } else {
             SecondaryButton(
-                label = stringResource(R.string.training_exercise_describe_estimate),
+                label = stringResource(submitRes),
                 onClick = onEstimate,
                 enabled = text.isNotBlank(),
                 icon = AppIcons.AiSparkle,
@@ -222,6 +230,32 @@ private fun DescribeExerciseFieldMessagePreview() {
                 onEstimate = {},
                 onCancel = {},
                 message = stringResource(R.string.training_exercise_describe_none),
+                speechAvailable = true,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** The strength screen's copy — a session rather than an activity. */
+@PreviewLightDark
+@Composable
+private fun DescribeExerciseFieldStrengthPreview() {
+    AppTheme {
+        Surface {
+            DescribeExerciseField(
+                open = true,
+                text = "Bench 3x8 at 60, squats 5x5 at 100",
+                parsing = false,
+                onOpen = {},
+                onClose = {},
+                onTextChange = {},
+                onEstimate = {},
+                onCancel = {},
+                labelRes = R.string.training_strength_describe,
+                promptRes = R.string.training_strength_describe_prompt,
+                placeholderRes = R.string.training_strength_describe_placeholder,
+                submitRes = R.string.training_strength_describe_submit,
                 speechAvailable = true,
                 modifier = Modifier.padding(16.dp),
             )
