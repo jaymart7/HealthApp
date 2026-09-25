@@ -7,6 +7,7 @@ import android.graphics.Matrix
 import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,9 +24,16 @@ private const val MAX_CAPTURE_EDGE = 1280
 
 /** Decodes a picked image at the same size and orientation a capture gets. Null when the stream
  * can't be opened or holds nothing decodable — a picker can hand back a Uri that resolves to
- * neither. */
-suspend fun decodeRotatedBitmap(context: Context, uri: Uri): Bitmap? =
+ * neither. "Can't be opened" arrives as a throw, not a null: a cloud-only photo picked offline is an
+ * [IOException] and a revoked grant a [SecurityException], and every caller launches this bare, so
+ * either was a crash. The capture path needs no guard here — `CameraCaptureController` catches. */
+suspend fun decodeRotatedBitmap(context: Context, uri: Uri): Bitmap? = try {
     decodeRotatedBitmap { context.contentResolver.openInputStream(uri) }
+} catch (_: IOException) {
+    null
+} catch (_: SecurityException) {
+    null
+}
 
 internal suspend fun decodeRotatedBitmap(file: File): Bitmap? =
     decodeRotatedBitmap { file.inputStream() }

@@ -23,7 +23,13 @@ import androidx.compose.ui.platform.LocalContext
 @Composable
 fun rememberSpeechAvailable(): Boolean {
     val context = LocalContext.current
-    return remember(context) { SpeechRecognizer.isRecognitionAvailable(context) }
+    // Both, because the mic launches the dialog, not the service: a phone can carry a recognizer
+    // with nothing answering the intent (an OEM's service, the Google app disabled), and there a
+    // tap was an ActivityNotFoundException. The manifest's <queries> makes the intent visible.
+    return remember(context) {
+        SpeechRecognizer.isRecognitionAvailable(context) &&
+            speechIntent("").resolveActivity(context.packageManager) != null
+    }
 }
 
 /**

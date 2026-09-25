@@ -107,8 +107,11 @@ fun QuickLogSheet(
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
         if (taken) attach(captureUri)
     }
+    // Guarded: a work profile or a policy can leave no camera app to answer, and the picker is
+    // still there — `HealthConnectionScreen`'s refusal-to-crash around its own intent.
+    val takePhoto = { runCatching { camera.launch(captureUri) } }
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) camera.launch(captureUri) else state.message = R.string.food_quick_camera_denied
+        if (granted) takePhoto() else state.message = R.string.food_quick_camera_denied
     }
     val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let(attach)
@@ -173,7 +176,7 @@ fun QuickLogSheet(
         onTakePhoto = {
             val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
                 PackageManager.PERMISSION_GRANTED
-            if (granted) camera.launch(captureUri) else cameraPermission.launch(Manifest.permission.CAMERA)
+            if (granted) takePhoto() else cameraPermission.launch(Manifest.permission.CAMERA)
         },
         onPickPhoto = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
         onScanBarcode = {
