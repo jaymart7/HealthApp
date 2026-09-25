@@ -188,6 +188,7 @@
 
     <!-- Routines -->
     <string name="profile_routines_empty_heading">No routines yet</string>
+    <string name="profile_routines_new">New routine</string>
     <string name="profile_routines_empty_body">Log a strength workout, tap \"Save as routine\", and it shows up here.</string>
     <string name="profile_routine_delete_body">This routine is removed for good. Workouts you logged from it stay in your diary.</string>
     <!-- Units only: the figure line prints the number itself, tabular, in its own colour. -->

@@ -539,6 +539,9 @@ fun AppScaffold(
                             onOpenHealth = { topLevelBackStack.add(HealthConnectionRoute) },
                             onOpenLibrary = { topLevelBackStack.add(FoodLibraryRoute) },
                             onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },
+                            // Day 0 is today. A blank session, not a builder: "Save as routine"
+                            // on that screen is still the one way a routine is authored.
+                            onNewRoutine = { topLevelBackStack.add(StrengthWorkoutRoute(0)) },
                             onOpenSupplements = { topLevelBackStack.add(SupplementsRoute) },
                             onOpenSupplementScan = { topLevelBackStack.add(SupplementScanRoute) },
                             onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },

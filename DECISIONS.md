@@ -3423,6 +3423,13 @@ rather than needing a counter patched.
   are **not exported**, for the reason saved meals and recipes aren't — convenience data, not
   history — so no export schema bump; and nothing else moved, because a started routine saves as an
   ordinary `ExerciseEntry` with sets.
+- **Profile → Workout routines has a New routine door, and it leads to the strength screen.** Not a
+  builder, for the reason above: it pushes a blank `StrengthWorkoutRoute(0)` (today), whose "Save as
+  routine" stays the one authoring path. It is a **screen-level `DockedFab`**, which is the thing
+  `SupplementsScreen`'s KDoc argued against — at ≥840dp it sits beside the rail's collapsed FAB. The
+  user chose it knowing that; on a phone the pane has no tab chrome, so nothing collides. *The
+  catch: the session behind a just-saved routine was never logged, so backing out asks to discard
+  it. A routine-only mode on the strength screen is the fix if that grates.*
 - **The training plan is one `Int` column on `routine`, not a `routine_day` table.** A weekday
   bitmask (bit 0 = Monday), `0` = unscheduled: seven booleans per routine is not a relation, and
   this is the call `Profile.homeLayout` makes one table over. `Routine.days` is defaulted so every

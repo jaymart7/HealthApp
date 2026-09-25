@@ -554,7 +554,8 @@ panes at ≥840dp.
   nothing on the right at all. The card itself opens the row's sheet — Edit on supplements, Rename
   in the library and routines — and Delete lives at the foot of that sheet, below a rule in
   `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
-  any of the three can log, tick or start anything.
+  any of the three can log, tick or start anything — routines' New routine only opens the strength
+  screen, which does the logging.
 - Supplements: name, dose label, times per day, **which weekdays** — the same seven-cell picker the
   routine editor draws, defaulting to every day and refusing to be emptied — and **what one dose
   carries**: the seven graded nutrients, typable behind a "What's in a dose" disclosure that opens
@@ -582,7 +583,8 @@ panes at ≥840dp.
   names *and* contents lines, with match highlighting, and sticky counted section headers; My
   foods rows draw their macros in the fixed P/C/F colours.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a
-  week", or a prompt and seven dashed cells when nothing is set yet.
+  week", or a prompt and seven dashed cells when nothing is set yet. A **New routine** FAB opens a
+  blank strength screen for today, where "Save as routine" authors it.
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 22, import is all-or-nothing.
 - Export as CSV — the same thirteen tables as a zip of spreadsheet files from one picker, dates
   rendered ISO and times as a clock. A strength session's sets get a file of their own, joined on
