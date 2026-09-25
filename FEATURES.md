@@ -421,13 +421,15 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Coach — a chat screen told the day's numbers, which can read the rest of the diary itself:
   `get_day` for any past day's meals, macros, water and activity — plus that day's steps against
   the step goal, and its sleep, mood, completed fast, supplements against what was due, heart rate
-  and every blood-pressure reading it holds, where those are tracked, plus the note the user
-  wrote about that day — `get_history`
+  and every blood-pressure reading it holds, its weigh-in, body measurements and cycle day, flow
+  and symptoms, where those are tracked, plus the note the user wrote about that day — `get_history`
   for a span of up to a month with water, training, steps, sleep, supplements, heart rate, the
-  day's mean blood pressure, weigh-ins and body
-  measurements (the last two as a change since the reading before, never as a figure), and `get_library` for
+  day's mean blood pressure, period days, weigh-ins and body measurements (each as the figure and
+  its change since the reading before, in the profile's unit), and `get_library` for
   the meals and recipes the user has saved, the foods they log most often and the supplements they
   take with today's count on each.
+  Its system instruction also carries who the user is — sex, age, height, latest weight, target
+  weight, activity level, step and fasting goals and their unit.
   History persisted, clearable with a confirm from the top-bar overflow. The answer streams in word
   by word, under the question, which is on screen from the moment it's sent, and may be a short
   list where a list answers better.
@@ -435,7 +437,7 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   them: foods into today's diary, glasses of water, an activity — whose calorie burn is the
   app's own MET estimate from the user's latest weigh-in, never the model's guess — or today's
   weigh-in, drawn in the unit their profile uses with what it moves by under it, and only ever
-  from a figure they volunteered: the coach never asks what they weigh and is never told — or a
+  from a figure they volunteered — or a
   dose of one of their own supplements, matched by exact name and ticked onto today, never one the
   coach suggested. Three more record what the user said about themselves, on the weigh-in's rule:
   **how the day felt** (mood and energy on the same 1–5 scale the card taps out, either column or
@@ -700,7 +702,8 @@ each one is argued in `CLAUDE.md`.
 - **A stepper for vitamin D, calcium, iron or potassium.** They are seeded and repriced, never typed.
 - **A fertile window or ovulation date.** FitPulse names things and reports numbers; a fertile
   window derived from a mean cycle length is a contraception claim it cannot stand behind.
-- **Cycle data in any AI payload, the widget, the watch or the recap.** It stays on the phone.
+- **Cycle data on the widget, the watch or the recap.** The coach reads it (flow, symptoms and
+  the cycle day, never a prediction); nothing else sends or shows it off the phone.
 - **Badges in the recap.** No badge records when it was earned.
 - **Sleep, heart, blood pressure, fasting, supplements in the recap.** Not enough scroll earned.
 - **Blood pressure's Google Health scope.** Deliberately not requested. Health Connect reads it

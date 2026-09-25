@@ -3446,6 +3446,22 @@ rather than needing a counter patched.
   is context and the question is the user's, which is the same reading the prefill-don't-send rule
   is built on. The whole chip is the dismiss target rather than the 14dp glyph inside it, at the
   48dp-touch / 40dp-visual split the profile stepper already ships: one intent, one target.
+- **The coach sees everything the user logged, figures included — a reversal, on the user's call.**
+  The data-minimisation rule (a weigh-in or a measurement leaves the device as a change, never a
+  figure; no age, sex or height; cycle data in no AI payload) was the owner's to set and the owner
+  reversed it: the goal is a coach that can answer any question about the app's data, and one that
+  cannot say "you were 82.4 last Monday" answers around the question. So `get_day` carries the
+  day's weigh-in, measurements and cycle line, `get_history` carries each body reading **as the
+  figure and its change**, in the profile's unit (it used to be metric throughout, because the file
+  had no profile to read — `getHistory` now passes `unitSystem()`), and `profileLine()` puts sex,
+  age, height, latest weight, target weight, activity level and goals in the system instruction
+  beside `dietLine()`. The prompt lost "you are never told what they weigh" and "never state a
+  weight you were not told". **What did not move:** the Home insight's `InsightRequest` still sends
+  a delta only — this is the coach's tools, not the insight card; photos never leave the device;
+  cycle data goes out as the user's own taps (flow, symptoms, cycle day) and **never as a
+  prediction**, and the prompt forbids a period forecast, a fertile window or any fertility or
+  contraception claim — FEATURES.md's "no fertile window" is untouched. The open question is
+  Health Connect's Data Use policy for rows imported from it; see CLAUDE.md's Backlog.
 
 ### Training, strength & routines
 

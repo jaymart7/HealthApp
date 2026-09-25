@@ -96,9 +96,7 @@ sealed interface CoachAction {
      *
      * The fourth streak domain, and the one the coach could not draft. It is the mirror image of
      * every other action here: the figure is the *user's*, said out loud in their own question,
-     * and the model's only job is to read it back. Nothing about what the app *tells* a model
-     * changes — `InsightRequest` still sends a change and never a weight, and the prompt still
-     * forbids asking for one.
+     * and the model's only job is to read it back.
      *
      * [weight] is in [unit] and is never converted before the write: the card draws this figure,
      * and [CoachRepository.settle] is the one place it becomes kilograms.
@@ -179,10 +177,6 @@ sealed interface CoachAction {
      * into what the table stores. [unit] is the **profile's**, stamped by [resolve] — a model
      * asked which unit a number was in is a model guessing at the one figure the card promises is
      * exact — and is `Metric` until then.
-     *
-     * It does not contradict the coach never being *told* a measurement: a tool still answers with
-     * a direction and never a figure, and this is the user volunteering one in their own question.
-     * The prompt still forbids asking.
      */
     data class LogMeasurement(
         val part: MeasurementPart,
@@ -349,9 +343,10 @@ sealed interface CoachReply {
 /**
  * The second Gemini-backed feature, and the first that talks back.
  *
- * It is told the same [InsightRequest] the home-screen insight sends and nothing else — no age,
- * sex, height, absolute weight, diary rows or photos. One payload type is what keeps "what leaves
- * the device" auditable in one place.
+ * It is told the same [InsightRequest] the home-screen insight sends, plus who the user is
+ * (`profileLine`), and reads everything else they logged through its tools — weights, measurements
+ * and cycle days included, by the user's choice. Photos never leave the device. What leaves it is
+ * auditable in two places: `systemPromptFor` and `CoachToolbox`.
  *
  * A question is only persisted once it has been answered: [send] writes both rows in one
  * transaction *after* the stream completes, so a call killed by process death or by leaving the

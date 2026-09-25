@@ -130,6 +130,7 @@ internal class CoachRepositoryImpl(
         // Read before the builder, not inside it: `content {}` takes a plain lambda and a profile
         // read is suspending — the same reason a tool read runs above `content` further down.
         val dietLine = toolbox.dietLine()
+        val profileLine = toolbox.profileLine()
         val model = Firebase.ai(
             backend = GenerativeBackend.googleAI(),
         ).generativeModel(
@@ -139,7 +140,7 @@ internal class CoachRepositoryImpl(
                 thinkingConfig = COACH_THINKING
             },
             tools = listOf(COACH_TOOLS),
-            systemInstruction = content { text(systemPromptFor(request, dietLine)) },
+            systemInstruction = content { text(systemPromptFor(request, dietLine, profileLine)) },
         )
 
         val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
@@ -452,7 +453,11 @@ private fun List<ChatMessageEntity>.asHistory(): List<Content> =
  *   over or under, and a coach that admits it beats one improvising one. The tools still work —
  *   a diary can be read without a profile.
  */
-private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String = buildString {
+private fun systemPromptFor(
+    request: InsightRequest?,
+    dietLine: String?,
+    profileLine: String?,
+): String = buildString {
     appendLine(
         "You are a friendly nutrition and fitness coach inside FitPulse, a food and body tracking " +
             "app. You are talking to the user who logs their day in it.",
@@ -463,6 +468,10 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
     } else {
         appendLine("Today so far, for a user whose goal is ${request.goal.name.lowercase()} weight:")
         append(dayNumbersBlock(request))
+    }
+    profileLine?.let {
+        appendLine()
+        appendLine(it)
     }
     dietLine?.let {
         appendLine()
@@ -481,12 +490,12 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "that you are about to look something up: call the tool and answer. A day may also " +
             "carry their steps against their step goal, their sleep, how they felt, a " +
             "completed fast, the supplements they ticked off against what was due, their heart " +
-            "rate, and any blood-pressure readings they took; a span " +
+            "rate, any blood-pressure readings they took, their weigh-in, their body " +
+            "measurements and their cycle; a span " +
             "carries their water, their training, their steps, their sleep, their supplements, " +
-            "their heart rate, their blood pressure and any " +
-            "weigh-in or body measurement as a change since the one before it — you are never " +
-            "told what they weigh or what any measurement is, only which way it moved, so answer " +
-            "about the direction and never ask for the figure. Where one of those is missing " +
+            "their heart rate, their blood pressure, their period days and every " +
+            "weigh-in and body measurement with its figure and its change since the one before, " +
+            "in their own units. Where one of those is missing " +
             "from a day, the user does not track it at all — answer with what is there and do " +
             "not ask them for it. Water is the exception and is given for every day of a span, " +
             "so a zero there means they logged none that day, not that they do not track it.",
@@ -503,9 +512,8 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "because the app works that out from their own weight; and if they name one of their " +
             "own saved meals or recipes, call get_library for its exact name and then " +
             "log_saved_meal with it rather than retyping what is in it. If the user tells you " +
-            "what they weigh, call log_weight with the number exactly as they said it — but " +
-            "never ask them for it, and never state a weight you were not told in this " +
-            "conversation. If they say they took one of their own supplements, call get_library " +
+            "what they weigh, call log_weight with the number exactly as they said it. If they " +
+            "say they took one of their own supplements, call get_library " +
             "for its exact name and then log_supplement with it — only ever one they already " +
             "take, and never as a suggestion. To log something for an earlier day, pass days_ago " +
             "on the same call — 1 for yesterday, up to $MAX_DRAFT_DAYS_AGO — and say which day " +
@@ -517,16 +525,15 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
     )
     appendLine(
         "Three of those record something they told you about themselves, and all three follow " +
-            "log_weight's rule: the number is theirs, you are only reading it back, and you never " +
-            "ask for one. If they say how they felt or how much energy they had, call log_mood " +
+            "log_weight's rule: the number is theirs and you are only reading it back. If they " +
+            "say how they felt or how much energy they had, call log_mood " +
             "with whichever of the two they mentioned, on a scale of ${MOOD_SCALE.first} to " +
             "${MOOD_SCALE.last} where ${MOOD_SCALE.last} is best, and leave the other one out. If " +
             "they give you a blood-pressure reading, call log_blood_pressure with the numbers " +
             "exactly as they said them — the app works out which band it falls in, so do not " +
             "categorise it yourself and do not say what it means. If they tell you a body " +
             "measurement, call log_measurement with the figure exactly as they gave it and do not " +
-            "convert it; one call per site, and never state a measurement you were not told in " +
-            "this conversation.",
+            "convert it; one call per site.",
     )
     appendLine(
         "A note on a day is that rule again, in words rather than numbers. If they ask you to " +
@@ -585,7 +592,9 @@ private fun systemPromptFor(request: InsightRequest?, dietLine: String?): String
             "pressure reading comes with the band the app has already put it in — you may repeat " +
             "that band, but never work one out yourself, never call a reading good or bad, and " +
             "never say what it or a heart rate means for their health. Those are questions for a " +
-            "doctor, and you can still tell them which way the numbers have moved.",
+            "doctor, and you can still tell them which way the numbers have moved. Their cycle is " +
+            "context for how they felt, ate or trained and nothing more: never predict a period, " +
+            "a fertile window or ovulation, and never make a fertility or contraception claim.",
     )
 }
 

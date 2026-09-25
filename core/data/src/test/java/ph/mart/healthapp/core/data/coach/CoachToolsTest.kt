@@ -11,6 +11,8 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.DIASTOLIC_RANGE
 import ph.mart.healthapp.core.data.bloodpressure.PULSE_RANGE
 import ph.mart.healthapp.core.data.bloodpressure.SYSTOLIC_RANGE
+import ph.mart.healthapp.core.data.cycle.CycleDay
+import ph.mart.healthapp.core.data.cycle.CycleSymptom
 import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -32,6 +34,10 @@ import ph.mart.healthapp.core.data.health.StepDay
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.note.NOTE_MAX_CHARS
+import ph.mart.healthapp.core.data.profile.ActivityLevel
+import ph.mart.healthapp.core.data.profile.Goal
+import ph.mart.healthapp.core.data.profile.Profile
+import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
 import ph.mart.healthapp.core.data.progress.MeasurementPart
@@ -916,6 +922,59 @@ class CoachToolsTest {
         assertTrue(text, "Steps: 8,432 of 10,000" in text)
     }
 
+    @Test
+    fun `a day carries its weigh-in, measurements and cycle in the profile's unit`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+            weightKg = 80.0,
+            measurements = listOf(
+                MeasurementEntry(MeasurementPart.Waist, 0, 86.36),
+                MeasurementEntry(MeasurementPart.BodyFat, 0, 21.0),
+            ),
+            cycle = CycleDay(dateEpochDay = 0, flow = 2, symptoms = setOf(CycleSymptom.Tender)),
+            cycleDay = 2,
+            unit = UnitSystem.Imperial,
+        )
+        assertTrue(text, "Weighed in: 176.4 lb" in text)
+        assertTrue(text, "Measured: waist 34.0 in, body fat 21.0 %" in text)
+        assertTrue(text, "Cycle: day 2 of their cycle, period, light flow, tender breasts" in text)
+    }
+
+    @Test
+    fun `a day with no cycle data carries no cycle line`() {
+        val text = formatDay(
+            label = "Today",
+            foods = emptyList(),
+            targetCalories = null,
+            waterGlasses = 0,
+            exercise = emptyList(),
+        )
+        assertTrue(text, "Cycle" !in text)
+        assertTrue(text, "Weighed" !in text)
+    }
+
+    @Test
+    fun `the profile line prefers the latest weigh-in and names the unit`() {
+        val profile = Profile(
+            sex = Sex.Female,
+            age = 32,
+            heightCm = 165.0,
+            weightKg = 70.0,
+            activityLevel = ActivityLevel.Moderate,
+            goal = Goal.Lose,
+            targetWeightKg = 62.0,
+        )
+        val line = profileLine(profile, latestWeighInKg = 68.4)!!
+        assertTrue(line, "female, 32 years old, 165.0 cm tall, weighing 68.4 kg, aiming for 62.0 kg" in line)
+        assertTrue(line, "activity level moderate" in line)
+        assertTrue(line, "kilograms and centimetres" in line)
+        assertNull(profileLine(null, 68.4))
+    }
+
     /** The one thing in a day payload the user composed rather than the app measured, so it goes
      * in verbatim — and a day nobody wrote about carries no line at all, the rule steps, sleep,
      * mood and fasting already follow. */
@@ -1048,16 +1107,12 @@ class CoachToolsTest {
         )
         assertTrue(text, "- 2 days ago: 1800 kcal, 120g protein" in text)
         assertTrue(text, "- Yesterday: nothing logged" in text)
-        assertTrue(text, "- Today: 900 kcal, 60g protein, 0 glasses, weighed in (-0.4 kg since the last)" in text)
+        assertTrue(text, "- Today: 900 kcal, 60g protein, 0 glasses, weighed 72.4 kg (-0.4 kg since the last)" in text)
     }
 
-    /**
-     * The data-minimisation rule `InsightRequest` is built around, applied to a tool: a weigh-in
-     * leaves the device as a *change*, never as a weight. A tool is not a loophole in that just
-     * because the user asked the question out loud.
-     */
+    /** A weigh-in goes out as the figure and its change — the reversed data-minimisation rule. */
     @Test
-    fun `a weigh-in never sends an absolute weight`() {
+    fun `a weigh-in sends the figure and its change`() {
         val today = 20_000L
         val text = formatHistory(
             days = 3,
@@ -1071,12 +1126,48 @@ class CoachToolsTest {
             ),
             today = today,
         )
-        listOf("94.9", "94.2", "93.6").forEach {
-            assertTrue("$it leaked into: $text", it !in text)
-        }
+        // Outside the window: compared against, never listed.
+        assertTrue(text, "94.9" !in text)
         // A weigh-in older than the window is still what the oldest day in it compares against.
-        assertTrue(text, "-0.7 kg since the last" in text)
-        assertTrue(text, "-0.6 kg since the last" in text)
+        assertTrue(text, "weighed 94.2 kg (-0.7 kg since the last)" in text)
+        assertTrue(text, "weighed 93.6 kg (-0.6 kg since the last)" in text)
+    }
+
+    @Test
+    fun `a span reads weights and measurements in the profile's unit`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 1,
+            nutrition = emptyList(),
+            weights = listOf(
+                WeightEntry(dateEpochDay = today - 3, weightKg = 80.0),
+                WeightEntry(dateEpochDay = today, weightKg = 79.0),
+            ),
+            today = today,
+            measurements = mapOf(
+                MeasurementPart.Waist to listOf(MeasurementEntry(MeasurementPart.Waist, today, 86.36)),
+            ),
+            unit = UnitSystem.Imperial,
+        )
+        assertTrue(text, "weighed 174.2 lb (-2.2 lb since the last)" in text)
+        assertTrue(text, "measured waist 34.0 in (first one" in text)
+    }
+
+    @Test
+    fun `a span carries the days of a period and nothing on the days without one`() {
+        val today = 20_000L
+        val text = formatHistory(
+            days = 3,
+            nutrition = emptyList(),
+            weights = emptyList(),
+            today = today,
+            cycle = listOf(
+                CycleDay(dateEpochDay = today - 1, flow = 3, symptoms = setOf(CycleSymptom.Cramps)),
+                CycleDay(dateEpochDay = today, flow = 0),
+            ),
+        )
+        assertTrue(text, "- Yesterday: nothing logged, 0 glasses, cycle: period, medium flow, cramps" in text)
+        assertTrue(text, "- Today: nothing logged, 0 glasses\n" in text)
     }
 
     @Test
@@ -1090,8 +1181,7 @@ class CoachToolsTest {
             weights = listOf(WeightEntry(dateEpochDay = today, weightKg = 80.0)),
             today = today,
         )
-        assertTrue(text, "nothing to compare against" in text)
-        assertTrue(text, "80" !in text)
+        assertTrue(text, "weighed 80.0 kg (first one, nothing to compare against)" in text)
     }
 
     @Test
@@ -1204,13 +1294,9 @@ class CoachToolsTest {
         assertTrue(text, "- Today: nothing logged, 0 glasses, 14,204 steps" in text)
     }
 
-    /**
-     * A tape measure is the same class of figure as a weigh-in, and gets the same rule: the change
-     * leaves the device, the reading never does. This is that rule's own test — the twin of
-     * `a weigh-in never sends an absolute weight`.
-     */
+    /** A tape measure is the same class of figure as a weigh-in, and gets the same rule. */
     @Test
-    fun `a measurement never sends an absolute figure`() {
+    fun `a measurement sends the figure and its change`() {
         val today = 20_000L
         val text = formatHistory(
             days = 3,
@@ -1224,9 +1310,9 @@ class CoachToolsTest {
                 ),
             ),
         )
-        listOf("86", "84").forEach { assertTrue("$it leaked into: $text", it !in text) }
+        assertTrue(text, "86" !in text)
         // A reading older than the window is still what the one inside it compares against.
-        assertTrue(text, "measured waist (-2.0 cm since the last)" in text)
+        assertTrue(text, "measured waist 84.0 cm (-2.0 cm since the last)" in text)
     }
 
     /** Two parts measured in one sitting are two clauses, not one overwriting the other — and a
@@ -1250,8 +1336,8 @@ class CoachToolsTest {
                 ),
             ),
         )
-        assertTrue(text, "measured waist (-1.5 cm since the last)" in text)
-        assertTrue(text, "measured body fat (-1.1 % since the last)" in text)
+        assertTrue(text, "measured waist 84.5 cm (-1.5 cm since the last)" in text)
+        assertTrue(text, "measured body fat 20.9 % (-1.1 % since the last)" in text)
     }
 
     /** The first reading of a part has nothing behind it, exactly as the first weigh-in does — and
@@ -1268,8 +1354,7 @@ class CoachToolsTest {
                 MeasurementPart.Arms to listOf(MeasurementEntry(MeasurementPart.Arms, today, 38.0)),
             ),
         )
-        assertTrue(text, "measured arms (first one, nothing to compare against)" in text)
-        assertTrue(text, "38" !in text)
+        assertTrue(text, "measured arms 38.0 cm (first one, nothing to compare against)" in text)
     }
 
     /** The series a day's line is counted off is the window, not the nutrition list: a day holding

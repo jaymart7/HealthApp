@@ -20,6 +20,13 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.bloodpressure.byDay
 import ph.mart.healthapp.core.data.bloodpressure.categoryOf
 import ph.mart.healthapp.core.data.bloodpressure.formatBloodPressure
+import ph.mart.healthapp.core.data.cycle.CycleDay
+import ph.mart.healthapp.core.data.cycle.CycleRepository
+import ph.mart.healthapp.core.data.cycle.CycleSymptom
+import ph.mart.healthapp.core.data.cycle.FlowLevel
+import ph.mart.healthapp.core.data.cycle.cycleDayNumber
+import ph.mart.healthapp.core.data.cycle.flowLevelOf
+import ph.mart.healthapp.core.data.cycle.periods
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -62,7 +69,12 @@ import ph.mart.healthapp.core.data.note.NoteRepository
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.MoodDay
 import ph.mart.healthapp.core.data.mood.MoodRepository
+import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
+import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
+import ph.mart.healthapp.core.data.profile.lengthUnitLabel
+import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.round1
@@ -71,6 +83,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.fromDisplay
 import ph.mart.healthapp.core.data.progress.range
+import ph.mart.healthapp.core.data.progress.toDisplay
 import ph.mart.healthapp.core.data.recap.REPORT_DAYS
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.progress.unitLabel
@@ -785,6 +798,11 @@ internal fun formatDay(
     heart: HeartDay? = null,
     bloodPressure: List<BloodPressureReading> = emptyList(),
     note: String? = null,
+    weightKg: Double? = null,
+    measurements: List<MeasurementEntry> = emptyList(),
+    cycle: CycleDay? = null,
+    cycleDay: Int? = null,
+    unit: UnitSystem = UnitSystem.Metric,
 ): String = buildString {
     appendLine("$label:")
     if (foods.isEmpty()) {
@@ -856,6 +874,17 @@ internal fun formatDay(
             },
         )
     }
+    // The body figures themselves, in the user's own unit — see `formatHistory`'s doc for when that
+    // stopped being a change-only rule. Omitted when absent, like everything below food and water.
+    weightKg?.let { appendLine("Weighed in: ${weightFigure(it, unit)}") }
+    if (measurements.isNotEmpty()) {
+        appendLine(
+            measurements.joinToString(", ", prefix = "Measured: ") {
+                "${it.part.promptName()} ${measurementFigure(it.part, it.value, unit)}"
+            },
+        )
+    }
+    cycleLine(cycle, cycleDay)?.let(::appendLine)
 
     // Last, and omitted when blank for the reason the six above are: a day nobody wrote about is
     // not a day with an empty note on it. It is also the only thing in this payload the *user*
@@ -874,6 +903,66 @@ private fun MoodDay.describe(): String? {
     return parts.takeIf { it.isNotEmpty() }?.joinToString(", ", prefix = "Felt: ")
 }
 
+/** A stored kilogram figure in the unit the user reads it in, the one the app shows them. */
+private fun weightFigure(kg: Double, unit: UnitSystem): String =
+    "${String.format(Locale.US, "%.1f", kg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}"
+
+/** The same for a tape site; a body fat stays a percentage in either unit. Interpolated rather
+ * than formatted whole, because the label is "%" for a body fat. */
+private fun measurementFigure(part: MeasurementPart, stored: Double, unit: UnitSystem): String =
+    "${String.format(Locale.US, "%.1f", part.toDisplay(stored, unit))} ${part.unitLabel(unit)}"
+
+/**
+ * The day's cycle, or null for a user who does not track it.
+ *
+ * The flow and symptoms are the user's own taps, reported and never graded. Nothing predicted
+ * goes out — no next period and no fertile window, the rule FEATURES.md keeps for the whole app.
+ */
+private fun cycleLine(cycle: CycleDay?, cycleDay: Int?): String? {
+    val parts = listOfNotNull(
+        cycleDay?.let { "day $it of their cycle" },
+        cycle?.let { flowName(it.flow) },
+    ) + cycle?.symptoms.orEmpty().map { it.promptName() }
+    return parts.takeIf { it.isNotEmpty() }?.joinToString(", ", prefix = "Cycle: ")
+}
+
+/** Null for no flow, which a symptom-only day has. */
+private fun flowName(flow: Int): String? = when (flowLevelOf(flow)) {
+    FlowLevel.Unstated -> "period"
+    FlowLevel.Light -> "period, light flow"
+    FlowLevel.Medium -> "period, medium flow"
+    FlowLevel.Heavy -> "period, heavy flow"
+    null -> null
+}
+
+/**
+ * Who the user is, in one paragraph of the system instruction: the Mifflin–St Jeor inputs, the
+ * goal behind their targets, and the unit they read figures in. The weight is the latest weigh-in,
+ * else the onboarding one — [CoachToolbox.weightKg]'s fallback.
+ *
+ * Null with no profile, which appends nothing, [dietLine]'s rule.
+ */
+internal fun profileLine(profile: Profile?, latestWeighInKg: Double?): String? {
+    profile ?: return null
+    val unit = profile.preferredUnit
+    val height = String.format(Locale.US, "%.1f", profile.heightCm.cmToDisplayUnit(unit))
+    val target = profile.targetWeightKg?.let { ", aiming for ${weightFigure(it, unit)}" }.orEmpty()
+    val units = if (unit == UnitSystem.Imperial) "pounds and inches" else "kilograms and centimetres"
+    return "About them: ${profile.sex.name.lowercase()}, ${profile.age} years old, $height " +
+        "${unit.lengthUnitLabel()} tall, weighing ${weightFigure(latestWeighInKg ?: profile.weightKg, unit)}" +
+        "$target, activity level ${profile.activityLevel.name.lowercase()}. Their step goal is " +
+        "${formatSteps(profile.stepGoal)} and their fasting goal ${profile.fastingGoalHours} hours. " +
+        "They read figures in $units, so answer in those."
+}
+
+/** Prompt text, for [MeasurementPart.promptName]'s reason. */
+private fun CycleSymptom.promptName(): String = when (this) {
+    CycleSymptom.MoodSwings -> "mood swings"
+    CycleSymptom.Tender -> "tender breasts"
+    CycleSymptom.BackPain -> "back pain"
+    else -> name.lowercase()
+}
+
 /**
  * One line per day, newest last.
  *
@@ -881,17 +970,18 @@ private fun MoodDay.describe(): String? {
  * `observeDailyNutrition()` returns a dense zero-filled series, so a silent omission would let the
  * model average over days the user never opened the app and report a number nobody ate.
  *
- * And **a body reading is reported as a change, never as a figure.** `InsightRequest` sends
- * `weightDeltaKg` and has never sent an absolute figure, for the data-minimisation reason the
- * 30-day health backfill is written against — and a tool is not a loophole in that rule just
- * because the user asked the question out loud. A delta answers "is this going the right way?"
- * in full, which is the only thing anyone asks a coach about a trend; a model that knows the user
- * weighs 94.2 kg answers a different, unasked question. The first reading in a window has nothing
- * to compare against and says so, the distinction [WeightEntry] trends already draw.
+ * And **a body reading goes out as the figure and its change**, in the user's own [unit]. It used to
+ * be the change alone, for data minimisation, and that rule was reversed on purpose: the user asked
+ * for a coach that sees everything they logged, and a coach that cannot say "you were 82.4 last
+ * Monday" was answering around the question. `InsightRequest` — the Home card — still sends a delta
+ * only; this is the coach's tool. The first reading in a window has nothing to compare against and
+ * says so, the distinction [WeightEntry] trends already draw.
  *
  * A tape measure is the same class of figure as a weigh-in and gets the same treatment, through
- * the same [deltaClauses] fold — one rule with one implementation, so a waist cannot quietly start
- * being sent whole while a weight is not.
+ * the same [deltaClauses] fold — one rule with one implementation.
+ *
+ * [cycle] is the days of a period and the symptoms tapped, reported and never predicted. It
+ * reverses the older rule that cycle data never reached an AI payload, for the reason above.
  */
 internal fun formatHistory(
     days: Int,
@@ -906,11 +996,15 @@ internal fun formatHistory(
     supplements: List<SupplementDay> = emptyList(),
     heart: List<HeartDay> = emptyList(),
     bloodPressure: List<BloodPressureReading> = emptyList(),
+    cycle: List<CycleDay> = emptyList(),
+    unit: UnitSystem = UnitSystem.Metric,
 ): String = buildString {
     val from = today - days + 1
     // Weigh-ins and tape measures in one map, because they are one rule — see the doc above.
-    val changes = weightClauses(weights, from, today)
-        .mergedWith(measurementClauses(measurements, from, today))
+    val changes = weightClauses(weights, from, today, unit)
+        .mergedWith(measurementClauses(measurements, from, today, unit))
+    val periods = cycle.filter { it.dateEpochDay in from..today && it.logged }
+        .associateBy { it.dateEpochDay }
     val byDay = nutrition.filter { it.dateEpochDay in from..today }.associateBy { it.dateEpochDay }
     // A day's whole training, not one line per session: a week of two-a-days would otherwise be
     // fourteen lines of an answer that has six of them to spend.
@@ -930,7 +1024,7 @@ internal fun formatHistory(
         .associateBy { it.dateEpochDay }
     if (byDay.values.none { it.isLogged } && changes.isEmpty() && training.isEmpty() &&
         slept.isEmpty() && walked.isEmpty() && drank.none { it.value.glasses > 0 } &&
-        taken.isEmpty() && beats.isEmpty() && cuff.isEmpty()
+        taken.isEmpty() && beats.isEmpty() && cuff.isEmpty() && periods.isEmpty()
     ) {
         return "Nothing logged in the last $days days."
     }
@@ -970,7 +1064,11 @@ internal fun formatHistory(
                 "(${categoryOf(it.systolic, it.diastolic).promptName()})"
         }.orEmpty()
         val change = changes[date].orEmpty().joinToString("")
-        appendLine("- $label: $food$glasses$activity$walk$night$pills$bpm$pressure$change")
+        val period = periods[date]?.let { day ->
+            (listOfNotNull(flowName(day.flow)) + day.symptoms.map { it.promptName() })
+                .joinToString(", ", prefix = ", cycle: ")
+        }.orEmpty()
+        appendLine("- $label: $food$glasses$activity$walk$night$pills$bpm$pressure$change$period")
     }
 }
 
@@ -978,9 +1076,9 @@ internal fun formatHistory(
  * Each reading in the window against the one before it — including a reading from *before* the
  * window, which is what makes the oldest day in a span carry a change rather than a shrug.
  *
- * Generic over the series because a weigh-in and a tape measure differ only in the words: both
- * report a change and neither ever reports the reading. [clause] is handed the delta, or null for
- * the first reading of its kind, and returns the whole clause that goes on the day's line.
+ * Generic over the series because a weigh-in and a tape measure differ only in the words. [clause]
+ * is handed the reading and its delta, or null for the first reading of its kind, and returns the
+ * whole clause that goes on the day's line.
  *
  * A **list** per day, because a day can carry several: a waist and a body fat measured in the same
  * sitting are two clauses, not one overwriting the other.
@@ -991,7 +1089,7 @@ private fun <T> deltaClauses(
     to: Long,
     day: (T) -> Long,
     value: (T) -> Double,
-    clause: (delta: Double?) -> String,
+    clause: (entry: T, delta: Double?) -> String,
 ): Map<Long, List<String>> {
     val sorted = readings.sortedBy(day)
     return buildMap {
@@ -999,43 +1097,48 @@ private fun <T> deltaClauses(
             val date = day(entry)
             if (date !in from..to) return@forEachIndexed
             val prior = sorted.getOrNull(index - 1)
-            put(date, getOrElse(date) { emptyList() } + clause(prior?.let { value(entry) - value(it) }))
+            put(date, getOrElse(date) { emptyList() } + clause(entry, prior?.let { value(entry) - value(it) }))
         }
     }
 }
 
-private fun weightClauses(weights: List<WeightEntry>, from: Long, to: Long): Map<Long, List<String>> =
-    deltaClauses(weights, from, to, WeightEntry::dateEpochDay, WeightEntry::weightKg) { delta ->
+private fun weightClauses(
+    weights: List<WeightEntry>,
+    from: Long,
+    to: Long,
+    unit: UnitSystem,
+): Map<Long, List<String>> =
+    deltaClauses(weights, from, to, WeightEntry::dateEpochDay, WeightEntry::weightKg) { entry, delta ->
+        val figure = weightFigure(entry.weightKg, unit)
         if (delta == null) {
-            ", weighed in (first one, nothing to compare against)"
+            ", weighed $figure (first one, nothing to compare against)"
         } else {
-            String.format(Locale.US, ", weighed in (%+.1f kg since the last)", delta)
+            val change = String.format(Locale.US, "%+.1f", delta.kgToDisplayUnit(unit))
+            ", weighed $figure ($change ${unit.weightUnitLabel()} since the last)"
         }
     }
 
 /**
  * The same fold, once per part: each part is its own series, so a waist is compared against the
- * last waist and never against a thigh.
- *
- * **Stored units, not the user's** — cm and %, matching the kg a weigh-in already reports. The
- * whole file is pure over `:core:data` types with no profile to read a preference off, and a coach
- * that quoted inches while the weight came back in kilograms would be worse than one that is
- * consistently metric. Converting both is its own pass.
+ * last waist and never against a thigh. In the user's own unit, as the weight is.
  */
 private fun measurementClauses(
     measurements: Map<MeasurementPart, List<MeasurementEntry>>,
     from: Long,
     to: Long,
+    unit: UnitSystem,
 ): Map<Long, List<String>> = measurements.entries.fold(emptyMap()) { acc, (part, entries) ->
-    val unit = part.unitLabel(UnitSystem.Metric)
+    val label = part.unitLabel(unit)
     acc.mergedWith(
-        deltaClauses(entries, from, to, MeasurementEntry::dateEpochDay, MeasurementEntry::value) { delta ->
+        deltaClauses(entries, from, to, MeasurementEntry::dateEpochDay, MeasurementEntry::value) { entry, delta ->
+            val figure = measurementFigure(part, entry.value, unit)
             if (delta == null) {
-                ", measured ${part.promptName()} (first one, nothing to compare against)"
+                ", measured ${part.promptName()} $figure (first one, nothing to compare against)"
             } else {
-                // The number is formatted on its own and interpolated: `unit` is "%" for a body
+                // The number is formatted on its own and interpolated: `label` is "%" for a body
                 // fat, and a "%" inside the format string is a conversion specifier, not a sign.
-                ", measured ${part.promptName()} (${String.format(Locale.US, "%+.1f", delta)} $unit since the last)"
+                val change = String.format(Locale.US, "%+.1f", part.toDisplay(delta, unit))
+                ", measured ${part.promptName()} $figure ($change $label since the last)"
             }
         },
     )
@@ -1379,6 +1482,9 @@ internal class CoachToolbox(
     // The day in the user's own words. It widens `get_day` alone: `get_history` is one line per
     // day for up to a month, and free text would swamp the span it exists to summarise.
     private val noteRepository: NoteRepository,
+    // The last domain the coach could not see, held back until the user asked for a coach that
+    // sees everything. Reported, never predicted — see `cycleLine`.
+    private val cycleRepository: CycleRepository,
 ) {
     /** Null for a tool this does not run — which is every write tool, and is how the caller's loop
      * tells a question from an instruction without a second lookup. */
@@ -1416,6 +1522,10 @@ internal class CoachToolbox(
      */
     suspend fun dietLine(): String? =
         dietLine(profileRepository.observeProfile().first()?.dietaryPreference)
+
+    /** Who they are, for the system instruction beside [dietLine]. Null with no profile. */
+    suspend fun profileLine(): String? =
+        profileLine(profileRepository.observeProfile().first(), latestWeighInKg())
 
     /** The two reads [savedMealRows] needs, and nothing else — the matching itself is pure, so it
      * is the part a JVM test can reach. */
@@ -1492,6 +1602,7 @@ internal class CoachToolbox(
         // could disagree if the user edits a target while the turn is in flight.
         val profile = profileRepository.observeProfile().first()
         val names = supplementRepository.allSupplements().associate { it.id to it.name }
+        val cycle = cycleRepository.observeDays().first()
         return formatDay(
             label = label,
             foods = foodRepository.observeEntries(date).first(),
@@ -1528,6 +1639,13 @@ internal class CoachToolbox(
             // Blank whenever nothing was written, which is what leaves the line out entirely —
             // the rule steps, sleep, mood and fasting already follow.
             note = noteRepository.observeForDate(date).first().text,
+            weightKg = progressRepository.observeWeightEntries().first()
+                .firstOrNull { it.dateEpochDay == date }?.weightKg,
+            measurements = progressRepository.observeMeasurements().first().values.flatten()
+                .filter { it.dateEpochDay == date },
+            cycle = cycle.firstOrNull { it.dateEpochDay == date && it.logged },
+            cycleDay = cycle.periods().cycleDayNumber(date),
+            unit = profile?.preferredUnit ?: UnitSystem.Metric,
         )
     }
 
@@ -1548,6 +1666,8 @@ internal class CoachToolbox(
         supplements = supplementRepository.observeDays().first(),
         heart = heartRepository.observeDays().first(),
         bloodPressure = bloodPressureRepository.observeReadings().first(),
+        cycle = cycleRepository.observeDays().first(),
+        unit = unitSystem(),
     )
 }
 

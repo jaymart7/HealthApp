@@ -261,6 +261,15 @@ the OAuth work above, and cheaper: no CASA, and no per-scope justification. `REA
 is on that form too and is the one entry in a sensitive category, so declare it even though it
 is requested only while cycle tracking is on.
 
+**Health Connect-imported rows now reach Gemini through the coach.** Since the coach was given
+every figure (`DECISIONS.md` → *The coach sees everything*), `get_day`/`get_history` send
+weights, measurements and cycle days — some of which Health Connect imported. Check HC's Data Use
+policy on passing HC-derived data to an AI processor alongside the Play declaration form above;
+`CycleDay` carries no source field, so manual and imported cycle rows cannot be told apart today
+if the answer is "manual only". The Google Health consent panel's "Never sold, never shared"
+(`ds_health_assure_device`) predates this and was already loose once steps and sleep reached the
+coach; settle its wording with the OAuth verification, not before.
+
 **FoodData Central runs on one signed key shipped in the APK** — extractable, and its 3600
 req/hour budget is shared by every install. A proxy holding the key is the upgrade path if
 either the ceiling or the exposure starts to matter; the barcode cache took the rescan traffic

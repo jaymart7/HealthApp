@@ -107,7 +107,7 @@
     <!-- Cycle -->
     <string name="profile_cycle_track">Track your cycle</string>
     <string name="profile_cycle_reveal">A cycle card is now on Home, and Progress has a Cycle page.</string>
-    <string name="profile_cycle_track_sub">Adds a Home card and a Progress page for period logging. Stays on this phone — it is never sent to the coach or used for an insight.</string>
+    <string name="profile_cycle_track_sub">Adds a Home card and a Progress page for period logging. The coach can read it when you ask; it is never used for an insight or a prediction.</string>
 
     <!-- Supplements, library, layout, connections -->
     <string name="profile_stuff_supplements">Supplements</string>
