@@ -31,7 +31,6 @@ import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.components.MealTypeChipRow
-import ph.mart.healthapp.feature.food.ui.shared.components.RecentSentences
 
 private val EXAMPLE = R.string.food_voice_example
 

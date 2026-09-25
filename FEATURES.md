@@ -44,8 +44,7 @@ each row with its portion, calories and P/C/F in their macro colours, a remove �
 talk-to-log's "Rough guess · …" tag, plus a total under two or more foods; tapping a food row opens
 the shared portion stepper inside the card, which reprices it. An **other card** holds activities,
 water and the weigh-in, each with its kind's glyph. Corrections are typed as another message and
-show as their own thread under the rows while they run, with Log hidden. Under a blank field, the
-last three sentences that became meals — the same list talk-to-log offers — fill the field on a tap.
+show as their own thread under the rows while they run, with Log hidden.
 Mic inside the field, a send/stop circle beside it, and Photo · Scan chips under it until a
 conversation starts. Photo offers the system camera or the gallery and attaches the plate as a
 thumbnail above the field, so words typed next refine it ("only half the rice"); one call reads

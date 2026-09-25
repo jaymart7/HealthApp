@@ -18,7 +18,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -61,7 +60,6 @@ import ph.mart.healthapp.feature.food.ui.quicklog.components.QuickLogMessageLine
 import ph.mart.healthapp.feature.food.ui.quicklog.components.QuickLogMotion
 import ph.mart.healthapp.feature.food.ui.quicklog.components.quickLogShared
 import ph.mart.healthapp.feature.food.ui.quicklog.components.retainLast
-import ph.mart.healthapp.feature.food.ui.shared.components.RecentSentences
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
@@ -149,7 +147,6 @@ fun QuickLogSheet(
 
     QuickLogContent(
         state = state,
-        recentSentences = uiState.recentSentences,
         unit = uiState.unit,
         onDismiss = {
             cancel()
@@ -205,7 +202,6 @@ fun QuickLogSheet(
 @Composable
 private fun QuickLogContent(
     state: QuickLogState,
-    recentSentences: List<String>,
     onDismiss: () -> Unit,
     unit: UnitSystem = UnitSystem.Metric,
     onSend: () -> Unit,
@@ -225,8 +221,6 @@ private fun QuickLogContent(
         else -> R.string.food_quick_placeholder
     }?.let { stringResource(it) }
     val message = state.message ?: R.string.food_quick_removed.takeIf { state.showRemoved }
-    val showRecents =
-        state.turns.isEmpty() && state.text.isBlank() && state.photo == null && recentSentences.isNotEmpty()
 
     AppBottomSheet(
         title = stringResource(R.string.food_quick_prompt),
@@ -307,18 +301,8 @@ private fun QuickLogContent(
                 },
             )
         }
-        val hasContent = showRecents || state.turns.isNotEmpty() || state.parsedTurns != null
+        val hasContent = state.turns.isNotEmpty() || state.parsedTurns != null
         Column(modifier = Modifier.padding(top = if (hasContent) 4.dp else 0.dp)) {
-            // Only before anything is typed or sent — `RecentSentences`' own rule — and a tap fills
-            // the field rather than sending: a remembered sentence is worth correcting before a request.
-            if (showRecents) {
-                RecentSentences(
-                    sentences = recentSentences,
-                    onSelect = { state.text = it },
-                    rowColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    modifier = Modifier.padding(bottom = 12.dp),
-                )
-            }
             QuickLogConversation(
                 said = state.said,
                 turns = state.turns,
@@ -346,11 +330,10 @@ private fun QuickLogContent(
 
 /** The sheet in one of its states, with the coach door drawn exactly when the sheet would draw it. */
 @Composable
-private fun QuickLogPreview(state: QuickLogState, recentSentences: List<String> = emptyList()) {
+private fun QuickLogPreview(state: QuickLogState) {
     AppTheme {
         QuickLogContent(
             state = state,
-            recentSentences = recentSentences,
             onDismiss = {},
             onSend = {},
             onCancel = {},
@@ -391,20 +374,6 @@ private fun reviewedState(offline: Boolean = false) =
 @Composable
 private fun QuickLogSheetPreview() {
     QuickLogPreview(QuickLogState())
-}
-
-/** 02 — a blank start with meals behind it: the strip is the whole difference. */
-@PreviewLightDark
-@Composable
-private fun QuickLogSheetRecentPreview() {
-    QuickLogPreview(
-        state = QuickLogState(),
-        recentSentences = listOf(
-            "oatmeal with banana and a spoon of peanut butter",
-            "chicken adobo with one cup of rice and a side of greens",
-            "oat latte and a blueberry muffin",
-        ),
-    )
 }
 
 /** 05 — a plate attached: send is ready with nothing typed. */

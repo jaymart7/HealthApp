@@ -37,9 +37,6 @@ import ph.mart.healthapp.core.data.water.WaterRepository
  * The sheet is hosted by `AppScaffold`, outside any nav entry, so this outlives it — which is why
  * dismissing sends [QuickLogEvent.OnCancel], or a late answer would land on the next blank sheet.
  */
-/** The strip's length — `VoiceLogViewModel`'s three, since it is the same strip. */
-private const val RECENT_SENTENCES = 3
-
 class QuickLogViewModel(
     private val quickLogRepository: QuickLogRepository,
     private val foodRepository: FoodRepository,
@@ -52,7 +49,6 @@ class QuickLogViewModel(
 
     override val container = orbitContainer<QuickLogUiState, QuickLogSideEffect>(QuickLogUiState()) {
         observeWeight(profileRepository, progressRepository)
-        observeRecentSentences()
     }
 
     /** Cancelled by back, by dismissing the sheet, and by the next send. */
@@ -84,13 +80,6 @@ class QuickLogViewModel(
                     unit = profile?.preferredUnit ?: UnitSystem.Metric,
                 )
             }
-        }
-    }
-
-    /** Talk-to-log's list, read here too — one store of "sentences that became meals". */
-    private fun observeRecentSentences() = intent {
-        foodRepository.observeRecentSentences(RECENT_SENTENCES).collect { sentences ->
-            reduce { state.copy(recentSentences = sentences) }
         }
     }
 

@@ -11,13 +11,11 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
 
 /**
  * The two figures a parse is priced and credited against — `LogExerciseUiState`'s, for its
- * reasons — and the sentences that have become meals before, talk-to-log's strip. Everything else
- * is the conversation, which is the user's and lives in [QuickLogState].
+ * reasons. Everything else is the conversation, which is the user's and lives in [QuickLogState].
  */
 data class QuickLogUiState(
     val weightKg: Double = DEFAULT_WEIGHT_KG,
     val addExerciseToBudget: Boolean = true,
-    val recentSentences: List<String> = emptyList(),
     /** The profile's: a weight said in a sentence is read in it, and the rows print in it. */
     val unit: UnitSystem = UnitSystem.Metric,
 )
@@ -32,7 +30,7 @@ sealed interface QuickLogEvent {
     data object OnCancel : QuickLogEvent
 
     /** Both kinds in one event, so a "toast and a run" lands in the diary at once. [sentence] is
-     * what the user said, remembered for the recents strip when the log was a meal. */
+     * what the user said, remembered for talk-to-log's recents strip when the log was a meal. */
     data class OnLog(
         val foods: List<FoodEntry>,
         val exercises: List<ExerciseEntry>,

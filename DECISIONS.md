@@ -2147,12 +2147,12 @@ rather than needing a counter patched.
 - **A slot the user names beats the clock.** "for lunch" sets the chip; a sentence that names no
   meal keeps `defaultMealTypeForNow()`. The schema's `mealType` is an optional enumeration, and
   `quickLogResult` matches it against `MealType`'s names so an invented slot is no slot.
-- **The recents strip is talk-to-log's list, recorded only for meals.** Both screens read
-  `observeRecentSentences(3)`; the quick log records `userSentence` — every user turn joined, so an
-  answer rides with the sentence it answered and a re-send skips the question — but only when the
-  log was food and nothing else (no activity, water or weigh-in) and had no photo, whose words were
-  never the whole meal. Talk-to-log offers the list under a *food* field, where "30 min run"
-  can only fail. *ponytail: no recents for workouts; they need their own store (a Room migration).* Logging reports the credited burn to `AppScaffold`'s snackbar, the same line the
+- **The quick log feeds talk-to-log's recents strip but no longer draws it** (removed from the
+  sheet 2026-09-25; talk-to-log alone reads `observeRecentSentences(3)`). The quick log still
+  records `userSentence` — every user turn joined, so an answer rides with the sentence it answered
+  and a re-send skips the question — but only when the log was food and nothing else (no activity,
+  water or weigh-in) and had no photo, whose words were never the whole meal. Talk-to-log offers the
+  list under a *food* field, where "30 min run" can only fail. *ponytail: no recents for workouts; they need their own store (a Room migration).* Logging reports the credited burn to `AppScaffold`'s snackbar, the same line the
   log-exercise sheet raises.
 - **Water and a weigh-in ride the same sentence, under the coach's rules.** "3 glasses and weighed
   72" adds glasses to today (never assigns the total) and replaces today's weigh-in — the two
@@ -2286,7 +2286,7 @@ rather than needing a counter patched.
     the meal slot and the unit toggle are `SegmentedToggle` rather than M3's outlined segmented
     button; `PortionControl` keeps its "Portion" label, its `displaySmall` amount and its
     g/oz/cup/serving units (so a parsed "egg" portion still highlights "g" — an existing gap, not a
-    new one); `RecentSentences` keeps its "Recent" label; `SendStopButton` keeps its stop glyph and
+    new one); `SendStopButton` keeps its stop glyph and
     only gained the handoff's motion, which the coach's and the recipe's composers now share.
 
 ### Reminders & notifications

@@ -91,7 +91,7 @@ internal class QuickLogState(
             turns.take(count).filter { it.fromUser && it.text.isNotBlank() }.joinToString(" · ") { it.text }
         }?.takeIf { it.isNotBlank() }
 
-    /** Everything the user said, as one sentence — what the recents strip offers back. Answers
+    /** Everything the user said, as one sentence — what talk-to-log's recents strip offers back. Answers
      * join the sentence they answer ("rice and adobo, two cups"), which is exactly what a re-send
      * needs to skip the question. */
     val userSentence: String
