@@ -25,6 +25,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -79,6 +82,15 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * because `SheetState` is an experimental Material type: putting it in this signature would push an
  * `@OptIn` onto every sheet in the app to answer a question one caller asks. The state stays inside
  * this file, where the opt-in already is.
+ *
+ * [scrollRules] draws a 1dp `outlineVariant` rule under the header while the content has scrolled
+ * under it, and over the bar while more of it sits below. Drawn over the viewport's edges rather
+ * than laid out, so a rule coming and going never moves the content by a pixel. Only the quick log
+ * asks: its bar is tall enough that where the scroll ends stops being obvious.
+ *
+ * [container] wraps the header, body and bar *inside* the sheet's own window. The quick log's
+ * `SharedTransitionLayout` is the one caller: its overlay has to draw in the window the flying
+ * element lives in, or the flight would run behind the scrim.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,6 +103,8 @@ fun AppBottomSheet(
     expanded: Boolean = false,
     scrollable: Boolean = true,
     scrollState: ScrollState = rememberScrollState(),
+    scrollRules: Boolean = false,
+    container: @Composable (content: @Composable () -> Unit) -> Unit = { it() },
     bottomBar: @Composable (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -103,6 +117,7 @@ fun AppBottomSheet(
             showClose = showClose,
             onDismiss = onDismiss,
             horizontalPadding = horizontalPadding,
+            container = container,
             bottomBar = bottomBar,
             content = content,
         )
@@ -120,14 +135,19 @@ fun AppBottomSheet(
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        SheetHeader(title = title, showClose = showClose, onClose = onDismiss)
-        SheetBody(
-            horizontalPadding = horizontalPadding,
-            scrollable = scrollable,
-            scrollState = scrollState,
-            bottomBar = bottomBar,
-            content = content,
-        )
+        container {
+            Column {
+                SheetHeader(title = title, showClose = showClose, onClose = onDismiss)
+                SheetBody(
+                    horizontalPadding = horizontalPadding,
+                    scrollable = scrollable,
+                    scrollState = scrollState,
+                    scrollRules = scrollRules,
+                    bottomBar = bottomBar,
+                    content = content,
+                )
+            }
+        }
     }
 }
 
@@ -177,15 +197,19 @@ private fun ColumnScope.SheetBody(
     horizontalPadding: Dp,
     scrollable: Boolean,
     scrollState: ScrollState,
+    scrollRules: Boolean,
     bottomBar: @Composable (() -> Unit)?,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val rule = MaterialTheme.colorScheme.outlineVariant
     Column(
         modifier = Modifier
             .fillMaxWidth()
             // fill = false is what lets one shape serve every sheet: a short sheet stays the height
             // of its content. The search state is the one that wants the height handed to it.
             .weight(1f, fill = !scrollable)
+            // Before the scroll, so the rules sit on the viewport's edges rather than scrolling away.
+            .then(if (scrollRules) Modifier.scrollRules(scrollState, rule) else Modifier)
             .then(if (scrollable) Modifier.verticalScroll(scrollState) else Modifier)
             .padding(
                 start = horizontalPadding,
@@ -199,6 +223,18 @@ private fun ColumnScope.SheetBody(
     bottomBar?.invoke()
 }
 
+/** The two rules, read in the draw phase only — scrolling repaints them and recomposes nothing. */
+private fun Modifier.scrollRules(scrollState: ScrollState, color: Color): Modifier = drawWithContent {
+    drawContent()
+    val stroke = 1.dp.toPx()
+    if (scrollState.canScrollBackward) {
+        drawLine(color, Offset(0f, stroke / 2), Offset(size.width, stroke / 2), stroke)
+    }
+    if (scrollState.canScrollForward) {
+        drawLine(color, Offset(0f, size.height - stroke / 2), Offset(size.width, size.height - stroke / 2), stroke)
+    }
+}
+
 @Composable
 private fun PreviewSheet(
     modifier: Modifier,
@@ -206,6 +242,7 @@ private fun PreviewSheet(
     showClose: Boolean,
     onDismiss: () -> Unit,
     horizontalPadding: Dp,
+    container: @Composable (content: @Composable () -> Unit) -> Unit,
     bottomBar: @Composable (() -> Unit)?,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -215,29 +252,31 @@ private fun PreviewSheet(
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f)),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .padding(top = 12.dp, bottom = if (bottomBar == null) 24.dp else 0.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .size(width = 32.dp, height = 4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant),
-            )
-            Box(modifier = Modifier.size(12.dp))
-            SheetHeader(title = title, showClose = showClose, onClose = onDismiss)
+        container {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = horizontalPadding, end = horizontalPadding),
-                content = content,
-            )
-            bottomBar?.invoke()
+                    .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .padding(top = 12.dp, bottom = if (bottomBar == null) 24.dp else 0.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .size(width = 32.dp, height = 4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant),
+                )
+                Box(modifier = Modifier.size(12.dp))
+                SheetHeader(title = title, showClose = showClose, onClose = onDismiss)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = horizontalPadding, end = horizontalPadding),
+                    content = content,
+                )
+                bottomBar?.invoke()
+            }
         }
     }
 }

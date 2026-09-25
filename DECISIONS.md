@@ -2239,6 +2239,55 @@ rather than needing a counter patched.
   `flags`, so the notification's `FLAG_ACTIVITY_CLEAR_TOP` has no shortcut equivalent; without
   `singleTop` a shortcut tapped on a running app would stack a second `MainActivity` instead of
   reaching `onNewIntent`. It is also what makes that method's comment true for both callers.
+- **The quick log sheet is the Claude Design handoff (`design_handoff_quick_log`), built with its
+  twelve additions and the shared components as they are.** The prompt that produced it is
+  `claude-design/quick-log-sheet-prompt.md`. What the handoff changed and why:
+  - **The conversation is a thread while it lasts, and collapses when rows arrive (A1–A3).** The
+    old sheet emptied the field on send and showed nothing in its place, and after an answer the
+    question it answered was gone. `QuickLogState.parsedTurns` is the one number behind the split:
+    `thread` is the turns after it (all of them before any rows; only a correction in flight once
+    there are rows), `said` is the user's turns up to it joined with " · " for the eye —
+    `userSentence` keeps its ", " because recents and the coach store it. Removing every row leaves
+    `parsedTurns`, so an emptied review still says what was said (`QuickLogStateTest`).
+  - **The model's turn is one bubble that changes its mind.** Dots while it reads, then the
+    question, resized into place — one `AnimatedContent` in one slot, not a bubble swapped for
+    another. The thread's slots are kept after their turn is gone so a cancel, a dead end or a
+    start-over can animate out, and each starts hidden so its first appearance is an entrance.
+  - **Every message is one line at the top of the bar (A4)**, over the field the user's eyes are on
+    after a send, where it used to sit under the rows — the offline caveat included. "Everything's
+    been removed" (A9) is the one new line: a review emptied row by row otherwise showed a disabled
+    Log over nothing.
+  - **Two cards, not one list (A5, A7).** Four kinds of row told apart only by their value column
+    became a food card, headed by the meal slot it alone is filed in, and a card for activities,
+    water and the weigh-in with a glyph per kind. Offline, those rows carry "Check this" too
+    (`QuickLogState.offline`): every row is a guess, not only the food.
+  - **Ask coach is a text button when it is alone (A6)**, because one outlined box under the field
+    reads as a second field; beside Photo · Scan it stays a chip. Nothing sits under the field while
+    a call runs, and there is no placeholder then either (A11).
+  - **Timings are the handoff's, not `Motion`'s** — `QuickLogMotion`, and the same figures in
+    `SendStopButton` and `AppTextField`'s placeholder crossfade. The handoff times one sheet's
+    choreography as a whole, overlaps included, and rounding each figure to `Motion`'s ladder would
+    break the overlaps. The curves are `Motion`'s, and everything runs through Compose's animation
+    APIs, so Remove animations still collapses it.
+  - **The send flight is a shared-bounds transition, and it is subtler than the handoff drew.** A
+    `SharedTransitionLayout` wraps the sheet through `AppBottomSheet`'s `container` so its overlay
+    draws in the sheet's own window (outside it, the flight ran behind the scrim). But the sheet hugs
+    its content: on send it grows and re-anchors, so the new bubble lands where the field just was
+    in the sheet's own coordinates, and the flight is mostly the bubble resizing from the field's
+    width to its own. Growing the content over time instead (`animateContentSize`) was tried and
+    made it worse — `ModalBottomSheet` does not follow a height that changes every frame, and the
+    bar slid under the keyboard. The sent words also fade out of the field over 100ms.
+  - **`AppBottomSheet` grew two seams, both off by default:** `scrollRules` (a 1dp rule under the
+    header and over the bar while content runs past them, drawn over the viewport so it never
+    shifts the layout) and `container`. Only the quick log passes either.
+  - **Where the build is not the mock, on purpose** — the shared components stayed as they are, so
+    no other screen changed: the chips keep `LabelledActionChip`'s `outlineVariant` border and
+    `onSurfaceVariant` glyph; the Unsure chip is talk-to-log's `ConfidenceChip` without the sparkle;
+    the meal slot and the unit toggle are `SegmentedToggle` rather than M3's outlined segmented
+    button; `PortionControl` keeps its "Portion" label, its `displaySmall` amount and its
+    g/oz/cup/serving units (so a parsed "egg" portion still highlights "g" — an existing gap, not a
+    new one); `RecentSentences` keeps its "Recent" label; `SendStopButton` keeps its stop glyph and
+    only gained the handoff's motion, which the coach's and the recipe's composers now share.
 
 ### Reminders & notifications
 

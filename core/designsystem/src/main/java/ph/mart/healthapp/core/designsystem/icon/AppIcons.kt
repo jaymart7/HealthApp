@@ -60,6 +60,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EggAlt
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Grass
@@ -69,6 +70,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.MonitorWeight
+import androidx.compose.material.icons.outlined.NoPhotography
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Restaurant
@@ -138,6 +140,8 @@ object AppIcons {
     val Dumbbell: ImageVector = Icons.Outlined.FitnessCenter
     val Edit: ImageVector = Icons.Outlined.Edit
     val Egg: ImageVector = Icons.Outlined.EggAlt
+    /** A call that failed — drawn in the `error` role, and only for a fault, never for an answer. */
+    val Error: ImageVector = Icons.Outlined.ErrorOutline
     val Filter: ImageVector = Icons.Filled.FilterList
     /** A figure the app worked out rather than one the user typed — onboarding's derivation line
      * is the only place a calculation shows its own arithmetic. */
@@ -148,6 +152,8 @@ object AppIcons {
     val History: ImageVector = Icons.Outlined.History
     val Gallery: ImageVector = Icons.Filled.PhotoLibrary
     val Info: ImageVector = Icons.Outlined.Info
+    /** Camera permission refused. */
+    val NoPhotography: ImageVector = Icons.Outlined.NoPhotography
     /** An outbound connection to another service — Google Health, and whatever follows it. */
     val Link: ImageVector = Icons.Filled.Link
     /** The connection that was offered and declined. Never an error glyph: not connecting is an

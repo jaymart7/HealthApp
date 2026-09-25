@@ -28,22 +28,34 @@ Wear tile · WorkManager notifications (`:app/reminder/`).
 **FAB quick log** (`:feature:food/ui/quicklog/QuickLogSheet.kt`, hosted by `AppScaffold`): one AI
 field, focused with the keyboard up the moment the sheet opens, reading what the user ate *or* did —
 food rows priced by the model, activities priced on-device off the latest weigh-in, glasses of water
-added to today and a stated weigh-in (read in the profile's unit), all from one sentence. Every Log
+added to today and a stated weigh-in (read in the profile's unit), all from one sentence. The sheet
+hugs its content, so a blank start is a header, the composer and the keyboard. Every Log
 ends on a "Logged · Undo" snackbar (the earned line when there is a burn), and Undo reverses the
 whole batch. Offline it still works: the sentence is matched on the phone against the user's own
 foods and the built-in list (plus glasses of water, a stated weigh-in and an activity with a
-duration), every row tagged as a guess under an "Offline — check the portions" line. When the sentence leaves out what the estimate turns on (how much rice, how long a run) it
-asks back in an AI-accent bubble, at most twice, then estimates. The confirmation is inline: rows
-with a remove ✕ and, on a guess, talk-to-log's "Rough guess · …" tag; tapping a food row opens the
-shared portion stepper, which reprices it; a meal-slot chip row (pre-set when the sentence names the
-meal) and Log. Corrections are typed as another message. Under a blank field, the last three
-sentences that became meals — the same list talk-to-log offers — fill the field on a tap. Mic inside the field, a send/stop circle beside it, and Photo · Scan chips under it until a
+duration), every row — food or not — tagged "Check this" under an "Offline — check the portions"
+line. **The conversation is a thread**: a sent sentence leaves the field as an end-aligned bubble,
+the model's turn is an AI-accent bubble of three pulsing dots while it reads, and when the sentence
+leaves out what the estimate turns on (how much rice, how long a run) that bubble becomes the
+question — at most twice, then it estimates. Every question and answer stays on screen until rows
+arrive, when the thread collapses into a "You said · …" line over them. The confirmation is two
+cards: a **food card** headed by the meal-slot toggle (pre-set when the sentence names the meal),
+each row with its portion, calories and P/C/F in their macro colours, a remove ✕ and, on a guess,
+talk-to-log's "Rough guess · …" tag, plus a total under two or more foods; tapping a food row opens
+the shared portion stepper inside the card, which reprices it. An **other card** holds activities,
+water and the weigh-in, each with its kind's glyph. Corrections are typed as another message and
+show as their own thread under the rows while they run, with Log hidden. Under a blank field, the
+last three sentences that became meals — the same list talk-to-log offers — fill the field on a tap.
+Mic inside the field, a send/stop circle beside it, and Photo · Scan chips under it until a
 conversation starts. Photo offers the system camera or the gallery and attaches the plate as a
 thumbnail above the field, so words typed next refine it ("only half the rice"); one call reads
 both, and the photo is stored with the logged meal. The full-screen camera stays on the diary's
-Photo chip. Back steps: in flight → cancel, question/review → start over. Once a conversation
-has started — a question, the review, or a first send that came to nothing — an **Ask coach** chip
-sits under the field: it closes the sheet and opens the coach with everything the user said in its
+Photo chip. Every message — nothing found, failed, offline, camera refused, "Everything's been
+removed" — is one line at the top of the bar, right over the field. Back steps: in flight → cancel
+(the bubble flies back into the field), question/review → start over. Once a conversation has
+started — a question, the review, or a first send that came to nothing — **Ask coach** sits under the
+field (a text button, or a third chip beside Photo · Scan after a first send that came to nothing):
+it closes the sheet and opens the coach with everything the user said in its
 field, unsent, under a "Quick log" chip.
 
 **Launcher shortcuts** (`@xml/shortcuts`, static): Say what you ate · Log food · Add water ·

@@ -1,5 +1,7 @@
 package ph.mart.healthapp.core.designsystem.component
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,6 +32,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.Motion
+
+/** The quick log handoff's crossfade — see `SendStopButton`'s note on whose timings these are. */
+private const val PLACEHOLDER_SWAP_MS = 150
 
 /**
  * 12dp-corner text field, [MaterialTheme.colorScheme.outline] border, transparent fill.
@@ -142,7 +148,8 @@ fun AppTextField(
 }
 
 /** The placeholder and the field itself, split out only so the box above stays readable once the
- * trailing slot sits beside them. */
+ * trailing slot sits beside them. A placeholder that changes crossfades — the quick log's turns from
+ * a prompt to "Your answer…" to nothing — and one that never changes draws exactly as it did. */
 @Composable
 private fun FieldContent(
     value: String,
@@ -154,12 +161,20 @@ private fun FieldContent(
     maxLines: Int,
 ) {
     Box(contentAlignment = Alignment.CenterStart) {
-        if (value.isEmpty() && placeholder != null) {
-            Text(
-                text = placeholder,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        if (value.isEmpty()) {
+            Crossfade(
+                targetState = placeholder,
+                animationSpec = tween(PLACEHOLDER_SWAP_MS, easing = Motion.Standard),
+                label = "placeholder",
+            ) { shown ->
+                if (shown != null) {
+                    Text(
+                        text = shown,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
         BasicTextField(
             value = value,

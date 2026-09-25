@@ -67,12 +67,29 @@ internal class QuickLogState(
     var waterGlasses: Int? by mutableStateOf(null)
     var weightKg: Double? by mutableStateOf(null)
 
+    /** Matched on the phone: every row is a guess, food or not, and says so. */
+    var offline: Boolean by mutableStateOf(false)
+
+    /**
+     * How many turns the rows on screen answer — null until the first rows land, and again once a
+     * question or a start-over clears them. Removing rows leaves it, so an emptied review still says
+     * what was said.
+     */
+    var parsedTurns: Int? by mutableStateOf(null)
+
     /** The follow-up waiting for an answer: the model's turn, when it is the last one. */
     val question: String? get() = turns.lastOrNull()?.takeIf { !it.fromUser }?.text
 
-    /** What the user said last, shown above the question it prompted — a photo sent with no words
-     * said nothing to quote. */
-    val lastSaid: String? get() = turns.lastOrNull { it.fromUser && it.text.isNotBlank() }?.text
+    /** The conversation as drawn: all of it while asking and answering, and only what came after
+     * the rows once there are rows — a correction in flight, under the rows it corrects. */
+    val thread: List<QuickLogTurn> get() = turns.drop(parsedTurns ?: 0)
+
+    /** The thread the rows collapsed, as one line over them — a photo sent with no words said
+     * nothing to quote. Joined with " · " for the eye; [userSentence] is the one that is stored. */
+    val said: String?
+        get() = parsedTurns?.let { count ->
+            turns.take(count).filter { it.fromUser && it.text.isNotBlank() }.joinToString(" · ") { it.text }
+        }?.takeIf { it.isNotBlank() }
 
     /** Everything the user said, as one sentence — what the recents strip offers back. Answers
      * join the sentence they answer ("rice and adobo, two cups"), which is exactly what a re-send
@@ -102,6 +119,12 @@ internal class QuickLogState(
     val canSend: Boolean
         get() = (text.isNotBlank() || (photo != null && turns.isEmpty())) && phase != QuickLogPhase.Thinking
 
+    val thinking: Boolean get() = phase == QuickLogPhase.Thinking
+
+    /** A review with every row removed and nothing else to say — its own line, so the empty space
+     * above a disabled Log explains itself. */
+    val showRemoved: Boolean get() = phase == QuickLogPhase.Review && !hasResult && message == null
+
     /** Whether back has a level to step down — a call in flight, or a conversation to drop. */
     val canStepBack: Boolean get() = phase == QuickLogPhase.Thinking || turns.isNotEmpty()
 
@@ -128,12 +151,15 @@ internal class QuickLogState(
         mealType: MealType?,
         waterGlasses: Int? = null,
         weightKg: Double? = null,
+        offline: Boolean = false,
     ) {
         mealType?.let { this.mealType = it }
         this.foods = foods.map { it.toAddEntryForm(this.mealType) }
         this.exercises = exercises
         this.waterGlasses = waterGlasses
         this.weightKg = weightKg
+        this.offline = offline
+        parsedTurns = turns.size
         expandedIndex = null
         phase = QuickLogPhase.Review
     }
@@ -143,6 +169,8 @@ internal class QuickLogState(
         exercises = emptyList()
         waterGlasses = null
         weightKg = null
+        offline = false
+        parsedTurns = null
         expandedIndex = null
     }
 

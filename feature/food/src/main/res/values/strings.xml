@@ -403,8 +403,6 @@
     <string name="food_quick_cancel">Cancel</string>
     <string name="food_quick_log">Log</string>
     <string name="food_quick_remove">Remove %1$s</string>
-    <string name="food_quick_burned">%1$d kcal burned</string>
-    <string name="food_quick_total">Total · %1$d kcal</string>
     <string name="food_quick_adjust">Adjust portion</string>
     <string name="food_quick_portion_caveat">The estimate rescales with the portion.</string>
     <string name="food_quick_water">Water</string>
@@ -423,4 +421,8 @@
     <string name="food_quick_ask_coach">Ask coach</string>
     <!-- What the coach's context chip names as the source of that pre-filled question. -->
     <string name="food_quick_coach_source">Quick log</string>
+    <string name="food_quick_removed">Everything\'s been removed. Type something to log, or go back to start over.</string>
+    <string name="food_quick_reading">Reading</string>
+    <string name="food_quick_total_label">Total</string>
+    <string name="food_quick_burned_unit">kcal burned</string>
 </resources>
