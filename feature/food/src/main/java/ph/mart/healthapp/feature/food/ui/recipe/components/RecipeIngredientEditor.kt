@@ -4,10 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -27,6 +31,9 @@ import ph.mart.healthapp.feature.food.ui.shared.withPortionAmount
  * One ingredient's fields, plus the button that commits it to the recipe. Identical in shape to the
  * add-entry sheet's form — including [FoodSearchPanel], which owns its own ViewModel and so drops
  * in for free, letting an ingredient come from FoodData Central instead of the keyboard.
+ *
+ * A change of [bringIntoViewKey] scrolls the draft's row into view: a tapped ingredient lands here,
+ * at the foot of the page, and without this it lands out of sight.
  */
 @Composable
 internal fun RecipeIngredientEditor(
@@ -35,7 +42,10 @@ internal fun RecipeIngredientEditor(
     onDraftChange: (SavedMealItem) -> Unit,
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
+    bringIntoViewKey: Int = 0,
 ) {
+    val draftRow = remember { BringIntoViewRequester() }
+    LaunchedEffect(bringIntoViewKey) { draftRow.bringIntoView() }
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = stringResource(R.string.food_recipe_add_ingredient_title),
@@ -67,6 +77,7 @@ internal fun RecipeIngredientEditor(
             proteinG = draft.proteinG,
             carbsG = draft.carbsG,
             fatG = draft.fatG,
+            modifier = Modifier.bringIntoViewRequester(draftRow),
             onNameChange = { onDraftChange(draft.copy(name = it)) },
             onPortionAmountChange = { onDraftChange(draft.withPortionAmount(it)) },
             onPortionUnitChange = { onDraftChange(draft.copy(portionUnit = it)) },

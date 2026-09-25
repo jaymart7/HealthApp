@@ -37,7 +37,10 @@ import ph.mart.healthapp.core.data.food.Nutrients
 import ph.mart.healthapp.core.data.food.QuickLogRepository
 import ph.mart.healthapp.core.data.food.QuickLogResult
 import ph.mart.healthapp.core.data.food.QuickLogTurn
+import ph.mart.healthapp.core.data.food.RecipeParseRepository
+import ph.mart.healthapp.core.data.food.RecipeParseResult
 import ph.mart.healthapp.core.data.food.mayAsk
+import ph.mart.healthapp.core.data.food.recipeParseResult
 import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
@@ -47,7 +50,7 @@ import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
 import ph.mart.healthapp.core.data.supplement.SupplementScanResult
 
 /**
- * The eight smaller AI features, faked off local data. The coach is next door in
+ * The nine smaller AI features, faked off local data. The coach is next door in
  * [FakeCoachRepository], because it is the only one with a state machine worth faking carefully.
  *
  * Every one of these reuses something the app already ships, and that is the design rather than an
@@ -292,6 +295,28 @@ internal fun fakeStrengthParse(text: String, unit: UnitSystem): List<StrengthSet
 internal fun fakeExerciseParse(text: String): ParsedExercise? = offlineActivity(text, defaultMinutes = FAKE_MINUTES)
 
 private const val FAKE_MINUTES = 30
+
+internal class FakeRecipeParseRepository : RecipeParseRepository {
+    override suspend fun parse(text: String): RecipeParseResult {
+        delay(FAKE_LATENCY_MS)
+        return fakeRecipeParse(text)
+    }
+}
+
+private val SERVINGS_SAID = Regex("""(?:for|serves|makes)\s+(\d+)""", RegexOption.IGNORE_CASE)
+
+/**
+ * [fakeParse] over the whole text for the ingredients, the words before the first break for the
+ * name, and "for 4" / "serves 4" for the servings — so "Chili for 4, beef, beans" really comes back
+ * as Chili, four portions, beef and beans. It ends on [recipeParseResult] so the caps and the clamp
+ * are exercised rather than bypassed. A dish named with no listed ingredient the table knows finds
+ * nothing, which is this fake's way of reaching that branch.
+ */
+internal fun fakeRecipeParse(text: String): RecipeParseResult = recipeParseResult(
+    name = text.split(',', ':', '\n').first().split(Regex("""\s+for\s+""", RegexOption.IGNORE_CASE)).first(),
+    servings = SERVINGS_SAID.find(text)?.groupValues?.get(1)?.toIntOrNull() ?: 1,
+    ingredients = fakeParse(text),
+)
 
 internal class FakeQuickLogRepository : QuickLogRepository {
     override suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap?): QuickLogResult {

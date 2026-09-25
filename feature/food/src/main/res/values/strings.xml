@@ -281,6 +281,22 @@
     <string name="food_recipe_summary">%1$d kcal per serving · makes %2$d</string>
     <string name="food_recipe_delete">Delete recipe %1$s</string>
     <string name="food_recipe_use">Use %1$s</string>
+    <string name="food_recipe_describe_label">Describe your recipe</string>
+    <string name="food_recipe_describe_placeholder">e.g. Chicken adobo for 4, or paste the ingredients</string>
+    <string name="food_recipe_describe_hint">AI estimates each ingredient. Check the amounts before saving.</string>
+    <string name="food_recipe_fill">Fill in with AI</string>
+    <string name="food_recipe_fill_stop">Stop filling in</string>
+    <string name="food_recipe_fill_offline">You\'re offline. Add ingredients by hand below.</string>
+    <string name="food_recipe_fill_nothing">Couldn\'t find a recipe in that. Name the dish or list its ingredients.</string>
+    <string name="food_recipe_fill_failed">Couldn\'t fill it in. Try again.</string>
+    <string name="food_recipe_replace_title">Replace the ingredients?</string>
+    <plurals name="food_recipe_replace_body">
+        <item quantity="one">Filling in again replaces the %1$d ingredient on this recipe.</item>
+        <item quantity="other">Filling in again replaces the %1$d ingredients on this recipe.</item>
+    </plurals>
+    <string name="food_recipe_replace">Replace</string>
+    <string name="food_recipe_add_manually">Add ingredient manually</string>
+    <string name="food_recipe_edit">Edit %1$s</string>
 
     <!-- Exercise -->
     <string name="food_exercise">Exercise</string>

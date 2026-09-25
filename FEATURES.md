@@ -176,7 +176,9 @@ ranked by the daily loop, not grouped by kind.
 - Your own foods — keep what's in the add-entry form as a food ("Save as my food"), and it leads
   every later food search ahead of the built-in list, replacing the built-in row of the same name.
 - Saved meals — snapshot a diary section, re-log as separate rows.
-- Recipes — a saved meal with servings; logs as one priced row.
+- Recipes — a saved meal with servings; logs as one priced row. The builder opens on an AI field:
+  describe the dish or paste its ingredients and the name, servings and every ingredient fill in
+  for review; tap a row to correct it, or add ingredients by hand.
 - Food search — the user's own foods first, then a built-in list of ~120 common foods, offline
   and instant; the empty field lists all of them, eight rows at a time in a box that appends the
   next eight when it is scrolled to its bottom. Behind both, an Open Food
@@ -594,7 +596,7 @@ panes at ≥840dp.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything). The food library has an **Add** FAB whose menu opens
   **New food** (name, portion, calories, macros and fiber/sugar/sodium, saved as one of your foods)
-  or **New recipe** (the recipe builder). It also has a persistent search over
+  or **New recipe** (the recipe builder, AI-filled from a description). It also has a persistent search over
   names *and* contents lines, with match highlighting, and sticky counted section headers; My
   foods rows draw their macros in the fixed P/C/F colours.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a

@@ -1785,6 +1785,28 @@ rather than needing a counter patched.
   Workout routines made one screen over, and on a phone the pane has no tab chrome to collide with.
   A menu rather than two FABs: one primary action per screen. The FAB stays expanded because
   `rememberFabExpanded` reads a `ScrollState` and this list is lazy.
+- **The recipe builder is AI-first: describe or paste, and the model fills the form.** A
+  "Describe your recipe" field heads the screen, sent with the quick log's `SendStopButton`; the
+  model returns a name, servings and every ingredient priced for the amount the *whole* recipe
+  uses (`perServing()` does the dividing). It is a separate `RecipeParseRepository`, not the meal
+  parse with another prompt, because all three of that parse's rules break here: a pasted list is
+  longer than `MAX_PARSE_CHARS`, a recipe has more parts than `MAX_PARSED_FOODS`, and "chicken
+  adobo" alone has to *become* its ingredients where the meal parse is told to invent nothing. A
+  listed recipe is still taken as given. The payload is that parse's — the user's text, nothing
+  from the profile — and the schema is `RECOGNIZED_FOOD_SCHEMA` nested under one key, the quick
+  log's shape. `recipeParseResult()` is the trust boundary and deliberately **not** `loggable()`:
+  salt, water and spices are real 0-kcal ingredients and salt is where the sodium is, so only a
+  blank name is dropped; servings clamp to `1..MAX_RECIPE_SERVINGS`. Around it:
+  - **A fill replaces the list, and asks first over a non-empty one.** The description stays in
+    the field, so a correction is an edit and a resend — appending would duplicate every row on
+    the second try. The name is filled only when blank; one the user typed is theirs.
+  - **The manual editor is behind "Add ingredient manually", and a tapped row opens it.** The
+    AI field is the way in, so the search-plus-fields form stops being the page. Tapping a row
+    moves it into the editor (adding a named draft first, so nothing is lost) and scrolls it into
+    view — the one way to correct an AI estimate without deleting and retyping it. Offline, the
+    field says so and the editor is one tap away, which is the whole manual fallback.
+  - **Back mid-fill stops the call**, one level, the photo flow's Analyzing rule; otherwise it
+    is the dirty-builder discard it always was, and a typed description now counts as dirty.
 - **Changing a portion reprices the entry.** `AddEntryForm.withPortionAmount()` (and its
   `SavedMealItem` twin) scale calories, all three macros and the three micronutrients by the
   portion ratio, because every

@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.food.ui.recipe
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -26,6 +28,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import org.koin.androidx.compose.koinViewModel
+import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMealItem
@@ -40,11 +43,15 @@ import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
+import ph.mart.healthapp.feature.food.ui.recipe.components.RecipeDescribeField
 import ph.mart.healthapp.feature.food.ui.recipe.components.RecipeIngredientEditor
 
 /**
  * Authors a recipe: a name, how many portions it makes, and its ingredients. Saving writes it once;
  * logging happens later from the add-entry sheet, one serving at a time.
+ *
+ * The AI field at the top is the way in — describe the dish or paste the list, and the model fills
+ * the rest. The manual editor stays one tap away, which is the whole of the offline path.
  *
  * A screen rather than a sub-view of that sheet because an ingredient list plus its editor doesn't
  * fit above a keyboard — the one place in this feature where the sheet pattern was the wrong shape.
@@ -54,14 +61,20 @@ fun RecipeBuilderScreen(
     onExit: () -> Unit,
     viewModel: RecipeBuilderViewModel = koinViewModel(),
 ) {
+    val uiState by viewModel.collectAsState()
     val state = rememberRecipeBuilderState()
     viewModel.collectSideEffect { effect ->
         when (effect) {
             RecipeBuilderSideEffect.Saved -> onExit()
+            is RecipeBuilderSideEffect.Filled -> state.applyFill(effect.name, effect.servings, effect.items)
+            is RecipeBuilderSideEffect.FillFailed -> state.fillError = effect.message
         }
     }
     RecipeBuilderContent(
+        filling = uiState.filling,
         state = state,
+        onFill = { viewModel.handleEvent(RecipeBuilderEvent.OnFill(state.description)) },
+        onCancelFill = { viewModel.handleEvent(RecipeBuilderEvent.OnCancelFill) },
         onSave = {
             viewModel.handleEvent(
                 RecipeBuilderEvent.OnSave(
@@ -77,17 +90,21 @@ fun RecipeBuilderScreen(
 
 @Composable
 private fun RecipeBuilderContent(
+    filling: Boolean,
     state: RecipeBuilderState,
+    onFill: () -> Unit,
+    onCancelFill: () -> Unit,
     onSave: () -> Unit,
     onExit: () -> Unit,
 ) {
     // Back out of a half-built recipe is the one destructive gesture on this screen, so it only
     // intercepts once there is something to lose; an untouched builder pops like any other route.
-    if (state.isDirty) {
+    // Mid-fill, back is one level: it stops the call, the photo flow's Analyzing rule.
+    if (filling || state.isDirty) {
         val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
         NavigationBackHandler(
             state = navigationState,
-            onBackCompleted = { state.discardOpen = true },
+            onBackCompleted = { if (filling) onCancelFill() else state.discardOpen = true },
         )
     }
 
@@ -112,6 +129,22 @@ private fun RecipeBuilderContent(
                     // No docked FAB over this route any more, so no clearance to reserve for one.
                     .padding(top = 16.dp, bottom = 24.dp),
             ) {
+                RecipeDescribeField(
+                    text = state.description,
+                    filling = filling,
+                    error = state.fillError?.let { stringResource(it) },
+                    onTextChange = {
+                        state.description = it
+                        state.fillError = null
+                    },
+                    // A fill replaces the list, so one over ingredients already there asks first. The
+                    // last attempt's error goes with the new one, or it outlives a fill that works.
+                    onFill = {
+                        state.fillError = null
+                        if (state.ingredients.isEmpty()) onFill() else state.replaceOpen = true
+                    },
+                    onStop = onCancelFill,
+                )
                 AppTextField(
                     value = state.name,
                     onValueChange = { state.name = it },
@@ -133,14 +166,25 @@ private fun RecipeBuilderContent(
                 )
                 IngredientList(
                     ingredients = state.ingredients,
+                    onEdit = state::editIngredient,
                     onRemove = state::removeIngredient,
                 )
-                RecipeIngredientEditor(
-                    draft = state.draft,
-                    canAdd = state.draftIsValid,
-                    onDraftChange = { state.draft = it },
-                    onAdd = state::addDraft,
-                )
+                if (state.editorOpen) {
+                    RecipeIngredientEditor(
+                        draft = state.draft,
+                        canAdd = state.draftIsValid,
+                        onDraftChange = { state.draft = it },
+                        onAdd = state::addDraft,
+                        bringIntoViewKey = state.editRequests,
+                    )
+                } else {
+                    SecondaryButton(
+                        label = stringResource(R.string.food_recipe_add_manually),
+                        onClick = { state.editorOpen = true },
+                        icon = AppIcons.Add,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
                     SecondaryButton(
                         label = stringResource(R.string.food_cancel),
@@ -165,6 +209,22 @@ private fun RecipeBuilderContent(
                         onExit()
                     },
                     onDismiss = { state.discardOpen = false },
+                )
+            }
+            if (state.replaceOpen) {
+                DiscardConfirmDialog(
+                    title = stringResource(R.string.food_recipe_replace_title),
+                    body = pluralStringResource(
+                        R.plurals.food_recipe_replace_body,
+                        state.ingredients.size,
+                        state.ingredients.size,
+                    ),
+                    confirmLabel = stringResource(R.string.food_recipe_replace),
+                    onConfirm = {
+                        state.replaceOpen = false
+                        onFill()
+                    },
+                    onDismiss = { state.replaceOpen = false },
                 )
             }
         }
@@ -195,8 +255,9 @@ private fun PerServingSummary(calories: Int, proteinG: Int, carbsG: Int, fatG: I
     }
 }
 
+/** A row taps back into the editor — how an AI estimate gets corrected without retyping it. */
 @Composable
-private fun IngredientList(ingredients: List<SavedMealItem>, onRemove: (Int) -> Unit) {
+private fun IngredientList(ingredients: List<SavedMealItem>, onEdit: (Int) -> Unit, onRemove: (Int) -> Unit) {
     if (ingredients.isEmpty()) {
         Text(
             text = stringResource(R.string.food_recipe_no_ingredients),
@@ -207,7 +268,13 @@ private fun IngredientList(ingredients: List<SavedMealItem>, onRemove: (Int) -> 
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ingredients.forEachIndexed { index, ingredient ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(
+                    onClickLabel = stringResource(R.string.food_recipe_edit, ingredient.name),
+                    onClick = { onEdit(index) },
+                ),
+            ) {
                 FoodItemRow(
                     variant = FoodItemRowVariant.Display,
                     name = ingredient.name,
@@ -236,6 +303,7 @@ private fun IngredientList(ingredients: List<SavedMealItem>, onRemove: (Int) -> 
 private fun RecipeBuilderScreenPreview() {
     AppTheme {
         RecipeBuilderContent(
+            filling = false,
             state = RecipeBuilderState(
                 name = "Chili",
                 servings = 4,
@@ -243,7 +311,26 @@ private fun RecipeBuilderScreenPreview() {
                     SavedMealItem("Beans", 400.0, "g", 480, 28, 80, 4),
                     SavedMealItem("Beef mince", 500.0, "g", 1100, 100, 0, 80),
                 ),
+                description = "Chili for 4 — beef mince, beans, onion",
             ),
+            onFill = {},
+            onCancelFill = {},
+            onSave = {},
+            onExit = {},
+        )
+    }
+}
+
+/** A fresh builder mid-fill: the circle is the stop, and the manual editor is still behind its door. */
+@PreviewLightDark
+@Composable
+private fun RecipeBuilderScreenFillingPreview() {
+    AppTheme {
+        RecipeBuilderContent(
+            filling = true,
+            state = RecipeBuilderState(description = "Chicken adobo for 4"),
+            onFill = {},
+            onCancelFill = {},
             onSave = {},
             onExit = {},
         )
