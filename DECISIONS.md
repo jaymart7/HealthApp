@@ -3462,6 +3462,15 @@ rather than needing a counter patched.
   prediction**, and the prompt forbids a period forecast, a fertile window or any fertility or
   contraception claim — FEATURES.md's "no fertile window" is untouched. The open question is
   Health Connect's Data Use policy for rows imported from it; see CLAUDE.md's Backlog.
+- **The coach can open any screen, as a draft whose Confirm navigates.** `open_screen` is
+  `start_routine`'s shape with no form behind it: a `CoachAction` that writes nothing, stands
+  alone on its card (`navigatingDraftStandsAlone()`, the routine's rule generalised), and whose
+  tap hands a name to `:app`. **An enum, not a String list** — `CoachScreen` gives `ProposalCard`
+  and `:app` exhaustive `when`s and keeps screen names out of `checkUiLiterals`' reach; its Progress
+  members share `Subject`'s names so `:app` maps them through `Subject.route()` with no second
+  list, and `CoachScreenRouteTest` holds every one to a route. The report card's `onOpenSection`
+  became `onOpenScreen` and `reportSectionRoute` became `coachScreenRoute`: one door out, one
+  mapper. A tab is switched to; everything else is pushed above the coach.
 
 ### Training, strength & routines
 

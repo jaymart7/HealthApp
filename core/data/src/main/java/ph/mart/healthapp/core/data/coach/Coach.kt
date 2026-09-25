@@ -268,6 +268,30 @@ sealed interface CoachAction {
         val goalHours: Int = DEFAULT_FAST_GOAL_HOURS,
         val elapsedMinutes: Int = 0,
     ) : CoachAction
+
+    /**
+     * A screen of the app, about to be opened.
+     *
+     * [StartRoutine]'s kind: it commits nothing and its Confirm navigates, so it stands alone on
+     * its card for that one's reason. A [CoachScreen] rather than a route, because `:core:data`
+     * cannot see a feature's `NavKey` — `:app` is what turns it into one.
+     */
+    data class OpenScreen(val screen: CoachScreen) : CoachAction
+}
+
+/**
+ * Every screen `open_screen` may name. The four tabs (the Food tab is `Diary`, which is what it
+ * is), the Profile lists and settings the coach can point at, and every Progress subject under its
+ * `Subject` name — which is what lets `:app` map those through `Subject.route()` without a second
+ * list. `SupplementList` is Profile's list of what they take; `Supplements` is Progress's page.
+ *
+ * The `name`s are the tool's schema values, so renaming one is a prompt change.
+ */
+enum class CoachScreen {
+    Home, Diary, Progress, Profile,
+    FoodLibrary, Routines, SupplementList, HealthConnections, HomeLayout,
+    Weight, Photos, Measurements, Nutrition, Water, Fasting, Supplements,
+    Activity, Strength, Sleep, Mood, Cycle, Heart, BloodPressure, Badges,
 }
 
 /**
@@ -301,6 +325,7 @@ val CoachAction.draftedOn: Long?
         is CoachAction.StartRoutine,
         // And a fast is started or broken now by definition: the transition is the thing.
         is CoachAction.SetFast,
+        is CoachAction.OpenScreen,
         -> null
     }?.takeIf { it > 0 }
 

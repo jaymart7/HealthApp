@@ -208,7 +208,7 @@ class CoachUiStateTest {
     }
 
     /**
-     * The one action whose Confirm navigates instead of writing. `routineDraftStandsAlone()` in
+     * The one action whose Confirm navigates instead of writing. `navigatingDraftStandsAlone()` in
      * `:core:data` is what stops a routine sharing a card with rows, so anything but a lone one
      * is null here rather than the first routine in the list.
      */

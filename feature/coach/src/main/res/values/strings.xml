@@ -220,6 +220,34 @@
     <string name="coach_proposal_routine_caveat">Opens the workout screen. Nothing is written until you finish it there.</string>
     <string name="coach_proposal_start">Start it</string>
 
+    <!-- A screen the coach offers to open. Writes nothing, so no "Logged:" line follows it. -->
+    <string name="coach_proposal_open_title">Open in the app</string>
+    <string name="coach_proposal_open">Open it</string>
+    <string name="coach_screen_home">Home</string>
+    <string name="coach_screen_diary">Food diary</string>
+    <string name="coach_screen_progress">Progress</string>
+    <string name="coach_screen_profile">Profile</string>
+    <string name="coach_screen_food_library">Food library</string>
+    <string name="coach_screen_routines">Workout routines</string>
+    <string name="coach_screen_supplement_list">Your supplements</string>
+    <string name="coach_screen_health_connections">Health connections</string>
+    <string name="coach_screen_home_layout">Home layout</string>
+    <string name="coach_screen_weight">Weight</string>
+    <string name="coach_screen_photos">Progress photos</string>
+    <string name="coach_screen_measurements">Measurements</string>
+    <string name="coach_screen_nutrition">Nutrition</string>
+    <string name="coach_screen_water">Water</string>
+    <string name="coach_screen_fasting">Fasting</string>
+    <string name="coach_screen_supplements">Supplement chart</string>
+    <string name="coach_screen_activity">Activity</string>
+    <string name="coach_screen_strength">Strength</string>
+    <string name="coach_screen_sleep">Sleep</string>
+    <string name="coach_screen_mood">Mood</string>
+    <string name="coach_screen_cycle">Cycle</string>
+    <string name="coach_screen_heart">Heart rate</string>
+    <string name="coach_screen_blood_pressure">Blood pressure</string>
+    <string name="coach_screen_badges">Badges</string>
+
     <!-- The fasting timer. The one card whose confirm changes a state rather than writing a row,
          so it gets its own verb rather than "Log it". A start shows the goal it will run to, which
          is the profile's; an end shows how long the fast has been going, which is the one figure on

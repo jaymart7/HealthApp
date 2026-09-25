@@ -498,6 +498,10 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   draws what it replaces under what it writes; a blank or over-long note fails the turn rather
   than clearing or truncating the day. The button says "Note it", and today's note earns the diary
   door.
+- Coach screens — "show me my sleep" / "open my food library" drafts an `open_screen` card naming
+  one of `CoachScreen`'s 24 places (the four tabs, Profile's lists and settings, every Progress
+  subject); "Open it" goes there, above the coach so back returns to the chat. It writes nothing
+  and stands alone on its card, a routine's rule.
 - Coach door out — once a confirmed draft has put rows in **today's** diary, an outlined row under
   that answer names where they went ("View it in Breakfast") and switches to the Food tab. It lasts until the next
   question. A weigh-in, a supplement or a backdated draft gets none: the diary opens on today and

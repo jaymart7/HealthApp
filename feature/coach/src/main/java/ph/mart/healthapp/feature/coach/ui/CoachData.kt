@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.coach.CoachScreen
 import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.recap.Report
@@ -131,6 +132,8 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
         is CoachAction.StartRoutine,
         // A fast is Home's card and Progress's page, and it writes no diary row at all.
         is CoachAction.SetFast,
+        // Nothing written, and the tap already took them where they asked to go.
+        is CoachAction.OpenScreen,
         -> false
     }
 }
@@ -140,11 +143,15 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
  *
  * The one action whose Confirm navigates rather than writes, so the screen needs to know — and it
  * is a pure function beside [opensTheDiary] for that one's reason: a composable that pattern-matches
- * on an action kind is a rule nothing can test. `routineDraftStandsAlone()` in `:core:data` is what
+ * on an action kind is a rule nothing can test. `navigatingDraftStandsAlone()` in `:core:data` is what
  * guarantees the singleton, so anything else here is null rather than the first routine it finds.
  */
 internal fun List<CoachAction>.routineIdToStart(): Long? =
     (singleOrNull() as? CoachAction.StartRoutine)?.routineId?.takeIf { it > 0 }
+
+/** The screen a confirmed draft is about to open, or null — [routineIdToStart]'s twin. */
+internal fun List<CoachAction>.screenToOpen(): CoachScreen? =
+    (singleOrNull() as? CoachAction.OpenScreen)?.screen
 
 /**
  * The report to draw under the message at [index], or null where there is none.

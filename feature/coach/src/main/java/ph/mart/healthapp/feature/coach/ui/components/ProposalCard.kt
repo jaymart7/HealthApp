@@ -34,6 +34,7 @@ import kotlin.math.abs
 import ph.mart.healthapp.core.data.bloodpressure.categoryOf
 import ph.mart.healthapp.core.data.bloodpressure.formatBloodPressure
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.coach.CoachScreen
 import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.RoutineLift
@@ -280,6 +281,7 @@ internal fun confirmLabelFor(single: CoachAction?): Int = when {
     single is CoachAction.LogNote -> R.string.coach_proposal_note_confirm
     single is CoachAction.SetFast && single.ending -> R.string.coach_proposal_end
     single is CoachAction.SetFast -> R.string.coach_proposal_start
+    single is CoachAction.OpenScreen -> R.string.coach_proposal_open
     else -> R.string.coach_proposal_confirm
 }
 
@@ -309,6 +311,7 @@ private fun confirmLabel(kept: List<CoachAction>, drafted: Int): String {
 private fun confirmIconFor(single: CoachAction?): ImageVector = when (single) {
     is CoachAction.StartRoutine -> AppIcons.Play
     is CoachAction.SetFast -> if (single.ending) AppIcons.Check else AppIcons.Play
+    is CoachAction.OpenScreen -> AppIcons.ArrowForward
     else -> AppIcons.Check
 }
 
@@ -496,6 +499,12 @@ private fun SingleProposal(action: CoachAction) {
             }
         }
 
+        // Nothing to write and nothing to show but where it goes.
+        is CoachAction.OpenScreen -> {
+            ProposalKicker(stringResource(R.string.coach_proposal_open_title))
+            ProposalHeadline(stringResource(screenLabel(action.screen)))
+        }
+
         // `resolve()` turns a saved meal into its own rows before any card is drawn, so this is
         // only ever reached if that stops being true. It renders the name rather than nothing,
         // which stays honest: the name is the whole of what the model supplied.
@@ -658,7 +667,7 @@ private fun actionName(action: CoachAction): String = when (action) {
     // The sentence itself: there is nothing else to call a note, and the row it sits in is the
     // one place it can be read before the tap.
     is CoachAction.LogNote -> action.text
-    // Never drawn in a list — `routineDraftStandsAlone()` is what guarantees a routine is the
+    // Never drawn in a list — `navigatingDraftStandsAlone()` is what guarantees a routine is the
     // whole draft — but the name is the right answer if that ever stops being true.
     is CoachAction.StartRoutine -> action.name
     // Drawn in a list when a fast rides beside rows — "I broke my fast with two eggs" — which is
@@ -667,6 +676,8 @@ private fun actionName(action: CoachAction): String = when (action) {
         if (action.ending) R.string.coach_proposal_fast_end_title
         else R.string.coach_proposal_fast_start_title,
     )
+    // Never drawn in a list, for a routine's reason.
+    is CoachAction.OpenScreen -> stringResource(screenLabel(action.screen))
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -689,6 +700,7 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.LogNote -> null
     is CoachAction.StartRoutine -> routineLifts(action)
     is CoachAction.SetFast -> if (action.ending) fastElapsed(action) else fastGoal(action)
+    is CoachAction.OpenScreen -> null
 }
 
 /**
@@ -730,6 +742,8 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
         // line under the answer would be a claim the app cannot stand behind. The turn is
         // persisted with the coach's own prose, exactly as a dismissal is.
         single is CoachAction.StartRoutine -> ""
+        // The routine's reason: the tap changed nothing, so there is nothing to report.
+        single is CoachAction.OpenScreen -> ""
         // Unlike a routine this *did* change something, so it says so — and it says the figure the
         // tap settled on rather than a total, because a fast has none.
         single is CoachAction.SetFast && single.ending -> stringResource(
@@ -1145,6 +1159,21 @@ private fun ProposalCardRoutinePreview() {
     }
 }
 
+@PreviewLightDark
+@Composable
+private fun ProposalCardOpenScreenPreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(CoachAction.OpenScreen(CoachScreen.Sleep)),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
 private fun food(name: String, kcal: Int, protein: Int, carbs: Int, fat: Int) = CoachAction.LogFood(
     name = name,
     mealType = MealType.Breakfast,
@@ -1190,4 +1219,34 @@ private fun ProposalCardFastEndPreview() {
             )
         }
     }
+}
+
+/** What a screen is called on the card. `:core:data` cannot hold a label, and the Progress
+ * subjects' own labels are `:feature:progress`'s, so this is the coach's own list. */
+@StringRes
+internal fun screenLabel(screen: CoachScreen): Int = when (screen) {
+    CoachScreen.Home -> R.string.coach_screen_home
+    CoachScreen.Diary -> R.string.coach_screen_diary
+    CoachScreen.Progress -> R.string.coach_screen_progress
+    CoachScreen.Profile -> R.string.coach_screen_profile
+    CoachScreen.FoodLibrary -> R.string.coach_screen_food_library
+    CoachScreen.Routines -> R.string.coach_screen_routines
+    CoachScreen.SupplementList -> R.string.coach_screen_supplement_list
+    CoachScreen.HealthConnections -> R.string.coach_screen_health_connections
+    CoachScreen.HomeLayout -> R.string.coach_screen_home_layout
+    CoachScreen.Weight -> R.string.coach_screen_weight
+    CoachScreen.Photos -> R.string.coach_screen_photos
+    CoachScreen.Measurements -> R.string.coach_screen_measurements
+    CoachScreen.Nutrition -> R.string.coach_screen_nutrition
+    CoachScreen.Water -> R.string.coach_screen_water
+    CoachScreen.Fasting -> R.string.coach_screen_fasting
+    CoachScreen.Supplements -> R.string.coach_screen_supplements
+    CoachScreen.Activity -> R.string.coach_screen_activity
+    CoachScreen.Strength -> R.string.coach_screen_strength
+    CoachScreen.Sleep -> R.string.coach_screen_sleep
+    CoachScreen.Mood -> R.string.coach_screen_mood
+    CoachScreen.Cycle -> R.string.coach_screen_cycle
+    CoachScreen.Heart -> R.string.coach_screen_heart
+    CoachScreen.BloodPressure -> R.string.coach_screen_blood_pressure
+    CoachScreen.Badges -> R.string.coach_screen_badges
 }

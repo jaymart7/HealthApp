@@ -59,7 +59,7 @@ fun CoachScreen(
     source: String? = null,
     onOpenDiary: () -> Unit = {},
     onStartRoutine: (Long) -> Unit = {},
-    onOpenSection: (String) -> Unit = {},
+    onOpenScreen: (String) -> Unit = {},
     onExitFlow: () -> Unit = {},
     viewModel: CoachViewModel = koinViewModel(),
 ) {
@@ -83,7 +83,7 @@ fun CoachScreen(
         source = source?.takeUnless { state.chipDismissed },
         onOpenDiary = onOpenDiary,
         onStartRoutine = onStartRoutine,
-        onOpenSection = onOpenSection,
+        onOpenScreen = onOpenScreen,
         onExitFlow = onExitFlow,
     )
 }
@@ -108,7 +108,7 @@ private fun CoachContent(
     source: String? = null,
     onOpenDiary: () -> Unit = {},
     onStartRoutine: (Long) -> Unit = {},
-    onOpenSection: (String) -> Unit = {},
+    onOpenScreen: (String) -> Unit = {},
     onExitFlow: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
@@ -216,7 +216,7 @@ private fun CoachContent(
                                 drafted = report.days,
                                 // The enum's `name` and not the enum: `:feature:*` modules never
                                 // import each other, so `:app` is what turns this into a route.
-                                onOpenSection = { onOpenSection(it.name) },
+                                onOpenSection = { onOpenScreen(it.name) },
                                 modifier = Modifier.padding(top = 8.dp, start = AnswerIndent),
                             )
                         }
@@ -242,6 +242,7 @@ private fun CoachContent(
                                 onConfirm = { kept, line ->
                                     onEvent(CoachEvent.OnConfirmProposal(kept, line))
                                     kept.routineIdToStart()?.let(onStartRoutine)
+                                    kept.screenToOpen()?.let { onOpenScreen(it.name) }
                                 },
                                 onDismiss = { onEvent(CoachEvent.OnDismissProposal) },
                             )

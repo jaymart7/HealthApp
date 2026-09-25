@@ -174,7 +174,7 @@ internal class CoachRepositoryImpl(
             // each call clears the same boundary it always did, one at a time.
             val writes = calls.filter { it.name in WRITE_TOOLS }
             if (writes.isNotEmpty()) {
-                // One card, one kind — `routineDraftStandsAlone()`'s rule, one tool earlier. A
+                // One card, one kind — `navigatingDraftStandsAlone()`'s rule, one tool earlier. A
                 // draft and a report in the same round are two cards under one answer, and the
                 // report would be the one silently dropped: the write branch returns from here.
                 if (calls.any { it.name == TOOL_SHOW_REPORT }) return@flow emit(CoachReply.Failed)
@@ -197,7 +197,7 @@ internal class CoachRepositoryImpl(
                 if (actions.draftDay(today) == null) return@flow emit(CoachReply.Failed)
                 // And one card, one kind, where that kind is a routine: its Confirm leaves the
                 // screen, so it cannot also be the tap that writes a meal.
-                if (!actions.routineDraftStandsAlone()) return@flow emit(CoachReply.Failed)
+                if (!actions.navigatingDraftStandsAlone()) return@flow emit(CoachReply.Failed)
                 // And one card, one fasting transition: a draft holding two would start and end a
                 // fast on the same tap. It may still ride beside rows — "I broke my fast with two
                 // eggs" is one sentence — which is where it parts company with a routine.
@@ -571,6 +571,12 @@ private fun systemPromptFor(
             "you cannot invent a workout, add a lift to one, or say how much they should lift — " +
             "and never draft a routine in the same turn as anything else. If they have no " +
             "routines, say so and leave it there.",
+    )
+    appendLine(
+        "When they ask to see, open or go to a part of the app — a chart, their diary, a list, " +
+            "a setting — call open_screen with the screen that fits. It changes nothing: it puts " +
+            "a button under your reply that takes them there, so say where it goes in one short " +
+            "sentence. Never call it in the same turn as anything else.",
     )
     appendLine(
         "When they ask for a report, a summary, an overview, or how their week or month has " +

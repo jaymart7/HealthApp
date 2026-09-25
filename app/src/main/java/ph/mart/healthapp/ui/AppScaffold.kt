@@ -83,6 +83,7 @@ import ph.mart.healthapp.feature.progress.ui.PhotoComparisonRoute
 import ph.mart.healthapp.feature.progress.ui.ProgressSubjectRoutes
 import ph.mart.healthapp.feature.progress.ui.RecapRoute
 import ph.mart.healthapp.feature.progress.ui.TimelapseRoute
+import ph.mart.healthapp.core.data.coach.CoachScreen
 import ph.mart.healthapp.core.data.recap.ReportSection
 import ph.mart.healthapp.feature.progress.ui.progress.Subject
 import ph.mart.healthapp.feature.progress.ui.progressEntries
@@ -484,12 +485,17 @@ fun AppScaffold(
                             onStartRoutine = { routineId ->
                                 topLevelBackStack.add(StrengthWorkoutRoute(0, 0, routineId))
                             },
-                            // A report section through to the page that owns it. Pushed above the
-                            // coach rather than switching tabs — the diary door switches because
-                            // the diary *is* a tab, while these four are routes, and back has to
-                            // return to the conversation with the card still on it.
-                            onOpenSection = { section ->
-                                reportSectionRoute(section)?.let { topLevelBackStack.add(it) }
+                            // A report section or an `open_screen` draft, through to the page it
+                            // names. A tab is switched to; anything else is pushed above the coach,
+                            // so back returns to the conversation with the card still on it.
+                            onOpenScreen = { screen ->
+                                coachScreenRoute(screen)?.let { route ->
+                                    if (TopLevelDestination.entries.any { it.route == route }) {
+                                        topLevelBackStack.addTopLevel(route)
+                                    } else {
+                                        topLevelBackStack.add(route)
+                                    }
+                                }
                             },
                             onExitFlow = { topLevelBackStack.removeLast() },
                         )
@@ -627,22 +633,39 @@ fun AppScaffold(
 }
 
 /**
- * A report-card section, to the Progress page that owns it.
+ * A name the coach hands out, to the route it names: a report-card section (`ReportSection`) or
+ * a `CoachScreen` from a confirmed `open_screen` draft.
  *
- * `:app` is the only module that can see both ends — `ReportSection` is `:core:data`'s and the
- * four pages are `:feature:progress`'s — which is why the coach hands out a `name` and this is
- * where it becomes a route. Through [Subject] and its existing `route()` rather than naming the
- * four `NavKey`s directly, so this cannot drift out of step with `ProgressSubjectRoutes`.
+ * `:app` is the only module that can see both ends, which is why the coach hands out a `name` and
+ * this is where it becomes a route. Progress pages go through [Subject] and its existing `route()`
+ * rather than naming their `NavKey`s, so this cannot drift out of step with `ProgressSubjectRoutes`
+ * — `CoachScreen` uses the `Subject` names for exactly that, and `CoachScreenRouteTest` holds each
+ * of them to a real one.
  *
- * Null only on a name from a build that knew a section this one does not. The card would have to
- * come from a transcript written by a newer install, which no path produces today — but a crash
- * is the wrong answer to it either way, and nothing happening is the same shrug the diary door
- * already gives a draft it cannot honestly point at.
+ * Null only on a name from a build that knew one this one does not. A crash is the wrong answer
+ * to it, and nothing happening is the same shrug the diary door gives a draft it cannot point at.
  */
-private fun reportSectionRoute(section: String): NavKey? = when (section) {
+internal fun coachScreenRoute(screen: String): NavKey? = when (screen) {
     ReportSection.Nutrition.name -> Subject.Nutrition.route()
     ReportSection.Steps.name -> Subject.Activity.route()
     ReportSection.Training.name -> Subject.Strength.route()
-    ReportSection.Weight.name -> Subject.Weight.route()
-    else -> null
+    else -> CoachScreen.entries.firstOrNull { it.name == screen }?.route()
+}
+
+private fun CoachScreen.route(): NavKey = when (this) {
+    CoachScreen.Home -> TopLevelDestination.Home.route
+    CoachScreen.Diary -> TopLevelDestination.Food.route
+    CoachScreen.Progress -> TopLevelDestination.Progress.route
+    CoachScreen.Profile -> TopLevelDestination.Profile.route
+    CoachScreen.FoodLibrary -> FoodLibraryRoute
+    CoachScreen.Routines -> RoutinesRoute
+    CoachScreen.SupplementList -> SupplementsRoute
+    CoachScreen.HealthConnections -> HealthConnectionRoute
+    CoachScreen.HomeLayout -> HomeLayoutRoute
+    // The rest share `Subject`'s names on purpose — see `CoachScreen`.
+    CoachScreen.Weight, CoachScreen.Photos, CoachScreen.Measurements, CoachScreen.Nutrition,
+    CoachScreen.Water, CoachScreen.Fasting, CoachScreen.Supplements, CoachScreen.Activity,
+    CoachScreen.Strength, CoachScreen.Sleep, CoachScreen.Mood, CoachScreen.Cycle,
+    CoachScreen.Heart, CoachScreen.BloodPressure, CoachScreen.Badges,
+    -> Subject.valueOf(name).route()
 }

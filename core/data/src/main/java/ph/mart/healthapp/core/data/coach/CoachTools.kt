@@ -193,6 +193,8 @@ internal const val FAST_START = "start"
 internal const val FAST_END = "end"
 internal const val TOOL_START_ROUTINE = "start_routine"
 
+internal const val TOOL_OPEN_SCREEN = "open_screen"
+
 /** The tool that neither reads nor drafts: it draws. See this file's header. */
 internal const val TOOL_SHOW_REPORT = "show_report"
 
@@ -215,6 +217,8 @@ internal val WRITE_TOOLS = setOf(
     // The one that executes nothing *and* writes nothing: it ends the turn as a draft like the
     // rest, and the tap on that draft opens a form. See [CoachAction.StartRoutine].
     TOOL_START_ROUTINE,
+    // The routine's kind with no form behind it: the tap opens a screen. [CoachAction.OpenScreen].
+    TOOL_OPEN_SCREEN,
 )
 
 /**
@@ -468,6 +472,20 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             ),
         ),
         FunctionDeclaration(
+            name = TOOL_OPEN_SCREEN,
+            description = "Propose opening a screen of the app when the user asks to see, open or " +
+                "go to one. It puts a button on screen that opens it; it changes nothing. Diary " +
+                "is the food diary, SupplementList is the list of supplements they take, " +
+                "Supplements is the chart of how they kept up, Badges is their achievements. " +
+                "Never call it in the same turn as anything else.",
+            parameters = mapOf(
+                "screen" to Schema.enumeration(
+                    values = CoachScreen.entries.map { it.name },
+                    description = "Which screen to open.",
+                ),
+            ),
+        ),
+        FunctionDeclaration(
             name = TOOL_SHOW_REPORT,
             description = "Put an interactive report card on screen summarising the user's last " +
                 "7 or 30 days — their calories and macros, their weight, their training and " +
@@ -547,6 +565,9 @@ internal fun parseAction(
         ?.trim()
         ?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS }
         ?.let { CoachAction.StartRoutine(name = it) }
+    TOOL_OPEN_SCREEN -> args.string("screen")?.trim()
+        ?.let { screen -> CoachScreen.entries.firstOrNull { it.name.equals(screen, ignoreCase = true) } }
+        ?.let(CoachAction::OpenScreen)
     else -> null
 }
 
@@ -1384,30 +1405,30 @@ internal fun fastDraft(
 /**
  * Whether a draft holds at most one fasting transition.
  *
- * Unlike [routineDraftStandsAlone] this permits company: *"I broke my fast with two eggs"* is one
+ * Unlike [navigatingDraftStandsAlone] this permits company: *"I broke my fast with two eggs"* is one
  * sentence, both halves are writes, and both are on the card to be read before the tap — the
  * stand-alone rule a routine has is about its Confirm *leaving the screen*, which this one does
  * not. What it cannot hold is two of these: one tap would start and end a fast, and no sentence
  * means that.
  *
- * Pure and here rather than inline in `send`, for [routineDraftStandsAlone]'s reason.
+ * Pure and here rather than inline in `send`, for [navigatingDraftStandsAlone]'s reason.
  */
 internal fun List<CoachAction>.fastDraftIsSingular(): Boolean =
     count { it is CoachAction.SetFast } <= 1
 
 /**
- * Whether a draft holding a routine holds *only* that routine.
+ * Whether a draft whose Confirm navigates — a routine, or a screen to open — holds nothing else.
  *
- * A routine's Confirm leaves the screen, and a button that both writes a meal and navigates away
- * is two decisions on one tap — the half that happened off screen being the half nobody notices.
- * So a mixed draft fails the whole turn, the ruling `draftDay` already makes about a card whose
- * rows disagree about the day.
+ * That Confirm leaves the screen, and a button that both writes a meal and navigates away is two
+ * decisions on one tap — the half that happened off screen being the half nobody notices. So a
+ * mixed draft fails the whole turn, the ruling `draftDay` already makes about a card whose rows
+ * disagree about the day.
  *
  * Pure and here rather than inline in `send`, for [parseAction]'s reason: it is the part a JVM
  * test can reach.
  */
-internal fun List<CoachAction>.routineDraftStandsAlone(): Boolean =
-    none { it is CoachAction.StartRoutine } || size == 1
+internal fun List<CoachAction>.navigatingDraftStandsAlone(): Boolean =
+    none { it is CoachAction.StartRoutine || it is CoachAction.OpenScreen } || size == 1
 
 private fun SavedMealItem.toLogFood(name: String, mealType: MealType, dateEpochDay: Long) =
     CoachAction.LogFood(

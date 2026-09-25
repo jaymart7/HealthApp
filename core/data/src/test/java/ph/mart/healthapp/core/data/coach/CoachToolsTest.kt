@@ -1620,10 +1620,28 @@ class CoachToolsTest {
     @Test
     fun `a routine draft may not ride with rows`() {
         val routine = CoachAction.StartRoutine(name = "Push day", routineId = 7)
-        assertTrue(listOf(routine).routineDraftStandsAlone())
-        assertTrue(listOf(logFood("Toast", 180), CoachAction.LogWater(glasses = 1)).routineDraftStandsAlone())
-        assertTrue(emptyList<CoachAction>().routineDraftStandsAlone())
-        assertFalse(listOf(logFood("Toast", 180), routine).routineDraftStandsAlone())
+        assertTrue(listOf(routine).navigatingDraftStandsAlone())
+        assertTrue(listOf(logFood("Toast", 180), CoachAction.LogWater(glasses = 1)).navigatingDraftStandsAlone())
+        assertTrue(emptyList<CoachAction>().navigatingDraftStandsAlone())
+        assertFalse(listOf(logFood("Toast", 180), routine).navigatingDraftStandsAlone())
+    }
+
+    @Test
+    fun `an open-screen call names one of the app's screens, case-insensitively`() {
+        assertEquals(
+            CoachAction.OpenScreen(CoachScreen.Sleep),
+            parseAction(TOOL_OPEN_SCREEN, mapOf("screen" to JsonPrimitive("sleep")), 0),
+        )
+        assertNull(parseAction(TOOL_OPEN_SCREEN, mapOf("screen" to JsonPrimitive("Settings menu")), 0))
+        assertNull(parseAction(TOOL_OPEN_SCREEN, emptyMap(), 0))
+    }
+
+    /** An open-screen Confirm leaves the chat, the routine's reason for standing alone. */
+    @Test
+    fun `an open-screen draft may not ride with rows`() {
+        val open = CoachAction.OpenScreen(CoachScreen.Weight)
+        assertTrue(listOf(open).navigatingDraftStandsAlone())
+        assertFalse(listOf(open, CoachAction.LogWater(glasses = 1)).navigatingDraftStandsAlone())
     }
 
     // endregion

@@ -42,16 +42,16 @@ data class CoachRoute(val question: String? = null, val source: String? = null) 
  * the routine's id, which is all the back stack ever carries — the row is resolved by the screen.
  * Confirming a drafted routine is what calls it; every other draft writes and stays.
  *
- * [onOpenSection] is the third, from a section of a report card through to the Progress page that
- * owns it. It carries a `ReportSection`'s `name` — a plain String, `onStartRoutine`'s rule one
- * type along, since the four pages are `:feature:progress`'s and `:app` is the only module that
- * can see both ends. Pushed above the coach, so back returns to the conversation with the card
- * where it was.
+ * [onOpenScreen] is the third: a section of a report card through to the Progress page that owns
+ * it (a `ReportSection`'s `name`), or a confirmed `open_screen` draft (one of `COACH_SCREENS`). A
+ * plain String, `onStartRoutine`'s rule one type along, since the pages are other features' and
+ * `:app` is the only module that can see both ends. Pushed above the coach, so back returns to the
+ * conversation.
  */
 fun EntryProviderScope<NavKey>.coachEntries(
     onOpenDiary: () -> Unit,
     onStartRoutine: (Long) -> Unit,
-    onOpenSection: (String) -> Unit,
+    onOpenScreen: (String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
     entry<CoachRoute> { route ->
@@ -60,7 +60,7 @@ fun EntryProviderScope<NavKey>.coachEntries(
             source = route.source,
             onOpenDiary = onOpenDiary,
             onStartRoutine = onStartRoutine,
-            onOpenSection = onOpenSection,
+            onOpenScreen = onOpenScreen,
             onExitFlow = onExitFlow,
         )
     }
