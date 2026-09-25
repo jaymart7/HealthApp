@@ -4449,9 +4449,14 @@ rather than needing a counter patched.
 - **The lookup is recall, the scan is transcription, and three things carry that difference.**
   `SupplementScanRepositoryImpl`'s existing prompt exists to stop the model completing a panel from
   what it knows about the product; a lookup has nothing else to go on, so the guard moves to the
-  product's identity instead — **answer for this product or answer with nothing**, never from a
-  similar one or from what a supplement of this kind typically contains. An empty object is a dead
-  end the sheet has words for; an invented formula is a figure that looks read. Second,
+  product's identity instead — **answer for a product you recognise or answer with nothing**, never
+  with a different product and never a bare category ("magnesium") filled from what a supplement
+  of this kind typically contains. An empty object is a dead end the sheet has words for; an
+  invented formula is a figure that looks read. The first wording asked for "this exact product,
+  as its manufacturer prints it", and `gemini-3.5-flash-lite` at minimal thinking never claims
+  that much about any panel: every schema field is optional, so `{}` always complied, and the
+  sheet said "we don't know that one" to nearly every name. *Recognises* lets an approximate
+  panel through, which is what the estimate chip and the check-the-bottle caveat exist for. Second,
   `PanelReadout` takes an `estimated` flag that swaps its chip and its caveat — "AI estimate · from
   the name you typed" rather than "AI read this · straight off the label", because calling a
   recollection a transcript would be the readout claiming evidence it does not have. Third, nothing
@@ -4468,7 +4473,11 @@ rather than needing a counter patched.
   ends — a panel photographed on its own prints no product name and the blank row's empty name
   stays, and a lookup that read a strength off "vitamin D3 2000 IU" without naming a product leaves
   the words the user typed. It lives in `:core:data` beside `readable()` for that file's reason:
-  it is pure, so `SupplementLabelTest` can hold it.
+  it is pure, so `SupplementLabelTest` can hold it. **The lookup layers it over the sheet's live
+  fields**, not over the seed the sheet opened with: the sparkle hands `SupplementsScreen` the
+  sheet's current draft, and that becomes `editing` before the call goes out. Layering over the
+  seed blanked a typed name whenever the reply carried none (on an add the seed's name is `""`),
+  which disabled Save, and it reset a typed dose, frequency and days along with it.
 - **The sparkle's result lands in the open sheet, so `editing` moved up a level.**
   `SupplementsScreen` collects the side effect and holds the draft; `SupplementsContent` takes it as
   a parameter, the shape the previews were already passing nothing for. `editing?.let` around the
@@ -4844,14 +4853,16 @@ consequence of that.
   holds the safe action — and Delete sits left in `error`. Neither is filled: one filled `error`
   container would out-shout the body copy, which is the thing actually doing the reassuring. The
   name goes in the title and never in the body, so each body stays constant per row type.
-- **Supplements' Add is a docked bar, and the ≥840dp pane is what chose it.** The shipped button
-  was the last item in the scroll and left the screen the moment the list needed it. A
-  screen-level FAB would land beside the app's own at two-pane width; a top-bar action would put
-  the pane's primary action in the chrome above it. A bar docked to the bottom of the pane is the
-  only one of the three that stays in its own column. It is `DockedActionBar`, promoted from
-  `:feature:food` to `:core:designsystem` on the ≥2-consumers rule rather than copied. The food
-  library and the routines went the other way — screen FABs, by the user's choice, accepting the
-  two-pane collision this bullet avoided; see "The library adds now" and "New routine door".
+- **Supplements' Add is a FAB, with Scan label as a small FAB above it.** It was a docked bar,
+  chosen so that at ≥840dp the pane's action would not sit beside the app's own FAB. By the user's
+  choice it now matches the food library and the routines ("The library adds now", "New routine
+  door"): a screen `DockedFab` for Add and a `SmallFloatingActionButton` holding the camera, in
+  `surfaceContainerHigh`/`primary` so it reads as second. On a phone this route has no tab chrome
+  to collide with, and from 600dp the app's FAB is collapsed into the rail at the far edge. **Two
+  FABs rather than the library's menu**, because the user asked for both doors one tap away. The
+  list's bottom padding clears the whole stack (`DockedFabContentPadding` + the small FAB's 48dp
+  target + the 16dp gap). `DockedActionBar` stays in `:core:designsystem` for `:feature:food`'s
+  three screens.
 - **Frequency is the supplement row's marker, and it is never a checkbox.** Times-per-day was the
   tail of a grey caption and invisible unless read; a scan down the list now shows which rows owe
   a second dose. `primaryContainer` at two or more, quiet at one, and the figure is printed

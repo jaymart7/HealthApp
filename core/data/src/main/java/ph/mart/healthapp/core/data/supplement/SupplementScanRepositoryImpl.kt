@@ -54,11 +54,19 @@ all, return an object with no fields set.
  * The same figures asked for from the other end, and the opposite instruction in one respect only.
  *
  * [PROMPT] above says *read what is in frame and nothing else*; there is no frame here, so the
- * guard has to be the product's identity instead: answer for **this** product or answer with
- * nothing. The failure this is written against is the plausible one — asked about a multivitamin it
- * has never seen, a model will happily return a typical multivitamin, and the user then ticks a
- * formula nobody published into their day's nutrient panel. An empty object is a dead end the
- * screen has words for; an invented panel is a figure that looks read.
+ * guard has to be the product's identity instead: answer for a product the model **recognises**, or
+ * answer with nothing. The failure this is written against is the plausible one — asked about a
+ * multivitamin it has never seen, a model will happily return a typical multivitamin, and the user
+ * then ticks a formula nobody published into their day's nutrient panel. An empty object is a dead
+ * end the screen has words for; an invented panel is a figure that looks read.
+ *
+ * *Recognises*, not *knows exactly*. The first version asked for "this exact product, as its
+ * manufacturer prints it", and a lite model at the minimal thinking level never claims that much
+ * about any panel — every field is optional, so `{}` always complied, and the sheet said "we don't
+ * know that one" to nearly every name. An approximate panel for a product it does recognise is
+ * what the sheet is built to receive: `PanelReadout` labels it an AI estimate and tells the user to
+ * check it against the bottle, and nothing is written until Save. A bare category ("magnesium")
+ * still gets nothing, because answering it *is* the typical-formula failure above.
  *
  * Everything else is deliberately [PROMPT]'s: per serving, unchanged, the named fields for what
  * maps and otherNutrients for the rest, the same two unit hedges. The reading is the same type and
@@ -68,10 +76,12 @@ all, return an object with no fields set.
 private val LOOKUP_PROMPT = """
 You are identifying a supplement for a health-tracking app from the name the user typed.
 
-Report only what this specific product's Supplement Facts panel declares, as its manufacturer
-prints it. If you do not know this exact product, return an object with no fields set. Do not answer
-from a similar product, from the same brand's other products, or from what a supplement of this kind
-typically contains. Never write 0 for a line you are unsure of — leave the field out.
+If you recognise the product — a brand and product line you know — report its Supplement Facts panel
+as best you know it. The app shows your answer as an estimate and asks the user to check it against
+the bottle, so a panel you know approximately is still worth reporting. If the name does not
+identify a product you recognise, return an object with no fields set: do not answer with a
+different product, and do not answer a bare category ("magnesium", "fish oil") with what such a
+supplement typically contains. Never write 0 for a line you are unsure of — leave the field out.
 
 If the name is a nutrient and a strength rather than a product ("vitamin D3 2000 IU"), report that
 much and leave the rest out.

@@ -576,8 +576,8 @@ panes at ≥840dp.
   carries**: the seven graded nutrients, typable behind a "What's in a dose" disclosure that opens
   itself when there is something in it, with a µg/IU toggle on vitamin D because bottles print
   either. A→Z, times-per-day as the row's marker tile, a narrowed schedule spelled out on the row's
-  figure line ("twice a day · Mon · Wed · Fri"), a docked bar that never scrolls away carrying Add
-  beside **Scan label**, edit and delete. Home's checklist shows only what is due today, and the
+  figure line ("twice a day · Mon · Wed · Fri"), an Add FAB with **Scan label** as a small camera
+  FAB above it, edit and delete. Home's checklist shows only what is due today, and the
   adherence chart prices each day against what was due on it.
 - Supplement-label scan — photograph the Supplement Facts panel and a model transcribes it into
   the same edit sheet, seeded: the product name, the serving as the label words it ("2 capsules")
@@ -591,8 +591,9 @@ panes at ≥840dp.
   in it, and a model fills the same fields the scan does: the serving as the dose, the frequency
   where the directions state one, the four graded figures and the rest of the panel listed back.
   The readout says **AI estimate** rather than "AI read this", because this half is recalled rather
-  than transcribed — the model is asked to answer with nothing for a product it does not know, and
-  nothing is written until Save. Offline, unrecognised and failed each say so under the field.
+  than transcribed — the model is asked to answer with nothing for a product it does not recognise
+  (or a bare category like "magnesium"), and nothing is written until Save. What was already typed
+  stays where the reply is silent. Offline, unrecognised and failed each say so under the field.
 - Food library — your own foods, saved meals and recipes — and routine library: rename and
   delete (neither can log or start anything). The food library has an **Add** FAB whose menu opens
   **New food** (name, portion, calories, macros and fiber/sugar/sodium, saved as one of your foods)

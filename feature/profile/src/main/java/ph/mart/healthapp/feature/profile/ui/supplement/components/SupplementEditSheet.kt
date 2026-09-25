@@ -79,7 +79,7 @@ internal fun SupplementEditSheet(
     onDismiss: () -> Unit,
     onSave: (Supplement) -> Unit,
     onDelete: () -> Unit = {},
-    onLookUp: ((String) -> Unit)? = null,
+    onLookUp: ((Supplement) -> Unit)? = null,
     lookingUp: Boolean = false,
     lookupError: String? = null,
     estimated: Boolean = false,
@@ -91,6 +91,16 @@ internal fun SupplementEditSheet(
     // never touched survives a save it was only rounded for display.
     var nutrients by remember(supplement) { mutableStateOf(supplement.nutrients) }
     var days by remember(supplement) { mutableIntStateOf(supplement.days) }
+
+    // What is on screen, as a row. Save writes it, and the lookup hands it over so a reading is
+    // layered over the fields the user typed rather than over the seed the sheet opened with.
+    fun draft() = supplement.copy(
+        name = name,
+        dose = dose,
+        timesPerDay = timesPerDay,
+        nutrients = nutrients,
+        days = days,
+    )
 
     AppBottomSheet(
         title = stringResource(
@@ -109,7 +119,7 @@ internal fun SupplementEditSheet(
                 placeholder = stringResource(R.string.profile_name),
                 error = lookupError,
                 imeAction = if (onLookUp != null) ImeAction.Search else ImeAction.Default,
-                onImeAction = if (canLookUp) ({ onLookUp(name) }) else null,
+                onImeAction = if (canLookUp) ({ onLookUp(draft()) }) else null,
                 trailing = if (onLookUp == null) {
                     null
                 } else {
@@ -121,7 +131,7 @@ internal fun SupplementEditSheet(
                                 modifier = Modifier.size(20.dp),
                             )
                         } else {
-                            IconButton(onClick = { onLookUp(name) }, enabled = canLookUp) {
+                            IconButton(onClick = { onLookUp(draft()) }, enabled = canLookUp) {
                                 Icon(
                                     imageVector = AppIcons.AiSparkle,
                                     contentDescription = stringResource(R.string.profile_supplements_lookup),
@@ -171,17 +181,7 @@ internal fun SupplementEditSheet(
             WeekdayPicker(days = days, onDaysChange = { if (it != 0) days = it })
             PrimaryButton(
                 label = stringResource(R.string.profile_save),
-                onClick = {
-                    onSave(
-                        supplement.copy(
-                            name = name,
-                            dose = dose,
-                            timesPerDay = timesPerDay,
-                            nutrients = nutrients,
-                            days = days,
-                        ),
-                    )
-                },
+                onClick = { onSave(draft()) },
                 // A nameless supplement is unidentifiable, and unlike a diary entry it has no
                 // calorie figure to stand in for one — the same guard `RenameSheet` applies.
                 enabled = name.isNotBlank(),
