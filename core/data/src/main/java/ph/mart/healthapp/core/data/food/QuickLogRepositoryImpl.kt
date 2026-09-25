@@ -47,6 +47,8 @@ internal class QuickLogRepositoryImpl : QuickLogRepository {
             }.orEmpty(),
             mayAsk = mayAsk,
             mealType = body.optString("mealType"),
+            waterGlasses = body.optInt("waterGlasses").takeIf { body.has("waterGlasses") },
+            weight = body.optDouble("weight").takeIf { body.has("weight") },
         )
     } catch (e: CancellationException) {
         // Dismissing the sheet cancels the call — the rule every other parse here follows.
@@ -70,8 +72,15 @@ private val QUICK_LOG_SCHEMA = Schema.obj(
             values = MealType.entries.map { it.name },
             description = "Only when they named the meal, e.g. \"for lunch\"",
         ),
+        "waterGlasses" to Schema.integer(
+            description = "Glasses of plain water they drank, only when they said so",
+        ),
+        "weight" to Schema.double(
+            description = "Their body weight, the number exactly as they said it, only when they " +
+                "stated what they weigh",
+        ),
     ),
-    optionalProperties = listOf("question", "mealType"),
+    optionalProperties = listOf("question", "mealType", "waterGlasses", "weight"),
 )
 
 /** A full food list plus a few activities and a question. */
@@ -111,7 +120,10 @@ private fun promptFor(turns: List<QuickLogTurn>, mayAsk: Boolean): String = buil
             "Activities: pick the closest type from the list, with the duration in minutes as " +
             "they gave it; set name to a short note in their own words, or leave it out. Do not " +
             "estimate calories burned — the app works that out from their own weight. " +
-            "Set mealType only if they said which meal it was.",
+            "Set mealType only if they said which meal it was. " +
+            "Water: if they said how many glasses of plain water they drank, set waterGlasses and " +
+            "do not also list it as a food. Weight: if they stated their own body weight, set weight " +
+            "to the number exactly as they said it, with no unit conversion.",
     )
     appendLine()
     if (mayAsk) {

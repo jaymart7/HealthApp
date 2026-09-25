@@ -55,6 +55,10 @@ internal class QuickLogState(
     /** The food row whose portion is open — one at a time, talk-to-log's rule. */
     var expandedIndex: Int? by mutableStateOf(null)
 
+    /** Glasses to add, and a weigh-in already in kilograms — null when the sentence said neither. */
+    var waterGlasses: Int? by mutableStateOf(null)
+    var weightKg: Double? by mutableStateOf(null)
+
     /** The follow-up waiting for an answer: the model's turn, when it is the last one. */
     val question: String? get() = turns.lastOrNull()?.takeIf { !it.fromUser }?.text
 
@@ -66,7 +70,8 @@ internal class QuickLogState(
      * needs to skip the question. */
     val userSentence: String get() = turns.filter { it.fromUser }.joinToString(", ") { it.text }
 
-    val hasResult: Boolean get() = foods.isNotEmpty() || exercises.isNotEmpty()
+    val hasResult: Boolean
+        get() = foods.isNotEmpty() || exercises.isNotEmpty() || waterGlasses != null || weightKg != null
 
     val canSend: Boolean get() = text.isNotBlank() && phase != QuickLogPhase.Thinking
 
@@ -85,18 +90,33 @@ internal class QuickLogState(
     /** A question replaces whatever the last answer was: the model has said it was not enough. */
     fun applyQuestion(question: String) {
         turns = turns + QuickLogTurn(fromUser = false, text = question)
-        foods = emptyList()
-        exercises = emptyList()
+        clearResult()
         phase = QuickLogPhase.Input
     }
 
     /** A slot the user named wins over the time-of-day guess; the chips still win over both. */
-    fun applyParsed(foods: List<RecognizedFood>, exercises: List<ExerciseEntry>, mealType: MealType?) {
+    fun applyParsed(
+        foods: List<RecognizedFood>,
+        exercises: List<ExerciseEntry>,
+        mealType: MealType?,
+        waterGlasses: Int? = null,
+        weightKg: Double? = null,
+    ) {
         mealType?.let { this.mealType = it }
         this.foods = foods.map { it.toAddEntryForm(this.mealType) }
         this.exercises = exercises
+        this.waterGlasses = waterGlasses
+        this.weightKg = weightKg
         expandedIndex = null
         phase = QuickLogPhase.Review
+    }
+
+    private fun clearResult() {
+        foods = emptyList()
+        exercises = emptyList()
+        waterGlasses = null
+        weightKg = null
+        expandedIndex = null
     }
 
     fun selectMealType(mealType: MealType) {
@@ -128,9 +148,7 @@ internal class QuickLogState(
     fun startOver() {
         turns.firstOrNull()?.let { text = it.text }
         turns = emptyList()
-        foods = emptyList()
-        exercises = emptyList()
-        expandedIndex = null
+        clearResult()
         message = null
         phase = QuickLogPhase.Input
     }
@@ -142,6 +160,14 @@ internal class QuickLogState(
 
     fun removeExercise(index: Int) {
         exercises = exercises.filterIndexed { i, _ -> i != index }
+    }
+
+    fun removeWater() {
+        waterGlasses = null
+    }
+
+    fun removeWeight() {
+        weightKg = null
     }
 
     companion object {

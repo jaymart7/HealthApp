@@ -1,6 +1,10 @@
 package ph.mart.healthapp.core.data.food
 
+import ph.mart.healthapp.core.data.coach.MAX_ACTION_GLASSES
+import ph.mart.healthapp.core.data.coach.MAX_ACTION_WEIGHT
+import ph.mart.healthapp.core.data.coach.MIN_ACTION_WEIGHT
 import ph.mart.healthapp.core.data.exercise.ParsedExercise
+import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.stripMarkdown
 
 /**
@@ -27,12 +31,20 @@ data class QuickLogTurn(val fromUser: Boolean, val text: String)
  */
 sealed interface QuickLogResult {
     data class Question(val text: String) : QuickLogResult
-    /** [mealType] is the slot the user named ("for lunch"), null when they named none — the
-     * sheet then keeps its time-of-day guess. */
+    /**
+     * [mealType] is the slot the user named ("for lunch"), null when they named none — the sheet
+     * then keeps its time-of-day guess.
+     *
+     * [waterGlasses] is glasses to **add**, never the day's total — `CoachAction.LogWater`'s rule.
+     * [weight] is the number the user said, in the **profile's** unit: the model is never asked
+     * which unit a figure was in, `CoachAction.LogWeight`'s rule, and the caller converts.
+     */
     data class Parsed(
         val foods: List<RecognizedFood>,
         val activities: List<ParsedExercise>,
         val mealType: MealType? = null,
+        val waterGlasses: Int? = null,
+        val weight: Double? = null,
     ) : QuickLogResult
     data object NothingFound : QuickLogResult
     data object Failed : QuickLogResult
@@ -70,16 +82,28 @@ fun quickLogResult(
     activities: List<ParsedExercise?>,
     mayAsk: Boolean,
     mealType: String? = null,
+    waterGlasses: Int? = null,
+    weight: Double? = null,
 ): QuickLogResult {
     val asked = question?.let { stripMarkdown(it).trim().take(MAX_QUESTION_CHARS).trim() }
     if (mayAsk && !asked.isNullOrEmpty()) return QuickLogResult.Question(asked)
     val eaten = foods.loggable()
     val done = activities.filterNotNull()
-    return if (eaten.isEmpty() && done.isEmpty()) {
+    // The coach's bands, so a sentence and a coach draft judge the same figure the same way: past
+    // twenty glasses is a miscount, and a weight outside the band is a misread number, not a body.
+    val glasses = waterGlasses?.takeIf { it in 1..MAX_ACTION_GLASSES }
+    val body = weight?.takeIf { it in MIN_ACTION_WEIGHT..MAX_ACTION_WEIGHT }?.let(::round1)
+    return if (eaten.isEmpty() && done.isEmpty() && glasses == null && body == null) {
         QuickLogResult.NothingFound
     } else {
-        // Only against the enum's own names — the schema's enumeration — so a slot the model made
-        // up is no slot, not a crash.
-        QuickLogResult.Parsed(eaten, done, MealType.entries.firstOrNull { it.name.equals(mealType, ignoreCase = true) })
+        QuickLogResult.Parsed(
+            foods = eaten,
+            activities = done,
+            // Only against the enum's own names — the schema's enumeration — so a slot the model
+            // made up is no slot, not a crash.
+            mealType = MealType.entries.firstOrNull { it.name.equals(mealType, ignoreCase = true) },
+            waterGlasses = glasses,
+            weight = body,
+        )
     }
 }

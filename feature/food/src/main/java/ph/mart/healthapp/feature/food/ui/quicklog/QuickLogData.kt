@@ -5,6 +5,8 @@ import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.QuickLogTurn
 import ph.mart.healthapp.core.data.food.RecognizedFood
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.progress.WeightEntry
 
 /**
  * The two figures a parse is priced and credited against — `LogExerciseUiState`'s, for its
@@ -15,6 +17,8 @@ data class QuickLogUiState(
     val weightKg: Double = DEFAULT_WEIGHT_KG,
     val addExerciseToBudget: Boolean = true,
     val recentSentences: List<String> = emptyList(),
+    /** The profile's: a weight said in a sentence is read in it, and the rows print in it. */
+    val unit: UnitSystem = UnitSystem.Metric,
 )
 
 /** Only ever seen before the first profile emission, which lands before anyone can type. */
@@ -32,8 +36,27 @@ sealed interface QuickLogEvent {
         val foods: List<FoodEntry>,
         val exercises: List<ExerciseEntry>,
         val sentence: String,
+        val waterGlasses: Int? = null,
+        val weightKg: Double? = null,
     ) : QuickLogEvent
+
+    /** Carries the batch it reverses, so a snackbar left over from an earlier log can only ever
+     * undo that log — never whichever one the ViewModel wrote last. */
+    data class OnUndo(val batch: LoggedBatch) : QuickLogEvent
 }
+
+/**
+ * What one Log wrote, and enough to take it back: the new rows' ids for the two soft-deleted
+ * domains, the water count before the glasses were added, and the day's previous weigh-in — null
+ * [weightBefore] with a [weightDay] means there was none, so undo deletes the one written.
+ */
+data class LoggedBatch(
+    val foodIds: List<Long> = emptyList(),
+    val exerciseIds: List<Long> = emptyList(),
+    val waterBefore: Int? = null,
+    val weightDay: Long? = null,
+    val weightBefore: WeightEntry? = null,
+)
 
 sealed interface QuickLogSideEffect {
     data class Asked(val question: String) : QuickLogSideEffect
@@ -44,10 +67,14 @@ sealed interface QuickLogSideEffect {
         val foods: List<RecognizedFood>,
         val exercises: List<ExerciseEntry>,
         val mealType: MealType?,
+        val waterGlasses: Int? = null,
+        /** Already converted from the profile's unit — the ViewModel's arithmetic, like the burn. */
+        val weightKg: Double? = null,
     ) : QuickLogSideEffect
     data object NothingFound : QuickLogSideEffect
     data object Failed : QuickLogSideEffect
 
-    /** `LogExerciseSideEffect.Saved`'s figure: what the host's snackbar congratulates. */
-    data class Logged(val creditedKcal: Int) : QuickLogSideEffect
+    /** `LogExerciseSideEffect.Saved`'s figure — what the host's snackbar congratulates — and the
+     * batch its Undo reverses. */
+    data class Logged(val creditedKcal: Int, val batch: LoggedBatch) : QuickLogSideEffect
 }

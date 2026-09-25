@@ -84,6 +84,38 @@ class QuickLogTest {
         assertEquals(null, (absent as QuickLogResult.Parsed).mealType)
     }
 
+    /** Water alone is a log — "nothing found" means nothing of any kind. */
+    @Test
+    fun `water or a weigh-in alone is enough to log`() {
+        val water = quickLogResult(null, emptyList(), emptyList(), mayAsk = false, waterGlasses = 3)
+        val weight = quickLogResult(null, emptyList(), emptyList(), mayAsk = false, weight = 72.44)
+
+        assertEquals(3, (water as QuickLogResult.Parsed).waterGlasses)
+        assertEquals(72.4, (weight as QuickLogResult.Parsed).weight!!, 0.0001)
+    }
+
+    /** The coach's bands: past twenty glasses is a miscount, and a weight outside the band is a
+     * misread number rather than a body. */
+    @Test
+    fun `water and weight outside the coach's bands are dropped`() {
+        val result = quickLogResult(
+            null, listOf(food("Toast", 80)), emptyList(), mayAsk = false,
+            waterGlasses = 21, weight = 0.4,
+        )
+
+        result as QuickLogResult.Parsed
+        assertEquals(null, result.waterGlasses)
+        assertEquals(null, result.weight)
+    }
+
+    @Test
+    fun `zero glasses and nothing else is nothing found`() {
+        assertEquals(
+            QuickLogResult.NothingFound,
+            quickLogResult(null, emptyList(), emptyList(), mayAsk = false, waterGlasses = 0),
+        )
+    }
+
     @Test
     fun `the model may ask twice and no more`() {
         val sentence = QuickLogTurn(fromUser = true, text = "rice")

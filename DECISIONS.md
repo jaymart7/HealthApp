@@ -2131,6 +2131,21 @@ rather than needing a counter patched.
   log was food and nothing else. Talk-to-log offers the list under a *food* field, where "30 min run"
   can only fail. *ponytail: no recents for workouts; they need their own store (a Room migration).* Logging reports the credited burn to `AppScaffold`'s snackbar, the same line the
   log-exercise sheet raises.
+- **Water and a weigh-in ride the same sentence, under the coach's rules.** "3 glasses and weighed
+  72" adds glasses to today (never assigns the total) and replaces today's weigh-in — the two
+  writes `CoachRepositoryImpl` already makes for its drafts, and `quickLogResult` judges them with
+  the coach's own `MAX_ACTION_GLASSES` and `MIN/MAX_ACTION_WEIGHT` bands so a sentence and a draft
+  agree. The weight is the number the user said **in the profile's unit**, converted by the
+  ViewModel: the model is never asked which unit a figure was in, `CoachAction.LogWeight`'s rule.
+  This is also how a weigh-in came back to the FAB after its row left.
+- **Every quick log gets Undo, and the undo carries its own batch.** A sentence can write five
+  things the user never typed field by field, so the shell's snackbar always follows a quick log —
+  the earned line when there is a burn worth it, "Logged" otherwise — with Undo and
+  `SnackbarDuration.Long`. `addEntries` now returns its ids; `LoggedBatch` holds those, the
+  activity ids, the water count before and today's previous weigh-in, and `OnUndo(batch)` soft-deletes
+  the rows, restores the count, and puts the old weigh-in back (or deletes the new one — weigh-ins
+  are keyed by day, and the weigh-in sheet's delete is already a hard one). The batch rides the
+  event rather than living in the ViewModel, so a stale snackbar can only undo its own log.
 - **Photo and barcode stay as chips; the rest left the FAB.** A plate and a barcode are not
   sentences, so they keep a door under the field — until a conversation starts, when the space is
   the review's. Log weight, the body progress photo and manual log exercise were removed: weight is

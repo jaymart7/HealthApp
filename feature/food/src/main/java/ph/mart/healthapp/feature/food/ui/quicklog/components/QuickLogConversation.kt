@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -24,8 +25,13 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.RecognitionConfidence
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
+import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.water.waterVolumeLabel
 import ph.mart.healthapp.core.designsystem.component.FoodItemRow
 import ph.mart.healthapp.core.designsystem.component.FoodItemRowVariant
+import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -70,6 +76,11 @@ internal fun QuickLogConversation(
     onRemoveExercise: (Int) -> Unit,
     onMealTypeSelect: (MealType) -> Unit,
     modifier: Modifier = Modifier,
+    waterGlasses: Int? = null,
+    weightKg: Double? = null,
+    unit: UnitSystem = UnitSystem.Metric,
+    onRemoveWater: () -> Unit = {},
+    onRemoveWeight: () -> Unit = {},
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier.fillMaxWidth()) {
         if (question != null) {
@@ -103,7 +114,40 @@ internal fun QuickLogConversation(
         exercises.forEachIndexed { index, exercise ->
             val label = stringResource(exercise.type.label)
             RemovableRow(label = label, onRemove = { onRemoveExercise(index) }) {
-                ExerciseRow(exercise = exercise, label = label, modifier = Modifier.weight(1f))
+                MetricRow(
+                    label = label,
+                    detail = listOfNotNull(
+                        stringResource(R.string.food_exercise_row, exercise.minutes),
+                        exercise.name.takeIf { it.isNotBlank() },
+                    ).joinToString(" · "),
+                    value = stringResource(R.string.food_quick_burned, exercise.burnedKcal),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        // Water and a weigh-in are not food and not a workout, so they are rows of their own in
+        // the same shape — a label, what was said, and the figure that will be written.
+        waterGlasses?.let { glasses ->
+            val label = stringResource(R.string.food_quick_water)
+            RemovableRow(label = label, onRemove = onRemoveWater) {
+                MetricRow(
+                    label = label,
+                    detail = pluralStringResource(R.plurals.food_copy_glasses, glasses, glasses),
+                    value = waterVolumeLabel(glasses, unit),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        weightKg?.let { kg ->
+            val label = stringResource(R.string.food_quick_weight)
+            RemovableRow(label = label, onRemove = onRemoveWeight) {
+                MetricRow(
+                    label = label,
+                    detail = null,
+                    value = "${formatOneDecimal(kg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
 
@@ -224,22 +268,22 @@ private fun RemovableRow(
     }
 }
 
+/** The diary exercise block's row shape, shared by an activity, water and a weigh-in. */
 @Composable
-private fun ExerciseRow(exercise: ExerciseEntry, label: String, modifier: Modifier = Modifier) {
+private fun MetricRow(label: String, detail: String?, value: String, modifier: Modifier = Modifier) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(text = label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
-            Text(
-                text = listOfNotNull(
-                    stringResource(R.string.food_exercise_row, exercise.minutes),
-                    exercise.name.takeIf { it.isNotBlank() },
-                ).joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (!detail.isNullOrEmpty()) {
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
         Text(
-            text = stringResource(R.string.food_quick_burned, exercise.burnedKcal),
+            text = value,
             style = MaterialTheme.typography.titleMedium.tabularNums,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -300,6 +344,33 @@ private fun QuickLogConversationReviewPreview() {
                 onRemoveFood = {},
                 onRemoveExercise = {},
                 onMealTypeSelect = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** Water and a weigh-in said in the same breath as breakfast — each its own row. */
+@PreviewLightDark
+@Composable
+private fun QuickLogConversationWaterWeightPreview() {
+    AppTheme {
+        Surface {
+            QuickLogConversation(
+                lastSaid = null,
+                question = null,
+                foods = PREVIEW_FOODS.take(1),
+                exercises = emptyList(),
+                mealType = MealType.Breakfast,
+                expandedIndex = null,
+                message = null,
+                onToggleFood = {},
+                onFoodChange = { _, _ -> },
+                onRemoveFood = {},
+                onRemoveExercise = {},
+                onMealTypeSelect = {},
+                waterGlasses = 3,
+                weightKg = 72.4,
                 modifier = Modifier.padding(16.dp),
             )
         }

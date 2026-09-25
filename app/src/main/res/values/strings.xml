@@ -13,6 +13,10 @@
     <string name="shortcut_log_weight_short">Weigh in</string>
     <string name="shortcut_log_weight_long">Log today\'s weight</string>
 
+    <!-- The FAB's quick log: the confirmation the shell shows after it closes. -->
+    <string name="app_quicklog_logged">Logged</string>
+    <string name="app_quicklog_undo">Undo</string>
+
     <!-- Bottom nav / rail tabs -->
     <string name="app_tab_home">Home</string>
     <string name="app_tab_food">Food</string>

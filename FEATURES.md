@@ -27,8 +27,10 @@ Wear tile · WorkManager notifications (`:app/reminder/`).
 
 **FAB quick log** (`:feature:food/ui/quicklog/QuickLogSheet.kt`, hosted by `AppScaffold`): one AI
 field, focused with the keyboard up the moment the sheet opens, reading what the user ate *or* did —
-food rows priced by the model, activities priced on-device off the latest weigh-in, both from one
-sentence. When the sentence leaves out what the estimate turns on (how much rice, how long a run) it
+food rows priced by the model, activities priced on-device off the latest weigh-in, glasses of water
+added to today and a stated weigh-in (read in the profile's unit), all from one sentence. Every Log
+ends on a "Logged · Undo" snackbar (the earned line when there is a burn), and Undo reverses the
+whole batch. When the sentence leaves out what the estimate turns on (how much rice, how long a run) it
 asks back in an AI-accent bubble, at most twice, then estimates. The confirmation is inline: rows
 with a remove ✕ and, on a guess, talk-to-log's "Rough guess · …" tag; tapping a food row opens the
 shared portion stepper, which reprices it; a meal-slot chip row (pre-set when the sentence names the

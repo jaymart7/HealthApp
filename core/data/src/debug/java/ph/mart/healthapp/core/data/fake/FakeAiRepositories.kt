@@ -334,15 +334,24 @@ internal fun fakeQuickLog(turns: List<QuickLogTurn>): QuickLogResult {
     val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
     val foods = fakeParse(said)
     val activity = fakeExerciseParse(said)
+    val glasses = FAKE_GLASSES.find(said)?.groupValues?.get(1)?.toIntOrNull()
+    val weight = FAKE_WEIGHT.find(said)?.groupValues?.get(1)?.toDoubleOrNull()
     val question = when {
         activity != null && !FIRST_NUMBER.containsMatchIn(said) -> "How long did it last?"
-        activity == null && foods.isEmpty() -> "What did you eat, or what did you do?"
+        activity == null && foods.isEmpty() && glasses == null && weight == null ->
+            "What did you eat, or what did you do?"
         else -> null
     }
     // "snack" for Snacks — the one slot whose name is not the word people say.
     val slot = MealType.entries.firstOrNull { said.contains(it.name.removeSuffix("s"), ignoreCase = true) }
-    return quickLogResult(question, foods, listOf(activity), turns.mayAsk(), slot?.name)
+    return quickLogResult(question, foods, listOf(activity), turns.mayAsk(), slot?.name, glasses, weight)
 }
+
+/** "3 glasses", "two glasses" is past a fake's reach — a digit is what a debug walk-through types. */
+private val FAKE_GLASSES = Regex("""(\d+)\s*glass""", RegexOption.IGNORE_CASE)
+
+/** "weighed 80", "weigh 72.4", "weight 150". */
+private val FAKE_WEIGHT = Regex("""weigh\w*\s+(\d+(?:\.\d+)?)""", RegexOption.IGNORE_CASE)
 
 /** Below this a "word" matches half the table — "an" is in "banana", "pan" and "pancake". */
 private const val MIN_MATCH_CHARS = 3

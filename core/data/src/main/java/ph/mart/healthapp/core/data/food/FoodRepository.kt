@@ -196,8 +196,10 @@ interface FoodRepository {
      *
      * [photo] follows [addEntry]'s rule and is written once, onto the first entry only; see
      * [withPhotoOnFirst]. Every caller but the camera flow omits it.
+     *
+     * Returns the new rows' ids, in order — the quick log's Undo soft-deletes exactly these.
      */
-    suspend fun addEntries(entries: List<FoodEntry>, photo: Bitmap? = null)
+    suspend fun addEntries(entries: List<FoodEntry>, photo: Bitmap? = null): List<Long>
     /**
      * Corrects a logged entry. The corrected row *supersedes* the old one — soft delete plus a
      * fresh insert in one transaction — so [FoodEntry.id] changes while the row's place in the

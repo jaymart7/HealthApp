@@ -24,6 +24,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.QuickLogTurn
 import ph.mart.healthapp.core.data.food.RecognitionConfidence
 import ph.mart.healthapp.core.data.food.RecognizedFood
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -41,7 +42,8 @@ import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
  * A sheet rather than a route for the reason every FAB sheet is one — back closes it onto the tab
  * it was opened over — and hosted by `AppScaffold`, so everything leaving it is a callback:
  * [onCapturePhoto] and [onScanBarcode] push their routes (day 0, the FAB is today-only), and
- * [onSaved] is the same earned-kcal snackbar the log-exercise sheet reports to.
+ * [onLogged] hands the host the credited burn for its snackbar and the `undo` that reverses the
+ * whole log — the host owns the snackbar, and this sheet is gone by the time anyone taps it.
  *
  * Back steps through the conversation before it leaves: a call in flight is cancelled with its
  * words handed back, a question or a review starts over from the first sentence, and only a blank
@@ -54,7 +56,7 @@ fun QuickLogSheet(
     onDismiss: () -> Unit,
     onCapturePhoto: () -> Unit,
     onScanBarcode: () -> Unit,
-    onSaved: (creditedKcal: Int) -> Unit,
+    onLogged: (creditedKcal: Int, undo: () -> Unit) -> Unit,
     viewModel: QuickLogViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
@@ -63,12 +65,14 @@ fun QuickLogSheet(
     viewModel.collectSideEffect { effect ->
         when (effect) {
             is QuickLogSideEffect.Asked -> state.applyQuestion(effect.question)
-            is QuickLogSideEffect.Parsed -> state.applyParsed(effect.foods, effect.exercises, effect.mealType)
+            is QuickLogSideEffect.Parsed ->
+                state.applyParsed(effect.foods, effect.exercises, effect.mealType, effect.waterGlasses, effect.weightKg)
             QuickLogSideEffect.NothingFound -> state.restoreLast(R.string.food_quick_nothing)
             QuickLogSideEffect.Failed -> state.restoreLast(R.string.food_quick_failed)
             // Reported before the dismiss — `LogExerciseSheet`'s order, for its reason.
+            // The ViewModel outlives the sheet, so the undo still reaches it after the dismiss.
             is QuickLogSideEffect.Logged -> {
-                onSaved(effect.creditedKcal)
+                onLogged(effect.creditedKcal) { viewModel.handleEvent(QuickLogEvent.OnUndo(effect.batch)) }
                 onDismiss()
             }
         }
@@ -81,6 +85,7 @@ fun QuickLogSheet(
     QuickLogContent(
         state = state,
         recentSentences = uiState.recentSentences,
+        unit = uiState.unit,
         onDismiss = {
             cancel()
             onDismiss()
@@ -104,6 +109,8 @@ fun QuickLogSheet(
                     foods = state.foods.map { it.toFoodEntry() },
                     exercises = state.exercises,
                     sentence = state.userSentence,
+                    waterGlasses = state.waterGlasses,
+                    weightKg = state.weightKg,
                 ),
             )
         },
@@ -123,6 +130,7 @@ private fun QuickLogContent(
     state: QuickLogState,
     recentSentences: List<String>,
     onDismiss: () -> Unit,
+    unit: UnitSystem = UnitSystem.Metric,
     onSend: () -> Unit,
     onCancel: () -> Unit,
     onLog: () -> Unit,
@@ -207,6 +215,11 @@ private fun QuickLogContent(
             onRemoveFood = state::removeFood,
             onRemoveExercise = state::removeExercise,
             onMealTypeSelect = state::selectMealType,
+            waterGlasses = state.waterGlasses,
+            weightKg = state.weightKg,
+            unit = unit,
+            onRemoveWater = state::removeWater,
+            onRemoveWeight = state::removeWeight,
         )
     }
 }

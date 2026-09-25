@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
@@ -388,6 +390,21 @@ fun AppScaffold(
             scope.launch { snackbarHostState.showSnackbar(earnedSavedLine(creditedKcal)) }
         }
     }
+    // Every quick log confirms, unlike a saved workout: it may have written five things the user
+    // did not type field by field, so each one gets an Undo — the earned line when there is a burn
+    // worth congratulating, a plain "Logged" otherwise. Long, because the action is the point.
+    val loggedLine = stringResource(R.string.app_quicklog_logged)
+    val undoLabel = stringResource(R.string.app_quicklog_undo)
+    val onQuickLogged: (Int, () -> Unit) -> Unit = { creditedKcal, undo ->
+        scope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = if (creditedKcal >= EARNED_MIN_KCAL) earnedSavedLine(creditedKcal) else loggedLine,
+                actionLabel = undoLabel,
+                duration = SnackbarDuration.Long,
+            )
+            if (result == SnackbarResult.ActionPerformed) undo()
+        }
+    }
     val tabItems = TopLevelDestination.entries.map { BottomNavItem(it.icon(), stringResource(it.label())) }
     val selectedTab = TopLevelDestination.entries.indexOfFirst { it.route == topLevelBackStack.topLevelKey }
 
@@ -574,7 +591,7 @@ fun AppScaffold(
                     activeSheet = ActiveSheet.None
                     topLevelBackStack.add(BarcodeScanRoute(0))
                 },
-                onSaved = onWorkoutSaved,
+                onLogged = onQuickLogged,
             )
             ActiveSheet.LogExercise -> LogExerciseSheet(
                 onDismiss = {

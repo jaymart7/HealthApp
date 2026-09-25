@@ -3,20 +3,26 @@ package ph.mart.healthapp.feature.food.ui.quicklog
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
-import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MAX_PARSE_CHARS
 import ph.mart.healthapp.core.data.food.QuickLogRepository
 import ph.mart.healthapp.core.data.food.QuickLogResult
 import ph.mart.healthapp.core.data.food.QuickLogTurn
 import ph.mart.healthapp.core.data.network.NetworkMonitor
+import ph.mart.healthapp.core.data.nowMinuteOfDay
 import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.data.water.WaterRepository
 
 /**
  * The FAB sheet's container. Its own flow package because it is a second ViewModel in this
@@ -37,8 +43,9 @@ class QuickLogViewModel(
     private val foodRepository: FoodRepository,
     private val exerciseRepository: ExerciseRepository,
     private val networkMonitor: NetworkMonitor,
+    private val waterRepository: WaterRepository,
+    private val progressRepository: ProgressRepository,
     profileRepository: ProfileRepository,
-    progressRepository: ProgressRepository,
 ) : ViewModel(), OrbitContainerHost<QuickLogUiState, QuickLogUiState, QuickLogSideEffect> {
 
     override val container = orbitContainer<QuickLogUiState, QuickLogSideEffect>(QuickLogUiState()) {
@@ -56,7 +63,8 @@ class QuickLogViewModel(
         when (event) {
             is QuickLogEvent.OnSend -> onSend(event.turns)
             QuickLogEvent.OnCancel -> sendJob?.cancel()
-            is QuickLogEvent.OnLog -> onLog(event.foods, event.exercises, event.sentence)
+            is QuickLogEvent.OnLog -> onLog(event)
+            is QuickLogEvent.OnUndo -> onUndo(event.batch)
         }
     }
 
@@ -74,6 +82,7 @@ class QuickLogViewModel(
                 state.copy(
                     weightKg = latestKg ?: profile?.weightKg ?: QuickLogUiState().weightKg,
                     addExerciseToBudget = profile?.addExerciseToBudget != false,
+                    unit = profile?.preferredUnit ?: UnitSystem.Metric,
                 )
             }
         }
@@ -102,6 +111,10 @@ class QuickLogViewModel(
                         )
                     },
                     mealType = result.mealType,
+                    waterGlasses = result.waterGlasses,
+                    // The number the user said, in their own unit — `CoachRepositoryImpl`'s one
+                    // conversion, made here for the same reason: the model never picks the unit.
+                    weightKg = result.weight?.displayUnitToKg(state.unit),
                 )
                 QuickLogResult.NothingFound -> QuickLogSideEffect.NothingFound
                 QuickLogResult.Failed -> QuickLogSideEffect.Failed
@@ -117,13 +130,52 @@ class QuickLogViewModel(
      * back under a *food* field, and "30 min run" there is a sentence that can only fail. After the
      * write, `VoiceLogViewModel.logMeal`'s order — a log that never happened proves nothing.
      */
-    private fun onLog(foods: List<FoodEntry>, exercises: List<ExerciseEntry>, sentence: String) = intent {
-        if (foods.isNotEmpty()) foodRepository.addEntries(foods)
-        exercises.forEach { exerciseRepository.addEntry(it) }
-        if (foods.isNotEmpty() && exercises.isEmpty() && sentence.isNotBlank()) {
-            foodRepository.recordSentence(sentence.take(MAX_PARSE_CHARS))
+    private fun onLog(event: QuickLogEvent.OnLog) = intent {
+        val foods = event.foods
+        val exercises = event.exercises
+        val foodIds = if (foods.isNotEmpty()) foodRepository.addEntries(foods) else emptyList()
+        val exerciseIds = exercises.map { exerciseRepository.addEntry(it) }
+        // Added to the day, never assigned — the coach's water rule — and the count before is kept
+        // so Undo can put it back exactly.
+        val waterBefore = event.waterGlasses?.let { glasses ->
+            waterRepository.observeToday().first().also { waterRepository.setToday(it + glasses) }
+        }
+        // Keyed on the day, so it replaces today's weigh-in the way the weigh-in sheet does; the
+        // one it replaces is what Undo restores.
+        val today = todayEpochDay()
+        val weightBefore = event.weightKg?.let { kg ->
+            progressRepository.observeWeightEntries().first().firstOrNull { it.dateEpochDay == today }.also {
+                progressRepository.upsertWeightEntry(
+                    WeightEntry(dateEpochDay = today, weightKg = kg, minuteOfDay = nowMinuteOfDay()),
+                )
+            }
+        }
+        if (foods.isNotEmpty() && exercises.isEmpty() && event.sentence.isNotBlank()) {
+            foodRepository.recordSentence(event.sentence.take(MAX_PARSE_CHARS))
         }
         val credited = if (state.addExerciseToBudget) exercises.sumOf { it.burnedKcal } else 0
-        postSideEffect(QuickLogSideEffect.Logged(credited))
+        val batch = LoggedBatch(
+            foodIds = foodIds,
+            exerciseIds = exerciseIds,
+            waterBefore = waterBefore,
+            weightDay = today.takeIf { event.weightKg != null },
+            weightBefore = weightBefore,
+        )
+        postSideEffect(QuickLogSideEffect.Logged(credited, batch))
+    }
+
+    /**
+     * Every write of one Log, reversed. Food and activities soft-delete, the module rule; water goes
+     * back to its count; a weigh-in goes back to the one it replaced, or away if it replaced none —
+     * the weigh-in sheet's own delete, and weigh-ins are the one domain keyed by day, not by row.
+     */
+    private fun onUndo(batch: LoggedBatch) = intent {
+        batch.foodIds.forEach { foodRepository.deleteEntry(it) }
+        batch.exerciseIds.forEach { exerciseRepository.deleteEntry(it) }
+        batch.waterBefore?.let { waterRepository.setToday(it) }
+        batch.weightDay?.let { day ->
+            batch.weightBefore?.let { progressRepository.upsertWeightEntry(it) }
+                ?: progressRepository.deleteWeightEntry(day)
+        }
     }
 }
