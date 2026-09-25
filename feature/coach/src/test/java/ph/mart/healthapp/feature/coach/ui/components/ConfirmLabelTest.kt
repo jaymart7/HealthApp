@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import ph.mart.healthapp.core.data.coach.CoachAction
+import ph.mart.healthapp.core.data.coach.CoachScreen
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.feature.coach.R
@@ -64,6 +65,15 @@ class ConfirmLabelTest {
     @Test
     fun `a multi-row draft logs`() {
         assertEquals(R.string.coach_proposal_confirm, confirmLabelFor(null))
+    }
+
+    /** A change says what it does to a row already there; a library item is saved, not logged. */
+    @Test
+    fun `a change updates or removes, and a library item saves`() {
+        assertEquals(R.string.coach_proposal_update, confirmLabelFor(CoachAction.SetWater(glasses = 5)))
+        assertEquals(R.string.coach_proposal_remove_confirm, confirmLabelFor(CoachAction.DeleteFood(entryId = 1)))
+        assertEquals(R.string.coach_proposal_save, confirmLabelFor(CoachAction.SaveMeal("Lunch", emptyList())))
+        assertEquals(R.string.coach_proposal_open, confirmLabelFor(CoachAction.OpenScreen(CoachScreen.Sleep)))
     }
 
     @Test

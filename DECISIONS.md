@@ -3487,6 +3487,18 @@ rather than needing a counter patched.
   for. `settle` writes through `updateEntry` and the ordinary soft delete, so a coach correction is
   indistinguishable from the edit sheet's. `set_water` is a total where `log_water` adds, and goes
   down first so "I had five, and one more now" lands as six.
+- **The coach can design library items — the reversal of "you cannot invent a workout".** The
+  routine paragraph used to forbid inventing a workout or adding a lift; the owner asked for a
+  coach that generates what is needed, so `save_meal`, `save_recipe` and `create_routine` draft new
+  saved meals, recipes and routines. **What stayed:** a routine carries sets and reps and never a
+  load — the table has no weight column and "how much should I lift" is still not the model's to
+  answer; supplements are still never added or suggested (the medical clause); nothing is saved
+  until the tap, and saving a meal logs nothing. Food figures are the model's estimates under
+  `log_food`'s ceilings — the same trust a drafted food already gets — and a name the library
+  already has fails the turn, because `log_saved_meal` matches by name and could not tell two
+  apart. `addRoutine` grew a `days` argument so a planned routine is one insert rather than an
+  insert and a lookup by name. `MAX_OUTPUT_TOKENS` went 700 → 2000: a meal plan's call arguments
+  come out of the same budget as the reply.
 
 ### Training, strength & routines
 

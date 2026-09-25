@@ -15,7 +15,9 @@ interface RoutineRepository {
     /** Newest first, lifts included. */
     fun observeRoutines(): Flow<List<Routine>>
 
-    suspend fun addRoutine(name: String, lifts: List<RoutineLift>)
+    /** [days] is the weekday mask [setRoutineDays] takes, for a routine that arrives already
+     * planned — the coach's `create_routine`. The editor adds with none and sets them after. */
+    suspend fun addRoutine(name: String, lifts: List<RoutineLift>, days: Int = 0)
 
     suspend fun renameRoutine(id: Long, name: String)
 

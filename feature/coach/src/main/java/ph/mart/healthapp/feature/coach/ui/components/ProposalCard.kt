@@ -39,6 +39,7 @@ import ph.mart.healthapp.core.data.coach.draftedOn
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
+import ph.mart.healthapp.core.data.weekdayLabel
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.health.formatBpm
@@ -287,8 +288,14 @@ internal fun confirmLabelFor(single: CoachAction?): Int = when {
     single is CoachAction.DeleteFood || single is CoachAction.DeleteExercise ->
         R.string.coach_proposal_remove_confirm
     single?.isChange == true -> R.string.coach_proposal_update
+    single?.isLibrary == true -> R.string.coach_proposal_save
     else -> R.string.coach_proposal_confirm
 }
+
+/** A draft that adds to the library rather than the diary — "Save", never "Log". */
+internal val CoachAction.isLibrary: Boolean
+    get() = this is CoachAction.SaveMeal || this is CoachAction.SaveRecipe ||
+        this is CoachAction.CreateRoutine
 
 /** A draft that changes rows already written rather than adding new ones. Its button and its logged
  * line say so: "Log 3 items" over a card that deletes one of them would be the wrong verb. */
@@ -314,6 +321,7 @@ private fun confirmLabel(kept: List<CoachAction>, drafted: Int): String {
     return when {
         count == null -> stringResource(confirmLabelFor(kept.singleOrNull()))
         kept.any { it.isChange } -> pluralStringResource(R.plurals.coach_proposal_apply_items, count, count)
+        kept.all { it.isLibrary } -> pluralStringResource(R.plurals.coach_proposal_save_items, count, count)
         else -> pluralStringResource(R.plurals.coach_proposal_confirm_items, count, count)
     }
 }
@@ -547,6 +555,42 @@ private fun SingleProposal(action: CoachAction) {
             }
         }
 
+        // Every item and every figure the library will hold, before the tap.
+        is CoachAction.SaveMeal -> {
+            ProposalKicker(stringResource(R.string.coach_proposal_save_meal_title))
+            ProposalHeadline(action.name)
+            ReceiptPanel {
+                action.items.forEach { ReceiptLine(it.name, stringResource(R.string.coach_proposal_row_kcal, it.calories)) }
+                ReceiptLine(
+                    stringResource(R.string.coach_receipt_total_kcal),
+                    stringResource(R.string.coach_proposal_row_kcal, action.items.sumOf { it.calories }),
+                )
+            }
+        }
+        is CoachAction.SaveRecipe -> {
+            ProposalKicker(pluralStringResource(R.plurals.coach_proposal_save_recipe_title, action.servings, action.servings))
+            ProposalHeadline(action.name)
+            ReceiptPanel {
+                action.items.forEach { ReceiptLine(it.name, stringResource(R.string.coach_proposal_row_kcal, it.calories)) }
+                ReceiptLine(
+                    stringResource(R.string.coach_receipt_per_serving),
+                    stringResource(R.string.coach_proposal_row_kcal, action.items.sumOf { it.calories } / action.servings),
+                )
+            }
+        }
+        is CoachAction.CreateRoutine -> {
+            ProposalKicker(stringResource(R.string.coach_proposal_create_routine_title))
+            ProposalHeadline(action.name)
+            ReceiptPanel {
+                action.lifts.forEach { lift ->
+                    ReceiptLine(lift.exerciseName, stringResource(R.string.coach_proposal_routine_sets, lift.sets, lift.reps))
+                }
+                if (action.days != 0) {
+                    ReceiptLine(stringResource(R.string.coach_receipt_planned), action.days.weekdayLabel())
+                }
+            }
+        }
+
         // Nothing to write and nothing to show but where it goes.
         is CoachAction.OpenScreen -> {
             ProposalKicker(stringResource(R.string.coach_proposal_open_title))
@@ -731,6 +775,9 @@ private fun actionName(action: CoachAction): String = when (action) {
     is CoachAction.DeleteFood -> action.entry?.name.orEmpty()
     is CoachAction.DeleteExercise -> action.entry?.let { exerciseName(it) }.orEmpty()
     is CoachAction.SetWater -> waterAmount(action.glasses)
+    is CoachAction.SaveMeal -> action.name
+    is CoachAction.SaveRecipe -> action.name
+    is CoachAction.CreateRoutine -> action.name
 }
 
 /** Null where the name already is the whole row: a glass of water has no second figure. */
@@ -762,6 +809,10 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     }
     is CoachAction.DeleteFood, is CoachAction.DeleteExercise -> stringResource(R.string.coach_proposal_delete_row)
     is CoachAction.SetWater -> stringResource(R.string.coach_proposal_was, waterAmount(action.previous))
+    is CoachAction.SaveMeal -> stringResource(R.string.coach_proposal_row_kcal, action.items.sumOf { it.calories })
+    is CoachAction.SaveRecipe ->
+        pluralStringResource(R.plurals.coach_proposal_save_recipe_title, action.servings, action.servings)
+    is CoachAction.CreateRoutine -> pluralStringResource(R.plurals.coach_proposal_lifts, action.lifts.size, action.lifts.size)
 }
 
 /** A food's figure and portion, the two things an edit changes. */
@@ -833,6 +884,9 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
             stringResource(R.string.coach_proposal_changed_water, waterAmount(single.glasses))
         actions.any { it.isChange } ->
             pluralStringResource(R.plurals.coach_proposal_changed_items, actions.size, actions.size)
+        single != null && single.isLibrary -> stringResource(R.string.coach_proposal_saved, actionName(single))
+        actions.all { it.isLibrary } ->
+            pluralStringResource(R.plurals.coach_proposal_saved_items, actions.size, actions.size)
         // Unlike a routine this *did* change something, so it says so — and it says the figure the
         // tap settled on rather than a total, because a fast has none.
         single is CoachAction.SetFast && single.ending -> stringResource(
@@ -1271,6 +1325,31 @@ private fun ProposalCardEditPreview() {
                         portionAmount = 0.5,
                         before = rice,
                         after = rice.copy(portionAmount = 0.5, calories = 100, proteinG = 2, carbsG = 22),
+                    ),
+                ),
+                onConfirm = { _, _ -> },
+                onDismiss = {},
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun ProposalCardCreateRoutinePreview() {
+    AppTheme {
+        Surface {
+            ProposalCard(
+                actions = listOf(
+                    CoachAction.CreateRoutine(
+                        name = "Push day",
+                        lifts = listOf(
+                            RoutineLift("Bench press", sets = 4, reps = 8),
+                            RoutineLift("Overhead press", sets = 3, reps = 10),
+                            RoutineLift("Dips", sets = 3, reps = 12),
+                        ),
+                        days = 0b1001,
                     ),
                 ),
                 onConfirm = { _, _ -> },

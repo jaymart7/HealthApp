@@ -5,6 +5,7 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.Tool
 import java.util.Locale
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -32,6 +33,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.RoutineRepository
 import ph.mart.healthapp.core.data.exercise.dayLabel
 import ph.mart.healthapp.core.data.exercise.isPlannedOn
@@ -93,7 +95,9 @@ import ph.mart.healthapp.core.data.supplement.SUPPLEMENT_TIMES_PER_DAY
 import ph.mart.healthapp.core.data.supplement.SupplementDay
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.supplement.SupplementToday
+import ph.mart.healthapp.core.data.hasWeekday
 import ph.mart.healthapp.core.data.todayEpochDay
+import ph.mart.healthapp.core.data.toggleWeekday
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 
@@ -201,6 +205,22 @@ internal const val TOOL_EDIT_EXERCISE = "edit_exercise"
 internal const val TOOL_DELETE_ENTRY = "delete_entry"
 internal const val TOOL_SET_WATER = "set_water"
 
+internal const val TOOL_SAVE_MEAL = "save_meal"
+internal const val TOOL_SAVE_RECIPE = "save_recipe"
+internal const val TOOL_CREATE_ROUTINE = "create_routine"
+
+/** Ceilings on a designed library item — past these the model is looping rather than designing,
+ * and a card that long is scrolled past rather than read. */
+internal const val MAX_LIBRARY_ITEMS = 12
+internal const val MAX_ROUTINE_LIFTS = 12
+internal const val MAX_ROUTINE_SETS = 10
+internal const val MAX_ROUTINE_REPS = 50
+internal const val MAX_RECIPE_SERVINGS = 20
+
+/** `create_routine`'s weekday values, Monday first because that is how `Weekday.kt` counts. Schema
+ * text in English, like every other word the model reads — the user sees `weekdayLabel()`. */
+internal val WEEKDAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
 /** The two kinds `delete_entry` takes. Schema text, compared against rather than shown. */
 internal const val ENTRY_FOOD = "food"
 internal const val ENTRY_EXERCISE = "exercise"
@@ -235,6 +255,24 @@ internal val WRITE_TOOLS = setOf(
     TOOL_EDIT_EXERCISE,
     TOOL_DELETE_ENTRY,
     TOOL_SET_WATER,
+    // New library items the coach designed. The card lists every item or lift before the tap.
+    TOOL_SAVE_MEAL,
+    TOOL_SAVE_RECIPE,
+    TOOL_CREATE_ROUTINE,
+)
+
+/** One food of a designed meal or recipe — `log_food`'s fields without the meal slot or the day,
+ * because a library item belongs to neither. */
+private val libraryItemSchema = Schema.obj(
+    mapOf(
+        "name" to Schema.string(description = "What the food is called."),
+        "portion_amount" to Schema.double(description = "How much, e.g. 2 or 150."),
+        "portion_unit" to Schema.string(description = "The unit, e.g. 'g', 'ml', 'serving'."),
+        "calories" to Schema.integer(description = "Calories for the whole portion."),
+        "protein_g" to Schema.integer(description = "Protein in grams."),
+        "carbs_g" to Schema.integer(description = "Carbohydrates in grams."),
+        "fat_g" to Schema.integer(description = "Fat in grams."),
+    ),
 )
 
 /**
@@ -479,8 +517,8 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             description = "Propose starting one of the user's own saved workout routines, by its " +
                 "exact name from get_library. This does NOT log a workout and records nothing: " +
                 "it opens their workout screen already filled in with that routine's lifts, and " +
-                "they save it themselves. Only ever one of their own routines — you cannot " +
-                "invent a workout, add a lift to one, or set how much they lift.",
+                "they save it themselves. Only ever one of their own routines — to design a new " +
+                "one use create_routine — and never set how much they lift.",
             parameters = mapOf(
                 "name" to Schema.string(
                     description = "The routine's name, exactly as get_library gave it.",
@@ -571,6 +609,51 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                 "days_ago" to draftDaysAgoSchema,
             ),
             optionalParameters = listOf("days_ago"),
+        ),
+        FunctionDeclaration(
+            name = TOOL_SAVE_MEAL,
+            description = "Propose saving a new meal to the user's library, when they ask you to " +
+                "save, plan or design one — a meal plan is one call per meal in the same turn. " +
+                "Estimate each food's nutrition. It is saved only when they confirm, and logging " +
+                "it later is up to them.",
+            parameters = mapOf(
+                "name" to Schema.string(description = "A short name for the meal, e.g. 'High-protein breakfast'."),
+                "items" to Schema.array(libraryItemSchema, description = "Up to $MAX_LIBRARY_ITEMS foods."),
+            ),
+        ),
+        FunctionDeclaration(
+            name = TOOL_SAVE_RECIPE,
+            description = "Propose saving a new recipe to the user's library: the ingredients for " +
+                "the whole pot and how many servings it makes. Saved only when they confirm.",
+            parameters = mapOf(
+                "name" to Schema.string(description = "The recipe's name."),
+                "servings" to Schema.integer(description = "How many servings, 1 to $MAX_RECIPE_SERVINGS."),
+                "items" to Schema.array(libraryItemSchema, description = "Up to $MAX_LIBRARY_ITEMS ingredients, for the whole recipe."),
+            ),
+        ),
+        FunctionDeclaration(
+            name = TOOL_CREATE_ROUTINE,
+            description = "Propose saving a new workout routine they asked you to design: its lifts " +
+                "with sets and reps, and optionally the weekdays it is planned for. Never a " +
+                "weight or load. Saved only when they confirm.",
+            parameters = mapOf(
+                "name" to Schema.string(description = "The routine's name, e.g. 'Push day'."),
+                "lifts" to Schema.array(
+                    Schema.obj(
+                        mapOf(
+                            "exercise_name" to Schema.string(description = "The lift, e.g. 'Bench press'."),
+                            "sets" to Schema.integer(description = "Sets, 1 to $MAX_ROUTINE_SETS."),
+                            "reps" to Schema.integer(description = "Reps per set, 1 to $MAX_ROUTINE_REPS."),
+                        ),
+                    ),
+                    description = "Up to $MAX_ROUTINE_LIFTS lifts, in order.",
+                ),
+                "weekdays" to Schema.array(
+                    Schema.enumeration(values = WEEKDAY_NAMES),
+                    description = "The weekdays it is planned for, if they said.",
+                ),
+            ),
+            optionalParameters = listOf("weekdays"),
         ),
         FunctionDeclaration(
             name = TOOL_SHOW_REPORT,
@@ -668,6 +751,17 @@ internal fun parseAction(
         }
     }
     // Zero is a real total here, unlike `log_water`'s: "I didn't drink any" is a correction.
+    TOOL_SAVE_MEAL -> args.libraryName()?.let { name ->
+        parseLibraryItems(args)?.let { CoachAction.SaveMeal(name = name, items = it) }
+    }
+    TOOL_SAVE_RECIPE -> {
+        val name = args.libraryName()
+        val servings = args.int("servings")?.takeIf { it in 1..MAX_RECIPE_SERVINGS }
+        val items = parseLibraryItems(args)
+        if (name == null || servings == null || items == null) null
+        else CoachAction.SaveRecipe(name = name, servings = servings, items = items)
+    }
+    TOOL_CREATE_ROUTINE -> parseCreateRoutine(args)
     TOOL_SET_WATER -> args.int("glasses")
         ?.takeIf { it in 0..MAX_ACTION_GLASSES }
         ?.let { glasses ->
@@ -724,6 +818,62 @@ private fun parseEditExercise(args: Map<String, JsonElement>, today: Long): Coac
         minutes = minutes.value,
     )
 }
+
+private fun Map<String, JsonElement>.libraryName(): String? =
+    string("name")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS }
+
+/** Every item held to `log_food`'s own bounds; one bad item fails the whole draft, the rule a
+ * meal of `log_food` calls already follows. */
+private fun parseLibraryItems(args: Map<String, JsonElement>): List<SavedMealItem>? {
+    val array = (args["items"] as? JsonArray)?.takeIf { it.size in 1..MAX_LIBRARY_ITEMS } ?: return null
+    return array.map { element ->
+        val item = element as? JsonObject ?: return null
+        SavedMealItem(
+            name = item.libraryName() ?: return null,
+            portionAmount = item.portionAmount(),
+            portionUnit = item.portionUnit(),
+            calories = item.int("calories")?.takeIf { it in 0..MAX_ACTION_CALORIES } ?: return null,
+            proteinG = item.macro("protein_g") ?: return null,
+            carbsG = item.macro("carbs_g") ?: return null,
+            fatG = item.macro("fat_g") ?: return null,
+        )
+    }
+}
+
+private fun parseCreateRoutine(args: Map<String, JsonElement>): CoachAction.CreateRoutine? {
+    val name = args.libraryName() ?: return null
+    val lifts = (args["lifts"] as? JsonArray)?.takeIf { it.size in 1..MAX_ROUTINE_LIFTS }?.map { element ->
+        val lift = element as? JsonObject ?: return null
+        RoutineLift(
+            exerciseName = lift.string("exercise_name")?.trim()
+                ?.takeIf { it.isNotEmpty() && it.length <= MAX_NAME_CHARS } ?: return null,
+            sets = lift.int("sets")?.takeIf { it in 1..MAX_ROUTINE_SETS } ?: return null,
+            reps = lift.int("reps")?.takeIf { it in 1..MAX_ROUTINE_REPS } ?: return null,
+        )
+    } ?: return null
+    // An unknown weekday fails the draft rather than being dropped: a routine planned for fewer
+    // days than the user asked for is the silent half of a card.
+    val days = when (val raw = args["weekdays"]) {
+        null, is JsonNull -> 0
+        is JsonArray -> raw.fold(0) { mask, element ->
+            val day = (element as? JsonPrimitive)?.takeIf { it.isString }?.content?.trim()
+            val index = WEEKDAY_NAMES.indexOfFirst { it.equals(day, ignoreCase = true) }
+            if (index < 0) return null
+            if (mask.hasWeekday(index)) mask else mask.toggleWeekday(index)
+        }
+        else -> return null
+    }
+    return CoachAction.CreateRoutine(name = name, lifts = lifts, days = days)
+}
+
+/** The portion is a label on the row, not arithmetic — the calories are already for the whole of
+ * it — so a missing or absurd one falls back rather than failing the draft. */
+private fun Map<String, JsonElement>.portionAmount(): Double =
+    double("portion_amount")?.takeIf { it > 0 && it <= MAX_PORTION_AMOUNT } ?: 1.0
+
+private fun Map<String, JsonElement>.portionUnit(): String =
+    string("portion_unit")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_UNIT_CHARS }
+        ?: DEFAULT_PORTION_UNIT
 
 /** An optional field's reading: [value] null when the model left it out (or sent JSON null), and
  * the whole thing null when it was sent and failed [read] — which fails the draft. */
@@ -900,11 +1050,8 @@ private fun parseLogFood(args: Map<String, JsonElement>, today: Long): CoachActi
     val protein = args.macro("protein_g") ?: return null
     val carbs = args.macro("carbs_g") ?: return null
     val fat = args.macro("fat_g") ?: return null
-    // The portion is a label on the row, not arithmetic — the calories above are already for the
-    // whole portion. So a missing one falls back rather than failing the draft.
-    val amount = args.double("portion_amount")?.takeIf { it > 0 && it <= MAX_PORTION_AMOUNT } ?: 1.0
-    val unit = args.string("portion_unit")?.trim()?.takeIf { it.isNotEmpty() && it.length <= MAX_UNIT_CHARS }
-        ?: DEFAULT_PORTION_UNIT
+    val amount = args.portionAmount()
+    val unit = args.portionUnit()
     val date = draftDay(args, today) ?: return null
     return CoachAction.LogFood(
         name = name,
@@ -1787,6 +1934,17 @@ internal class CoachToolbox(
         exerciseRepository.observeEntries(dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()).first()
             .firstOrNull { it.id == id }
 
+    /** Whether a saved meal or recipe already goes by [name] — `savedMealRows`' exact,
+     * case-insensitive match, since `log_saved_meal` could not tell two of them apart. */
+    suspend fun libraryHasFood(name: String): Boolean =
+        (foodRepository.observeAllSavedMeals().first().map { it.name } +
+            foodRepository.observeAllRecipes().first().map { it.name })
+            .any { it.equals(name.trim(), ignoreCase = true) }
+
+    /** [libraryHasFood] for a routine, `start_routine`'s reason. */
+    suspend fun libraryHasRoutine(name: String): Boolean =
+        routineRepository.observeRoutines().first().any { it.name.equals(name.trim(), ignoreCase = true) }
+
     /** The day's glasses, for what a `set_water` card replaces. */
     suspend fun waterOn(dateEpochDay: Long): Int =
         waterRepository.observeDay(dateEpochDay.takeIf { it > 0 } ?: todayEpochDay()).first()
@@ -1929,6 +2087,10 @@ internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachActio
         ?.let { before -> editedExercise(this, before, toolbox.weightKg())?.let { listOf(copy(before = before, after = it)) } }
     is CoachAction.DeleteFood -> toolbox.foodEntry(entryId, dateEpochDay)?.let { listOf(copy(entry = it)) }
     is CoachAction.DeleteExercise -> toolbox.exerciseEntry(entryId, dateEpochDay)?.let { listOf(copy(entry = it)) }
+    // A name already in the library fails the turn rather than saving a twin nobody can tell apart.
+    is CoachAction.SaveMeal -> listOf(this).takeUnless { toolbox.libraryHasFood(name) }
+    is CoachAction.SaveRecipe -> listOf(this).takeUnless { toolbox.libraryHasFood(name) }
+    is CoachAction.CreateRoutine -> listOf(this).takeUnless { toolbox.libraryHasRoutine(name) }
     is CoachAction.SetWater -> listOf(copy(previous = toolbox.waterOn(dateEpochDay)))
         // The total they already have is not a correction.
         .takeIf { it.single().previous != glasses }

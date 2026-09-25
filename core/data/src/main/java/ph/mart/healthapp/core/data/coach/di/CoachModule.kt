@@ -51,6 +51,7 @@ val coachDataModule = module {
             bloodPressureRepository = get(),
             fastingRepository = get(),
             noteRepository = get(),
+            routineRepository = get(),
             toolbox = get(),
         )
         debugCoach(real, get()) ?: real

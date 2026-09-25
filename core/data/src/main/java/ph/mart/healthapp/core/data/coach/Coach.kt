@@ -7,6 +7,7 @@ import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.insight.InsightRequest
@@ -338,6 +339,34 @@ sealed interface CoachAction {
         val dateEpochDay: Long = 0,
         val previous: Int = 0,
     ) : CoachAction
+
+    /**
+     * A new saved meal the coach designed — a meal plan is several of these on one card.
+     *
+     * The one kind of draft whose figures are the model's estimates *and* land outside the diary:
+     * they go into the library, and logging the meal later copies them. `log_food`'s ceilings hold
+     * every item, and [resolve] fails a name the library already has rather than saving a second
+     * meal the user cannot tell from the first.
+     */
+    data class SaveMeal(val name: String, val items: List<SavedMealItem>) : CoachAction
+
+    /** [SaveMeal] for a recipe: the items are the whole pot and [servings] divides it. */
+    data class SaveRecipe(
+        val name: String,
+        val servings: Int,
+        val items: List<SavedMealItem>,
+    ) : CoachAction
+
+    /**
+     * A new workout routine the coach designed: lifts with sets and reps, and the weekdays it is
+     * planned for as `Weekday.kt`'s Monday-first mask. **Never a load** — a routine has no weight
+     * column, and how much someone should lift stays out of the coach's mouth.
+     */
+    data class CreateRoutine(
+        val name: String,
+        val lifts: List<RoutineLift>,
+        val days: Int = 0,
+    ) : CoachAction
 }
 
 /**
@@ -393,6 +422,10 @@ val CoachAction.draftedOn: Long?
         // And a fast is started or broken now by definition: the transition is the thing.
         is CoachAction.SetFast,
         is CoachAction.OpenScreen,
+        // A library item belongs to no day.
+        is CoachAction.SaveMeal,
+        is CoachAction.SaveRecipe,
+        is CoachAction.CreateRoutine,
         -> null
     }?.takeIf { it > 0 }
 

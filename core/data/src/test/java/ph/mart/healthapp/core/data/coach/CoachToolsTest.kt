@@ -1,6 +1,8 @@
 package ph.mart.healthapp.core.data.coach
 
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -1738,6 +1740,82 @@ class CoachToolsTest {
         )
         assertTrue(text, "- #42 Rice (Lunch): 200 kcal, 4P/44C/0F, 1 cup" in text)
         assertTrue(text, "- Activity: #7 Run, 30 min, 300 kcal burned" in text)
+    }
+
+    // endregion
+
+    // region Library items
+
+    private fun itemJson(name: String, kcal: Int) = JsonObject(
+        mapOf(
+            "name" to JsonPrimitive(name),
+            "portion_amount" to JsonPrimitive(1),
+            "portion_unit" to JsonPrimitive("serving"),
+            "calories" to JsonPrimitive(kcal),
+            "protein_g" to JsonPrimitive(10),
+            "carbs_g" to JsonPrimitive(20),
+            "fat_g" to JsonPrimitive(5),
+        ),
+    )
+
+    @Test
+    fun `a designed meal becomes one action holding its items`() {
+        val meal = parseAction(
+            TOOL_SAVE_MEAL,
+            mapOf("name" to JsonPrimitive("Protein breakfast"), "items" to JsonArray(listOf(itemJson("Eggs", 180), itemJson("Toast", 90)))),
+            0,
+        ) as CoachAction.SaveMeal
+        assertEquals("Protein breakfast", meal.name)
+        assertEquals(listOf("Eggs", "Toast"), meal.items.map { it.name })
+        assertEquals(270, meal.items.sumOf { it.calories })
+    }
+
+    @Test
+    fun `one bad item, no items or no name fails the design`() {
+        val bad = itemJson("Cake", 90_000)
+        assertNull(parseAction(TOOL_SAVE_MEAL, mapOf("name" to JsonPrimitive("X"), "items" to JsonArray(listOf(itemJson("Eggs", 180), bad))), 0))
+        assertNull(parseAction(TOOL_SAVE_MEAL, mapOf("name" to JsonPrimitive("X"), "items" to JsonArray(emptyList())), 0))
+        assertNull(parseAction(TOOL_SAVE_MEAL, mapOf("items" to JsonArray(listOf(itemJson("Eggs", 180)))), 0))
+    }
+
+    @Test
+    fun `a recipe needs its servings`() {
+        val args = mapOf("name" to JsonPrimitive("Chili"), "items" to JsonArray(listOf(itemJson("Beans", 400))))
+        assertNull(parseAction(TOOL_SAVE_RECIPE, args, 0))
+        assertEquals(4, (parseAction(TOOL_SAVE_RECIPE, args + ("servings" to JsonPrimitive(4)), 0) as CoachAction.SaveRecipe).servings)
+    }
+
+    private fun lift(name: String, sets: Int, reps: Int) = JsonObject(
+        mapOf("exercise_name" to JsonPrimitive(name), "sets" to JsonPrimitive(sets), "reps" to JsonPrimitive(reps)),
+    )
+
+    @Test
+    fun `a designed routine carries its lifts and a Monday-first weekday mask`() {
+        val routine = parseAction(
+            TOOL_CREATE_ROUTINE,
+            mapOf(
+                "name" to JsonPrimitive("Push day"),
+                "lifts" to JsonArray(listOf(lift("Bench press", 3, 8), lift("Dips", 3, 12))),
+                "weekdays" to JsonArray(listOf(JsonPrimitive("monday"), JsonPrimitive("Thursday"), JsonPrimitive("Monday"))),
+            ),
+            0,
+        ) as CoachAction.CreateRoutine
+        assertEquals(listOf(RoutineLift("Bench press", 3, 8), RoutineLift("Dips", 3, 12)), routine.lifts)
+        assertEquals((1 shl 0) or (1 shl 3), routine.days)
+    }
+
+    @Test
+    fun `a routine with an unknown weekday or an absurd lift fails, and weekdays are optional`() {
+        val lifts = JsonArray(listOf(lift("Squat", 5, 5)))
+        assertNull(
+            parseAction(
+                TOOL_CREATE_ROUTINE,
+                mapOf("name" to JsonPrimitive("Legs"), "lifts" to lifts, "weekdays" to JsonArray(listOf(JsonPrimitive("Someday")))),
+                0,
+            ),
+        )
+        assertNull(parseAction(TOOL_CREATE_ROUTINE, mapOf("name" to JsonPrimitive("Legs"), "lifts" to JsonArray(listOf(lift("Squat", 50, 5)))), 0))
+        assertEquals(0, (parseAction(TOOL_CREATE_ROUTINE, mapOf("name" to JsonPrimitive("Legs"), "lifts" to lifts), 0) as CoachAction.CreateRoutine).days)
     }
 
     // endregion

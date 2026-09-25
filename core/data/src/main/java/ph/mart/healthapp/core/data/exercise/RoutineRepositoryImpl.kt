@@ -11,9 +11,9 @@ internal class RoutineRepositoryImpl(private val dao: RoutineDao) : RoutineRepos
     override fun observeRoutines(): Flow<List<Routine>> =
         combine(dao.observeRoutines(), dao.observeLifts(), ::joinLifts)
 
-    override suspend fun addRoutine(name: String, lifts: List<RoutineLift>) {
+    override suspend fun addRoutine(name: String, lifts: List<RoutineLift>, days: Int) {
         dao.insertWithLifts(
-            RoutineEntity(name = name.trim(), createdAt = System.currentTimeMillis()),
+            RoutineEntity(name = name.trim(), createdAt = System.currentTimeMillis(), days = days),
             lifts.map { RoutineLiftEntity(routineId = 0, exerciseName = it.exerciseName, sets = it.sets, reps = it.reps) },
         )
     }

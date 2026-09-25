@@ -145,6 +145,10 @@ internal fun List<CoachAction>.opensTheDiary(): Boolean = any {
         is CoachAction.SetFast,
         // Nothing written, and the tap already took them where they asked to go.
         is CoachAction.OpenScreen,
+        // The library, not the diary.
+        is CoachAction.SaveMeal,
+        is CoachAction.SaveRecipe,
+        is CoachAction.CreateRoutine,
         -> false
     }
 }

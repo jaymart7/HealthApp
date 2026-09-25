@@ -247,6 +247,31 @@
         <item quantity="other">Changed %1$d items.</item>
     </plurals>
 
+    <!-- A library item the coach designed. Saving it logs nothing, so the verb is Save. -->
+    <string name="coach_proposal_save_meal_title">Save to your meals</string>
+    <plurals name="coach_proposal_save_recipe_title">
+        <item quantity="one">Save recipe · %1$d serving</item>
+        <item quantity="other">Save recipe · %1$d servings</item>
+    </plurals>
+    <string name="coach_proposal_create_routine_title">Save new routine</string>
+    <string name="coach_receipt_total_kcal">Total</string>
+    <string name="coach_receipt_per_serving">Per serving</string>
+    <string name="coach_receipt_planned">Planned</string>
+    <string name="coach_proposal_save">Save it</string>
+    <plurals name="coach_proposal_save_items">
+        <item quantity="one">Save %1$d item</item>
+        <item quantity="other">Save %1$d items</item>
+    </plurals>
+    <string name="coach_proposal_saved">Saved to your library: %1$s.</string>
+    <plurals name="coach_proposal_saved_items">
+        <item quantity="one">Saved %1$d item to your library.</item>
+        <item quantity="other">Saved %1$d items to your library.</item>
+    </plurals>
+    <plurals name="coach_proposal_lifts">
+        <item quantity="one">%1$d lift</item>
+        <item quantity="other">%1$d lifts</item>
+    </plurals>
+
     <!-- A screen the coach offers to open. Writes nothing, so no "Logged:" line follows it. -->
     <string name="coach_proposal_open_title">Open in the app</string>
     <string name="coach_proposal_open">Open it</string>

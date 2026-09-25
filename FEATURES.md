@@ -504,6 +504,11 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   after — a portion-only edit repriced by the app, a changed activity re-priced off the latest
   weigh-in — and "Update it" / "Remove it" writes through the diary's own update and soft delete.
   Up to a month back, one day per card, today's earning the diary door.
+- Coach designs — "plan my meals for tomorrow", "save a chili recipe", "make me a push-day routine
+  for Mondays and Thursdays": `save_meal` (a meal plan is one per meal on one card), `save_recipe`
+  and `create_routine` draft new library items — every food with its estimated figures, every lift
+  with sets and reps, never a load — and "Save it" adds them through the library's own calls. A name
+  the library already has fails the turn rather than saving a twin. Saving a meal logs nothing.
 - Coach screens — "show me my sleep" / "open my food library" drafts an `open_screen` card naming
   one of `CoachScreen`'s 24 places (the four tabs, Profile's lists and settings, every Progress
   subject); "Open it" goes there, above the coach so back returns to the chat. It writes nothing

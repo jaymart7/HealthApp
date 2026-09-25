@@ -24,6 +24,7 @@ import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
+import ph.mart.healthapp.core.data.exercise.RoutineRepository
 import ph.mart.healthapp.core.data.fasting.FastingRepository
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
@@ -49,8 +50,11 @@ import ph.mart.healthapp.core.data.water.WaterRepository
  * Raised from 300 when the coach got tools: a turn can now spend tokens deciding to call `get_day`,
  * reading the result, and *then* writing a six-line list. All three come out of one budget — the
  * lesson `AI_THINKING` is written against.
+ *
+ * Raised again from 700 when the coach could design library items: a meal plan's `save_meal` calls
+ * carry every food's figures as arguments, and those come out of this same budget.
  */
-private const val MAX_OUTPUT_TOKENS = 700
+private const val MAX_OUTPUT_TOKENS = 2000
 
 /**
  * The coach is the first call site in this app that leaves [ph.mart.healthapp.core.data.AI_THINKING].
@@ -120,6 +124,8 @@ internal class CoachRepositoryImpl(
     // The ninth, and the only one the coach could already *read* before it could write: `get_day`
     // has handed the model the day's note since the note shipped.
     private val noteRepository: NoteRepository,
+    // The tenth, for a routine the coach designed; starting one still writes nothing.
+    private val routineRepository: RoutineRepository,
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
@@ -290,6 +296,10 @@ internal class CoachRepositoryImpl(
                 is CoachAction.DeleteFood -> foodRepository.deleteEntry(it.entryId)
                 is CoachAction.EditExercise -> it.after?.let { entry -> exerciseRepository.updateEntry(entry) }
                 is CoachAction.DeleteExercise -> exerciseRepository.deleteEntry(it.entryId)
+                // New library items, through the calls the library's own editors make.
+                is CoachAction.SaveMeal -> foodRepository.saveMeal(it.name, it.items)
+                is CoachAction.SaveRecipe -> foodRepository.saveRecipe(it.name, it.servings, it.items)
+                is CoachAction.CreateRoutine -> routineRepository.addRoutine(it.name, it.lifts, it.days)
                 else -> Unit
             }
         }
@@ -596,10 +606,19 @@ private fun systemPromptFor(
             "weekday each is planned for, so prefer the one planned for today. Then call " +
             "start_routine with its exact name. That logs nothing and records nothing: it opens " +
             "their workout screen already filled in with that routine's lifts, and they save it " +
-            "themselves, so say which routine you are proposing. Only ever one of their own — " +
-            "you cannot invent a workout, add a lift to one, or say how much they should lift — " +
-            "and never draft a routine in the same turn as anything else. If they have no " +
-            "routines, say so and leave it there.",
+            "themselves, so say which routine you are proposing. Only ever one of their own, " +
+            "and never draft starting a routine in the same turn as anything else. If they have " +
+            "no routines, offer to design one.",
+    )
+    appendLine(
+        "You can also add to their library when they ask you to design, plan or save something. " +
+            "Call save_meal for a meal — a meal plan is one save_meal per meal in the same turn — " +
+            "save_recipe for a recipe with its servings, and create_routine for a workout routine " +
+            "with its lifts, sets, reps and, if they said, its weekdays. Check get_library first " +
+            "and give each a name they do not already use. Estimate a food's nutrition the way " +
+            "you would for log_food. A routine never carries a weight or a load: never say how " +
+            "much they should lift. Nothing is saved until they confirm, and saving a meal does " +
+            "not log it.",
     )
     appendLine(
         "When they ask to see, open or go to a part of the app — a chart, their diary, a list, " +
