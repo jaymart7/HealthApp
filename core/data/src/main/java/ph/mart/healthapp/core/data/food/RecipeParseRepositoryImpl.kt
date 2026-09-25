@@ -9,7 +9,7 @@ import org.json.JSONObject
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /**
  * [QuickLogRepositoryImpl]'s shape: the ingredients are [RECOGNIZED_FOOD_SCHEMA] nested under one
@@ -28,8 +28,7 @@ internal class RecipeParseRepositoryImpl : RecipeParseRepository {
     )
 
     override suspend fun parse(text: String): RecipeParseResult = try {
-        val response = model.generateContent(content { text(promptFor(text.take(MAX_RECIPE_CHARS))) })
-        logAiUsage("recipe parse", response.usageMetadata)
+        val response = model.generate("recipe parse", content { text(promptFor(text.take(MAX_RECIPE_CHARS))) })
         val body = JSONObject(response.text ?: "{}")
         recipeParseResult(
             name = body.optString("name"),

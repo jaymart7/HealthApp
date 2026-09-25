@@ -8,7 +8,7 @@ import org.json.JSONArray
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /** Three foods with ten fields each. [fitting] rejects whatever gets past it, but capping here is
  * cheaper than paying for a list that will be thrown away. */
@@ -35,7 +35,7 @@ private val IDEA_SCHEMA = Schema.obj(
  * parses it — no kotlinx-serialization dependency needed for ten flat fields, the same call
  * [FoodRecognitionRepositoryImpl] makes.
  *
- * The model is built once and held, unlike the coach's: nothing about this configuration carries
+ * The model is built once and held, like every other: nothing about this configuration carries
  * the day's numbers — those ride the prompt, which is written fresh per request.
  */
 internal class MealIdeaRepositoryImpl : MealIdeaRepository {
@@ -50,8 +50,7 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
     )
 
     override suspend fun ideas(request: MealIdeaRequest): MealIdeaResult = try {
-        val response = model.generateContent(content { text(promptFor(request)) })
-        logAiUsage("meal ideas", response.usageMetadata)
+        val response = model.generate("meal ideas", content { text(promptFor(request)) })
         val ideas = parse(response.text).fitting(request.remainingKcal)
         // An empty list is a failure, not an answer: the screen's fallback — the user's own foods —
         // is better than a heading over nothing.

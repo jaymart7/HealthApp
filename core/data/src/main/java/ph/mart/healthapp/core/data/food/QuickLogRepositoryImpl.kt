@@ -4,6 +4,7 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.thinkingConfig
@@ -14,14 +15,17 @@ import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.exercise.PARSED_EXERCISE_SCHEMA
 import ph.mart.healthapp.core.data.exercise.readActivity
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /**
  * [MealParseRepositoryImpl]'s shape with both parses' schemas nested in one reply: the food items
  * are [RECOGNIZED_FOOD_SCHEMA] and the activities are `PARSED_EXERCISE_SCHEMA`, read back by the
  * same two functions, so a meal typed here and one typed on talk-to-log land identically.
  */
-internal class QuickLogRepositoryImpl : QuickLogRepository {
+internal class QuickLogRepositoryImpl(
+    // Read for the saved foods the sentence names — see `MyFoods.kt`.
+    private val foodRepository: FoodRepository,
+) : QuickLogRepository {
 
     private val model = aiModel(
         generationConfig = generationConfig {
@@ -49,17 +53,18 @@ internal class QuickLogRepositoryImpl : QuickLogRepository {
 
     override suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap?): QuickLogResult = try {
         val mayAsk = turns.mayAsk()
-        val prompt = promptFor(turns, mayAsk, hasPhoto = photo != null)
+        val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
+        val mine = foodRepository.observeMyFoods().first().namedIn(said)
+        val prompt = promptFor(turns, mayAsk, hasPhoto = photo != null, mine = mine)
         val response = if (photo == null) {
-            model.generateContent(content { text(prompt) })
+            model.generate("quick log", content { text(prompt) })
         } else {
-            photoModel.generateContent(content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(prompt) })
+            photoModel.generate("quick log", content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(prompt) })
         }
-        logAiUsage("quick log", response.usageMetadata)
         val body = JSONObject(response.text ?: "{}")
         quickLogResult(
             question = body.optString("question"),
-            foods = parseRecognizedFoods(body.optJSONArray("foods") ?: JSONArray()),
+            foods = parseRecognizedFoods(body.optJSONArray("foods") ?: JSONArray()).preferMyFoods(mine),
             activities = body.optJSONArray("activities")?.let { array ->
                 (0 until array.length()).map { readActivity(array.getJSONObject(it)) }
             }.orEmpty(),
@@ -111,7 +116,12 @@ private const val MAX_QUICK_LOG_PHOTO_TOKENS = MAX_QUICK_LOG_TOKENS + 400
  * The first turn is the meal, so it is always kept; the rest are the latest, where the answers and
  * corrections are. Each is cut to [MAX_PARSE_CHARS] for that constant's reason.
  */
-private fun promptFor(turns: List<QuickLogTurn>, mayAsk: Boolean, hasPhoto: Boolean): String = buildString {
+private fun promptFor(
+    turns: List<QuickLogTurn>,
+    mayAsk: Boolean,
+    hasPhoto: Boolean,
+    mine: List<ScannedProduct>,
+): String = buildString {
     appendLine(
         "You are a logging assistant for a nutrition and fitness app. The user has typed what " +
             "they ate, what exercise they did, or both. Turn it into foods with estimated " +
@@ -137,6 +147,10 @@ private fun promptFor(turns: List<QuickLogTurn>, mayAsk: Boolean, hasPhoto: Bool
                 "the rice\" halves the rice, \"plus a coffee\" adds one. Only when the photo shows " +
                 "no food, go by their words alone.",
         )
+    }
+    myFoodsLine(mine)?.let {
+        appendLine()
+        appendLine(it)
     }
     appendLine()
     appendLine(

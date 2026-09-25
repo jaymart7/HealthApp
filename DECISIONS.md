@@ -2202,6 +2202,24 @@ rather than needing a counter patched.
   pretending to be a conversation — every row is `Low`, and an activity with no duration said is
   dropped, since offline there is nothing to estimate one from. The ViewModel decides at the send;
   the sheet no longer blocks it.
+- **Online, the parse prefers the user's own foods too — and the model never prices one.** The
+  offline matcher above always put a saved food first, so for months "two protein bars" logged the
+  label's figures with the radio off and a Gemini estimate with it on — the path with *more* signal
+  was the one that ignored the best figures the app had. `MyFoods.kt` closes it in three steps,
+  shared by the quick log and talk-to-log (`MealParseRepositoryImpl`). **`namedIn`** picks the
+  candidates with the offline path's own word rule (`matchWords` + `namedBy`, extracted so there is
+  one copy), capped at eight — so both paths consider the same foods, and a sentence that names
+  none sends nothing extra. **`myFoodsLine`** names them to the model with the unit each is saved
+  in, asking it to use the name exactly and answer in that unit: names only, never the figures,
+  because a figure the model can see is a figure it can "correct". **`preferMyFoods`** is the
+  deterministic half: a row returned under a saved name (ignoring case) takes the saved food's
+  figures, repriced by `portionFactor` to the model's portion when the unit matches — the model is
+  trusted with *which* food and *how much*, never with what a saved food contains. In any other
+  unit there is no honest conversion (grams to bars), so the row keeps the saved serving and goes
+  `Low`, which the review tags; a guessed density would be the invented number this app's nullable
+  figures exist to avoid. The repositories read `observeMyFoods()` themselves rather than taking
+  the list through the interface, so no ViewModel or fake changed — the debug fakes stay word
+  matchers. `MyFoodsTest` holds the four rules.
 - **Every quick log gets Undo, and the undo carries its own batch.** A sentence can write five
   things the user never typed field by field, so the shell's snackbar always follows a quick log —
   the earned line when there is a burn worth it, "Logged" otherwise — with Undo and
@@ -3134,6 +3152,20 @@ rather than needing a counter patched.
     and output tokens. `cached` is the only place the coach's prefix shows it is working, and
     `thoughts` against a site's `maxOutputTokens` is how near it runs to the `MAX_TOKENS` trap
     `AI_THINKING` describes.
+  - **One retry, on a server error only.** Every one-shot site calls `GenerativeModel.generate()`,
+    which retries once after a second on `ServerException` — a 5xx, which is what "the model is
+    overloaded" arrives as — and logs the usage. Nothing else earns it: a timeout would double a
+    minute's wait, a `QuotaExceededException` does not clear in a second, and a `MAX_TOKENS` stop
+    fails the same way twice. The coach is left out: it streams, and its failure already carries a
+    visible Retry.
+- **The coach remembers today, not the last twenty.** History was `dao.recent(20)` across every day,
+  replayed on every round. Each earlier answer quotes the figures of the day it was given — "you
+  have 600 kcal left" — beside a context block that is only ever about today; and the window slid
+  two messages a turn, so the cached prefix lost its history on every send. `send` now drops rows
+  from before today's start (`epochDayStartMillis`) before the twenty-message cap applies, so a
+  day's conversation only grows at the end. The screen still shows every message; only the model
+  forgets. Continuity across midnight is the price — a question at 00:05 does not see 23:55's —
+  and it is the same boundary the context block already draws.
 - **A cancellation is not a failure, and all six AI call sites now say so.** `catch (e: Exception)`
   around a suspending `generateContent` also catches `CancellationException`, so leaving a screen
   mid-request reported the request the user withdrew as a dead model or an App Check refusal —

@@ -8,7 +8,7 @@ import org.json.JSONObject
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 import ph.mart.healthapp.core.data.profile.UnitSystem
 
 /**
@@ -47,8 +47,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
 
     override suspend fun parse(text: String): ExerciseParseResult = try {
         val prompt = promptFor(text.take(MAX_EXERCISE_PARSE_CHARS))
-        val response = model.generateContent(content { text(prompt) })
-        logAiUsage("exercise parse", response.usageMetadata)
+        val response = model.generate("exercise parse", content { text(prompt) })
         val activity = response.text?.let { readActivity(JSONObject(it)) }
         // Null means the sentence named nothing physical — a real answer with its own line on the
         // sheet, not a failure to retry.
@@ -66,8 +65,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
 
     override suspend fun parseSets(text: String, unit: UnitSystem): StrengthParseResult = try {
         val prompt = setsPromptFor(text.take(MAX_STRENGTH_PARSE_CHARS))
-        val response = setsModel.generateContent(content { text(prompt) })
-        logAiUsage("strength parse", response.usageMetadata)
+        val response = setsModel.generate("strength parse", content { text(prompt) })
         val sets = response.text?.let { parsedSets(readLifts(JSONObject(it)), unit) }.orEmpty()
         if (sets.isEmpty()) StrengthParseResult.NoLiftsFound else StrengthParseResult.Success(sets)
     } catch (e: CancellationException) {

@@ -41,16 +41,19 @@ fun offlineQuickLog(text: String, myFoods: List<ScannedProduct> = emptyList()): 
  * Every word against the user's own foods first — a custom row is the one they mean — then the
  * built-in table. Distinct by name, capped and judged by [loggable] like every other parse.
  */
-internal fun offlineFoods(text: String, myFoods: List<ScannedProduct> = emptyList()): List<RecognizedFood> = text
+internal fun offlineFoods(text: String, myFoods: List<ScannedProduct> = emptyList()): List<RecognizedFood> =
+    matchWords(text)
+        .mapNotNull { word -> myFoods.firstOrNull { it.namedBy(word) } ?: commonFoodFor(word) }
+        .distinctBy { it.name }
+        .map { it.toRecognized() }
+        .loggable()
+
+/** The words of [text] worth matching a food against — lowercased, long enough not to match half
+ * the table, and not water. One copy, because [namedIn] must pick the saved foods this path would. */
+internal fun matchWords(text: String): List<String> = text
     .split(' ', ',', '.', '\n')
     .map { it.trim().lowercase() }
     .filter { it.length >= MIN_MATCH_CHARS && it !in NOT_FOOD }
-    .mapNotNull { word ->
-        myFoods.firstOrNull { it.namesWord(word) || it.namesWord(word.removeSuffix("s")) } ?: commonFoodFor(word)
-    }
-    .distinctBy { it.name }
-    .map { it.toRecognized() }
-    .loggable()
 
 /**
  * One word against the built-in table, **singularised on a miss**, and only where a word of the
@@ -73,6 +76,9 @@ internal fun commonFoodFor(word: String): ScannedProduct? {
         searchCommonFoods(stem).firstOrNull { it.namesWord(stem) }
     }
 }
+
+/** A saved food a said word could mean, plural or not — "bars" is still the *Protein bar*. */
+internal fun ScannedProduct.namedBy(word: String): Boolean = namesWord(word) || namesWord(word.removeSuffix("s"))
 
 /** Whether a word of the name starts with [stem] — "egg" names *Egg white*, "ran" names nothing. */
 internal fun ScannedProduct.namesWord(stem: String): Boolean =

@@ -6,7 +6,7 @@ import kotlinx.coroutines.CancellationException
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /** One sentence's worth. A cap here is cheaper than trusting the prompt's "under 120 characters",
  * and [sanitizeInsight] rejects whatever gets through anyway. */
@@ -38,8 +38,7 @@ internal class InsightRepositoryImpl : InsightRepository {
         cached?.let { (day, text) -> if (day == todayEpochDay) return text }
 
         val insight = try {
-            val response = model.generateContent(content { text(promptFor(request)) })
-            logAiUsage("dailyInsight", response.usageMetadata)
+            val response = model.generate("dailyInsight", content { text(promptFor(request)) })
             sanitizeInsight(response.text)
         } catch (e: CancellationException) {
             // Backing out of the screen cancels the scope, and that is not an AI failure: without

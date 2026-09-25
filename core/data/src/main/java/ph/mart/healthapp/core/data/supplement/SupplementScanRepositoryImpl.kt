@@ -7,7 +7,7 @@ import kotlinx.coroutines.CancellationException
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /**
  * A Supplement Facts panel in, its figures out.
@@ -124,8 +124,7 @@ internal class SupplementScanRepositoryImpl : SupplementScanRepository {
     )
 
     override suspend fun read(photo: Bitmap): SupplementScanResult = try {
-        val response = model.generateContent(content { image(photo); text(PROMPT) })
-        logAiUsage("supplement scan", response.usageMetadata)
+        val response = model.generate("supplement scan", content { image(photo); text(PROMPT) })
         val reading = parseSupplementLabel(response.text)
         // A name and nothing else is the front of the bottle, not the panel. `readable()` is what
         // decides; this only picks the screen.
@@ -150,8 +149,7 @@ internal class SupplementScanRepositoryImpl : SupplementScanRepository {
      * Either way it is not an answer worth seeding a sheet with.
      */
     override suspend fun lookUp(name: String): SupplementScanResult = try {
-        val response = model.generateContent(content { text("$LOOKUP_PROMPT\n$name") })
-        logAiUsage("supplement lookup", response.usageMetadata)
+        val response = model.generate("supplement lookup", content { text("$LOOKUP_PROMPT\n$name") })
         val reading = parseSupplementLabel(response.text)
         if (reading.readable()) SupplementScanResult.Found(reading) else SupplementScanResult.NoLabelFound
     } catch (e: CancellationException) {

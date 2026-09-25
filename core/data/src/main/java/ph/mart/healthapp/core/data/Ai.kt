@@ -5,14 +5,17 @@ import com.google.firebase.Firebase
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.ThinkingConfig
 import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.UsageMetadata
 import com.google.firebase.ai.type.thinkingConfig
+import kotlinx.coroutines.delay
 
 /**
  * The one model name for every Firebase AI Logic call in the app.
@@ -76,6 +79,33 @@ internal fun aiModel(
     systemInstruction = systemInstruction,
     requestOptions = RequestOptions(timeoutInMillis = AI_TIMEOUT_MILLIS),
 )
+
+/** How long a retry waits: long enough for a 503's "try again" to mean something, short enough that
+ * the screen is still on *Analyzing* rather than on its fallback. */
+private const val AI_RETRY_DELAY_MILLIS = 1_000L
+
+/**
+ * One request, the way every one-shot call site makes it: retried **once** on a [ServerException] —
+ * a 5xx, which is what "the model is overloaded" arrives as — and its usage logged.
+ *
+ * Nothing else earns the retry. A timeout would double a minute's wait, a [QuotaExceededException]
+ * does not clear in a second, and a `MAX_TOKENS` stop fails the same way twice; each of those goes
+ * straight to the caller's fallback as before. The coach is not routed through here — it streams,
+ * and its failure bubble already carries a Retry the user can see.
+ *
+ * [QuotaExceededException]: com.google.firebase.ai.type.QuotaExceededException
+ */
+internal suspend fun GenerativeModel.generate(where: String, prompt: Content): GenerateContentResponse {
+    val response = try {
+        generateContent(prompt)
+    } catch (e: ServerException) {
+        logAiFailure("$where, retrying", e)
+        delay(AI_RETRY_DELAY_MILLIS)
+        generateContent(prompt)
+    }
+    logAiUsage(where, response.usageMetadata)
+    return response
+}
 
 private const val TAG = "FitPulseAI"
 

@@ -7,7 +7,7 @@ import kotlinx.coroutines.CancellationException
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /**
  * A nutrition panel in, its figures out.
@@ -67,8 +67,7 @@ internal class LabelScanRepositoryImpl : LabelScanRepository {
     )
 
     override suspend fun read(photo: Bitmap): LabelScanResult = try {
-        val response = model.generateContent(content { image(photo); text(PROMPT) })
-        logAiUsage("label scan", response.usageMetadata)
+        val response = model.generate("label scan", content { image(photo); text(PROMPT) })
         val reading = parseLabelReading(response.text)
         // A name and nothing else is the front of the pack, not the panel — and a review screen
         // holding seven dashes is a worse answer than saying so. `readable()` is what decides;

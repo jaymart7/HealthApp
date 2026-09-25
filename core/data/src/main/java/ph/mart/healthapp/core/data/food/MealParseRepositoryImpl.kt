@@ -4,10 +4,11 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /**
  * JSON out and [org.json.JSONArray] in, the call [MealIdeaRepositoryImpl] makes for the same
@@ -17,9 +18,11 @@ import ph.mart.healthapp.core.data.logAiUsage
  * at all when a photographed plate stopped being a single food.
  *
  * The model is built once and held — nothing about this configuration carries anything about the
- * user, and the only thing that varies per call is the sentence itself.
+ * user; what varies per call is the sentence, and the saved foods it names (`MyFoods.kt`).
  */
-internal class MealParseRepositoryImpl : MealParseRepository {
+internal class MealParseRepositoryImpl(
+    private val foodRepository: FoodRepository,
+) : MealParseRepository {
 
     private val model = aiModel(
         generationConfig = generationConfig {
@@ -31,10 +34,11 @@ internal class MealParseRepositoryImpl : MealParseRepository {
     )
 
     override suspend fun parse(text: String): MealParseResult = try {
-        val prompt = promptFor(text.take(MAX_PARSE_CHARS))
-        val response = model.generateContent(content { text(prompt) })
-        logAiUsage("meal parse", response.usageMetadata)
-        val foods = parseRecognizedFoods(response.text).loggable()
+        val sentence = text.take(MAX_PARSE_CHARS)
+        val mine = foodRepository.observeMyFoods().first().namedIn(sentence)
+        val prompt = promptFor(sentence, mine)
+        val response = model.generate("meal parse", content { text(prompt) })
+        val foods = parseRecognizedFoods(response.text).preferMyFoods(mine).loggable()
         // An empty list means the sentence named nothing edible — a real answer with its own
         // screen, not a failure to retry.
         if (foods.isEmpty()) MealParseResult.NoFoodFound else MealParseResult.Success(foods)
@@ -60,7 +64,7 @@ internal class MealParseRepositoryImpl : MealParseRepository {
  *   quantity is given, one ordinary serving.
  * - **No medical advice**, for the reason [promptFor][MealIdeaRepositoryImpl]'s twin gives.
  */
-private fun promptFor(sentence: String): String = buildString {
+private fun promptFor(sentence: String, mine: List<ScannedProduct>): String = buildString {
     appendLine(
         "You are a nutrition-estimation assistant for a food-logging app. The user has said or " +
             "typed what they ate. Turn it into a list of foods with estimated nutrition.",
@@ -69,6 +73,10 @@ private fun promptFor(sentence: String): String = buildString {
     appendLine("What they said:")
     appendLine(sentence)
     appendLine()
+    myFoodsLine(mine)?.let {
+        appendLine(it)
+        appendLine()
+    }
     appendLine(
         "List one entry per distinct food they named, at most $MAX_PARSED_FOODS, each with a " +
             "realistic portion for the quantity they gave (one ordinary serving where they gave " +

@@ -40,8 +40,8 @@ val foodDataModule = module {
     single<BarcodeLookupRepository> { BarcodeLookupRepositoryImpl(get()) }
     single<LabelScanRepository> { debugLabelScan() ?: LabelScanRepositoryImpl() }
     single<MealIdeaRepository> { debugMealIdeas() ?: MealIdeaRepositoryImpl() }
-    single<MealParseRepository> { debugMealParse() ?: MealParseRepositoryImpl() }
-    single<QuickLogRepository> { debugQuickLog() ?: QuickLogRepositoryImpl() }
+    single<MealParseRepository> { debugMealParse() ?: MealParseRepositoryImpl(get()) }
+    single<QuickLogRepository> { debugQuickLog() ?: QuickLogRepositoryImpl(get()) }
     single<RecipeParseRepository> { debugRecipeParse() ?: RecipeParseRepositoryImpl() }
     single<ProductSearchRepository> { ProductSearchRepositoryImpl() }
 }

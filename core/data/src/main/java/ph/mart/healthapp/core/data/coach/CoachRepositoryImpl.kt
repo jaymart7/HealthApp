@@ -39,6 +39,7 @@ import ph.mart.healthapp.core.data.recap.REPORT_DAYS
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -148,7 +149,9 @@ internal class CoachRepositoryImpl(
         // read is suspending — the same reason a tool read runs above `content` further down.
         val context = contextFor(request, toolbox.dietLine(), toolbox.profileLine())
 
-        val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
+        val todayStart = epochDayStartMillis(todayEpochDay())
+        val history = dao.recent(MAX_HISTORY_MESSAGES).filter { it.sentAtMillis >= todayStart }
+        val chat = model.startChat(history = history.asHistory())
         val raw = StringBuilder()
         // The context is a part of this message only: history is rebuilt from Room with the bare
         // question, so an old turn never carries old numbers and the prefix stays append-only.

@@ -34,7 +34,9 @@ ends on a "Logged · Undo" snackbar (the earned line when there is a burn), and 
 whole batch. Offline it still works: the sentence is matched on the phone against the user's own
 foods and the built-in list (plus glasses of water, a stated weigh-in and an activity with a
 duration), every row — food or not — tagged "Check this" under an "Offline — check the portions"
-line. **The conversation is a thread**: a sent sentence leaves the field as an end-aligned bubble,
+line. Online, a food the sentence names that the user saved from a label is logged with its own
+figures, repriced to the portion said, rather than estimated — talk-to-log does the same.
+**The conversation is a thread**: a sent sentence leaves the field as an end-aligned bubble,
 the model's turn is an AI-accent bubble of three pulsing dots while it reads, and when the sentence
 leaves out what the estimate turns on (how much rice, how long a run) that bubble becomes the
 question — at most twice, then it estimates. Every question and answer stays on screen until rows

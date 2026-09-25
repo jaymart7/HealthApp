@@ -9,7 +9,7 @@ import com.google.firebase.ai.type.thinkingConfig
 import kotlinx.coroutines.CancellationException
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.logAiFailure
-import ph.mart.healthapp.core.data.logAiUsage
+import ph.mart.healthapp.core.data.generate
 
 /**
  * A plate in, the foods on it out.
@@ -79,8 +79,7 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     )
 
     override suspend fun recognize(photo: Bitmap): RecognitionResult = try {
-        val response = model.generateContent(content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(PROMPT) })
-        logAiUsage("photo recognize", response.usageMetadata)
+        val response = model.generate("photo recognize", content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(PROMPT) })
         val json = response.text
         val foods = parseRecognizedFoods(json).loggable()
         if (foods.isEmpty()) {

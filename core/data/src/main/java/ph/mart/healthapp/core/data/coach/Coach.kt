@@ -532,7 +532,14 @@ interface CoachRepository {
 internal const val MAX_REPLY_CHARS = 1400
 
 /**
- * How much of the conversation is replayed to the model on each send.
+ * How much of *today's* conversation is replayed to the model on each send — `send` drops anything
+ * from an earlier day before this cap applies.
+ *
+ * Today only, because every earlier answer quotes the figures of the day it was given — "you have
+ * 600 kcal left" — and the context block beside the question is the only day the coach is
+ * about. Replaying yesterday's also cost tokens on every round and slid the window two messages a
+ * turn, which moved the cached prefix's history every send; a day's conversation only grows at
+ * the end. The screen still shows every message; only the model forgets.
  *
  * ponytail: a flat message count, not a token budget — ten turns of a nutrition chat is nowhere
  * near the context window. Price it in tokens if the coach ever grows attachments.
