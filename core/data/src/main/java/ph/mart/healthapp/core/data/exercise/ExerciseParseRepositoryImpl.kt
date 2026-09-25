@@ -1,16 +1,14 @@
 package ph.mart.healthapp.core.data.exercise
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
 import org.json.JSONObject
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 import ph.mart.healthapp.core.data.profile.UnitSystem
 
 /**
@@ -27,11 +25,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
  */
 internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_ACTIVITY_TOKENS
@@ -42,11 +36,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
 
     /** The strength screen's parse: a different schema and a longer answer, so a second held
      * model rather than a per-call config — still nothing about the user in it. */
-    private val setsModel = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val setsModel = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_SETS_TOKENS
@@ -58,6 +48,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
     override suspend fun parse(text: String): ExerciseParseResult = try {
         val prompt = promptFor(text.take(MAX_EXERCISE_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
+        logAiUsage("exercise parse", response.usageMetadata)
         val activity = response.text?.let { readActivity(JSONObject(it)) }
         // Null means the sentence named nothing physical — a real answer with its own line on the
         // sheet, not a failure to retry.
@@ -76,6 +67,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
     override suspend fun parseSets(text: String, unit: UnitSystem): StrengthParseResult = try {
         val prompt = setsPromptFor(text.take(MAX_STRENGTH_PARSE_CHARS))
         val response = setsModel.generateContent(content { text(prompt) })
+        logAiUsage("strength parse", response.usageMetadata)
         val sets = response.text?.let { parsedSets(readLifts(JSONObject(it)), unit) }.orEmpty()
         if (sets.isEmpty()) StrengthParseResult.NoLiftsFound else StrengthParseResult.Success(sets)
     } catch (e: CancellationException) {

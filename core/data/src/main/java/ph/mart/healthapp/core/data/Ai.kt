@@ -1,14 +1,23 @@
 package ph.mart.healthapp.core.data
 
 import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.ai.GenerativeModel
+import com.google.firebase.ai.ai
+import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.GenerationConfig
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ThinkingConfig
 import com.google.firebase.ai.type.ThinkingLevel
+import com.google.firebase.ai.type.Tool
+import com.google.firebase.ai.type.UsageMetadata
 import com.google.firebase.ai.type.thinkingConfig
 
 /**
  * The one model name for every Firebase AI Logic call in the app.
  *
- * It lives here rather than five times over because a Gemini model is a wasting asset: Google
+ * It lives here rather than once per call site because a Gemini model is a wasting asset: Google
  * retires them on a published schedule and a retired name is a 404, not a deprecation warning.
  * The whole AI surface degrades gracefully, so a stale name here reads as "the feature is quiet"
  * at every call site — which is exactly how `gemini-1.5-flash` outlived its shutdown in this
@@ -18,7 +27,7 @@ internal const val AI_MODEL_NAME = "gemini-3.5-flash-lite"
 
 /**
  * The one thinking setting for every Firebase AI Logic call in the app, here for the same reason
- * [AI_MODEL_NAME] is: it is a property of the model, so five copies would go stale together.
+ * [AI_MODEL_NAME] is: it is a property of the model, so a copy per call site would go stale together.
  *
  * Gemini 2.5 and newer think before answering unless told not to, and **thinking tokens are spent
  * from `maxOutputTokens`**. Every caller here sizes that cap for the answer alone — 60 tokens for
@@ -37,6 +46,37 @@ internal const val AI_MODEL_NAME = "gemini-3.5-flash-lite"
  */
 internal val AI_THINKING: ThinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.MINIMAL }
 
+/**
+ * How long one request may take before it is a failure. The SDK's own default is 180 s, which
+ * outlasts the patience of every fallback in this app: a photo sat on "Analyzing" for three
+ * minutes on a dead connection before manual entry was offered. A healthy answer on a flash-lite
+ * model is seconds, and the coach's rounds are separate requests, so a minute is headroom.
+ */
+private const val AI_TIMEOUT_MILLIS = 60_000L
+
+/**
+ * The one way this app builds a model. Every call site passes only what is genuinely its own —
+ * the output cap, the thinking level, the schema, the coach's tools — and everything that is a
+ * property of *the app's* AI setup is decided here once: the backend, [AI_MODEL_NAME], the
+ * timeout, and the App Check mode.
+ *
+ * **No limited-use App Check tokens.** Each limited-use token is a fresh Play Integrity
+ * attestation — added latency on every request and a draw on its daily quota, past which App Check
+ * fails and every AI feature goes quiet at once — and all it buys is replay protection, which is
+ * not enforced for this project in the Firebase console. The two go back on together or not at all.
+ */
+internal fun aiModel(
+    generationConfig: GenerationConfig,
+    tools: List<Tool>? = null,
+    systemInstruction: Content? = null,
+): GenerativeModel = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+    modelName = AI_MODEL_NAME,
+    generationConfig = generationConfig,
+    tools = tools,
+    systemInstruction = systemInstruction,
+    requestOptions = RequestOptions(timeoutInMillis = AI_TIMEOUT_MILLIS),
+)
+
 private const val TAG = "FitPulseAI"
 
 /**
@@ -46,4 +86,19 @@ private const val TAG = "FitPulseAI"
  */
 internal fun logAiFailure(where: String, cause: Throwable) {
     Log.w(TAG, "$where failed: ${cause.javaClass.simpleName}: ${cause.message}", cause)
+}
+
+/**
+ * What a call actually spent, beside what it cost when it failed. `cached` is Gemini's implicit
+ * cache — the coach's prompt is shaped for it, and this line is the only place a hit shows up;
+ * `thoughts` against the site's `maxOutputTokens` is how close it runs to the `MAX_TOKENS` trap
+ * [AI_THINKING] describes.
+ */
+internal fun logAiUsage(where: String, usage: UsageMetadata?) {
+    usage ?: return
+    Log.d(
+        TAG,
+        "$where: in=${usage.promptTokenCount} cached=${usage.cachedContentTokenCount} " +
+            "thoughts=${usage.thoughtsTokenCount} out=${usage.candidatesTokenCount}",
+    )
 }

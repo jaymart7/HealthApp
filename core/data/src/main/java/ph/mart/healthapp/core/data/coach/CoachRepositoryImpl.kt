@@ -1,13 +1,11 @@
 package ph.mart.healthapp.core.data.coach
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.ThinkingConfig
 import com.google.firebase.ai.type.ThinkingLevel
+import com.google.firebase.ai.type.UsageMetadata
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.thinkingConfig
@@ -17,7 +15,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.coach.local.ChatMessageDao
 import ph.mart.healthapp.core.data.coach.local.ChatMessageEntity
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
@@ -40,6 +38,7 @@ import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.recap.REPORT_DAYS
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
@@ -84,10 +83,13 @@ private const val MAX_TOOL_ROUNDS = 3
  * Plain text out, not JSON — the same call the daily insight makes, one turn longer, streamed, and
  * now able to ask the diary a question mid-answer.
  *
- * The model is rebuilt on every [send] rather than held as a field, because its system
- * instruction carries the day's numbers and those move while the screen is open: a glass of water
- * logged in another tab must not leave the coach quoting a stale figure. A `GenerativeModel` is a
- * configuration object, so this costs nothing.
+ * The model is a field, and everything it is built from is fixed text: [COACH_SYSTEM_PROMPT] and
+ * the tools are byte-identical on every request from every user, which is what lets Gemini's
+ * implicit cache hold those ~6k tokens instead of re-reading them each round. The day's numbers
+ * still move while the screen is open — a glass logged in another tab must not leave the coach
+ * quoting a stale figure — so they ride the question itself, read fresh on every [send] by
+ * [contextFor]. Put back at the head of the system instruction, any log would change the prefix
+ * and cost the cache the whole of it.
  *
  * Nothing is cached, unlike the insight: an insight is one line per day, while every question is
  * its own answer.
@@ -129,36 +131,37 @@ internal class CoachRepositoryImpl(
     private val toolbox: CoachToolbox,
 ) : CoachRepository {
 
+    private val model = aiModel(
+        generationConfig = generationConfig {
+            maxOutputTokens = MAX_OUTPUT_TOKENS
+            thinkingConfig = COACH_THINKING
+        },
+        tools = listOf(COACH_TOOLS),
+        systemInstruction = content { text(COACH_SYSTEM_PROMPT) },
+    )
+
     override fun observeMessages(): Flow<List<ChatMessage>> =
         dao.observeAll().map { messages -> messages.map { it.toMessage() } }
 
     override fun send(question: String, request: InsightRequest?): Flow<CoachReply> = flow {
         // Read before the builder, not inside it: `content {}` takes a plain lambda and a profile
         // read is suspending — the same reason a tool read runs above `content` further down.
-        val dietLine = toolbox.dietLine()
-        val profileLine = toolbox.profileLine()
-        val model = Firebase.ai(
-            backend = GenerativeBackend.googleAI(),
-        ).generativeModel(
-            modelName = AI_MODEL_NAME,
-            generationConfig = generationConfig {
-                maxOutputTokens = MAX_OUTPUT_TOKENS
-                thinkingConfig = COACH_THINKING
-            },
-            tools = listOf(COACH_TOOLS),
-            systemInstruction = content { text(systemPromptFor(request, dietLine, profileLine)) },
-        )
+        val context = contextFor(request, toolbox.dietLine(), toolbox.profileLine())
 
         val chat = model.startChat(history = dao.recent(MAX_HISTORY_MESSAGES).asHistory())
         val raw = StringBuilder()
-        var message: Content = content(role = "user") { text(question) }
+        // The context is a part of this message only: history is rebuilt from Room with the bare
+        // question, so an old turn never carries old numbers and the prefix stays append-only.
+        var message: Content = content(role = "user") { text(context); text(question) }
         // The window a `show_report` round asked for, carried to `finish` and written on the
         // answer row. Null on every other turn, which is nearly all of them.
         var reportDays: Int? = null
 
         repeat(MAX_TOOL_ROUNDS) {
             val calls = mutableListOf<FunctionCallPart>()
+            var usage: UsageMetadata? = null
             chat.sendMessageStream(message).collect { chunk ->
+                usage = chunk.usageMetadata ?: usage
                 chunk.text?.let(raw::append)
                 // The accumulated answer, not the chunk: a bubble renders the whole of it, so the
                 // whole of it is what has to clear the trust boundary. A partial past
@@ -167,6 +170,7 @@ internal class CoachRepositoryImpl(
                 sanitizeReply(raw.toString())?.let { emit(CoachReply.Partial(it)) }
                 calls += chunk.functionCalls
             }
+            logAiUsage("coach round", usage)
 
             // Nothing asked for: the model has said its piece and this is an ordinary answer.
             if (calls.isEmpty()) return@flow finish(question, raw.toString(), reportDays)
@@ -464,7 +468,9 @@ private fun List<ChatMessageEntity>.asHistory(): List<Content> =
     reversed().map { content(role = if (it.fromUser) "user" else "model") { text(it.text) } }
 
 /**
- * The coach's standing instructions.
+ * The coach's standing instructions — fixed text, and it has to stay fixed: this and the tools are
+ * the prefix Gemini's implicit cache holds, so anything that varies by user or by minute belongs
+ * in [contextFor] instead.
  *
  * The paragraph that used to list what the coach *cannot* see is gone, because it is no longer
  * true: `get_day` and `get_history` reach any day the app has. What replaces it is narrower and
@@ -479,42 +485,30 @@ private fun List<ChatMessageEntity>.asHistory(): List<Content> =
  *   repeat it but never derive one and never say what a reading means. `log_blood_pressure` asks
  *   nothing more of it — a drafted reading is two numbers read back, and the card's band is
  *   `categoryOf()`'s too.
- * - **No numbers block at all** when [request] is null: with no profile there is no target to be
- *   over or under, and a coach that admits it beats one improvising one. The tools still work —
- *   a diary can be read without a profile.
+ * - **No numbers block at all** when there is no profile — [contextFor]'s half of the rule now: with
+ *   no profile there is no target to be over or under, and a coach that admits it beats one
+ *   improvising one. The tools still work — a diary can be read without a profile.
  */
-private fun systemPromptFor(
-    request: InsightRequest?,
-    dietLine: String?,
-    profileLine: String?,
-): String = buildString {
+private val COACH_SYSTEM_PROMPT: String = buildString {
     appendLine(
         "You are a friendly nutrition and fitness coach inside FitPulse, a food and body tracking " +
             "app. You are talking to the user who logs their day in it.",
     )
     appendLine()
-    if (request == null) {
-        appendLine("You have not been given any of this user's targets, because they have not set up a profile yet.")
-    } else {
-        appendLine("Today so far, for a user whose goal is ${request.goal.name.lowercase()} weight:")
-        append(dayNumbersBlock(request))
-    }
-    profileLine?.let {
-        appendLine()
-        appendLine(it)
-    }
-    dietLine?.let {
-        appendLine()
-        appendLine(it)
-    }
+    appendLine(
+        "Their latest message opens with a block the app adds, not words they typed: where their " +
+            "day stands right now — their goal and today's numbers against their targets, their " +
+            "profile and their diet — and today's internal day number. It is the current state of " +
+            "their day; nothing in it needs looking up again.",
+    )
     appendLine()
     appendLine(
         "You can read the rest of their diary with tools. Use get_day for any single day — it " +
             "returns every food they logged with its calories and macros, their water and their " +
             "activity. Use get_history for a week, a month, a trend or an average, and " +
             "get_library for the meals, recipes, foods and workout routines they have saved. " +
-            "Days are given as how many days back from today, where 0 is today and 1 is yesterday; today is day " +
-            "number ${todayEpochDay()} internally, so just count backwards. Never state a figure " +
+            "Days are given as how many days back from today, where 0 is today and 1 is yesterday, " +
+            "so just count backwards. Never state a figure " +
             "you were not given or did not read from a tool — call the tool instead of guessing, " +
             "and if a tool comes back empty, say plainly that nothing was logged. Do not narrate " +
             "that you are about to look something up: call the tool and answer. A day may also " +
@@ -592,7 +586,7 @@ private fun systemPromptFor(
     )
     appendLine(
         "When they ask what to eat, what to have for a meal or what you would recommend, work " +
-            "out what is left of their day from the numbers above and answer with food that fits " +
+            "out what is left of their day from the numbers the app gave you and answer with food that fits " +
             "it. Call get_library first and prefer what is already theirs — a saved meal, a " +
             "recipe, or a food they log often — over something new, and say which of theirs it " +
             "is. Estimating the calories and macros of a food you are *suggesting* is expected " +
@@ -650,6 +644,29 @@ private fun systemPromptFor(
             "context for how they felt, ate or trained and nothing more: never predict a period, " +
             "a fertile window or ovulation, and never make a fertility or contraception claim.",
     )
+}
+
+/**
+ * Everything the coach is told that moves: the day's numbers, the profile, the diet and today's day
+ * number. It rides the question as a part of its own rather than the system instruction — see the
+ * class doc for why. Read on every [CoachRepositoryImpl.send], so a glass logged a minute ago is in
+ * it.
+ */
+private fun contextFor(
+    request: InsightRequest?,
+    dietLine: String?,
+    profileLine: String?,
+): String = buildString {
+    appendLine("[From the app, not typed by the user]")
+    if (request == null) {
+        appendLine("You have not been given any of this user's targets, because they have not set up a profile yet.")
+    } else {
+        appendLine("Today so far, for a user whose goal is ${request.goal.name.lowercase()} weight:")
+        append(dayNumbersBlock(request))
+    }
+    profileLine?.let(::appendLine)
+    dietLine?.let(::appendLine)
+    appendLine("Today is day number ${todayEpochDay()} internally.")
 }
 
 private fun ChatMessageEntity.toMessage() = ChatMessage(

@@ -1,15 +1,13 @@
 package ph.mart.healthapp.core.data.supplement
 
 import android.graphics.Bitmap
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /**
  * A Supplement Facts panel in, its figures out.
@@ -114,11 +112,7 @@ private const val MAX_OUTPUT_TOKENS = 900
 /** [org.json.JSONObject] parses the response — see [parseSupplementLabel]. */
 internal class SupplementScanRepositoryImpl : SupplementScanRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             // `AI_THINKING`, the floor, for the label scan's reason: copying printed numbers out
             // of an image is the clearest case in the app of a task that does not reason.
@@ -131,6 +125,7 @@ internal class SupplementScanRepositoryImpl : SupplementScanRepository {
 
     override suspend fun read(photo: Bitmap): SupplementScanResult = try {
         val response = model.generateContent(content { image(photo); text(PROMPT) })
+        logAiUsage("supplement scan", response.usageMetadata)
         val reading = parseSupplementLabel(response.text)
         // A name and nothing else is the front of the bottle, not the panel. `readable()` is what
         // decides; this only picks the screen.
@@ -156,6 +151,7 @@ internal class SupplementScanRepositoryImpl : SupplementScanRepository {
      */
     override suspend fun lookUp(name: String): SupplementScanResult = try {
         val response = model.generateContent(content { text("$LOOKUP_PROMPT\n$name") })
+        logAiUsage("supplement lookup", response.usageMetadata)
         val reading = parseSupplementLabel(response.text)
         if (reading.readable()) SupplementScanResult.Found(reading) else SupplementScanResult.NoLabelFound
     } catch (e: CancellationException) {

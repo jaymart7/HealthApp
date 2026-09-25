@@ -92,7 +92,7 @@ internal fun sanitizeInsight(raw: String?): String? {
 /**
  * The numbers block, formatted once for both callers.
  *
- * [InsightRepositoryImpl]'s prompt and the coach's system instruction describe the same day to the
+ * [InsightRepositoryImpl]'s prompt and the coach's context block describe the same day to the
  * same model, so they format it in the same place: a field added to [InsightRequest] and shown to
  * one but not the other would be a coach contradicting the card that sent the user to it.
  */

@@ -1,15 +1,13 @@
 package ph.mart.healthapp.core.data.food
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /**
  * JSON out and [org.json.JSONArray] in, the call [MealIdeaRepositoryImpl] makes for the same
@@ -23,11 +21,7 @@ import ph.mart.healthapp.core.data.logAiFailure
  */
 internal class MealParseRepositoryImpl : MealParseRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_FOOD_LIST_TOKENS
@@ -39,6 +33,7 @@ internal class MealParseRepositoryImpl : MealParseRepository {
     override suspend fun parse(text: String): MealParseResult = try {
         val prompt = promptFor(text.take(MAX_PARSE_CHARS))
         val response = model.generateContent(content { text(prompt) })
+        logAiUsage("meal parse", response.usageMetadata)
         val foods = parseRecognizedFoods(response.text).loggable()
         // An empty list means the sentence named nothing edible — a real answer with its own
         // screen, not a failure to retry.

@@ -1,17 +1,15 @@
 package ph.mart.healthapp.core.data.food
 
 import android.graphics.Bitmap
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.ai.type.thinkingConfig
 import kotlinx.coroutines.CancellationException
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /**
  * A plate in, the foods on it out.
@@ -51,15 +49,20 @@ Estimate rather than decline: the user reviews and corrects every figure before 
  */
 private const val MAX_OUTPUT_TOKENS = 1600
 
+/**
+ * What a plate is sent to the model at, on its long edge. `decodeRotatedBitmap` only halves, so a
+ * 12MP frame arrives at 2016×1512 — `MAX_CAPTURE_EDGE` is its floor, not its ceiling — and the SDK
+ * re-encodes every pixel of it as a base64 JPEG. A plate needs none of that detail: this is about
+ * half the upload, sent again on each quick-log follow-up. Plates only — a label is fine print and
+ * keeps what the decoder gave it, and the progress photos that share the decoder are never cut.
+ */
+internal const val PLATE_PHOTO_EDGE = 1280
+
 /** [org.json.JSONArray] parses the response — see [parseRecognizedFoods], which the meal parse
  * shares. */
 internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             // The one call site `AI_THINKING` invites to raise itself. Every other call in the app
             // states something already known — a figure off the diary, a line of encouragement —
@@ -76,7 +79,8 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     )
 
     override suspend fun recognize(photo: Bitmap): RecognitionResult = try {
-        val response = model.generateContent(content { image(photo); text(PROMPT) })
+        val response = model.generateContent(content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(PROMPT) })
+        logAiUsage("photo recognize", response.usageMetadata)
         val json = response.text
         val foods = parseRecognizedFoods(json).loggable()
         if (foods.isEmpty()) {

@@ -1,14 +1,12 @@
 package ph.mart.healthapp.core.data.insight
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /** One sentence's worth. A cap here is cheaper than trusting the prompt's "under 120 characters",
  * and [sanitizeInsight] rejects whatever gets through anyway. */
@@ -26,11 +24,7 @@ private const val MAX_OUTPUT_TOKENS = 60
  */
 internal class InsightRepositoryImpl : InsightRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             maxOutputTokens = MAX_OUTPUT_TOKENS
             thinkingConfig = AI_THINKING
@@ -44,7 +38,9 @@ internal class InsightRepositoryImpl : InsightRepository {
         cached?.let { (day, text) -> if (day == todayEpochDay) return text }
 
         val insight = try {
-            sanitizeInsight(model.generateContent(content { text(promptFor(request)) }).text)
+            val response = model.generateContent(content { text(promptFor(request)) })
+            logAiUsage("dailyInsight", response.usageMetadata)
+            sanitizeInsight(response.text)
         } catch (e: CancellationException) {
             // Backing out of the screen cancels the scope, and that is not an AI failure: without
             // this the catch below swallows the cancellation and logs a request the user withdrew.

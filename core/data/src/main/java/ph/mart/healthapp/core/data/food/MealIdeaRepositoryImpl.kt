@@ -1,16 +1,14 @@
 package ph.mart.healthapp.core.data.food
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /** Three foods with ten fields each. [fitting] rejects whatever gets past it, but capping here is
  * cheaper than paying for a list that will be thrown away. */
@@ -42,11 +40,7 @@ private val IDEA_SCHEMA = Schema.obj(
  */
 internal class MealIdeaRepositoryImpl : MealIdeaRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_OUTPUT_TOKENS
@@ -57,6 +51,7 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
 
     override suspend fun ideas(request: MealIdeaRequest): MealIdeaResult = try {
         val response = model.generateContent(content { text(promptFor(request)) })
+        logAiUsage("meal ideas", response.usageMetadata)
         val ideas = parse(response.text).fitting(request.remainingKcal)
         // An empty list is a failure, not an answer: the screen's fallback — the user's own foods —
         // is better than a heading over nothing.

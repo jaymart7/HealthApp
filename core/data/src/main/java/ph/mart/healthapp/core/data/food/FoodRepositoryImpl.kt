@@ -251,7 +251,7 @@ internal class FoodRepositoryImpl(
 /** The bitmap at most [edge] on its long side, or itself when it is already smaller — a picked
  * gallery image can be either. `filter = true` because this is a real downscale, and nearest
  * neighbour on a 1280 → 768 reduction is visibly ragged. */
-private fun Bitmap.scaledToEdge(edge: Int): Bitmap {
+internal fun Bitmap.scaledToEdge(edge: Int): Bitmap {
     val longEdge = maxOf(width, height)
     if (longEdge <= edge) return this
     val factor = edge.toDouble() / longEdge

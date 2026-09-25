@@ -281,8 +281,8 @@ private val libraryItemSchema = Schema.obj(
  * A model handed a date format invents dates — the wrong year, a timezone's yesterday, a 31st of
  * February. An offset has none of those failure modes, needs no parsing, and maps onto
  * [todayEpochDay] in one subtraction. The cost is that the model cannot express "last Tuesday"
- * directly, which it does not need to: it is told today's date in the system instruction and can
- * count.
+ * directly, which it does not need to: it is told today's date in the context block its question
+ * carries, and can count.
  */
 private val daysAgoSchema = Schema.integer(
     description = "How many days back. 0 is today, 1 is yesterday. Maximum $MAX_DAYS_AGO.",
@@ -1115,7 +1115,7 @@ internal fun historyDaysOf(args: Map<String, JsonElement>): Int =
  * The same call `sanitizeInsight` makes for the insight and the coach's own reply: the model reads
  * prose at least as well as it reads a nested object, and a plain string is a pure function's
  * output that a JVM test can assert on character for character. The shape deliberately echoes
- * `dayNumbersBlock()` so a tool result and the day block in the system instruction cannot
+ * `dayNumbersBlock()` so a tool result and the day block the question carries cannot
  * describe the same day two different ways.
  */
 internal fun formatDay(
@@ -1276,7 +1276,7 @@ private fun flowName(flow: Int): String? = when (flowLevelOf(flow)) {
 }
 
 /**
- * Who the user is, in one paragraph of the system instruction: the Mifflin–St Jeor inputs, the
+ * Who the user is, in one paragraph of the context each question carries: the Mifflin–St Jeor inputs, the
  * goal behind their targets, and the unit they read figures in. The weight is the latest weigh-in,
  * else the onboarding one — [CoachToolbox.weightKg]'s fallback.
  *
@@ -1858,7 +1858,7 @@ internal class CoachToolbox(
      * Null for `None` and for no profile at all, which appends nothing — the coach is told what to
      * avoid or it is told nothing, never that there are "no restrictions". It lives on the toolbox
      * because the toolbox is where this file's profile reads are, even though the caller spends it
-     * on the system instruction rather than on a tool result.
+     * on the question's context block rather than on a tool result.
      */
     suspend fun dietLine(): String? =
         dietLine(profileRepository.observeProfile().first()?.dietaryPreference)

@@ -1,15 +1,13 @@
 package ph.mart.healthapp.core.data.food
 
 import android.graphics.Bitmap
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /**
  * A nutrition panel in, its figures out.
@@ -55,11 +53,7 @@ private const val MAX_OUTPUT_TOKENS = 500
 /** [org.json.JSONObject] parses the response — see [parseLabelReading]. */
 internal class LabelScanRepositoryImpl : LabelScanRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             // `AI_THINKING`, not the recognition call's raised level. That one estimates — identify
             // a food, judge how much of it is on the plate, recall its figures and scale them —
@@ -74,6 +68,7 @@ internal class LabelScanRepositoryImpl : LabelScanRepository {
 
     override suspend fun read(photo: Bitmap): LabelScanResult = try {
         val response = model.generateContent(content { image(photo); text(PROMPT) })
+        logAiUsage("label scan", response.usageMetadata)
         val reading = parseLabelReading(response.text)
         // A name and nothing else is the front of the pack, not the panel — and a review screen
         // holding seven dashes is a worse answer than saying so. `readable()` is what decides;

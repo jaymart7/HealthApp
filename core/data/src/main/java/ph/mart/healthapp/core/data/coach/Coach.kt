@@ -471,7 +471,7 @@ sealed interface CoachReply {
  * It is told the same [InsightRequest] the home-screen insight sends, plus who the user is
  * (`profileLine`), and reads everything else they logged through its tools — weights, measurements
  * and cycle days included, by the user's choice. Photos never leave the device. What leaves it is
- * auditable in two places: `systemPromptFor` and `CoachToolbox`.
+ * auditable in two places: `contextFor` and `CoachToolbox`.
  *
  * A question is only persisted once it has been answered: [send] writes both rows in one
  * transaction *after* the stream completes, so a call killed by process death or by leaving the

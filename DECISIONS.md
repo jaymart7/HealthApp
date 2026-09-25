@@ -585,6 +585,15 @@ rather than needing a counter patched.
 - **`rememberBitmapFromFile` moved to `:core:designsystem`.** Two features draw stored photos now,
   and a second decoder is a second downsampling rule to keep in step. Nothing about it changed but
   its package and one more size constant (`THUMB_PX`, for the diary row's 40dp tile).
+- **A plate goes to Gemini at 1280, and nothing else is cut to get there.** `MAX_CAPTURE_EDGE` is
+  the decoder's *floor* — `inSampleSize` only halves — so a 12MP frame arrived at 2016×1512 and the
+  SDK re-encoded all of it as base64 JPEG, sent again on every quick-log follow-up.
+  `PLATE_PHOTO_EDGE` scales the request's copy (via `scaledToEdge`, the meal-photo writer's own)
+  in `FoodRecognitionRepositoryImpl` and `QuickLogRepositoryImpl` only: about half the upload for
+  a plate that needs no fine detail. **Not in the decoder**, because progress photos are saved
+  straight from it and shown full-screen; **not for labels**, which are fine print. It is bytes and
+  latency, not tokens — on 3.x an image's token cost is set by media resolution, which firebase-ai
+  does not expose.
 
 ### Food search, the diary filter & history
 
@@ -2462,11 +2471,21 @@ rather than needing a counter patched.
   (`CoachUiStateTest`), the reason `sanitizeReply` is one. `CoachUiState.sending` became
   `pending: String?` in the same move: same boolean, plus the question to draw above the answer, so
   the turn assembles top-down instead of the question popping in over a finished reply.
-- **The coach's model is rebuilt on every send; the insight's is a field.** Its system instruction
-  carries the day's numbers, and those move while the screen is open — a glass logged in another
-  tab must not leave it quoting a stale figure. A `GenerativeModel` is a config object, so this
-  costs nothing. Nothing is cached either, unlike the insight's one line per day: every question is
-  its own answer. `sanitizeReply` is the whole trust boundary and keeps line breaks where
+- **The coach's prompt is fixed text; the day's numbers ride the question.** Its model used to be
+  rebuilt on every send because the system instruction *opened* with the day's numbers — and those
+  move while the screen is open, so a glass logged in another tab must not leave it quoting a stale
+  figure. That was right about staleness and expensive about everything else: the instructions and
+  the 24 tool declarations are ~6k tokens, identical for every user, re-sent on every round of
+  every question — and Gemini's implicit cache only holds a request's *unchanged prefix*, so a
+  prefix that began with today's calories was invalidated by every logged meal. Now
+  `COACH_SYSTEM_PROMPT` is a constant, the model is a field like the insight's, and `contextFor()`
+  puts the numbers, profile line, diet line and today's day number into the user turn as a part of
+  its own, read fresh on every send. History is still rebuilt from Room with the bare question, so
+  an old turn never carries old numbers and the prefix only ever grows at the end — system, tools,
+  history, *then* what moved. The prompt says so in one sentence ("a block the app adds, not words
+  they typed"). `logAiUsage`'s `cached=` is the proof; a change that moves anything variable back
+  above the history spends it. Nothing is cached in the *answer* sense, unlike the insight's one
+  line per day: every question is its own answer. `sanitizeReply` is the whole trust boundary and keeps line breaks where
   `sanitizeInsight` collapses them (an answer legitimately spans a short paragraph), and rejects
   past `MAX_REPLY_CHARS` rather than truncating, for the reason the insight cap gives.
 - **Markdown is stripped at the trust boundary, not rendered.** Every prose prompt in this app
@@ -3079,6 +3098,22 @@ rather than needing a counter patched.
   its shutdown here. The fallbacks stay exactly as they were — this adds a bound exception and a
   `Log.w` above each, nothing else. Remote Config is the upgrade path if the name needs changing
   without a release; one constant is enough while a release is cheap.
+- **One model builder, and what it decides for every call site.** `aiModel()` in `Ai.kt` is the only
+  place a `GenerativeModel` is made; a call site passes its output cap, thinking level, schema and —
+  for the coach — tools and system prompt, and nothing else. What it decides once:
+  - **No limited-use App Check tokens.** Eleven of the twelve models asked for them, which is a fresh Play
+    Integrity attestation per request — latency on every call, and a draw on Play Integrity's
+    daily quota, past which App Check fails and every AI feature goes quiet at once. What they buy
+    is replay protection, and that is not enforced for this project in the Firebase console, so
+    they bought nothing. The coach had already dropped the flag. Standard App Check still gates
+    every call. **They go back on together with enforcement, or not at all.**
+  - **A 60 s timeout**, against the SDK's 180 s default — which outlasts the patience of every
+    fallback here: a photo sat on *Analyzing* for three minutes on a dead connection before manual
+    entry was offered. Flash-lite answers in seconds and each coach round is its own request.
+  - **`logAiUsage()` beside `logAiFailure()`** — one `Log.d` per call with prompt, cached, thinking
+    and output tokens. `cached` is the only place the coach's prefix shows it is working, and
+    `thoughts` against a site's `maxOutputTokens` is how near it runs to the `MAX_TOKENS` trap
+    `AI_THINKING` describes.
 - **A cancellation is not a failure, and all six AI call sites now say so.** `catch (e: Exception)`
   around a suspending `generateContent` also catches `CancellationException`, so leaving a screen
   mid-request reported the request the user withdrew as a dead model or an App Check refusal —

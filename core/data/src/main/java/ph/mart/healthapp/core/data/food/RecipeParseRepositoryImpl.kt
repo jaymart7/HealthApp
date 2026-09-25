@@ -1,17 +1,15 @@
 package ph.mart.healthapp.core.data.food
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
 import org.json.JSONArray
 import org.json.JSONObject
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /**
  * [QuickLogRepositoryImpl]'s shape: the ingredients are [RECOGNIZED_FOOD_SCHEMA] nested under one
@@ -20,11 +18,7 @@ import ph.mart.healthapp.core.data.logAiFailure
  */
 internal class RecipeParseRepositoryImpl : RecipeParseRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_RECIPE_TOKENS
@@ -35,6 +29,7 @@ internal class RecipeParseRepositoryImpl : RecipeParseRepository {
 
     override suspend fun parse(text: String): RecipeParseResult = try {
         val response = model.generateContent(content { text(promptFor(text.take(MAX_RECIPE_CHARS))) })
+        logAiUsage("recipe parse", response.usageMetadata)
         val body = JSONObject(response.text ?: "{}")
         recipeParseResult(
             name = body.optString("name"),

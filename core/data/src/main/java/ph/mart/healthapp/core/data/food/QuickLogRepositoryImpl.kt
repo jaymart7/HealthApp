@@ -1,8 +1,5 @@
 package ph.mart.healthapp.core.data.food
 
-import com.google.firebase.Firebase
-import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
@@ -12,11 +9,12 @@ import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.thinkingConfig
 import org.json.JSONArray
 import org.json.JSONObject
-import ph.mart.healthapp.core.data.AI_MODEL_NAME
+import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.exercise.PARSED_EXERCISE_SCHEMA
 import ph.mart.healthapp.core.data.exercise.readActivity
 import ph.mart.healthapp.core.data.logAiFailure
+import ph.mart.healthapp.core.data.logAiUsage
 
 /**
  * [MealParseRepositoryImpl]'s shape with both parses' schemas nested in one reply: the food items
@@ -25,11 +23,7 @@ import ph.mart.healthapp.core.data.logAiFailure
  */
 internal class QuickLogRepositoryImpl : QuickLogRepository {
 
-    private val model = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val model = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
             maxOutputTokens = MAX_QUICK_LOG_TOKENS
@@ -44,11 +38,7 @@ internal class QuickLogRepositoryImpl : QuickLogRepository {
      * thinking spends from the output budget, so the budget carries the headroom. Held beside the
      * text model rather than replacing it: a sentence alone does not need to pay for the thinking.
      */
-    private val photoModel = Firebase.ai(
-        backend = GenerativeBackend.googleAI(),
-        useLimitedUseAppCheckTokens = true,
-    ).generativeModel(
-        modelName = AI_MODEL_NAME,
+    private val photoModel = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.LOW }
             maxOutputTokens = MAX_QUICK_LOG_PHOTO_TOKENS
@@ -63,8 +53,9 @@ internal class QuickLogRepositoryImpl : QuickLogRepository {
         val response = if (photo == null) {
             model.generateContent(content { text(prompt) })
         } else {
-            photoModel.generateContent(content { image(photo); text(prompt) })
+            photoModel.generateContent(content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(prompt) })
         }
+        logAiUsage("quick log", response.usageMetadata)
         val body = JSONObject(response.text ?: "{}")
         quickLogResult(
             question = body.optString("question"),
