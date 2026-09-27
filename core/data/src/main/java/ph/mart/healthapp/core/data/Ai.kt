@@ -63,16 +63,21 @@ private const val AI_TIMEOUT_MILLIS = 60_000L
  * property of *the app's* AI setup is decided here once: the backend, [AI_MODEL_NAME], the
  * timeout, and the App Check mode.
  *
- * **No limited-use App Check tokens.** Each limited-use token is a fresh Play Integrity
- * attestation — added latency on every request and a draw on its daily quota, past which App Check
- * fails and every AI feature goes quiet at once — and all it buys is replay protection, which is
- * not enforced for this project in the Firebase console. The two go back on together or not at all.
+ * **Limited-use App Check tokens, on every model.** 1.19 and 1.20 sent *session* tokens, and a
+ * Play install attested fine — no `Error obtaining AppCheck token` — yet every call came back
+ * `Firebase App Check token is invalid.`: what enforced replay protection does to a session token.
+ * A limited-use token is accepted whether replay protection is enforced or not; each costs a fresh
+ * Play Integrity attestation — latency per request, a draw on its daily quota — and that is the
+ * price of not having to know which way the console is set.
  */
 internal fun aiModel(
     generationConfig: GenerationConfig,
     tools: List<Tool>? = null,
     systemInstruction: Content? = null,
-): GenerativeModel = Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+): GenerativeModel = Firebase.ai(
+    backend = GenerativeBackend.googleAI(),
+    useLimitedUseAppCheckTokens = true,
+).generativeModel(
     modelName = AI_MODEL_NAME,
     generationConfig = generationConfig,
     tools = tools,

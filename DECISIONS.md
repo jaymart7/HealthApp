@@ -3139,12 +3139,17 @@ rather than needing a counter patched.
 - **One model builder, and what it decides for every call site.** `aiModel()` in `Ai.kt` is the only
   place a `GenerativeModel` is made; a call site passes its output cap, thinking level, schema and —
   for the coach — tools and system prompt, and nothing else. What it decides once:
-  - **No limited-use App Check tokens.** Eleven of the twelve models asked for them, which is a fresh Play
-    Integrity attestation per request — latency on every call, and a draw on Play Integrity's
-    daily quota, past which App Check fails and every AI feature goes quiet at once. What they buy
-    is replay protection, and that is not enforced for this project in the Firebase console, so
-    they bought nothing. The coach had already dropped the flag. Standard App Check still gates
-    every call. **They go back on together with enforcement, or not at all.**
+  - **Limited-use App Check tokens, on all twelve.** This entry first said the opposite — drop
+    them, on the belief that replay protection was not enforced — and 1.19 shipped that. On a
+    Play install every AI call then failed `Firebase App Check token is invalid.` with no
+    `Error obtaining AppCheck token` before it: the device attested, and the backend refused the
+    *session* token, which is what enforced replay protection does. The coach had been on session
+    tokens since 1.9 (a822bc1), so it failed the same way for as long as enforcement has been on —
+    when that began is not recorded here. A limited-use token is
+    accepted whether replay protection is enforced or not, so the flag stays on without needing
+    to know how the console is set; the cost is a Play Integrity attestation per request —
+    latency and a draw on its daily quota. **Drop it only after setting replay protection to
+    *Unenforced*, and re-check a Play build's logcat when you do.**
   - **A 60 s timeout**, against the SDK's 180 s default — which outlasts the patience of every
     fallback here: a photo sat on *Analyzing* for three minutes on a dead connection before manual
     entry was offered. Flash-lite answers in seconds and each coach round is its own request.
