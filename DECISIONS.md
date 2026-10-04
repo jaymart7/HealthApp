@@ -5420,8 +5420,9 @@ The rules that bind are `CLAUDE.md` → **Localization**. These are the argument
   maps a typed `','` onto `'.'`, so a comma keyboard still works and what is shown is what is
   parsed. `NumberFormatTest` sets the default locale to three comma locales and asserts it.
   Grouping separators (`"%,d"` in `formatSteps`, `volumeLabel`) stay locale-aware: nothing types
-  those back in. *ponytail: if a translation ever ships, this flips to a `NumberFormat` parser at
-  the three input sites rather than back to a locale-aware formatter — the round trip is the
+  those back in. *ponytail: the first translation to ship, Filipino, writes decimals with `.`, so
+  this still stands for it. A comma-decimal language flips it to a `NumberFormat` parser at the
+  three input sites rather than back to a locale-aware formatter — the round trip is the
   constraint, not the separator.*
 - **Nine copies of that formatter became one, and that is why the fix was one line.** The same
   `if (value == value.toInt().toDouble()) … else "%.1f".format(value)` sat in `:core:data`,
@@ -5450,10 +5451,10 @@ The rules that bind are `CLAUDE.md` → **Localization**. These are the argument
   because `("Branded"` reads identically in a Room query, an AI prompt or a request header, and
   scoping the rule was cheaper than allowlisting every file that holds one. `error()` and
   `require()` lines are skipped: an exception message is not copy. `literalExceptions` in the root
-  build is the six files whose English is a decision recorded at its own definition, one name per
-  line, and it is the only place the gate can be argued with. *ponytail: still a line-based grep,
-  not a parser — a literal split across lines, or one starting with a template (`"$n tracked"`),
-  slips through, and a Compose lint rule is the upgrade path.*
+  build is the files whose English is a decision recorded at its own definition — since `Phrase`,
+  only `MascotAvatar.kt`'s proper names — and it is the only place the gate can be argued with.
+  *ponytail: still a line-based grep, not a parser — a literal split across lines slips through,
+  and so does copy outside a `ui/` tree, and a Compose lint rule is the upgrade path.*
 - **Keys are `<module>_<screen>_<thing>`,** flat, lowercase. Enough to grep, not a taxonomy.
 - **A resource id is never a `const val`.** A library module's R fields are runtime values, and
   `const` inlines the placeholder `0` — which is a `Resources$NotFoundException: String resource
@@ -5483,27 +5484,68 @@ The rules that bind are `CLAUDE.md` → **Localization**. These are the argument
   names in `:app` — because each enum's `name` is a stored token (a diary row, an export field, a
   profile column) and six screens were printing it at the user. `:core:navigation` lost
   `TopLevelDestination.label` outright: a leaf module with no resources has nowhere to put one.
-- **What stays in Kotlin, each commented at its definition.** Two rules, and only two.
+- **What stays in Kotlin, each commented at its definition.** One rule now; there were two.
   **Persisted or compared:** `QUICK_ADD_NAME`, the `COMMON_FOODS` names (`searchFoods()` dedupes
   on them), portion units (`portionStep` switches on `"g"`/`"oz"`/`"cup"`/`SERVING_UNIT`), every
   enum `name`, `HomeCard`'s stored layout format, Room queries, Data Layer paths, `@SerialName`s,
   intent extras. An imported workout's fallback name takes `ExerciseType.name` for the same
-  reason — a resource would freeze the import-time language into a row that outlives it.
-  **Pure functions with a JVM test over their wording:** `insightFor()`, `goalProjectionLine()`,
-  `:feature:home`'s `greetingFor`, `:feature:progress`'s
-  `summarize()` and `captionFor()`, `:feature:food`'s `diaryDateLabel` ("Today"/"Yesterday"), and
-  `:core:data/exercise/Strength.kt`'s three label functions (`loadLabel`, `summaryLabel`,
-  `LiftPerformance.label` — "Bodyweight × 20", "3 sets", "Last: 60 kg × 8"). Converting those means
-  returning a case type per branch for a composable to resolve, or handing a non-composable a
-  `Context` for a noun and a plural; that is one decision, not eight, and it has not been taken —
-  the test is what earns each of them the exemption, so a label without one gets a test rather than
-  a comment. Also staying: AI prompts (the model reads them in English), `Reminder.title`/`body`,
-  `MascotCharacter`'s five proper names, `parseExport`'s `require()` message and the import
+  reason — a resource would freeze the import-time language into a row that outlives it. The
+  second rule — a pure function with a JVM test over its wording kept its English — was retired
+  when Filipino shipped; see the `Phrase` entry below. Also staying: AI prompts (the model reads
+  them in English), `MascotCharacter`'s five proper names, `parseExport`'s `require()` message and the import
   fallback beside it (an exception's text is an exception's text), and unit symbols — kg, lb, cm,
   in, kcal, g, mg are not copy.
 - **A test that asserted wording now asserts the rule.** `FoodLibraryDataTest` checks the totals,
   the per-serving division and the portion's dropped trailing zero rather than the sentence the
   resource now owns. Nothing it covered was lost.
+- **Filipino first, because its decimals are `.`.** The package is `ph.mart`, and the one hard
+  constraint on a second language here is the ASCII round trip above: Filipino keeps it, so no
+  input parser had to change. A comma-decimal language would have started with three parsers.
+- **The pure-function exemption ended in a `Phrase`, not a case type per function.** Taking the
+  "one decision, not eight" meant choosing between a sealed hierarchy per function — about eight,
+  `summarize()` alone past twenty cases, each with a second `when` in a composable to keep in step
+  — and one small value: `Phrase` in `:core:data` (`Res` with arguments, `Plural`, or `Raw` for
+  text already final). Each function keeps its own `when` and returns `phrase(R.string.x, figure)`
+  where it built a sentence; its test asserts the phrase and the figures, so every branch stays
+  guarded and only the English moved. An argument may itself be a `Phrase`, which is how "Last:
+  60 kg × 8 · 3 sets" nests. `Raw` exists because `SubjectSummary.unit` is "shots" on one card and
+  "kg" on the next, and a history band is "This week" or a formatted month. `:core:data` hosts it
+  because `:core:designsystem` and `:core:data` cannot see each other, so `goalProjectionLine()`
+  moved beside `goalProjection()` and takes its date pre-formatted, as it already took its weight.
+  Resolution is `LocalResources.current` at the call site, or the worker's own Context for
+  `Reminder.title`/`body` — **no ViewModel resolves**, and `CoachFailure` carries the `Phrase`.
+- **The resource folder is `values-fil`, settled on the device.** Every Google library ships
+  Filipino as `values-tl`, the AOSP habit from before three-letter codes, which made it a real
+  question whether a `fil` app locale would find `values-fil`. A one-string probe answered it on
+  the emulator ("Wika" rendered) before 1,880 strings were written to the wrong folder.
+- **The locale config is hand-written.** Android's per-app picker lists exactly what this file
+  says, and the app speaks two languages while its dependencies ship forty. Two `<locale>` lines are
+  cheaper than trusting `generateLocaleConfig` to scan only this app's own resource sets.
+  `locales_config.xml` lists en and fil, and the picker showed exactly those two on the emulator.
+- **`checkTranslations` exists because a placeholder mismatch is a crash.** A translation that
+  drops `%1$s` or reorders a non-positional `%d` throws at the call site, and CI does not run lint.
+  The task compares key sets, the sorted placeholders of every string, and every plural item
+  against the English `other` — a Filipino `one` that drops its `%d` is legal Android but wrong,
+  because Filipino's `one` covers more numbers than 1. Only the placeholder forms this app uses
+  count, so a literal `"% taken"` is text.
+- **AI replies follow the app language through one line read per request.** `replyLanguageLine()`
+  is null for English and otherwise names the language; it is read when a request is built, never
+  at model construction, because the repositories are Koin singletons that outlive a per-app
+  language change. It names portion units and saved-food names as staying English, because both
+  are compared — `portionStep` switches on `"cup"`, and `preferMyFoods` reprices only on an exact
+  name match. The coach gets it once per question, in the message with the day's context: the tool
+  rounds continue the same chat, and a text part beside a function response is a shape the SDK
+  does not promise to keep. The label and supplement scans, which transcribe, and the exercise and
+  recipe parses, whose names echo the user's words, do not get it.
+- **Two gate rules closed what the conversion found.** `EarnedCalories.kt` had held four English
+  sentences in `:core:data` — all templates outside a `ui/` tree, so no rule could see them — and the
+  macro initials were single capitals. `checkUiLiterals` now flags a template opening a sentence
+  (`"$days days ago"`, but not `"$n kcal"`) and a lone capital passed as an argument; both ran clean
+  over the tree before they were added, so they cost no exceptions.
+- **A string that wraps is shortened before a layout is touched.** The device pass found six labels
+  that wrapped where the English sat on one line; each took the shorter honest Filipino word
+  (*Nagpapapayat*, *Mag-ayuno*, *Wala pang kumpara*) rather than an ellipsis or a second layout,
+  so no component learned about Filipino.
 
 ### Build & release
 

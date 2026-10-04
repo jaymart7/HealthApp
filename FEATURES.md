@@ -584,7 +584,7 @@ Four screens, not one scroll. **Profile** (the tab) is about the person: an iden
 (mascot, goal, "Male · 26 · 170 cm · Moderately active", now/target weight with a goal-relative
 trend) · **Targets** (calories & macros, then water/fasting/steps as one Day-targets card) ·
 **Your body** (cycle) · **Your stuff** (supplements, food library, workout routines). A gear in the
-title row opens **Settings**: Display (units, appearance, cards on Home) · Notifications ·
+title row opens **Settings**: Display (units, appearance, cards on Home, language) · Notifications ·
 Connections · Data · About. **About you** (from the header) holds the six Mifflin–St Jeor inputs
 plus target weight and the add-exercise-calories switch. **Reminders** (from Settings) holds the
 eight switches in three groups with the permission banner. All three new routes are Profile detail
@@ -708,11 +708,17 @@ WaterGlassRow.
 Charts live in `:feature:progress/ui/shared/components/`: `DayBarChart` (zero-based) and
 `RangeBarChart` (floating bars).
 
-## Localization scaffolding
+## Localization — English and Filipino
 
 Every module owns a `res/values/strings.xml` and every user-facing string reads from it —
-about 1,100 across twelve modules. **No translation ships**; this is what makes one possible.
-`./gradlew checkUiLiterals` is the gate that keeps it that way.
+about 1,880 across eleven modules — and **Filipino ships** beside it in `values-fil/`, every
+screen, notification, the widget and the watch included. The language follows the phone, or the
+per-app choice Android 13+ offers (Settings → Display → **Language** opens it; below 13 the row
+opens the phone's own language settings). AI replies — the coach, the daily insight, quick log,
+meal ideas, photo and voice logging — come back in the app's language; portion units and saved
+foods' names stay English. Terms follow `docs/glossary-fil.md`; nothing has been reviewed by a
+native speaker yet. `./gradlew checkUiLiterals` keeps copy out of Kotlin and
+`./gradlew checkTranslations` keeps the two languages in step.
 
 Numbers are the other half and go the other way: every decimal a user sees or types is ASCII,
 formatted through `NumberFormat.kt` in `Locale.US`, because the fields that show these figures

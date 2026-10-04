@@ -169,15 +169,23 @@ weighted — is `DECISIONS.md` → **Adaptive layout**.
 ## Localization
 
 Every module owns a `res/values/strings.xml` and every user-facing string reads from it —
-about 1,100 strings across twelve modules. **No translation ships**; this is the scaffolding
-that makes one possible. The rules below are what stop the next pass undoing it; the arguments
-behind them are `DECISIONS.md` → **Localization**.
+about 1,880 strings across eleven modules. **Filipino ships** beside English, in a `values-fil/`
+next to every one of them, and Settings → Display → Language opens Android's per-app picker
+(`res/xml/locales_config.xml`, hand-written: en and fil). The rules below are what stop the next
+pass undoing it; the arguments behind them are `DECISIONS.md` → **Localization**.
 
-- **`./gradlew checkUiLiterals` is the gate**, not stock lint (`HardcodedText` scans XML layouts
-  and this app has none). It greps every module in `localizedModules` for a capitalized literal
-  in a copy-carrying argument, plus three positional patterns that run only where copy lives.
-  Preview fixtures are skipped. A module joins `localizedModules` in its own commit, and
-  `literalExceptions` in the root build is the only place the gate can be argued with.
+- **`./gradlew checkUiLiterals` is the first gate**, not stock lint (`HardcodedText` scans XML
+  layouts and this app has none). It greps every module in `localizedModules` for a capitalized
+  literal in a copy-carrying argument, plus five positional patterns that run only where copy
+  lives — among them a template opening a sentence (`"$days days ago"`) and a lone capital passed
+  as an argument (`"F"`). Preview fixtures are skipped. A module joins `localizedModules` in its
+  own commit, and `literalExceptions` in the root build is the only place the gate can be argued
+  with.
+- **`./gradlew checkTranslations` is the second.** It fails when a module's `values-fil/` and its
+  English drift: a key on one side only, placeholders that differ (a lost `%1$s` is a crash at the
+  call site), a plural without `one` and `other`. **A new English string needs its Filipino entry
+  in the same commit**, worded from `docs/glossary-fil.md` — the term list every translation
+  follows. None of it has been reviewed by a native speaker yet.
 - **Keys are `<module>_<screen>_<thing>`,** flat, lowercase. Enough to grep, not a taxonomy.
 - **A resource id is never a `const val`** — `@StringRes val`, always. `const` inlines the
   placeholder `0` and crashes at the call site rather than failing to compile.
@@ -205,26 +213,33 @@ behind them are `DECISIONS.md` → **Localization**.
 - **Display names live where the enum's `name` is not the display name** — `MealType.labelRes()`
   in `:feature:food/ui/shared/`, `ActivityLevel.label()` in `:feature:profile`, the tab names in
   `:app`. `:core:data` owns a `strings.xml` for the six enums whose labels a feature renders.
-- **What stays in Kotlin, each commented at its definition.** Two rules, and only two.
-  **Persisted or compared:** `QUICK_ADD_NAME`, the `COMMON_FOODS` names, portion units, every
-  enum `name`, `HomeCard`'s stored layout format, Room queries, Data Layer paths, `@SerialName`s,
-  intent extras. **A pure function with a JVM test over its wording:** `insightFor()`,
-  `goalProjectionLine()`, `greetingFor`, `summarize()`, `captionFor()`, `diaryDateLabel`, and
-  `Strength.kt`'s three label functions. The test is what earns the exemption — a label without
-  one gets a test rather than a comment. Also staying: AI prompts, `Reminder.title`/`body`,
-  `MascotCharacter`'s five proper names, exception messages, and unit symbols (kg, lb, cm, in,
-  kcal, g, mg are not copy).
+- **A pure function that chooses words returns a `Phrase`** (`:core:data/Phrase.kt`): a string
+  resource with its arguments, a plural, or `Raw` text that is already final (a unit symbol, a
+  formatted date). Its JVM test asserts *which* phrase with *which* figures; the composable
+  resolves it with `LocalResources.current`. `insightFor()`, `goalProjectionLine()` (now in
+  `:core:data/progress/`), `summarize()`, `captionFor()`, the date labels, the history labels,
+  `EarnedCalories.kt` and `Strength.kt`'s labels all work this way; a function that only picks one
+  of a few sentences (`greetingFor`) returns a `@StringRes Int`.
+- **What stays in Kotlin, each commented at its definition.** **Persisted or compared:**
+  `QUICK_ADD_NAME`, the `COMMON_FOODS` names, portion units, every enum `name`, `HomeCard`'s stored
+  layout format, Room queries, Data Layer paths, `@SerialName`s, intent extras. Also staying: AI
+  prompts, `MascotCharacter`'s five proper names, exception messages, and unit symbols (kg, lb, cm,
+  in, kcal, g, mg are not copy).
+- **AI replies follow the app language.** `replyLanguageLine()` in `Ai.kt` adds one line to each
+  prompt that produces words the user reads, read per request; it keeps portion units and
+  saved-food names English, because both are compared. The prompts themselves stay English.
 
 ## Build & check
 
 ```
 ./gradlew assembleDebug
 ./gradlew testDebugUnitTest      # 75 JVM test files across 14 modules
-./gradlew checkUiLiterals        # the localization gate, defined in the root build
+./gradlew checkUiLiterals        # the localization gates, defined in the root build
+./gradlew checkTranslations
 ```
 
 `fdcApiKey` is a Gradle property and the build must pass without it — that is the
-degrade-gracefully rule, not a secret to work around. `.github/workflows/build.yml` runs all three.
+degrade-gracefully rule, not a secret to work around. `.github/workflows/build.yml` runs all four.
 
 ## Backlog
 
@@ -278,7 +293,7 @@ off that ceiling, so what is left is the exposure and first scans.
 **No instrumented test but the generated `ExampleInstrumentedTest`.** The
 deps are already wired in `:app` (`ui-test-junit4`, `espresso-core`, `androidx-junit`,
 `ui-test-manifest`), so nothing new goes in the version catalog. CI now exists —
-`.github/workflows/build.yml` runs `assembleDebug`, `testDebugUnitTest` and `checkUiLiterals`, on
+`.github/workflows/build.yml` runs `assembleDebug`, `testDebugUnitTest`, `checkUiLiterals` and `checkTranslations`, on
 JDK 17, with no secret supplying `fdcApiKey` or the keystore, because a fresh checkout has neither
 and the build must pass that way. An emulator stays out — a large, slow, flaky dependency for a solo project, and the JVM tests are
 where the derivation logic lives. What is worth an instrumented test is what no JVM test can reach

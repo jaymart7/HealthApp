@@ -58,8 +58,9 @@ val literalExceptions = listOf(
  * positional.
  *
  * ponytail: a line-based grep, not a parser — a literal split across lines still slips through,
- * and so does copy in a module's non-`ui/` code (`EarnedCalories.kt` sat in `:core:data` for a
- * year). A Compose lint rule is the upgrade path if that starts happening.
+ * and so does copy in a module's non-`ui/` code (`EarnedCalories.kt`'s four sentences in
+ * `:core:data` were found by hand). A Compose lint rule is the upgrade path if that starts
+ * happening.
  */
 tasks.register("checkUiLiterals") {
     group = "verification"
