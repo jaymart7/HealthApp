@@ -2,6 +2,9 @@ package ph.mart.healthapp.core.data.progress
 
 import kotlin.math.abs
 import kotlin.math.ceil
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.R
+import ph.mart.healthapp.core.data.phrase
 import ph.mart.healthapp.core.data.profile.Goal
 
 /**
@@ -110,4 +113,32 @@ internal fun List<WeightEntry>.slopeKgPerDay(): Double? {
     val denominator = sumOf { (it.dateEpochDay - meanDay) * (it.dateEpochDay - meanDay) }
     if (denominator == 0.0) return null
     return sumOf { (it.dateEpochDay - meanDay) * (it.weightKg - meanKg) } / denominator
+}
+
+/**
+ * "When do I get there?", in one sentence — the words shared by Progress's goal projection card,
+ * Progress's weekly recap and Home's weight card. Three surfaces, one wording: the projection is
+ * derived once in [goalProjection], and this is what stops the three from describing the same fact
+ * differently.
+ *
+ * [windowDays] is named in the sentence rather than left implicit: the recap card is headed
+ * "Last 7 days" while the fit runs over thirty, and a line that doesn't say which is which is a
+ * card contradicting its own heading. Callers pass [PROJECTION_WINDOW_DAYS], so the words can't
+ * drift from the constant.
+ *
+ * Both labels arrive formatted — [goalWeightLabel] unit-converted and suffixed ("72 kg"),
+ * [targetDateLabel] by `formatEpochDay` — because those formatters live in `:core:designsystem`,
+ * which this module cannot see.
+ */
+fun goalProjectionLine(
+    goalWeightLabel: String,
+    targetDateLabel: String?,
+    reached: Boolean,
+    windowDays: Long,
+): Phrase = when {
+    reached -> phrase(R.string.data_projection_reached)
+    targetDateLabel != null -> phrase(R.string.data_projection_date, windowDays, goalWeightLabel, targetDateLabel)
+    // Flat, pointing away from the goal, or past the horizon — the projection reports no date, and
+    // saying so beats a date the next weigh-in would move by a year.
+    else -> phrase(R.string.data_projection_none)
 }

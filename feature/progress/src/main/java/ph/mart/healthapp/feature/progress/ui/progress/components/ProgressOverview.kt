@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -34,14 +35,16 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.progress.goalProjectionLine
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AIInsightCard
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
-import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
@@ -161,10 +164,10 @@ internal fun ProgressOverview(
                         formatOneDecimal(it.goalWeightKg.kgToDisplayUnit(uiState.preferredUnit)),
                         uiState.preferredUnit.weightUnitLabel(),
                     ),
-                    targetEpochDay = it.targetEpochDay,
+                    targetDateLabel = it.targetEpochDay?.let(::formatEpochDay),
                     reached = it.reached,
                     windowDays = PROJECTION_WINDOW_DAYS,
-                ),
+                ).resolve(LocalResources.current),
                 subline = rateLine(it, uiState.preferredUnit),
                 headlineStyle = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 12.dp),

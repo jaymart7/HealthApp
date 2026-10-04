@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data
 
+import android.content.res.Resources
 import ph.mart.healthapp.core.data.coach.CoachRepository
 import ph.mart.healthapp.core.data.coach.CoachToolbox
 import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
@@ -22,9 +23,9 @@ import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
  * If this file ever drifts out of step with its debug twin, `assembleRelease` fails to compile.
  * That is the whole point of it.
  */
-internal fun debugCoach(real: CoachRepository, toolbox: CoachToolbox): CoachRepository? = null
+internal fun debugCoach(real: CoachRepository, toolbox: CoachToolbox, resources: Resources): CoachRepository? = null
 
-internal fun debugInsight(): InsightRepository? = null
+internal fun debugInsight(resources: Resources): InsightRepository? = null
 
 internal fun debugRecognition(): FoodRecognitionRepository? = null
 

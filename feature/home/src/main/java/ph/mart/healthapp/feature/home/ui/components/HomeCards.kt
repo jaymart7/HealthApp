@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import java.util.Calendar
@@ -42,6 +43,7 @@ import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.goalProjection
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
 import ph.mart.healthapp.core.designsystem.component.HomeCard
@@ -110,7 +112,7 @@ internal fun HomeCards(
     // and a model with nothing to say all land on the same rules that shipped before there
     // was a model at all. The credit rides along so the workout rule can fire.
     val insight = uiState.aiInsight
-        ?: targets?.let { insightFor(uiState.totals, it, trend, uiState.creditedKcal) }
+        ?: targets?.let { insightFor(uiState.totals, it, trend, uiState.creditedKcal) }?.resolve(LocalResources.current)
     val unit = uiState.profile?.preferredUnit ?: UnitSystem.Metric
     val budget = targets?.let { budgetKcal(it.calories, uiState.burnedKcal, uiState.addExerciseToBudget) } ?: 0
 

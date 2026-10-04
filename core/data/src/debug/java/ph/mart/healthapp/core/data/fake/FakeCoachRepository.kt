@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.fake
 
+import android.content.res.Resources
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -20,6 +21,7 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.recap.REPORT_DAYS
 import ph.mart.healthapp.core.data.note.NOTE_MAX_CHARS
@@ -87,6 +89,7 @@ import ph.mart.healthapp.core.data.todayEpochDay
 internal class FakeCoachRepository(
     private val real: CoachRepository,
     private val toolbox: CoachToolbox,
+    private val resources: Resources,
 ) : CoachRepository by real {
 
     override fun send(question: String, request: InsightRequest?): Flow<CoachReply> = flow {
@@ -127,7 +130,7 @@ internal class FakeCoachRepository(
             }
 
             is FakeScript.Say -> {
-                val answer = stream(script.text(request))
+                val answer = stream(script.text(request, request?.let(::insightFor)?.resolve(resources)))
                 real.settle(question, answer, emptyList())
             }
 
@@ -180,8 +183,9 @@ internal sealed interface FakeScript {
     data class Tool(val name: String, val args: Map<String, JsonElement>, val preamble: String) : FakeScript
 
     /** [text] takes the day's payload because the generic answer should still quote real numbers;
-     * with no profile there are none, and it says so. */
-    data class Say(val text: (InsightRequest?) -> String) : FakeScript
+     * with no profile there are none, and it says so. `insight` is the rule-based line already
+     * resolved by the repository, which holds the `Resources` this pure routing does not. */
+    data class Say(val text: (request: InsightRequest?, insight: String?) -> String) : FakeScript
 
     /** The card, and the one sentence over it. No figures in [preamble] — the real prompt forbids
      * them and the model is not handed any, so a fake that quoted some would be showing a bubble
@@ -391,13 +395,13 @@ internal fun fakeCoachScript(question: String): FakeScript {
         )
     }
 
-    return FakeScript.Say { request ->
+    return FakeScript.Say { request, insight ->
         when {
             request == null -> "You haven't set up a profile yet, so I don't have any targets to " +
                 "measure today against."
             // The rule-based line when the day has something to say, so the fake quotes numbers
             // that are actually true of today rather than inventing encouragement.
-            else -> insightFor(request)?.let { "$it Ask me about a past day or your week too." }
+            else -> insight?.let { "$it Ask me about a past day or your week too." }
                 ?: "Today's on track against your targets. Ask me about a past day or your week " +
                     "and I'll pull it up."
         }

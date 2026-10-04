@@ -153,7 +153,7 @@ class FakeCoachScriptTest {
     @Test
     fun `the plain answer admits it has nothing when there is no profile`() {
         val say = fakeCoachScript("hello") as FakeScript.Say
-        assertTrue(say.text(null), "profile" in say.text(null))
+        assertTrue(say.text(null, null), "profile" in say.text(null, null))
     }
 
     /**

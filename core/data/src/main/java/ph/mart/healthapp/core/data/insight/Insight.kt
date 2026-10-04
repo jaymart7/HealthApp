@@ -2,9 +2,12 @@ package ph.mart.healthapp.core.data.insight
 
 import java.util.Locale
 import kotlin.math.abs
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.R
 import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
 import ph.mart.healthapp.core.data.exercise.earnedInsightLine
 import ph.mart.healthapp.core.data.food.DiaryTotals
+import ph.mart.healthapp.core.data.phrase
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
@@ -115,9 +118,8 @@ internal fun dayNumbersBlock(request: InsightRequest): String = buildString {
  * each other. Same reason `goalProjection()` sits in `progress/`: pure derivation over
  * `:core:data` types, no table, no repository.
  *
- * The sentences stay in Kotlin for now — this is a pure function with a JVM test over its
- * wording, and moving them means returning a case type for a composable to resolve. Deferred by
- * decision in the localization pass, not overlooked; `goalProjectionLine()` is the twin.
+ * It returns a [Phrase]: which rule fired and with which figures is what `InsightTest` holds, and
+ * the wording is `data_insight_*`, resolved by whichever screen draws it.
  *
  * [burnedKcal] is the day's whole credit (`dayBurnedKcal()`), and **0 unless the caller has
  * checked `Profile.addExerciseToBudget`** — it both widens the first rule's budget and unlocks
@@ -129,22 +131,22 @@ fun insightFor(
     targets: DailyTargets,
     trend: WeightTrendDisplay,
     burnedKcal: Int = 0,
-): String? {
+): Phrase? {
     // The same fold `budgetKcal()` makes, and the reason the first rule says "budget" rather than
     // "target": with a workout credited, the figure the day is over is the one the ring drew, not
     // the one Mifflin–St Jeor produced. Zero — every caller but Home — leaves both untouched.
     val budget = targets.calories + burnedKcal
     return when {
         totals.calories > budget ->
-            "You're ${totals.calories - budget} kcal over today's budget."
+            phrase(R.string.data_insight_over_budget, totals.calories - budget)
         // Above protein on purpose: it fires only on a day with real burn, which is the day this
         // line exists for. Callers pass 0 when `addExerciseToBudget` is off, so a credit that was
         // never added is never announced.
         burnedKcal >= EARNED_MIN_KCAL -> earnedInsightLine(burnedKcal)
         targets.proteinG > 0 && totals.calories > 0 && totals.proteinG < targets.proteinG * 0.6 ->
-            "You're ${targets.proteinG - totals.proteinG}g short on protein today."
+            phrase(R.string.data_insight_protein_short, targets.proteinG - totals.proteinG)
         trend.hasPrior && abs(trend.deltaKg) >= TREND_ARROW_DEADBAND_KG ->
-            "${formatDelta(trend.deltaKg)} kg over the last week — keep it steady."
+            phrase(R.string.data_insight_weight_trend, formatDelta(trend.deltaKg))
         else -> null
     }
 }
@@ -170,7 +172,7 @@ fun formatDelta(deltaKg: Double): String = String.format(Locale.US, "%+.1f", del
  * telling the model about a workout — a prompt change, not a plumbing one. Add it there the day
  * the coach needs to speak about one.
  */
-fun insightFor(request: InsightRequest): String? = insightFor(
+fun insightFor(request: InsightRequest): Phrase? = insightFor(
     totals = DiaryTotals(
         calories = request.caloriesConsumed,
         proteinG = request.proteinG,

@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -21,6 +22,7 @@ import ph.mart.healthapp.core.data.exercise.loadLabel
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -54,7 +56,7 @@ internal fun LiftRecordRow(record: LiftRecord, unit: UnitSystem, modifier: Modif
         }
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = StrengthSet(record.exerciseName, record.bestReps, record.bestWeightKg).loadLabel(unit),
+                text = StrengthSet(record.exerciseName, record.bestReps, record.bestWeightKg).loadLabel(unit).resolve(LocalResources.current),
                 style = MaterialTheme.typography.bodyMedium.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )

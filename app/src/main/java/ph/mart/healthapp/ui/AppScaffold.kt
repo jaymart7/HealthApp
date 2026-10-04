@@ -29,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -41,6 +42,7 @@ import ph.mart.healthapp.ShortcutAction
 import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
 import ph.mart.healthapp.core.data.exercise.earnedSavedLine
 import ph.mart.healthapp.core.data.food.MealIdea
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavBar
 import ph.mart.healthapp.core.designsystem.component.BottomNavItem
@@ -383,12 +385,14 @@ fun AppScaffold(
     // underneath — and an update belongs to the app rather than to any one screen, so it has no
     // other host to ask for.
     val snackbarHostState = remember { SnackbarHostState() }
+    // Read here, in composition: both snackbars below are raised from a coroutine.
+    val resources = LocalResources.current
     // A confirmation of something the user just did, so it is silent when there is nothing to
     // confirm: the profile's credit switch is off, the save was a correction, or the burn is under
     // the floor `EarnedCalories.kt` argues for.
     val onWorkoutSaved: (Int) -> Unit = { creditedKcal ->
         if (creditedKcal >= EARNED_MIN_KCAL) {
-            scope.launch { snackbarHostState.showSnackbar(earnedSavedLine(creditedKcal)) }
+            scope.launch { snackbarHostState.showSnackbar(earnedSavedLine(creditedKcal).resolve(resources)) }
         }
     }
     // Every quick log confirms, unlike a saved workout: it may have written five things the user
@@ -399,7 +403,7 @@ fun AppScaffold(
     val onQuickLogged: (Int, () -> Unit) -> Unit = { creditedKcal, undo ->
         scope.launch {
             val result = snackbarHostState.showSnackbar(
-                message = if (creditedKcal >= EARNED_MIN_KCAL) earnedSavedLine(creditedKcal) else loggedLine,
+                message = if (creditedKcal >= EARNED_MIN_KCAL) earnedSavedLine(creditedKcal).resolve(resources) else loggedLine,
                 actionLabel = undoLabel,
                 duration = SnackbarDuration.Long,
             )

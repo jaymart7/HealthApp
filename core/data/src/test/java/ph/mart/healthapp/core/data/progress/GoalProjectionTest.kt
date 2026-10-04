@@ -6,6 +6,8 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.R
+import ph.mart.healthapp.core.data.phrase
 import ph.mart.healthapp.core.data.profile.Goal
 
 private const val TODAY = 20_000L
@@ -102,5 +104,31 @@ class GoalProjectionTest {
         assertNotNull(result.targetEpochDay)
         assertTrue(result.kgPerWeek > 0)
         assertFalse(result.reached)
+    }
+
+    // goalProjectionLine — which sentence, with which figures; the words are `data_projection_*`.
+
+    @Test
+    fun `arrival wins over any date`() {
+        assertEquals(
+            phrase(R.string.data_projection_reached),
+            goalProjectionLine("72 kg", targetDateLabel = "Jan 12, 2025", reached = true, windowDays = 30),
+        )
+    }
+
+    @Test
+    fun `a date names the window it was fitted over`() {
+        assertEquals(
+            phrase(R.string.data_projection_date, 30L, "72 kg", "Jan 12, 2025"),
+            goalProjectionLine("72 kg", targetDateLabel = "Jan 12, 2025", reached = false, windowDays = 30),
+        )
+    }
+
+    @Test
+    fun `no date says so rather than guessing one`() {
+        assertEquals(
+            phrase(R.string.data_projection_none),
+            goalProjectionLine("159 lb", targetDateLabel = null, reached = false, windowDays = 30),
+        )
     }
 }

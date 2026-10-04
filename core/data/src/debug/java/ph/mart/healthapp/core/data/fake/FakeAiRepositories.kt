@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.fake
 
+import android.content.res.Resources
 import android.graphics.Bitmap
 import kotlinx.coroutines.delay
 import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
@@ -49,6 +50,7 @@ import ph.mart.healthapp.core.data.food.recipeParseResult
 import ph.mart.healthapp.core.data.insight.InsightRepository
 import ph.mart.healthapp.core.data.insight.InsightRequest
 import ph.mart.healthapp.core.data.insight.insightFor
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.supplement.SupplementLabelReading
 import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
@@ -77,10 +79,10 @@ private const val FAKE_LATENCY_MS = 700L
  * honest, and is why there is nothing more to write here. Null when the day holds nothing worth
  * remarking on, the same first-class answer the interface already documents.
  */
-internal class FakeInsightRepository : InsightRepository {
+internal class FakeInsightRepository(private val resources: Resources) : InsightRepository {
     override suspend fun dailyInsight(request: InsightRequest, todayEpochDay: Long): String? {
         delay(FAKE_LATENCY_MS)
-        return insightFor(request)
+        return insightFor(request)?.resolve(resources)
     }
 }
 

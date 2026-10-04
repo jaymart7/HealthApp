@@ -1,6 +1,10 @@
 package ph.mart.healthapp.core.data.exercise
 
 import java.util.Locale
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.R
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.plural
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
@@ -180,10 +184,8 @@ const val RECENT_STRENGTH_WORKOUTS = 10
 // strength screen and the Progress tab all print these, and `:feature:*` modules never import each
 // other. Unit conversion lives one package over, in `profile/Units.kt`.
 //
-// The English below stays in Kotlin: each is a pure function with a JVM test over its exact wording
-// (`StrengthTest`), the reading `StreakCard`'s `dayCountLabel` and `insightFor()` already got.
-// Moving it means handing every one of them a `Context` — none of these is a composable — for a
-// noun and a plural, and that is its own decision.
+// The words are `data_strength_*`; these return a [Phrase] for the screen to resolve, and
+// `StrengthTest` holds which one, with which figures.
 
 /** Trims the pointless ".0" — 60 kg is "60", 62.5 kg is "62.5".
  *
@@ -195,11 +197,12 @@ fun formatLoad(value: Double): String =
     if (value == value.toInt().toDouble()) value.toInt().toString() else String.format(Locale.US, "%.1f", value)
 
 /** "60 kg × 8", or "Bodyweight × 20" when there was no load to name. */
-fun StrengthSet.loadLabel(unit: UnitSystem): String =
+fun StrengthSet.loadLabel(unit: UnitSystem): Phrase =
     if (weightKg <= 0.0) {
-        "Bodyweight × $reps"
+        phrase(R.string.data_strength_bodyweight, reps)
     } else {
-        "${formatLoad(weightKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} × $reps"
+        // Figures and a unit symbol only — nothing here a translator touches.
+        Phrase.Raw("${formatLoad(weightKg.kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} × $reps")
     }
 
 /** Volume is a big number, so it gets thousands separators the individual loads don't need. */
@@ -207,17 +210,19 @@ fun volumeLabel(volumeKg: Double, unit: UnitSystem): String =
     "%,d %s".format(volumeKg.kgToDisplayUnit(unit).toLong(), unit.weightUnitLabel())
 
 /** The diary row's one line under a strength workout: what it was, not how it went. */
-fun List<StrengthSet>.summaryLabel(unit: UnitSystem): String {
-    if (isEmpty()) return ""
+fun List<StrengthSet>.summaryLabel(unit: UnitSystem): Phrase? {
+    if (isEmpty()) return null
     val lifts = distinctBy { it.exerciseName }.size
     val volume = volumeKg()
-    return listOfNotNull(
-        "$lifts ${if (lifts == 1) "exercise" else "exercises"}",
-        "$size ${if (size == 1) "set" else "sets"}",
-        volumeLabel(volume, unit).takeIf { volume > 0 },
-    ).joinToString(" · ")
+    val exercises = plural(R.plurals.data_strength_exercises, lifts, lifts)
+    val sets = plural(R.plurals.data_strength_sets, size, size)
+    return if (volume > 0) {
+        phrase(R.string.data_strength_summary_volume, exercises, sets, volumeLabel(volume, unit))
+    } else {
+        phrase(R.string.data_strength_summary, exercises, sets)
+    }
 }
 
 /** "Last: 60 kg × 8 · 3 sets" — the one line under the exercise field that says what to beat. */
-fun LiftPerformance.label(unit: UnitSystem): String =
-    "Last: ${topSet.loadLabel(unit)} · $sets ${if (sets == 1) "set" else "sets"}"
+fun LiftPerformance.label(unit: UnitSystem): Phrase =
+    phrase(R.string.data_strength_last, topSet.loadLabel(unit), plural(R.plurals.data_strength_sets, sets, sets))

@@ -91,4 +91,44 @@
          floor. One copy, because a safety warning that drifts between them is worse than the
          layering smell of user-facing copy in :core:data. -->
     <string name="data_calorie_floor_warning">This is below the generally recommended minimum. Consider talking to a healthcare provider before going lower.</string>
+
+    <!-- Sentences pure functions choose and composables spell — see `Phrase`. -->
+
+    <!-- insightFor() — Home's rule-based line and the coach's fallback. -->
+    <string name="data_insight_over_budget">You\'re %1$d kcal over today\'s budget.</string>
+    <string name="data_insight_protein_short">You\'re %1$dg short on protein today.</string>
+    <string name="data_insight_weight_trend">%1$s kg over the last week — keep it steady.</string>
+
+    <!-- EarnedCalories — what a workout's credit buys, in whole portions. -->
+    <string name="data_earned_food_burger">a burger and fries</string>
+    <string name="data_earned_food_chicken">a chicken breast with rice</string>
+    <string name="data_earned_food_sandwich">a peanut-butter sandwich</string>
+    <string name="data_earned_food_yoghurt">yoghurt and berries</string>
+    <string name="data_earned_food_banana">a banana</string>
+    <string name="data_earned_food_apple">an apple</string>
+    <string name="data_earned_saved">Nice work — +%1$d kcal on today\'s budget.</string>
+    <string name="data_earned_saved_about">Nice work — +%1$d kcal on today\'s budget, about %2$s.</string>
+    <string name="data_earned_ring">+%1$d kcal earned today</string>
+    <string name="data_earned_ring_about">+%1$d kcal earned — about %2$s</string>
+    <string name="data_earned_insight">Today\'s activity bought you %1$d kcal more than a rest day.</string>
+    <string name="data_earned_insight_about">Today\'s activity bought you %1$d kcal more than a rest day — about %2$s.</string>
+
+    <!-- Strength labels — the diary row, the strength screen and Progress. -->
+    <string name="data_strength_bodyweight">Bodyweight × %1$d</string>
+    <plurals name="data_strength_exercises">
+        <item quantity="one">%d exercise</item>
+        <item quantity="other">%d exercises</item>
+    </plurals>
+    <plurals name="data_strength_sets">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d sets</item>
+    </plurals>
+    <string name="data_strength_summary">%1$s · %2$s</string>
+    <string name="data_strength_summary_volume">%1$s · %2$s · %3$s</string>
+    <string name="data_strength_last">Last: %1$s · %2$s</string>
+
+    <!-- goalProjectionLine() — Home's weight card, the projection card and the recap. -->
+    <string name="data_projection_reached">You\'re at your goal weight.</string>
+    <string name="data_projection_date">On the last %1$d days\' trend, %2$s around %3$s.</string>
+    <string name="data_projection_none">No date to project at this pace.</string>
 </resources>

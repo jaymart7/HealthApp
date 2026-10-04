@@ -15,9 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -96,7 +99,7 @@ internal fun CoachNotice(
             // Only offline, and only when there is something to say: a failed turn has a working
             // connection, so the coach itself is the better second try.
             if (failure.offline && failure.insight != null) {
-                FallbackPanel(insight = failure.insight)
+                FallbackPanel(insight = failure.insight.resolve(LocalResources.current))
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -164,7 +167,7 @@ private fun CoachNoticeOfflinePreview() {
             CoachNotice(
                 failure = CoachFailure(
                     offline = true,
-                    insight = "You're 88 g short on protein today.",
+                    insight = Phrase.Raw("You're 88 g short on protein today."),
                     question = "How am I doing today?",
                 ),
                 onRetry = {},

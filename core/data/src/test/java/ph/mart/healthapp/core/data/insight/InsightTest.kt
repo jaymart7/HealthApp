@@ -3,8 +3,11 @@ package ph.mart.healthapp.core.data.insight
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import ph.mart.healthapp.core.data.R
 import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
+import ph.mart.healthapp.core.data.exercise.earnedInsightLine
 import ph.mart.healthapp.core.data.food.DiaryTotals
+import ph.mart.healthapp.core.data.phrase
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.WeightTrendDisplay
 
@@ -70,17 +73,17 @@ class InsightTest {
     fun `insight prefers the calorie overage, then protein, then weight`() {
         val flatTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
         assertEquals(
-            "You're 200 kcal over today's budget.",
+            phrase(R.string.data_insight_over_budget, 200),
             insightFor(DiaryTotals(2200, 150, 200, 67), TARGETS, flatTrend),
         )
         assertEquals(
-            "You're 70g short on protein today.",
+            phrase(R.string.data_insight_protein_short, 70),
             insightFor(DiaryTotals(1000, 80, 100, 30), TARGETS, flatTrend),
         )
         // Exactly 60% of the protein goal is not "short" — the rule is strictly below.
         assertNull(insightFor(DiaryTotals(1000, 90, 100, 30), TARGETS, flatTrend))
         assertEquals(
-            "-0.6 kg over the last week — keep it steady.",
+            phrase(R.string.data_insight_weight_trend, "-0.6"),
             insightFor(
                 DiaryTotals(1000, 140, 100, 30),
                 TARGETS,
@@ -112,12 +115,12 @@ class InsightTest {
     fun `the overage counts the day's burn, and says so only once past it`() {
         val flatTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
         assertEquals(
-            "You're 100 kcal over today's budget.",
+            phrase(R.string.data_insight_over_budget, 100),
             insightFor(DiaryTotals(2500, 150, 200, 67), TARGETS, flatTrend, burnedKcal = 400),
         )
         // 2,300 against a 2,000 target is over; against the 2,400 the run bought, it is not.
         assertEquals(
-            "Today's activity bought you 400 kcal more than a rest day — about a peanut-butter sandwich.",
+            earnedInsightLine(400),
             insightFor(DiaryTotals(2300, 150, 200, 67), TARGETS, flatTrend, burnedKcal = 400),
         )
     }
@@ -127,9 +130,9 @@ class InsightTest {
     fun `the workout line outranks a protein shortfall`() {
         val flatTrend = WeightTrendDisplay(currentKg = 76.0, deltaKg = 0.0, hasPrior = false)
         val short = DiaryTotals(1000, 80, 100, 30)
-        assertEquals("You're 70g short on protein today.", insightFor(short, TARGETS, flatTrend))
+        assertEquals(phrase(R.string.data_insight_protein_short, 70), insightFor(short, TARGETS, flatTrend))
         assertEquals(
-            "Today's activity bought you 220 kcal more than a rest day — about yoghurt and berries.",
+            earnedInsightLine(220),
             insightFor(short, TARGETS, flatTrend, burnedKcal = 220),
         )
     }

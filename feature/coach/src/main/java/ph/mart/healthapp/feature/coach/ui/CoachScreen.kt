@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
@@ -496,7 +497,7 @@ private fun CoachScreenOfflinePreview() {
                 offline = true,
                 failure = CoachFailure(
                     offline = true,
-                    insight = "You're 88g short on protein today.",
+                    insight = Phrase.Raw("You're 88g short on protein today."),
                     question = "How am I doing today?",
                 ),
             ),

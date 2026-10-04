@@ -3,47 +3,44 @@ package ph.mart.healthapp.core.data.exercise
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import ph.mart.healthapp.core.data.R
+import ph.mart.healthapp.core.data.phrase
 
 /**
- * The wording is the test — these four functions are exempt from the localization pass on exactly
- * this basis, the reading `goalProjectionLine()` and `insightFor()` already got. A phrase changed
- * without a reason to change it fails here.
+ * Which phrase each credit reaches, and that every line carries both the figure and the food. The
+ * wording itself is `data_earned_*`.
  */
 class EarnedCaloriesTest {
 
+    private val sandwich = phrase(R.string.data_earned_food_sandwich)
+
     @Test
     fun `each threshold takes the phrase it reaches, not the one below`() {
-        assertEquals("a burger and fries", earnedFoodPhrase(700))
-        assertEquals("a chicken breast with rice", earnedFoodPhrase(699))
-        assertEquals("a chicken breast with rice", earnedFoodPhrase(450))
-        assertEquals("a peanut-butter sandwich", earnedFoodPhrase(449))
-        assertEquals("yoghurt and berries", earnedFoodPhrase(299))
-        assertEquals("a banana", earnedFoodPhrase(199))
-        assertEquals("an apple", earnedFoodPhrase(119))
-        assertEquals("an apple", earnedFoodPhrase(EARNED_MIN_KCAL))
+        assertEquals(phrase(R.string.data_earned_food_burger), earnedFood(700))
+        assertEquals(phrase(R.string.data_earned_food_chicken), earnedFood(699))
+        assertEquals(phrase(R.string.data_earned_food_chicken), earnedFood(450))
+        assertEquals(sandwich, earnedFood(449))
+        assertEquals(phrase(R.string.data_earned_food_yoghurt), earnedFood(299))
+        assertEquals(phrase(R.string.data_earned_food_banana), earnedFood(199))
+        assertEquals(phrase(R.string.data_earned_food_apple), earnedFood(119))
+        assertEquals(phrase(R.string.data_earned_food_apple), earnedFood(EARNED_MIN_KCAL))
     }
 
     /** The floor is the same one every caller gates on, so below it there is nothing to picture. */
     @Test
     fun `under the floor there is no phrase`() {
-        assertNull(earnedFoodPhrase(EARNED_MIN_KCAL - 1))
-        assertNull(earnedFoodPhrase(0))
+        assertNull(earnedFood(EARNED_MIN_KCAL - 1))
+        assertNull(earnedFood(0))
         // A negative can't arrive from `estimateBurnedKcal`, which coerces at zero — checked so a
         // future caller subtracting two figures can't produce a sentence out of one.
-        assertNull(earnedFoodPhrase(-200))
+        assertNull(earnedFood(-200))
     }
 
     @Test
     fun `the three lines name the figure and the food`() {
-        assertEquals(
-            "Nice work — +320 kcal on today's budget, about a peanut-butter sandwich.",
-            earnedSavedLine(320),
-        )
-        assertEquals("+320 kcal earned — about a peanut-butter sandwich", earnedRingLine(320))
-        assertEquals(
-            "Today's activity bought you 320 kcal more than a rest day — about a peanut-butter sandwich.",
-            earnedInsightLine(320),
-        )
+        assertEquals(phrase(R.string.data_earned_saved_about, 320, sandwich), earnedSavedLine(320))
+        assertEquals(phrase(R.string.data_earned_ring_about, 320, sandwich), earnedRingLine(320))
+        assertEquals(phrase(R.string.data_earned_insight_about, 320, sandwich), earnedInsightLine(320))
     }
 
     /**
@@ -52,8 +49,8 @@ class EarnedCaloriesTest {
      */
     @Test
     fun `a line with no phrase to offer still reads as a sentence`() {
-        assertEquals("Nice work — +10 kcal on today's budget.", earnedSavedLine(10))
-        assertEquals("+10 kcal earned today", earnedRingLine(10))
-        assertEquals("Today's activity bought you 10 kcal more than a rest day.", earnedInsightLine(10))
+        assertEquals(phrase(R.string.data_earned_saved, 10), earnedSavedLine(10))
+        assertEquals(phrase(R.string.data_earned_ring, 10), earnedRingLine(10))
+        assertEquals(phrase(R.string.data_earned_insight, 10), earnedInsightLine(10))
     }
 }

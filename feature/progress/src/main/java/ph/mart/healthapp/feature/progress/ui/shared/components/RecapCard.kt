@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -43,11 +44,13 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
+import ph.mart.healthapp.core.data.progress.goalProjectionLine
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.formatDecimals
+import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.component.formatWeekday
-import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -179,10 +182,10 @@ fun RecapCard(
                 Note(
                     goalProjectionLine(
                         goalWeightLabel = stringResource(R.string.progress_weight_value, formatOneDecimal(it.goalWeightKg.kgToDisplayUnit(unit)), unit.weightUnitLabel()),
-                        targetEpochDay = it.targetEpochDay,
+                        targetDateLabel = it.targetEpochDay?.let(::formatEpochDay),
                         reached = it.reached,
                         windowDays = PROJECTION_WINDOW_DAYS,
-                    ),
+                    ).resolve(LocalResources.current),
                 )
             }
         }

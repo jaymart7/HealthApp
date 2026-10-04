@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -21,6 +22,7 @@ import ph.mart.healthapp.core.data.exercise.loadLabel
 import ph.mart.healthapp.core.data.exercise.volumeKg
 import ph.mart.healthapp.core.data.exercise.volumeLabel
 import ph.mart.healthapp.core.data.profile.UnitSystem
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -87,7 +89,7 @@ internal fun StrengthSetList(
                             modifier = Modifier.padding(end = 12.dp),
                         )
                         Text(
-                            text = set.loadLabel(unit),
+                            text = set.loadLabel(unit).resolve(LocalResources.current),
                             style = MaterialTheme.typography.bodyMedium.tabularNums,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),

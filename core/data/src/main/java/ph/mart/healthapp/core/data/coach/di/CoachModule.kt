@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.coach.di
 
+import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import ph.mart.healthapp.core.data.AppDatabase
 import ph.mart.healthapp.core.data.coach.CoachRepository
@@ -54,6 +55,6 @@ val coachDataModule = module {
             routineRepository = get(),
             toolbox = get(),
         )
-        debugCoach(real, get()) ?: real
+        debugCoach(real, get(), androidContext().resources) ?: real
     }
 }

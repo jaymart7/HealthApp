@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data
 
+import android.content.res.Resources
 import android.util.Log
 import ph.mart.healthapp.core.data.coach.CoachRepository
 import ph.mart.healthapp.core.data.coach.CoachToolbox
@@ -50,10 +51,10 @@ private const val USE_REAL_AI = false
  * else — the tool loop, the trust boundaries, the sanitizers and every Room write are the real
  * code either way.
  */
-internal fun debugCoach(real: CoachRepository, toolbox: CoachToolbox): CoachRepository? =
-    ifFaking { FakeCoachRepository(real, toolbox) }
+internal fun debugCoach(real: CoachRepository, toolbox: CoachToolbox, resources: Resources): CoachRepository? =
+    ifFaking { FakeCoachRepository(real, toolbox, resources) }
 
-internal fun debugInsight(): InsightRepository? = ifFaking { FakeInsightRepository() }
+internal fun debugInsight(resources: Resources): InsightRepository? = ifFaking { FakeInsightRepository(resources) }
 
 internal fun debugRecognition(): FoodRecognitionRepository? = ifFaking { FakeRecognitionRepository() }
 

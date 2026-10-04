@@ -21,11 +21,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.EARNED_MIN_KCAL
 import ph.mart.healthapp.core.data.exercise.earnedRingLine
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
@@ -133,7 +135,7 @@ fun CalorieRingCard(
                     )
                     if (burnedKcal >= EARNED_MIN_KCAL) {
                         Text(
-                            text = earnedRingLine(burnedKcal),
+                            text = earnedRingLine(burnedKcal).resolve(LocalResources.current),
                             style = MaterialTheme.typography.bodyMedium.tabularNums,
                             color = MaterialTheme.colorScheme.primary,
                         )

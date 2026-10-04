@@ -1,6 +1,7 @@
 package ph.mart.healthapp.feature.coach.ui
 
 import androidx.annotation.StringRes
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.coach.ChatMessage
 import ph.mart.healthapp.core.data.coach.CoachAction
@@ -279,7 +280,7 @@ internal fun CoachUiState.withTurnAbandoned(stopped: Boolean = false): CoachUiSt
  * It is *attributed* on screen rather than drawn as an answer, which is the whole reason the
  * failure shapes stopped being bubbles.
  */
-data class CoachFailure(val offline: Boolean, val insight: String?, val question: String)
+data class CoachFailure(val offline: Boolean, val insight: Phrase?, val question: String)
 
 /**
  * All the screen's writes. [OnRetry] resends the question the failure is holding, so a dropped

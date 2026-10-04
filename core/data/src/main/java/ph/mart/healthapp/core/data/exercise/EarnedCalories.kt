@@ -1,5 +1,9 @@
 package ph.mart.healthapp.core.data.exercise
 
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.R
+import ph.mart.healthapp.core.data.phrase
+
 /**
  * Below this a credit is not worth a sentence: it is inside [estimateBurnedKcal]'s own error, and
  * a ten-minute stroll announcing itself is the noise that makes the real ones stop landing.
@@ -29,13 +33,13 @@ const val EARNED_MIN_KCAL = 50
  * ponytail: one flat table, no goal- or diet-awareness, so a vegetarian is offered a burger. A
  * `DietaryPreference` filter is the upgrade path if that gets reported.
  */
-fun earnedFoodPhrase(kcal: Int): String? = when {
-    kcal >= 700 -> "a burger and fries"
-    kcal >= 450 -> "a chicken breast with rice"
-    kcal >= 300 -> "a peanut-butter sandwich"
-    kcal >= 200 -> "yoghurt and berries"
-    kcal >= 120 -> "a banana"
-    kcal >= EARNED_MIN_KCAL -> "an apple"
+fun earnedFood(kcal: Int): Phrase? = when {
+    kcal >= 700 -> phrase(R.string.data_earned_food_burger)
+    kcal >= 450 -> phrase(R.string.data_earned_food_chicken)
+    kcal >= 300 -> phrase(R.string.data_earned_food_sandwich)
+    kcal >= 200 -> phrase(R.string.data_earned_food_yoghurt)
+    kcal >= 120 -> phrase(R.string.data_earned_food_banana)
+    kcal >= EARNED_MIN_KCAL -> phrase(R.string.data_earned_food_apple)
     else -> null
 }
 
@@ -46,20 +50,20 @@ fun earnedFoodPhrase(kcal: Int): String? = when {
  * That is what separates it from the streak celebration `DECISIONS.md` rules out: it fires on a
  * save, not on a threshold, so there is no "already celebrated" state for it to need.
  */
-fun earnedSavedLine(kcal: Int): String = earnedFoodPhrase(kcal)
-    ?.let { "Nice work — +$kcal kcal on today's budget, about $it." }
-    ?: "Nice work — +$kcal kcal on today's budget."
+fun earnedSavedLine(kcal: Int): Phrase = earnedFood(kcal)
+    ?.let { phrase(R.string.data_earned_saved_about, kcal, it) }
+    ?: phrase(R.string.data_earned_saved, kcal)
 
 /** The promoted line under Home's calorie ring, beside the arc that draws the same share. */
-fun earnedRingLine(kcal: Int): String = earnedFoodPhrase(kcal)
-    ?.let { "+$kcal kcal earned — about $it" }
-    ?: "+$kcal kcal earned today"
+fun earnedRingLine(kcal: Int): Phrase = earnedFood(kcal)
+    ?.let { phrase(R.string.data_earned_ring_about, kcal, it) }
+    ?: phrase(R.string.data_earned_ring, kcal)
 
 /**
  * `insightFor()`'s workout rule. "Activity", not "workout": the figure it is handed is
  * [dayBurnedKcal][ph.mart.healthapp.core.data.health.dayBurnedKcal], which folds the day's step
  * credit in beside anything logged by hand.
  */
-fun earnedInsightLine(kcal: Int): String = earnedFoodPhrase(kcal)
-    ?.let { "Today's activity bought you $kcal kcal more than a rest day — about $it." }
-    ?: "Today's activity bought you $kcal kcal more than a rest day."
+fun earnedInsightLine(kcal: Int): Phrase = earnedFood(kcal)
+    ?.let { phrase(R.string.data_earned_insight_about, kcal, it) }
+    ?: phrase(R.string.data_earned_insight, kcal)

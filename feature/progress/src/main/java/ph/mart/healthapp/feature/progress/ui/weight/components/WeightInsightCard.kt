@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -20,9 +21,11 @@ import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.GoalProjection
 import ph.mart.healthapp.core.data.progress.PROJECTION_WINDOW_DAYS
+import ph.mart.healthapp.core.data.progress.goalProjectionLine
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AIInsightCard
+import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
-import ph.mart.healthapp.core.designsystem.component.goalProjectionLine
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.progress.R
 
@@ -50,10 +53,10 @@ internal fun ColumnScope.WeightInsightCard(
                 formatOneDecimal(it.goalWeightKg.kgToDisplayUnit(unit)),
                 unit.weightUnitLabel(),
             ),
-            targetEpochDay = it.targetEpochDay,
+            targetDateLabel = it.targetEpochDay?.let(::formatEpochDay),
             reached = it.reached,
             windowDays = PROJECTION_WINDOW_DAYS,
-        )
+        ).resolve(LocalResources.current)
     }
     val estimate = checkIn?.estimate
     val checkInHeadline = when {
