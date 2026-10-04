@@ -25,7 +25,7 @@
     <string name="home_weight_title">Timbang</string>
     <string name="home_weight_value">%1$s %2$s</string>
     <string name="home_weight_delta">%1$s %2$s kumpara 7 araw na ang nakalipas</string>
-    <string name="home_weight_no_prior">Wala pang naunang data</string>
+    <string name="home_weight_no_prior">Wala pang kumpara</string>
     <string name="home_mood_title">Kumusta ang pakiramdam mo?</string>
     <string name="home_mood_mood">Mood</string>
     <string name="home_mood_energy">Enerhiya</string>
@@ -67,9 +67,9 @@
     <string name="home_supplements_desc_todo">%1$s, hindi pa nainom. I-tap para i-log.</string>
     <string name="home_fasting_title">Pag-aayuno</string>
     <string name="home_fasting_goal">%1$dh na layunin</string>
-    <string name="home_fasting_none">Hindi nag-aayuno</string>
+    <string name="home_fasting_none">Wala</string>
     <string name="home_fasting_hint">Simulan ang orasan pagkatapos mong kumain.</string>
-    <string name="home_fasting_start">Simulan ang ayuno</string>
+    <string name="home_fasting_start">Mag-ayuno</string>
     <string name="home_fasting_reached">Naabot ang layunin — nagsimula %1$s</string>
     <string name="home_fasting_running">Nagsimula %1$s · layunin sa %2$s</string>
     <string name="home_fasting_end">Tapusin ang ayuno</string>
@@ -122,7 +122,7 @@
     <string name="home_greeting_morning">Magandang umaga</string>
     <string name="home_greeting_afternoon">Magandang hapon</string>
     <string name="home_greeting_evening">Magandang gabi</string>
-    <string name="home_greeting_sub_morning">Handa ka na bang mag-almusal?</string>
+    <string name="home_greeting_sub_morning">Almusal na ba?</string>
     <string name="home_greeting_sub_afternoon">Kumusta ang araw mo?</string>
-    <string name="home_greeting_sub_evening">Malapit na ang dulo ng araw.</string>
+    <string name="home_greeting_sub_evening">Halos tapos na ang araw.</string>
 </resources>

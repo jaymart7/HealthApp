@@ -48,6 +48,10 @@
     <string name="ds_macro_protein">Protein</string>
     <string name="ds_macro_carbs">Carbs</string>
     <string name="ds_macro_fat">Fat</string>
+    <!-- The one-letter labels a macro line shrinks to beside its coloured figure: P 12g · C 30g · F 8g. -->
+    <string name="ds_macro_letter_protein">P</string>
+    <string name="ds_macro_letter_carbs">C</string>
+    <string name="ds_macro_letter_fat">F</string>
     <string name="ds_macro_percent">%1$s · %2$d%%</string>
     <string name="ds_macro_grams">%1$s in grams</string>
     <!-- MacroFieldCell speaks its own unit: it draws the micronutrients too, where "g" is wrong. -->

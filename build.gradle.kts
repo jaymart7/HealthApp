@@ -51,7 +51,7 @@ val literalExceptions = listOf(
  * skipped; they are debug-only sample data and no translator reads them.
  *
  * Two rules. The named one runs over every localized module and catches `text = "Add reading"`.
- * The positional four run only where copy lives — a `ui/` tree, or a shared component — because
+ * The positional five run only where copy lives — a `ui/` tree, or a shared component — because
  * `StatRow("Systolic", …)` reads the same as a Room query, a prompt or a `@SerialName` everywhere
  * else. That split is not cosmetic: the whole of `:feature:progress` passed this task while
  * thirteen empty-state pages were still English, because every one of those literals was
@@ -74,6 +74,9 @@ tasks.register("checkUiLiterals") {
         // copy, so "$n kcal" and "$n bpm" pass; shorter symbols (g, kg, ml, cm) never reach three
         // letters.
         Regex(""""\$(\{[^}]*\}|[\w.]+) (?!kcal\b|bpm\b)[a-z]{3,}"""),
+        // A lone capital passed as an argument: the macro initials ("P", "C", "F") were copy the
+        // rules above could not see, and Filipino's fat is "T".
+        Regex("""[(,]\s*"[A-Z]"\s*[,)]"""),
     )
     val previewStart = Regex("""fun \w*Preview\(|^(private )?val (PREVIEW|preview)""")
     // Copied into a local: `doLast` cannot capture a script property and stay configuration-cacheable.

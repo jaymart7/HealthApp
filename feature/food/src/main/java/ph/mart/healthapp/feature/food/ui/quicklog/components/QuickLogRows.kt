@@ -52,6 +52,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.water.waterVolumeLabel
+import ph.mart.healthapp.core.designsystem.R as DsR
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -198,9 +199,9 @@ private fun FoodRow(
                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     KcalFigure(kcal = food.calories ?: 0)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MacroFigure("P", food.proteinG ?: 0, MaterialTheme.colorScheme.primary)
-                        MacroFigure("C", food.carbsG ?: 0, MaterialTheme.colorScheme.tertiary)
-                        MacroFigure("F", food.fatG ?: 0, MaterialTheme.colorScheme.secondary)
+                        MacroFigure(stringResource(DsR.string.ds_macro_letter_protein), food.proteinG ?: 0, MaterialTheme.colorScheme.primary)
+                        MacroFigure(stringResource(DsR.string.ds_macro_letter_carbs), food.carbsG ?: 0, MaterialTheme.colorScheme.tertiary)
+                        MacroFigure(stringResource(DsR.string.ds_macro_letter_fat), food.fatG ?: 0, MaterialTheme.colorScheme.secondary)
                     }
                 }
             }

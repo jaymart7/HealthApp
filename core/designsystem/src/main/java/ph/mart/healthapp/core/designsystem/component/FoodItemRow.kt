@@ -488,9 +488,9 @@ fun macroLine(
     fatG: Int,
 ): AnnotatedString = buildAnnotatedString {
     append("${portionAmount.formatPortion()} $portionUnit")
-    macroToken("P", proteinG, MaterialTheme.colorScheme.primary)
-    macroToken("C", carbsG, MaterialTheme.colorScheme.tertiary)
-    macroToken("F", fatG, MaterialTheme.colorScheme.secondary)
+    macroToken(stringResource(R.string.ds_macro_letter_protein), proteinG, MaterialTheme.colorScheme.primary)
+    macroToken(stringResource(R.string.ds_macro_letter_carbs), carbsG, MaterialTheme.colorScheme.tertiary)
+    macroToken(stringResource(R.string.ds_macro_letter_fat), fatG, MaterialTheme.colorScheme.secondary)
 }
 
 private fun AnnotatedString.Builder.macroToken(initial: String, grams: Int, color: Color) {
