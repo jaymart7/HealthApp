@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filipino. Terms follow docs/glossary-fil.md; keys and placeholders are held by
+     ./gradlew checkTranslations. -->
+<resources>
+    <string name="training_cancel">Kanselahin</string>
+    <string name="training_save">I-save</string>
+    <string name="training_exercise">Ehersisyo</string>
+    <string name="training_not_saved">Hindi pa ito naka-save.</string>
+    <string name="training_exercise_log">I-log ang ehersisyo</string>
+    <string name="training_exercise_edit">I-edit ang ehersisyo</string>
+    <string name="training_exercise_log_sets">Mag-log ng sets sa halip →</string>
+    <string name="training_exercise_describe">Ilarawan na lang</string>
+    <string name="training_exercise_describe_prompt">Ano ang ginawa mo?</string>
+    <string name="training_exercise_describe_placeholder">45 minutong takbo sa tabi ng ilog</string>
+    <string name="training_exercise_describe_speak">Sabihin sa halip na i-type</string>
+    <string name="training_exercise_describe_close">Isara</string>
+    <string name="training_exercise_describe_estimate">Punan ang form</string>
+    <string name="training_exercise_describe_cancel">Kanselahin</string>
+    <string name="training_exercise_describe_none">Walang workout diyan — sabihin kung ano ang ginawa mo at gaano katagal.</string>
+    <string name="training_exercise_describe_failed">Hindi gumana. Subukan ulit, o punan na lang sa ibaba.</string>
+    <string name="training_exercise_describe_offline">Offline ka. Punan na lang sa ibaba.</string>
+    <string name="training_exercise_note">Tala (opsyonal)</string>
+    <string name="training_exercise_duration">Tagal</string>
+    <string name="training_exercise_minutes">min</string>
+    <string name="training_exercise_kcal">kcal</string>
+    <string name="training_exercise_burned_manual">Nasunog · sariling bilang mo</string>
+    <string name="training_exercise_burned_estimated">Nasunog · tantya mula sa %1$s sa pinakahuling timbang mo</string>
+    <string name="training_strength_repeat">Ulitin ang huling workout</string>
+    <string name="training_strength_start_routine">Magsimula ng routine</string>
+    <string name="training_strength_describe">Ilarawan ang mga set mo</string>
+    <string name="training_strength_describe_prompt">Ano ang binuhat mo?</string>
+    <string name="training_strength_describe_placeholder">Bench 3x8 sa 60, squats 5x5 sa 100</string>
+    <string name="training_strength_describe_submit">Idagdag ang mga set</string>
+    <string name="training_strength_describe_none">Walang lift diyan. Sabihin ang lift, sets × reps at ang bigat.</string>
+    <string name="training_strength_save_routine">I-save bilang routine</string>
+    <string name="training_strength_saved_routine">Na-save bilang \"%1$s\"</string>
+    <string name="training_strength_save_workout">I-save ang workout</string>
+    <string name="training_strength_discard_new">Itapon ang workout na ito?</string>
+    <string name="training_strength_discard_edit">Itapon ang mga pagbabagong ito?</string>
+    <plurals name="training_strength_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d set</item>
+    </plurals>
+    <string name="training_strength_summary">%1$s · %2$d ang nabuhat</string>
+    <string name="training_strength_no_sets">Wala pang set. Idagdag ang una sa ibaba.</string>
+    <string name="training_strength_unnamed">Lift na walang pangalan</string>
+    <string name="training_strength_remove_set">Tanggalin ang set %1$d ng %2$s</string>
+    <string name="training_strength_exercise_placeholder">Bench press</string>
+    <string name="training_strength_reps">Reps</string>
+    <string name="training_strength_load">Bigat</string>
+    <string name="training_strength_load_bodyweight">Bigat · bodyweight</string>
+    <string name="training_strength_add_set">Magdagdag ng set</string>
+    <string name="training_rest_title">Rest timer</string>
+    <string name="training_rest_off">Naka-off</string>
+    <string name="training_rest_extend">+30 seg</string>
+    <string name="training_rest_skip">Laktawan</string>
+    <string name="training_rest_running">Tumatakbo ang rest timer</string>
+    <string name="training_routine_sheet_title">I-save bilang routine</string>
+    <plurals name="training_routine_lifts">
+        <item quantity="one">%1$d lift</item>
+        <item quantity="other">%1$d lift</item>
+    </plurals>
+    <string name="training_routine_sheet_body">%1$s · %2$s — simulan ulit sa isang tap, sa kung anuman ang binubuhat mo noon.</string>
+    <string name="training_routine_placeholder">Push day</string>
+</resources>

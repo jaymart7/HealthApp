@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filipino. Terms follow docs/glossary-fil.md; keys and placeholders are held by
+     ./gradlew checkTranslations. -->
+<resources>
+    <string name="home_from_google_health">Mula sa Google Health</string>
+    <string name="home_ask_coach">Tanungin ang coach mo</string>
+    <string name="home_ask_short">Magtanong</string>
+    <string name="home_streak_title">Streak</string>
+    <string name="home_streak_badge_desc">%1$d-araw na badge</string>
+    <plurals name="home_streak_days">
+        <item quantity="one">" araw"</item>
+        <item quantity="other">" araw"</item>
+    </plurals>
+    <string name="home_calories_title">Calories</string>
+    <string name="home_calories_consumed">Nakain ngayon</string>
+    <string name="home_calories_of_goal">" / %1$d kcal"</string>
+    <string name="home_calories_left">kcal pa</string>
+    <string name="home_macros_title">Macros</string>
+    <string name="home_macro_protein">Protina</string>
+    <string name="home_macro_carbs">Carbs</string>
+    <string name="home_macro_fat">Taba</string>
+    <string name="home_macro_figure">%1$d / %2$d g</string>
+    <string name="home_water_title">Tubig</string>
+    <string name="home_water_count">%1$d / %2$d · %3$s</string>
+    <string name="home_weight_title">Timbang</string>
+    <string name="home_weight_value">%1$s %2$s</string>
+    <string name="home_weight_delta">%1$s %2$s kumpara 7 araw na ang nakalipas</string>
+    <string name="home_weight_no_prior">Wala pang naunang data</string>
+    <string name="home_mood_title">Kumusta ang pakiramdam mo?</string>
+    <string name="home_mood_mood">Mood</string>
+    <string name="home_mood_energy">Enerhiya</string>
+    <string name="home_mood_set_mood">Itakda ang mood sa %1$s</string>
+    <string name="home_mood_set_energy">Itakda ang enerhiya sa %1$s</string>
+    <string name="home_steps_title">Hakbang ngayon</string>
+    <string name="home_steps_of_goal">sa %1$s</string>
+    <string name="home_steps_credit">+%1$d kcal sa budget mo</string>
+    <string name="home_steps_goal_credit">sa %1$s · %2$d kcal</string>
+    <string name="home_sleep_title">Kagabi</string>
+    <string name="home_heart_title">Tibok ng puso ngayon</string>
+    <string name="home_heart_lowest">Pinakamababa %1$s</string>
+    <string name="home_heart_bpm">bpm</string>
+    <string name="home_heart_average">Average sa araw</string>
+    <string name="home_bp_title">Presyon ng dugo</string>
+    <string name="home_taken_today">Ngayon</string>
+    <string name="home_taken_yesterday">Kahapon</string>
+    <plurals name="home_days_ago">
+        <item quantity="one">%1$d araw na ang nakalipas</item>
+        <item quantity="other">%1$d araw na ang nakalipas</item>
+    </plurals>
+    <string name="home_cycle_title">Cycle</string>
+    <string name="home_cycle_day">Araw %1$d</string>
+    <string name="home_cycle_none">Wala pang na-log na regla</string>
+    <string name="home_cycle_imported">Na-import bilang araw ng regla — i-tap para sabihin kung gaano kalakas.</string>
+    <string name="home_cycle_flow">Daloy</string>
+    <string name="home_cycle_set_flow">Itakda ang daloy sa %1$s</string>
+    <string name="home_cycle_no_prediction">Mag-log ng dalawang regla at ipapakita nito kung kailan ang susunod.</string>
+    <string name="home_cycle_due_today">Inaasahan ang susunod na regla ngayon</string>
+    <string name="home_cycle_due_tomorrow">Inaasahan ang susunod na regla bukas</string>
+    <string name="home_cycle_due_in">Inaasahan ang susunod na regla sa loob ng %1$d araw</string>
+    <string name="home_cycle_late_yesterday">Inaasahan kahapon</string>
+    <string name="home_cycle_late_days">Inaasahan %1$d araw na ang nakalipas</string>
+    <string name="home_supplements_title">Supplements</string>
+    <string name="home_supplements_count">%1$d sa %2$d</string>
+    <string name="home_supplements_taken_of">%1$d / %2$d</string>
+    <string name="home_supplements_desc_partial">%1$s, %2$d sa %3$d ang nainom. I-tap para mag-log ng dose.</string>
+    <string name="home_supplements_desc_done">%1$s, nainom na. I-tap para alisin.</string>
+    <string name="home_supplements_desc_todo">%1$s, hindi pa nainom. I-tap para i-log.</string>
+    <string name="home_fasting_title">Pag-aayuno</string>
+    <string name="home_fasting_goal">%1$dh na layunin</string>
+    <string name="home_fasting_none">Hindi nag-aayuno</string>
+    <string name="home_fasting_hint">Simulan ang orasan pagkatapos mong kumain.</string>
+    <string name="home_fasting_start">Simulan ang ayuno</string>
+    <string name="home_fasting_reached">Naabot ang layunin — nagsimula %1$s</string>
+    <string name="home_fasting_running">Nagsimula %1$s · layunin sa %2$s</string>
+    <string name="home_fasting_end">Tapusin ang ayuno</string>
+    <string name="home_fasting_discard">Itapon</string>
+    <string name="home_fasting_discard_title">Itapon ang ayunong ito?</string>
+    <string name="home_fasting_discard_body">Hindi ito mase-save sa history mo. Kung tatapusin mo na lang, maiiwan ang oras na nagawa mo.</string>
+    <string name="home_fasting_discard_keep">Ituloy ang ayuno</string>
+    <string name="home_plan_title">Workout ngayon</string>
+    <string name="home_plan_ratio">%1$d sa %2$d ngayong linggo</string>
+    <string name="home_plan_rest">Araw ng pahinga.</string>
+    <string name="home_plan_rest_trained">Araw ng pahinga — pero nag-training ka pa rin.</string>
+    <plurals name="home_plan_lifts">
+        <item quantity="one">%1$d lift</item>
+        <item quantity="other">%1$d lift</item>
+    </plurals>
+    <string name="home_plan_summary">%1$s · %2$d set · %3$s</string>
+    <string name="home_plan_logged">Na-log</string>
+    <string name="home_plan_start">Simulan</string>
+    <string name="home_plan_day_done">%1$s tapos</string>
+    <string name="home_plan_day_planned">%1$s nakaplano</string>
+    <string name="home_plan_nothing">Walang nakaplano ngayong linggo</string>
+    <string name="home_photo_title">Progress photo</string>
+    <string name="home_photo_none">Wala pang larawan</string>
+    <string name="home_photo_none_value">Wala pa</string>
+    <string name="home_photo_today">Ngayon</string>
+    <plurals name="home_photo_days_unit">
+        <item quantity="one">" araw na ang nakalipas"</item>
+        <item quantity="other">" araw na ang nakalipas"</item>
+    </plurals>
+    <plurals name="home_photo_days_ago">
+        <item quantity="one">Huling larawan %1$d araw na ang nakalipas</item>
+        <item quantity="other">Huling larawan %1$d araw na ang nakalipas</item>
+    </plurals>
+    <plurals name="home_photo_shots">
+        <item quantity="one">%1$d kuha</item>
+        <item quantity="other">%1$d kuha</item>
+    </plurals>
+    <plurals name="home_photo_arc">
+        <item quantity="one">%1$s %2$s sa loob ng %3$d araw</item>
+        <item quantity="other">%1$s %2$s sa loob ng %3$d araw</item>
+    </plurals>
+    <string name="home_photo_cta">Kumuha</string>
+    <string name="home_rearrange">Ayusin ang Home mo</string>
+    <string name="home_strip_calories">kcal pa</string>
+    <string name="home_strip_water">tubig</string>
+    <string name="home_strip_steps">hakbang</string>
+    <string name="home_strip_streak">araw na streak</string>
+    <string name="home_strip_weight">timbang</string>
+    <string name="home_strip_water_value">%1$d/%2$d</string>
+    <string name="home_greeting_morning">Magandang umaga</string>
+    <string name="home_greeting_afternoon">Magandang hapon</string>
+    <string name="home_greeting_evening">Magandang gabi</string>
+    <string name="home_greeting_sub_morning">Handa ka na bang mag-almusal?</string>
+    <string name="home_greeting_sub_afternoon">Kumusta ang araw mo?</string>
+    <string name="home_greeting_sub_evening">Malapit na ang dulo ng araw.</string>
+</resources>
