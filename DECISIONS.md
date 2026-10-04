@@ -4948,6 +4948,17 @@ form, three cards against the top of a 915dp screen and twenty-six taps to set a
   bar redraws left to right over 500ms, and the button is held for the 900ms the whole thing runs.
   No confetti and no new colour. With animations off the state still applies and navigation is
   immediate, because every piece of it rides the app's existing `MotionDurationScale` idiom.
+- **The step-advance announcement is a hidden live region, not nothing.** `View.announceForAccessibility`
+  is deprecated and Compose 1.12 has no announce call, only `liveRegion`. Dropping the two
+  announcements was the other option, but on steps 1 and 3 a tap both answers and moves the screen,
+  and TalkBack reads the card's "Selected" and nothing about the move. So `OnboardingScreen`
+  draws one polite live-region `Box` outside `AnimatedContent`, so it outlives the step it speaks
+  for. Each of its three details is forced by Compose's own source and looks like something to tidy
+  away. **1dp, not zero:** a node with empty bounds is pruned from the accessibility tree.
+  **Declared after the steps:** a node fully covered by a sibling drawn above it is pruned too, and
+  every step is full-screen. **Cleared after `ANNOUNCEMENT_CLEAR_MS`:** a live region speaks only
+  when its text changes, so without the clear a second "Not selected" on step 4 is silent, and the
+  stale text stays a stop for TalkBack's swipe navigation.
 
 ### Profile & Settings
 

@@ -8,7 +8,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -20,7 +22,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
@@ -45,6 +51,10 @@ const val SELECTION_HOLD_MS = 400L
 /** One step's worth of slide, emphasised-decelerate. */
 private const val TRANSITION_MS = 300
 
+/** How long an announcement stays in the live region: long enough for TalkBack to have read it,
+ * short enough that the same words can be announced again, and not left behind as a swipe stop. */
+private const val ANNOUNCEMENT_CLEAR_MS = 1000L
+
 /**
  * Hosts the whole 7-step wizard. No Nav3 here — back is a plain `step - 1` with no branching, so a
  * saved `step: Int` + `when` dispatch reproduces it exactly (including Skip -> Confirm, then back
@@ -58,9 +68,9 @@ private const val TRANSITION_MS = 300
 fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     val state = rememberOnboardingState()
-    val view = LocalView.current
     val context = LocalContext.current
     var pending by remember { mutableStateOf<Int?>(null) }
+    var announcement by remember { mutableStateOf("") }
     // Which way the next transition slides. Read during the step change, so it is set first.
     var direction by remember { mutableIntStateOf(1) }
 
@@ -84,6 +94,12 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
         pending = null
     }
 
+    LaunchedEffect(announcement) {
+        if (announcement.isEmpty()) return@LaunchedEffect
+        delay(ANNOUNCEMENT_CLEAR_MS)
+        announcement = ""
+    }
+
     val backHandlerState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
     NavigationBackHandler(
         state = backHandlerState,
@@ -99,9 +115,8 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
     // A string built in a click callback, so it reads through `LocalContext` rather than reaching
     // a ViewModel for a Context. Nothing else confirms the choice before the screen moves.
     fun announce(@StringRes label: Int, step: Int) {
-        view.announceForAccessibility(
-            context.getString(R.string.onboarding_selected_moving, context.getString(label), step, ONBOARDING_STEPS),
-        )
+        announcement =
+            context.getString(R.string.onboarding_selected_moving, context.getString(label), step, ONBOARDING_STEPS)
     }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
@@ -156,7 +171,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
                         state.form = state.form.copy(
                             dietaryPreference = if (cleared) null else option.preference,
                         )
-                        if (cleared) view.announceForAccessibility(context.getString(R.string.onboarding_not_selected))
+                        if (cleared) announcement = context.getString(R.string.onboarding_not_selected)
                     },
                     onSkip = {
                         state.form = state.form.copy(dietaryPreference = null)
@@ -177,5 +192,16 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
                 )
             }
         }
+
+        // The screen's announcer, outside AnimatedContent so it outlives the step it speaks for.
+        // A live region only speaks when its text changes, from a node that was already there.
+        // Compose prunes a zero-size node, and one drawn under the full-screen step, from the
+        // accessibility tree, so it is 1dp and declared last.
+        Box(
+            Modifier.requiredSize(1.dp).semantics {
+                liveRegion = LiveRegionMode.Polite
+                if (announcement.isNotEmpty()) contentDescription = announcement
+            },
+        )
     }
 }
