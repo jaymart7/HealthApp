@@ -166,12 +166,18 @@ rather than needing a counter patched.
   - `epochDayStartMillis` and `epochDayToCalendar` were always correct and are untouched: both step
     with `Calendar.add(DAY_OF_YEAR, …)` rather than multiplying out, which is why the *pair*
     disagreed rather than both being wrong. They are exact inverses again under the corrected key.
-  - The definition is stated twice — `core.data.epochDayOf` and `:core:designsystem`'s
-    `DateFormat.kt`, which cannot depend on `:core:data` — so `DateFormatTest` restates the
-    contract and `EpochDayTest` holds the same property in the module that owns it. Both zone lists
-    now include `Europe/London`, and the reason they didn't is why this survived: UTC, Manila,
-    Kathmandu and New York all pass without the offset, because a collision needs a standard offset
-    of exactly UTC+0. **A zone list without a UTC+0 DST zone in it is not a guard.**
+  - The definition is stated **three** times — `core.data.epochDayOf`, `:core:designsystem`'s
+    `DateFormat.kt`, which cannot depend on `:core:data`, and `:wear`'s `Clock.kt`, which must not
+    (Room on the wrist) — so `DateFormatTest` and `ClockTest` restate the contract and `EpochDayTest`
+    holds the same property in the module that owns it. All three zone lists include
+    `Europe/London`, and the reason they didn't is why this survived: UTC, Manila, Kathmandu and New
+    York all pass without the offset, because a collision needs a standard offset of exactly UTC+0.
+    **A zone list without a UTC+0 DST zone in it is not a guard.**
+  - **The watch's copy was missed by the first fix**, and there the cost is the comparison rather
+    than a collision: the phone stamps `TodaySnapshot.dateEpochDay` with the corrected key and
+    `isStale` compared it against the plain divide, so from late March to late October in London
+    every snapshot read as a day old and the stale note sat over the watch all summer. `ClockTest`
+    pins a London summer day to the phone's figure.
 - **Diary date navigation:** forward stepping stops at today (there are no
   planned meals), and system back from a past day returns to today rather than
   leaving the tab.
