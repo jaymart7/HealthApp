@@ -641,9 +641,10 @@ panes at ≥840dp.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a
   week", or a prompt and seven dashed cells when nothing is set yet. A **New routine** FAB opens a
   sheet with one AI box, "What kind of routine do you want?" ("Push day, 45 minutes, dumbbells
-  only"): Gemini designs the lifts with sets and reps — or keeps exactly the ones you named — and
-  the sheet previews them under an "AI designed" chip with the name editable; "Change" goes back to
-  the request, "Save routine" adds it to the list. Weekdays you named land in its Plan. "Build from
+  only"), typed or dictated: Gemini designs the lifts with sets and reps — or keeps exactly the ones
+  you named — and the sheet previews them under an "AI designed" chip, every part still editable:
+  the name, each lift's name, sets and reps on steppers, remove a lift or add one. "Change" goes
+  back to the request, "Save routine" adds it to the list. Weekdays you named land in its Plan. "Build from
   a workout instead" is the manual and offline path — a blank strength screen and its "Save as
   routine". Back steps out of a design in flight, then the preview, then the sheet.
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 22, import is all-or-nothing.

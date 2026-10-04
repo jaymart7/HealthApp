@@ -29,6 +29,13 @@ data class RoutineLift(
     val reps: Int,
 )
 
+/** A routine's bounds — past these a design is looping rather than designing, and a card that
+ * long is scrolled past rather than read. Held by the coach's `create_routine` and by the New
+ * routine sheet's editor alike. */
+const val MAX_ROUTINE_LIFTS = 12
+const val MAX_ROUTINE_SETS = 10
+const val MAX_ROUTINE_REPS = 50
+
 fun Routine.totalSets(): Int = lifts.sumOf { it.sets }
 
 /**

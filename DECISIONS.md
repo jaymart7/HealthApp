@@ -3738,9 +3738,11 @@ rather than needing a counter patched.
   - **Only the sentence goes out** — no profile, no history, no lift loads — the narrow payload every
     parse in that repository keeps. It is the one prompt there allowed to *choose* lifts, and only
     when the request named none: dictated lifts are kept exactly, in order.
-  - **The name is editable in the preview; the lifts are not.** "Change" returns to the request,
-    which is the cheaper correction for a list the model wrote. *ponytail: a per-lift editor in
-    the preview is the upgrade if users ask for one.*
+  - **Everything in the preview is editable** — the name, each lift's name, sets and reps on
+    steppers clamped to `MAX_ROUTINE_SETS`/`MAX_ROUTINE_REPS` (moved beside `Routine` so the coach
+    and the sheet hold one copy), remove a lift, add one up to `MAX_ROUTINE_LIFTS`. Save waits for a
+    name and every lift named. "Change" still returns to the request, for a design that missed
+    whole. No load field, for `RoutineLift`'s reason.
   - **The strength screen is still the manual and offline path**, as "Build from a workout instead"
     under the field. The catch it always had — backing out after "Save as routine" asks to discard
     the unlogged session — now only meets users who chose that path.

@@ -200,6 +200,10 @@
         <item quantity="one">set</item>
         <item quantity="other">sets</item>
     </plurals>
+    <plurals name="profile_routine_reps_unit">
+        <item quantity="one">rep</item>
+        <item quantity="other">reps</item>
+    </plurals>
     <string name="profile_routine_plan">Plan</string>
     <plurals name="profile_routine_days_a_week">
         <item quantity="one">%1$d day a week</item>
@@ -220,6 +224,12 @@
     <string name="profile_routine_design_name">Name</string>
     <string name="profile_routine_design_change">Change</string>
     <string name="profile_routine_design_save">Save routine</string>
+    <string name="profile_routine_design_speak">Say it</string>
+    <string name="profile_routine_design_lift">Lift</string>
+    <string name="profile_routine_design_add">Add lift</string>
+    <string name="profile_routine_design_remove">Remove %1$s</string>
+    <string name="profile_routine_design_sets_of">sets of %1$s</string>
+    <string name="profile_routine_design_reps_of">reps of %1$s</string>
 
     <!-- Supplements -->
     <string name="profile_supplements_empty_heading">Nothing here yet</string>

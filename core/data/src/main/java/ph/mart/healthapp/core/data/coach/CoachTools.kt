@@ -32,6 +32,9 @@ import ph.mart.healthapp.core.data.cycle.periods
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_LIFTS
+import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_REPS
+import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_SETS
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.RoutineRepository
@@ -212,9 +215,6 @@ internal const val TOOL_CREATE_ROUTINE = "create_routine"
 /** Ceilings on a designed library item — past these the model is looping rather than designing,
  * and a card that long is scrolled past rather than read. */
 internal const val MAX_LIBRARY_ITEMS = 12
-internal const val MAX_ROUTINE_LIFTS = 12
-internal const val MAX_ROUTINE_SETS = 10
-internal const val MAX_ROUTINE_REPS = 50
 internal const val MAX_RECIPE_SERVINGS = 20
 
 /** `create_routine`'s weekday values, Monday first because that is how `Weekday.kt` counts. Schema
