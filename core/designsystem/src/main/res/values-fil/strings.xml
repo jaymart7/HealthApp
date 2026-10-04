@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filipino. Terms follow docs/glossary-fil.md; keys and placeholders are held by
+     ./gradlew checkTranslations. -->
+<resources>
+    <string name="ds_back">Bumalik</string>
+    <string name="ds_sheet_close">Isara</string>
+    <string name="ds_fab_log">I-log</string>
+    <string name="ds_discard">Itapon</string>
+    <string name="ds_keep_editing">Ituloy ang pag-edit</string>
+    <string name="ds_step_of">Hakbang %1$d sa %2$d</string>
+    <string name="ds_decrease">Bawasan ang %1$s</string>
+    <string name="ds_increase">Dagdagan ang %1$s</string>
+    <string name="ds_ruler_hint">I-drag o i-tap para itakda</string>
+    <string name="ds_ruler_range">%1$s–%2$s %3$s</string>
+    <string name="ds_ruler_done">Tapos na</string>
+
+    <string name="ds_viewfinder_close">Isara</string>
+    <string name="ds_viewfinder_take_photo">Kumuha ng larawan</string>
+    <string name="ds_viewfinder_gallery">Mag-upload ng larawan</string>
+    <string name="ds_viewfinder_manual">Ilagay nang manual</string>
+    <string name="ds_viewfinder_hint_preview">Ipasok sa frame</string>
+    <string name="ds_camera_needed">Kailangan ang access sa camera</string>
+    <string name="ds_grant_access">Payagan</string>
+    <string name="ds_open_settings">Buksan ang Mga Setting</string>
+
+    <string name="ds_insight">Insight</string>
+    <string name="ds_insight_dismiss">Isara ang insight</string>
+    <string name="ds_badge_earned">%1$s, nakuha na</string>
+    <string name="ds_badge_not_earned">%1$s, hindi pa nakukuha</string>
+    <string name="ds_water_set">Itakda sa %1$d ng %2$d baso</string>
+
+    <string name="ds_date">Petsa</string>
+    <string name="ds_time">Oras</string>
+    <string name="ds_time_set">Itakda</string>
+    <string name="ds_cancel">Kanselahin</string>
+    <string name="ds_previous_month">Nakaraang buwan</string>
+    <string name="ds_next_month">Susunod na buwan</string>
+    <string name="ds_weekday_initials">L,L,M,M,H,B,S</string>
+
+    <string name="ds_macro_protein">Protina</string>
+    <string name="ds_macro_carbs">Carbs</string>
+    <string name="ds_macro_fat">Taba</string>
+    <string name="ds_macro_percent">%1$s · %2$d%%</string>
+    <string name="ds_macro_grams">%1$s sa gramo</string>
+    <string name="ds_macro_field">%1$s sa %2$s</string>
+
+    <string name="ds_nutrients_more">Iba pang nutrient</string>
+    <string name="ds_nutrients_show">Ipakita ang iba pang nutrient</string>
+    <string name="ds_nutrients_hide">Itago ang iba pang nutrient</string>
+    <string name="ds_nutrients_optional">Opsyonal</string>
+    <string name="ds_nutrient_fiber">Fiber</string>
+    <string name="ds_nutrient_sugar">Asukal</string>
+    <string name="ds_nutrient_sodium">Sodium</string>
+    <string name="ds_nutrient_in_grams">%1$s sa gramo</string>
+    <string name="ds_nutrient_in_milligrams">%1$s sa milligram</string>
+    <string name="ds_nutrient_reading">%1$s %2$s</string>
+    <string name="ds_nutrient_reading_of">%1$s %2$s sa %3$s</string>
+
+    <string name="ds_food_calories_value">%1$d kcal</string>
+    <string name="ds_food_name">Pagkain</string>
+    <string name="ds_food_portion">Dami</string>
+    <string name="ds_food_portion_amount">Dami sa %1$s</string>
+    <string name="ds_food_portion_decrease">Bawasan ang dami</string>
+    <string name="ds_food_portion_increase">Dagdagan ang dami</string>
+    <string name="ds_food_calories">Calories</string>
+
+    <string name="ds_card_calories">Calories</string>
+    <string name="ds_card_streak">Streak</string>
+    <string name="ds_card_water">Tubig</string>
+    <string name="ds_card_fasting">Pag-aayuno</string>
+    <string name="ds_card_workout">Workout ngayon</string>
+    <string name="ds_card_sleep">Tulog</string>
+    <string name="ds_card_steps">Hakbang</string>
+    <string name="ds_card_heart">Tibok ng puso</string>
+    <string name="ds_card_blood_pressure">Presyon ng dugo</string>
+    <string name="ds_card_mood">Mood</string>
+    <string name="ds_card_cycle">Cycle</string>
+    <string name="ds_card_supplements">Supplements</string>
+    <string name="ds_card_weight">Timbang</string>
+    <string name="ds_card_macros">Macros</string>
+    <string name="ds_card_progress_photo">Progress photo</string>
+    <string name="ds_card_week_budget">Budget ng linggo</string>
+    <string name="ds_card_note_watch">Lalabas kapag nag-sync na ang Google Health</string>
+    <string name="ds_card_note_workout">Lalabas kapag may nakatakdang araw ang isang routine</string>
+    <string name="ds_card_note_blood_pressure">Lalabas kapag nag-log ka ng reading</string>
+    <string name="ds_card_note_cycle">Lalabas kapag naka-on ang cycle tracking sa Profile</string>
+    <string name="ds_card_note_supplements">Lalabas kapag may laman na ang listahan mo</string>
+
+    <string name="ds_health_title">FitPulse at Google Health</string>
+    <string name="ds_health_reads">Ang binabasa at isinusulat ng FitPulse</string>
+    <string name="ds_health_scope_activity">Mga workout at hakbang</string>
+    <string name="ds_health_scope_activity_line">Pinapalaki ang budget mo sa calories</string>
+    <string name="ds_health_scope_body">Timbang, mga sukat at tibok ng puso</string>
+    <string name="ds_health_scope_body_line">Totoong pagtimbang ang gamit ng trend mo</string>
+    <string name="ds_health_scope_sleep">Tulog</string>
+    <string name="ds_health_scope_sleep_line">Kagabi, katabi ng araw mo</string>
+    <string name="ds_health_scope_nutrition">Nutrisyon at hydration</string>
+    <string name="ds_health_scope_nutrition_line">Ang mga pagkain at tubig na nila-log mo, ibinabalik</string>
+    <string name="ds_health_assure_write">Ang mga pagkain at tubig lang na nila-log mo ang isinusulat pabalik. Walang ibang nagbabago sa Google Health.</string>
+    <string name="ds_health_assure_device">Naka-store sa device na ito. Hindi ibinebenta, hindi ibinabahagi.</string>
+    <string name="ds_health_assure_undo">Idiskonekta at i-delete ito anumang oras mula sa Profile.</string>
+    <string name="ds_health_continue">Magpatuloy</string>
+    <string name="ds_health_connect">Ikonekta ang Google Health</string>
+    <string name="ds_health_connecting">Kumokonekta…</string>
+
+    <string name="ds_share">I-share</string>
+    <string name="ds_share_save">I-save sa photos</string>
+    <string name="ds_share_brand">FitPulse</string>
+
+    <string name="ds_mascot_colour_soft">Banayad</string>
+    <string name="ds_mascot_colour_bold">Matingkad</string>
+    <string name="ds_mascot_colour_muted">Mapusyaw</string>
+    <string name="ds_mascot_colour_contrast">Contrast</string>
+    <string name="ds_mascot_colour_neutral">Neutral</string>
+    <string name="ds_mascot_colour_blush">Blush</string>
+    <string name="ds_mascot_colour_red">Pula</string>
+    <string name="ds_mascot_colour_peach">Peach</string>
+    <string name="ds_mascot_colour_orange">Kahel</string>
+    <string name="ds_mascot_colour_butter">Butter</string>
+    <string name="ds_mascot_colour_yellow">Dilaw</string>
+    <string name="ds_mascot_colour_pear">Pear</string>
+    <string name="ds_mascot_colour_lime">Lime</string>
+    <string name="ds_mascot_colour_sage">Sage</string>
+    <string name="ds_mascot_colour_green">Berde</string>
+    <string name="ds_mascot_colour_jade">Jade</string>
+    <string name="ds_mascot_colour_emerald">Emerald</string>
+    <string name="ds_mascot_colour_seafoam">Seafoam</string>
+    <string name="ds_mascot_colour_teal">Teal</string>
+    <string name="ds_mascot_colour_sky">Sky</string>
+    <string name="ds_mascot_colour_cyan">Cyan</string>
+    <string name="ds_mascot_colour_powder">Powder</string>
+    <string name="ds_mascot_colour_azure">Azure</string>
+    <string name="ds_mascot_colour_periwinkle">Periwinkle</string>
+    <string name="ds_mascot_colour_blue">Asul</string>
+    <string name="ds_mascot_colour_lavender">Lavender</string>
+    <string name="ds_mascot_colour_indigo">Indigo</string>
+    <string name="ds_mascot_colour_lilac">Lilac</string>
+    <string name="ds_mascot_colour_violet">Violet</string>
+    <string name="ds_mascot_colour_mauve">Mauve</string>
+    <string name="ds_mascot_colour_magenta">Magenta</string>
+    <string name="ds_mascot_colour_orchid">Orchid</string>
+    <string name="ds_mascot_colour_pink">Pink</string>
+    <string name="ds_mascot_colour_rose">Rose</string>
+    <string name="ds_mascot_colour_crimson">Crimson</string>
+
+    <string name="ds_week_budget_title">Ngayong linggo</string>
+    <string name="ds_week_budget_span">Lun–Lin</string>
+    <string name="ds_week_budget_banked">kcal na naipon</string>
+    <string name="ds_week_budget_over">kcal na lampas</string>
+    <string name="ds_week_budget_days">%1$d sa %2$d araw ang na-log</string>
+    <string name="ds_week_budget_empty">Wala pang na-log ngayong linggo.</string>
+    <string name="ds_week_budget_even">%1$s · %2$d kada araw para pantay sa dulo</string>
+    <string name="ds_week_budget_floor">Iyan ang %1$d kcal na floor, hindi ang kuwenta — mas malaki na ang kulang ng linggo kaysa kayang bawiin ng isang araw.</string>
+    <plurals name="ds_week_budget_left">
+        <item quantity="one">%1$d araw pa</item>
+        <item quantity="other">%1$d araw pa</item>
+    </plurals>
+</resources>

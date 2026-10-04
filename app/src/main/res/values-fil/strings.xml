@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filipino. Terms follow docs/glossary-fil.md; keys and placeholders are held by
+     ./gradlew checkTranslations. -->
+<resources>
+    <string name="app_name">FitPulse</string>
+    <string name="widget_description">Calories, streak at tubig ngayong araw — may one-tap na pag-log.</string>
+
+    <string name="shortcut_speak_food_short">Sabihin ang kinain</string>
+    <string name="shortcut_speak_food_long">Mag-log ng pagkain sa pagsasalita</string>
+    <string name="shortcut_log_food_short">I-log ang pagkain</string>
+    <string name="shortcut_log_food_long">Kunan ng litrato ang pagkain</string>
+    <string name="shortcut_add_water_short">Magdagdag ng tubig</string>
+    <string name="shortcut_add_water_long">Mag-log ng isang basong tubig</string>
+    <string name="shortcut_log_weight_short">Magtimbang</string>
+    <string name="shortcut_log_weight_long">I-log ang timbang ngayon</string>
+
+    <string name="app_quicklog_logged">Na-log</string>
+    <string name="app_quicklog_undo">I-undo</string>
+
+    <string name="app_tab_home">Home</string>
+    <string name="app_tab_food">Pagkain</string>
+    <string name="app_tab_progress">Progreso</string>
+    <string name="app_tab_profile">Profile</string>
+
+    <string name="app_title_add_to_library">Idagdag sa library</string>
+    <string name="app_title_edit">I-edit</string>
+    <string name="app_title_edit_workout">I-edit ang workout</string>
+    <string name="app_title_strength_workout">Strength workout</string>
+    <string name="app_title_meal_ideas">Mga ideya sa pagkain</string>
+    <string name="app_title_voice_log">Sabihin ang kinain</string>
+    <string name="app_title_google_health">Google Health</string>
+    <string name="app_title_food_library">Food library</string>
+    <string name="app_title_routines">Mga workout routine</string>
+    <string name="app_title_supplements">Supplements</string>
+    <string name="app_title_home_layout">Ayos ng Home</string>
+    <string name="app_title_settings">Mga Setting</string>
+    <string name="app_title_about_you">Tungkol sa iyo</string>
+    <string name="app_title_reminders">Mga paalala</string>
+    <string name="app_title_compare">Ikumpara</string>
+    <string name="app_title_timelapse">Timelapse</string>
+    <string name="app_title_recap">Recap</string>
+
+    <string name="app_notification_channel">Mga paalala</string>
+    <string name="app_notification_add_glass">+1 baso</string>
+    <string name="app_fasting_goal_title">Tapos na ang %1$d-oras na ayuno</string>
+    <string name="app_fasting_goal_body">%1$s ka nang nag-aayuno. Tapusin ito kapag handa ka na.</string>
+    <string name="app_update_ready">Na-download na ang update</string>
+    <string name="app_update_restart">I-restart</string>
+
+    <string name="widget_onboarding">I-set up ang FitPulse para makita ang mga numero ngayong araw.</string>
+    <string name="widget_today">Ngayon</string>
+    <string name="widget_streak">%1$d-araw na streak</string>
+    <string name="widget_budget">" / %1$d kcal"</string>
+    <string name="widget_kcal_left">%1$d kcal pa</string>
+    <string name="widget_kcal_over">%1$d kcal na lampas</string>
+    <string name="widget_steps">%1$s hakbang</string>
+    <string name="widget_water">Tubig %1$d / %2$d · %3$s</string>
+    <string name="widget_water_goal_hit">Naabot ang layunin</string>
+    <string name="widget_add_glass">+1 baso</string>
+    <string name="widget_fast_complete">Tapos na ang ayuno</string>
+    <string name="widget_fasting_until">Nag-aayuno hanggang %1$s</string>
+
+    <string name="app_reminder_breakfast_title">Na-log mo na ba ang almusal?</string>
+    <string name="app_reminder_breakfast_body">Idagdag na habang naaalala mo pa ang dami.</string>
+    <string name="app_reminder_lunch_title">Na-log mo na ba ang tanghalian?</string>
+    <string name="app_reminder_lunch_body">Isang mabilis na entry para tapat ang macros mo ngayong araw.</string>
+    <string name="app_reminder_dinner_title">Na-log mo na ba ang hapunan?</string>
+    <string name="app_reminder_dinner_body">Tapusin na ang diary ng araw.</string>
+    <string name="app_reminder_weigh_in_title">Araw ng pagtimbang</string>
+    <string name="app_reminder_weigh_in_body">Parehong oras, parehong timbangan — i-log ang timbang ngayong linggo.</string>
+    <string name="app_reminder_photo_title">Oras na ng progress photo</string>
+    <string name="app_reminder_photo_body">Dalawang linggo na. Kunan ang susunod sa parehong pose.</string>
+    <string name="app_reminder_water_title">Tsek sa tubig</string>
+    <string name="app_reminder_water_midday_body">Kalahati na ng araw — ilang baso na?</string>
+    <string name="app_reminder_water_afternoon_body">May oras pa para maabot ang layunin mo sa tubig ngayong araw.</string>
+    <string name="app_reminder_supplements_title">Supplements</string>
+    <string name="app_reminder_supplements_body">Markahan ang mga nainom mo na ngayong araw.</string>
+    <string name="app_reminder_workout_title">Araw ng training</string>
+    <string name="app_reminder_workout_body">Nasa plano ang routine mo ngayong araw.</string>
+    <string name="app_reminder_weekly_recap_title">Ang linggo mo, sa isang tingin</string>
+    <string name="app_reminder_weekly_recap_body">Pitong araw na — tingnan kung paano ito nangyari.</string>
+</resources>

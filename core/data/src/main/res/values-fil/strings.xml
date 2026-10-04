@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filipino. Terms follow docs/glossary-fil.md; keys and placeholders are held by
+     ./gradlew checkTranslations. -->
+<resources>
+    <string name="data_chart_range_1m">1M</string>
+    <string name="data_chart_range_3m">3M</string>
+    <string name="data_chart_range_6m">6M</string>
+    <string name="data_chart_range_1y">1Y</string>
+
+    <string name="data_mood_level_very_low">Napakababa</string>
+    <string name="data_mood_level_low">Mababa</string>
+    <string name="data_mood_level_okay">Okay lang</string>
+    <string name="data_mood_level_good">Mabuti</string>
+    <string name="data_mood_level_great">Napakabuti</string>
+
+    <string name="data_meal_breakfast">Almusal</string>
+    <string name="data_meal_lunch">Tanghalian</string>
+    <string name="data_meal_dinner">Hapunan</string>
+    <string name="data_meal_snacks">Meryenda</string>
+
+    <string name="data_exercise_type_walk">Lakad</string>
+    <string name="data_exercise_type_run">Takbo</string>
+    <string name="data_exercise_type_cycle">Bisikleta</string>
+    <string name="data_exercise_type_swim">Langoy</string>
+    <string name="data_exercise_type_strength">Strength</string>
+    <string name="data_exercise_type_yoga">Yoga</string>
+    <string name="data_exercise_type_hiit">HIIT</string>
+    <string name="data_exercise_type_other">Iba pa</string>
+
+    <string name="data_bp_category_normal">Normal</string>
+    <string name="data_bp_category_elevated">Medyo mataas</string>
+    <string name="data_bp_category_stage1">Mataas (stage 1)</string>
+    <string name="data_bp_category_stage2">Mataas (stage 2)</string>
+    <string name="data_bp_category_crisis">Krisis</string>
+
+    <string name="data_bmi_category_underweight">Kulang sa timbang</string>
+    <string name="data_bmi_category_healthy">Malusog</string>
+    <string name="data_bmi_category_overweight">Sobra sa timbang</string>
+    <string name="data_bmi_category_obese">Obese</string>
+
+    <string name="data_measurement_chest">Dibdib</string>
+    <string name="data_measurement_waist">Baywang</string>
+    <string name="data_measurement_hips">Balakang</string>
+    <string name="data_measurement_arms">Braso</string>
+    <string name="data_measurement_thighs">Hita</string>
+    <string name="data_measurement_body_fat">Body fat</string>
+
+    <string name="data_flow_level_unstated">Na-log</string>
+    <string name="data_flow_level_light">Mahina</string>
+    <string name="data_flow_level_medium">Katamtaman</string>
+    <string name="data_flow_level_heavy">Malakas</string>
+
+    <string name="data_cycle_symptom_cramps">Pananakit ng puson</string>
+    <string name="data_cycle_symptom_headache">Sakit ng ulo</string>
+    <string name="data_cycle_symptom_bloating">Kabag</string>
+    <string name="data_cycle_symptom_fatigue">Pagod</string>
+    <string name="data_cycle_symptom_mood_swings">Pabago-bagong mood</string>
+    <string name="data_cycle_symptom_tender">Masakit na dibdib</string>
+    <string name="data_cycle_symptom_acne">Tigyawat</string>
+    <string name="data_cycle_symptom_nausea">Pagduduwal</string>
+    <string name="data_cycle_symptom_back_pain">Sakit ng likod</string>
+    <string name="data_cycle_symptom_cravings">Paghahangad sa pagkain</string>
+
+    <string name="data_nutrient_fiber">Fiber</string>
+    <string name="data_nutrient_sugar">Asukal</string>
+    <string name="data_nutrient_sodium">Sodium</string>
+    <string name="data_nutrient_vitamin_d">Vitamin D</string>
+    <string name="data_nutrient_calcium">Calcium</string>
+    <string name="data_nutrient_iron">Iron</string>
+    <string name="data_nutrient_potassium">Potassium</string>
+
+    <string name="data_calorie_floor_warning">Mas mababa ito sa karaniwang inirerekomendang minimum. Kumonsulta muna sa isang healthcare provider bago bumaba pa.</string>
+
+    <string name="data_insight_over_budget">Lampas ka nang %1$d kcal sa budget mo ngayong araw.</string>
+    <string name="data_insight_protein_short">Kulang ka pa nang %1$dg na protina ngayong araw.</string>
+    <string name="data_insight_weight_trend">%1$s kg sa nakaraang linggo — panatilihin itong steady.</string>
+
+    <string name="data_earned_food_burger">isang burger at fries</string>
+    <string name="data_earned_food_chicken">isang chicken breast na may kanin</string>
+    <string name="data_earned_food_sandwich">isang peanut-butter sandwich</string>
+    <string name="data_earned_food_yoghurt">yogurt at berries</string>
+    <string name="data_earned_food_banana">isang saging</string>
+    <string name="data_earned_food_apple">isang mansanas</string>
+    <string name="data_earned_saved">Galing — +%1$d kcal sa budget mo ngayong araw.</string>
+    <string name="data_earned_saved_about">Galing — +%1$d kcal sa budget mo ngayong araw, mga %2$s.</string>
+    <string name="data_earned_ring">+%1$d kcal ang nakuha ngayong araw</string>
+    <string name="data_earned_ring_about">+%1$d kcal ang nakuha — mga %2$s</string>
+    <string name="data_earned_insight">Dahil sa galaw mo ngayong araw, may %1$d kcal ka pang dagdag kumpara sa araw ng pahinga.</string>
+    <string name="data_earned_insight_about">Dahil sa galaw mo ngayong araw, may %1$d kcal ka pang dagdag kumpara sa araw ng pahinga — mga %2$s.</string>
+
+    <string name="data_strength_bodyweight">Bodyweight × %1$d</string>
+    <plurals name="data_strength_exercises">
+        <item quantity="one">%d ehersisyo</item>
+        <item quantity="other">%d ehersisyo</item>
+    </plurals>
+    <plurals name="data_strength_sets">
+        <item quantity="one">%d set</item>
+        <item quantity="other">%d set</item>
+    </plurals>
+    <string name="data_strength_summary">%1$s · %2$s</string>
+    <string name="data_strength_summary_volume">%1$s · %2$s · %3$s</string>
+    <string name="data_strength_last">Huli: %1$s · %2$s</string>
+
+    <string name="data_projection_reached">Nasa target weight ka na.</string>
+    <string name="data_projection_date">Sa takbo ng huling %1$d araw, %2$s bandang %3$s.</string>
+    <string name="data_projection_none">Walang petsang matantya sa bilis na ito.</string>
+</resources>

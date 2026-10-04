@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filipino. Terms follow docs/glossary-fil.md; keys and placeholders are held by
+     ./gradlew checkTranslations. The watch follows its own language, not the phone's. -->
+<resources>
+    <string name="app_name">FitPulse</string>
+    <string name="tile_label">Ngayon</string>
+    <string name="tile_description">Calories at tubig ngayong araw, may one-tap na pag-log.</string>
+    <string name="wear_today_no_snapshot">Buksan ang FitPulse sa phone mo para makita ang ngayong araw.</string>
+    <string name="wear_today_no_profile">Tapusin ang pag-set up ng FitPulse sa phone mo.</string>
+    <string name="wear_today_phone_unreachable">Hindi maabot ang phone</string>
+    <string name="wear_today_streak">%1$d-araw na streak</string>
+    <string name="wear_today_steps">%1$d hakbang</string>
+    <string name="wear_today_stale">Mula sa naunang araw — buksan ang FitPulse sa phone mo</string>
+    <string name="wear_kcal_left">kcal pa</string>
+    <string name="wear_kcal_over">kcal lampas</string>
+    <string name="wear_water_goal_hit">Naabot ang tubig</string>
+    <string name="wear_water_add_glass">+1 baso</string>
+    <string name="wear_fast_start">Simulan ang ayuno</string>
+    <string name="wear_fast_stop">Tapusin ang ayuno</string>
+    <string name="wear_fast_none">Hindi nag-aayuno</string>
+    <string name="wear_fast_goal_reached">Naabot ang layunin</string>
+    <string name="wear_fast_until">Hanggang %1$s</string>
+    <string name="wear_tile_title">Ngayon</string>
+    <string name="wear_tile_water">Tubig %1$d/%2$d</string>
+    <string name="wear_tile_no_data">Buksan ang FitPulse sa phone mo</string>
+    <string name="wear_tile_open">Buksan</string>
+</resources>
