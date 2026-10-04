@@ -74,7 +74,10 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
     // Which way the next transition slides. Read during the step change, so it is set first.
     var direction by remember { mutableIntStateOf(1) }
 
+    // Every way off a step abandons a pending advance rather than racing it: the header's back
+    // arrow, like the system back, would otherwise land and then be overtaken by the hold.
     fun goTo(step: Int) {
+        pending = null
         direction = if (step >= state.step) 1 else -1
         state.step = step
     }
@@ -91,7 +94,6 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
         val next = pending ?: return@LaunchedEffect
         delay(SELECTION_HOLD_MS)
         goTo(next)
-        pending = null
     }
 
     LaunchedEffect(announcement) {
@@ -104,12 +106,8 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
     NavigationBackHandler(
         state = backHandlerState,
         isBackEnabled = state.step > 0,
-        // A pending advance is abandoned rather than raced: back during the hold returns to the
-        // step you were on, with the selection intact.
-        onBackCompleted = {
-            pending = null
-            goTo(state.step - 1)
-        },
+        // Back during the hold goes back from the step you were on, with the selection intact.
+        onBackCompleted = { goTo(state.step - 1) },
     )
 
     // A string built in a click callback, so it reads through `LocalContext` rather than reaching
