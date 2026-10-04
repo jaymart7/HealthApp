@@ -1,6 +1,6 @@
-# Builds the app and runs the JVM tests. No emulator: an instrumented run in CI is a large,
-# slow, flaky dependency for a solo project, and the JVM tests are where the derivation logic
-# lives.
+# Builds the app, runs the JVM tests and the localization gate. No emulator: an instrumented
+# run in CI is a large, slow, flaky dependency for a solo project, and the JVM tests are where
+# the derivation logic lives.
 #
 # Nothing here supplies `fdcApiKey` or the signing properties. Both live in an untracked
 # `~/.gradle/gradle.properties` outside the repo, so a fresh checkout simply has neither — which
@@ -29,7 +29,7 @@ jobs:
 
       # `gradle.properties` caps the daemon at 2048m, which is enough locally and tight here for
       # fourteen modules of Compose + KSP + Room.
-      - run: ./gradlew assembleDebug testDebugUnitTest -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8"
+      - run: ./gradlew assembleDebug testDebugUnitTest checkUiLiterals -Dorg.gradle.jvmargs="-Xmx4g -Dfile.encoding=UTF-8"
 
       # A red run otherwise leaves only a stack trace in the log.
       - if: failure()

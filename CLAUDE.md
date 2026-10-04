@@ -224,7 +224,7 @@ behind them are `DECISIONS.md` → **Localization**.
 ```
 
 `fdcApiKey` is a Gradle property and the build must pass without it — that is the
-degrade-gracefully rule, not a secret to work around. There is no CI; see Backlog.
+degrade-gracefully rule, not a secret to work around. `.github/workflows/build.yml` runs all three.
 
 ## Backlog
 
@@ -278,10 +278,9 @@ off that ceiling, so what is left is the exposure and first scans.
 **No instrumented test but the generated `ExampleInstrumentedTest`.** The
 deps are already wired in `:app` (`ui-test-junit4`, `espresso-core`, `androidx-junit`,
 `ui-test-manifest`), so nothing new goes in the version catalog. CI now exists —
-`.github/workflows/build.yml` runs `assembleDebug` and `testDebugUnitTest` **only**, on JDK 17,
-with no secret supplying `fdcApiKey` or the keystore, because a fresh checkout has neither and
-the build must pass that way. It does not run `checkUiLiterals`; adding it is one word.
-An emulator stays out — a large, slow, flaky dependency for a solo project, and the JVM tests are
+`.github/workflows/build.yml` runs `assembleDebug`, `testDebugUnitTest` and `checkUiLiterals`, on
+JDK 17, with no secret supplying `fdcApiKey` or the keystore, because a fresh checkout has neither
+and the build must pass that way. An emulator stays out — a large, slow, flaky dependency for a solo project, and the JVM tests are
 where the derivation logic lives. What is worth an instrumented test is what no JVM test can reach
 and would break silently: onboarding's steps writing a profile, the add-entry sheet's shared `isValid()`
 across its three log paths, the diary's date navigation stopping at today, and predictive back
