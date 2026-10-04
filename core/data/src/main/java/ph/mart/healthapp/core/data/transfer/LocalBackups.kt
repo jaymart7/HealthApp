@@ -51,6 +51,9 @@ class LocalBackups(private val context: Context) {
      */
     fun write(json: String) {
         val backupDir = dir
+        // A run stopped mid-write leaves its staging file behind, and nothing else ever sees one —
+        // so without this sweep it stayed forever: a whole diary riding Auto Backup's 25 MB cap.
+        backupDir.listFiles { _, name -> name.endsWith(STAGING_SUFFIX) }?.forEach(File::delete)
         val target = File(backupDir, "$BACKUP_PREFIX${System.currentTimeMillis()}$BACKUP_SUFFIX")
         val staging = File(backupDir, "${target.name}$STAGING_SUFFIX")
         staging.writeText(json)
