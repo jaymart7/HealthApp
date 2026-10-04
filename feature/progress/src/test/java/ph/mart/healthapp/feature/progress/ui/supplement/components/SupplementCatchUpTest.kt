@@ -1,30 +1,29 @@
 package ph.mart.healthapp.feature.progress.ui.supplement.components
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Test
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.feature.progress.R
 
-/** The two relative words are what keep `catchUpDateLabel` in Kotlin — the exemption a label
- * earns by having a test over its wording, the reading `diaryDateLabel` got. */
+/** Which of the three a day gets; the two relative words are `progress_catchup_*`. */
 class SupplementCatchUpTest {
 
     private val today = 20_000L
 
     @Test
     fun `today is named`() {
-        assertEquals("Today", catchUpDateLabel(today, today))
+        assertEquals(phrase(R.string.progress_catchup_today), catchUpDateLabel(today, today))
     }
 
     @Test
     fun `yesterday is named`() {
-        assertEquals("Yesterday", catchUpDateLabel(today - 1, today))
+        assertEquals(phrase(R.string.progress_catchup_yesterday), catchUpDateLabel(today - 1, today))
     }
 
     @Test
     fun `anything older is an absolute date`() {
-        val label = catchUpDateLabel(today - 2, today)
-        assertNotEquals("Today", label)
-        assertNotEquals("Yesterday", label)
-        assertEquals(true, label.any { it.isDigit() })
+        assertEquals(Phrase.Raw(formatEpochDay(today - 2)), catchUpDateLabel(today - 2, today))
     }
 }

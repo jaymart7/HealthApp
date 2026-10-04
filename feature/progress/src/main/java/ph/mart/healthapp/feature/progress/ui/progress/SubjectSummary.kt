@@ -1,5 +1,7 @@
 package ph.mart.healthapp.feature.progress.ui.progress
 
+import androidx.annotation.StringRes
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.bloodpressure.averages
 import ph.mart.healthapp.core.data.bloodpressure.byDay
 import ph.mart.healthapp.core.data.cycle.cycleAverages
@@ -20,6 +22,8 @@ import ph.mart.healthapp.core.data.health.sleepAverages
 import ph.mart.healthapp.core.data.health.stepAverages
 import ph.mart.healthapp.core.data.mood.MOOD_SCALE
 import ph.mart.healthapp.core.data.mood.moodAverages
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.plural
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TREND_ARROW_DEADBAND_KG
 import ph.mart.healthapp.core.data.profile.TrendDirection
@@ -30,6 +34,7 @@ import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.progress.MeasurementEntry
+import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.toDisplay
 import ph.mart.healthapp.core.data.progress.unitLabel
 import ph.mart.healthapp.core.data.progress.weightArc
@@ -39,6 +44,7 @@ import ph.mart.healthapp.core.data.supplement.averageAdherence
 import ph.mart.healthapp.core.data.water.waterAverages
 import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.achievement.badgeGroups
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -70,9 +76,9 @@ enum class TrendArrow { Down, Flat, Up }
 data class SubjectSummary(
     val subject: Subject,
     val value: String? = null,
-    val unit: String? = null,
+    val unit: Phrase? = null,
     val preview: SubjectPreview = SubjectPreview.None,
-    val footnote: String = "",
+    val footnote: Phrase? = null,
     val arrow: TrendArrow? = null,
     val trend: TrendDirection = TrendDirection.Neutral,
 ) {
@@ -90,11 +96,11 @@ data class SubjectSummary(
  * supplements, blood pressure) average whatever the repository returned, which is already the year
  * the charts draw. Nothing here re-slices to a chart range — the card is a standing summary, and
  * the range toggle belongs to the chart it sits in.
+ *
+ * The words are `progress_summary_*`, carried as [Phrase]s the card resolves; a figure and its unit
+ * symbol travel pre-formatted as one argument, exactly as they read.
  */
 @Suppress("CyclomaticComplexMethod", "LongMethod")
-// Stays in Kotlin, with `trendWord` and `daysAgo` below it: a pure fold with a JVM test over its
-// exact wording, the same reading `insightFor()` and `goalProjectionLine()` got. Moving it means
-// returning a case type per branch for the card to resolve, which is its own decision.
 fun summarize(
     subject: Subject,
     uiState: ProgressUiState,
@@ -109,15 +115,18 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = formatOneDecimal(entries.last().weightKg.kgToDisplayUnit(unit)),
-                unit = unit.weightUnitLabel(),
+                unit = Phrase.Raw(unit.weightUnitLabel()),
                 preview = SubjectPreview.Line(
                     entries.takeLast(PREVIEW_POINTS).map { it.weightKg.kgToDisplayUnit(unit) },
                 ),
                 footnote = if (trend.hasPrior) {
-                    "${formatOneDecimal(abs(trend.deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
-                        "this week · ${trendWord(uiState.goal, trend.deltaKg)}"
+                    phrase(
+                        R.string.progress_summary_weight_week,
+                        "${formatOneDecimal(abs(trend.deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                        phrase(trendWord(uiState.goal, trend.deltaKg)),
+                    )
                 } else {
-                    "One reading so far"
+                    phrase(R.string.progress_summary_one_reading)
                 },
                 arrow = if (trend.hasPrior) arrowFor(trend.deltaKg, TREND_ARROW_DEADBAND_KG) else null,
                 trend = if (trend.hasPrior) goalRelativeTrend(uiState.goal, trend.deltaKg) else TrendDirection.Neutral,
@@ -137,14 +146,18 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "${photos.size}",
-                unit = if (photos.size == 1) "shot" else "shots",
+                unit = plural(R.plurals.progress_summary_shots, photos.size),
                 preview = SubjectPreview.PhotoStrip(
                     photos.sortedByDescending { it.dateEpochDay }.take(3).map { it.filePath },
                 ),
                 footnote = arc?.let { (deltaKg, days) ->
-                    "${formatOneDecimal(abs(deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()} " +
-                        "over $days ${if (days == 1L) "day" else "days"} · last one $ago"
-                } ?: "Last one $ago",
+                    phrase(
+                        R.string.progress_summary_photos_arc,
+                        "${formatOneDecimal(abs(deltaKg).kgToDisplayUnit(unit))} ${unit.weightUnitLabel()}",
+                        plural(R.plurals.progress_summary_over_days, days.toInt(), days),
+                        ago,
+                    )
+                } ?: phrase(R.string.progress_summary_last_one, ago),
                 // Direction is the arrow and the judgement is the colour — the split `TrendArrow`
                 // and `TrendDirection` exist for. The text stays absolute, the Weight card's rule.
                 arrow = arc?.let { (deltaKg, _) -> arrowFor(deltaKg, TREND_ARROW_DEADBAND_KG) },
@@ -166,17 +179,25 @@ fun summarize(
                 subject = subject,
                 value = formatOneDecimal(lead.key.toDisplay(history.last().value, unit)),
                 // Body fat is a percentage, so it carries its own words rather than the unit
-                // toggle's. Two literals in a file the JVM test already pins, which is why this
-                // file is on the literal gate's exception list.
-                unit = if (lead.key.percent) "% body fat" else "${unit.lengthUnitLabel()} ${lead.key.name.lowercase()}",
+                // toggle's. Every other part reads "cm waist": the symbol, then the part's noun.
+                unit = if (lead.key.percent) {
+                    phrase(R.string.progress_summary_unit_body_fat)
+                } else {
+                    phrase(R.string.progress_summary_unit_part, unit.lengthUnitLabel(), phrase(nounFor(lead.key)))
+                },
                 preview = SubjectPreview.Line(
                     history.takeLast(PREVIEW_POINTS).map { lead.key.toDisplay(it.value, unit) },
                 ),
-                footnote = buildString {
-                    if (delta != null) {
-                        append("${formatOneDecimal(lead.key.toDisplay(abs(delta), unit))} ${lead.key.unitLabel(unit)} · ")
+                footnote = plural(R.plurals.progress_summary_parts, tracked.size, tracked.size).let { parts ->
+                    if (delta == null) {
+                        parts
+                    } else {
+                        phrase(
+                            R.string.progress_summary_measure_delta,
+                            "${formatOneDecimal(lead.key.toDisplay(abs(delta), unit))} ${lead.key.unitLabel(unit)}",
+                            parts,
+                        )
                     }
-                    append("${tracked.size} ${if (tracked.size == 1) "part" else "parts"}")
                 },
                 arrow = delta?.let { arrowFor(it, deadband = 0.0) },
                 // Shrinking reads as progress here, the rule `MeasurementRow` already draws by —
@@ -197,13 +218,13 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "${averages.calories}",
-                unit = "kcal avg",
+                unit = phrase(R.string.progress_summary_unit_kcal_avg),
                 preview = SubjectPreview.Bars(week.map { it.calories }),
                 footnote = when {
-                    target == null -> "${averages.daysLogged} of ${week.size} days logged"
-                    averages.calories < target -> "${target - averages.calories} kcal under target"
-                    averages.calories > target -> "${averages.calories - target} kcal over target"
-                    else -> "On target"
+                    target == null -> phrase(R.string.progress_summary_days_logged_of, averages.daysLogged, week.size)
+                    averages.calories < target -> phrase(R.string.progress_summary_kcal_under, target - averages.calories)
+                    averages.calories > target -> phrase(R.string.progress_summary_kcal_over, averages.calories - target)
+                    else -> phrase(R.string.progress_summary_on_target)
                 },
             )
         }
@@ -215,9 +236,9 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = formatDecimals(average, decimals = 1),
-                unit = "glasses avg",
+                unit = phrase(R.string.progress_summary_unit_glasses_avg),
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.glasses }),
-                footnote = "${averages.daysHitGoal} of ${averages.daysLogged} days hit goal",
+                footnote = phrase(R.string.progress_summary_water_goal_days, averages.daysHitGoal, averages.daysLogged),
             )
         }
 
@@ -229,11 +250,11 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = formatDuration(average),
-                unit = "avg",
+                unit = phrase(R.string.progress_summary_unit_avg),
                 preview = SubjectPreview.Bars(
                     sessions.takeLast(PREVIEW_POINTS).map { it.durationMinutes(nowMillis = 0) },
                 ),
-                footnote = "${averages.goalsHit} of ${averages.count} goals hit",
+                footnote = phrase(R.string.progress_summary_fast_goals, averages.goalsHit, averages.count),
             )
         }
 
@@ -244,11 +265,11 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "${(adherence * 100).roundToInt()}",
-                unit = "% taken",
+                unit = phrase(R.string.progress_supplements_hero),
                 preview = SubjectPreview.Bars(
                     byDay.takeLast(PREVIEW_POINTS).map { (_, ratio) -> (ratio * 100).roundToInt() },
                 ),
-                footnote = "${byDay.size} ${if (byDay.size == 1) "day" else "days"} logged",
+                footnote = plural(R.plurals.progress_summary_days_logged, byDay.size, byDay.size),
             )
         }
 
@@ -259,9 +280,9 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = formatSteps(average),
-                unit = "steps",
+                unit = phrase(R.string.progress_summary_unit_steps),
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.steps }),
-                footnote = "Daily average · ${averages.daysHitGoal} of ${averages.days} hit goal",
+                footnote = phrase(R.string.progress_summary_steps_goal, averages.daysHitGoal, averages.days),
             )
         }
 
@@ -272,11 +293,11 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "${totals.workouts}",
-                unit = if (totals.workouts == 1) "workout" else "workouts",
+                unit = plural(R.plurals.progress_summary_workouts, totals.workouts),
                 preview = SubjectPreview.Bars(
                     lifted.volumeByDay().takeLast(PREVIEW_POINTS).map { it.volumeKg.roundToInt() },
                 ),
-                footnote = "Lifted ${volumeLabel(totals.volumeKg, unit)}",
+                footnote = phrase(R.string.progress_summary_lifted, volumeLabel(totals.volumeKg, unit)),
             )
         }
 
@@ -287,9 +308,9 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = formatDuration(average),
-                unit = "avg",
+                unit = phrase(R.string.progress_summary_unit_avg),
                 preview = SubjectPreview.Bars(nights.takeLast(PREVIEW_POINTS).map { it.minutesAsleep }),
-                footnote = "From your watch · ${averages.nights} nights",
+                footnote = plural(R.plurals.progress_summary_watch_nights, averages.nights, averages.nights),
             )
         }
 
@@ -300,9 +321,9 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = formatDecimals(mood, decimals = 1),
-                unit = "/ ${MOOD_SCALE.last}",
+                unit = Phrase.Raw("/ ${MOOD_SCALE.last}"),
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.mood }),
-                footnote = "${averages.daysLogged} ${if (averages.daysLogged == 1) "day" else "days"} logged",
+                footnote = plural(R.plurals.progress_summary_days_logged, averages.daysLogged, averages.daysLogged),
             )
         }
 
@@ -316,7 +337,7 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "$cycleDay",
-                unit = "day of cycle",
+                unit = phrase(R.string.progress_summary_unit_cycle_day),
                 // The last week's flow, gaps drawn as stubs — a week is what the strip can hold.
                 preview = SubjectPreview.Bars(
                     (todayEpochDay - PREVIEW_POINTS + 1..todayEpochDay).map { day ->
@@ -324,8 +345,8 @@ fun summarize(
                     },
                 ),
                 footnote = averages.cycleDays
-                    ?.let { "Average cycle ${it.roundToInt()} days" }
-                    ?: "${averages.daysLogged} ${if (averages.daysLogged == 1) "day" else "days"} logged",
+                    ?.let { phrase(R.string.progress_summary_avg_cycle, it.roundToInt()) }
+                    ?: plural(R.plurals.progress_summary_days_logged, averages.daysLogged, averages.daysLogged),
             )
         }
 
@@ -336,9 +357,10 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "$average",
-                unit = "bpm avg",
+                unit = phrase(R.string.progress_summary_unit_bpm_avg),
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.averageBpm }),
-                footnote = averages.lowestBpm?.let { "Lowest $it bpm" } ?: "From your watch",
+                footnote = averages.lowestBpm?.let { phrase(R.string.progress_summary_lowest_bpm, it) }
+                    ?: phrase(R.string.progress_summary_from_watch),
             )
         }
 
@@ -349,9 +371,9 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "$systolic/${averages.diastolic}",
-                unit = "mmHg avg",
+                unit = phrase(R.string.progress_summary_unit_mmhg_avg),
                 preview = SubjectPreview.Bars(readings.byDay().takeLast(PREVIEW_POINTS).map { it.systolic }),
-                footnote = "${averages.readings} ${if (averages.readings == 1) "reading" else "readings"}",
+                footnote = plural(R.plurals.progress_summary_readings, averages.readings, averages.readings),
             )
         }
 
@@ -361,8 +383,8 @@ fun summarize(
             SubjectSummary(
                 subject = subject,
                 value = "${tally.earned}",
-                unit = "of ${tally.total} earned",
-                footnote = "${tally.families} ${if (tally.families == 1) "family" else "families"}",
+                unit = phrase(R.string.progress_summary_badges_of, tally.total),
+                footnote = plural(R.plurals.progress_summary_families, tally.families, tally.families),
             )
         }
     }
@@ -407,19 +429,33 @@ private fun arrowFor(delta: Double, deadband: Double): TrendArrow = when {
 }
 
 /** The words beside the arrow. Colour never carries this on its own. */
-private fun trendWord(goal: Goal?, deltaKg: Double): String =
+@StringRes
+private fun trendWord(goal: Goal?, deltaKg: Double): Int =
     if (abs(deltaKg) < TREND_ARROW_DEADBAND_KG) {
-        "steady"
+        R.string.progress_summary_trend_steady
     } else {
         when (goalRelativeTrend(goal, deltaKg)) {
-            TrendDirection.OnTrack -> "on track"
-            TrendDirection.OffTrack -> "off track"
-            TrendDirection.Neutral -> "steady"
+            TrendDirection.OnTrack -> R.string.progress_summary_trend_on_track
+            TrendDirection.OffTrack -> R.string.progress_summary_trend_off_track
+            TrendDirection.Neutral -> R.string.progress_summary_trend_steady
         }
     }
 
-private fun daysAgo(dateEpochDay: Long, todayEpochDay: Long): String = when (val days = todayEpochDay - dateEpochDay) {
-    0L -> "today"
-    1L -> "yesterday"
-    else -> "$days days ago"
+/** Lowercase on purpose — it sits mid-sentence, after "last one". */
+private fun daysAgo(dateEpochDay: Long, todayEpochDay: Long): Phrase = when (val days = todayEpochDay - dateEpochDay) {
+    0L -> phrase(R.string.progress_summary_ago_today)
+    1L -> phrase(R.string.progress_summary_ago_yesterday)
+    else -> plural(R.plurals.progress_summary_ago_days, days.toInt(), days)
+}
+
+/** The part as a noun inside "cm waist" — lowercase, unlike [MeasurementPart.label], which heads a
+ * row. Body fat never reaches here (it reads "% body fat"), but the `when` stays total. */
+@StringRes
+private fun nounFor(part: MeasurementPart): Int = when (part) {
+    MeasurementPart.Chest -> R.string.progress_summary_part_chest
+    MeasurementPart.Waist -> R.string.progress_summary_part_waist
+    MeasurementPart.Hips -> R.string.progress_summary_part_hips
+    MeasurementPart.Arms -> R.string.progress_summary_part_arms
+    MeasurementPart.Thighs -> R.string.progress_summary_part_thighs
+    MeasurementPart.BodyFat -> R.string.progress_summary_part_body_fat
 }

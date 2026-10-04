@@ -6,9 +6,13 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import java.util.Calendar
 import org.junit.Test
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.HISTORY_PAGE_SIZE
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.plural
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.toFoodEntry
 
 /**
@@ -102,7 +106,7 @@ class FoodHistoryTest {
 
         val bands = (firstPage + nextPage).bandedGroups(today)
 
-        assertEquals(listOf("This week", "July"), bands.map { it.label })
+        assertEquals(listOf(thisWeek, Phrase.Raw("July")), bands.map { it.label })
         assertEquals(3, bands[0].days.size)
     }
 
@@ -176,40 +180,39 @@ class FoodHistoryTest {
 
     @Test
     fun `the two days with names get them`() {
-        assertEquals("Today", relativeAgeLabel(20_000, today = 20_000))
-        assertEquals("Yesterday", relativeAgeLabel(19_999, today = 20_000))
+        assertEquals(phrase(R.string.food_today), relativeAgeLabel(20_000, today = 20_000))
+        assertEquals(phrase(R.string.food_yesterday), relativeAgeLabel(19_999, today = 20_000))
     }
 
     @Test
     fun `days up to a fortnight are counted in days`() {
-        assertEquals("2 days ago", relativeAgeLabel(19_998, today = 20_000))
-        assertEquals("12 days ago", relativeAgeLabel(19_988, today = 20_000))
-        assertEquals("13 days ago", relativeAgeLabel(19_987, today = 20_000))
+        assertEquals(ago(R.plurals.food_history_days_ago, 2), relativeAgeLabel(19_998, today = 20_000))
+        assertEquals(ago(R.plurals.food_history_days_ago, 12), relativeAgeLabel(19_988, today = 20_000))
+        assertEquals(ago(R.plurals.food_history_days_ago, 13), relativeAgeLabel(19_987, today = 20_000))
     }
 
-    /** Every tier starts at two of its unit, so no label ever reads "1 weeks" or "1 months" — the
-     * singular a string with no plural form could not have produced. */
+    /** Every tier starts at two of its unit, so English never reaches a singular. */
     @Test
     fun `weeks take over at a fortnight, months at two of them`() {
-        assertEquals("2 weeks ago", relativeAgeLabel(19_986, today = 20_000))
-        assertEquals("8 weeks ago", relativeAgeLabel(19_941, today = 20_000))
-        assertEquals("2 months ago", relativeAgeLabel(19_940, today = 20_000))
-        assertEquals("3 months ago", relativeAgeLabel(19_910, today = 20_000))
+        assertEquals(ago(R.plurals.food_history_weeks_ago, 2), relativeAgeLabel(19_986, today = 20_000))
+        assertEquals(ago(R.plurals.food_history_weeks_ago, 8), relativeAgeLabel(19_941, today = 20_000))
+        assertEquals(ago(R.plurals.food_history_months_ago, 2), relativeAgeLabel(19_940, today = 20_000))
+        assertEquals(ago(R.plurals.food_history_months_ago, 3), relativeAgeLabel(19_910, today = 20_000))
     }
 
     /** A future day can't be logged, but a device whose clock moves backwards can produce one, and
      * "-1 days ago" is worse than calling it today. */
     @Test
     fun `a day in the future reads as today rather than a negative count`() {
-        assertEquals("Today", relativeAgeLabel(20_001, today = 20_000))
+        assertEquals(phrase(R.string.food_today), relativeAgeLabel(20_001, today = 20_000))
     }
 
     // ---- The bands ----
 
     @Test
     fun `the last seven days are one band`() {
-        assertEquals("This week", ageBandFor(20_000, today = 20_000))
-        assertEquals("This week", ageBandFor(19_994, today = 20_000))
+        assertEquals(thisWeek, ageBandFor(20_000, today = 20_000))
+        assertEquals(thisWeek, ageBandFor(19_994, today = 20_000))
     }
 
     /** The day after the week ends is still this month, so it lands in the middle band rather than
@@ -218,14 +221,14 @@ class FoodHistoryTest {
     fun `the rest of the current month is the middle band`() {
         val today = epochDayOf(2026, 9, 20)
 
-        assertEquals("Earlier this month", ageBandFor(epochDayOf(2026, 9, 5), today))
+        assertEquals(earlierThisMonth, ageBandFor(epochDayOf(2026, 9, 5), today))
     }
 
     @Test
     fun `an older month is its own name`() {
         val today = epochDayOf(2026, 9, 20)
 
-        assertEquals("August", ageBandFor(epochDayOf(2026, 8, 14), today))
+        assertEquals(Phrase.Raw("August"), ageBandFor(epochDayOf(2026, 8, 14), today))
     }
 
     /** Two Augusts in one list is the ambiguity the year exists to close. */
@@ -233,7 +236,7 @@ class FoodHistoryTest {
     fun `a month in another year carries the year`() {
         val today = epochDayOf(2026, 9, 20)
 
-        assertEquals("August 2025", ageBandFor(epochDayOf(2025, 8, 14), today))
+        assertEquals(Phrase.Raw("August 2025"), ageBandFor(epochDayOf(2025, 8, 14), today))
     }
 
     // ---- The band fold ----
@@ -248,7 +251,7 @@ class FoodHistoryTest {
             entry("d", epochDayOf(2026, 8, 14)),
         ).bandedGroups(today)
 
-        assertEquals(listOf("This week", "Earlier this month", "August"), bands.map { it.label })
+        assertEquals(listOf(thisWeek, earlierThisMonth, Phrase.Raw("August")), bands.map { it.label })
         assertEquals(2, bands[0].days.size)
         assertEquals(listOf("c"), bands[1].days.single().entries.map { it.name })
     }
@@ -257,4 +260,10 @@ class FoodHistoryTest {
     fun `no results is no bands`() {
         assertTrue(emptyList<FoodEntry>().bandedGroups(today = 20_000).isEmpty())
     }
+
+    private val thisWeek = phrase(R.string.food_history_band_this_week)
+
+    private val earlierThisMonth = phrase(R.string.food_history_band_earlier_month)
+
+    private fun ago(id: Int, count: Long) = plural(id, count.toInt(), count)
 }

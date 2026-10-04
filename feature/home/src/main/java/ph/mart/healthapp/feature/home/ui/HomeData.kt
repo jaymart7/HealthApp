@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.home.ui
 
+import androidx.annotation.StringRes
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.health.DEFAULT_STEP_GOAL
 import ph.mart.healthapp.core.data.exercise.PlanDay
@@ -20,6 +21,7 @@ import ph.mart.healthapp.core.data.streak.StreakStats
 import ph.mart.healthapp.core.data.bloodpressure.BloodPressureReading
 import ph.mart.healthapp.core.data.supplement.SupplementToday
 import ph.mart.healthapp.core.data.water.DEFAULT_WATER_GOAL_GLASSES
+import ph.mart.healthapp.feature.home.R
 
 /**
  * Read model. Every field traces back to a repository interface: [profile] from
@@ -180,18 +182,19 @@ internal fun HomeUiState.toInsightRequest(): InsightRequest? = profile?.let {
  *
  * The split is what lets the header block's mascot row shrink to 56dp: the greeting is the row's
  * title beside the avatar, and the sentence sits under it as a sub-line rather than inside a speech
- * bubble the row has to make room for. Both stay in Kotlin under the pure-function-with-a-JVM-test
- * exemption — the test over their exact wording is what earns it.
+ * bubble the row has to make room for. Each returns the resource for its part of the day.
  */
-fun greetingFor(hour: Int): String = when {
-    hour < 12 -> "Good morning"
-    hour < 18 -> "Good afternoon"
-    else -> "Good evening"
+@StringRes
+fun greetingFor(hour: Int): Int = when {
+    hour < 12 -> R.string.home_greeting_morning
+    hour < 18 -> R.string.home_greeting_afternoon
+    else -> R.string.home_greeting_evening
 }
 
 /** The second half of [greetingFor] — see its KDoc for why they are two functions. */
-fun greetingSubFor(hour: Int): String = when {
-    hour < 12 -> "Ready for breakfast?"
-    hour < 18 -> "How's the day going?"
-    else -> "Almost there for today."
+@StringRes
+fun greetingSubFor(hour: Int): Int = when {
+    hour < 12 -> R.string.home_greeting_sub_morning
+    hour < 18 -> R.string.home_greeting_sub_afternoon
+    else -> R.string.home_greeting_sub_evening
 }

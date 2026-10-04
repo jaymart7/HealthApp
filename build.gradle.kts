@@ -35,19 +35,11 @@ val uiArguments = listOf(
 )
 
 /**
- * Files whose English is a decision recorded at its own definition — a pure function with a JVM
- * test over its exact wording, an exception message, or a proper name. Each carries the comment
- * saying so; this list is only what keeps [checkUiLiterals] from arguing with it.
+ * Files whose English is a decision recorded at its own definition — today, only proper names.
+ * Each carries the comment saying so; this list is only what keeps [checkUiLiterals] from arguing
+ * with it. A pure function that chooses words is not an exception any more: it returns a `Phrase`.
  */
 val literalExceptions = listOf(
-    "SubjectSummary.kt",
-    "BadgeGroupCard.kt",
-    "HomeData.kt",
-    "DiaryDateHeader.kt",
-    // `catchUpDateLabel`'s "Today"/"Yesterday", for `DiaryDateHeader.kt`'s reason one module over.
-    "SupplementCatchUpCard.kt",
-    "FoodHistoryData.kt",
-    "GoalProjectionLine.kt",
     "MascotAvatar.kt",
 )
 
@@ -59,15 +51,15 @@ val literalExceptions = listOf(
  * skipped; they are debug-only sample data and no translator reads them.
  *
  * Two rules. The named one runs over every localized module and catches `text = "Add reading"`.
- * The positional three run only where copy lives — a `ui/` tree, or a shared component — because
+ * The positional four run only where copy lives — a `ui/` tree, or a shared component — because
  * `StatRow("Systolic", …)` reads the same as a Room query, a prompt or a `@SerialName` everywhere
  * else. That split is not cosmetic: the whole of `:feature:progress` passed this task while
  * thirteen empty-state pages were still English, because every one of those literals was
  * positional.
  *
- * ponytail: a line-based grep, not a parser — a literal split across lines, or one starting with a
- * template (`"$n tracked"`), still slips through. A Compose lint rule is the upgrade path if that
- * starts happening.
+ * ponytail: a line-based grep, not a parser — a literal split across lines still slips through,
+ * and so does copy in a module's non-`ui/` code (`EarnedCalories.kt` sat in `:core:data` for a
+ * year). A Compose lint rule is the upgrade path if that starts happening.
  */
 tasks.register("checkUiLiterals") {
     group = "verification"
@@ -78,6 +70,10 @@ tasks.register("checkUiLiterals") {
         Regex("""[(,]\s*"[A-Z][a-z]"""),  // a literal opening an argument
         Regex("""^\s*"[A-Z][a-z]"""),     // a literal alone on its own line
         Regex("""->\s*"[A-Z][a-z]"""),    // a `when` branch returning copy
+        // A template opening a sentence: "$days days ago". Unit symbols after a figure are not
+        // copy, so "$n kcal" and "$n bpm" pass; shorter symbols (g, kg, ml, cm) never reach three
+        // letters.
+        Regex(""""\$(\{[^}]*\}|[\w.]+) (?!kcal\b|bpm\b)[a-z]{3,}"""),
     )
     val previewStart = Regex("""fun \w*Preview\(|^(private )?val (PREVIEW|preview)""")
     // Copied into a local: `doLast` cannot capture a script property and stay configuration-cacheable.
@@ -102,7 +98,7 @@ tasks.register("checkUiLiterals") {
                         previewStart.containsMatchIn(line) -> { inPreview = true; null }
                         // An `error()` or `require()` message is an exception, not copy, and an
                         // annotation argument is never read by anyone.
-                        trimmed.startsWith("//") || trimmed.startsWith("*") ||
+                        trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*") ||
                             trimmed.startsWith("@") || "error(" in line || "require(" in line -> null
                         named.containsMatchIn(line) ||
                             (drawsCopy && positional.any { it.containsMatchIn(line) }) ->

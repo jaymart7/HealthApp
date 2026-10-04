@@ -1,9 +1,14 @@
 package ph.mart.healthapp.feature.food.ui.history
 
+import androidx.annotation.PluralsRes
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.HISTORY_PAGE_SIZE
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.plural
 import ph.mart.healthapp.core.designsystem.component.formatMonthYear
+import ph.mart.healthapp.feature.food.R
 import ph.mart.healthapp.feature.food.ui.shared.AddEntryForm
 import ph.mart.healthapp.feature.food.ui.shared.toAddEntryForm
 
@@ -94,7 +99,7 @@ internal fun List<FoodEntry>.groupedByDay(): List<Pair<Long, List<FoodEntry>>> =
 internal data class HistoryDay(val dateEpochDay: Long, val entries: List<FoodEntry>)
 
 /** A run of days under one heading — "This week", "Earlier this month", "August". */
-internal data class HistoryBand(val label: String, val days: List<HistoryDay>)
+internal data class HistoryBand(val label: Phrase, val days: List<HistoryDay>)
 
 /**
  * The days folded again, into the bands the list is scanned by.
@@ -104,7 +109,7 @@ internal data class HistoryBand(val label: String, val days: List<HistoryDay>)
  * has already passed, which is what keeps the list's order and its headings the same statement.
  */
 internal fun List<FoodEntry>.bandedGroups(today: Long): List<HistoryBand> =
-    groupedByDay().fold(mutableListOf<Pair<String, MutableList<HistoryDay>>>()) { bands, (day, entries) ->
+    groupedByDay().fold(mutableListOf<Pair<Phrase, MutableList<HistoryDay>>>()) { bands, (day, entries) ->
         val label = ageBandFor(day, today)
         val open = bands.lastOrNull()
         val row = HistoryDay(day, entries)
@@ -121,11 +126,10 @@ internal fun List<FoodEntry>.bandedGroups(today: Long): List<HistoryBand> =
  * carry the same month heading, which is what [formatMonthYear] already decides — no second
  * calendar comparison, and no second place for the year rule to be got wrong.
  */
-// Stays in Kotlin under the pure-function-with-a-test rule: FoodHistoryTest asserts this wording.
-internal fun ageBandFor(epochDay: Long, today: Long): String = when {
-    today - epochDay < DAYS_IN_WEEK -> "This week"
-    formatMonthYear(epochDay) == formatMonthYear(today) -> "Earlier this month"
-    else -> formatMonthYear(epochDay)
+internal fun ageBandFor(epochDay: Long, today: Long): Phrase = when {
+    today - epochDay < DAYS_IN_WEEK -> phrase(R.string.food_history_band_this_week)
+    formatMonthYear(epochDay) == formatMonthYear(today) -> phrase(R.string.food_history_band_earlier_month)
+    else -> Phrase.Raw(formatMonthYear(epochDay))
 }
 
 /**
@@ -135,17 +139,18 @@ internal fun ageBandFor(epochDay: Long, today: Long): String = when {
  * two are drawn together because neither does the other's job. The unit coarsens with distance for
  * the reason the bands do: "63 days ago" is a number to work out, "9 weeks ago" is a fact.
  */
-// Stays in Kotlin under the pure-function-with-a-test rule: FoodHistoryTest asserts this wording.
-internal fun relativeAgeLabel(epochDay: Long, today: Long): String {
+internal fun relativeAgeLabel(epochDay: Long, today: Long): Phrase {
     val days = today - epochDay
     return when {
-        days <= 0L -> "Today"
-        days == 1L -> "Yesterday"
-        days < 2 * DAYS_IN_WEEK -> "$days days ago"
-        days < 2 * DAYS_IN_MONTH -> "${days / DAYS_IN_WEEK} weeks ago"
-        else -> "${days / DAYS_IN_MONTH} months ago"
+        days <= 0L -> phrase(R.string.food_today)
+        days == 1L -> phrase(R.string.food_yesterday)
+        days < 2 * DAYS_IN_WEEK -> ago(R.plurals.food_history_days_ago, days)
+        days < 2 * DAYS_IN_MONTH -> ago(R.plurals.food_history_weeks_ago, days / DAYS_IN_WEEK)
+        else -> ago(R.plurals.food_history_months_ago, days / DAYS_IN_MONTH)
     }
 }
+
+private fun ago(@PluralsRes id: Int, count: Long): Phrase = plural(id, count.toInt(), count)
 
 private const val DAYS_IN_WEEK = 7L
 

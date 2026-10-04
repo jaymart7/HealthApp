@@ -6,6 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.feature.home.R
 
 class HomeDataTest {
 
@@ -35,17 +36,17 @@ class HomeDataTest {
     }
 
     @Test
-    fun `greeting matches the prototype copy for each part of the day`() {
-        assertEquals("Good morning", greetingFor(8))
-        assertEquals("Good afternoon", greetingFor(12))
-        assertEquals("Good evening", greetingFor(18))
+    fun `greeting turns at noon and at six`() {
+        assertEquals(R.string.home_greeting_morning, greetingFor(8))
+        assertEquals(R.string.home_greeting_afternoon, greetingFor(12))
+        assertEquals(R.string.home_greeting_evening, greetingFor(18))
     }
 
     @Test
     fun `the sub-line splits on the same hours the greeting does`() {
-        assertEquals("Ready for breakfast?", greetingSubFor(8))
-        assertEquals("How's the day going?", greetingSubFor(12))
-        assertEquals("Almost there for today.", greetingSubFor(18))
+        assertEquals(R.string.home_greeting_sub_morning, greetingSubFor(8))
+        assertEquals(R.string.home_greeting_sub_afternoon, greetingSubFor(12))
+        assertEquals(R.string.home_greeting_sub_evening, greetingSubFor(18))
         // The boundaries themselves, since two functions now have to agree on them.
         assertEquals(greetingFor(11), greetingFor(0))
         assertEquals(greetingSubFor(17), greetingSubFor(12))

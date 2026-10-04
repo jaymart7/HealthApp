@@ -13,12 +13,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import kotlinx.coroutines.launch
 import ph.mart.healthapp.core.data.food.MealIdeaRequest
 import ph.mart.healthapp.core.data.food.Recipe
 import ph.mart.healthapp.core.data.food.SavedMeal
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.CalendarPanel
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
@@ -71,7 +73,7 @@ internal fun DiarySheets(
 
     if (state.noteSheetOpen) {
         DayNoteSheet(
-            dateLabel = diaryDateLabel(uiState.selectedDate, uiState.today),
+            dateLabel = diaryDateLabel(uiState.selectedDate, uiState.today).resolve(LocalResources.current),
             draft = state.noteDraft,
             onDraftChange = { state.noteDraft = it },
             onDismiss = state::closeNoteSheet,

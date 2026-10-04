@@ -15,12 +15,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.supplement.Supplement
 import ph.mart.healthapp.core.data.supplement.SupplementOnDay
 import ph.mart.healthapp.core.data.supplement.nextTaken
@@ -40,14 +44,13 @@ private val ROW_RADIUS = 12.dp
  * clipping it would be worse than a taller row. */
 private val TapTargetMin = 48.dp
 
-/** "Today" / "Yesterday" / "Aug 27, 2026". Pure, so the two relative cases are testable, and
- * `SupplementCatchUpTest` asserts both words — the reading `diaryDateLabel` and
- * `goalProjectionLine()` got, and what keeps these two in Kotlin. The diary's copy is
- * `:feature:food`-internal and a feature never imports another feature's types. */
-internal fun catchUpDateLabel(epochDay: Long, today: Long): String = when (epochDay) {
-    today -> "Today"
-    today - 1 -> "Yesterday"
-    else -> formatEpochDay(epochDay)
+/** "Today" / "Yesterday" / "Aug 27, 2026". Pure, so `SupplementCatchUpTest` can hold which of the
+ * three a day gets. The diary's copy is `:feature:food`-internal and a feature never imports
+ * another feature's types. */
+internal fun catchUpDateLabel(epochDay: Long, today: Long): Phrase = when (epochDay) {
+    today -> phrase(R.string.progress_catchup_today)
+    today - 1 -> phrase(R.string.progress_catchup_yesterday)
+    else -> Phrase.Raw(formatEpochDay(epochDay))
 }
 
 /**
@@ -125,7 +128,7 @@ private fun DateStepper(
             )
         }
         Text(
-            text = catchUpDateLabel(selectedDate, today),
+            text = catchUpDateLabel(selectedDate, today).resolve(LocalResources.current),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,

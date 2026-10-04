@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.profile.TrendDirection
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
@@ -169,9 +170,9 @@ private fun GroupSectionPreview() {
                         Subject.Weight to SubjectSummary(
                             subject = Subject.Weight,
                             value = "82.7",
-                            unit = "kg",
+                            unit = Phrase.Raw("kg"),
                             preview = SubjectPreview.Line(listOf(84.8, 84.1, 83.6, 83.2, 82.7)),
-                            footnote = "0.4 kg this week · on track",
+                            footnote = Phrase.Raw("0.4 kg this week · on track"),
                             arrow = TrendArrow.Down,
                             trend = TrendDirection.OnTrack,
                         ),
@@ -179,9 +180,9 @@ private fun GroupSectionPreview() {
                         Subject.Measurements to SubjectSummary(
                             subject = Subject.Measurements,
                             value = "88.0",
-                            unit = "cm waist",
+                            unit = Phrase.Raw("cm waist"),
                             preview = SubjectPreview.Line(listOf(90.0, 89.4, 88.8, 88.0)),
-                            footnote = "1.5 cm · 3 parts",
+                            footnote = Phrase.Raw("1.5 cm · 3 parts"),
                             arrow = TrendArrow.Down,
                             trend = TrendDirection.OnTrack,
                         ),

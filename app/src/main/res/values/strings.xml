@@ -65,4 +65,25 @@
     <string name="widget_add_glass">+1 glass</string>
     <string name="widget_fast_complete">Fast complete</string>
     <string name="widget_fasting_until">Fasting until %1$s</string>
+
+    <!-- Reminder notifications — `Reminder.title` / `.body`, resolved when the worker posts. -->
+    <string name="app_reminder_breakfast_title">Breakfast logged?</string>
+    <string name="app_reminder_breakfast_body">Add it while you remember the portions.</string>
+    <string name="app_reminder_lunch_title">Lunch logged?</string>
+    <string name="app_reminder_lunch_body">A quick entry keeps today\'s macros honest.</string>
+    <string name="app_reminder_dinner_title">Dinner logged?</string>
+    <string name="app_reminder_dinner_body">Close out the day\'s diary.</string>
+    <string name="app_reminder_weigh_in_title">Weigh-in day</string>
+    <string name="app_reminder_weigh_in_body">Same time, same scale — log this week\'s weight.</string>
+    <string name="app_reminder_photo_title">Progress photo time</string>
+    <string name="app_reminder_photo_body">Two weeks on. Take the next one in the same pose.</string>
+    <string name="app_reminder_water_title">Water check</string>
+    <string name="app_reminder_water_midday_body">Halfway through the day — how many glasses so far?</string>
+    <string name="app_reminder_water_afternoon_body">Still time to hit today\'s water goal.</string>
+    <string name="app_reminder_supplements_title">Supplements</string>
+    <string name="app_reminder_supplements_body">Tick off what you\'ve taken today.</string>
+    <string name="app_reminder_workout_title">Training day</string>
+    <string name="app_reminder_workout_body">Today\'s routine is on the plan.</string>
+    <string name="app_reminder_weekly_recap_title">Your week in review</string>
+    <string name="app_reminder_weekly_recap_body">Seven days done — see how they went.</string>
 </resources>

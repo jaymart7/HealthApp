@@ -142,8 +142,8 @@ internal fun HomeCards(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         HomeHeaderBlock(
-            greeting = greetingFor(hour),
-            greetingSub = greetingSubFor(hour),
+            greeting = stringResource(greetingFor(hour)),
+            greetingSub = stringResource(greetingSubFor(hour)),
             strip = todayStripCards(visible).mapNotNull { stripCell(it, uiState, budget, unit) },
             insight = insight,
             insightDismissed = state.insightDismissed,

@@ -151,4 +151,12 @@
     <string name="home_strip_streak">day streak</string>
     <string name="home_strip_weight">weight</string>
     <string name="home_strip_water_value">%1$d/%2$d</string>
+
+    <!-- greetingFor() / greetingSubFor() — the header row's title and the line under it. -->
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_greeting_sub_morning">Ready for breakfast?</string>
+    <string name="home_greeting_sub_afternoon">How\'s the day going?</string>
+    <string name="home_greeting_sub_evening">Almost there for today.</string>
 </resources>

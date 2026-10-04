@@ -33,12 +33,15 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.profile.TrendDirection
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -110,7 +113,7 @@ private fun TrackedCard(summary: SubjectSummary, onClick: () -> Unit, modifier: 
                 )
                 summary.unit?.let {
                     Text(
-                        text = " $it",
+                        text = " ${it.resolve(LocalResources.current)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -151,7 +154,7 @@ private fun TrendFootnote(summary: SubjectSummary) {
             Spacer(modifier = Modifier.size(4.dp))
         }
         Text(
-            text = summary.footnote,
+            text = summary.footnote?.resolve(LocalResources.current).orEmpty(),
             style = MaterialTheme.typography.labelSmall,
             color = color,
             maxLines = 2,
@@ -352,9 +355,9 @@ private fun SubjectCardPreview() {
                     summary = SubjectSummary(
                         subject = Subject.Weight,
                         value = "82.7",
-                        unit = "kg",
+                        unit = Phrase.Raw("kg"),
                         preview = SubjectPreview.Line(listOf(84.8, 84.4, 84.1, 83.6, 83.2, 82.9, 82.7)),
-                        footnote = "0.4 kg this week · on track",
+                        footnote = Phrase.Raw("0.4 kg this week · on track"),
                         arrow = TrendArrow.Down,
                         trend = TrendDirection.OnTrack,
                     ),
@@ -388,11 +391,11 @@ private fun SubjectCardPhotoPreview() {
                     summary = SubjectSummary(
                         subject = Subject.Photos,
                         value = "4",
-                        unit = "shots",
+                        unit = Phrase.Raw("shots"),
                         // No paths behind them in a preview — the tiles draw as their placeholder
                         // ground, which is what a photo that hasn't decoded yet looks like anyway.
                         preview = SubjectPreview.PhotoStrip(listOf("", "", "")),
-                        footnote = "2.1 kg over 92 days · last one 12 days ago",
+                        footnote = Phrase.Raw("2.1 kg over 92 days · last one 12 days ago"),
                         arrow = TrendArrow.Down,
                         trend = TrendDirection.OnTrack,
                     ),
@@ -405,9 +408,9 @@ private fun SubjectCardPhotoPreview() {
                     summary = SubjectSummary(
                         subject = Subject.Photos,
                         value = "2",
-                        unit = "shots",
+                        unit = Phrase.Raw("shots"),
                         preview = SubjectPreview.PhotoStrip(listOf("", "")),
-                        footnote = "Last one 12 days ago",
+                        footnote = Phrase.Raw("Last one 12 days ago"),
                     ),
                     onClick = {},
                     onHint = {},
@@ -431,10 +434,10 @@ private fun SubjectCardBarsPreview() {
                     summary = SubjectSummary(
                         subject = Subject.Nutrition,
                         value = "1651",
-                        unit = "kcal avg",
+                        unit = Phrase.Raw("kcal avg"),
                         // The third day is a gap, and draws as a stub rather than nothing.
                         preview = SubjectPreview.Bars(listOf(1850, 2100, 0, 1720, 2340, 1610, 1490)),
-                        footnote = "610 kcal under target",
+                        footnote = Phrase.Raw("610 kcal under target"),
                     ),
                     onClick = {},
                     onHint = {},
@@ -444,9 +447,9 @@ private fun SubjectCardBarsPreview() {
                     summary = SubjectSummary(
                         subject = Subject.Sleep,
                         value = "6h 52m",
-                        unit = "avg",
+                        unit = Phrase.Raw("avg"),
                         preview = SubjectPreview.Bars(listOf(432, 401, 512, 388, 447, 460, 402)),
-                        footnote = "From your watch · 7 nights",
+                        footnote = Phrase.Raw("From your watch · 7 nights"),
                     ),
                     onClick = {},
                     onHint = {},

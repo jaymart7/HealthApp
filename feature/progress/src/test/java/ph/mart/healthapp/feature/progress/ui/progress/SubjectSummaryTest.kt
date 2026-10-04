@@ -4,8 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.Phrase
 import ph.mart.healthapp.core.data.food.DayNutrition
 import ph.mart.healthapp.core.data.health.SleepNight
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.plural
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.TrendDirection
@@ -15,6 +18,7 @@ import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.ProgressPhoto
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.water.WaterDay
+import ph.mart.healthapp.feature.progress.R
 
 private const val TODAY = 20_000L
 
@@ -49,10 +53,10 @@ class SubjectSummaryTest {
             ),
         )
         assertEquals("82.7", summary.value)
-        assertEquals("kg", summary.unit)
+        assertEquals(Phrase.Raw("kg"), summary.unit)
         assertEquals(TrendDirection.OnTrack, summary.trend)
         assertEquals(TrendArrow.Down, summary.arrow)
-        assertTrue(summary.footnote, summary.footnote.contains("on track"))
+        assertEquals(phrase(R.string.progress_summary_trend_on_track), summary.footnoteArg(1))
     }
 
     /** The same fall of 0.7 kg against a Build goal. Colour is never the thing that changes on its
@@ -62,7 +66,7 @@ class SubjectSummaryTest {
         val entries = listOf(WeightEntry(TODAY - 7, 83.4), WeightEntry(TODAY, 82.7))
         val summary = summaryFor(Subject.Weight, ProgressUiState(weightEntries = entries, goal = Goal.Build))
         assertEquals(TrendDirection.OffTrack, summary.trend)
-        assertTrue(summary.footnote, summary.footnote.contains("off track"))
+        assertEquals(phrase(R.string.progress_summary_trend_off_track), summary.footnoteArg(1))
     }
 
     /** One weigh-in is not a trend, and inventing the other end would be a delta nobody measured. */
@@ -83,7 +87,7 @@ class SubjectSummaryTest {
         }
         val summary = summaryFor(Subject.Nutrition, ProgressUiState(dailyNutrition = days, targets = TARGETS))
         assertEquals("1700", summary.value)
-        assertEquals("300 kcal under target", summary.footnote)
+        assertEquals(phrase(R.string.progress_summary_kcal_under, 300), summary.footnote)
     }
 
     /** The gap still has to be reported when the day was overshot, and in the same shape. */
@@ -91,7 +95,7 @@ class SubjectSummaryTest {
     fun `nutrition says over target when it is`() {
         val days = listOf(DayNutrition(TODAY, 2400, 150, 240, 80))
         val summary = summaryFor(Subject.Nutrition, ProgressUiState(dailyNutrition = days, targets = TARGETS))
-        assertEquals("400 kcal over target", summary.footnote)
+        assertEquals(phrase(R.string.progress_summary_kcal_over, 400), summary.footnote)
     }
 
     /** A zero-filled day is a day that happened and held nothing; it must reach the preview as a
@@ -117,8 +121,8 @@ class SubjectSummaryTest {
             ),
         )
         assertEquals("2", summary.value)
-        assertEquals("shots", summary.unit)
-        assertEquals("Last one 3 days ago", summary.footnote)
+        assertEquals(plural(R.plurals.progress_summary_shots, 2), summary.unit)
+        assertEquals(phrase(R.string.progress_summary_last_one, daysAgo(3)), summary.footnote)
     }
 
     /** The shots carry their own weights, so the card reports the run rather than only its date —
@@ -135,7 +139,10 @@ class SubjectSummaryTest {
                 goal = Goal.Lose,
             ),
         )
-        assertEquals("2.1 kg over 92 days · last one 3 days ago", summary.footnote)
+        assertEquals(
+            phrase(R.string.progress_summary_photos_arc, "2.1 kg", plural(R.plurals.progress_summary_over_days, 92, 92L), daysAgo(3)),
+            summary.footnote,
+        )
         assertEquals(TrendArrow.Down, summary.arrow)
         assertEquals(TrendDirection.OnTrack, summary.trend)
     }
@@ -171,7 +178,7 @@ class SubjectSummaryTest {
                 ),
             ),
         )
-        assertEquals("Last one yesterday", summary.footnote)
+        assertEquals(phrase(R.string.progress_summary_last_one, phrase(R.string.progress_summary_ago_yesterday)), summary.footnote)
         assertEquals(null, summary.arrow)
         assertEquals(TrendDirection.Neutral, summary.trend)
     }
@@ -192,9 +199,9 @@ class SubjectSummaryTest {
             ),
         )
         assertEquals("88", summary.value)
-        assertEquals("cm waist", summary.unit)
+        assertEquals(phrase(R.string.progress_summary_unit_part, "cm", phrase(R.string.progress_summary_part_waist)), summary.unit)
         assertEquals(TrendDirection.OnTrack, summary.trend)
-        assertTrue(summary.footnote, summary.footnote.contains("2 parts"))
+        assertEquals(phrase(R.string.progress_summary_measure_delta, "1.5 cm", parts(2)), summary.footnote)
     }
 
     /** Body fat is stored as a percentage in the same column the tape readings use, so the card
@@ -214,9 +221,9 @@ class SubjectSummaryTest {
                 ProgressUiState(measurements = measurements, preferredUnit = unit),
             )
             assertEquals(unit.name, "18.5", summary.value)
-            assertEquals(unit.name, "% body fat", summary.unit)
+            assertEquals(unit.name, phrase(R.string.progress_summary_unit_body_fat), summary.unit)
             assertEquals(unit.name, TrendDirection.OnTrack, summary.trend)
-            assertTrue(summary.footnote, summary.footnote.startsWith("1 % · "))
+            assertEquals(unit.name, phrase(R.string.progress_summary_measure_delta, "1 %", parts(2)), summary.footnote)
         }
     }
 
@@ -232,7 +239,7 @@ class SubjectSummaryTest {
             ),
         )
         assertEquals(null, summary.arrow)
-        assertEquals("1 part", summary.footnote)
+        assertEquals(parts(1), summary.footnote)
     }
 
     @Test
@@ -252,7 +259,7 @@ class SubjectSummaryTest {
         val days = listOf(WaterDay(TODAY - 13, 9), WaterDay(TODAY - 6, 6), WaterDay(TODAY, 3))
         val summary = summaryFor(Subject.Water, ProgressUiState(waterDays = days, waterGoalGlasses = 8))
         assertEquals("6.0", summary.value)
-        assertEquals("1 of 3 days hit goal", summary.footnote)
+        assertEquals(phrase(R.string.progress_summary_water_goal_days, 1, 3), summary.footnote)
         assertEquals(SubjectPreview.Bars(listOf(9, 6, 3)), summary.preview)
     }
 
@@ -274,4 +281,12 @@ class SubjectSummaryTest {
         assertTrue(tally.families > 0)
         assertTrue(tally.earned <= tally.total)
     }
+
+    private fun daysAgo(days: Long) = plural(R.plurals.progress_summary_ago_days, days.toInt(), days)
+
+    private fun parts(n: Int) = plural(R.plurals.progress_summary_parts, n, n)
+
+    /** One argument of a footnote that is a sentence — where the words around a figure matter
+     * and the figure itself is pinned elsewhere. */
+    private fun SubjectSummary.footnoteArg(index: Int): Any = (footnote as Phrase.Res).args[index]
 }

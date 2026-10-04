@@ -86,8 +86,8 @@ class ReminderWorker(
             notify(
                 context,
                 reminder.ordinal,
-                reminder.title,
-                reminder.body,
+                context.getString(reminder.title),
+                context.getString(reminder.body),
                 reminder.tab,
                 waterAction = reminder.checksWater,
                 action = reminder.action,

@@ -4,9 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import ph.mart.healthapp.core.data.fasting.FastSession
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.plural
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.streak.StreakBadge
 import ph.mart.healthapp.core.data.streak.StreakStats
+import ph.mart.healthapp.feature.progress.R
 import ph.mart.healthapp.feature.progress.ui.achievement.components.captionFor
 
 private const val HOUR = 3_600_000L
@@ -66,19 +69,22 @@ class AchievementsTest {
     @Test
     fun `captions count up to the next threshold, and never below a tier of one`() {
         val workouts = groups(workoutCount = 9)[BadgeFamily.Workouts]!!
-        assertEquals("1 more workout to your 10-workout badge.", captionFor(workouts, UnitSystem.Metric))
+        assertEquals(plural(R.plurals.progress_badge_caption_more_workout, 1, 1, 10), captionFor(workouts, UnitSystem.Metric))
 
         val fasts = groups()[BadgeFamily.Fasts]!!
-        assertEquals("Your first fast earns a badge.", captionFor(fasts, UnitSystem.Metric))
+        assertEquals(
+            phrase(R.string.progress_badge_caption_first, phrase(R.string.progress_badge_noun_fast)),
+            captionFor(fasts, UnitSystem.Metric),
+        )
 
         val photos = groups(photoCount = 99)[BadgeFamily.Photos]!!
-        assertEquals("Every badge earned.", captionFor(photos, UnitSystem.Metric))
+        assertEquals(phrase(R.string.progress_badge_caption_all), captionFor(photos, UnitSystem.Metric))
 
         val weight = groups(weightProgressKg = 3.0)[BadgeFamily.WeightMoved]!!
-        assertEquals("Reach 5 kg for the next badge.", captionFor(weight, UnitSystem.Metric))
-        assertEquals("Reach 11 lb for the next badge.", captionFor(weight, UnitSystem.Imperial))
+        assertEquals(phrase(R.string.progress_badge_caption_weight, "5", "kg"), captionFor(weight, UnitSystem.Metric))
+        assertEquals(phrase(R.string.progress_badge_caption_weight, "11", "lb"), captionFor(weight, UnitSystem.Imperial))
 
         val longest = groups(fasts = listOf(fast(17)))[BadgeFamily.LongestFast]!!
-        assertEquals("A 24h fast earns the next badge.", captionFor(longest, UnitSystem.Metric))
+        assertEquals(phrase(R.string.progress_badge_caption_fast, "24h"), captionFor(longest, UnitSystem.Metric))
     }
 }

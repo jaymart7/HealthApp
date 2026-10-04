@@ -497,4 +497,117 @@
     <string name="progress_supplements_average">Average taken</string>
     <string name="progress_supplements_full_days">Full days</string>
     <string name="progress_supplements_days_logged">Days logged</string>
+
+    <!-- catchUpDateLabel() — the supplement catch-up card's day. -->
+    <string name="progress_catchup_today">Today</string>
+    <string name="progress_catchup_yesterday">Yesterday</string>
+
+    <!-- Badge captions and the dots' descriptions. -->
+    <string name="progress_badge_caption_all">Every badge earned.</string>
+    <string name="progress_badge_caption_first">Your first %1$s earns a badge.</string>
+    <string name="progress_badge_caption_fast">A %1$s fast earns the next badge.</string>
+    <string name="progress_badge_caption_weight">Reach %1$s %2$s for the next badge.</string>
+    <plurals name="progress_badge_caption_more_day">
+        <item quantity="one">%1$d more day to your %2$d-day badge.</item>
+        <item quantity="other">%1$d more days to your %2$d-day badge.</item>
+    </plurals>
+    <plurals name="progress_badge_caption_more_workout">
+        <item quantity="one">%1$d more workout to your %2$d-workout badge.</item>
+        <item quantity="other">%1$d more workouts to your %2$d-workout badge.</item>
+    </plurals>
+    <plurals name="progress_badge_caption_more_fast">
+        <item quantity="one">%1$d more fast to your %2$d-fast badge.</item>
+        <item quantity="other">%1$d more fasts to your %2$d-fast badge.</item>
+    </plurals>
+    <plurals name="progress_badge_caption_more_photo">
+        <item quantity="one">%1$d more photo to your %2$d-photo badge.</item>
+        <item quantity="other">%1$d more photos to your %2$d-photo badge.</item>
+    </plurals>
+    <string name="progress_badge_noun_day">day</string>
+    <string name="progress_badge_noun_workout">workout</string>
+    <string name="progress_badge_noun_fast">fast</string>
+    <string name="progress_badge_noun_hour">hour</string>
+    <string name="progress_badge_noun_photo">photo</string>
+    <string name="progress_badge_desc_weight">%1$s %2$s badge</string>
+    <string name="progress_badge_desc_day">%1$s-day badge</string>
+    <string name="progress_badge_desc_workout">%1$s-workout badge</string>
+    <string name="progress_badge_desc_fast">%1$s-fast badge</string>
+    <string name="progress_badge_desc_hour">%1$s-hour badge</string>
+    <string name="progress_badge_desc_photo">%1$s-photo badge</string>
+
+    <!-- summarize() — each subject card's unit and footnote on the overview. A figure and its unit
+         symbol arrive as one argument ("0.4 kg"), already formatted. -->
+    <string name="progress_summary_weight_week">%1$s this week · %2$s</string>
+    <string name="progress_summary_one_reading">One reading so far</string>
+    <string name="progress_summary_trend_steady">steady</string>
+    <string name="progress_summary_trend_on_track">on track</string>
+    <string name="progress_summary_trend_off_track">off track</string>
+    <plurals name="progress_summary_shots">
+        <item quantity="one">shot</item>
+        <item quantity="other">shots</item>
+    </plurals>
+    <string name="progress_summary_photos_arc">%1$s over %2$s · last one %3$s</string>
+    <plurals name="progress_summary_over_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="progress_summary_last_one">Last one %1$s</string>
+    <string name="progress_summary_ago_today">today</string>
+    <string name="progress_summary_ago_yesterday">yesterday</string>
+    <plurals name="progress_summary_ago_days">
+        <item quantity="one">%d day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <string name="progress_summary_unit_body_fat">% body fat</string>
+    <string name="progress_summary_unit_part">%1$s %2$s</string>
+    <string name="progress_summary_part_chest">chest</string>
+    <string name="progress_summary_part_waist">waist</string>
+    <string name="progress_summary_part_hips">hips</string>
+    <string name="progress_summary_part_arms">arms</string>
+    <string name="progress_summary_part_thighs">thighs</string>
+    <string name="progress_summary_part_body_fat">body fat</string>
+    <string name="progress_summary_measure_delta">%1$s · %2$s</string>
+    <plurals name="progress_summary_parts">
+        <item quantity="one">%d part</item>
+        <item quantity="other">%d parts</item>
+    </plurals>
+    <string name="progress_summary_unit_kcal_avg">kcal avg</string>
+    <string name="progress_summary_days_logged_of">%1$d of %2$d days logged</string>
+    <string name="progress_summary_kcal_under">%1$d kcal under target</string>
+    <string name="progress_summary_kcal_over">%1$d kcal over target</string>
+    <string name="progress_summary_on_target">On target</string>
+    <string name="progress_summary_unit_glasses_avg">glasses avg</string>
+    <string name="progress_summary_water_goal_days">%1$d of %2$d days hit goal</string>
+    <string name="progress_summary_unit_avg">avg</string>
+    <string name="progress_summary_fast_goals">%1$d of %2$d goals hit</string>
+    <plurals name="progress_summary_days_logged">
+        <item quantity="one">%d day logged</item>
+        <item quantity="other">%d days logged</item>
+    </plurals>
+    <string name="progress_summary_unit_steps">steps</string>
+    <string name="progress_summary_steps_goal">Daily average · %1$d of %2$d hit goal</string>
+    <plurals name="progress_summary_workouts">
+        <item quantity="one">workout</item>
+        <item quantity="other">workouts</item>
+    </plurals>
+    <string name="progress_summary_lifted">Lifted %1$s</string>
+    <plurals name="progress_summary_watch_nights">
+        <item quantity="one">From your watch · %d night</item>
+        <item quantity="other">From your watch · %d nights</item>
+    </plurals>
+    <string name="progress_summary_unit_cycle_day">day of cycle</string>
+    <string name="progress_summary_avg_cycle">Average cycle %1$d days</string>
+    <string name="progress_summary_unit_bpm_avg">bpm avg</string>
+    <string name="progress_summary_lowest_bpm">Lowest %1$d bpm</string>
+    <string name="progress_summary_from_watch">From your watch</string>
+    <string name="progress_summary_unit_mmhg_avg">mmHg avg</string>
+    <plurals name="progress_summary_readings">
+        <item quantity="one">%d reading</item>
+        <item quantity="other">%d readings</item>
+    </plurals>
+    <string name="progress_summary_badges_of">of %1$d earned</string>
+    <plurals name="progress_summary_families">
+        <item quantity="one">%d family</item>
+        <item quantity="other">%d families</item>
+    </plurals>
 </resources>

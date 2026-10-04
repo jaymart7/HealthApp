@@ -3,6 +3,7 @@ package ph.mart.healthapp.reminder
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import java.util.Calendar
@@ -32,10 +33,9 @@ const val KEY_REMINDER = "reminder"
  * Profile switches already promise in their sublabels (`ReminderKind` in `:feature:profile`):
  * meals 3x daily, weigh-in Monday 8:00, photos every 2 weeks.
  *
- * [title] and [body] stay in Kotlin, deliberately: they are fields on an enum that the
- * scheduler reads without a composition, and the localization pass left them where they are
- * rather than growing a resolver for a table this small. Move them together with the enum, or
- * not at all.
+ * [title] and [body] are resources, resolved by [ReminderWorker] with its own Context at the
+ * moment it posts — so a notification speaks whatever language the app is in then, not the one
+ * it was in when the reminder was booked.
  *
  * [mealType] is set only on the three meal reminders, [checksWater] only on the two water ones,
  * [checksSupplements] only on the supplement one, [checksPlan] only on the training one and
@@ -47,8 +47,8 @@ enum class Reminder(
     val hour: Int,
     /** [Calendar.MONDAY] etc. for a weekly reminder; null when any day will do. */
     val dayOfWeek: Int?,
-    val title: String,
-    val body: String,
+    @StringRes val title: Int,
+    @StringRes val body: Int,
     val tab: TopLevelDestination,
     val mealType: MealType?,
     val checksWater: Boolean = false,
@@ -65,25 +65,25 @@ enum class Reminder(
      */
     val action: ShortcutAction? = null,
 ) {
-    Breakfast(1, 8, null, "Breakfast logged?", "Add it while you remember the portions.", TopLevelDestination.Food, MealType.Breakfast),
-    Lunch(1, 13, null, "Lunch logged?", "A quick entry keeps today's macros honest.", TopLevelDestination.Food, MealType.Lunch),
-    Dinner(1, 19, null, "Dinner logged?", "Close out the day's diary.", TopLevelDestination.Food, MealType.Dinner),
-    WeighIn(7, 8, Calendar.MONDAY, "Weigh-in day", "Same time, same scale — log this week's weight.", TopLevelDestination.Progress, null),
-    Photo(14, 9, null, "Progress photo time", "Two weeks on. Take the next one in the same pose.", TopLevelDestination.Progress, null),
-    WaterMidday(1, 11, null, "Water check", "Halfway through the day — how many glasses so far?", TopLevelDestination.Home, null, checksWater = true),
-    WaterAfternoon(1, 16, null, "Water check", "Still time to hit today's water goal.", TopLevelDestination.Home, null, checksWater = true),
+    Breakfast(1, 8, null, R.string.app_reminder_breakfast_title, R.string.app_reminder_breakfast_body, TopLevelDestination.Food, MealType.Breakfast),
+    Lunch(1, 13, null, R.string.app_reminder_lunch_title, R.string.app_reminder_lunch_body, TopLevelDestination.Food, MealType.Lunch),
+    Dinner(1, 19, null, R.string.app_reminder_dinner_title, R.string.app_reminder_dinner_body, TopLevelDestination.Food, MealType.Dinner),
+    WeighIn(7, 8, Calendar.MONDAY, R.string.app_reminder_weigh_in_title, R.string.app_reminder_weigh_in_body, TopLevelDestination.Progress, null),
+    Photo(14, 9, null, R.string.app_reminder_photo_title, R.string.app_reminder_photo_body, TopLevelDestination.Progress, null),
+    WaterMidday(1, 11, null, R.string.app_reminder_water_title, R.string.app_reminder_water_midday_body, TopLevelDestination.Home, null, checksWater = true),
+    WaterAfternoon(1, 16, null, R.string.app_reminder_water_title, R.string.app_reminder_water_afternoon_body, TopLevelDestination.Home, null, checksWater = true),
     // Appended rather than slotted in beside the other daily ones: [ordinal] is the notification
     // id, so inserting mid-list would re-point every notification already pending on a device.
-    Supplements(1, 9, null, "Supplements", "Tick off what you've taken today.", TopLevelDestination.Home, null, checksSupplements = true),
+    Supplements(1, 9, null, R.string.app_reminder_supplements_title, R.string.app_reminder_supplements_body, TopLevelDestination.Home, null, checksSupplements = true),
     // Appended for [Supplements]' reason — [ordinal] is the notification id. Late afternoon: early
     // enough to still train today, late enough that a morning session has already been logged.
-    Workout(1, 17, null, "Training day", "Today's routine is on the plan.", TopLevelDestination.Home, null, checksPlan = true),
+    Workout(1, 17, null, R.string.app_reminder_workout_title, R.string.app_reminder_workout_body, TopLevelDestination.Home, null, checksPlan = true),
     // Appended for [Supplements]' reason once more — [ordinal] is the notification id. Sunday
     // 19:00: late enough that the week is over, early enough to still be read.
     WeeklyRecap(
         7, 19, Calendar.SUNDAY,
-        "Your week in review",
-        "Seven days done — see how they went.",
+        R.string.app_reminder_weekly_recap_title,
+        R.string.app_reminder_weekly_recap_body,
         TopLevelDestination.Progress,
         null,
         checksRecap = true,

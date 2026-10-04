@@ -1,8 +1,11 @@
 package ph.mart.healthapp.feature.food.ui.diary.components
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.designsystem.component.formatEpochDay
+import ph.mart.healthapp.feature.food.R
 
 class DiaryDateHeaderTest {
 
@@ -10,19 +13,16 @@ class DiaryDateHeaderTest {
 
     @Test
     fun `the selected day is Today`() {
-        assertEquals("Today", diaryDateLabel(today, today))
+        assertEquals(phrase(R.string.food_today), diaryDateLabel(today, today))
     }
 
     @Test
     fun `one day back is Yesterday`() {
-        assertEquals("Yesterday", diaryDateLabel(today - 1, today))
+        assertEquals(phrase(R.string.food_yesterday), diaryDateLabel(today - 1, today))
     }
 
     @Test
     fun `anything older falls back to a calendar date`() {
-        // Not asserted verbatim: the format follows the device locale.
-        val label = diaryDateLabel(today - 2, today)
-        assertTrue(label, label.any { it.isDigit() })
-        assertTrue(label, label !in setOf("Today", "Yesterday"))
+        assertEquals(Phrase.Raw(formatEpochDay(today - 2)), diaryDateLabel(today - 2, today))
     }
 }

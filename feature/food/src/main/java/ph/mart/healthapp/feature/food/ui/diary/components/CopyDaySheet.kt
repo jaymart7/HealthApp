@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -25,6 +26,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.dailyTotals
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
@@ -57,7 +59,7 @@ internal fun CopyDaySheet(
     AppBottomSheet(
         // Relative where the diary's own header is — "Copy from Yesterday" is the sentence someone
         // would say. Absolute past that, which is what diaryDateLabel already does.
-        title = stringResource(R.string.food_copy_title, diaryDateLabel(source.dateEpochDay, today)),
+        title = stringResource(R.string.food_copy_title, diaryDateLabel(source.dateEpochDay, today).resolve(LocalResources.current)),
         onDismiss = onDismiss,
     ) {
 

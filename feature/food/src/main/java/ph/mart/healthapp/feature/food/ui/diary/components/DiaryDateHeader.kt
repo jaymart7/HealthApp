@@ -24,10 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.Phrase
+import ph.mart.healthapp.core.data.phrase
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.formatEpochDay
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -35,13 +39,12 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.feature.food.R
 
-/** "Today" / "Yesterday" / "Aug 27, 2026" — pure, so the two relative cases are testable, and
- * `DiaryDateHeaderTest` asserts both words. That test is what keeps the two of them in Kotlin,
- * the reading `StreakCard`'s `dayCountLabel` and `goalProjectionLine()` got. */
-internal fun diaryDateLabel(epochDay: Long, today: Long): String = when (epochDay) {
-    today -> "Today"
-    today - 1 -> "Yesterday"
-    else -> formatEpochDay(epochDay)
+/** "Today" / "Yesterday" / "Aug 27, 2026" — pure, so `DiaryDateHeaderTest` can hold which of the
+ * three a day gets. */
+internal fun diaryDateLabel(epochDay: Long, today: Long): Phrase = when (epochDay) {
+    today -> phrase(R.string.food_today)
+    today - 1 -> phrase(R.string.food_yesterday)
+    else -> Phrase.Raw(formatEpochDay(epochDay))
 }
 
 /**
@@ -130,7 +133,7 @@ private fun RowScope.DateControls(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(
-                text = diaryDateLabel(selectedDate, today),
+                text = diaryDateLabel(selectedDate, today).resolve(LocalResources.current),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
@@ -177,10 +180,11 @@ private fun RowScope.DateControls(
     // The question the day itself raises, asked where the day is. It carries the day's own words —
     // the label already on screen — so the coach opens knowing which day was meant, and it fills
     // the field rather than sending: the mic's rule, and the reason a mistap costs nothing.
-    val coachQuestion = stringResource(R.string.food_ask_coach_question, diaryDateLabel(selectedDate, today))
+    val dayLabel = diaryDateLabel(selectedDate, today).resolve(LocalResources.current)
+    val coachQuestion = stringResource(R.string.food_ask_coach_question, dayLabel)
     // What the coach's context chip says it is being asked about: the same words as the question,
     // named as a place rather than as a sentence.
-    val coachSource = stringResource(R.string.food_ask_coach_source, diaryDateLabel(selectedDate, today))
+    val coachSource = stringResource(R.string.food_ask_coach_source, dayLabel)
     IconButton(onClick = { onAskCoach(coachQuestion, coachSource) }, modifier = Modifier.size(48.dp)) {
         Icon(
             imageVector = AppIcons.AiSparkle,

@@ -34,6 +34,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -46,6 +47,7 @@ import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.food.MealType
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
@@ -351,7 +353,7 @@ private fun HistoryList(
         var index = 0
         bands.forEach { band ->
             index++
-            item(key = "band-${band.days.first().entries.first().id}") { HistoryAgeBand(label = band.label) }
+            item(key = "band-${band.days.first().entries.first().id}") { HistoryAgeBand(label = band.label.resolve(LocalResources.current)) }
             band.days.forEach { day ->
                 val headerIndex = index++
                 stickyHeader(key = "day-${day.entries.first().id}") {
