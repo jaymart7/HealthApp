@@ -14,9 +14,13 @@ import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.Period
+import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlin.reflect.KClass
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -168,16 +172,33 @@ internal class HealthConnectSourceImpl(private val context: Context) : HealthCon
             )
         }
 
-    /** Raw records, folded to daily totals by `writeSteps` — the cloud's buckets, locally. */
+    /**
+     * One bucket per local day — the cloud's buckets, locally — from Health Connect's aggregate,
+     * never from raw records. A phone and a watch both write `StepsRecord`s for the same walk, and
+     * summing the raw rows counted it once per writer; only the aggregate applies Health Connect's
+     * own data-source priority. The window opens on a local midnight (`stepsWindowStart`), so the
+     * day slices land on the same keys `epochDayOf` gives them.
+     */
     @RequiresApi(Build.VERSION_CODES.P)
-    private suspend fun readSteps(client: HealthConnectClient, sinceMillis: Long): List<RemoteSteps> =
-        page(client, StepsRecord::class, sinceMillis).map { record ->
-            RemoteSteps(
-                remoteName = connectName(record.metadata.id),
-                timeMillis = record.startTime.toEpochMilli(),
-                count = record.count.toInt(),
-            )
+    private suspend fun readSteps(client: HealthConnectClient, sinceMillis: Long): List<RemoteSteps> {
+        val zone = ZoneId.systemDefault()
+        val days = client.aggregateGroupByPeriod(
+            AggregateGroupByPeriodRequest(
+                metrics = setOf(StepsRecord.COUNT_TOTAL),
+                timeRangeFilter = TimeRangeFilter.between(
+                    LocalDateTime.ofInstant(Instant.ofEpochMilli(sinceMillis), zone),
+                    LocalDateTime.now(zone),
+                ),
+                timeRangeSlicer = Period.ofDays(1),
+            ),
+        )
+        return days.mapNotNull { day ->
+            val count = day.result[StepsRecord.COUNT_TOTAL] ?: return@mapNotNull null
+            val start = day.startTime.atZone(zone).toInstant().toEpochMilli()
+            // Steps record no link, so the name is a label only — see `writeSteps`.
+            RemoteSteps(remoteName = connectName("steps:$start"), timeMillis = start, count = count.toInt())
         }
+    }
 
     /**
      * One [RemoteHeart] per *sample*, so `aggregateHeartByDay` folds these exactly as it folds the

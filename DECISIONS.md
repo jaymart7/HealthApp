@@ -5191,6 +5191,14 @@ providers for the same six types, and two writers for one table is the failure t
   `estimatedSteps()` price an imported session — the same two functions the diary's own exercise
   sheet seeds, and both stay editable on the row. *ponytail: one `aggregate()` per session reads
   the real figure at the cost of a call per workout; worth it only if the estimates read wrong.*
+- **Daily steps come from `aggregateGroupByPeriod`, never from raw `StepsRecord`s.** A phone and a
+  watch both write records for the same walk, and the reader used to page them and sum — so anyone
+  with two step sources saw roughly double, and since steps price `stepsBurnedKcal`, a calorie
+  budget inflated with them. Raw records carry no "this overlaps that" mark; only the aggregate
+  applies Health Connect's own data-source priority. It is not the matcher ruled out above: it is
+  Health Connect's dedup, applied inside one provider, with nothing tolerated. Sliced by
+  `Period.ofDays(1)` over a `LocalDateTime` window that opens on `stepsWindowStart()`'s local
+  midnight, so each slice is one `epochDayOf` key and `stepTotals`/`writeSteps` are untouched.
 - **Read-only, and not getting a write path.** Meals and water still go out over the cloud, so
   `pushNutrition` is untouched, no `WRITE_*` permission is requested and there is no Play
   health-write declaration to file. *ponytail: a windowed read rather than `getChanges(token)` — a
