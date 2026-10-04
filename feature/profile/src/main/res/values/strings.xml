@@ -352,4 +352,8 @@
     <string name="profile_metric_heart">Heart rate</string>
     <string name="profile_metric_blood_pressure">Blood pressure</string>
     <string name="profile_metric_menstruation">Period days</string>
+
+    <!-- Settings → Display: the way into Android's language picker. -->
+    <string name="profile_settings_language_row">Language</string>
+    <string name="profile_settings_language_row_sub">English or Filipino — follows your phone until you choose</string>
 </resources>

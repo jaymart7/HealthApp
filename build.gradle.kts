@@ -115,3 +115,80 @@ tasks.register("checkUiLiterals") {
         }
     }
 }
+
+/** The language this build ships besides English, as its resource folder names it. */
+val translationQualifier = "values-fil"
+
+/**
+ * Fails when a translation and its English drift apart: a key on one side only, a string whose
+ * placeholders differ, or a plural missing a category. Placeholders are the sharp one — a `%1$s`
+ * the English has and the translation lost is a crash at the call site, not a typo.
+ *
+ * Only the forms this app uses count as placeholders (`%s`, `%d`, `%1$s`, `%.1f`, `%%`), so a
+ * literal `"% taken"` is text. Every plural item is held to the placeholders of the English
+ * `other`: a `one` that drops its `%d` is legal Android, but Filipino's `one` covers more numbers
+ * than 1, so it would print the wrong count.
+ */
+tasks.register("checkTranslations") {
+    group = "verification"
+    description = "Fails if a translation's keys, placeholders or plurals differ from the English."
+    // Copied into locals: `doLast` cannot capture a script property and stay configuration-cacheable.
+    val resDirs = localizedModules.associateWith { file("$it/src/main/res") }
+    val qualifier = translationQualifier
+    doLast {
+        val placeholder = Regex("""%(\d+\$)?,?(\.\d+)?[sdf]|%%""")
+        // name -> (kind, quantity -> text); a <string> is stored under the quantity "".
+        fun read(file: File): Map<String, Pair<String, Map<String, String>>> {
+            if (!file.exists()) return emptyMap()
+            val root = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder().parse(file).documentElement
+            val out = linkedMapOf<String, Pair<String, Map<String, String>>>()
+            val nodes = root.childNodes
+            for (i in 0 until nodes.length) {
+                val el = nodes.item(i) as? org.w3c.dom.Element ?: continue
+                if (el.getAttribute("translatable") == "false") continue
+                val name = el.getAttribute("name")
+                when (el.tagName) {
+                    "string" -> out[name] = "string" to mapOf("" to el.textContent)
+                    "plurals" -> {
+                        val items = el.getElementsByTagName("item")
+                        out[name] = "plurals" to (0 until items.length).associate {
+                            val item = items.item(it) as org.w3c.dom.Element
+                            item.getAttribute("quantity") to item.textContent
+                        }
+                    }
+                }
+            }
+            return out
+        }
+        fun marks(text: String) = placeholder.findAll(text).map { it.value }.sorted().toList()
+        val problems = resDirs.flatMap { (where, res) ->
+            val english = read(File(res, "values/strings.xml"))
+            if (english.isEmpty()) return@flatMap emptyList<String>()
+            val translated = read(File(res, "$qualifier/strings.xml"))
+            buildList {
+                (english.keys - translated.keys).forEach { add("$where: missing $it") }
+                (translated.keys - english.keys).forEach { add("$where: extra $it") }
+                for (key in english.keys.intersect(translated.keys)) {
+                    val (kind, en) = english.getValue(key)
+                    val (trKind, tr) = translated.getValue(key)
+                    if (kind != trKind) {
+                        add("$where: $key is a $kind in English and a $trKind here")
+                    } else if (kind == "plurals") {
+                        listOf("one", "other").filter { it !in tr }
+                            .forEach { add("$where: $key has no quantity=\"$it\"") }
+                        val want = marks(en.getValue("other"))
+                        tr.forEach { (quantity, text) ->
+                            if (marks(text) != want) add("$where: $key[$quantity] placeholders ${marks(text)}, English $want")
+                        }
+                    } else if (marks(en.getValue("")) != marks(tr.getValue(""))) {
+                        add("$where: $key placeholders ${marks(tr.getValue(""))}, English ${marks(en.getValue(""))}")
+                    }
+                }
+            }
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException("Translation drift (${problems.size}):\n" + problems.joinToString("\n"))
+        }
+    }
+}

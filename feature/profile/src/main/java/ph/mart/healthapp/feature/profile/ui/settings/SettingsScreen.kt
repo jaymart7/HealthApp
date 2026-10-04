@@ -1,5 +1,9 @@
 package ph.mart.healthapp.feature.profile.ui.settings
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -47,6 +51,7 @@ import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsAppearan
 import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsConnectionsSection
 import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsDataSection
 import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsHomeLayoutSection
+import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsLanguageSection
 import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsRemindersSection
 import ph.mart.healthapp.feature.profile.ui.settings.components.SettingsUnitsSection
 import ph.mart.healthapp.feature.profile.ui.shared.components.SectionHeader
@@ -182,6 +187,18 @@ fun SettingsScreen(
         onExportCsv = viewModel::buildCsvExport,
         onImport = { importLauncher.launch(arrayOf("application/json")) },
         onOpenHomeLayout = onOpenHomeLayout,
+        onOpenLanguage = {
+            // Guarded for RemindersScreen's reason: a stripped OEM build may resolve neither page.
+            runCatching {
+                context.startActivity(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Intent(Settings.ACTION_APP_LOCALE_SETTINGS, Uri.fromParts("package", context.packageName, null))
+                    } else {
+                        Intent(Settings.ACTION_LOCALE_SETTINGS)
+                    },
+                )
+            }
+        },
         onOpenReminders = onOpenReminders,
         onOpenHealth = onOpenHealth,
     )
@@ -202,6 +219,7 @@ private fun SettingsContent(
     onExportCsv: () -> Unit,
     onImport: () -> Unit,
     onOpenHomeLayout: () -> Unit,
+    onOpenLanguage: () -> Unit,
     onOpenReminders: () -> Unit,
     onOpenHealth: () -> Unit,
 ) {
@@ -230,6 +248,7 @@ private fun SettingsContent(
                 onSelectMascotPalette = onSelectMascotPalette,
             )
             SettingsHomeLayoutSection(onOpenHomeLayout = onOpenHomeLayout)
+            SettingsLanguageSection(onOpenLanguage = onOpenLanguage)
 
             SectionHeader(label = stringResource(R.string.profile_settings_notifications))
             SettingsRemindersSection(onOpenReminders = onOpenReminders)
@@ -280,6 +299,7 @@ private fun SettingsScreenPreview() {
             onExportCsv = {},
             onImport = {},
             onOpenHomeLayout = {},
+            onOpenLanguage = {},
             onOpenReminders = {},
             onOpenHealth = {},
         )

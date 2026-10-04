@@ -62,6 +62,19 @@ internal fun SettingsHomeLayoutSection(onOpenHomeLayout: () -> Unit, modifier: M
     )
 }
 
+/** The way into the app's language. Android owns the picker — the per-app setting on 13 and up,
+ * the phone's own language below — so this row only opens it. */
+@Composable
+internal fun SettingsLanguageSection(onOpenLanguage: () -> Unit, modifier: Modifier = Modifier) {
+    SettingsNavRow(
+        label = stringResource(R.string.profile_settings_language_row),
+        sublabel = stringResource(R.string.profile_settings_language_row_sub),
+        icon = AppIcons.Language,
+        onClick = onOpenLanguage,
+        modifier = modifier,
+    )
+}
+
 /** The way into the eight reminder switches, which are a screen of their own rather than a card
  * on this one. The sublabel is a static description of what is in there, not a count of what is
  * on — see [SettingsNavRow]. */

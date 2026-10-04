@@ -67,6 +67,7 @@ import androidx.compose.material.icons.outlined.Grass
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.MonitorWeight
@@ -114,6 +115,7 @@ object AppIcons {
     val Book: ImageVector = Icons.AutoMirrored.Outlined.MenuBook
     val Bookmark: ImageVector = Icons.Filled.BookmarkAdd
     val Camera: ImageVector = Icons.Filled.PhotoCamera
+    val Language: ImageVector = Icons.Outlined.Language
     val Chair: ImageVector = Icons.Outlined.Chair
     val Check: ImageVector = Icons.Filled.Check
     /** The answered state of a selectable card — [Check] is the bare mark, this is the mark that
