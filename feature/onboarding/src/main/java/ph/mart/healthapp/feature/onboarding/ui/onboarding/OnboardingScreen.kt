@@ -70,6 +70,9 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
     val state = rememberOnboardingState()
     val context = LocalContext.current
     var pending by remember { mutableStateOf<Int?>(null) }
+    // Bumped by every choice, so a second choice inside the hold restarts it instead of being
+    // carried off by the first one's timer before its check has landed.
+    var choices by remember { mutableIntStateOf(0) }
     var announcement by remember { mutableStateOf("") }
     // Which way the next transition slides. Read during the step change, so it is set first.
     var direction by remember { mutableIntStateOf(1) }
@@ -90,7 +93,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
         }
     }
 
-    LaunchedEffect(pending) {
+    LaunchedEffect(pending, choices) {
         val next = pending ?: return@LaunchedEffect
         delay(SELECTION_HOLD_MS)
         goTo(next)
@@ -138,6 +141,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
                     onSelect = { option ->
                         state.form = state.form.copy(goal = option.goal).clearOverrides()
                         announce(option.title, 2)
+                        choices++
                         pending = 2
                     },
                     onBack = { goTo(0) },
@@ -156,6 +160,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
                     onSelect = { option ->
                         state.form = state.form.copy(activityLevel = option.level).clearOverrides()
                         announce(option.title, 4)
+                        choices++
                         pending = 4
                     },
                     onBack = { goTo(2) },
