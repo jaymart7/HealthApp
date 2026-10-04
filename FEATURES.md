@@ -760,7 +760,12 @@ each one is argued in `CLAUDE.md`.
   handover. The same watch feeds both with no shared identifier, so a tolerance-based matcher
   would be wrong in both directions.
 - **Dynamic color (Material You) is off**, and `Color.kt` is frozen.
-- **No hard deletes** anywhere except an unfinished fast and a superseded workout's sets.
+- **No hard deletes of anything logged by hand**, except an unfinished fast and a superseded
+  workout's sets. The other `DELETE`s remove rows that have no tombstone column, and only when the
+  user asked for them gone: imported rows on a Google Health disconnect or a Health Connect
+  handover (`weight_entry`, `sleep_day`, and `step_day`/`heart_day` cleared in full), and an
+  import's replace-in-full (`supplement`, `supplement_day`, `fast_session`, `strength_set`). Each
+  DAO says why beside its `DELETE`.
 - **The watch has no database**, and the tile never writes.
 - **No planned meals** — the diary never steps past today.
 - **Log weight, add photo and manual log exercise on the FAB.** The sheet is one AI field plus
