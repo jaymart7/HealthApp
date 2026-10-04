@@ -15,6 +15,7 @@ import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.UsageMetadata
 import com.google.firebase.ai.type.thinkingConfig
+import java.util.Locale
 import kotlinx.coroutines.delay
 
 /**
@@ -136,4 +137,24 @@ internal fun logAiUsage(where: String, usage: UsageMetadata?) {
         "$where: in=${usage.promptTokenCount} cached=${usage.cachedContentTokenCount} " +
             "thoughts=${usage.thoughtsTokenCount} out=${usage.candidatesTokenCount}",
     )
+}
+
+/**
+ * The one line that tells the model which language the user reads, or null for English — the
+ * prompts themselves stay English either way, since that is what the model reads best.
+ *
+ * Read per request, never at model construction: the repositories are Koin singletons and outlive a
+ * per-app language change, so a line baked into a `systemInstruction` would keep answering in the
+ * language the app started in.
+ *
+ * Portion units and saved-food names are carved out by name because both are *compared*:
+ * `portionStep` switches on "g"/"cup"/"serving", and `preferMyFoods` reprices a row only when its
+ * name matches a saved food's exactly. A translated unit or name is a silently broken stepper, or
+ * an estimate where the label's own figures should have been.
+ */
+internal fun replyLanguageLine(locale: Locale = Locale.getDefault()): String? {
+    if (locale.language == "en") return null
+    val language = locale.getDisplayLanguage(Locale.ENGLISH)
+    return "Write everything the user will read — sentences, questions, food and meal names — in " +
+        "$language. Keep every portion unit and the name of any saved food exactly as given, in English."
 }

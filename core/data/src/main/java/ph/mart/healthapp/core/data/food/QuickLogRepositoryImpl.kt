@@ -16,6 +16,7 @@ import ph.mart.healthapp.core.data.exercise.PARSED_EXERCISE_SCHEMA
 import ph.mart.healthapp.core.data.exercise.readActivity
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.generate
+import ph.mart.healthapp.core.data.replyLanguageLine
 
 /**
  * [MealParseRepositoryImpl]'s shape with both parses' schemas nested in one reply: the food items
@@ -56,10 +57,14 @@ internal class QuickLogRepositoryImpl(
         val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
         val mine = foodRepository.observeMyFoods().first().namedIn(said)
         val prompt = promptFor(turns, mayAsk, hasPhoto = photo != null, mine = mine)
+        val language = replyLanguageLine()
         val response = if (photo == null) {
-            model.generate("quick log", content { text(prompt) })
+            model.generate("quick log", content { text(prompt); language?.let { text(it) } })
         } else {
-            photoModel.generate("quick log", content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(prompt) })
+            photoModel.generate(
+                "quick log",
+                content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(prompt); language?.let { text(it) } },
+            )
         }
         val body = JSONObject(response.text ?: "{}")
         quickLogResult(

@@ -10,6 +10,7 @@ import kotlinx.coroutines.CancellationException
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.generate
+import ph.mart.healthapp.core.data.replyLanguageLine
 
 /**
  * A plate in, the foods on it out.
@@ -79,7 +80,10 @@ internal class FoodRecognitionRepositoryImpl : FoodRecognitionRepository {
     )
 
     override suspend fun recognize(photo: Bitmap): RecognitionResult = try {
-        val response = model.generate("photo recognize", content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(PROMPT) })
+        val response = model.generate(
+            "photo recognize",
+            content { image(photo.scaledToEdge(PLATE_PHOTO_EDGE)); text(PROMPT); replyLanguageLine()?.let { text(it) } },
+        )
         val json = response.text
         val foods = parseRecognizedFoods(json).loggable()
         if (foods.isEmpty()) {

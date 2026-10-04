@@ -9,6 +9,7 @@ import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.generate
+import ph.mart.healthapp.core.data.replyLanguageLine
 
 /** Three foods with ten fields each. [fitting] rejects whatever gets past it, but capping here is
  * cheaper than paying for a list that will be thrown away. */
@@ -50,7 +51,7 @@ internal class MealIdeaRepositoryImpl : MealIdeaRepository {
     )
 
     override suspend fun ideas(request: MealIdeaRequest): MealIdeaResult = try {
-        val response = model.generate("meal ideas", content { text(promptFor(request)) })
+        val response = model.generate("meal ideas", content { text(promptFor(request)); replyLanguageLine()?.let { text(it) } })
         val ideas = parse(response.text).fitting(request.remainingKcal)
         // An empty list is a failure, not an answer: the screen's fallback — the user's own foods —
         // is better than a heading over nothing.

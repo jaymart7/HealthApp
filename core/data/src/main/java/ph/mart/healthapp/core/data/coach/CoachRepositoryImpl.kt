@@ -36,6 +36,7 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
 import ph.mart.healthapp.core.data.progress.fromDisplay
 import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.data.recap.REPORT_DAYS
+import ph.mart.healthapp.core.data.replyLanguageLine
 import ph.mart.healthapp.core.data.supplement.SupplementRepository
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.logAiUsage
@@ -154,8 +155,11 @@ internal class CoachRepositoryImpl(
         val chat = model.startChat(history = history.asHistory())
         val raw = StringBuilder()
         // The context is a part of this message only: history is rebuilt from Room with the bare
-        // question, so an old turn never carries old numbers and the prefix stays append-only.
-        var message: Content = content(role = "user") { text(context); text(question) }
+        // question, so an old turn never carries old numbers and the prefix stays append-only. The
+        // language line rides here for the same reason, once per question: the tool rounds below
+        // continue this chat, so it stays in view without a text part beside a function response.
+        val language = replyLanguageLine()
+        var message: Content = content(role = "user") { text(context); language?.let { text(it) }; text(question) }
         // The window a `show_report` round asked for, carried to `finish` and written on the
         // answer row. Null on every other turn, which is nearly all of them.
         var reportDays: Int? = null

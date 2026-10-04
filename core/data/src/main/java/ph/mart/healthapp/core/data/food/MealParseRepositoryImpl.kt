@@ -9,6 +9,7 @@ import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.generate
+import ph.mart.healthapp.core.data.replyLanguageLine
 
 /**
  * JSON out and [org.json.JSONArray] in, the call [MealIdeaRepositoryImpl] makes for the same
@@ -37,7 +38,7 @@ internal class MealParseRepositoryImpl(
         val sentence = text.take(MAX_PARSE_CHARS)
         val mine = foodRepository.observeMyFoods().first().namedIn(sentence)
         val prompt = promptFor(sentence, mine)
-        val response = model.generate("meal parse", content { text(prompt) })
+        val response = model.generate("meal parse", content { text(prompt); replyLanguageLine()?.let { text(it) } })
         val foods = parseRecognizedFoods(response.text).preferMyFoods(mine).loggable()
         // An empty list means the sentence named nothing edible — a real answer with its own
         // screen, not a failure to retry.
