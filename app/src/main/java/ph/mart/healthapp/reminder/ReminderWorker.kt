@@ -5,6 +5,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -44,7 +45,9 @@ class ReminderWorker(
      * Posts if there is anything to say, and then — on every path, including every quiet one and
      * every one that threw — books the next firing. The chain *is* the schedule (see
      * [ReminderScheduler.schedule]), so a run that stayed silent because breakfast was already
-     * logged must still put tomorrow's in the queue, or that reminder stops for good.
+     * logged must still put tomorrow's in the queue, or that reminder stops for good. The two
+     * exceptions are the two ways the user stops it: the switch is off, or `reconcile` cancelled
+     * this run.
      *
      * The re-enqueue is the last statement rather than the first because REPLACE on a unique name
      * cancels whatever is running under it — which is this worker. By here the notification is
@@ -57,12 +60,29 @@ class ReminderWorker(
             ?.let { name -> Reminder.entries.firstOrNull { it.name == name } }
             ?: return Result.success()
 
-        // runCatching, because the re-enqueue below is only unskippable by an *early return* —
+        // Switched off since this run was booked: the chain ends here, unbooked. `reconcile` only
+        // cancels when the enabled set *moves*, so a chain that slipped past its one cancel would
+        // otherwise keep firing a reminder the user turned off until the next cold start.
+        if (isSwitchedOff(reminder)) return Result.success()
+
+        // Caught, because the re-enqueue below is only unskippable by an *early return* —
         // shouldNotify does seven repository reads, and a throw from any of them leaves doWork
         // via Result.failure(), which drops the unique work. The chain IS the schedule, so that
         // is the same death the predicate was extracted to prevent, one path over. A day this
         // worker cannot read is a day it stays quiet about, and tomorrow still gets booked.
-        if (runCatching { shouldNotify(reminder) }.getOrDefault(false)) {
+        //
+        // A cancel is rethrown, never caught with the rest: it is `reconcile` switching this
+        // reminder off, and swallowing it walked straight into the REPLACE below and re-booked the
+        // chain it had just cancelled. A system stop needs no re-book either — WorkManager
+        // reschedules stopped work itself.
+        val notify = try {
+            shouldNotify(reminder)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+        if (notify) {
             notify(
                 context,
                 reminder.ordinal,
@@ -76,6 +96,16 @@ class ReminderWorker(
 
         ReminderScheduler(context).schedule(reminder, ExistingWorkPolicy.REPLACE)
         return Result.success()
+    }
+
+    /** Off by the profile — null counts as off, the reading `reconcile` makes. A read that throws
+     * is *not* off: an unreadable profile must not end a chain the user never touched. */
+    private suspend fun isSwitchedOff(reminder: Reminder): Boolean = try {
+        profileRepository.observeProfile().first()?.let { !reminder.enabledIn(it) } ?: true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        false
     }
 
     /** Every reason to stay quiet, in one predicate — extracted from [doWork] so the reschedule

@@ -2352,11 +2352,20 @@ rather than needing a counter patched.
   on some later app start. Pulling every quiet-day check out into `shouldNotify` closed the
   `return` route. It did not close the throwing route — the predicate makes seven repository reads,
   and an exception out of any of them leaves `doWork` as `Result.failure()`, dropping the unique
-  work just as surely. `runCatching { shouldNotify(reminder) }.getOrDefault(false)` is the whole
-  fix: a day this worker cannot read is a day it says nothing about, and tomorrow is still booked.
+  work just as surely. Catching the throw and reading it as "stay quiet" is the whole fix: a day
+  this worker cannot read is a day it says nothing about, and tomorrow is still booked.
   Staying quiet rather than posting is the right default — the alternative is a notification fired
   on no information, about a meal that may already be logged. There is no test: reaching it needs a
   throwing repository, and this project has no MockK and no Robolectric on purpose.
+- **…but a cancel is never caught with the throws, and a switched-off reminder ends its own
+  chain.** The fix above shipped as `runCatching`, which catches `CancellationException` too — and a
+  cancel is how `reconcile()` switches a reminder off. A run caught mid-read swallowed it, fell
+  through to `schedule(REPLACE)` and re-booked the chain it had just been cancelled out of; since
+  `reconcile` collects through `distinctUntilChanged`, nothing cancelled it again until a cold
+  start. So the catch rethrows a cancel (a system stop needs no re-book — WorkManager reschedules
+  stopped work itself), and `doWork` first reads the switch: off — or no profile, `reconcile`'s own
+  reading — returns without booking. The chain no longer depends on catching its one cancel. A
+  profile read that *throws* is not "off", for the first entry's reason.
 
 - **Only the water reminder gets an action button, and answering it cancels it.** `addGlass()` is a
   single unambiguous write already shared with the widget and the watch, so a fourth surface caps
