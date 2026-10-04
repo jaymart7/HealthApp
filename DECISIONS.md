@@ -5337,6 +5337,14 @@ Connect.
   when there's no night rather than rendering a zero. Progress's Sleep tab windows the series
   **anchored to today**, like mood and unlike weight: a sparse series headed "1M" has to show the
   last 30 days with their gaps intact, not the 30 days around whenever the watch last synced.
+- **A day's `sleep_day` row is its longest session, not its latest.** The row is keyed by the day
+  a session *ended* and sessions arrive oldest first, so a 15:00 nap used to overwrite the night
+  that ended at 07:00 — Home's "last night" and the Sleep chart then read half an hour.
+  `RemoteSleep.replaces()` keeps the longer session; the same session re-synced (same start) always
+  lands, so a provider's corrected figure is never refused for having shrunk. A session that loses
+  still records its link, so it is not fetched again. Both providers share `writeSleepNight`, so
+  this holds for Health Connect and the cloud alike. *ponytail: a night a tracker splits in two
+  keeps the longer half; summing the day's non-overlapping sessions is the upgrade path.*
 - **The disclosure screen is a screen, not a settings row.** It renders from
   `HealthDisclosurePanel` in `:core:designsystem` because onboarding (step 5 of 6) and Profile →
   Connections both show it, and `connect()` is the only path from it to Google's consent prompt.

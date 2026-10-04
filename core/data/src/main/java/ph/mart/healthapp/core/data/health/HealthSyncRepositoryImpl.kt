@@ -408,17 +408,22 @@ internal class HealthSyncRepositoryImpl(
         write = ::writeSleepNight,
     )
 
-    /** Keyed by the day the night ended — see [SleepDayEntity]. Shared by both providers. */
+    /** Keyed by the day the night ended — see [SleepDayEntity]. Shared by both providers.
+     *
+     * Returns the day whether or not the row moved, so a session that lost to the night already
+     * held still records its link and is not fetched again — see [replaces]. */
     private suspend fun writeSleepNight(remote: RemoteSleep): Long {
         val day = epochDayOf(remote.endMillis)
-        sleepDao.upsert(
-            SleepDayEntity(
-                date = day,
-                minutesAsleep = remote.minutesAsleep,
-                startMillis = remote.timeMillis,
-                endMillis = remote.endMillis,
-            ),
-        )
+        if (remote.replaces(sleepDao.observeForDate(day).first())) {
+            sleepDao.upsert(
+                SleepDayEntity(
+                    date = day,
+                    minutesAsleep = remote.minutesAsleep,
+                    startMillis = remote.timeMillis,
+                    endMillis = remote.endMillis,
+                ),
+            )
+        }
         return day
     }
 
@@ -881,3 +886,17 @@ internal class HealthSyncRepositoryImpl(
         }
     }
 }
+
+/**
+ * Whether this session takes the day's one `sleep_day` row from the one [held] there.
+ *
+ * The row is the *night*, and sessions arrive oldest first — so without this, an afternoon nap that
+ * ended the same day replaced the seven hours that ended at 07:00, and Home's "last night" and the
+ * Sleep chart read the nap. The longer session keeps the row; the same session re-synced (same
+ * start) always does, so a provider's corrected figure still lands even when it shrank.
+ *
+ * ponytail: a night a tracker splits into two sessions keeps only the longer half. Summing the
+ * day's non-overlapping sessions is the upgrade path if a split night ever reads short.
+ */
+internal fun RemoteSleep.replaces(held: SleepDayEntity?): Boolean =
+    held == null || held.startMillis == timeMillis || minutesAsleep >= held.minutesAsleep

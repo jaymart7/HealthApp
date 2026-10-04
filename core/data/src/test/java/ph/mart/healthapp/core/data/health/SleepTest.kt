@@ -1,8 +1,11 @@
 package ph.mart.healthapp.core.data.health
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import ph.mart.healthapp.core.data.health.local.SleepDayEntity
 import ph.mart.healthapp.core.data.progress.ChartRange
 
 class SleepTest {
@@ -46,5 +49,30 @@ class SleepTest {
         assertEquals("7h 12m", formatDuration(432))
         assertEquals("45m", formatDuration(45))
         assertEquals(SleepNight(1, 432).formatDuration(), formatDuration(432))
+    }
+
+    private val night = SleepDayEntity(date = 1, minutesAsleep = 420, startMillis = 1_000L, endMillis = 2_000L)
+
+    private fun session(start: Long, minutes: Int) =
+        RemoteSleep(remoteName = "s$start", timeMillis = start, endMillis = start + 1, minutesAsleep = minutes)
+
+    @Test
+    fun `the first session of a day takes the row`() {
+        assertTrue(session(start = 1_000L, minutes = 30).replaces(held = null))
+    }
+
+    @Test
+    fun `a nap ending the same day does not replace the night`() {
+        assertFalse(session(start = 5_000L, minutes = 30).replaces(night))
+    }
+
+    @Test
+    fun `a longer session does replace a shorter one`() {
+        assertTrue(session(start = 5_000L, minutes = 480).replaces(night))
+    }
+
+    @Test
+    fun `the same session re-synced lands even when its figure shrank`() {
+        assertTrue(session(start = night.startMillis, minutes = 400).replaces(night))
     }
 }
