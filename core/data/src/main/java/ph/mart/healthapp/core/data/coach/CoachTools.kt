@@ -221,6 +221,27 @@ internal const val MAX_RECIPE_SERVINGS = 20
  * text in English, like every other word the model reads — the user sees `weekdayLabel()`. */
 internal val WEEKDAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 
+/** `create_routine`'s arguments, and the routines screen's describe-it response schema too — one
+ * shape and one [parseCreateRoutine] behind both, so a routine the sheet designs and one the coach
+ * designs are held to the same bounds. `weekdays` is the optional one in both. */
+internal val CREATE_ROUTINE_PARAMETERS = mapOf(
+    "name" to Schema.string(description = "The routine's name, e.g. 'Push day'."),
+    "lifts" to Schema.array(
+        Schema.obj(
+            mapOf(
+                "exercise_name" to Schema.string(description = "The lift, e.g. 'Bench press'."),
+                "sets" to Schema.integer(description = "Sets, 1 to $MAX_ROUTINE_SETS."),
+                "reps" to Schema.integer(description = "Reps per set, 1 to $MAX_ROUTINE_REPS."),
+            ),
+        ),
+        description = "Up to $MAX_ROUTINE_LIFTS lifts, in order.",
+    ),
+    "weekdays" to Schema.array(
+        Schema.enumeration(values = WEEKDAY_NAMES),
+        description = "The weekdays it is planned for, if they said.",
+    ),
+)
+
 /** The two kinds `delete_entry` takes. Schema text, compared against rather than shown. */
 internal const val ENTRY_FOOD = "food"
 internal const val ENTRY_EXERCISE = "exercise"
@@ -636,23 +657,7 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             description = "Propose saving a new workout routine they asked you to design: its lifts " +
                 "with sets and reps, and optionally the weekdays it is planned for. Never a " +
                 "weight or load. Saved only when they confirm.",
-            parameters = mapOf(
-                "name" to Schema.string(description = "The routine's name, e.g. 'Push day'."),
-                "lifts" to Schema.array(
-                    Schema.obj(
-                        mapOf(
-                            "exercise_name" to Schema.string(description = "The lift, e.g. 'Bench press'."),
-                            "sets" to Schema.integer(description = "Sets, 1 to $MAX_ROUTINE_SETS."),
-                            "reps" to Schema.integer(description = "Reps per set, 1 to $MAX_ROUTINE_REPS."),
-                        ),
-                    ),
-                    description = "Up to $MAX_ROUTINE_LIFTS lifts, in order.",
-                ),
-                "weekdays" to Schema.array(
-                    Schema.enumeration(values = WEEKDAY_NAMES),
-                    description = "The weekdays it is planned for, if they said.",
-                ),
-            ),
+            parameters = CREATE_ROUTINE_PARAMETERS,
             optionalParameters = listOf("weekdays"),
         ),
         FunctionDeclaration(
@@ -840,7 +845,7 @@ private fun parseLibraryItems(args: Map<String, JsonElement>): List<SavedMealIte
     }
 }
 
-private fun parseCreateRoutine(args: Map<String, JsonElement>): CoachAction.CreateRoutine? {
+internal fun parseCreateRoutine(args: Map<String, JsonElement>): CoachAction.CreateRoutine? {
     val name = args.libraryName() ?: return null
     val lifts = (args["lifts"] as? JsonArray)?.takeIf { it.size in 1..MAX_ROUTINE_LIFTS }?.map { element ->
         val lift = element as? JsonObject ?: return null

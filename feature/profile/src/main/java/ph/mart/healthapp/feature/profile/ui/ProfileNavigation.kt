@@ -109,7 +109,7 @@ fun EntryProviderScope<NavKey>.profileEntries(
     onOpenSavedMeal: (Long) -> Unit,
     onOpenFood: (String) -> Unit,
     onOpenRoutines: () -> Unit,
-    onNewRoutine: () -> Unit,
+    onBuildFromWorkout: () -> Unit,
     onOpenSupplements: () -> Unit,
     onOpenSupplementScan: () -> Unit,
     onOpenHomeLayout: () -> Unit,
@@ -135,7 +135,7 @@ fun EntryProviderScope<NavKey>.profileEntries(
     entry<FoodLibraryRoute>(metadata = detail) {
         FoodLibraryScreen(onAdd = onAddToLibrary, onOpenSavedMeal = onOpenSavedMeal, onOpenFood = onOpenFood)
     }
-    entry<RoutinesRoute>(metadata = detail) { RoutinesScreen(onNewRoutine = onNewRoutine) }
+    entry<RoutinesRoute>(metadata = detail) { RoutinesScreen(onBuildFromWorkout = onBuildFromWorkout) }
     entry<SupplementsRoute>(metadata = detail) { SupplementsScreen(onOpenScan = onOpenSupplementScan) }
     // No pane metadata: see [SupplementScanRoute].
     entry<SupplementScanRoute> { SupplementScanScreen(onExit = onExitFlow) }

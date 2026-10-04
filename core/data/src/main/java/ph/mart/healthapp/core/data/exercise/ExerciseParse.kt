@@ -22,6 +22,13 @@ interface ExerciseParseRepository {
      * the sentence gave no unit for, which is what "bench at 60" means to the person who typed it.
      */
     suspend fun parseSets(text: String, unit: UnitSystem): StrengthParseResult
+
+    /**
+     * A request for a routine in ("push day, 45 minutes, dumbbells"), a designed one out — the
+     * routines screen's New routine sheet. The one call here that may *choose* lifts rather than
+     * only transcribe them, and still only the sentence goes out: no profile, no history.
+     */
+    suspend fun designRoutine(request: String): RoutineDesignResult
 }
 
 /**
@@ -105,6 +112,20 @@ sealed interface StrengthParseResult {
 
 /** A session lists several lifts, so twice what one activity is allowed. */
 const val MAX_STRENGTH_PARSE_CHARS = 400
+
+/**
+ * [ExerciseParseResult]'s three answers, for a routine designed from a request. [Success]'s
+ * routine is unsaved — `id` 0 — and is the user's to rename and save.
+ */
+sealed interface RoutineDesignResult {
+    data class Success(val routine: Routine) : RoutineDesignResult
+    data object NothingDesigned : RoutineDesignResult
+    data object Failed : RoutineDesignResult
+}
+
+/** A request lists what it wants — muscles, a length, some kit, maybe the lifts themselves — so
+ * the strength parse's allowance. */
+const val MAX_ROUTINE_DESIGN_CHARS = 400
 
 /** Past any real set, short enough that a misread "3x800" cannot seed one. */
 const val MAX_PARSED_REPS = 100

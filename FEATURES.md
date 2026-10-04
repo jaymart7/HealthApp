@@ -308,6 +308,7 @@ see `DECISIONS.md`.
 - Bodyweight sets (0 kg) are a real value.
 - "Repeat last workout" seeds the whole set list.
 - Routines: save a session as a routine (modal reps), start one to seed sets at last-lifted loads.
+  Or describe one to Gemini from Profile → Workout routines (see below).
 - Training plan: a weekday picker per routine; Home shows today's routine and a week ratio.
 - Edit or delete a logged workout (sets re-pointed in the same transaction).
 - Rest timer between sets: Off/1:00/1:30/2:00/3:00, auto-started by "Add set", with +30 sec,
@@ -603,8 +604,8 @@ panes at ≥840dp.
   nothing on the right at all. The card itself opens the thing — the Edit sheet on supplements, the
   add-and-edit screen in the library, Rename on routines — and Delete lives at the foot of it, below
   a rule in `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
-  any of the three can log, tick or start anything — routines' New routine only opens the strength
-  screen, which does the logging, and the library's Add only authors.
+  any of the three can log, tick or start anything — routines' New routine designs and saves a
+  routine without logging one, and the library's Add only authors.
 - Supplements: name, dose label, times per day, **which weekdays** — the same seven-cell picker the
   routine editor draws, defaulting to every day and refusing to be emptied — and **what one dose
   carries**: the seven graded nutrients, typable behind a "What's in a dose" disclosure that opens
@@ -639,7 +640,12 @@ panes at ≥840dp.
   The routine library renames and deletes, and cannot start anything.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a
   week", or a prompt and seven dashed cells when nothing is set yet. A **New routine** FAB opens a
-  blank strength screen for today, where "Save as routine" authors it.
+  sheet with one AI box, "What kind of routine do you want?" ("Push day, 45 minutes, dumbbells
+  only"): Gemini designs the lifts with sets and reps — or keeps exactly the ones you named — and
+  the sheet previews them under an "AI designed" chip with the name editable; "Change" goes back to
+  the request, "Save routine" adds it to the list. Weekdays you named land in its Plan. "Build from
+  a workout instead" is the manual and offline path — a blank strength screen and its "Save as
+  routine". Back steps out of a design in flight, then the preview, then the sheet.
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 22, import is all-or-nothing.
 - Export as CSV — the same thirteen tables as a zip of spreadsheet files from one picker, dates
   rendered ISO and times as a clock. A strength session's sets get a file of their own, joined on

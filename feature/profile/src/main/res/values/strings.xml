@@ -189,7 +189,7 @@
     <!-- Routines -->
     <string name="profile_routines_empty_heading">No routines yet</string>
     <string name="profile_routines_new">New routine</string>
-    <string name="profile_routines_empty_body">Log a strength workout, tap \"Save as routine\", and it shows up here.</string>
+    <string name="profile_routines_empty_body">Tap New routine and describe the workout you want. AI designs it, and you save it here.</string>
     <string name="profile_routine_delete_body">This routine is removed for good. Workouts you logged from it stay in your diary.</string>
     <!-- Units only: the figure line prints the number itself, tabular, in its own colour. -->
     <plurals name="profile_routine_lifts_unit">
@@ -207,6 +207,19 @@
     </plurals>
     <string name="profile_routine_unscheduled">Tap a day to put this in your week</string>
     <string name="profile_routine_lift">%1$s %2$d×%3$d</string>
+    <!-- New routine sheet -->
+    <string name="profile_routine_design_prompt">What kind of routine do you want?</string>
+    <string name="profile_routine_design_placeholder">Push day, 45 minutes, dumbbells only</string>
+    <string name="profile_routine_design_submit">Design it</string>
+    <string name="profile_routine_design_cancel">Cancel</string>
+    <string name="profile_routine_design_manual">Build from a workout instead</string>
+    <string name="profile_routine_design_none">Couldn\'t make a routine from that. Try naming the muscles, your equipment or a few lifts.</string>
+    <string name="profile_routine_design_failed">That didn\'t work. Try again, or build one from a workout.</string>
+    <string name="profile_routine_design_offline">You\'re offline. You can still build one from a workout.</string>
+    <string name="profile_routine_design_chip">AI designed</string>
+    <string name="profile_routine_design_name">Name</string>
+    <string name="profile_routine_design_change">Change</string>
+    <string name="profile_routine_design_save">Save routine</string>
 
     <!-- Supplements -->
     <string name="profile_supplements_empty_heading">Nothing here yet</string>

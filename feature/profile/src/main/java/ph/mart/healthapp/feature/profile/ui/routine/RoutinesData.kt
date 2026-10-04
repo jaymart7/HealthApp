@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineDesignResult
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.totalSets
 import ph.mart.healthapp.feature.profile.R
@@ -16,6 +17,8 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.Figure
  */
 data class RoutinesUiState(
     val routines: List<Routine> = emptyList(),
+    /** A New routine design is in flight — `LogExerciseUiState.parsing`'s flag, one screen over. */
+    val designing: Boolean = false,
 ) {
     /** Distinguishes "nothing saved" from "not loaded yet" for the empty state, exactly as
      * `FoodLibraryUiState` does — a mascot that flashes before the rows arrive reads as a bug. */
@@ -46,8 +49,17 @@ fun List<RoutineLift>.contents(): String {
 
 sealed interface RoutinesEvent {
     data class OnDelete(val id: Long) : RoutinesEvent
+    data class OnDesign(val request: String) : RoutinesEvent
+    data object OnCancelDesign : RoutinesEvent
+    /** The designed routine as the sheet holds it — renamed, perhaps, but otherwise as designed. */
+    data class OnSaveDesigned(val routine: Routine) : RoutinesEvent
     /** The whole mask, not one day — the picker owns the toggle, so the write is idempotent and a
      * stale emission can't flip a day the user never touched. */
     data class OnSetDays(val id: Long, val days: Int) : RoutinesEvent
     data class OnRename(val id: Long, val name: String) : RoutinesEvent
+}
+
+/** A design's answer, handed to the sheet once: the routine to preview, or why there isn't one. */
+sealed interface RoutinesSideEffect {
+    data class Designed(val result: RoutineDesignResult) : RoutinesSideEffect
 }

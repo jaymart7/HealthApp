@@ -4,9 +4,14 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
+import ph.mart.healthapp.core.data.coach.CREATE_ROUTINE_PARAMETERS
+import ph.mart.healthapp.core.data.coach.parseCreateRoutine
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.generate
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -45,6 +50,17 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
         },
     )
 
+    /** The New routine sheet's design: the coach's `create_routine` shape as a response schema, so
+     * one validator ([designedRoutine]) reads both. A third held model for [setsModel]'s reason. */
+    private val designModel = aiModel(
+        generationConfig = generationConfig {
+            thinkingConfig = AI_THINKING
+            maxOutputTokens = MAX_SETS_TOKENS
+            responseMimeType = "application/json"
+            responseSchema = Schema.obj(CREATE_ROUTINE_PARAMETERS, optionalProperties = listOf("weekdays"))
+        },
+    )
+
     override suspend fun parse(text: String): ExerciseParseResult = try {
         val prompt = promptFor(text.take(MAX_EXERCISE_PARSE_CHARS))
         val response = model.generate("exercise parse", content { text(prompt) })
@@ -75,6 +91,58 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
         logAiFailure("strength parse", e)
         StrengthParseResult.Failed
     }
+
+    override suspend fun designRoutine(request: String): RoutineDesignResult = try {
+        val prompt = designPromptFor(request.take(MAX_ROUTINE_DESIGN_CHARS))
+        val response = designModel.generate("routine design", content { text(prompt) })
+        val routine = response.text?.let { designedRoutine(Json.parseToJsonElement(it).jsonObject) }
+        if (routine == null) RoutineDesignResult.NothingDesigned else RoutineDesignResult.Success(routine)
+    } catch (e: CancellationException) {
+        // [parse]'s reason: a withdrawn request is not a failure to log.
+        throw e
+    } catch (e: Exception) {
+        logAiFailure("routine design", e)
+        RoutineDesignResult.Failed
+    }
+}
+
+/**
+ * The model's routine, held to `create_routine`'s bounds by the coach's own [parseCreateRoutine] —
+ * a lift past the limits or an empty list fails the whole design, which is the prompt's "not a
+ * strength request" answer. Unsaved, so `id` 0. Pure for [parsedExercise]'s reason.
+ */
+internal fun designedRoutine(body: JsonObject): Routine? =
+    parseCreateRoutine(body)?.let { Routine(id = 0, name = it.name, lifts = it.lifts, days = it.days) }
+
+/**
+ * A request in, a routine out. Unlike every other prompt in this file it is allowed to *choose*
+ * lifts, because choosing them is what was asked — but only when they didn't name their own:
+ * - **Their lifts win.** A request that lists lifts is a routine being dictated, and the model
+ *   keeps exactly those, in order, at the sets and reps given.
+ * - **No load, ever** — the routine stores none (`RoutineLift`'s KDoc), and the schema has nowhere
+ *   to put one.
+ * - **Weekdays only if named**, so a plan is never invented onto Home.
+ * - **No medical advice or training-safety judgements**, as everywhere else.
+ */
+private fun designPromptFor(request: String): String = buildString {
+    appendLine(
+        "You are a strength coach in a fitness app. The user has described a workout routine " +
+            "they want saved. Design one routine: a short name and its lifts, in order, each with " +
+            "sets and reps.",
+    )
+    appendLine()
+    appendLine("What they asked for:")
+    appendLine(request)
+    appendLine()
+    appendLine(
+        "If they named lifts, use exactly those, in their order, with the sets and reps they gave " +
+            "(read \"3x8\" as 3 sets of 8 reps). Otherwise choose common, well-known lifts that fit " +
+            "what they asked for — the muscles, the equipment, and the length if they gave one, " +
+            "allowing about 2 to 3 minutes per set. Name the routine in a few words, e.g. " +
+            "'Push day'. Never give a weight or load. Set weekdays only if they named days. If " +
+            "the request is not about strength training, return an empty list of lifts. Give no " +
+            "medical advice, no diagnosis, and no training-safety judgements.",
+    )
 }
 
 /**

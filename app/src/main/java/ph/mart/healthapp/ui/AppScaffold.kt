@@ -569,9 +569,9 @@ fun AppScaffold(
                             onOpenSavedMeal = { id -> topLevelBackStack.add(LibraryItemRoute(savedMealId = id)) },
                             onOpenFood = { name -> topLevelBackStack.add(LibraryItemRoute(foodName = name)) },
                             onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },
-                            // Day 0 is today. A blank session, not a builder: "Save as routine"
-                            // on that screen is still the one way a routine is authored.
-                            onNewRoutine = { topLevelBackStack.add(StrengthWorkoutRoute(0)) },
+                            // Day 0 is today. The New routine sheet's manual path: a blank
+                            // session whose "Save as routine" authors it from real sets.
+                            onBuildFromWorkout = { topLevelBackStack.add(StrengthWorkoutRoute(0)) },
                             onOpenSupplements = { topLevelBackStack.add(SupplementsRoute) },
                             onOpenSupplementScan = { topLevelBackStack.add(SupplementScanRoute) },
                             onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },

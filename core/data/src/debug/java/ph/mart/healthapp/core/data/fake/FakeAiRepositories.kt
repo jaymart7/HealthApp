@@ -7,9 +7,13 @@ import ph.mart.healthapp.core.data.exercise.ExerciseParseResult
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.ParsedExercise
 import ph.mart.healthapp.core.data.exercise.ParsedLiftRow
+import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineDesignResult
+import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthParseResult
 import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.exercise.parsedSets
+import ph.mart.healthapp.core.data.exercise.toRoutineLifts
 import ph.mart.healthapp.core.data.food.COMMON_FOODS
 import ph.mart.healthapp.core.data.food.FoodRecognitionRepository
 import ph.mart.healthapp.core.data.food.LabelBasis
@@ -272,6 +276,30 @@ internal class FakeExerciseParseRepository : ExerciseParseRepository {
         val sets = fakeStrengthParse(text, unit)
         return if (sets.isEmpty()) StrengthParseResult.NoLiftsFound else StrengthParseResult.Success(sets)
     }
+
+    override suspend fun designRoutine(request: String): RoutineDesignResult {
+        delay(FAKE_LATENCY_MS)
+        return fakeRoutineDesign(request)?.let(RoutineDesignResult::Success) ?: RoutineDesignResult.NothingDesigned
+    }
+}
+
+/** Words that make a request sound like a routine, for [fakeRoutineDesign]'s canned answer. */
+private val FAKE_ROUTINE_WORDS = Regex("""(?i)\b(push|pull|legs?|upper|lower|full|body|day|workout|routine)\b""")
+
+/**
+ * Dictated lifts ("bench 3x8, dips 2x10") come back as exactly those, through [fakeStrengthParse];
+ * a request that only sounds like a routine gets a canned full-body one; anything else is
+ * [RoutineDesignResult.NothingDesigned] — the three branches the sheet draws.
+ */
+internal fun fakeRoutineDesign(request: String): Routine? {
+    val dictated = fakeStrengthParse(request, UnitSystem.Metric).toRoutineLifts()
+    if (dictated.isNotEmpty()) return Routine(id = 0, name = "My routine", lifts = dictated)
+    if (!FAKE_ROUTINE_WORDS.containsMatchIn(request)) return null
+    return Routine(
+        id = 0,
+        name = "Full body",
+        lifts = listOf(RoutineLift("Squat", 3, 8), RoutineLift("Bench press", 3, 8), RoutineLift("Row", 3, 10)),
+    )
 }
 
 /** "bench 3x8 at 60 kg" — a name, sets × reps, then an optional load and unit. */

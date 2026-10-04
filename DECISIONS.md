@@ -3706,7 +3706,8 @@ rather than needing a counter patched.
   number as much as a routine does. *ponytail: `RECENT_STRENGTH_WORKOUTS` = 10 is the ceiling — a
   lift untouched for ten sessions reads as new and seeds at bodyweight; a per-lift `MAX(date)`
   query is the upgrade.*
-- **A routine is authored by naming a workout, never in a builder.** "Save as routine" collapses the
+- **A routine is authored by naming a workout or describing one, never lift by lift.** "Save as
+  routine" (the other path is the New routine sheet, two entries down) collapses the
   set list with `toRoutineLifts()` (`groupBy` the lift, count the sets, take the *modal* reps — 8/8/6
   is a routine of 8s with a set that fell short), which is the gesture "Save this meal" makes on a
   diary section, and it saves nothing else: logging the session is still the Save button beside it.
@@ -3721,13 +3722,30 @@ rather than needing a counter patched.
   are **not exported**, for the reason saved meals and recipes aren't — convenience data, not
   history — so no export schema bump; and nothing else moved, because a started routine saves as an
   ordinary `ExerciseEntry` with sets.
-- **Profile → Workout routines has a New routine door, and it leads to the strength screen.** Not a
-  builder, for the reason above: it pushes a blank `StrengthWorkoutRoute(0)` (today), whose "Save as
-  routine" stays the one authoring path. It is a **screen-level `DockedFab`**, which is the thing
-  `SupplementsScreen`'s KDoc argued against — at ≥840dp it sits beside the rail's collapsed FAB. The
-  user chose it knowing that; on a phone the pane has no tab chrome, so nothing collides. *The
-  catch: the session behind a just-saved routine was never logged, so backing out asks to discard
-  it. A routine-only mode on the strength screen is the fix if that grates.*
+- **Profile → Workout routines' New routine is described to Gemini, not built and not logged.**
+  It used to push a blank `StrengthWorkoutRoute(0)` and leave "Save as routine" as the one
+  authoring path — and that was a bug in practice: the screen it landed on is a workout *logger*,
+  its primary button is "Save workout", and a user who built a session and pressed it logged
+  today's workout to the diary and found no routine in the list (the "Save as routine" button sat
+  above it, and only once a set was down). So the FAB now opens `NewRoutineSheet`: one field ("Push
+  day, 45 minutes, dumbbells only"), Gemini designs it, a preview under an "AI designed" chip, Save.
+  - **One schema, one validator, two callers.** The call is `ExerciseParseRepository.designRoutine`
+    and its response schema *is* the coach's `create_routine` arguments
+    (`CREATE_ROUTINE_PARAMETERS`), read back through the coach's own `parseCreateRoutine` — so a
+    routine the sheet designs and one the coach designs are held to the same 12 lifts / 10 sets /
+    50 reps, and a weekday named in the request lands in the Plan exactly as the coach's would.
+    `designedRoutine()` is the pure seam a JVM test reaches.
+  - **Only the sentence goes out** — no profile, no history, no lift loads — the narrow payload every
+    parse in that repository keeps. It is the one prompt there allowed to *choose* lifts, and only
+    when the request named none: dictated lifts are kept exactly, in order.
+  - **The name is editable in the preview; the lifts are not.** "Change" returns to the request,
+    which is the cheaper correction for a list the model wrote. *ponytail: a per-lift editor in
+    the preview is the upgrade if users ask for one.*
+  - **The strength screen is still the manual and offline path**, as "Build from a workout instead"
+    under the field. The catch it always had — backing out after "Save as routine" asks to discard
+    the unlogged session — now only meets users who chose that path.
+  - It stays a **screen-level `DockedFab`**, the call `SupplementsScreen`'s KDoc argued against: at
+    ≥840dp it sits beside the rail's collapsed FAB. The user chose it knowing that.
 - **The training plan is one `Int` column on `routine`, not a `routine_day` table.** A weekday
   bitmask (bit 0 = Monday), `0` = unscheduled: seven booleans per routine is not a relation, and
   this is the call `Profile.homeLayout` makes one table over. `Routine.days` is defaulted so every

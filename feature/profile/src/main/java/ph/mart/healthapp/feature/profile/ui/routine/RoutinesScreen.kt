@@ -21,7 +21,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineDesignResult
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.designsystem.component.DockedFab
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
@@ -32,6 +34,7 @@ import ph.mart.healthapp.core.designsystem.component.rememberFabExpanded
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
+import ph.mart.healthapp.feature.profile.ui.routine.components.NewRoutineSheet
 import ph.mart.healthapp.feature.profile.ui.routine.components.RoutinePlanZone
 import ph.mart.healthapp.feature.profile.ui.shared.components.DeleteConfirmDialog
 import ph.mart.healthapp.feature.profile.ui.shared.components.FigureRow
@@ -45,8 +48,10 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
  *
  * Rename and delete only. Starting a routine needs a workout in progress and a day to log it on,
  * and Profile has neither — the same division the food library draws against the add-entry sheet.
- * "New routine" is a door, not a builder: it opens a blank strength screen, where "Save as routine"
- * is still the one place a routine is authored.
+ * "New routine" opens [NewRoutineSheet]: describe the routine, Gemini designs it, save it here.
+ * [onBuildFromWorkout] is that sheet's manual path — a blank strength screen and its "Save as
+ * routine". It used to be the FAB itself, which landed users on a workout *logger* whose primary
+ * button logs today's session and saves no routine at all.
  *
  * A screen FAB where Supplements docks a bar, by choice — at ≥840dp it sits beside the rail's own.
  * `DECISIONS.md` → **Training, strength & routines** has the call.
@@ -57,18 +62,53 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
  */
 @Composable
 fun RoutinesScreen(
-    onNewRoutine: () -> Unit,
+    onBuildFromWorkout: () -> Unit,
     viewModel: RoutinesViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
-    RoutinesContent(uiState = uiState, onEvent = viewModel::handleEvent, onNewRoutine = onNewRoutine)
+    val newRoutine = rememberNewRoutineState()
+
+    viewModel.collectSideEffect { effect ->
+        when (effect) {
+            is RoutinesSideEffect.Designed -> when (val result = effect.result) {
+                is RoutineDesignResult.Success -> newRoutine.draft = result.routine
+                // Both keep the request, the describe field's rule: correcting it beats retyping it.
+                RoutineDesignResult.NothingDesigned -> newRoutine.message = R.string.profile_routine_design_none
+                RoutineDesignResult.Failed -> newRoutine.message = R.string.profile_routine_design_failed
+            }
+        }
+    }
+
+    RoutinesContent(
+        uiState = uiState,
+        onEvent = viewModel::handleEvent,
+        newRoutine = newRoutine,
+        onDesign = {
+            newRoutine.message = null
+            if (viewModel.isOnline()) {
+                viewModel.handleEvent(RoutinesEvent.OnDesign(newRoutine.request))
+            } else {
+                // "Build from a workout instead" sits right under this line — saying so is the
+                // whole degrade.
+                newRoutine.message = R.string.profile_routine_design_offline
+            }
+        },
+        onBuildFromWorkout = {
+            viewModel.handleEvent(RoutinesEvent.OnCancelDesign)
+            newRoutine.close()
+            onBuildFromWorkout()
+        },
+    )
 }
 
 @Composable
 private fun RoutinesContent(
     uiState: RoutinesUiState,
     onEvent: (RoutinesEvent) -> Unit,
-    onNewRoutine: () -> Unit,
+    onBuildFromWorkout: () -> Unit,
+    // Defaulted for the previews, which have no ViewModel to design with.
+    newRoutine: NewRoutineState = rememberNewRoutineState(),
+    onDesign: () -> Unit = {},
 ) {
     // Local rather than saveable, for the reason the food library gives: a dialog that survived
     // process death would reopen asking about a row the user has stopped looking at.
@@ -111,7 +151,7 @@ private fun RoutinesContent(
                 }
             }
             DockedFab(
-                onClick = onNewRoutine,
+                onClick = { newRoutine.open = true },
                 label = stringResource(R.string.profile_routines_new),
                 expanded = rememberFabExpanded(scrollState),
                 modifier = Modifier
@@ -132,6 +172,25 @@ private fun RoutinesContent(
                 pendingDelete = null
             },
             onKeep = { pendingDelete = null },
+        )
+    }
+
+    if (newRoutine.open) {
+        NewRoutineSheet(
+            state = newRoutine,
+            designing = uiState.designing,
+            onDesign = onDesign,
+            onCancelDesign = { onEvent(RoutinesEvent.OnCancelDesign) },
+            onSave = { routine ->
+                onEvent(RoutinesEvent.OnSaveDesigned(routine))
+                newRoutine.close()
+            },
+            onBuildFromWorkout = onBuildFromWorkout,
+            // A spinner abandoned with the sheet would still be spinning the next time it opened.
+            onDismiss = {
+                onEvent(RoutinesEvent.OnCancelDesign)
+                newRoutine.close()
+            },
         )
     }
 
@@ -172,7 +231,7 @@ private fun RoutinesPreview() {
                 ),
             ),
             onEvent = {},
-            onNewRoutine = {},
+            onBuildFromWorkout = {},
         )
     }
 }
@@ -181,5 +240,5 @@ private fun RoutinesPreview() {
 @PreviewLightDark
 @Composable
 private fun RoutinesEmptyPreview() {
-    AppTheme { RoutinesContent(uiState = RoutinesUiState(), onEvent = {}, onNewRoutine = {}) }
+    AppTheme { RoutinesContent(uiState = RoutinesUiState(), onEvent = {}, onBuildFromWorkout = {}) }
 }

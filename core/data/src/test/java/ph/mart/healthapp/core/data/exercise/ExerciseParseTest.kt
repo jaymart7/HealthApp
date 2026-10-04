@@ -3,6 +3,8 @@ package ph.mart.healthapp.core.data.exercise
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import org.junit.Test
 import ph.mart.healthapp.core.data.profile.KG_PER_LB
 import ph.mart.healthapp.core.data.profile.UnitSystem
@@ -125,5 +127,29 @@ class ExerciseParseTest {
     fun `nothing usable is empty`() {
         assertTrue(parsedSets(listOf(row(reps = null)), UnitSystem.Metric).isEmpty())
         assertTrue(parsedSets(emptyList(), UnitSystem.Metric).isEmpty())
+    }
+
+    private fun design(json: String) = designedRoutine(Json.parseToJsonElement(json).jsonObject)
+
+    /** The New routine sheet's read-back: the coach's validator, wrapped into an unsaved routine. */
+    @Test
+    fun `a designed routine keeps its lifts and planned days`() {
+        val routine = design(
+            """{"name":"Push day","lifts":[{"exercise_name":"Bench press","sets":3,"reps":8},""" +
+                """{"exercise_name":"Dip","sets":2,"reps":10}],"weekdays":["Monday","Friday"]}""",
+        )
+        assertEquals("Push day", routine?.name)
+        assertEquals(listOf(RoutineLift("Bench press", 3, 8), RoutineLift("Dip", 2, 10)), routine?.lifts)
+        assertEquals(0b0010001, routine?.days)
+        assertEquals(0L, routine?.id)
+    }
+
+    /** The prompt's "not a strength request" answer, and a load the model volunteered anyway. */
+    @Test
+    fun `no lifts designs nothing and a stray load is ignored`() {
+        assertNull(design("""{"name":"Nap","lifts":[]}"""))
+        val routine = design("""{"name":"Legs","lifts":[{"exercise_name":"Squat","sets":5,"reps":5,"weight":100}]}""")
+        assertEquals(listOf(RoutineLift("Squat", 5, 5)), routine?.lifts)
+        assertEquals(0, routine?.days)
     }
 }

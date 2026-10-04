@@ -6,7 +6,8 @@ package ph.mart.healthapp.core.data.exercise
  * all of it is testable without a database.
  *
  * A routine is the saved-meal pattern applied to workouts — authored by naming a session that is
- * already on screen, re-used by seeding a new one, and never linked to either.
+ * already on screen (or by describing one to `ExerciseParseRepository.designRoutine`), re-used by
+ * seeding a new one, and never linked to either.
  */
 data class Routine(
     val id: Long,
