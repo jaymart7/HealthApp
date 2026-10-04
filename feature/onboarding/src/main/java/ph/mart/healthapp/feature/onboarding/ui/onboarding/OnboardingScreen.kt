@@ -11,6 +11,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -20,6 +21,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -199,9 +201,10 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
         // The screen's announcer, outside AnimatedContent so it outlives the step it speaks for.
         // A live region only speaks when its text changes, from a node that was already there.
         // Compose prunes a zero-size node, and one drawn under the full-screen step, from the
-        // accessibility tree, so it is 1dp and declared last.
+        // accessibility tree, so it is 1dp and declared last. Being on top, it parks in the
+        // top-start corner, under the status bar, rather than over whichever card sits mid-screen.
         Box(
-            Modifier.requiredSize(1.dp).semantics {
+            Modifier.wrapContentSize(Alignment.TopStart).requiredSize(1.dp).semantics {
                 liveRegion = LiveRegionMode.Polite
                 if (announcement.isNotEmpty()) contentDescription = announcement
             },
