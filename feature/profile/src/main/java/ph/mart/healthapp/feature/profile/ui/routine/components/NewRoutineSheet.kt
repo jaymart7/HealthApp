@@ -227,7 +227,9 @@ private fun PreviewStep(
  */
 @Composable
 private fun LiftEditor(lift: RoutineLift, onChange: (RoutineLift) -> Unit, onRemove: () -> Unit) {
-    val removeLabel = stringResource(R.string.profile_routine_design_remove, lift.exerciseName)
+    // A just-added row has no name yet, and "Remove " tells a screen reader nothing.
+    val liftLabel = lift.exerciseName.ifBlank { stringResource(R.string.profile_routine_design_lift) }
+    val removeLabel = stringResource(R.string.profile_routine_design_remove, liftLabel)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppTextField(
@@ -248,7 +250,7 @@ private fun LiftEditor(lift: RoutineLift, onChange: (RoutineLift) -> Unit, onRem
             CountStepper(
                 value = lift.sets,
                 unit = pluralStringResource(R.plurals.profile_routine_sets_unit, lift.sets),
-                label = stringResource(R.string.profile_routine_design_sets_of, lift.exerciseName),
+                label = stringResource(R.string.profile_routine_design_sets_of, liftLabel),
                 range = 1..MAX_ROUTINE_SETS,
                 onValueChange = { onChange(lift.copy(sets = it)) },
                 modifier = Modifier.weight(1f),
@@ -256,7 +258,7 @@ private fun LiftEditor(lift: RoutineLift, onChange: (RoutineLift) -> Unit, onRem
             CountStepper(
                 value = lift.reps,
                 unit = pluralStringResource(R.plurals.profile_routine_reps_unit, lift.reps),
-                label = stringResource(R.string.profile_routine_design_reps_of, lift.exerciseName),
+                label = stringResource(R.string.profile_routine_design_reps_of, liftLabel),
                 range = 1..MAX_ROUTINE_REPS,
                 onValueChange = { onChange(lift.copy(reps = it)) },
                 modifier = Modifier.weight(1f),
