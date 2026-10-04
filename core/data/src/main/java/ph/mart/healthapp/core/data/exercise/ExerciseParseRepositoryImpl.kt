@@ -119,6 +119,9 @@ internal fun designedRoutine(body: JsonObject): Routine? =
  * lifts, because choosing them is what was asked — but only when they didn't name their own:
  * - **Their lifts win.** A request that lists lifts is a routine being dictated, and the model
  *   keeps exactly those, in order, at the sets and reps given.
+ * - **A length is filled, as set counts.** "About 2 to 3 minutes per set" alone was read loosely —
+ *   a live 45-minute request came back as 9 sets, about 25 minutes of work — so the prompt gives
+ *   the sets and lifts each length works out to, and a default for a request that gave none.
  * - **No load, ever** — the routine stores none (`RoutineLift`'s KDoc), and the schema has nowhere
  *   to put one.
  * - **Weekdays only if named**, so a plan is never invented onto Home.
@@ -137,8 +140,11 @@ private fun designPromptFor(request: String): String = buildString {
     appendLine(
         "If they named lifts, use exactly those, in their order, with the sets and reps they gave " +
             "(read \"3x8\" as 3 sets of 8 reps). Otherwise choose common, well-known lifts that fit " +
-            "what they asked for — the muscles, the equipment, and the length if they gave one, " +
-            "allowing about 2 to 3 minutes per set. Name the routine in a few words, e.g. " +
+            "the muscles and the equipment they asked for, and fill the time: count about 2 to 3 " +
+            "minutes per set including rest, so 30 minutes is about 10 to 14 sets across 3 to 5 " +
+            "lifts, 45 minutes about 15 to 20 sets across 4 to 6 lifts, and 60 minutes about 20 to " +
+            "25 sets across 5 to 7 lifts. If they gave no length, design for about 45 minutes. " +
+            "Name the routine in a few words, e.g. " +
             "'Push day'. Never give a weight or load. Set weekdays only if they named days. If " +
             "the request is not about strength training, return an empty list of lifts. Give no " +
             "medical advice, no diagnosis, and no training-safety judgements.",
