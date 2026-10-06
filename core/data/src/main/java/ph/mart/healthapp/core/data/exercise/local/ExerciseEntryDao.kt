@@ -79,7 +79,9 @@ internal interface ExerciseEntryDao {
     suspend fun replace(id: Long, entity: ExerciseEntryEntity, sets: List<StrengthSetEntity>) {
         deleteSets(id)
         softDelete(id)
-        insertWithSets(entity, sets)
+        // `id = 0`, `FoodEntryDao.replace`'s reason: the old row is soft-deleted, not gone, so
+        // carrying the caller's id across re-inserts a primary key the table still holds.
+        insertWithSets(entity.copy(id = 0), sets)
     }
 
     @Query("UPDATE exercise_entry SET isDeleted = 1")
