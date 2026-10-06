@@ -864,6 +864,14 @@ rather than needing a counter patched.
   food's name. `expanded` is a `Boolean` and **not** a hoisted `SheetState`: that type is
   experimental, and putting it in this signature would push an `@OptIn` onto every sheet in the app
   to answer a question one caller asks — the same refusal `AppTopBar`'s `titleStyle` makes.
+- **No sheet reaches under the status bar.** `AppBottomSheet` pads the `ModalBottomSheet` itself by
+  `safeDrawing`'s top. Material 3 1.4 instead lets the sheet ride up under the bar and pads its
+  content by however much of the bar it covers, which makes the sheet's height a function of its
+  own offset. A sheet whose content settles within a status bar of the top then chases its anchor
+  and never rests: Edit routine with three lifts swung between 150px down and 50px above the
+  screen, continuously. A full-height sheet (the add-entry search) now stops under the bar with
+  the scrim behind it, which is the price. Dropping the padding to win the full bleed back is the
+  bug again.
 - **Every sheet closes with a ✕, and the ten Cancel buttons are gone.** `AppBottomSheet` grew
   `title` and `showClose` and now draws the heading row itself: the title at the left, a 48dp close
   at the right. What it replaced was a `SecondaryButton` Cancel taking `weight(1f)` beside the
