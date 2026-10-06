@@ -1,14 +1,10 @@
 package ph.mart.healthapp.feature.food.ui.diary.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -28,6 +24,7 @@ import ph.mart.healthapp.core.data.food.SavedMeal
 import ph.mart.healthapp.core.data.food.SavedMealItem
 import ph.mart.healthapp.core.data.food.ScannedProduct
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
+import ph.mart.healthapp.core.designsystem.component.SheetActionBar
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.component.TonalButton
@@ -269,22 +266,6 @@ private fun FormActionBar(
                 )
             }
         }
-    }
-}
-
-/** The docked bar's chrome. Ruled off rather than floated: the content behind it is a scroll with
- * an edge, and a shadow would only blur that edge. */
-@Composable
-private fun SheetActionBar(content: @Composable ColumnScope.() -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            content = content,
-        )
     }
 }
 

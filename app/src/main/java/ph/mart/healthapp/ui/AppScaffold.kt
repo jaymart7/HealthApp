@@ -611,6 +611,17 @@ fun AppScaffold(
                     sheetEditingId = 0
                 },
                 onSaved = onWorkoutSaved,
+                // A deleted row gets an undo, the diary swipe's rule; the sheet has already worded it.
+                onDeleted = { message, undo ->
+                    scope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = message,
+                            actionLabel = undoLabel,
+                            duration = SnackbarDuration.Short,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) undo()
+                    }
+                },
                 // The sheet builds the route — the diary's day, the row being corrected, a routine
                 // or a parsed session all ride it — so this only closes the sheet and pushes.
                 onOpenStrength = { route ->

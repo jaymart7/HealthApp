@@ -1,5 +1,6 @@
 package ph.mart.healthapp.feature.training.ui
 
+import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseParseResult
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -60,7 +61,11 @@ data class LogExerciseUiState(
 /**
  * [burnedEdited] latches the moment the user touches the kcal stepper: after that, changing the
  * type or duration must not silently overwrite the number they chose.
+ *
+ * Serializable because it rides [StrengthWorkoutRoute.draft]: the sheet hands the strength screen
+ * the form as it stands, so a note or a duration typed before "Sets" is tapped is not lost.
  */
+@Serializable
 data class LogExerciseForm(
     val type: ExerciseType = ExerciseType.Walk,
     val name: String = "",
@@ -168,6 +173,15 @@ sealed interface LogExerciseEvent {
     /** Names the workout on screen as a routine. It logs nothing: [OnSave] is still what writes
      * the session, and the two are deliberately independent. */
     data class OnSaveRoutine(val name: String, val lifts: List<RoutineLift>) : LogExerciseEvent
+
+    /** The edit sheet's Delete — the row as it was logged, so [OnRestore] can put it back. A soft
+     * delete, like the diary's swipe, and it confirms with an undo rather than a dialog: the
+     * diary's rule for a logged row. */
+    data class OnDelete(val entry: ExerciseEntry) : LogExerciseEvent
+
+    /** The undo on [LogExerciseSideEffect.Deleted]'s snackbar. Re-inserted, the diary's own
+     * `OnRestoreExercise` shape, so the restored row carries its sets back with it. */
+    data class OnRestore(val entry: ExerciseEntry) : LogExerciseEvent
 }
 
 sealed interface LogExerciseSideEffect {
@@ -192,4 +206,8 @@ sealed interface LogExerciseSideEffect {
     /** [Parsed]'s twin for the strength screen, handed over for the same reason: the sets land in
      * the screen's form, not on the container. */
     data class SetsParsed(val result: StrengthParseResult) : LogExerciseSideEffect
+
+    /** The row is gone; the sheet closes and its host offers the undo. [entry] is what
+     * [LogExerciseEvent.OnRestore] puts back. */
+    data class Deleted(val entry: ExerciseEntry) : LogExerciseSideEffect
 }

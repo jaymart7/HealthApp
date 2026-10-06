@@ -11,10 +11,14 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.StrengthSet
 
 /** [initial] seeds the form when an existing activity is being corrected. It doubles as the
- * saveable key, so opening a different row re-seeds rather than showing the last one's numbers. */
+ * saveable key, so opening a different row re-seeds rather than showing the last one's numbers.
+ * [start] is where the form begins when that is not the key itself — the strength screen opening
+ * on the draft the sheet handed over, while the row it came from stays the key. */
 @Composable
-internal fun rememberLogExerciseState(initial: LogExerciseForm = LogExerciseForm()): LogExerciseState =
-    rememberSaveable(initial, saver = LogExerciseState.Saver()) { LogExerciseState(initial) }
+internal fun rememberLogExerciseState(
+    initial: LogExerciseForm = LogExerciseForm(),
+    start: LogExerciseForm = initial,
+): LogExerciseState = rememberSaveable(initial, saver = LogExerciseState.Saver()) { LogExerciseState(start) }
 
 /** The in-progress form only — the same UI-only-state rule the diary's own screen state follows. */
 internal class LogExerciseState(form: LogExerciseForm = LogExerciseForm()) {

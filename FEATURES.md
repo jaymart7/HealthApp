@@ -297,9 +297,12 @@ see `DECISIONS.md`.
   the app's: the model is never asked for one and the schema has nowhere to put one, so a
   described run and a typed one of the same length price identically off the user's own latest
   weigh-in. Back during a parse cancels it. Correcting a logged workout shows the form alone — no
-  sentence, no routines. **Tapping any diary exercise row opens this sheet**; a workout with sets
-  drops the type chips, shows its sets line and offers **Edit sets →** to the strength screen,
-  which, when correcting, draws only the set list, its editor, Details and Save.
+  sentence, no routines — and **Delete** under the pinned Save, with an undo. **Tapping any diary
+  exercise row opens this sheet**; a workout with sets drops the type chips and shows a **Sets**
+  row (its summary, a chevron) that opens the strength screen, which, when correcting, draws only
+  the set list, its editor, Details and Save. Whatever was typed in the sheet travels with it, and
+  back there asks before dropping it. "Enter manually" hides the routine chips; picking Strength
+  shows the same Sets row to start a set list.
 - Burned calories credited to the day's budget, with a Profile switch to opt out.
 - **Earned calories** — what the credit bought, said in one voice on three surfaces: a
   snackbar the moment a workout saves, a promoted line and its own arc on Home's calorie
@@ -307,7 +310,10 @@ see `DECISIONS.md`.
   rest day — about a peanut-butter sandwich"). Every one of them goes silent with the
   switch off, on a correction to a past row, and under a 50 kcal floor.
 - Strength workouts: a full set editor (lift name, reps, weight in the user's unit), lift-name
-  chips from recent sessions, last-lifted load shown per lift.
+  chips from recent sessions, last-lifted load shown per lift — and picking a lift with history
+  fills in last time's reps and load. **Tap a set to correct it**: it loads into the editor for
+  **Update set**, **Remove set** or Cancel; back leaves the set edit first. Save is pinned at the
+  foot of the screen.
 - **Describe your sets** — "What did you lift?" heads the strength screen, always open: a
   sentence, typed or dictated, becomes sets appended to the list. A load said with no unit is in
   the user's own unit, applied on-device — only the sentence is sent. New workouts only — a

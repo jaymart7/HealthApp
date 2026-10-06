@@ -3,6 +3,7 @@ package ph.mart.healthapp.feature.training.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,12 +34,14 @@ import ph.mart.healthapp.core.data.exercise.summaryLabel
 import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
-import ph.mart.healthapp.core.designsystem.component.SecondaryButton
+import ph.mart.healthapp.core.designsystem.component.SheetActionBar
 import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.training.R
 import ph.mart.healthapp.feature.training.ui.components.DescribeExerciseField
 import ph.mart.healthapp.feature.training.ui.components.ExerciseFormFields
+import ph.mart.healthapp.feature.training.ui.components.ExerciseSetsRow
 import ph.mart.healthapp.feature.training.ui.components.NameChipRow
 
 /** [dateEpochDay] is the day the entry lands on — the diary passes its selected day; 0 is today,
@@ -54,22 +57,27 @@ import ph.mart.healthapp.feature.training.ui.components.NameChipRow
  * swipe and a cancel, neither of which earned anything; see [LogExerciseSideEffect.Saved].
  *
  * [onOpenStrength] leaves for the strength workout screen, and the sheet builds the route itself:
- * it is this module's, and the sheet already knows the day and the row. Four doors lead there — a
- * sentence that named lifts, a routine chip, "Log sets instead" once Strength is picked by hand,
- * and "Edit sets" on a logged workout that has them. The diary reopens every row here, sets or
- * not, so tapping one always does the same thing. "Log sets instead" is a door rather than an
- * automatic redirect on purpose: the plain duration-and-kcal path is what an imported watch
- * session is, and it stays reachable. */
+ * it is this module's, and the sheet already knows the day and the row. Three doors lead there — a
+ * sentence that named lifts, a routine chip, and the Sets row once Strength is the type, which
+ * carries the form across as the route's `draft` so nothing typed here is lost on the way. The
+ * diary reopens every row here, sets or not, so tapping one always does the same thing. The Sets
+ * row is a door rather than an automatic redirect on purpose: the plain duration-and-kcal path is
+ * what an imported watch session is, and it stays reachable.
+ *
+ * [onDeleted] hands the host a resolved "Deleted Run" and the undo for it; the sheet closes itself
+ * after, the order [onSaved] keeps. */
 @Composable
 fun LogExerciseSheet(
     onDismiss: () -> Unit,
     onOpenStrength: (StrengthWorkoutRoute) -> Unit,
     onSaved: (creditedKcal: Int) -> Unit = {},
+    onDeleted: (message: String, undo: () -> Unit) -> Unit = { _, _ -> },
     dateEpochDay: Long = 0,
     editingId: Long = 0,
     viewModel: LogExerciseViewModel = koinViewModel(),
 ) {
     val uiState by viewModel.collectAsState()
+    val resources = LocalResources.current
     LaunchedEffect(editingId) {
         if (editingId > 0) viewModel.handleEvent(LogExerciseEvent.OnLoadEditing(editingId))
     }
@@ -106,7 +114,10 @@ fun LogExerciseSheet(
                     // A sentence that named lifts is a session, and a session needs the set list
                     // this sheet has no room for — so it goes on, parse and all, rather than
                     // asking for the lifts a second time there.
-                    openStrength(StrengthWorkoutRoute(dateEpochDay, described = result.activity))
+                    // Merged onto the form rather than replacing it, the cardio branch's
+                    // `withParsed`: a note or a burn already typed travels on with the sets.
+                    val draft = state.form.withParsed(result.activity).copy(sets = result.activity.sets)
+                    openStrength(StrengthWorkoutRoute(dateEpochDay, draft = draft))
                 } else {
                     // `withEstimate` is the caller's, and it is what prices the parse: on a new
                     // form `burnedEdited` is false, so the burn falls out of the parsed type and
@@ -134,6 +145,17 @@ fun LogExerciseSheet(
             // The strength screen's parse; this sheet has no set list to put one in. Named rather
             // than swept into an `else`, the rule the strength screen follows for `Parsed`.
             is LogExerciseSideEffect.SetsParsed -> Unit
+
+            // Built here, where the resources are: the host only shows it. The undo outlives the
+            // sheet, which is fine — the ViewModel does too.
+            is LogExerciseSideEffect.Deleted -> {
+                val message = resources.getString(
+                    R.string.training_exercise_deleted,
+                    resources.getString(effect.entry.type.label),
+                )
+                onDeleted(message) { viewModel.handleEvent(LogExerciseEvent.OnRestore(effect.entry)) }
+                onDismiss()
+            }
         }
     }
 
@@ -144,7 +166,7 @@ fun LogExerciseSheet(
         manual = manual,
         onManual = { manual = true },
         dateEpochDay = dateEpochDay,
-        editingId = editing?.id,
+        editing = editing,
         // A parse in flight outlives this sheet otherwise — the ViewModel does — and the spinner
         // would still be up the next time the FAB opened a blank one.
         onDismiss = {
@@ -209,7 +231,7 @@ private fun LogExerciseContent(
     uiState: LogExerciseUiState,
     state: LogExerciseState,
     dateEpochDay: Long,
-    editingId: Long?,
+    editing: ExerciseEntry?,
     onDismiss: () -> Unit,
     onOpenStrength: (StrengthWorkoutRoute) -> Unit,
     onEvent: (LogExerciseEvent) -> Unit,
@@ -221,12 +243,49 @@ private fun LogExerciseContent(
     // Seeded from the form's own fields, so the estimate is right on the first frame too — the
     // form is the single source, and `withEstimate` is a no-op once the user takes the field over.
     val form = state.form.withEstimate(uiState.weightKg)
+    val showForm = editing != null || manual
 
     AppBottomSheet(
-        title = stringResource(if (editingId == null) R.string.training_exercise_log else R.string.training_exercise_edit),
+        title = stringResource(if (editing == null) R.string.training_exercise_log else R.string.training_exercise_edit),
         onDismiss = onDismiss,
+        // Grown to the form's full height, or the sheet opens half-way and cuts off the pinned
+        // bar below — Save behind the gesture bar and Delete off the screen.
+        expanded = showForm,
+        // Pinned once the form is open, the add-entry sheet's reason: a sheet whose action is the
+        // last thing in a scroll makes saving cost a scroll past everything already decided — and
+        // a workout's form was tall enough to push Save off the bottom.
+        bottomBar = if (!showForm) {
+            null
+        } else {
+            {
+                SheetActionBar {
+                    PrimaryButton(
+                        label = stringResource(R.string.training_save),
+                        onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editing?.id)) },
+                        enabled = form.isValid(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    // The food edit sheet's Delete, for its reason: a swipe on the diary row was
+                    // the only way to remove one, and a gesture nobody is shown is not a feature.
+                    if (editing != null) {
+                        TextButton(
+                            label = stringResource(R.string.training_exercise_delete),
+                            onClick = { onEvent(LogExerciseEvent.OnDelete(editing)) },
+                            color = MaterialTheme.colorScheme.error,
+                            icon = AppIcons.Delete,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+        },
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // The bar takes the sheet's bottom gutter with it, so the form keeps a gap of its own above
+        // the bar's rule rather than running flush into it.
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(bottom = if (showForm) 12.dp else 0.dp),
+        ) {
             // A parse in flight is the one sub-level here: back abandons it and leaves the
             // sentence, and the next back dismisses the sheet. Registered **inside** the sheet's
             // own window, exactly as `SheetDatePicker`'s calendar is, or `ModalBottomSheet` takes
@@ -242,7 +301,7 @@ private fun LogExerciseContent(
             // Absent when correcting a logged activity, and so are the routines: every figure on
             // that form is already the user's own, and a parse that rewrote its type and duration
             // is noise on the one path where there is nothing left to guess.
-            if (editingId == null) {
+            if (editing == null) {
                 DescribeExerciseField(
                     text = describe.text,
                     parsing = uiState.parsing,
@@ -256,8 +315,10 @@ private fun LogExerciseContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 // Starting a routine needs a day and a workout to put it in, and this sheet has
-                // the day — which is why it is here and not in Profile's routine list.
-                if (uiState.routines.isNotEmpty()) {
+                // the day — which is why it is here and not in Profile's routine list. Gone once
+                // the form opens: the user has chosen to type it in, and two unlabelled chip rows
+                // stacked — routines over activity types — read as one choice.
+                if (!manual && uiState.routines.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = stringResource(R.string.training_strength_start_routine),
@@ -280,7 +341,7 @@ private fun LogExerciseContent(
                     TextButton(label = stringResource(R.string.training_exercise_manual), onClick = onManual)
                 }
             }
-            if (editingId != null || manual) {
+            if (showForm) {
                 ExerciseFormFields(
                     form = form,
                     weightKg = uiState.weightKg,
@@ -289,36 +350,35 @@ private fun LogExerciseContent(
                     // leave its set list attached to a swim — the strength screen's own argument.
                     showTypeChips = form.sets.isEmpty(),
                 )
-                // The diary row's own line, so the sheet says what the button below will open.
-                form.sets.summaryLabel(uiState.preferredUnit)?.let { summary ->
-                    Text(
-                        text = summary.resolve(LocalResources.current),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
                 // Sets need a list and an editor, which don't fit above a keyboard — the argument
                 // the recipe builder already made. So the sheet hands off rather than growing a
-                // sub-view.
+                // sub-view, and hands the form over with it: whatever was typed here is still
+                // there on the other side.
                 if (form.type == ExerciseType.Strength) {
-                    SecondaryButton(
-                        label = stringResource(
-                            if (form.sets.isEmpty()) R.string.training_exercise_log_sets else R.string.training_exercise_edit_sets,
-                        ),
-                        onClick = { onOpenStrength(StrengthWorkoutRoute(dateEpochDay, editingId ?: 0)) },
-                        modifier = Modifier.fillMaxWidth(),
+                    ExerciseSetsRow(
+                        summary = form.sets.summaryLabel(uiState.preferredUnit)?.resolve(LocalResources.current),
+                        onClick = { onOpenStrength(StrengthWorkoutRoute(dateEpochDay, editing?.id ?: 0, draft = form)) },
                     )
                 }
-                PrimaryButton(
-                    label = stringResource(R.string.training_save),
-                    onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
-                    enabled = form.isValid(),
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
         }
     }
 }
+
+private val PREVIEW_RUN = ExerciseEntry(id = 1, type = ExerciseType.Run, name = "Riverside loop", minutes = 30, burnedKcal = 363)
+
+private val PREVIEW_WORKOUT = ExerciseEntry(
+    id = 3,
+    type = ExerciseType.Strength,
+    name = "Push day",
+    minutes = 45,
+    burnedKcal = 260,
+    sets = listOf(
+        StrengthSet("Bench press", 8, 60.0),
+        StrengthSet("Bench press", 8, 62.5),
+        StrengthSet("Dip", 10, 0.0),
+    ),
+)
 
 private val PreviewRoutines = listOf(
     Routine(id = 1, name = "Push day", lifts = emptyList()),
@@ -335,7 +395,7 @@ private fun LogExerciseSheetPreview() {
             state = LogExerciseState(form = LogExerciseForm()),
             describe = DescribeState(text = "45 minute run along the river"),
             dateEpochDay = 0,
-            editingId = null,
+            editing = null,
             onDismiss = {},
             onOpenStrength = {},
             onEvent = {},
@@ -353,7 +413,7 @@ private fun LogExerciseSheetManualPreview() {
             state = LogExerciseState(form = LogExerciseForm(type = ExerciseType.Run, minutes = 30)),
             manual = true,
             dateEpochDay = 0,
-            editingId = null,
+            editing = null,
             onDismiss = {},
             onOpenStrength = {},
             onEvent = {},
@@ -371,7 +431,7 @@ private fun LogExerciseSheetStrengthPreview() {
             state = LogExerciseState(form = LogExerciseForm(type = ExerciseType.Strength, minutes = 45)),
             manual = true,
             dateEpochDay = 0,
-            editingId = null,
+            editing = null,
             onDismiss = {},
             onOpenStrength = {},
             onEvent = {},
@@ -387,12 +447,9 @@ private fun LogExerciseSheetEditingPreview() {
     AppTheme {
         LogExerciseContent(
             uiState = LogExerciseUiState(weightKg = 74.0, routines = PreviewRoutines),
-            state = LogExerciseState(
-                form = ExerciseEntry(id = 1, type = ExerciseType.Run, name = "Riverside loop", minutes = 30, burnedKcal = 363)
-                    .toLogExerciseForm(),
-            ),
+            state = LogExerciseState(form = PREVIEW_RUN.toLogExerciseForm()),
             dateEpochDay = 0,
-            editingId = 1,
+            editing = PREVIEW_RUN,
             onDismiss = {},
             onOpenStrength = {},
             onEvent = {},
@@ -400,30 +457,17 @@ private fun LogExerciseSheetEditingPreview() {
     }
 }
 
-/** Correcting a logged workout that has sets: no type chips, its summary line, and the door to
- * the screen that can edit them. */
+/** Correcting a logged workout that has sets: no type chips, its Sets row, and Delete under the
+ * pinned Save. */
 @PreviewLightDark
 @Composable
 private fun LogExerciseSheetEditingSetsPreview() {
     AppTheme {
         LogExerciseContent(
             uiState = LogExerciseUiState(weightKg = 74.0),
-            state = LogExerciseState(
-                form = ExerciseEntry(
-                    id = 3,
-                    type = ExerciseType.Strength,
-                    name = "Push day",
-                    minutes = 45,
-                    burnedKcal = 260,
-                    sets = listOf(
-                        StrengthSet("Bench press", 8, 60.0),
-                        StrengthSet("Bench press", 8, 62.5),
-                        StrengthSet("Dip", 10, 0.0),
-                    ),
-                ).toLogExerciseForm(),
-            ),
+            state = LogExerciseState(form = PREVIEW_WORKOUT.toLogExerciseForm()),
             dateEpochDay = 0,
-            editingId = 3,
+            editing = PREVIEW_WORKOUT,
             onDismiss = {},
             onOpenStrength = {},
             onEvent = {},

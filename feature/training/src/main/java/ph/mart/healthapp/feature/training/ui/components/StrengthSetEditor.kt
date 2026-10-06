@@ -26,6 +26,8 @@ import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.NumericStepperField
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.component.TextButton
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.training.R
 
@@ -47,6 +49,11 @@ private fun loadStep(unit: UnitSystem): Double = if (unit == UnitSystem.Imperial
  * line under the field. It is the number a lifter opens the app for, and it belongs here rather
  * than beside the routine chips because it has to be right where the next load is typed — a
  * freestyle session gets it exactly as a routine does.
+ *
+ * [editingLabel] is non-null while a set already in the list is loaded here ("Editing set 2 of
+ * Bench press"): the button updates it in place rather than adding, and [onRemove] and
+ * [onCancelEdit] sit under it — removing a set lives here, behind a tap on its row, rather than as
+ * a bin on every row.
  */
 @Composable
 internal fun StrengthSetEditor(
@@ -57,11 +64,21 @@ internal fun StrengthSetEditor(
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
     lastPerformance: LiftPerformance? = null,
+    editingLabel: String? = null,
+    onRemove: () -> Unit = {},
+    onCancelEdit: () -> Unit = {},
 ) {
     val step = loadStep(unit)
     val displayLoad = draft.weightKg.kgToDisplayUnit(unit)
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier) {
+        if (editingLabel != null) {
+            Text(
+                text = editingLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         AppTextField(
             label = stringResource(R.string.training_exercise),
             value = draft.exerciseName,
@@ -116,11 +133,29 @@ internal fun StrengthSetEditor(
         // The caller keeps the draft after a commit, so pressing this again logs the same set —
         // which is the commonest gesture in a strength log and needs no button of its own.
         PrimaryButton(
-            label = stringResource(R.string.training_strength_add_set),
+            label = stringResource(
+                if (editingLabel == null) R.string.training_strength_add_set else R.string.training_strength_update_set,
+            ),
             onClick = onAdd,
             enabled = draft.canAdd(),
             modifier = Modifier.fillMaxWidth(),
         )
+        if (editingLabel != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                TextButton(
+                    label = stringResource(R.string.training_strength_remove),
+                    onClick = onRemove,
+                    color = MaterialTheme.colorScheme.error,
+                    icon = AppIcons.Delete,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(
+                    label = stringResource(R.string.training_cancel),
+                    onClick = onCancelEdit,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
     }
 }
 
@@ -144,6 +179,25 @@ private fun StrengthSetEditorPreview() {
                     topSet = StrengthSet("Bench press", reps = 8, weightKg = 57.5),
                     sets = 3,
                 ),
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+}
+
+/** A set from the list loaded back in: Update replaces it, Remove and Cancel sit under it. */
+@PreviewLightDark
+@Composable
+private fun StrengthSetEditorEditingPreview() {
+    AppTheme {
+        Surface {
+            StrengthSetEditor(
+                draft = StrengthSet("Bench press", reps = 8, weightKg = 62.5),
+                unit = UnitSystem.Metric,
+                recentLifts = listOf("Bench press", "Squat"),
+                onDraftChange = {},
+                onAdd = {},
+                editingLabel = "Editing set 2 of Bench press",
                 modifier = Modifier.padding(16.dp),
             )
         }

@@ -1,18 +1,23 @@
 package ph.mart.healthapp.feature.training.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -35,15 +40,19 @@ import ph.mart.healthapp.feature.training.R
  * its own exercise name, which is what keeps the schema at two tables instead of three. Insertion
  * order is preserved by `groupBy`, so the lifts read in the order they were done.
  *
- * [onRemove] takes the set's index in the flat list — the same list the form holds — so removing a
- * row from the middle of a group can't hit its neighbour.
+ * Tapping a set hands its index in the flat list — the same list the form holds — to [onSelect],
+ * which loads it into the editor to update or remove. A row from the middle of a group can't hit
+ * its neighbour, and there is no bin on every row: one stray tap used to delete a set with no way
+ * back, and fixing a typo cost a delete and a re-add at the end of the list. [selected] is the set
+ * the editor is holding, drawn so the user can see which one they are changing.
  */
 @Composable
 internal fun StrengthSetList(
     sets: List<StrengthSet>,
     unit: UnitSystem,
-    onRemove: (Int) -> Unit,
+    onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    selected: Int = -1,
 ) {
     if (sets.isEmpty()) {
         Text(
@@ -54,6 +63,7 @@ internal fun StrengthSetList(
         )
         return
     }
+    val editSet = stringResource(R.string.training_strength_edit_set)
     // Indices ride along so a row knows which entry of the flat list it is.
     val grouped = sets.withIndex().groupBy { it.value.exerciseName }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = modifier) {
@@ -69,15 +79,27 @@ internal fun StrengthSetList(
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    Text(
-                        text = volumeLabel(indexed.map { it.value }.volumeKg(), unit),
-                        style = MaterialTheme.typography.labelMedium.tabularNums,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    // A bodyweight lift moves no load, and "0 kg" beside it read as a mistake.
+                    val volume = indexed.map { it.value }.volumeKg()
+                    if (volume > 0) {
+                        Text(
+                            text = volumeLabel(volume, unit),
+                            style = MaterialTheme.typography.labelMedium.tabularNums,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
                 indexed.forEachIndexed { position, (index, set) ->
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.small)
+                            .background(
+                                if (index == selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
+                            )
+                            .clickable(onClickLabel = editSet) { onSelect(index) }
+                            .heightIn(min = 48.dp)
+                            .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -94,13 +116,12 @@ internal fun StrengthSetList(
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(onClick = { onRemove(index) }) {
-                            Icon(
-                                imageVector = AppIcons.Delete,
-                                contentDescription = stringResource(R.string.training_strength_remove_set, position + 1, name),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Icon(
+                            imageVector = AppIcons.Edit,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
+                        )
                     }
                 }
             }
@@ -120,7 +141,8 @@ private fun StrengthSetListPreview() {
                     StrengthSet("Pull-up", 10, 0.0),
                 ),
                 unit = UnitSystem.Metric,
-                onRemove = {},
+                onSelect = {},
+                selected = 1,
                 modifier = Modifier.padding(16.dp),
             )
         }
@@ -136,7 +158,7 @@ private fun StrengthSetListEmptyPreview() {
             StrengthSetList(
                 sets = emptyList(),
                 unit = UnitSystem.Metric,
-                onRemove = {},
+                onSelect = {},
                 modifier = Modifier.padding(16.dp),
             )
         }

@@ -103,35 +103,66 @@ class LogExerciseFormTest {
         assertEquals(emptyList<StrengthSet>(), LogExerciseForm().toExerciseEntry().sets)
     }
 
-    /** A session said in the log sheet arrives on the strength screen as its own seed — the lifts,
-     * the duration and the note — and is Strength whatever the model called it. */
+    /** The sheet's draft is where the strength screen starts — a typed note, a sentence's sets —
+     * and it is Strength whatever the sheet or the model called it. */
     @Test
-    fun `a described session seeds the strength form`() {
+    fun `the strength screen starts from the sheet's draft, as Strength`() {
         val sets = listOf(StrengthSet("Bench press", 8, 60.0), StrengthSet("Bench press", 8, 60.0))
-        val described = ParsedExercise(type = ExerciseType.Other, name = "gym", minutes = 50, sets = sets)
+        val draft = LogExerciseForm(type = ExerciseType.Other, name = "gym", minutes = 50, sets = sets)
 
-        val seed = LogExerciseUiState().strengthSeed(described)
+        val start = strengthStart(LogExerciseUiState().strengthSeed(), draft)
 
-        assertEquals(ExerciseType.Strength, seed.type)
-        assertEquals("gym", seed.name)
-        assertEquals(50, seed.minutes)
-        assertEquals(sets, seed.sets)
+        assertEquals(ExerciseType.Strength, start.type)
+        assertEquals("gym", start.name)
+        assertEquals(50, start.minutes)
+        assertEquals(sets, start.sets)
     }
 
-    /** The row being corrected and a started routine are the user's own; a parse is only a reading
-     * of a sentence, so it never wins over either. */
+    /** No draft: the row being corrected, or a started routine, exactly as before. */
     @Test
-    fun `an edit and a routine both outrank a described session`() {
-        val described = ParsedExercise(
-            type = ExerciseType.Strength,
-            name = "",
-            minutes = 50,
-            sets = listOf(StrengthSet("Bench press", 8, 60.0)),
-        )
+    fun `without a draft the screen starts from the row or the routine`() {
         val editing = logged.copy(type = ExerciseType.Strength, sets = listOf(StrengthSet("Squat", 5, 100.0)))
         val routine = Routine(id = 1, name = "Leg day", lifts = listOf(RoutineLift("Squat", sets = 3, reps = 5)))
 
-        assertEquals(editing.sets, LogExerciseUiState(editing = editing).strengthSeed(described).sets)
-        assertEquals("Leg day", LogExerciseUiState(seedRoutine = routine).strengthSeed(described).name)
+        assertEquals(editing.sets, strengthStart(LogExerciseUiState(editing = editing).strengthSeed(), null).sets)
+        assertEquals("Leg day", strengthStart(LogExerciseUiState(seedRoutine = routine).strengthSeed(), null).name)
+    }
+
+    /** Picking Strength in the sheet and handing over is not a change: the draft carries an
+     * estimate the blank seed doesn't, and back must not ask about a form nobody typed in. */
+    @Test
+    fun `a draft that only picked Strength is not unsaved`() {
+        val seed = LogExerciseUiState().strengthSeed()
+        val draft = LogExerciseForm(type = ExerciseType.Strength).withEstimate(weightKg = 74.0)
+
+        assertFalse(strengthStart(seed, draft).unsavedAgainst(seed, weightKg = 74.0))
+    }
+
+    /** The quirk this guards: a duration corrected in the sheet before "Sets" was tapped has to
+     * make back ask, or it is dropped without a word. */
+    @Test
+    fun `a duration corrected in the sheet is unsaved on the strength screen`() {
+        val editing = logged.copy(type = ExerciseType.Strength, sets = listOf(StrengthSet("Squat", 5, 100.0)))
+        val seed = LogExerciseUiState(editing = editing).strengthSeed()
+
+        assertFalse(strengthStart(seed, editing.toLogExerciseForm()).unsavedAgainst(seed, weightKg = 74.0))
+        assertTrue(strengthStart(seed, editing.toLogExerciseForm().copy(minutes = 45)).unsavedAgainst(seed, weightKg = 74.0))
+    }
+
+    /** A Run switched to Strength in the sheet keeps its own type in the seed, so the switch counts. */
+    @Test
+    fun `a logged run switched to Strength is unsaved`() {
+        val seed = LogExerciseUiState(editing = logged).strengthSeed()
+
+        assertTrue(strengthStart(seed, logged.toLogExerciseForm()).unsavedAgainst(seed, weightKg = 74.0))
+    }
+
+    /** A sentence's sets are a workout the user said — unsaved from the first frame. */
+    @Test
+    fun `a described session is unsaved`() {
+        val seed = LogExerciseUiState().strengthSeed()
+        val draft = LogExerciseForm(sets = listOf(StrengthSet("Bench press", 8, 60.0)))
+
+        assertTrue(strengthStart(seed, draft).unsavedAgainst(seed, weightKg = 74.0))
     }
 }

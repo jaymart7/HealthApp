@@ -3,7 +3,6 @@ package ph.mart.healthapp.feature.training.ui
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
-import ph.mart.healthapp.core.data.exercise.ParsedExercise
 
 /** Authoring a strength workout — reached from the log-exercise sheet, from tapping a logged one
  * to correct it, and from Home's training-plan card to start today's routine. It carries the day
@@ -15,15 +14,18 @@ import ph.mart.healthapp.core.data.exercise.ParsedExercise
  * reason: the back stack carries an id, never a row. It is meaningless beside a non-zero
  * [editingId] — a workout being corrected already has its sets.
  *
- * [described] is the log sheet's sentence once it named lifts — a parse, not a row, so it rides
- * the key the way `MealIdeasRoute`'s request does: nothing stored to resolve, and re-asking the
- * model on arrival would spend a second call on a sentence already answered. */
+ * [draft] is the log sheet's form as it stood when the sheet handed over: a note or a duration
+ * typed there, a correction to a logged row, or a sentence that named lifts, already parsed. It
+ * rides the key the way `MealIdeasRoute`'s request does — nothing stored to resolve, and re-asking
+ * the model on arrival would spend a second call on a sentence already answered. The screen starts
+ * from it but still measures "unsaved" against the row or the blank it would otherwise have
+ * opened on, so a carried change is never dropped by a quiet back. */
 @Serializable
 data class StrengthWorkoutRoute(
     val dateEpochDay: Long,
     val editingId: Long = 0,
     val routineId: Long = 0,
-    val described: ParsedExercise? = null,
+    val draft: LogExerciseForm? = null,
 ) : NavKey
 
 /**
@@ -41,7 +43,7 @@ fun EntryProviderScope<NavKey>.trainingEntries(
             dateEpochDay = key.dateEpochDay,
             editingId = key.editingId,
             routineId = key.routineId,
-            described = key.described,
+            draft = key.draft,
             onExit = onExitFlow,
             onSaved = onSaved,
         )

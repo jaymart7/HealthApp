@@ -3874,15 +3874,54 @@ rather than needing a counter patched.
   user could not tell which a row would do. Now the diary has one callback (`onLogExercise`) and
   `onOpenStrength` left `:feature:food` entirely. A row with sets hides the type chips (a chip
   could leave its sets on a swim — the screen's own argument for drawing none), shows the diary
-  row's own `summaryLabel()` line, and hands on with **Edit sets →**, the same door "Log sets
-  instead" already was. Editing sets costs one tap more; a duration or a burn costs one tap less.
-  *ponytail: edits typed into the sheet are dropped when Edit sets → is tapped, because the screen
-  reloads the row — the screen has the same fields, so nothing is unreachable.*
+  row's own `summaryLabel()` line, and hands on through a **Sets** row — one tappable row (icon,
+  summary, chevron) rather than a caption over a button, which is also what "Log sets instead"
+  became for a Strength activity with none yet. Editing sets costs one tap more; a duration or a
+  burn costs one tap less.
+- **The sheet hands the strength screen its form, not just an id.** `StrengthWorkoutRoute.draft`
+  is a `LogExerciseForm` (now `@Serializable`) carrying whatever the sheet held — a corrected
+  duration, a typed note, a sentence's sets — because the screen used to reload the row and drop
+  it all without a word. It replaced `described: ParsedExercise`, which was the same idea for one
+  path only; the parse now merges onto the form with `withParsed` and rides the same field. The
+  screen *starts* from the draft (`strengthStart`) but measures "unsaved" against what it would
+  have opened on otherwise (`strengthSeed`: the row as logged, a routine, or blank), so a carried
+  change makes back ask and an untouched hand-over pops quietly. `unsavedAgainst` compares *after*
+  `withEstimate` on both sides: a draft whose only act was picking Strength carries an estimated
+  burn the blank seed lacks, and that is the app's arithmetic, not the user's change. The edited
+  row keeps its own type in the seed for the same reason — a Run switched to Strength in the sheet
+  is a change. That retired `fromSentence`: a sentence's sets differ from a blank seed already.
+- **The edit sheet deletes, with an undo.** The food edit sheet's Delete, for its reason: a swipe on
+  the diary row was the only way to remove an activity, and a gesture nobody is shown is not a
+  feature. It soft-deletes like the swipe and confirms the same way — an undo, not a dialog, since
+  a logged row is history rather than something the user authored. The sheet words "Deleted Run"
+  (it has the resources) and `AppScaffold` shows it, because the sheet is gone by then; the undo
+  re-inserts through the ViewModel, which outlives the sheet. Save and Delete sit in the pinned
+  `SheetActionBar`, moved from `:feature:food` to `:core:designsystem` now that two features draw
+  it. The sheet opens fully expanded whenever its form is showing: `AppBottomSheet` passes
+  `skipPartiallyExpanded` for a sheet that opens `expanded`, read once, because M3's own show
+  animation settles at half height and beat the `expand()` call — leaving Save under the fold.
+- **Once the manual form opens, the routine chips go.** The user has chosen to type it in, and the
+  routine chips stacked straight over the activity-type chips read as one unlabelled choice.
 - **Correcting a workout is not a session, so the strength screen drops the session tools.** With
   an `editingId`, it draws no volume card, no describe field, no rest timer and no Cancel — the set
   list, its editor, Details, Save as routine and Save. Back (the top bar's goes through the
   dispatcher) still asks before discarding a dirty edit, which is why Cancel had nothing left to
-  do. A new workout keeps all four.
+  do. A new workout keeps all four, except that its volume card now waits for a first set — "0
+  sets · 0 lifted" over an empty list was noise. Save sits in a pinned bar on both, the sheets'
+  `bottomBar` argument: a long session's save must not cost a scroll past every set.
+- **A set is corrected by tapping it, not by deleting it.** Every row carried a bin, so one stray tap
+  lost a set with no way back, and fixing a typo cost a delete and a re-add at the *end* of the
+  list. A row now loads its set into the editor ("Editing set 2 of Bench press", the row
+  highlighted, the editor scrolled into view), where **Update set** replaces it in place and
+  **Remove set** and Cancel sit under it. Back steps out of a set edit before it asks about the
+  workout — a sub-level, the predictive-back rule. Leaving an edit gives a live session back its
+  last set as the draft (nearly always what it held before, so Add still repeats) and a correction
+  a blank one, so looking at a set never leaves the screen "unsaved". Updating starts no rest: the
+  set was lifted already. A bodyweight lift's group header no longer says "0 kg".
+- **Naming a lift fills in last time.** The editor already printed "Last: 60 kg × 8"; picking that
+  lift's chip (or typing its name) now puts those reps and that load in the fields — but only into
+  an empty draft, so a number already typed is never overwritten. The same `lastLifts` map, no new
+  read.
 - **The set editor's draft survives a commit, which is why there is no "same again" button.** Three
   sets of one lift at one load is the shape of most programmes, so pressing "Add set" again *is*
   the repeat gesture. The load steps by a plate (2.5 kg, 5 lb) rather than by 1, and is entered and
@@ -3942,13 +3981,14 @@ rather than needing a counter patched.
   fields plus an optional `lifts`, the strength parse's own row — read back through the same two
   trust boundaries (`parsedExercise`, `parsedSets`), the user's unit applied on-device and never
   sent. A schema of its own because `PARSED_EXERCISE_SCHEMA` is also the quick log's, which wants
-  no lifts. Non-empty sets close the sheet and push `StrengthWorkoutRoute(described = …)`: **the
+  no lifts. Non-empty sets close the sheet and push `StrengthWorkoutRoute(draft = …)`: **the
   parse rides the key**, as `MealIdeasRoute`'s request does — it is a reading of a sentence, not a
   row, so there is nothing stored to resolve, and re-asking the model on arrival would spend a
-  second call on an answered sentence. `strengthSeed()` takes it last, behind the row being
-  corrected and a started routine, which are the user's own. Arriving that way counts as dirty —
-  back asks before dropping a session the user *said*, where a routine's seed is a plan they can
-  start again for free.
+  second call on an answered sentence. It merges onto the sheet's form first (`withParsed` plus
+  the sets), so a note already typed travels with it. Arriving that way counts as dirty — back
+  asks before dropping a session the user *said*, where a routine's seed is a plan they can start
+  again for free — and needs no flag for it: the sets differ from the blank the screen measures
+  against.
 - **The log sheet starts routines; Profile's routine list still doesn't.** Starting one needs a
   day and a workout to put it in (the reason the list cannot), and the sheet has both, so its
   routine chips push `StrengthWorkoutRoute(routineId = …)` — the path Home's plan card takes, and

@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
+import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.RoutineLift
@@ -69,7 +70,18 @@ class LogExerciseViewModel(
             is LogExerciseEvent.OnParse -> onParse(event.text)
             is LogExerciseEvent.OnParseSets -> onParseSets(event.text)
             LogExerciseEvent.OnCancelParse -> onCancelParse()
+            is LogExerciseEvent.OnDelete -> onDelete(event.entry)
+            is LogExerciseEvent.OnRestore -> onRestore(event.entry)
         }
+    }
+
+    private fun onDelete(entry: ExerciseEntry) = intent {
+        exerciseRepository.deleteEntry(entry.id)
+        postSideEffect(LogExerciseSideEffect.Deleted(entry))
+    }
+
+    private fun onRestore(entry: ExerciseEntry) = intent {
+        exerciseRepository.addEntry(entry.copy(id = 0))
     }
 
     private fun observeWeight(

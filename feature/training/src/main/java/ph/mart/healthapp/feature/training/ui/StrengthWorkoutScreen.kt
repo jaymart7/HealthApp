@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +40,6 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.LiftPerformance
-import ph.mart.healthapp.core.data.exercise.ParsedExercise
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthParseResult
@@ -52,6 +53,7 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.designsystem.component.DiscardConfirmDialog
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
+import ph.mart.healthapp.core.designsystem.component.SheetActionBar
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.training.R
@@ -71,6 +73,9 @@ import ph.mart.healthapp.feature.training.ui.components.canAdd
  * and the one most programmes are written around. */
 private const val DEFAULT_REST_SECONDS = 90
 
+/** The editor is adding, not correcting a set already down. */
+private const val NOT_EDITING = -1
+
 /**
  * Authors a strength workout: the duration and burn every activity carries, plus what was actually
  * lifted. Saving writes one ordinary [ExerciseEntry] with its sets attached — the streak,
@@ -82,15 +87,14 @@ private const val DEFAULT_REST_SECONDS = 90
  * [editingId] of 0 is a new workout. Non-zero names a logged one, which the ViewModel resolves —
  * the route carries an id, not the row. [routineId] is the same shape for the opposite direction:
  * a routine to start from, which Home's training-plan card and the log sheet's chips name.
- * [described] is the log sheet's sentence once it named lifts, already parsed — see
- * [StrengthWorkoutRoute].
+ * [draft] is the log sheet's form as it stood when it handed over — see [StrengthWorkoutRoute].
  */
 @Composable
 fun StrengthWorkoutScreen(
     dateEpochDay: Long,
     editingId: Long,
     routineId: Long = 0,
-    described: ParsedExercise? = null,
+    draft: LogExerciseForm? = null,
     onExit: () -> Unit,
     onSaved: (creditedKcal: Int) -> Unit = {},
     viewModel: LogExerciseViewModel = koinViewModel(),
@@ -114,9 +118,10 @@ fun StrengthWorkoutScreen(
     }
 
     // Held here rather than in the content, the sheet's shape: a parse's sets arrive as a side
-    // effect, and the form they land in has to be in reach of the collector.
-    val seed = remember(uiState.editing, uiState.seedRoutine) { uiState.strengthSeed(described) }
-    val state = rememberLogExerciseState(seed)
+    // effect, and the form they land in has to be in reach of the collector. The seed stays the
+    // measure of "unsaved" even when the form starts from the sheet's draft.
+    val seed = remember(uiState.editing, uiState.seedRoutine) { uiState.strengthSeed() }
+    val state = rememberLogExerciseState(seed, start = strengthStart(seed, draft))
     val describe = rememberDescribeState()
 
     viewModel.collectSideEffect { effect ->
@@ -144,10 +149,11 @@ fun StrengthWorkoutScreen(
                     describe.message = R.string.training_exercise_describe_failed
             }
 
-            // The sheet's activity parse. The type is Strength by definition here, so this screen
-            // asks for sets instead. Named rather than swept into an `else`, so adding another
-            // side effect still fails here.
+            // The sheet's activity parse, and the sheet's delete. Neither happens on this screen.
+            // Named rather than swept into an `else`, so adding another side effect still fails
+            // here.
             is LogExerciseSideEffect.Parsed -> Unit
+            is LogExerciseSideEffect.Deleted -> Unit
         }
     }
 
@@ -160,7 +166,6 @@ fun StrengthWorkoutScreen(
         seed = seed,
         state = state,
         describe = describe,
-        fromSentence = described != null,
         onDescribe = {
             describe.message = null
             if (viewModel.isOnline()) {
@@ -174,25 +179,36 @@ fun StrengthWorkoutScreen(
 }
 
 /**
- * Strength whatever it arrived as: this screen draws no type chips, and it can be reached from the
- * edit sheet with a cardio row already seeded in it. Saving sets against a Run is the one outcome
- * the missing chip row makes possible.
+ * The form this screen would open on with nothing handed over: the row being corrected, as it was
+ * logged, or a new Strength workout — started from a routine when one was named. A started routine
+ * seeds the same form the chip row would have, so an opened-from-Home workout and a chip-tapped
+ * one are the same workout.
  *
- * A started routine seeds the same form the chip row would have — one seeding path, so an
- * opened-from-Home workout and a chip-tapped one are the same workout.
- *
- * [described] comes last: the route never carries it beside an edit or a routine, and if it ever
- * did, the row and the routine are the user's own where a parse is only a reading of a sentence.
- * Its minutes and note seed the form too — the burn then re-estimates from them, as a typed
- * duration's would. Internal for `LogExerciseFormTest`.
+ * The row keeps its own type here, because this is what "unsaved" is measured against: a Run the
+ * sheet switched to Strength before handing over has to read as a change. Internal for
+ * `LogExerciseFormTest`.
  */
-internal fun LogExerciseUiState.strengthSeed(described: ParsedExercise? = null): LogExerciseForm {
-    val form = editing?.toLogExerciseForm()
-        ?: seedRoutine?.let { LogExerciseForm(name = it.name, sets = it.toSets(lastLoads)) }
-        ?: described?.let { LogExerciseForm(name = it.name, minutes = it.minutes, sets = it.sets) }
-        ?: LogExerciseForm()
-    return form.copy(type = ExerciseType.Strength)
-}
+internal fun LogExerciseUiState.strengthSeed(): LogExerciseForm =
+    editing?.toLogExerciseForm()
+        ?: seedRoutine?.let { LogExerciseForm(type = ExerciseType.Strength, name = it.name, sets = it.toSets(lastLoads)) }
+        ?: LogExerciseForm(type = ExerciseType.Strength)
+
+/**
+ * Where the form begins: the sheet's [draft] when it handed one over — a typed note, a corrected
+ * duration, a sentence's sets — and the [seed] otherwise. Strength either way: this screen draws
+ * no type chips, so saving sets against a Run is the one outcome a missing chip row could cause.
+ */
+internal fun strengthStart(seed: LogExerciseForm, draft: LogExerciseForm?): LogExerciseForm =
+    (draft ?: seed).copy(type = ExerciseType.Strength)
+
+/**
+ * True when this form says something [seed] doesn't — what decides whether back has to ask.
+ * Compared after estimating both, because a burn the app worked out is not something the user
+ * wrote: a draft whose only act was picking Strength carries an estimate the blank seed lacks,
+ * and must not read as a change. Internal for `LogExerciseFormTest`.
+ */
+internal fun LogExerciseForm.unsavedAgainst(seed: LogExerciseForm, weightKg: Double): Boolean =
+    withEstimate(weightKg) != seed.withEstimate(weightKg)
 
 @Composable
 private fun StrengthWorkoutContent(
@@ -207,18 +223,28 @@ private fun StrengthWorkoutContent(
     state: LogExerciseState = rememberLogExerciseState(seed),
     describe: DescribeState = DescribeState(),
     onDescribe: () -> Unit = {},
-    fromSentence: Boolean = false,
+    initialEditingSet: Int = NOT_EDITING,
 ) {
     val form = state.form.withEstimate(uiState.weightKg)
     val correcting = editingId != null
 
     // The in-progress set. Three primitives rather than a saver: each is Bundle-native on its own,
-    // and the draft is worth keeping across a rotation for the same reason the form is.
-    var draftName by rememberSaveable { mutableStateOf("") }
-    var draftReps by rememberSaveable { mutableIntStateOf(0) }
-    var draftKg by rememberSaveable { mutableDoubleStateOf(0.0) }
+    // and the draft is worth keeping across a rotation for the same reason the form is. Blank,
+    // unless the preview opens on a set already being edited.
+    val initialDraft = state.form.sets.getOrNull(initialEditingSet)
+    var draftName by rememberSaveable { mutableStateOf(initialDraft?.exerciseName.orEmpty()) }
+    var draftReps by rememberSaveable { mutableIntStateOf(initialDraft?.reps ?: 0) }
+    var draftKg by rememberSaveable { mutableDoubleStateOf(initialDraft?.weightKg ?: 0.0) }
     var discardOpen by rememberSaveable { mutableStateOf(false) }
     val draft = StrengthSet(draftName, draftReps, draftKg)
+
+    // The set being corrected, as its index in the flat list — tapping a row loads it into the
+    // editor, which then updates or removes it in place. Saveable for the draft's reason.
+    var editingSet by rememberSaveable { mutableIntStateOf(initialEditingSet) }
+    val editedSet = form.sets.getOrNull(editingSet)
+    val editorRequester = remember { BringIntoViewRequester() }
+    // The list sits above the editor, so a tapped set would otherwise load somewhere off screen.
+    LaunchedEffect(editingSet) { if (editingSet != NOT_EDITING) editorRequester.bringIntoView() }
 
     // The rest between sets: the chosen length, and when the running one is up (0 = not resting).
     // Two more Bundle-native primitives for the draft's reason — a rotation mid-rest must not
@@ -235,176 +261,229 @@ private fun StrengthWorkoutContent(
     // Adding or removing a set makes it a different workout, so it can be saved again.
     LaunchedEffect(form.sets.size) { savedRoutineName = null }
 
+    fun setDraft(set: StrengthSet) {
+        draftName = set.exerciseName
+        draftReps = set.reps
+        draftKg = set.weightKg
+    }
+
+    // Leaving a set edit hands the editor back. A live session goes on repeating its last set —
+    // nearly always what the draft held before the tap — and a correction goes back to blank, so a
+    // look at one set doesn't leave the screen thinking something changed.
+    fun stopEditingSet(sets: List<StrengthSet> = state.form.sets) {
+        editingSet = NOT_EDITING
+        setDraft(if (correcting) StrengthSet("", 0, 0.0) else sets.lastOrNull() ?: StrengthSet("", 0, 0.0))
+    }
+
     // The one place a set lands, so it is the one place a rest starts — "Add set" begins one and
-    // nothing else does.
+    // nothing else does. Updating a set in place starts none: it was lifted already.
     fun commit(set: StrengthSet) {
+        if (editedSet != null) {
+            val sets = form.sets.mapIndexed { i, old -> if (i == editingSet) set else old }
+            state.form = form.copy(sets = sets)
+            stopEditingSet(sets)
+            return
+        }
         state.form = form.copy(sets = form.sets + set)
         if (restSeconds > 0) restEndAt = System.currentTimeMillis() + restSeconds * 1000L
     }
 
     // Back out of a half-written workout is the one destructive gesture here, so it only
     // intercepts once there is something to lose — an untouched screen pops like any other route.
-    // A session that arrived from a sentence counts as something: it is a workout the user said,
-    // where a routine's seed is only a plan they can start again. A parse in flight is a sub-level
-    // above that: back abandons it first, and only then asks about the workout. One handler rather
-    // than two, so which one wins can't depend on which condition happened to become true first.
-    val isDirty = state.form != seed || draft.canAdd() || fromSentence
-    if (uiState.parsing || isDirty) {
+    // A draft the sheet handed over counts when it differs from the row or the blank this would
+    // otherwise have opened on: a sentence's sets, a corrected duration. Two sub-levels sit above
+    // that, and back leaves them first — a parse in flight, then a set being edited. One handler
+    // rather than three, so which one wins can't depend on which became true first.
+    val isDirty = form.unsavedAgainst(seed, uiState.weightKg) || draft.canAdd()
+    if (uiState.parsing || editedSet != null || isDirty) {
         val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
         NavigationBackHandler(
             state = navigationState,
             onBackCompleted = {
-                if (uiState.parsing) onEvent(LogExerciseEvent.OnCancelParse) else discardOpen = true
+                when {
+                    uiState.parsing -> onEvent(LogExerciseEvent.OnCancelParse)
+                    editedSet != null -> stopEditingSet()
+                    else -> discardOpen = true
+                }
             },
         )
     }
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    // Before the scroll, so the set editor's weight and reps fields lift clear of the
-                    // keyboard instead of sitting behind it.
-                    .imePadding()
-                    .verticalScroll(rememberScrollState())
-                    // No docked FAB over this route, so no clearance to reserve for one.
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 16.dp, bottom = 24.dp),
-            ) {
-                // Correcting a logged workout is not a session: no running total to watch, no
-                // sentence to say, no rest to time. The set list and its editor are the whole job,
-                // so the session tools below are a new workout's only.
-                if (!correcting) VolumeSummary(sets = form.sets, unit = uiState.preferredUnit)
+            // Before the scroll, so the set editor's weight and reps fields — and the pinned save
+            // bar — lift clear of the keyboard instead of sitting behind it.
+            Column(modifier = Modifier.fillMaxSize().imePadding()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        // No docked FAB over this route, so no clearance to reserve for one.
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp, bottom = 24.dp),
+                ) {
+                    // Correcting a logged workout is not a session: no running total to watch, no
+                    // sentence to say, no rest to time. The set list and its editor are the whole
+                    // job, so the session tools below are a new workout's only. The total waits for
+                    // a first set — "0 sets · 0 lifted" over an empty list is noise, not a figure.
+                    if (!correcting && form.sets.isNotEmpty()) {
+                        VolumeSummary(sets = form.sets, unit = uiState.preferredUnit)
+                    }
 
-                // Appends rather than replaces, so it is offered whatever is already down. First,
-                // because saying the session is the quick path and the editor below is the
-                // correction.
-                if (!correcting) {
-                    DescribeExerciseField(
-                        text = describe.text,
-                        parsing = uiState.parsing,
-                        onTextChange = {
-                            describe.text = it
-                            describe.message = null
-                        },
-                        onEstimate = onDescribe,
-                        onCancel = { onEvent(LogExerciseEvent.OnCancelParse) },
-                        message = describe.message?.let { stringResource(it) },
-                        promptRes = R.string.training_strength_describe_prompt,
-                        placeholderRes = R.string.training_strength_describe_placeholder,
-                        submitRes = R.string.training_strength_describe_submit,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-
-                // The last session and the routines are one question — what to start from — so
-                // they are one row. Offered only on an empty list: each seeds the whole of it, and
-                // once a set is down that would overwrite it, and the discard question is the
-                // wrong one to ask for a chip.
-                val last = uiState.lastWorkout
-                if (form.sets.isEmpty() && (last != null || uiState.routines.isNotEmpty())) {
-                    val lastLabel = stringResource(R.string.training_strength_last_workout)
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = stringResource(R.string.training_strength_start_from),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        NameChipRow(
-                            names = listOfNotNull(lastLabel.takeIf { last != null }) + uiState.routines.map { it.name },
-                            // Names are what the row shows, so the tapped one is what finds its
-                            // seed back — two routines sharing a name seed the newer, the chip
-                            // nearer the start. *ponytail: a routine named exactly "Last workout"
-                            // is shadowed by the chip in front of it; match by index if it ever
-                            // matters.*
-                            onSelect = { name ->
-                                val sets = if (last != null && name == lastLabel) {
-                                    last.sets
-                                } else {
-                                    uiState.routines.firstOrNull { it.name == name }?.toSets(uiState.lastLoads)
-                                }
-                                if (sets != null) state.form = form.copy(sets = sets)
+                    // Appends rather than replaces, so it is offered whatever is already down.
+                    // First, because saying the session is the quick path and the editor below is
+                    // the correction.
+                    if (!correcting) {
+                        DescribeExerciseField(
+                            text = describe.text,
+                            parsing = uiState.parsing,
+                            onTextChange = {
+                                describe.text = it
+                                describe.message = null
                             },
+                            onEstimate = onDescribe,
+                            onCancel = { onEvent(LogExerciseEvent.OnCancelParse) },
+                            message = describe.message?.let { stringResource(it) },
+                            promptRes = R.string.training_strength_describe_prompt,
+                            placeholderRes = R.string.training_strength_describe_placeholder,
+                            submitRes = R.string.training_strength_describe_submit,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+
+                    // The last session and the routines are one question — what to start from — so
+                    // they are one row. Offered only on an empty list: each seeds the whole of it,
+                    // and once a set is down that would overwrite it, and the discard question is
+                    // the wrong one to ask for a chip.
+                    val last = uiState.lastWorkout
+                    if (form.sets.isEmpty() && (last != null || uiState.routines.isNotEmpty())) {
+                        val lastLabel = stringResource(R.string.training_strength_last_workout)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                text = stringResource(R.string.training_strength_start_from),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            NameChipRow(
+                                names = listOfNotNull(lastLabel.takeIf { last != null }) + uiState.routines.map { it.name },
+                                // Names are what the row shows, so the tapped one is what finds its
+                                // seed back — two routines sharing a name seed the newer, the chip
+                                // nearer the start. *ponytail: a routine named exactly "Last
+                                // workout" is shadowed by the chip in front of it; match by index if
+                                // it ever matters.*
+                                onSelect = { name ->
+                                    val sets = if (last != null && name == lastLabel) {
+                                        last.sets
+                                    } else {
+                                        uiState.routines.firstOrNull { it.name == name }?.toSets(uiState.lastLoads)
+                                    }
+                                    if (sets != null) state.form = form.copy(sets = sets)
+                                },
+                            )
+                        }
+                    }
+
+                    StrengthSetList(
+                        sets = form.sets,
+                        unit = uiState.preferredUnit,
+                        selected = editingSet,
+                        onSelect = { index ->
+                            editingSet = index
+                            setDraft(form.sets[index])
+                        },
+                    )
+
+                    if (!correcting) {
+                        RestTimerCard(
+                            endAtMillis = restEndAt,
+                            durationSeconds = restSeconds,
+                            onDurationChange = { restSeconds = it },
+                            onExtend = { restEndAt += REST_EXTEND_SECONDS * 1000L },
+                            onSkip = { restEndAt = NO_REST },
+                            onFinished = { restEndAt = NO_REST },
+                        )
+                    }
+
+                    StrengthSetEditor(
+                        draft = draft,
+                        unit = uiState.preferredUnit,
+                        recentLifts = uiState.recentLifts,
+                        onDraftChange = { next ->
+                            // Naming a lift that has history fills in what was on the bar last
+                            // time — the "Last:" line under the field, one tap closer. Only into an
+                            // empty draft, so a number already typed is never overwritten.
+                            val lastTop = uiState.lastLifts[next.exerciseName.liftKey()]?.topSet
+                            val prefill = next.exerciseName != draftName && draftReps == 0 && draftKg == 0.0
+                            setDraft(
+                                if (prefill && lastTop != null) next.copy(reps = lastTop.reps, weightKg = lastTop.weightKg) else next,
+                            )
+                        },
+                        lastPerformance = uiState.lastLifts[draftName.liftKey()],
+                        // The draft deliberately survives the commit: three sets of the same lift
+                        // at the same load is the shape of most programmes, so pressing Add again
+                        // *is* the repeat gesture and no second button is needed for it.
+                        onAdd = { commit(draft) },
+                        editingLabel = editedSet?.let { set ->
+                            stringResource(
+                                R.string.training_strength_editing_set,
+                                form.sets.take(editingSet + 1).count { it.exerciseName == set.exerciseName },
+                                set.exerciseName.ifBlank { stringResource(R.string.training_strength_unnamed) },
+                            )
+                        },
+                        onRemove = {
+                            val sets = form.sets.filterIndexed { i, _ -> i != editingSet }
+                            state.form = form.copy(sets = sets)
+                            stopEditingSet(sets)
+                        },
+                        onCancelEdit = { stopEditingSet() },
+                        modifier = Modifier.bringIntoViewRequester(editorRequester),
+                    )
+
+                    WorkoutDetailsDisclosure(minutes = form.minutes, burnedKcal = form.burnedKcal) {
+                        ExerciseFormFields(
+                            form = form,
+                            weightKg = uiState.weightKg,
+                            onFormChange = { state.form = it },
+                            showTypeChips = false,
+                        )
+                    }
+
+                    if (form.sets.isNotEmpty()) {
+                        SecondaryButton(
+                            label = savedRoutineName?.let { stringResource(R.string.training_strength_saved_routine, it) }
+                                ?: stringResource(R.string.training_strength_save_routine),
+                            onClick = {
+                                routineName = form.name.trim()
+                                routineSheetOpen = true
+                            },
+                            enabled = savedRoutineName == null,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
 
-                StrengthSetList(
-                    sets = form.sets,
-                    unit = uiState.preferredUnit,
-                    onRemove = { index ->
-                        state.form = form.copy(sets = form.sets.filterIndexed { i, _ -> i != index })
-                    },
-                )
-
-                if (!correcting) {
-                    RestTimerCard(
-                        endAtMillis = restEndAt,
-                        durationSeconds = restSeconds,
-                        onDurationChange = { restSeconds = it },
-                        onExtend = { restEndAt += REST_EXTEND_SECONDS * 1000L },
-                        onSkip = { restEndAt = NO_REST },
-                        onFinished = { restEndAt = NO_REST },
-                    )
-                }
-
-                StrengthSetEditor(
-                    draft = draft,
-                    unit = uiState.preferredUnit,
-                    recentLifts = uiState.recentLifts,
-                    onDraftChange = {
-                        draftName = it.exerciseName
-                        draftReps = it.reps
-                        draftKg = it.weightKg
-                    },
-                    lastPerformance = uiState.lastLifts[draftName.liftKey()],
-                    // The draft deliberately survives the commit: three sets of the same lift at
-                    // the same load is the shape of most programmes, so pressing Add again *is*
-                    // the repeat gesture and no second button is needed for it.
-                    onAdd = { commit(draft) },
-                )
-
-                WorkoutDetailsDisclosure(minutes = form.minutes, burnedKcal = form.burnedKcal) {
-                    ExerciseFormFields(
-                        form = form,
-                        weightKg = uiState.weightKg,
-                        onFormChange = { state.form = it },
-                        showTypeChips = false,
-                    )
-                }
-
-                if (form.sets.isNotEmpty()) {
-                    SecondaryButton(
-                        label = savedRoutineName?.let { stringResource(R.string.training_strength_saved_routine, it) }
-                            ?: stringResource(R.string.training_strength_save_routine),
-                        onClick = {
-                            routineName = form.name.trim()
-                            routineSheetOpen = true
-                        },
-                        enabled = savedRoutineName == null,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    // A correction leaves by back, which still asks before dropping an edit.
-                    if (!correcting) {
-                        SecondaryButton(
-                            label = stringResource(R.string.training_cancel),
-                            onClick = { if (isDirty) discardOpen = true else onExit() },
+                // Pinned under the scroll, the sheets' `bottomBar` argument: a long session's save
+                // must not cost a scroll past every set already down.
+                SheetActionBar {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        // A correction leaves by back, which still asks before dropping an edit.
+                        if (!correcting) {
+                            SecondaryButton(
+                                label = stringResource(R.string.training_cancel),
+                                onClick = { if (isDirty) discardOpen = true else onExit() },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        PrimaryButton(
+                            label = stringResource(R.string.training_strength_save_workout),
+                            onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
+                            // The same guard the sheet uses: a workout is still a duration. A
+                            // session with no sets saves as the plain strength entry it always was.
+                            enabled = form.isValid(),
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    PrimaryButton(
-                        label = stringResource(R.string.training_strength_save_workout),
-                        onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
-                        // The same guard the sheet uses: a workout is still a duration. A session
-                        // with no sets saves as the plain strength entry it always was.
-                        enabled = form.isValid(),
-                        modifier = Modifier.weight(1f),
-                    )
                 }
             }
 
@@ -507,6 +586,38 @@ private fun StrengthWorkoutScreenPreview() {
             editingId = 1,
             onExit = {},
             onEvent = {},
+        )
+    }
+}
+
+/** A logged set tapped: highlighted in the list, loaded into the editor, which offers Update and
+ * Remove in place of Add. */
+@PreviewLightDark
+@Composable
+private fun StrengthWorkoutScreenEditingSetPreview() {
+    AppTheme {
+        StrengthWorkoutContent(
+            uiState = LogExerciseUiState(
+                weightKg = 74.0,
+                strengthLoaded = true,
+                editing = ExerciseEntry(
+                    id = 1,
+                    type = ExerciseType.Strength,
+                    name = "Push day",
+                    minutes = 45,
+                    burnedKcal = 260,
+                    sets = listOf(
+                        StrengthSet("Bench press", 8, 60.0),
+                        StrengthSet("Bench press", 8, 62.5),
+                        StrengthSet("Dip", 10, 0.0),
+                    ),
+                ),
+            ),
+            dateEpochDay = 0,
+            editingId = 1,
+            onExit = {},
+            onEvent = {},
+            initialEditingSet = 1,
         )
     }
 }

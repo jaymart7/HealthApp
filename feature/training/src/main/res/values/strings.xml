@@ -8,8 +8,10 @@
     <!-- Log exercise sheet -->
     <string name="training_exercise_log">Log exercise</string>
     <string name="training_exercise_edit">Edit exercise</string>
-    <string name="training_exercise_log_sets">Log sets instead →</string>
-    <string name="training_exercise_edit_sets">Edit sets →</string>
+    <string name="training_exercise_sets">Sets</string>
+    <string name="training_exercise_sets_none">Log each lift, rep and load</string>
+    <string name="training_exercise_delete">Delete exercise</string>
+    <string name="training_exercise_deleted">Deleted %1$s</string>
     <string name="training_exercise_manual">Enter manually</string>
 
     <!-- Describe it: the sentence the model turns into the form above -->
@@ -52,12 +54,15 @@
     <string name="training_strength_summary">%1$s · %2$d lifted</string>
     <string name="training_strength_no_sets">No sets yet. Add the first one below.</string>
     <string name="training_strength_unnamed">Unnamed lift</string>
-    <string name="training_strength_remove_set">Remove set %1$d of %2$s</string>
     <string name="training_strength_exercise_placeholder">Bench press</string>
     <string name="training_strength_reps">Reps</string>
     <string name="training_strength_load">Load</string>
     <string name="training_strength_load_bodyweight">Load · bodyweight</string>
     <string name="training_strength_add_set">Add set</string>
+    <string name="training_strength_update_set">Update set</string>
+    <string name="training_strength_remove">Remove set</string>
+    <string name="training_strength_edit_set">Edit set</string>
+    <string name="training_strength_editing_set">Editing set %1$d of %2$s</string>
 
     <!-- Rest timer -->
     <string name="training_rest_title">Rest timer</string>
