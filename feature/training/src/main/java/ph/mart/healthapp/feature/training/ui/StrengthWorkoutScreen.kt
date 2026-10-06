@@ -210,6 +210,7 @@ private fun StrengthWorkoutContent(
     fromSentence: Boolean = false,
 ) {
     val form = state.form.withEstimate(uiState.weightKg)
+    val correcting = editingId != null
 
     // The in-progress set. Three primitives rather than a saver: each is Bundle-native on its own,
     // and the draft is worth keeping across a rotation for the same reason the form is.
@@ -272,27 +273,31 @@ private fun StrengthWorkoutContent(
                     .padding(horizontal = 16.dp)
                     .padding(top = 16.dp, bottom = 24.dp),
             ) {
-                VolumeSummary(sets = form.sets, unit = uiState.preferredUnit)
+                // Correcting a logged workout is not a session: no running total to watch, no
+                // sentence to say, no rest to time. The set list and its editor are the whole job,
+                // so the session tools below are a new workout's only.
+                if (!correcting) VolumeSummary(sets = form.sets, unit = uiState.preferredUnit)
 
-                // Appends rather than replaces, so it is offered whatever is already down —
-                // correcting a logged workout included, where "and I forgot the curls" is the
-                // likeliest sentence. First, because saying the session is the quick path and the
-                // editor below is the correction.
-                DescribeExerciseField(
-                    text = describe.text,
-                    parsing = uiState.parsing,
-                    onTextChange = {
-                        describe.text = it
-                        describe.message = null
-                    },
-                    onEstimate = onDescribe,
-                    onCancel = { onEvent(LogExerciseEvent.OnCancelParse) },
-                    message = describe.message?.let { stringResource(it) },
-                    promptRes = R.string.training_strength_describe_prompt,
-                    placeholderRes = R.string.training_strength_describe_placeholder,
-                    submitRes = R.string.training_strength_describe_submit,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // Appends rather than replaces, so it is offered whatever is already down. First,
+                // because saying the session is the quick path and the editor below is the
+                // correction.
+                if (!correcting) {
+                    DescribeExerciseField(
+                        text = describe.text,
+                        parsing = uiState.parsing,
+                        onTextChange = {
+                            describe.text = it
+                            describe.message = null
+                        },
+                        onEstimate = onDescribe,
+                        onCancel = { onEvent(LogExerciseEvent.OnCancelParse) },
+                        message = describe.message?.let { stringResource(it) },
+                        promptRes = R.string.training_strength_describe_prompt,
+                        placeholderRes = R.string.training_strength_describe_placeholder,
+                        submitRes = R.string.training_strength_describe_submit,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
 
                 // The last session and the routines are one question — what to start from — so
                 // they are one row. Offered only on an empty list: each seeds the whole of it, and
@@ -334,14 +339,16 @@ private fun StrengthWorkoutContent(
                     },
                 )
 
-                RestTimerCard(
-                    endAtMillis = restEndAt,
-                    durationSeconds = restSeconds,
-                    onDurationChange = { restSeconds = it },
-                    onExtend = { restEndAt += REST_EXTEND_SECONDS * 1000L },
-                    onSkip = { restEndAt = NO_REST },
-                    onFinished = { restEndAt = NO_REST },
-                )
+                if (!correcting) {
+                    RestTimerCard(
+                        endAtMillis = restEndAt,
+                        durationSeconds = restSeconds,
+                        onDurationChange = { restSeconds = it },
+                        onExtend = { restEndAt += REST_EXTEND_SECONDS * 1000L },
+                        onSkip = { restEndAt = NO_REST },
+                        onFinished = { restEndAt = NO_REST },
+                    )
+                }
 
                 StrengthSetEditor(
                     draft = draft,
@@ -382,11 +389,14 @@ private fun StrengthWorkoutContent(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                    SecondaryButton(
-                        label = stringResource(R.string.training_cancel),
-                        onClick = { if (isDirty) discardOpen = true else onExit() },
-                        modifier = Modifier.weight(1f),
-                    )
+                    // A correction leaves by back, which still asks before dropping an edit.
+                    if (!correcting) {
+                        SecondaryButton(
+                            label = stringResource(R.string.training_cancel),
+                            onClick = { if (isDirty) discardOpen = true else onExit() },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                     PrimaryButton(
                         label = stringResource(R.string.training_strength_save_workout),
                         onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },

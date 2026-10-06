@@ -3868,7 +3868,21 @@ rather than needing a counter patched.
   chips, and can be reached from the edit sheet with a cardio row already in it), and it holds its
   content back until `strengthLoaded` — `rememberLogExerciseState` keys its saveable on the seed,
   so composing blank and re-seeding when the row lands would wipe what had been typed, the guard
-  `DiarySheets` already applies. Tapping a logged row routes there only when it has sets.
+  `DiarySheets` already applies.
+- **Every logged row reopens in the sheet, sets or not.** It used to split: a row with sets pushed
+  the strength screen, every other row opened the sheet — two outcomes for one gesture, and the
+  user could not tell which a row would do. Now the diary has one callback (`onLogExercise`) and
+  `onOpenStrength` left `:feature:food` entirely. A row with sets hides the type chips (a chip
+  could leave its sets on a swim — the screen's own argument for drawing none), shows the diary
+  row's own `summaryLabel()` line, and hands on with **Edit sets →**, the same door "Log sets
+  instead" already was. Editing sets costs one tap more; a duration or a burn costs one tap less.
+  *ponytail: edits typed into the sheet are dropped when Edit sets → is tapped, because the screen
+  reloads the row — the screen has the same fields, so nothing is unreachable.*
+- **Correcting a workout is not a session, so the strength screen drops the session tools.** With
+  an `editingId`, it draws no volume card, no describe field, no rest timer and no Cancel — the set
+  list, its editor, Details, Save as routine and Save. Back (the top bar's goes through the
+  dispatcher) still asks before discarding a dirty edit, which is why Cancel had nothing left to
+  do. A new workout keeps all four.
 - **The set editor's draft survives a commit, which is why there is no "same again" button.** Three
   sets of one lift at one load is the shape of most programmes, so pressing "Add set" again *is*
   the repeat gesture. The load steps by a plate (2.5 kg, 5 lb) rather than by 1, and is entered and

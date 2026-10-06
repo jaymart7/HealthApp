@@ -527,9 +527,6 @@ fun AppScaffold(
                             },
                             pendingIdea = pendingIdea,
                             onIdeaConsumed = { pendingIdea = null },
-                            onOpenStrength = { date, editingId ->
-                                topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
-                            },
                             // The same door Home's mascot card opens, carrying the question the
                             // day raised. `CoachRoute` fills the field with it and never sends.
                             onAskCoach = { question, source -> topLevelBackStack.add(CoachRoute(question, source)) },

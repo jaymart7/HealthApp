@@ -297,7 +297,9 @@ see `DECISIONS.md`.
   the app's: the model is never asked for one and the schema has nowhere to put one, so a
   described run and a typed one of the same length price identically off the user's own latest
   weigh-in. Back during a parse cancels it. Correcting a logged workout shows the form alone — no
-  sentence, no routines.
+  sentence, no routines. **Tapping any diary exercise row opens this sheet**; a workout with sets
+  drops the type chips, shows its sets line and offers **Edit sets →** to the strength screen,
+  which, when correcting, draws only the set list, its editor, Details and Save.
 - Burned calories credited to the day's budget, with a Profile switch to opt out.
 - **Earned calories** — what the credit bought, said in one voice on three surfaces: a
   snackbar the moment a workout saves, a promoted line and its own arc on Home's calorie
@@ -308,8 +310,9 @@ see `DECISIONS.md`.
   chips from recent sessions, last-lifted load shown per lift.
 - **Describe your sets** — "What did you lift?" heads the strength screen, always open: a
   sentence, typed or dictated, becomes sets appended to the list. A load said with no unit is in
-  the user's own unit, applied on-device — only the sentence is sent. Offered while correcting a
-  logged workout too, since it only adds; back during a parse cancels it.
+  the user's own unit, applied on-device — only the sentence is sent. New workouts only — a
+  correction has no volume card, describe field, rest timer or Cancel; back during a parse cancels
+  it.
 - Bodyweight sets (0 kg) are a real value.
 - **Start from** — one chip row on an empty set list: "Last workout" first, then every routine.
   Either seeds the whole list.

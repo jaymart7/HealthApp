@@ -14,6 +14,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,9 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseParseResult
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.StrengthSet
+import ph.mart.healthapp.core.data.exercise.summaryLabel
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.designsystem.component.AppBottomSheet
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
@@ -50,10 +54,12 @@ import ph.mart.healthapp.feature.training.ui.components.NameChipRow
  * swipe and a cancel, neither of which earned anything; see [LogExerciseSideEffect.Saved].
  *
  * [onOpenStrength] leaves for the strength workout screen, and the sheet builds the route itself:
- * it is this module's, and the sheet already knows the day and the row. Three doors lead there — a
- * sentence that named lifts, a routine chip, and "Log sets instead" once Strength is picked by
- * hand. That last one is a door rather than an automatic redirect on purpose: the plain
- * duration-and-kcal path is what an imported watch session is, and it stays reachable. */
+ * it is this module's, and the sheet already knows the day and the row. Four doors lead there — a
+ * sentence that named lifts, a routine chip, "Log sets instead" once Strength is picked by hand,
+ * and "Edit sets" on a logged workout that has them. The diary reopens every row here, sets or
+ * not, so tapping one always does the same thing. "Log sets instead" is a door rather than an
+ * automatic redirect on purpose: the plain duration-and-kcal path is what an imported watch
+ * session is, and it stays reachable. */
 @Composable
 fun LogExerciseSheet(
     onDismiss: () -> Unit,
@@ -279,13 +285,26 @@ private fun LogExerciseContent(
                     form = form,
                     weightKg = uiState.weightKg,
                     onFormChange = { state.form = it },
+                    // A logged workout with sets stays Strength: a chip that switched it would
+                    // leave its set list attached to a swim — the strength screen's own argument.
+                    showTypeChips = form.sets.isEmpty(),
                 )
+                // The diary row's own line, so the sheet says what the button below will open.
+                form.sets.summaryLabel(uiState.preferredUnit)?.let { summary ->
+                    Text(
+                        text = summary.resolve(LocalResources.current),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 // Sets need a list and an editor, which don't fit above a keyboard — the argument
                 // the recipe builder already made. So the sheet hands off rather than growing a
                 // sub-view.
                 if (form.type == ExerciseType.Strength) {
                     SecondaryButton(
-                        label = stringResource(R.string.training_exercise_log_sets),
+                        label = stringResource(
+                            if (form.sets.isEmpty()) R.string.training_exercise_log_sets else R.string.training_exercise_edit_sets,
+                        ),
                         onClick = { onOpenStrength(StrengthWorkoutRoute(dateEpochDay, editingId ?: 0)) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -374,6 +393,37 @@ private fun LogExerciseSheetEditingPreview() {
             ),
             dateEpochDay = 0,
             editingId = 1,
+            onDismiss = {},
+            onOpenStrength = {},
+            onEvent = {},
+        )
+    }
+}
+
+/** Correcting a logged workout that has sets: no type chips, its summary line, and the door to
+ * the screen that can edit them. */
+@PreviewLightDark
+@Composable
+private fun LogExerciseSheetEditingSetsPreview() {
+    AppTheme {
+        LogExerciseContent(
+            uiState = LogExerciseUiState(weightKg = 74.0),
+            state = LogExerciseState(
+                form = ExerciseEntry(
+                    id = 3,
+                    type = ExerciseType.Strength,
+                    name = "Push day",
+                    minutes = 45,
+                    burnedKcal = 260,
+                    sets = listOf(
+                        StrengthSet("Bench press", 8, 60.0),
+                        StrengthSet("Bench press", 8, 62.5),
+                        StrengthSet("Dip", 10, 0.0),
+                    ),
+                ).toLogExerciseForm(),
+            ),
+            dateEpochDay = 0,
+            editingId = 3,
             onDismiss = {},
             onOpenStrength = {},
             onEvent = {},

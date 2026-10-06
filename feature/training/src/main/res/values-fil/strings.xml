@@ -9,6 +9,7 @@
     <string name="training_exercise_log">I-log ang ehersisyo</string>
     <string name="training_exercise_edit">I-edit ang ehersisyo</string>
     <string name="training_exercise_log_sets">Mag-log ng sets sa halip →</string>
+    <string name="training_exercise_edit_sets">I-edit ang sets →</string>
     <string name="training_exercise_manual">Ilagay nang manual</string>
     <string name="training_exercise_describe_prompt">Ano ang ginawa mo?</string>
     <string name="training_exercise_describe_placeholder">45 minutong takbo, o bench 3x8 sa 60</string>

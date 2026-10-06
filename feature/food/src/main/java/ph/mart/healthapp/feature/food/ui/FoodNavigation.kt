@@ -85,9 +85,10 @@ data class VoiceLogRoute(val dateEpochDay: Long) : NavKey
  * add-and-edit screen, and the history search, which took its bar over when the review screen
  * behind a result brought one of its own.
  *
- * [onOpenStrength] and [onLogExercise] leave this module entirely — the strength screen and the
- * log-exercise sheet are `:feature:training`'s, and a feature never imports another's types, so
- * both stay callbacks resolved in `AppScaffold`. The shape `onOpenCoach` already has. */
+ * [onLogExercise] leaves this module entirely — the log-exercise sheet is `:feature:training`'s,
+ * and a feature never imports another's types, so it stays a callback resolved in `AppScaffold`.
+ * The shape `onOpenCoach` already has. Every exercise row reopens there, sets or not; the sheet is
+ * what hands a workout on to the strength screen. */
 fun EntryProviderScope<NavKey>.foodEntries(
     scrollState: ScrollState,
     twoPane: Boolean = false,
@@ -108,10 +109,9 @@ fun EntryProviderScope<NavKey>.foodEntries(
      * pop and the sheet reopening. Null the rest of the time. */
     pendingIdea: MealIdea? = null,
     onIdeaConsumed: () -> Unit = {},
-    onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
     /** The day's own question, carried to the coach — which lives above this tab, so like
-     * `onOpenStrength` it stays a callback `AppScaffold` resolves. */
+     * `onLogExercise` it stays a callback `AppScaffold` resolves. */
     onAskCoach: (question: String, source: String) -> Unit,
     onExitFlow: () -> Unit,
 ) {
@@ -127,7 +127,6 @@ fun EntryProviderScope<NavKey>.foodEntries(
             onGetIdeas = onGetIdeas,
             pendingIdea = pendingIdea,
             onIdeaConsumed = onIdeaConsumed,
-            onOpenStrength = onOpenStrength,
             onLogExercise = onLogExercise,
             onAskCoach = onAskCoach,
         )

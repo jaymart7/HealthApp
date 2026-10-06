@@ -68,7 +68,6 @@ internal fun DiaryBody(
     onSpeakFood: (Long) -> Unit,
     onCapturePhoto: (Long) -> Unit,
     onOpenHistory: (Long, String) -> Unit,
-    onOpenStrength: (Long, Long) -> Unit,
     onLogExercise: (Long, Long) -> Unit,
     onAskCoach: (question: String, source: String) -> Unit,
     snackbarHostState: SnackbarHostState,
@@ -220,15 +219,9 @@ internal fun DiaryBody(
                 dayIsEmpty = dayIsEmpty,
                 onToggle = { state.exerciseExpanded = !state.exerciseExpanded },
                 onAdd = { onLogExercise(uiState.selectedDate, 0) },
-                // A workout with sets reopens on the screen that can show them; everything
-                // else reopens in the sheet that logged it.
-                onEditEntry = { entry ->
-                    if (entry.sets.isEmpty()) {
-                        onLogExercise(uiState.selectedDate, entry.id)
-                    } else {
-                        onOpenStrength(uiState.selectedDate, entry.id)
-                    }
-                },
+                // Every row reopens in the same sheet; a workout with sets goes on to the strength
+                // screen from there, on its own button.
+                onEditEntry = { entry -> onLogExercise(uiState.selectedDate, entry.id) },
                 onDeleteEntry = { entry ->
                     onEvent(FoodEvent.OnDeleteExercise(entry.id))
                     scope.launch {
@@ -306,7 +299,6 @@ private fun DiaryBodyPreview() {
             onSpeakFood = {},
             onCapturePhoto = {},
             onOpenHistory = { _, _ -> },
-            onOpenStrength = { _, _ -> },
             onLogExercise = { _, _ -> },
             onAskCoach = { _, _ -> },
             snackbarHostState = SnackbarHostState(),

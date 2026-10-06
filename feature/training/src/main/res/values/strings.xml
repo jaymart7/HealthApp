@@ -9,6 +9,7 @@
     <string name="training_exercise_log">Log exercise</string>
     <string name="training_exercise_edit">Edit exercise</string>
     <string name="training_exercise_log_sets">Log sets instead →</string>
+    <string name="training_exercise_edit_sets">Edit sets →</string>
     <string name="training_exercise_manual">Enter manually</string>
 
     <!-- Describe it: the sentence the model turns into the form above -->
