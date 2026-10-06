@@ -37,12 +37,20 @@ internal interface RoutineDao {
     @Query("UPDATE routine SET isDeleted = 1 WHERE id = :id")
     suspend fun softDelete(id: Long)
 
-    /** Only the name, for the reason `SavedMealDao.rename` gives: an upsert of the whole entity is
-     * one typo away from rewriting what the routine is. */
-    @Query("UPDATE routine SET name = :name WHERE id = :id")
-    suspend fun rename(id: Long, name: String)
+    /**
+     * An edit from Profile → Workout routines: the old row is soft-deleted and the edited one
+     * inserted with its lifts, in one transaction — `SavedMealDao.replace`'s rule, so the list
+     * never emits a frame with the routine in neither place. The old lifts go out of view with
+     * their parent through [observeLifts]' grouping.
+     */
+    @Transaction
+    suspend fun replace(id: Long, entity: RoutineEntity, lifts: List<RoutineLiftEntity>) {
+        softDelete(id)
+        insertWithLifts(entity, lifts)
+    }
 
-    /** One column, for [rename]'s reason — and the whole write surface of the training plan. */
+    /** One column, so the card's plan zone can't rewrite the lifts — the whole write surface of
+     * the training plan outside [replace]. */
     @Query("UPDATE routine SET days = :days WHERE id = :id")
     suspend fun setDays(id: Long, days: Int)
 }

@@ -13,7 +13,7 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.Figure
 /**
  * Every saved routine. Unlike the food library there is no window to reach past — the strength
  * screen's chip row scrolls and shows them all — so this screen exists for the other half of that
- * screen's job: a routine can be *started* there and can only be renamed or deleted here.
+ * screen's job: a routine can be *started* there and can only be edited or deleted here.
  */
 data class RoutinesUiState(
     val routines: List<Routine> = emptyList(),
@@ -56,7 +56,8 @@ sealed interface RoutinesEvent {
     /** The whole mask, not one day — the picker owns the toggle, so the write is idempotent and a
      * stale emission can't flip a day the user never touched. */
     data class OnSetDays(val id: Long, val days: Int) : RoutinesEvent
-    data class OnRename(val id: Long, val name: String) : RoutinesEvent
+    /** The edit sheet's draft, whole — name, lifts and plan, saved as a new row. */
+    data class OnUpdate(val routine: Routine) : RoutinesEvent
 }
 
 /** A design's answer, handed to the sheet once: the routine to preview, or why there isn't one. */

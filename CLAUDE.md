@@ -346,7 +346,7 @@ for the database.
   `shared/` holding the row primitives — `AppListRow`, `IconTile`, `SectionHeader`, `StepperRow`
   — and `WeekdayPicker`, which the routine editor and the supplement sheet both draw, beside the
   saved-thing row family all three "Your stuff" lists draw: `SavedThingRow`,
-  `FigureText`, `RowOverflowMenu`, `DeleteConfirmDialog` and `RenameSheet`) and `:feature:onboarding`
+  `FigureText`, `RowOverflowMenu`, `DeleteConfirmDialog` and `SheetDeleteAction`) and `:feature:onboarding`
   (`onboarding`, `health`, `shared`) are the worked examples. Grouping is by *subject*, not by
   owning screen: `RecipeRow` sits under `library/` though the diary's add sheet renders it, and
   Progress's fourteen subject pages sit with the charts they draw rather than with the shell
@@ -401,3 +401,7 @@ for the database.
   implementation is done — a build or a test run is not a precondition for the
   commit. Say plainly what was and wasn't verified in the commit message or the
   reply; don't hold the work uncommitted waiting on a check.
+- **Push after every commit.** `git push origin main` straight after committing,
+  without asking — the push is part of the commit, not a separate step. If it
+  is rejected because the remote moved, `git pull --rebase` and push again; never
+  force-push.

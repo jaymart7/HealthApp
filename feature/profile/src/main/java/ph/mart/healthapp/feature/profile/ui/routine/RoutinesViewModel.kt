@@ -11,7 +11,7 @@ import ph.mart.healthapp.core.data.network.NetworkMonitor
 
 /**
  * `FoodLibraryViewModel`'s twin, one domain over: reads the unlimited list and writes what this
- * screen can do to it. A rename and a delete are writes the flow reports back on its own; the one
+ * screen can do to it. An edit and a delete are writes the flow reports back on its own; the one
  * side effect is a New routine design, which the sheet previews before anything is written.
  */
 class RoutinesViewModel(
@@ -34,7 +34,7 @@ class RoutinesViewModel(
     fun handleEvent(event: RoutinesEvent) {
         when (event) {
             is RoutinesEvent.OnDelete -> onDelete(event.id)
-            is RoutinesEvent.OnRename -> onRename(event.id, event.name)
+            is RoutinesEvent.OnUpdate -> onUpdate(event.routine)
             is RoutinesEvent.OnSetDays -> onSetDays(event.id, event.days)
             is RoutinesEvent.OnDesign -> onDesign(event.request)
             RoutinesEvent.OnCancelDesign -> onCancelDesign()
@@ -52,8 +52,8 @@ class RoutinesViewModel(
         routineRepository.deleteRoutine(id)
     }
 
-    private fun onRename(id: Long, name: String) = intent {
-        routineRepository.renameRoutine(id, name)
+    private fun onUpdate(routine: Routine) = intent {
+        routineRepository.updateRoutine(routine.id, routine.name, routine.lifts, routine.days)
     }
 
     private fun onSetDays(id: Long, days: Int) = intent {

@@ -602,8 +602,9 @@ panes at ≥840dp.
 - One row family across all three "Your stuff" lists — supplements, food library, routines: a
   marker tile, a title-weight name, the figures drawn as data, a one-line contents summary, and
   nothing on the right at all. The card itself opens the thing — the Edit sheet on supplements, the
-  add-and-edit screen in the library, Rename on routines — and Delete lives at the foot of it, below
-  a rule in `error`, still asking before anything goes. No swipe, no drag, no multi-select, and nothing on
+  add-and-edit screen in the library, the Edit routine sheet on routines — and Delete lives at the
+  foot of it, below a rule in `error` (on routines, small and left of Save in the same row), still
+  asking before anything goes. No swipe, no drag, no multi-select, and nothing on
   any of the three can log, tick or start anything — routines' New routine designs and saves a
   routine without logging one, and the library's Add only authors.
 - Supplements: name, dose label, times per day, **which weekdays** — the same seven-cell picker the
@@ -637,7 +638,7 @@ panes at ≥840dp.
   opens one AI box, "What do you want to save?": the model decides whether the answer is a food
   or a recipe and fills in a short review wearing an "AI estimate" chip; "Type in a food" and
   "Build a recipe by hand" under the box are the manual and offline path. Nothing here logs.
-  The routine library renames and deletes, and cannot start anything.
+  The routine library edits and deletes, and cannot start anything.
 - Workout routines: each card carries its own **Plan** zone — the weekday picker plus "n days a
   week", or a prompt and seven dashed cells when nothing is set yet. A **New routine** FAB opens a
   sheet with one AI box, "What kind of routine do you want?" ("Push day, 45 minutes, dumbbells
@@ -646,7 +647,9 @@ panes at ≥840dp.
   the name, each lift's name, sets and reps on steppers, remove a lift or add one. "Change" goes
   back to the request, "Save routine" adds it to the list. Weekdays you named land in its Plan. "Build from
   a workout instead" is the manual and offline path — a blank strength screen and its "Save as
-  routine". Back steps out of a design in flight, then the preview, then the sheet.
+  routine". Back steps out of a design in flight, then the preview, then the sheet. Tapping a card
+  opens **Edit routine**: the name, every lift on the same steppers, and the weekday plan, all
+  editable; Save replaces it (it moves to the top), Delete sits small to Save's left and asks first.
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 22, import is all-or-nothing.
 - Export as CSV — the same thirteen tables as a zip of spreadsheet files from one picker, dates
   rendered ISO and times as a clock. A strength session's sets get a file of their own, joined on

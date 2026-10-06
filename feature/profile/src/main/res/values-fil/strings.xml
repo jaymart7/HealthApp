@@ -7,7 +7,6 @@
     <string name="profile_cancel">Kanselahin</string>
     <string name="profile_save">I-save</string>
     <string name="profile_name">Pangalan</string>
-    <string name="profile_rename">Palitan ang pangalan</string>
     <string name="profile_edit">I-edit</string>
     <string name="profile_delete_title">I-delete ang %1$s?</string>
     <string name="profile_title">Profile</string>
@@ -156,6 +155,7 @@
     <string name="profile_weekday_selected">%1$s, napili</string>
     <string name="profile_routines_empty_heading">Wala pang routine</string>
     <string name="profile_routines_new">Bagong routine</string>
+    <string name="profile_routine_edit">I-edit ang routine</string>
     <string name="profile_routines_empty_body">I-tap ang Bagong routine at ilarawan ang workout na gusto mo. Ang AI ang gagawa nito, at dito mo ito ise-save.</string>
     <string name="profile_routine_delete_body">Tuluyang matatanggal ang routine na ito. Mananatili sa diary mo ang mga workout na na-log mo mula rito.</string>
     <plurals name="profile_routine_lifts_unit">

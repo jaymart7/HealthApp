@@ -34,19 +34,20 @@ import ph.mart.healthapp.core.designsystem.component.rememberFabExpanded
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
+import ph.mart.healthapp.feature.profile.ui.routine.components.EditRoutineSheet
 import ph.mart.healthapp.feature.profile.ui.routine.components.NewRoutineSheet
 import ph.mart.healthapp.feature.profile.ui.routine.components.RoutinePlanZone
 import ph.mart.healthapp.feature.profile.ui.shared.components.DeleteConfirmDialog
 import ph.mart.healthapp.feature.profile.ui.shared.components.FigureRow
-import ph.mart.healthapp.feature.profile.ui.shared.components.RenameSheet
 import ph.mart.healthapp.feature.profile.ui.shared.components.RowMarker
 import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
 
 /**
  * Every saved workout routine, one Nav3 level above Profile — the food library's twin, and the
- * only place a routine can be renamed, removed, or put in the week.
+ * only place a routine can be edited, removed, or put in the week.
  *
- * Rename and delete only. Starting a routine needs a workout in progress and a day to log it on,
+ * Tapping a card opens [EditRoutineSheet]: the whole routine, editable, with Delete beside Save.
+ * Edit and delete only. Starting a routine needs a workout in progress and a day to log it on,
  * and Profile has neither — the same division the food library draws against the add-entry sheet.
  * "New routine" opens [NewRoutineSheet]: describe the routine, Gemini designs it, save it here.
  * [onBuildFromWorkout] is that sheet's manual path — a blank strength screen and its "Save as
@@ -113,7 +114,7 @@ private fun RoutinesContent(
     // Local rather than saveable, for the reason the food library gives: a dialog that survived
     // process death would reopen asking about a row the user has stopped looking at.
     var pendingDelete by remember { mutableStateOf<Routine?>(null) }
-    var renaming by remember { mutableStateOf<Routine?>(null) }
+    var editing by remember { mutableStateOf<Routine?>(null) }
     val scrollState = rememberScrollState()
 
     Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxSize()) {
@@ -139,7 +140,7 @@ private fun RoutinesContent(
                             marker = { RowMarker(icon = AppIcons.Dumbbell, contentDescription = null) },
                             figures = { FigureRow(*routine.figures().toTypedArray()) },
                             detail = routine.lifts.contents().ifEmpty { null },
-                            onClick = { renaming = routine },
+                            onClick = { editing = routine },
                             footer = {
                                 RoutinePlanZone(
                                     days = routine.days,
@@ -194,18 +195,18 @@ private fun RoutinesContent(
         )
     }
 
-    renaming?.let { routine ->
-        RenameSheet(
-            currentName = routine.name,
-            onDismiss = { renaming = null },
-            onRename = { name ->
-                onEvent(RoutinesEvent.OnRename(routine.id, name))
-                renaming = null
+    editing?.let { routine ->
+        EditRoutineSheet(
+            routine = routine,
+            onSave = { edited ->
+                onEvent(RoutinesEvent.OnUpdate(edited))
+                editing = null
             },
             onDelete = {
                 pendingDelete = routine
-                renaming = null
+                editing = null
             },
+            onDismiss = { editing = null },
         )
     }
 }

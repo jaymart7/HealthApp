@@ -39,7 +39,7 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.WeekdayPicker
 
 /**
  * Adds a supplement or edits one, seeded from [supplement] — `id == 0` is the add. One sheet for
- * both, the same way `RenameSheet` is seeded with the name it is about to change — and one sheet
+ * both, the same way `EditRoutineSheet` is seeded with the routine it is about to change — and one sheet
  * for the scan too, which seeds it from a panel a model read rather than from a row.
  *
  * It is also where a supplement is deleted, now that the row's overflow menu is gone: below the
@@ -183,7 +183,7 @@ internal fun SupplementEditSheet(
                 label = stringResource(R.string.profile_save),
                 onClick = { onSave(draft()) },
                 // A nameless supplement is unidentifiable, and unlike a diary entry it has no
-                // calorie figure to stand in for one — the same guard `RenameSheet` applies.
+                // calorie figure to stand in for one — the same guard `EditRoutineSheet` applies.
                 enabled = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth(),
             )

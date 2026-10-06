@@ -12,14 +12,11 @@ internal class RoutineRepositoryImpl(private val dao: RoutineDao) : RoutineRepos
         combine(dao.observeRoutines(), dao.observeLifts(), ::joinLifts)
 
     override suspend fun addRoutine(name: String, lifts: List<RoutineLift>, days: Int) {
-        dao.insertWithLifts(
-            RoutineEntity(name = name.trim(), createdAt = System.currentTimeMillis(), days = days),
-            lifts.map { RoutineLiftEntity(routineId = 0, exerciseName = it.exerciseName, sets = it.sets, reps = it.reps) },
-        )
+        dao.insertWithLifts(routineEntity(name, days), lifts.map(::liftEntity))
     }
 
-    override suspend fun renameRoutine(id: Long, name: String) {
-        dao.rename(id, name.trim())
+    override suspend fun updateRoutine(id: Long, name: String, lifts: List<RoutineLift>, days: Int) {
+        dao.replace(id, routineEntity(name, days), lifts.map(::liftEntity))
     }
 
     override suspend fun setRoutineDays(id: Long, days: Int) {
@@ -30,6 +27,13 @@ internal class RoutineRepositoryImpl(private val dao: RoutineDao) : RoutineRepos
         dao.softDelete(id)
     }
 }
+
+private fun routineEntity(name: String, days: Int) =
+    RoutineEntity(name = name.trim(), createdAt = System.currentTimeMillis(), days = days)
+
+/** `routineId` is stamped by `RoutineDao.insertWithLifts` once the parent has one. */
+private fun liftEntity(lift: RoutineLift) =
+    RoutineLiftEntity(routineId = 0, exerciseName = lift.exerciseName, sets = lift.sets, reps = lift.reps)
 
 /** The one place the parent/child join happens, so no read path can return a routine with its
  * lifts missing — `ExerciseRepositoryImpl.joinSets`' reasoning, one table over. */

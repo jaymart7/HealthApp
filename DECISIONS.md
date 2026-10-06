@@ -3730,13 +3730,26 @@ rather than needing a counter patched.
   because it seeds the whole list. There is no confirmation toast when a routine is saved (the
   saved-meal path has none either); the button reports its own result and re-arms when the set list
   changes, so a fuller session can be saved again.
-- **Profile → Workout routines renames and deletes; it cannot start one.** The division the food
+- **Profile → Workout routines edits and deletes; it cannot start one.** The division the food
   library draws against the add-entry sheet: starting a routine needs a workout in progress and a
   day, and Profile has neither. It is `FoodLibraryScreen`'s twin one domain over, which is what
   moved `LibraryRow` and `RenameSheet` into `:feature:profile`'s `ui/shared/components/`. Routines
   are **not exported**, for the reason saved meals and recipes aren't — convenience data, not
   history — so no export schema bump; and nothing else moved, because a started routine saves as an
   ordinary `ExerciseEntry` with sets.
+- **Tapping a routine opens the whole routine, and Save supersedes it.** `RenameSheet` gave way to
+  `EditRoutineSheet`: the name, every lift on the New routine preview's own steppers (`RoutineFields`
+  in `RoutineEditor.kt`, drawn by both sheets, so an edited routine is held to a designed one's
+  bounds) and the plan as a draft. Save is `RoutineDao.replace` — soft-delete the old row and
+  insert the edited one with its lifts in one transaction, `SavedMealDao.replace`'s call, because
+  `routine_lift` has no tombstone and rewriting it in place would be a hard delete. So the id
+  changes and the edited routine moves to the top of the list, and a coach `StartRoutine` card
+  still pending for the old id stops resolving, as a saved meal's would. The card's own plan zone
+  still writes `setDays` on every tap, keeping the id.
+  - **Delete sits left of Save, in the same row, smaller** — a wrapped `TextButton` in `error`
+    beside a weighted `PrimaryButton` — rather than under a rule at the foot the way
+    `SheetDeleteAction` puts it. The user's call, for this sheet only; Supplements keeps the rule.
+    It still raises `DeleteConfirmDialog` rather than deleting.
 - **Profile → Workout routines' New routine is described to Gemini, not built and not logged.**
   It used to push a blank `StrengthWorkoutRoute(0)` and leave "Save as routine" as the one
   authoring path — and that was a bug in practice: the screen it landed on is a workout *logger*,

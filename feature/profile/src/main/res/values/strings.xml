@@ -5,7 +5,6 @@
     <string name="profile_cancel">Cancel</string>
     <string name="profile_save">Save</string>
     <string name="profile_name">Name</string>
-    <string name="profile_rename">Rename</string>
     <string name="profile_edit">Edit</string>
     <string name="profile_delete_title">Delete %1$s?</string>
 
@@ -189,6 +188,7 @@
     <!-- Routines -->
     <string name="profile_routines_empty_heading">No routines yet</string>
     <string name="profile_routines_new">New routine</string>
+    <string name="profile_routine_edit">Edit routine</string>
     <string name="profile_routines_empty_body">Tap New routine and describe the workout you want. AI designs it, and you save it here.</string>
     <string name="profile_routine_delete_body">This routine is removed for good. Workouts you logged from it stay in your diary.</string>
     <!-- Units only: the figure line prints the number itself, tabular, in its own colour. -->
