@@ -7,6 +7,8 @@ import org.junit.Test
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.ParsedExercise
+import ph.mart.healthapp.core.data.exercise.Routine
+import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthSet
 
 class LogExerciseFormTest {
@@ -99,5 +101,37 @@ class LogExerciseFormTest {
     @Test
     fun `a cardio form carries no sets`() {
         assertEquals(emptyList<StrengthSet>(), LogExerciseForm().toExerciseEntry().sets)
+    }
+
+    /** A session said in the log sheet arrives on the strength screen as its own seed — the lifts,
+     * the duration and the note — and is Strength whatever the model called it. */
+    @Test
+    fun `a described session seeds the strength form`() {
+        val sets = listOf(StrengthSet("Bench press", 8, 60.0), StrengthSet("Bench press", 8, 60.0))
+        val described = ParsedExercise(type = ExerciseType.Other, name = "gym", minutes = 50, sets = sets)
+
+        val seed = LogExerciseUiState().strengthSeed(described)
+
+        assertEquals(ExerciseType.Strength, seed.type)
+        assertEquals("gym", seed.name)
+        assertEquals(50, seed.minutes)
+        assertEquals(sets, seed.sets)
+    }
+
+    /** The row being corrected and a started routine are the user's own; a parse is only a reading
+     * of a sentence, so it never wins over either. */
+    @Test
+    fun `an edit and a routine both outrank a described session`() {
+        val described = ParsedExercise(
+            type = ExerciseType.Strength,
+            name = "",
+            minutes = 50,
+            sets = listOf(StrengthSet("Bench press", 8, 60.0)),
+        )
+        val editing = logged.copy(type = ExerciseType.Strength, sets = listOf(StrengthSet("Squat", 5, 100.0)))
+        val routine = Routine(id = 1, name = "Leg day", lifts = listOf(RoutineLift("Squat", sets = 3, reps = 5)))
+
+        assertEquals(editing.sets, LogExerciseUiState(editing = editing).strengthSeed(described).sets)
+        assertEquals("Leg day", LogExerciseUiState(seedRoutine = routine).strengthSeed(described).name)
     }
 }

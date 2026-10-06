@@ -27,7 +27,8 @@ import ph.mart.healthapp.core.data.progress.ProgressRepository
  * onboarding weight and is never updated — same fallback rule `trendVsSevenDaysAgo(fallbackKg)`
  * uses on Home.
  *
- * Everything the strength screen needs is loaded on demand instead, by
+ * The routines are the fourth, observed from creation because the sheet offers them as chips.
+ * Everything else the strength screen needs is loaded on demand instead, by
  * [LogExerciseEvent.OnOpenStrength]: the sheet shares this container, and it shows none of it.
  *
  * The two AI dependencies are the sheet's alone, and they are the reason this stayed one
@@ -43,10 +44,6 @@ class LogExerciseViewModel(
     progressRepository: ProgressRepository,
 ) : ViewModel(), OrbitContainerHost<LogExerciseUiState, LogExerciseUiState, LogExerciseSideEffect> {
 
-    /** The strength screen's `LaunchedEffect` re-fires on an Activity recreation while this
-     * ViewModel survives it, so the routine collection has to be started at most once. */
-    private var routinesObserved = false
-
     /** Lets [LogExerciseEvent.OnCancelParse] cancel just the in-flight call, the way the photo
      * flow's `analysisJob` and talk-to-log's `parseJob` do — cancellation reaches the Firebase AI
      * SDK cooperatively, and `ExerciseParseRepositoryImpl` rethrows it rather than logging a
@@ -55,6 +52,7 @@ class LogExerciseViewModel(
 
     override val container = orbitContainer<LogExerciseUiState, LogExerciseSideEffect>(LogExerciseUiState()) {
         observeWeight(profileRepository, progressRepository)
+        observeRoutines()
     }
 
     /** Asked by the sheet at the moment of the tap, not observed: a sheet lives seconds and the
@@ -96,8 +94,8 @@ class LogExerciseViewModel(
         }
     }
 
-    /** The sheet's share of [onOpenStrength]'s first read, and nothing else: it shows no chips,
-     * no last workout and no routines. */
+    /** The sheet's share of [onOpenStrength]'s first read, and nothing else: it shows no lift
+     * chips and no last workout. */
     private fun onLoadEditing(id: Long) = intent {
         val entry = exerciseRepository.entry(id)
         reduce { state.copy(editing = entry) }
@@ -129,18 +127,14 @@ class LogExerciseViewModel(
                 strengthLoaded = true,
             )
         }
-        observeRoutines()
     }
 
-    /** Observed rather than read once, unlike everything above: saving a routine from this screen
-     * has to show up in its own chip row without a reload. */
-    private fun observeRoutines() {
-        if (routinesObserved) return
-        routinesObserved = true
-        intent {
-            routineRepository.observeRoutines().collect { routines ->
-                reduce { state.copy(routines = routines) }
-            }
+    /** Observed from creation rather than read once: the sheet offers routines as soon as it opens,
+     * and saving one from the strength screen has to show up in its own chip row without a reload.
+     * `onCreate` runs once per container, which is the whole of the at-most-once guard. */
+    private fun observeRoutines() = intent {
+        routineRepository.observeRoutines().collect { routines ->
+            reduce { state.copy(routines = routines) }
         }
     }
 
@@ -153,14 +147,15 @@ class LogExerciseViewModel(
     private fun onParse(text: String) {
         parseJob = intent {
             reduce { state.copy(parsing = true) }
-            val result = exerciseParseRepository.parse(text)
+            // The unit the strength screen draws loads in — a sentence here may name lifts.
+            val result = exerciseParseRepository.parse(text, state.preferredUnit)
             reduce { state.copy(parsing = false) }
             postSideEffect(LogExerciseSideEffect.Parsed(result))
         }
     }
 
-    /** [onParse] on the same job and flag. The unit is the one the screen draws loads in, applied
-     * on-device to a load said without one — it is never sent. */
+    /** [onParse] on the same job and flag. The unit is applied on-device to a load said without
+     * one — it is never sent. */
     private fun onParseSets(text: String) {
         parseJob = intent {
             reduce { state.copy(parsing = true) }

@@ -9,13 +9,12 @@
     <string name="training_exercise_log">Log exercise</string>
     <string name="training_exercise_edit">Edit exercise</string>
     <string name="training_exercise_log_sets">Log sets instead →</string>
+    <string name="training_exercise_manual">Enter manually</string>
 
     <!-- Describe it: the sentence the model turns into the form above -->
-    <string name="training_exercise_describe">Describe it instead</string>
     <string name="training_exercise_describe_prompt">What did you do?</string>
-    <string name="training_exercise_describe_placeholder">45 minute run along the river</string>
+    <string name="training_exercise_describe_placeholder">45 min run, or bench 3x8 at 60</string>
     <string name="training_exercise_describe_speak">Say it instead of typing</string>
-    <string name="training_exercise_describe_close">Close</string>
     <string name="training_exercise_describe_estimate">Fill in the form</string>
     <string name="training_exercise_describe_cancel">Cancel</string>
     <string name="training_exercise_describe_none">No workout in that one — try naming what you did and how long for.</string>
@@ -29,9 +28,13 @@
     <string name="training_exercise_burned_estimated">Burned · estimated from %1$s at your latest weight</string>
 
     <!-- Strength workout -->
-    <string name="training_strength_repeat">Repeat last workout</string>
     <string name="training_strength_start_routine">Start a routine</string>
-    <string name="training_strength_describe">Describe your sets</string>
+    <string name="training_strength_start_from">Start from</string>
+    <string name="training_strength_last_workout">Last workout</string>
+    <string name="training_strength_details">Details</string>
+    <string name="training_strength_details_summary">%1$d min · %2$d kcal</string>
+    <string name="training_strength_details_show">Show details</string>
+    <string name="training_strength_details_hide">Hide details</string>
     <string name="training_strength_describe_prompt">What did you lift?</string>
     <string name="training_strength_describe_placeholder">Bench 3x8 at 60, squats 5x5 at 100</string>
     <string name="training_strength_describe_submit">Add the sets</string>

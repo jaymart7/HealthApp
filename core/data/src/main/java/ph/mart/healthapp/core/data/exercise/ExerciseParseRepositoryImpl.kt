@@ -30,12 +30,14 @@ import ph.mart.healthapp.core.data.profile.UnitSystem
  */
 internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
 
+    /** The log sheet's parse. A sentence there may name lifts, so it is answered in
+     * [DESCRIBED_EXERCISE_SCHEMA] at [setsModel]'s length. */
     private val model = aiModel(
         generationConfig = generationConfig {
             thinkingConfig = AI_THINKING
-            maxOutputTokens = MAX_ACTIVITY_TOKENS
+            maxOutputTokens = MAX_SETS_TOKENS
             responseMimeType = "application/json"
-            responseSchema = PARSED_EXERCISE_SCHEMA
+            responseSchema = DESCRIBED_EXERCISE_SCHEMA
         },
     )
 
@@ -61,10 +63,16 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
         },
     )
 
-    override suspend fun parse(text: String): ExerciseParseResult = try {
-        val prompt = promptFor(text.take(MAX_EXERCISE_PARSE_CHARS))
+    override suspend fun parse(text: String, unit: UnitSystem): ExerciseParseResult = try {
+        // The strength parse's allowance: a sentence here may list a whole session.
+        val prompt = promptFor(text.take(MAX_STRENGTH_PARSE_CHARS))
         val response = model.generate("exercise parse", content { text(prompt) })
-        val activity = response.text?.let { readActivity(JSONObject(it)) }
+        // Two trust boundaries, each already the rule for its half: [parsedExercise] decides
+        // whether this was a workout at all, and [parsedSets] what survives of the lifts.
+        val activity = response.text?.let { body ->
+            val json = JSONObject(body)
+            readActivity(json)?.copy(sets = parsedSets(readLifts(json), unit))
+        }
         // Null means the sentence named nothing physical — a real answer with its own line on the
         // sheet, not a failure to retry.
         if (activity == null) ExerciseParseResult.NoActivityFound else ExerciseParseResult.Success(activity)
@@ -151,6 +159,22 @@ private fun designPromptFor(request: String): String = buildString {
     )
 }
 
+/** [PARSED_EXERCISE_SCHEMA]'s three fields, held apart so [DESCRIBED_EXERCISE_SCHEMA] can add to
+ * them without the quick log's copy changing. */
+private val ACTIVITY_PROPERTIES = mapOf(
+    "type" to Schema.enumeration(
+        values = ExerciseType.entries.map { it.name },
+        description = "The kind of activity. Use Other when none of the rest fit.",
+    ),
+    "minutes" to Schema.integer(
+        description = "How long it lasted, in minutes. 0 if they named no physical activity.",
+    ),
+    "name" to Schema.string(
+        description = "A short note in their own words — where or how. Omit it entirely if " +
+            "they said nothing beyond the activity itself.",
+    ),
+)
+
 /**
  * Three fields, and the absent fourth is the point: there is nowhere in this schema to put a
  * calorie burn, so the model cannot volunteer one and no prompt has to forbid it. See
@@ -160,28 +184,12 @@ private fun designPromptFor(request: String): String = buildString {
  * is what makes `Other` a *choice* the model makes instead of the bucket a typo falls into.
  */
 internal val PARSED_EXERCISE_SCHEMA = Schema.obj(
-    mapOf(
-        "type" to Schema.enumeration(
-            values = ExerciseType.entries.map { it.name },
-            description = "The kind of activity. Use Other when none of the rest fit.",
-        ),
-        "minutes" to Schema.integer(
-            description = "How long it lasted, in minutes. 0 if they named no physical activity.",
-        ),
-        "name" to Schema.string(
-            description = "A short note in their own words — where or how. Omit it entirely if " +
-                "they said nothing beyond the activity itself.",
-        ),
-    ),
+    ACTIVITY_PROPERTIES,
     // The one optional property, [RECOGNIZED_FOOD_SCHEMA]'s `uncertainAbout` reasoning: required,
     // a model with nothing to add here adds something anyway, and an invented note on a plain run
     // is worse than no note at all.
     optionalProperties = listOf("name"),
 )
-
-/** Three flat fields. `MAX_FOOD_LIST_TOKENS`' rule at a twentieth of the size — and
- * `AI_THINKING`'s KDoc is why a generous cap is not free. */
-private const val MAX_ACTIVITY_TOKENS = 80
 
 /**
  * The object in, an activity out. Every read is an `opt*` with a default and the judgement is
@@ -224,7 +232,36 @@ private fun promptFor(sentence: String): String = buildString {
             "minutes to 0. Do not estimate calories burned — the app works that out from their " +
             "own weight. Give no medical advice, no diagnosis, and no training-safety judgements.",
     )
+    appendLine()
+    appendLine(
+        "If they named strength exercises with sets, reps or a weight, set type to Strength and " +
+            "list them in lifts: one entry per lift at one load, in the order they said them. " +
+            "Read \"3x8\" as 3 sets of 8 reps, and reps with no set count as 1 set. Give the " +
+            "weight exactly as they said it, and 0 for bodyweight or when they gave none. Set unit " +
+            "only if they said kg or lb (or pounds, kilos). Do not add lifts, sets, reps or " +
+            "weights they did not say. If they named no lifts, leave lifts out.",
+    )
 }
+
+/** One lift at one load — the row both [PARSED_SETS_SCHEMA] and [DESCRIBED_EXERCISE_SCHEMA] list. */
+private val LIFTS_PROPERTY = Schema.array(
+    Schema.obj(
+        mapOf(
+            "lift" to Schema.string(description = "The exercise, as they named it."),
+            "sets" to Schema.integer(description = "How many sets of this lift at this load."),
+            "reps" to Schema.integer(description = "Reps in each of those sets."),
+            "weight" to Schema.double(
+                description = "The load, as they said it. 0 for bodyweight or when they gave none.",
+            ),
+            "unit" to Schema.enumeration(
+                values = listOf("kg", "lb"),
+                description = "The unit they said. Omit it if they said none.",
+            ),
+        ),
+        optionalProperties = listOf("unit"),
+    ),
+    description = "Every lift they named, in order. Empty if they named none.",
+)
 
 /**
  * One object per lift at one load, and — like [PARSED_EXERCISE_SCHEMA] — no calorie field
@@ -234,30 +271,22 @@ private fun promptFor(sentence: String): String = buildString {
  * `unit` is the one optional property: a model made to give one for "bench at 60" guesses, and a
  * guessed unit is a 2.2× error. Absent, it is the user's own unit, applied on-device.
  */
-internal val PARSED_SETS_SCHEMA = Schema.obj(
-    mapOf(
-        "lifts" to Schema.array(
-            Schema.obj(
-                mapOf(
-                    "lift" to Schema.string(description = "The exercise, as they named it."),
-                    "sets" to Schema.integer(description = "How many sets of this lift at this load."),
-                    "reps" to Schema.integer(description = "Reps in each of those sets."),
-                    "weight" to Schema.double(
-                        description = "The load, as they said it. 0 for bodyweight or when they gave none.",
-                    ),
-                    "unit" to Schema.enumeration(
-                        values = listOf("kg", "lb"),
-                        description = "The unit they said. Omit it if they said none.",
-                    ),
-                ),
-                optionalProperties = listOf("unit"),
-            ),
-            description = "Every lift they named, in order. Empty if they named none.",
-        ),
-    ),
+internal val PARSED_SETS_SCHEMA = Schema.obj(mapOf("lifts" to LIFTS_PROPERTY))
+
+/**
+ * The log sheet's answer: [PARSED_EXERCISE_SCHEMA]'s activity plus an optional `lifts`, read back
+ * by [readActivity] and [readLifts] exactly as the two halves are on their own. A schema of its own
+ * because the activity one is also the quick log's, which wants no lifts. Still no calorie field.
+ *
+ * `lifts` is optional where `name` is, for the opposite reason: a run has none, and a required
+ * list is one a model fills.
+ */
+internal val DESCRIBED_EXERCISE_SCHEMA = Schema.obj(
+    ACTIVITY_PROPERTIES + ("lifts" to LIFTS_PROPERTY),
+    optionalProperties = listOf("name", "lifts"),
 )
 
-/** Up to a dozen small objects — [MAX_ACTIVITY_TOKENS]' rule, scaled to a list. */
+/** Up to a dozen small objects, and `AI_THINKING`'s KDoc is why a generous cap is not free. */
 private const val MAX_SETS_TOKENS = 600
 
 /** Every read an `opt*` with a default; [parsedSets] decides what survives. */

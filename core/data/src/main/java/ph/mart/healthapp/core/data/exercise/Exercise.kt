@@ -2,6 +2,7 @@ package ph.mart.healthapp.core.data.exercise
 
 import androidx.annotation.StringRes
 import kotlin.math.roundToInt
+import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.data.R
 
 /**
@@ -36,7 +37,10 @@ data class ExerciseEntry(
  * [weightKg] of 0 is **bodyweight**, and that is a real value, not the "never entered" reading
  * `mood_day`'s zero and `pulseBpm`'s zero have. It counts no volume and claims no personal
  * record, because neither figure means anything without a load — see [estimatedOneRepMax].
+ *
+ * Serializable because a parsed session rides `StrengthWorkoutRoute`'s key — see [ParsedExercise].
  */
+@Serializable
 data class StrengthSet(
     val exerciseName: String,
     val reps: Int,

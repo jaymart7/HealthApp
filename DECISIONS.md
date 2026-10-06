@@ -3704,10 +3704,11 @@ rather than needing a counter patched.
   again doesn't reset the date. The tab's stats re-fold over the *selected* window so they can't
   describe different days from the chart above them, while records stay all-time: re-scoring a best
   against a 1M filter would retire records every month.
-- **"Repeat last workout" reads back the entry that already exists**, so it costs no schema, and
-  `recentStrength` selects on *having sets* rather than on `type = 'Strength'` — a strength session
-  logged through the sheet has none, and a run of those would fill the limit with workouts there is
-  nothing to repeat or suggest from (it also keeps an enum name out of the SQL).
+- **"Last workout" (once "Repeat last workout") reads back the entry that already exists**, so it
+  costs no schema, and `recentStrength` selects on *having sets* rather than on
+  `type = 'Strength'` — a strength session logged through the sheet has none, and a run of those
+  would fill the limit with workouts there is nothing to repeat or suggest from (it also keeps an
+  enum name out of the SQL).
 - **A routine is a saved meal for workouts, and it stores no load.** `routine`/`routine_lift` mirror
   `saved_meal`/`saved_meal_item` down to the plain non-FK child column and the join-in-Kotlin fold,
   because it is the same idea: a thing authored once by *naming what is already on screen* and
@@ -3734,8 +3735,9 @@ rather than needing a counter patched.
   set list with `toRoutineLifts()` (`groupBy` the lift, count the sets, take the *modal* reps — 8/8/6
   is a routine of 8s with a set that fell short), which is the gesture "Save this meal" makes on a
   diary section, and it saves nothing else: logging the session is still the Save button beside it.
-  Starting one shares "Repeat last workout"'s guard — offered only while the set list is empty,
-  because it seeds the whole list. There is no confirmation toast when a routine is saved (the
+  On the strength screen, starting one sits in the same **Start from** row as "Last workout" —
+  one question, what to start from, so one row — offered only while the set list is empty,
+  because either chip seeds the whole list. There is no confirmation toast when a routine is saved (the
   saved-meal path has none either); the button reports its own result and re-arms when the set list
   changes, so a fuller session can be saved again.
 - **Profile → Workout routines edits and deletes; it cannot start one.** The division the food
@@ -3820,8 +3822,8 @@ rather than needing a counter patched.
   on it already shipped somewhere better: today's plan is Home's Workout card, today's sessions are
   the diary's exercise block (which also deletes and edits them), "Log activity" was the FAB
   sheet's own row (its AI field now), and the history with its charts is Progress. The one thing it had that nothing else does
-  was a one-tap door to the strength screen — a row in a sheet, not a screen, and not yet worth
-  adding. *A pillar earns a module when its code has no home; it earns a tab only when it has a
+  was a one-tap door to the strength screen — a row in a sheet, not a screen. It has since been
+  added, as exactly that: the log sheet's routine chips (below). *A pillar earns a module when its code has no home; it earns a tab only when it has a
   surface no other tab is already drawing.*
 - **The rest timer is screen state, not a domain.** No table, no repository, no ViewModel field: a
   rest is not part of the workout, so it is saved with nothing, makes nothing dirty, and travels in
@@ -3854,9 +3856,12 @@ rather than needing a counter patched.
   ViewModel outlives the sheet, so a previous edit's row is still on the state when the FAB opens a
   blank one). Net: one sheet host instead of two, and `FoodScreenState`'s saver two slots shorter.
 
-- **The sheet hands off to a screen; it does not redirect.** Picking Strength grows one "Log sets
-  instead →" button rather than navigating on the chip tap, so the plain duration-and-kcal path
-  stays reachable — that path is what an imported watch session is. A screen because a set list
+- **The sheet hands off to a screen; picking Strength does not redirect.** Picking Strength grows
+  one "Log sets instead →" button rather than navigating on the chip tap, so the plain
+  duration-and-kcal path stays reachable — that path is what an imported watch session is. A
+  *sentence* that names lifts is the one thing that does redirect (below): it has already said what
+  the set list would hold, and "45 minutes of weights", which names none, stays in the sheet as
+  that plain path. A screen because a set list
   plus its editor doesn't fit above a keyboard, the recipe builder's argument, and
   `StrengthWorkoutRoute` gets its back toolbar from `AppScaffold`'s existing `isTopLevel` rule with
   no new case. Two things fall out: the screen forces its seed to `Strength` (it draws no type
@@ -3905,6 +3910,41 @@ rather than needing a counter patched.
   never leaves the device. `parsedExercise` is the trust boundary and it deliberately **rejects** a
   type the model invented rather than bucketing it into `Other`: the type is what the burn is
   computed from, so a guessed one would price a workout nobody described.
+- **The sentence leads the sheet, and the form is one tap behind it.** It began as a collapsed
+  "Describe it instead" button that swapped a panel in over the form, which put the quick path one
+  tap behind the slow one and stacked type chips, two steppers and a Save under a single field. The
+  field is now always open on a new entry, the routines sit under it as chips, and the form waits
+  behind "Enter manually". A parse that lands, fails, finds nothing or meets no network **opens the
+  form** — it is where a filled-in activity is reviewed and the way through when the model is no
+  help — and Save lives inside it, so nothing can be logged that was not looked at. The form is
+  not a back level: it opens *below* a field that stays on screen, so there is no view to return
+  to, and back during a parse is the sheet's one sub-level. The strength screen's field lost its
+  swap-in the same way, and its note, duration and burn fold into one **Details** line under the
+  set editor: on that screen they are what nobody came to type, the burn re-estimates itself off
+  the duration anyway, and the line keeps both figures in sight so a form that will not save never
+  hides why.
+- **A sentence that names lifts goes on to the strength screen, parse and all.** One call, not
+  two: the sheet's parse answers in its own `DESCRIBED_EXERCISE_SCHEMA` — the activity's three
+  fields plus an optional `lifts`, the strength parse's own row — read back through the same two
+  trust boundaries (`parsedExercise`, `parsedSets`), the user's unit applied on-device and never
+  sent. A schema of its own because `PARSED_EXERCISE_SCHEMA` is also the quick log's, which wants
+  no lifts. Non-empty sets close the sheet and push `StrengthWorkoutRoute(described = …)`: **the
+  parse rides the key**, as `MealIdeasRoute`'s request does — it is a reading of a sentence, not a
+  row, so there is nothing stored to resolve, and re-asking the model on arrival would spend a
+  second call on an answered sentence. `strengthSeed()` takes it last, behind the row being
+  corrected and a started routine, which are the user's own. Arriving that way counts as dirty —
+  back asks before dropping a session the user *said*, where a routine's seed is a plan they can
+  start again for free.
+- **The log sheet starts routines; Profile's routine list still doesn't.** Starting one needs a
+  day and a workout to put it in (the reason the list cannot), and the sheet has both, so its
+  routine chips push `StrengthWorkoutRoute(routineId = …)` — the path Home's plan card takes, and
+  `toSets()` at last-lifted loads, so a routine started from either is the same workout. The sheet
+  builds the route itself, the route being this module's, and every way out cancels a parse first:
+  the ViewModel outlives the sheet, and a reply landing after it closed would seed the next blank
+  one. `observeRoutines()` moved to the container's `onCreate` so the sheet has them on open; that
+  ran once per container, which retired the at-most-once flag the strength screen's re-firing
+  `LaunchedEffect` used to need. Still one ViewModel: chips and a field are presentations of the
+  same form.
 - **A panel in the sheet, not a `VoiceLogRoute` of its own.** Talk-to-log is a route because a
   sentence there becomes up to eight priced rows that each need reviewing before anything is
   written; one activity is three fields and those three fields are already on screen, so the review
@@ -3914,7 +3954,8 @@ rather than needing a counter patched.
   more constructor arguments and the module's DI did not change at all. The strength screen shares
   that container and names the activity side effect to ignore it (it has its own, below), rather
   than growing an `else` that would swallow the next one too.
-- **It is absent when correcting a logged activity.** The panel draws only for `editingId == null`.
+- **It is absent when correcting a logged activity**, and so are the routine chips. The field draws
+  only for `editingId == null`.
   Every figure on an edit form is already the user's own, and a parse that rewrote the type and
   duration of a row they opened to fix a typo is noise on the one path where there is nothing left
   to guess — the same reading that makes `burnedEdited` latch true on an edit.
@@ -3924,11 +3965,11 @@ rather than needing a counter patched.
   answer that matters is the one true when a request is about to go out. The sheet underneath *is*
   the manual path, which is the whole of the graceful degrade — there is nothing else to fall back
   to and nothing to build.
-- **Back steps through the panel, and through a parse inside it.** A `NavigationBackHandler`
-  mounted only while the panel is open: back with a call in flight abandons it and leaves the
-  sentence, back again closes the panel, back again dismisses the sheet. Dismissing the sheet fires
-  the same cancel — this ViewModel outlives the sheet, so a spinner abandoned mid-parse would still
-  be up the next time the FAB opened a blank one.
+- **Back steps through a parse.** A `NavigationBackHandler` mounted only while a call is in flight:
+  back abandons it and leaves the sentence, back again dismisses the sheet. (It used to step out of
+  the panel too, before the panel stopped being one.) Dismissing the sheet fires the same cancel —
+  this ViewModel outlives the sheet, so a spinner abandoned mid-parse would still be up the next
+  time the FAB opened a blank one.
 - **The strength screen describes sets, and the sentence is still all that is sent.** The screen
   used to ignore the parse on the argument that a sentence cannot say what was on the bar — but
   "bench 3x8 at 60" says exactly that. `parseSets()` is a second method on the same
@@ -3939,11 +3980,11 @@ rather than needing a counter patched.
   is a 2.2× error. `parsedSets()` is the trust boundary and it drops rather than repairs a row out
   of range (reps 1–100, a count of 1–10, ≤ 500 kg, 30 sets a session) — except weight, where
   missing is bodyweight, a real value here. **It appends, never replaces**, which is why it is
-  offered at any time, editing included, where Repeat and the routine chips are offered only on an
+  offered at any time, editing included, where the Start from chips are offered only on an
   empty list and the sheet's panel is absent from an edit: adding sets rewrites nothing the user
   already typed. **It starts no rest** — `commit()` stays the one place a rest begins, and parsed
-  sets were lifted before anyone typed them. Back runs through one handler — parse, then panel,
-  then the discard question — so the order cannot depend on which condition turned true first, and
+  sets were lifted before anyone typed them. Back runs through one handler — parse, then the
+  discard question — so the order cannot depend on which condition turned true first, and
   leaving the route by any path cancels a parse in flight, because this ViewModel may outlive it.
 - **The third mic in the app moved the helper to `:core:designsystem`.** `SpeechInput.kt` holds
   `rememberSpeechAvailable()`, `speechIntent()` and `spokenPhrase()`; the coach's composer and

@@ -263,9 +263,16 @@ internal fun fakeParse(text: String): List<RecognizedFood> = offlineFoods(text)
  * without pointing a real model at a shopping list.
  */
 internal class FakeExerciseParseRepository : ExerciseParseRepository {
-    override suspend fun parse(text: String): ExerciseParseResult {
+    override suspend fun parse(text: String, unit: UnitSystem): ExerciseParseResult {
         delay(FAKE_LATENCY_MS)
-        val activity = fakeExerciseParse(text)
+        // Dictated lifts win, the way the real prompt sets Strength for them — and a canned hour,
+        // because the first number in "bench 3x8" is a set count, not a duration.
+        val sets = fakeStrengthParse(text, unit)
+        val activity = if (sets.isNotEmpty()) {
+            ParsedExercise(type = ExerciseType.Strength, name = "", minutes = FAKE_SESSION_MINUTES, sets = sets)
+        } else {
+            fakeExerciseParse(text)
+        }
         return if (activity == null) {
             ExerciseParseResult.NoActivityFound
         } else {
@@ -284,6 +291,9 @@ internal class FakeExerciseParseRepository : ExerciseParseRepository {
         return fakeRoutineDesign(request)?.let(RoutineDesignResult::Success) ?: RoutineDesignResult.NothingDesigned
     }
 }
+
+/** What [FakeExerciseParseRepository] gives a session of dictated lifts. */
+private const val FAKE_SESSION_MINUTES = 60
 
 /** Words that make a request sound like a routine, for [fakeRoutineDesign]'s canned answer. */
 private val FAKE_ROUTINE_WORDS = Regex("""(?i)\b(push|pull|legs?|upper|lower|full|body|day|workout|routine)\b""")

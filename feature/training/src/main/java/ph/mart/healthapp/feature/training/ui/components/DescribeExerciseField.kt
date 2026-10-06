@@ -22,7 +22,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.component.AppTextField
 import ph.mart.healthapp.core.designsystem.component.SecondaryButton
-import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.component.rememberSpeechAvailable
 import ph.mart.healthapp.core.designsystem.component.speechIntent
 import ph.mart.healthapp.core.designsystem.component.spokenPhrase
@@ -31,13 +30,14 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.training.R
 
 /**
- * The fastest way into the form above it: a sentence, and the three fields it answers filled in.
+ * The fastest way into the form below it: a sentence, and the fields it answers filled in.
  *
- * **A swap-in, not a second screen.** Talk-to-log is a route because a sentence there becomes up to
- * eight priced rows that each need reviewing; one activity needs three fields, and those three
- * fields are already on screen — so what a parse produces here is reviewed in the form itself
- * rather than on a page of its own. Collapsed it is one button; the panel replaces that button and
- * back closes it, which is the sub-level `LogExerciseSheet` wires a handler for.
+ * **Always open, and not a second screen.** It leads both the log sheet and the strength screen,
+ * because saying the workout is the quick path and the form is the correction. Talk-to-log is a
+ * route because a sentence there becomes up to eight priced rows that each need reviewing; here
+ * what a parse produces is reviewed in the form itself rather than on a page of its own. It used to
+ * be a collapsed button that swapped this panel in, which put the quick path one tap behind the
+ * slow one.
  *
  * **It never prices anything.** The model answers type, note and duration; the burn is
  * `withEstimate`'s, off the user's own latest weigh-in, exactly as it is for a duration typed by
@@ -51,37 +51,23 @@ import ph.mart.healthapp.feature.training.R
  * recognizer installed, and a component preview that can't show its own control is worth one
  * default argument — `ChatInputBar`'s reason, for the same glyph.
  *
- * The four `@StringRes` parameters default to the log sheet's copy; the strength screen passes
+ * The three `@StringRes` parameters default to the log sheet's copy; the strength screen passes
  * its own, because a set list is asked for differently from a run.
  */
 @Composable
 internal fun DescribeExerciseField(
-    open: Boolean,
     text: String,
     parsing: Boolean,
-    onOpen: () -> Unit,
-    onClose: () -> Unit,
     onTextChange: (String) -> Unit,
     onEstimate: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
     message: String? = null,
-    @StringRes labelRes: Int = R.string.training_exercise_describe,
     @StringRes promptRes: Int = R.string.training_exercise_describe_prompt,
     @StringRes placeholderRes: Int = R.string.training_exercise_describe_placeholder,
     @StringRes submitRes: Int = R.string.training_exercise_describe_estimate,
     speechAvailable: Boolean = rememberSpeechAvailable(),
 ) {
-    if (!open) {
-        SecondaryButton(
-            label = stringResource(labelRes),
-            onClick = onOpen,
-            icon = AppIcons.AiSparkle,
-            modifier = modifier,
-        )
-        return
-    }
-
     // The field's own placeholder is not the dialog's prompt here, the way it is on the coach's
     // composer: the placeholder is an example sentence and the prompt is the question. Saying
     // "45 minute run along the river" out loud to a dialog asking it back would be absurd.
@@ -144,29 +130,6 @@ internal fun DescribeExerciseField(
                 enabled = text.isNotBlank(),
                 icon = AppIcons.AiSparkle,
             )
-            TextButton(label = stringResource(R.string.training_exercise_describe_close), onClick = onClose)
-        }
-    }
-}
-
-/** Collapsed: the whole control is one button above a form that works without it. */
-@PreviewLightDark
-@Composable
-private fun DescribeExerciseFieldClosedPreview() {
-    AppTheme {
-        Surface {
-            DescribeExerciseField(
-                open = false,
-                text = "",
-                parsing = false,
-                onOpen = {},
-                onClose = {},
-                onTextChange = {},
-                onEstimate = {},
-                onCancel = {},
-                speechAvailable = true,
-                modifier = Modifier.padding(16.dp),
-            )
         }
     }
 }
@@ -177,11 +140,8 @@ private fun DescribeExerciseFieldOpenPreview() {
     AppTheme {
         Surface {
             DescribeExerciseField(
-                open = true,
                 text = "45 minute run along the river",
                 parsing = false,
-                onOpen = {},
-                onClose = {},
                 onTextChange = {},
                 onEstimate = {},
                 onCancel = {},
@@ -199,11 +159,8 @@ private fun DescribeExerciseFieldParsingPreview() {
     AppTheme {
         Surface {
             DescribeExerciseField(
-                open = true,
                 text = "45 minute run along the river",
                 parsing = true,
-                onOpen = {},
-                onClose = {},
                 onTextChange = {},
                 onEstimate = {},
                 onCancel = {},
@@ -221,11 +178,8 @@ private fun DescribeExerciseFieldMessagePreview() {
     AppTheme {
         Surface {
             DescribeExerciseField(
-                open = true,
                 text = "two eggs and toast",
                 parsing = false,
-                onOpen = {},
-                onClose = {},
                 onTextChange = {},
                 onEstimate = {},
                 onCancel = {},
@@ -244,15 +198,11 @@ private fun DescribeExerciseFieldStrengthPreview() {
     AppTheme {
         Surface {
             DescribeExerciseField(
-                open = true,
                 text = "Bench 3x8 at 60, squats 5x5 at 100",
                 parsing = false,
-                onOpen = {},
-                onClose = {},
                 onTextChange = {},
                 onEstimate = {},
                 onCancel = {},
-                labelRes = R.string.training_strength_describe,
                 promptRes = R.string.training_strength_describe_prompt,
                 placeholderRes = R.string.training_strength_describe_placeholder,
                 submitRes = R.string.training_strength_describe_submit,

@@ -38,6 +38,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.LiftPerformance
+import ph.mart.healthapp.core.data.exercise.ParsedExercise
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthParseResult
@@ -63,6 +64,7 @@ import ph.mart.healthapp.feature.training.ui.components.RestTimerCard
 import ph.mart.healthapp.feature.training.ui.components.SaveRoutineSheet
 import ph.mart.healthapp.feature.training.ui.components.StrengthSetEditor
 import ph.mart.healthapp.feature.training.ui.components.StrengthSetList
+import ph.mart.healthapp.feature.training.ui.components.WorkoutDetailsDisclosure
 import ph.mart.healthapp.feature.training.ui.components.canAdd
 
 /** The rest a fresh screen offers — the middle of [ph.mart.healthapp.feature.training.ui.components.REST_CHOICES],
@@ -79,13 +81,16 @@ private const val DEFAULT_REST_SECONDS = 90
  *
  * [editingId] of 0 is a new workout. Non-zero names a logged one, which the ViewModel resolves —
  * the route carries an id, not the row. [routineId] is the same shape for the opposite direction:
- * a routine to start from, which Home's training-plan card names when it opens this screen.
+ * a routine to start from, which Home's training-plan card and the log sheet's chips name.
+ * [described] is the log sheet's sentence once it named lifts, already parsed — see
+ * [StrengthWorkoutRoute].
  */
 @Composable
 fun StrengthWorkoutScreen(
     dateEpochDay: Long,
     editingId: Long,
     routineId: Long = 0,
+    described: ParsedExercise? = null,
     onExit: () -> Unit,
     onSaved: (creditedKcal: Int) -> Unit = {},
     viewModel: LogExerciseViewModel = koinViewModel(),
@@ -110,7 +115,7 @@ fun StrengthWorkoutScreen(
 
     // Held here rather than in the content, the sheet's shape: a parse's sets arrive as a side
     // effect, and the form they land in has to be in reach of the collector.
-    val seed = remember(uiState.editing, uiState.seedRoutine) { uiState.strengthSeed() }
+    val seed = remember(uiState.editing, uiState.seedRoutine) { uiState.strengthSeed(described) }
     val state = rememberLogExerciseState(seed)
     val describe = rememberDescribeState()
 
@@ -128,7 +133,7 @@ fun StrengthWorkoutScreen(
             is LogExerciseSideEffect.SetsParsed -> when (val result = effect.result) {
                 is StrengthParseResult.Success -> {
                     state.form = state.form.copy(sets = state.form.sets + result.sets)
-                    describe.close()
+                    describe.clear()
                 }
 
                 // Both keep the sentence, the sheet's rule: correcting it beats retyping it.
@@ -155,6 +160,7 @@ fun StrengthWorkoutScreen(
         seed = seed,
         state = state,
         describe = describe,
+        fromSentence = described != null,
         onDescribe = {
             describe.message = null
             if (viewModel.isOnline()) {
@@ -174,10 +180,16 @@ fun StrengthWorkoutScreen(
  *
  * A started routine seeds the same form the chip row would have — one seeding path, so an
  * opened-from-Home workout and a chip-tapped one are the same workout.
+ *
+ * [described] comes last: the route never carries it beside an edit or a routine, and if it ever
+ * did, the row and the routine are the user's own where a parse is only a reading of a sentence.
+ * Its minutes and note seed the form too — the burn then re-estimates from them, as a typed
+ * duration's would. Internal for `LogExerciseFormTest`.
  */
-private fun LogExerciseUiState.strengthSeed(): LogExerciseForm {
+internal fun LogExerciseUiState.strengthSeed(described: ParsedExercise? = null): LogExerciseForm {
     val form = editing?.toLogExerciseForm()
         ?: seedRoutine?.let { LogExerciseForm(name = it.name, sets = it.toSets(lastLoads)) }
+        ?: described?.let { LogExerciseForm(name = it.name, minutes = it.minutes, sets = it.sets) }
         ?: LogExerciseForm()
     return form.copy(type = ExerciseType.Strength)
 }
@@ -195,6 +207,7 @@ private fun StrengthWorkoutContent(
     state: LogExerciseState = rememberLogExerciseState(seed),
     describe: DescribeState = DescribeState(),
     onDescribe: () -> Unit = {},
+    fromSentence: Boolean = false,
 ) {
     val form = state.form.withEstimate(uiState.weightKg)
 
@@ -230,20 +243,17 @@ private fun StrengthWorkoutContent(
 
     // Back out of a half-written workout is the one destructive gesture here, so it only
     // intercepts once there is something to lose — an untouched screen pops like any other route.
-    // The describe panel is a sub-level above that: back abandons a parse in flight, then closes
-    // the panel, and only then asks about the workout. One handler rather than two, so which one
-    // wins can't depend on which condition happened to become true first.
-    val isDirty = state.form != seed || draft.canAdd()
-    if (describe.open || isDirty) {
+    // A session that arrived from a sentence counts as something: it is a workout the user said,
+    // where a routine's seed is only a plan they can start again. A parse in flight is a sub-level
+    // above that: back abandons it first, and only then asks about the workout. One handler rather
+    // than two, so which one wins can't depend on which condition happened to become true first.
+    val isDirty = state.form != seed || draft.canAdd() || fromSentence
+    if (uiState.parsing || isDirty) {
         val navigationState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
         NavigationBackHandler(
             state = navigationState,
             onBackCompleted = {
-                when {
-                    describe.open && uiState.parsing -> onEvent(LogExerciseEvent.OnCancelParse)
-                    describe.open -> describe.close()
-                    else -> discardOpen = true
-                }
+                if (uiState.parsing) onEvent(LogExerciseEvent.OnCancelParse) else discardOpen = true
             },
         )
     }
@@ -264,50 +274,13 @@ private fun StrengthWorkoutContent(
             ) {
                 VolumeSummary(sets = form.sets, unit = uiState.preferredUnit)
 
-                // Offered only on an untouched new workout: once a set is down, "repeat" would
-                // overwrite what is already there, and the discard question is the wrong one to
-                // ask for a button press.
-                val last = uiState.lastWorkout
-                if (last != null && form.sets.isEmpty()) {
-                    SecondaryButton(
-                        label = stringResource(R.string.training_strength_repeat),
-                        onClick = { state.form = form.copy(sets = last.sets) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-
-                // Same guard, same reason: a routine seeds the whole list, so offering it once a
-                // set is down would overwrite what is already there.
-                if (uiState.routines.isNotEmpty() && form.sets.isEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = stringResource(R.string.training_strength_start_routine),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        NameChipRow(
-                            names = uiState.routines.map { it.name },
-                            // Names are what the row shows, so the tapped one is what finds the
-                            // routine back — two routines sharing a name seed the newer, which is
-                            // the one the chip nearer the start is.
-                            onSelect = { name ->
-                                uiState.routines.firstOrNull { it.name == name }?.let { routine ->
-                                    state.form = form.copy(sets = routine.toSets(uiState.lastLoads))
-                                }
-                            },
-                        )
-                    }
-                }
-
-                // Appends rather than replaces, so unlike the two rows above it is offered whatever
-                // is already down — correcting a logged workout included, where "and I forgot the
-                // curls" is the likeliest sentence.
+                // Appends rather than replaces, so it is offered whatever is already down —
+                // correcting a logged workout included, where "and I forgot the curls" is the
+                // likeliest sentence. First, because saying the session is the quick path and the
+                // editor below is the correction.
                 DescribeExerciseField(
-                    open = describe.open,
                     text = describe.text,
                     parsing = uiState.parsing,
-                    onOpen = { describe.open = true },
-                    onClose = describe::close,
                     onTextChange = {
                         describe.text = it
                         describe.message = null
@@ -315,12 +288,43 @@ private fun StrengthWorkoutContent(
                     onEstimate = onDescribe,
                     onCancel = { onEvent(LogExerciseEvent.OnCancelParse) },
                     message = describe.message?.let { stringResource(it) },
-                    labelRes = R.string.training_strength_describe,
                     promptRes = R.string.training_strength_describe_prompt,
                     placeholderRes = R.string.training_strength_describe_placeholder,
                     submitRes = R.string.training_strength_describe_submit,
                     modifier = Modifier.fillMaxWidth(),
                 )
+
+                // The last session and the routines are one question — what to start from — so
+                // they are one row. Offered only on an empty list: each seeds the whole of it, and
+                // once a set is down that would overwrite it, and the discard question is the
+                // wrong one to ask for a chip.
+                val last = uiState.lastWorkout
+                if (form.sets.isEmpty() && (last != null || uiState.routines.isNotEmpty())) {
+                    val lastLabel = stringResource(R.string.training_strength_last_workout)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = stringResource(R.string.training_strength_start_from),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        NameChipRow(
+                            names = listOfNotNull(lastLabel.takeIf { last != null }) + uiState.routines.map { it.name },
+                            // Names are what the row shows, so the tapped one is what finds its
+                            // seed back — two routines sharing a name seed the newer, the chip
+                            // nearer the start. *ponytail: a routine named exactly "Last workout"
+                            // is shadowed by the chip in front of it; match by index if it ever
+                            // matters.*
+                            onSelect = { name ->
+                                val sets = if (last != null && name == lastLabel) {
+                                    last.sets
+                                } else {
+                                    uiState.routines.firstOrNull { it.name == name }?.toSets(uiState.lastLoads)
+                                }
+                                if (sets != null) state.form = form.copy(sets = sets)
+                            },
+                        )
+                    }
+                }
 
                 StrengthSetList(
                     sets = form.sets,
@@ -355,12 +359,14 @@ private fun StrengthWorkoutContent(
                     onAdd = { commit(draft) },
                 )
 
-                ExerciseFormFields(
-                    form = form,
-                    weightKg = uiState.weightKg,
-                    onFormChange = { state.form = it },
-                    showTypeChips = false,
-                )
+                WorkoutDetailsDisclosure(minutes = form.minutes, burnedKcal = form.burnedKcal) {
+                    ExerciseFormFields(
+                        form = form,
+                        weightKg = uiState.weightKg,
+                        onFormChange = { state.form = it },
+                        showTypeChips = false,
+                    )
+                }
 
                 if (form.sets.isNotEmpty()) {
                     SecondaryButton(
@@ -495,8 +501,8 @@ private fun StrengthWorkoutScreenPreview() {
     }
 }
 
-/** A fresh workout with a session to repeat and routines to start — the state those two rows
- * exist for. */
+/** A fresh workout with a session to repeat and a routine to start — the state the Start from row
+ * exists for. */
 @PreviewLightDark
 @Composable
 private fun StrengthWorkoutScreenEmptyPreview() {
@@ -513,6 +519,7 @@ private fun StrengthWorkoutScreenEmptyPreview() {
                     burnedKcal = 260,
                     sets = listOf(StrengthSet("Squat", 5, 100.0)),
                 ),
+                routines = listOf(Routine(id = 1, name = "Push day", lifts = emptyList())),
             ),
             dateEpochDay = 0,
             editingId = null,

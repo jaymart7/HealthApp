@@ -1,5 +1,6 @@
 package ph.mart.healthapp.core.data.exercise
 
+import kotlinx.serialization.Serializable
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.stripMarkdown
@@ -14,7 +15,12 @@ import ph.mart.healthapp.core.data.stripMarkdown
  * Nothing is cached: every sentence is its own answer.
  */
 interface ExerciseParseRepository {
-    suspend fun parse(text: String): ExerciseParseResult
+    /**
+     * The log sheet's sentence: one activity, and — when the sentence names lifts — its sets too,
+     * so "bench 3x8 at 60" reaches the strength screen already filled in rather than asking for
+     * the session twice. [unit] is [parseSets]' and is still **not sent**.
+     */
+    suspend fun parse(text: String, unit: UnitSystem): ExerciseParseResult
 
     /**
      * A sentence about a lifting session in, its sets out — the strength screen's describe panel.
@@ -53,19 +59,18 @@ sealed interface ExerciseParseResult {
  * absence is enforced by the schema rather than by a prompt asking nicely.
  *
  * [name] may be empty, which is what [ExerciseEntry] means by "call it by its type".
+ *
+ * [sets] is the log sheet's alone — the quick log and the coach read one activity and never fill
+ * it, which is why it is defaulted. Non-empty is what sends the sheet on to the strength screen,
+ * and the whole parse rides that route's key, hence [Serializable].
  */
+@Serializable
 data class ParsedExercise(
     val type: ExerciseType,
     val name: String,
     val minutes: Int,
+    val sets: List<StrengthSet> = emptyList(),
 )
-
-/**
- * How much of the sentence is sent. A workout is a phrase — shorter than a meal, which can list
- * courses — and `MAX_PARSE_CHARS`' reasoning applies: it is cheaper to cap the input than to pay
- * for a parse of something that was never a workout.
- */
-const val MAX_EXERCISE_PARSE_CHARS = 200
 
 /** A note is a line under the type, not a paragraph. `ExerciseEntry.name`'s practical ceiling. */
 const val MAX_EXERCISE_NAME_CHARS = 60
@@ -110,7 +115,11 @@ sealed interface StrengthParseResult {
     data object Failed : StrengthParseResult
 }
 
-/** A session lists several lifts, so twice what one activity is allowed. */
+/**
+ * How much of a sentence is sent — the log sheet's and the strength screen's alike, since either
+ * may list a whole session. `MAX_PARSE_CHARS`' reasoning: it is cheaper to cap the input than to
+ * pay for a parse of something that was never a workout.
+ */
 const val MAX_STRENGTH_PARSE_CHARS = 400
 
 /**

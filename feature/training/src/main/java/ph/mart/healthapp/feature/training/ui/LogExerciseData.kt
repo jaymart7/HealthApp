@@ -30,10 +30,11 @@ data class LogExerciseUiState(
      * the confirmation says nothing, because there is nothing it could truthfully say. */
     val addExerciseToBudget: Boolean = true,
     val editing: ExerciseEntry? = null,
-    /** The most recent strength session — what "Repeat last workout" seeds from. */
+    /** The most recent strength session — what the "Last workout" chip seeds from. */
     val lastWorkout: ExerciseEntry? = null,
     val recentLifts: List<String> = emptyList(),
-    /** The saved routines, newest first — the "Start a routine" chips. */
+    /** The saved routines, newest first — the sheet's "Start a routine" chips and the strength
+     * screen's "Start from" row. */
     val routines: List<Routine> = emptyList(),
     /** The routine this screen was opened *on*, when Home's plan card started one. Resolved here
      * rather than passed down the back stack, exactly like [editing], and folded into the form's

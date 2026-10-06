@@ -614,14 +614,13 @@ fun AppScaffold(
                     sheetEditingId = 0
                 },
                 onSaved = onWorkoutSaved,
-                // The diary opens this sheet on its selected day, and the workout screen inherits
-                // it — along with the row being corrected, when there is one.
-                onOpenStrength = { date ->
-                    val editingId = sheetEditingId
+                // The sheet builds the route — the diary's day, the row being corrected, a routine
+                // or a parsed session all ride it — so this only closes the sheet and pushes.
+                onOpenStrength = { route ->
                     activeSheet = ActiveSheet.None
                     sheetDate = 0
                     sheetEditingId = 0
-                    topLevelBackStack.add(StrengthWorkoutRoute(date, editingId))
+                    topLevelBackStack.add(route)
                 },
                 dateEpochDay = sheetDate,
                 editingId = sheetEditingId,

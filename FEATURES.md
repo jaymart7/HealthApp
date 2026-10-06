@@ -286,13 +286,18 @@ Logging and the strength screen live in `:feature:training`; the diary keeps its
 Profile keeps routine authoring, Progress keeps the history. There is no Training tab or screen —
 see `DECISIONS.md`.
 
-- Log a workout: type, duration, MET-estimated burn (editable; stops re-estimating once touched).
-- **Describe it instead** — a swap-in panel at the top of the log sheet takes a sentence,
-  typed or dictated ("45 minute run along the river"), and fills in the type, the note and the
-  duration. The burn stays the app's: the model is never asked for one and the schema has
-  nowhere to put one, so a described run and a typed one of the same length price identically
-  off the user's own latest weigh-in. Every field is editable after, back steps out of the
-  panel one level, and the panel is absent when correcting a logged workout.
+- **The log sheet leads with a sentence.** "What did you do?", typed or dictated, is open the
+  moment the diary's Exercise **+** opens it; under it, **Start a routine** chips (when there are
+  routines) open the strength screen seeded at last-lifted loads, and **Enter manually** opens the
+  form — type, duration, MET-estimated burn (editable; stops re-estimating once touched). A
+  cardio sentence ("45 minute run along the river") fills that form in and opens it for review; a
+  sentence that names lifts ("bench 3x8 at 60, squats 5x5 at 100") goes straight on to the strength
+  screen with its sets, duration and note already filled, and back there asks before dropping it.
+  Offline, failed or nothing found each say so under the field and open the form. The burn stays
+  the app's: the model is never asked for one and the schema has nowhere to put one, so a
+  described run and a typed one of the same length price identically off the user's own latest
+  weigh-in. Back during a parse cancels it. Correcting a logged workout shows the form alone — no
+  sentence, no routines.
 - Burned calories credited to the day's budget, with a Profile switch to opt out.
 - **Earned calories** — what the credit bought, said in one voice on three surfaces: a
   snackbar the moment a workout saves, a promoted line and its own arc on Home's calorie
@@ -301,14 +306,18 @@ see `DECISIONS.md`.
   switch off, on a correction to a past row, and under a 50 kcal floor.
 - Strength workouts: a full set editor (lift name, reps, weight in the user's unit), lift-name
   chips from recent sessions, last-lifted load shown per lift.
-- **Describe your sets** — a sentence on the strength screen, typed or dictated ("bench 3x8 at
-  60, squats 5x5 at 100"), becomes sets appended to the list. A load said with no unit is in the
-  user's own unit, applied on-device — only the sentence is sent. Offered while correcting a
-  logged workout too, since it only adds; back steps out of the panel one level.
+- **Describe your sets** — "What did you lift?" heads the strength screen, always open: a
+  sentence, typed or dictated, becomes sets appended to the list. A load said with no unit is in
+  the user's own unit, applied on-device — only the sentence is sent. Offered while correcting a
+  logged workout too, since it only adds; back during a parse cancels it.
 - Bodyweight sets (0 kg) are a real value.
-- "Repeat last workout" seeds the whole set list.
-- Routines: save a session as a routine (modal reps), start one to seed sets at last-lifted loads.
-  Or describe one to Gemini from Profile → Workout routines (see below).
+- **Start from** — one chip row on an empty set list: "Last workout" first, then every routine.
+  Either seeds the whole list.
+- **Details** — the note, duration and burn fold to one line ("45 min · 260 kcal") under the set
+  editor, and open to the steppers.
+- Routines: save a session as a routine (modal reps), start one from the log sheet, the strength
+  screen or Home's plan card to seed sets at last-lifted loads. Or describe one to Gemini from
+  Profile → Workout routines (see below).
 - Training plan: a weekday picker per routine; Home shows today's routine and a week ratio.
 - Edit or delete a logged workout (sets re-pointed in the same transaction).
 - Rest timer between sets: Off/1:00/1:30/2:00/3:00, auto-started by "Add set", with +30 sec,
@@ -575,7 +584,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   blank field, and not while an answer is still streaming.
 - Meal ideas (above).
 - Talk-to-log (above) — a sentence parsed into several priced diary rows.
-- Describe a workout (above) — a sentence parsed into one activity, priced on-device.
+- Describe a workout (above) — a sentence parsed into one activity, priced on-device, or into a
+  strength session that opens on the set list.
 - Every AI path degrades to a manual or local-derivation path offline.
 
 ## Profile & settings
