@@ -95,12 +95,15 @@ private fun SupplementsContent(
                 windowInsets = WindowInsets(0),
                 actions = {
                     AskCoachAction(subject = Subject.Supplements, onAskCoach = onAskCoach)
-                    IconButton(onClick = onOpenRecap) {
-                        Icon(
-                            imageVector = AppIcons.Share,
-                            contentDescription = stringResource(R.string.progress_recap),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                    // Nothing to share from an empty page.
+                    if (days.isNotEmpty() || supplements.isNotEmpty()) {
+                        IconButton(onClick = onOpenRecap) {
+                            Icon(
+                                imageVector = AppIcons.Share,
+                                contentDescription = stringResource(R.string.progress_recap),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 },
             )

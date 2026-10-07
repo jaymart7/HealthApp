@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.profile.ActivityLevel
 import ph.mart.healthapp.core.data.profile.CALORIE_FLOOR_WARNING
 import ph.mart.healthapp.core.data.profile.CALORIE_TARGET_KCAL
@@ -135,28 +134,12 @@ internal fun ProfileCaloriesSection(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = stringResource(R.string.profile_macro_split),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = stringResource(
-                        R.string.profile_targets_macro_pcts,
-                        targets.percentOf(targets.proteinG * 4),
-                        targets.percentOf(targets.carbsG * 4),
-                        targets.percentOf(targets.fatG * 9),
-                    ),
-                    style = MaterialTheme.typography.labelSmall.tabularNums,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            // The split is said once, on the rows below — beside the figure each percentage is of.
+            Text(
+                text = stringResource(R.string.profile_macro_split),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             MacroBar(proteinG = targets.proteinG, carbsG = targets.carbsG, fatG = targets.fatG)
             MacroInputGroup(
                 proteinG = targets.proteinG,
@@ -197,13 +180,6 @@ internal fun ProfileCaloriesSection(
             }
         }
     }
-}
-
-/** The share of the day's energy one macro carries, rounded for display only — the grams are the
- * stored figure and nothing reads this back. */
-private fun DailyTargets.percentOf(macroKcal: Int): Int {
-    val total = (proteinG * 4 + carbsG * 4 + fatG * 9).coerceAtLeast(1)
-    return (macroKcal * 100.0 / total).roundToInt()
 }
 
 private fun previewProfile() = Profile(

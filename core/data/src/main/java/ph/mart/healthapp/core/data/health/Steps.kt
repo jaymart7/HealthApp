@@ -87,7 +87,8 @@ fun List<StepDay>.inRange(range: ChartRange, todayEpochDay: Long): List<StepDay>
     return filter { it.dateEpochDay >= todayEpochDay - days }
 }
 
-/** Nulls rather than zeros on an empty window, so the stat row renders "—" instead of "0". */
+/** Nulls rather than zeros on an empty window, so the stat row renders "—" instead of "0". [bestSteps]
+ * is null on a one-day window too: a "best" of one is just that day. */
 data class StepAverages(val averageSteps: Int?, val bestSteps: Int?, val daysHitGoal: Int, val days: Int)
 
 /**
@@ -99,7 +100,7 @@ data class StepAverages(val averageSteps: Int?, val bestSteps: Int?, val daysHit
  */
 fun List<StepDay>.stepAverages(goal: Int): StepAverages = StepAverages(
     averageSteps = takeIf { it.isNotEmpty() }?.let { days -> days.sumOf { it.steps } / days.size },
-    bestSteps = maxOfOrNull { it.steps },
+    bestSteps = takeIf { it.size > 1 }?.maxOf { it.steps },
     daysHitGoal = count { it.steps >= goal },
     days = size,
 )

@@ -81,6 +81,15 @@ class RecapTest {
     }
 
     @Test
+    fun `one logged day is not a best day`() {
+        val result = weekOf(
+            nutrition = week(0, 0, 0, 0, 0, 0, 1900),
+            activeDays = setOf(TODAY),
+        )
+        assertNull(result!!.bestDay)
+    }
+
+    @Test
     fun `no targets means no best day`() {
         val result = weekOf(
             nutrition = week(0, 1900, 0, 0, 0, 0, 0),
@@ -171,11 +180,12 @@ class RecapTest {
             stepDays = listOf(
                 StepDay(dateEpochDay = TODAY - 100, steps = 20_000, burnedKcal = 600),
                 StepDay(dateEpochDay = TODAY - 5, steps = 8_000, burnedKcal = 240),
+                StepDay(dateEpochDay = TODAY - 3, steps = 6_000, burnedKcal = 180),
             ),
         )!!
         assertEquals(listOf(3L, 4L), result.photos.map { it.id })
-        assertEquals(1, result.steps.days)
-        assertEquals(8_000, result.steps.averageSteps)
+        assertEquals(2, result.steps.days)
+        assertEquals(7_000, result.steps.averageSteps)
         // The out-of-window day was the better one, and must not be reported as the best.
         assertEquals(8_000, result.steps.bestSteps)
     }

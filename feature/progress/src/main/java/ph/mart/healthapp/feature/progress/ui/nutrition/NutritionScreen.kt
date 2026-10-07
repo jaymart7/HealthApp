@@ -109,12 +109,15 @@ private fun NutritionContent(
                 windowInsets = WindowInsets(0),
                 actions = {
                     AskCoachAction(subject = Subject.Nutrition, onAskCoach = onAskCoach)
-                    IconButton(onClick = onOpenRecap) {
-                        Icon(
-                            imageVector = AppIcons.Share,
-                            contentDescription = stringResource(R.string.progress_recap),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                    // Nothing to share from an empty page.
+                    if (anythingLogged) {
+                        IconButton(onClick = onOpenRecap) {
+                            Icon(
+                                imageVector = AppIcons.Share,
+                                contentDescription = stringResource(R.string.progress_recap),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 },
             )

@@ -101,12 +101,15 @@ private fun SleepContent(
                     // which a page holding one series cannot see. `RecapScreen` folds its own and
                     // says so when there is nothing.
                     AskCoachAction(subject = Subject.Sleep, onAskCoach = onAskCoach)
-                    IconButton(onClick = onOpenRecap) {
-                        Icon(
-                            imageVector = AppIcons.Share,
-                            contentDescription = stringResource(R.string.progress_recap),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                    // Nothing to share from an empty page.
+                    if (nights.isNotEmpty()) {
+                        IconButton(onClick = onOpenRecap) {
+                            Icon(
+                                imageVector = AppIcons.Share,
+                                contentDescription = stringResource(R.string.progress_recap),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 },
             )

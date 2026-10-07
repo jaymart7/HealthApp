@@ -21,11 +21,14 @@
     <string name="home_macro_fat">Taba</string>
     <string name="home_macro_figure">%1$d / %2$d g</string>
     <string name="home_water_title">Tubig</string>
-    <string name="home_water_count">%1$d / %2$d · %3$s</string>
+    <plurals name="home_water_count">
+        <item quantity="one">%1$d / %2$d baso · %3$s</item>
+        <item quantity="other">%1$d / %2$d baso · %3$s</item>
+    </plurals>
     <string name="home_weight_title">Timbang</string>
     <string name="home_weight_value">%1$s %2$s</string>
     <string name="home_weight_delta">%1$s %2$s kumpara 7 araw na ang nakalipas</string>
-    <string name="home_weight_no_prior">Wala pang kumpara</string>
+    <string name="home_weight_no_prior">Walang pagtimbang isang linggo bago nito</string>
     <string name="home_mood_title">Kumusta ang pakiramdam mo?</string>
     <string name="home_mood_mood">Mood</string>
     <string name="home_mood_energy">Enerhiya</string>

@@ -38,13 +38,12 @@
     <string name="profile_header_off_track">off track</string>
     <string name="profile_header_changed">changed</string>
     <string name="profile_header_steady">steady</string>
-    <string name="profile_header_no_prior">No weigh-in a week ago to compare</string>
+    <string name="profile_header_no_prior">No weigh-in a week earlier</string>
 
     <!-- Calories &amp; macros -->
     <string name="profile_targets_calories_label">Daily calories</string>
     <string name="profile_targets_calories_down">Lower the calorie target</string>
     <string name="profile_targets_calories_up">Raise the calorie target</string>
-    <string name="profile_targets_macro_pcts">%1$d%% · %2$d%% · %3$d%%</string>
     <string name="profile_macro_split">Macro split</string>
 
     <!-- The three profile enums whose name is a stored token, so the words live here.
@@ -152,7 +151,7 @@
     <string name="profile_export_csv">Export as CSV</string>
     <string name="profile_export_csv_sub">A zip of spreadsheet files. For reading, not for restoring.</string>
     <string name="profile_import">Import data (JSON)</string>
-    <string name="profile_import_sub">Replaces your current profile and food entries</string>
+    <string name="profile_import_sub">Replaces all your data with the file\'s</string>
     <string name="profile_export_saved">Export saved.</string>
     <string name="profile_export_failed">Couldn\'t write that file.</string>
     <string name="profile_import_failed">Couldn\'t read that file.</string>

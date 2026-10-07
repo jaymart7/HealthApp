@@ -126,7 +126,7 @@ fun summarize(
                         phrase(trendWord(uiState.goal, trend.deltaKg)),
                     )
                 } else {
-                    phrase(R.string.progress_summary_one_reading)
+                    phrase(R.string.progress_summary_no_prior)
                 },
                 arrow = if (trend.hasPrior) arrowFor(trend.deltaKg, TREND_ARROW_DEADBAND_KG) else null,
                 trend = if (trend.hasPrior) goalRelativeTrend(uiState.goal, trend.deltaKg) else TrendDirection.Neutral,

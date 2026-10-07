@@ -79,8 +79,8 @@
     <string name="coach_empty_seen">What I can already see · %1$s</string>
     <string name="coach_empty_seen_today">Today</string>
     <string name="coach_empty_calories">kcal</string>
-    <string name="coach_empty_protein">protein</string>
-    <string name="coach_empty_water">water</string>
+    <string name="coach_empty_protein">g protein</string>
+    <string name="coach_empty_water">glasses of water</string>
     <!-- A value against its goal, e.g. "1,240 / 2,000". The goal half is drawn quieter. -->
     <string name="coach_empty_of_goal">/ %1$s</string>
     <!-- Spoken as one phrase, since the three columns are a sentence to a screen reader and a
@@ -98,9 +98,9 @@
     <!-- The eyebrow over each starter, naming the *kind* of question it stands in for. A label on
          the card, never part of what the tap sends. -->
     <string name="coach_starter_reach_today">Today</string>
-    <string name="coach_starter_reach_logged">A logged day</string>
-    <string name="coach_starter_reach_span">A span</string>
-    <string name="coach_starter_reach_opinion">An opinion</string>
+    <string name="coach_starter_reach_logged">Any past day</string>
+    <string name="coach_starter_reach_span">Any week or month</string>
+    <string name="coach_starter_reach_opinion">Advice</string>
 
     <!-- Follow-ups offered under a finished answer. Same rule as the starters: what gets sent is
          whatever the chip said, so these are translated. Each one is a question the coach can

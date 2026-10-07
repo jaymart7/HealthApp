@@ -15,6 +15,7 @@
     <string name="progress_recap">Recap</string>
     <string name="progress_show_group">Show %1$s</string>
     <string name="progress_group_none_tracked">%1$d subjects · none tracked</string>
+    <string name="progress_group_untracked">Not started yet</string>
     <string name="progress_recap_empty_heading">Nothing logged yet</string>
     <string name="progress_recap_empty_body">There\'s nothing in the %1$s to recap. Log a meal, a glass of water or a weigh-in and it\'ll show up here.</string>
     <string name="progress_trend_holding">Holding steady at your target.</string>
@@ -22,8 +23,8 @@
     <string name="progress_trend_down">Trending %1$s %2$s down per week.</string>
     <string name="progress_trend_up">Trending %1$s %2$s up per week.</string>
     <string name="progress_sparse_none">Nothing is tracking yet. Log anything and it shows up here.</string>
-    <string name="progress_sparse_one">One subject is tracking so far. The rest stay tucked away until there\'s something to read.</string>
-    <string name="progress_sparse_many">%1$d subjects are tracking so far. The rest stay tucked away until there\'s something to read.</string>
+    <string name="progress_sparse_one">You\'re tracking one subject so far. The rest stay tucked away until there\'s something to read.</string>
+    <string name="progress_sparse_many">You\'re tracking %1$d subjects so far. The rest stay tucked away until there\'s something to read.</string>
 
     <!-- Subject groups and names -->
     <string name="progress_group_body">Body</string>
@@ -245,7 +246,6 @@
     <string name="progress_activity_burned_legend">Steps and workouts, combined</string>
     <string name="progress_activity_average">Average steps</string>
     <string name="progress_activity_best">Best day</string>
-    <string name="progress_activity_hit_goal">Hit today\'s goal</string>
     <string name="progress_activity_burned">Burned</string>
     <string name="progress_fasting_hero">average fast</string>
     <string name="progress_fasting_goal">Goal %1$dh</string>
@@ -542,7 +542,7 @@
     <!-- summarize() — each subject card's unit and footnote on the overview. A figure and its unit
          symbol arrive as one argument ("0.4 kg"), already formatted. -->
     <string name="progress_summary_weight_week">%1$s this week · %2$s</string>
-    <string name="progress_summary_one_reading">One reading so far</string>
+    <string name="progress_summary_no_prior">No weigh-in a week earlier</string>
     <string name="progress_summary_trend_steady">steady</string>
     <string name="progress_summary_trend_on_track">on track</string>
     <string name="progress_summary_trend_off_track">off track</string>

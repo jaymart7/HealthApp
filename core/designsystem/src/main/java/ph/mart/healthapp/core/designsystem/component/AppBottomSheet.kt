@@ -28,8 +28,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,13 +83,11 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
  * for its rows, and a close icon flush against the screen edge is not a target. [showClose] is false
  * for exactly one sheet — the add-entry sheet, whose three states each draw their own chrome.
  *
- * [expanded] asks the sheet for the whole screen and keeps it there — the add-entry sheet's search
- * state, which hands its full height to one list. A sheet shorter than the screen grows only to its
- * own height, which is why the log-exercise form asks too: left half-open, a form taller than half
- * the screen hides its pinned [bottomBar] below the fold. A `Boolean` rather than a hoisted `SheetState`
- * because `SheetState` is an experimental Material type: putting it in this signature would push an
- * `@OptIn` onto every sheet in the app to answer a question one caller asks. The state stays inside
- * this file, where the opt-in already is.
+ * Every sheet opens at its own full height — M3's half-height stop is skipped. A sheet shorter than
+ * the screen grows only to its own height, so that changes nothing for a short one; a taller one
+ * left at the half stop hid whatever was at its bottom — the log-exercise form's pinned Save, the
+ * add-entry sheet's "Add it yourself", the weight sheet's Save — every one under the gesture bar.
+ * No caller wanted the half stop, so there is no flag for it.
  *
  * [scrollRules] draws a 1dp `outlineVariant` rule under the header while the content has scrolled
  * under it, and over the bar while more of it sits below. Drawn over the viewport's edges rather
@@ -110,7 +106,6 @@ fun AppBottomSheet(
     title: String? = null,
     showClose: Boolean = true,
     horizontalPadding: Dp = 16.dp,
-    expanded: Boolean = false,
     scrollable: Boolean = true,
     scrollState: ScrollState = rememberScrollState(),
     scrollRules: Boolean = false,
@@ -134,15 +129,7 @@ fun AppBottomSheet(
         return
     }
 
-    // A sheet that opens already [expanded] skips the half-height stop: M3's own show animation
-    // settles at partial and wins the race against the expand() below, which left the log-exercise
-    // form's pinned Save under the fold. Read once — M3 keys the saved state on this flag, so a
-    // value that changed later would rebuild the sheet under the user.
-    val opensExpanded = remember { expanded }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = opensExpanded)
-    // Only ever asked to grow. Coming back down is the content shrinking, not the sheet being
-    // dragged — a settle() to partial would fight a user who had already pulled it up themselves.
-    LaunchedEffect(expanded) { if (expanded) sheetState.expand() }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

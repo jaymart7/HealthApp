@@ -30,6 +30,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -363,8 +365,16 @@ private fun QuickAddPill(kcal: Int?, onKcalChange: (Int?) -> Unit, onLog: () -> 
                 .padding(horizontal = 8.dp),
         ) {
             // Sized to its digits for the reason every other figure on this sheet is: a field left
-            // to fill takes the whole row and "kcal" then measures against zero.
-            Box(modifier = Modifier.width(IntrinsicSize.Min)) {
+            // to fill takes the whole row and "kcal" then measures against zero. Underlined, so the
+            // em dash reads as a blank to fill — beside the + it read as a minus button.
+            val rule = MaterialTheme.colorScheme.outline
+            Box(
+                modifier = Modifier
+                    .width(IntrinsicSize.Min)
+                    .drawBehind {
+                        drawLine(rule, Offset(0f, size.height), Offset(size.width, size.height), 1.dp.toPx())
+                    },
+            ) {
                 if (kcal == null) {
                     Text(
                         text = "—",

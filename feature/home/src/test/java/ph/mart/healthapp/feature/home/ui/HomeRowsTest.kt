@@ -83,30 +83,34 @@ class HomeRowsTest {
         }
     }
 
+    /** Calories, Macros and Water lead the default layout and sit right under the strip. */
     @Test
-    fun `the strip takes the first three visible priority cards`() {
+    fun `the strip skips the three leading cards and takes the next priority ones`() {
         assertEquals(
-            listOf(HomeCard.Calories, HomeCard.Water, HomeCard.Steps),
+            listOf(HomeCard.Steps, HomeCard.Streak, HomeCard.Weight),
             todayStripCards(HomeCard.entries),
         )
     }
 
     @Test
     fun `a hidden card takes its own cell with it`() {
-        val visible = HomeCard.entries.filterNot { it == HomeCard.Calories || it == HomeCard.Steps }
-        assertEquals(
-            listOf(HomeCard.Water, HomeCard.Streak, HomeCard.Weight),
-            todayStripCards(visible),
-        )
+        val visible = HomeCard.entries.filterNot { it == HomeCard.Steps }
+        assertEquals(listOf(HomeCard.Streak, HomeCard.Weight), todayStripCards(visible))
     }
 
     @Test
     fun `one survivor is not a summary`() {
-        assertTrue(todayStripCards(listOf(HomeCard.Water, HomeCard.Mood)).isEmpty())
+        val lead = listOf(HomeCard.Calories, HomeCard.Macros, HomeCard.Mood)
+        assertTrue(todayStripCards(lead + listOf(HomeCard.Water, HomeCard.Supplements)).isEmpty())
         assertTrue(todayStripCards(emptyList()).isEmpty())
         assertEquals(
             listOf(HomeCard.Water, HomeCard.Weight),
-            todayStripCards(listOf(HomeCard.Water, HomeCard.Weight, HomeCard.Mood)),
+            todayStripCards(lead + listOf(HomeCard.Water, HomeCard.Weight, HomeCard.Supplements)),
         )
+    }
+
+    @Test
+    fun `a card already in view gets no cell`() {
+        assertTrue(todayStripCards(listOf(HomeCard.Calories, HomeCard.Water, HomeCard.Steps)).isEmpty())
     }
 }

@@ -106,7 +106,7 @@ Supplements · Mood · Sleep · Heart rate · Week budget · Cycle · Blood pres
 ranked by the daily loop, not grouped by kind.
 
 - Pinned header block — mascot greeting + the app's one door to the coach, a two-or-three-cell
-  Today strip mirroring visible cards, and the AI insight as a dismissible inset band (with a
+  Today strip mirroring visible cards further down than the first three, and the AI insight as a dismissible inset band (with a
   rules-based offline fallback).
 - Half-width cards pair with an adjacent half; an unpaired half falls back to full width. Gated
   cards are removed before pairing, so survivors close up rather than leaving holes.
@@ -346,7 +346,7 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   card that still opens its page; a group with nothing tracked collapses to one expandable row.
 - Detail page: a toolbar with back and the recap share, hero figure, fact chips, one chart card
   holding its own 1M/3M/6M/1Y range toggle and legend, and stat rows. The range is remembered per subject for the session. Empty subjects get a mascot page
-  and no call to action — except Weight, Cycle, Blood pressure and Measurements, whose log sheets
+  and no call to action and no share — except Weight, Cycle, Blood pressure and Measurements, whose log sheets
   are on the page itself.
 - Weight: a hero naming the reading's own day ("68 kg · Sep 16") unless it is today's, a daily
   line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
@@ -567,7 +567,7 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Coach empty state — a read-only strip of the three figures the coach is already told about
   (calories, protein and water, each against its goal), a capability line beside the 64dp mascot,
   and four openers as a 2×2 of cards, each with an eyebrow naming the kind of question it stands in
-  for: today, a logged day, a span, an opinion. The eyebrow is a label, never part of what is sent.
+  for: today, any past day, any week or month, advice. The eyebrow is a label, never part of what is sent.
 - Coach transcript — persisted, with a ruled day label at each day boundary, derived at render
   rather than stored. The coach's bubble and the user's are mirrors of each other, so the two read
   apart by shape before colour.

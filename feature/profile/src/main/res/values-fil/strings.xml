@@ -35,11 +35,10 @@
     <string name="profile_header_off_track">lihis</string>
     <string name="profile_header_changed">nagbago</string>
     <string name="profile_header_steady">steady</string>
-    <string name="profile_header_no_prior">Walang pagtimbang noong isang linggo para ikumpara</string>
+    <string name="profile_header_no_prior">Walang pagtimbang isang linggo bago nito</string>
     <string name="profile_targets_calories_label">Calories kada araw</string>
     <string name="profile_targets_calories_down">Babaan ang target sa calories</string>
     <string name="profile_targets_calories_up">Taasan ang target sa calories</string>
-    <string name="profile_targets_macro_pcts">%1$d%% · %2$d%% · %3$d%%</string>
     <string name="profile_macro_split">Hati ng macros</string>
     <string name="profile_activity_sedentary">Sedentary</string>
     <string name="profile_activity_sedentary_sub">Trabahong nakaupo, kaunting ehersisyo</string>
@@ -129,7 +128,7 @@
     <string name="profile_export_csv">I-export bilang CSV</string>
     <string name="profile_export_csv_sub">Isang zip ng mga spreadsheet file. Pambasa, hindi pang-restore.</string>
     <string name="profile_import">I-import ang data (JSON)</string>
-    <string name="profile_import_sub">Papalitan ang kasalukuyang profile at food entries mo</string>
+    <string name="profile_import_sub">Papalitan ang lahat ng data mo ng laman ng file</string>
     <string name="profile_export_saved">Na-save ang export.</string>
     <string name="profile_export_failed">Hindi maisulat ang file na iyan.</string>
     <string name="profile_import_failed">Hindi mabasa ang file na iyan.</string>

@@ -875,13 +875,19 @@ rather than needing a counter patched.
   say targets are ≥ 48dp and then draws the star, the delete and the chevron at 40 wide; a row with
   three targets in its last 150dp is exactly where undershooting gets noticed. This also retires six
   of the fourteen 44dp sites the Backlog tracks — the three panels they lived in are gone.
-- **`AppBottomSheet` grew a docked slot, a height flag and a scroll, all defaulted.** `bottomBar`
-  draws outside the scrolling column so the commit is not the last thing in a scroll; `expanded`
-  asks for the full screen; `scrollable = false` hands the height to a child that scrolls itself;
+- **`AppBottomSheet` grew a docked slot and a scroll, both defaulted.** `bottomBar`
+  draws outside the scrolling column so the commit is not the last thing in a scroll;
+  `scrollable = false` hands the height to a child that scrolls itself;
   `scrollState` lets the caller read the scroll, which is how the form's top bar takes over the
-  food's name. `expanded` is a `Boolean` and **not** a hoisted `SheetState`: that type is
+  food's name. No `SheetState` is hoisted: that type is
   experimental, and putting it in this signature would push an `@OptIn` onto every sheet in the app
-  to answer a question one caller asks — the same refusal `AppTopBar`'s `titleStyle` makes.
+  — the same refusal `AppTopBar`'s `titleStyle` makes.
+- **Every sheet skips the half-height stop.** It was an `expanded` flag, asked for by one sheet,
+  then two, then found missing on a third: the add-entry sheet's Browse, the log-exercise form and
+  the weight sheet each opened half-way with their action under the gesture bar. A sheet shorter
+  than the screen grows only to its own height, so skipping the stop changes nothing for a short
+  one, and no sheet in the app is a list someone browses at half height — so the flag went rather
+  than being set at every call site.
 - **No sheet reaches under the status bar.** `AppBottomSheet` pads the `ModalBottomSheet` itself by
   `safeDrawing`'s top. Material 3 1.4 instead lets the sheet ride up under the bar and pads its
   content by however much of the bar it covers, which makes the sheet's height a function of its
@@ -1242,7 +1248,9 @@ rather than needing a counter patched.
 - **The Today strip carries no new data, and its priority list is a guess that says so.**
   Each cell restates a card that is *currently visible*, chosen by `todayStripCards()` from
   `[Calories, Water, Steps, Streak, Weight]` — so hiding a card takes its cell with it and the strip
-  can never report a figure the user switched off. Fewer than two survivors hides the strip
+  can never report a figure the user switched off. It skips the layout's three leading cards:
+  they sit straight under it, and the default layout had "kcal left" and the water count twice on
+  the first screen. Fewer than two survivors hides the strip
   entirely: one cell is not a summary. *ponytail: the app records no per-card tap counts, so there
   is no signal to rank by; drive it off real counts if one ever exists rather than inventing a
   ranking to justify a different list.*
@@ -1449,7 +1457,7 @@ rather than needing a counter patched.
 - **There is no sparse-account flag.** Every difference the sparse overview shows falls out of the
   data: the mascot note appears when any group has nothing tracked, the recap's cells omit
   themselves, the insight card is already null-hidden, and a group collapses to one expandable row
-  when none of its subjects has data. A threshold ("fewer than N tracked") would be a number to
+  when none of its subjects has data — or, when some do, folds the rest into one row under them. A threshold ("fewer than N tracked") would be a number to
   maintain and a second thing that could disagree with the grid.
 - **The Patterns card compares two things the user logs, with a median split and an effect-size
   floor — not a correlation.** Fourteen subjects and nothing ever related two of them, which is the
@@ -1499,9 +1507,11 @@ rather than needing a counter patched.
   makes over a hand-picked pair, so the card and the overlay behind it cannot read one run two
   ways. Direction rides the arrow and the judgement rides the colour, which is what `TrendArrow`
   and `TrendDirection` are separate for; the text stays absolute, the Weight card's rule.
-- **An empty subject keeps its slot, dashed.** A card that vanished when it had no data is a
-  subject nobody would ever find, so an untracked one draws a 1dp **dashed** `outlineVariant`
-  outline over nothing, says "Nothing yet", and still opens its page. The dash is what carries the
+- **An empty subject keeps its slot, dashed — behind one row.** A card that vanished when it had no
+  data is a subject nobody would ever find, so an untracked one draws a 1dp **dashed** `outlineVariant`
+  outline over nothing, says "Nothing yet", and still opens its page. Those cards sit behind a
+  *Not started yet* row that names every one of them, because six of a new account's nine cards
+  were dashed and the overview read as a list of what was missing; a tap shows them in place. The dash is what carries the
   difference without colour. Its affordance line is a door to that page, which carries the
   explanation — except Blood pressure's "Log a reading", the one subject whose sheet already lives
   on this screen. Tracked cards sort before empty ones inside a group.
@@ -3924,9 +3934,8 @@ rather than needing a counter patched.
   (it has the resources) and `AppScaffold` shows it, because the sheet is gone by then; the undo
   re-inserts through the ViewModel, which outlives the sheet. Save and Delete sit in the pinned
   `SheetActionBar`, moved from `:feature:food` to `:core:designsystem` now that two features draw
-  it. The sheet opens fully expanded whenever its form is showing: `AppBottomSheet` passes
-  `skipPartiallyExpanded` for a sheet that opens `expanded`, read once, because M3's own show
-  animation settles at half height and beat the `expand()` call — leaving Save under the fold.
+  it. The sheet opens at its full height, as every sheet does now — M3's half-height stop
+  left Save under the fold.
 - **Once the manual form opens, the routine chips go.** The user has chosen to type it in, and the
   routine chips stacked straight over the activity-type chips read as one unlabelled choice.
 - **Correcting a workout is not a session, so the strength screen drops the session tools.** With

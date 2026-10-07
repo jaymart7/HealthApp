@@ -75,12 +75,15 @@ private fun AchievementsContent(
                 onBack = onExitFlow,
                 windowInsets = WindowInsets(0),
                 actions = {
-                    IconButton(onClick = onOpenRecap) {
-                        Icon(
-                            imageVector = AppIcons.Share,
-                            contentDescription = stringResource(R.string.progress_recap),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                    // Nothing to share from an empty page.
+                    if (uiState.activeDays.isNotEmpty()) {
+                        IconButton(onClick = onOpenRecap) {
+                            Icon(
+                                imageVector = AppIcons.Share,
+                                contentDescription = stringResource(R.string.progress_recap),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 },
             )

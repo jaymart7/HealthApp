@@ -45,8 +45,8 @@
     <string name="coach_empty_seen">Ang nakikita ko na · %1$s</string>
     <string name="coach_empty_seen_today">Ngayon</string>
     <string name="coach_empty_calories">kcal</string>
-    <string name="coach_empty_protein">protina</string>
-    <string name="coach_empty_water">tubig</string>
+    <string name="coach_empty_protein">g protina</string>
+    <string name="coach_empty_water">baso ng tubig</string>
     <string name="coach_empty_of_goal">/ %1$s</string>
     <string name="coach_empty_pair_spoken">%1$s sa %2$s %3$s</string>
     <string name="coach_starter_heading">Subukan ang isa sa mga ito</string>
@@ -55,9 +55,9 @@
     <string name="coach_starter_week">Kumusta ang linggo ko?</string>
     <string name="coach_starter_dinner">Ano\'ng magandang hapunan?</string>
     <string name="coach_starter_reach_today">Ngayon</string>
-    <string name="coach_starter_reach_logged">Isang na-log na araw</string>
-    <string name="coach_starter_reach_span">Isang yugto</string>
-    <string name="coach_starter_reach_opinion">Isang opinyon</string>
+    <string name="coach_starter_reach_logged">Kahit anong araw</string>
+    <string name="coach_starter_reach_span">Kahit anong linggo o buwan</string>
+    <string name="coach_starter_reach_opinion">Payo</string>
     <string name="coach_followup_protein">Ano ang hapunang mataas sa protina?</string>
     <string name="coach_followup_water">Sapat ba ang iniinom kong tubig?</string>
     <string name="coach_followup_weight">Ano ang takbo ng timbang ko?</string>

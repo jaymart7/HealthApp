@@ -46,8 +46,10 @@ private val RowMinHeight = 56.dp
  * to show yet saying so in one line rather than in four dashed boxes. Tapping it expands the grid
  * in place, for the session only — a preference nobody set is not worth a column.
  *
- * Tracked cards sort before empty ones, so the reading order is "what you have, then what you
- * could have".
+ * A group with *some* tracked draws those cards and folds the rest into the same kind of row under
+ * them, naming each untracked subject so none of them is lost — a new account's overview was six
+ * dashed "Nothing yet" cards out of nine. Expanded, the dashed cards come back after the tracked
+ * ones: "what you have, then what you could have".
  */
 @Composable
 internal fun GroupSection(
@@ -67,9 +69,15 @@ internal fun GroupSection(
     val trackedCount = subjects.count { summaries[it]?.tracked == true }
 
     if (trackedCount == 0 && !expanded) {
-        CollapsedGroupRow(group = group, subjectCount = subjects.size, onExpand = onToggle, modifier = modifier)
+        CollapsedGroupRow(
+            title = stringResource(group.label),
+            subtitle = stringResource(R.string.progress_group_none_tracked, subjects.size),
+            onExpand = onToggle,
+            modifier = modifier.padding(top = 12.dp),
+        )
         return
     }
+    val shown = if (expanded) cards else cards.take(trackedCount)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -92,7 +100,7 @@ internal fun GroupSection(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        cards.chunked(2).forEach { pair ->
+        shown.chunked(2).forEach { pair ->
             // IntrinsicSize.Min is what lets a card's footnote pin to its bottom: it gives the row
             // the height of its tallest card, so the shorter one's weighted spacer has slack to
             // take. Without it both columns wrap their own content and the last lines misalign.
@@ -112,24 +120,32 @@ internal fun GroupSection(
                 if (pair.size == 1) Spacer(modifier = Modifier.weight(1f))
             }
         }
+        if (shown.size < cards.size) {
+            CollapsedGroupRow(
+                title = cards.drop(trackedCount).map { stringResource(it.label) }.joinToString(", "),
+                subtitle = stringResource(R.string.progress_group_untracked),
+                onExpand = onToggle,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+        }
     }
 }
 
-/** A group nobody has started. One row rather than a grid of dashed boxes — the point of the
- * grouping is that an untouched family should cost one line of screen, not four cards. */
+/** Subjects nobody has started — a whole group, or what is left of one. One row rather than a
+ * grid of dashed boxes: an untouched subject should cost a line of screen, not a card. */
 @Composable
 private fun CollapsedGroupRow(
-    group: SubjectGroup,
-    subjectCount: Int,
+    title: String,
+    subtitle: String,
     onExpand: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val showGroup = stringResource(R.string.progress_show_group, stringResource(group.label))
+    val show = stringResource(R.string.progress_show_group, title)
     Surface(
         onClick = onExpand,
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = modifier.fillMaxWidth().padding(top = 12.dp),
+        modifier = modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.heightIn(min = RowMinHeight).padding(horizontal = 16.dp, vertical = 12.dp),
@@ -137,19 +153,19 @@ private fun CollapsedGroupRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(group.label),
+                    text = title,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = stringResource(R.string.progress_group_none_tracked, subjectCount),
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Icon(
                 imageVector = AppIcons.ChevronRight,
-                contentDescription = showGroup,
+                contentDescription = show,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(24.dp),
             )

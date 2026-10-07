@@ -154,10 +154,12 @@ fun recap(
 }
 
 /** Closest to the calorie target among logged days; ties break to the more recent day. There is
- * deliberately no worst day — naming one is a shaming pattern this app avoids everywhere else. */
+ * deliberately no worst day — naming one is a shaming pattern this app avoids everywhere else. Null
+ * with one logged day: a "best" of one is just that day. */
 private fun List<DayNutrition>.bestDay(targetCalories: Int): BestDay? =
     filter { it.isLogged }
-        .minWithOrNull(
+        .takeIf { it.size > 1 }
+        ?.minWithOrNull(
             compareBy<DayNutrition> { abs(it.calories - targetCalories) }
                 .thenByDescending { it.dateEpochDay },
         )

@@ -95,12 +95,15 @@ private fun StrengthContent(
                 windowInsets = WindowInsets(0),
                 actions = {
                     AskCoachAction(subject = Subject.Strength, onAskCoach = onAskCoach)
-                    IconButton(onClick = onOpenRecap) {
-                        Icon(
-                            imageVector = AppIcons.Share,
-                            contentDescription = stringResource(R.string.progress_recap),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                    // Nothing to share from an empty page.
+                    if (entries.isNotEmpty()) {
+                        IconButton(onClick = onOpenRecap) {
+                            Icon(
+                                imageVector = AppIcons.Share,
+                                contentDescription = stringResource(R.string.progress_recap),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 },
             )

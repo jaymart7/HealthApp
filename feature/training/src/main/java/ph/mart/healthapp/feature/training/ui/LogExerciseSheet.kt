@@ -248,9 +248,6 @@ private fun LogExerciseContent(
     AppBottomSheet(
         title = stringResource(if (editing == null) R.string.training_exercise_log else R.string.training_exercise_edit),
         onDismiss = onDismiss,
-        // Grown to the form's full height, or the sheet opens half-way and cuts off the pinned
-        // bar below — Save behind the gesture bar and Delete off the screen.
-        expanded = showForm,
         // Pinned once the form is open, the add-entry sheet's reason: a sheet whose action is the
         // last thing in a scroll makes saving cost a scroll past everything already decided — and
         // a workout's form was tall enough to push Save off the bottom.

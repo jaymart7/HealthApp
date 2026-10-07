@@ -15,6 +15,7 @@
     <string name="progress_recap">Recap</string>
     <string name="progress_show_group">Ipakita ang %1$s</string>
     <string name="progress_group_none_tracked">%1$d paksa · walang sinusubaybayan</string>
+    <string name="progress_group_untracked">Hindi pa nasisimulan</string>
     <string name="progress_recap_empty_heading">Wala pang na-log</string>
     <string name="progress_recap_empty_body">Walang mare-recap sa %1$s. Mag-log ng pagkain, isang basong tubig o pagtimbang at lalabas ito rito.</string>
     <string name="progress_trend_holding">Steady sa target mo.</string>
@@ -22,8 +23,8 @@
     <string name="progress_trend_down">Bumababa nang %1$s %2$s kada linggo.</string>
     <string name="progress_trend_up">Tumataas nang %1$s %2$s kada linggo.</string>
     <string name="progress_sparse_none">Wala pang sinusubaybayan. Mag-log ng kahit ano at lalabas ito rito.</string>
-    <string name="progress_sparse_one">Isang paksa pa lang ang sinusubaybayan. Nakatago muna ang iba hangga\'t walang mababasa.</string>
-    <string name="progress_sparse_many">%1$d paksa na ang sinusubaybayan. Nakatago muna ang iba hangga\'t walang mababasa.</string>
+    <string name="progress_sparse_one">Isang paksa pa lang ang sinusubaybayan mo. Nakatago muna ang iba hangga\'t walang mababasa.</string>
+    <string name="progress_sparse_many">%1$d paksa na ang sinusubaybayan mo. Nakatago muna ang iba hangga\'t walang mababasa.</string>
     <string name="progress_group_body">Katawan</string>
     <string name="progress_group_nutrition">Nutrisyon</string>
     <string name="progress_group_training">Training</string>
@@ -226,7 +227,6 @@
     <string name="progress_activity_burned_legend">Hakbang at mga workout, pinagsama</string>
     <string name="progress_activity_average">Average na hakbang</string>
     <string name="progress_activity_best">Pinakamagandang araw</string>
-    <string name="progress_activity_hit_goal">Naabot ang layunin ngayon</string>
     <string name="progress_activity_burned">Nasunog</string>
     <string name="progress_fasting_hero">average na ayuno</string>
     <string name="progress_fasting_goal">Layunin %1$dh</string>
@@ -495,7 +495,7 @@
     <string name="progress_badge_desc_hour">%1$s-oras na badge</string>
     <string name="progress_badge_desc_photo">%1$s-larawang badge</string>
     <string name="progress_summary_weight_week">%1$s ngayong linggo · %2$s</string>
-    <string name="progress_summary_one_reading">Isang reading pa lang</string>
+    <string name="progress_summary_no_prior">Walang pagtimbang isang linggo bago nito</string>
     <string name="progress_summary_trend_steady">steady</string>
     <string name="progress_summary_trend_on_track">nasa tamang landas</string>
     <string name="progress_summary_trend_off_track">lihis</string>

@@ -106,6 +106,8 @@ class StepsTest {
         // different goal — which is exactly why the stat is labelled "today's goal".
         assertEquals(2, averages.daysHitGoal)
         assertEquals(1, days.stepAverages(goal = 11_000).daysHitGoal)
+        // One day has no best — it is just that day.
+        assertNull(listOf(stepDay(1, 8_000)).stepAverages(goal = 10_000).bestSteps)
     }
 
     @Test

@@ -92,12 +92,15 @@ private fun ActivityContent(
                 windowInsets = WindowInsets(0),
                 actions = {
                     AskCoachAction(subject = Subject.Activity, onAskCoach = onAskCoach)
-                    IconButton(onClick = onOpenRecap) {
-                        Icon(
-                            imageVector = AppIcons.Share,
-                            contentDescription = stringResource(R.string.progress_recap),
-                            tint = MaterialTheme.colorScheme.onSurface,
-                        )
+                    // Nothing to share from an empty page.
+                    if (stepDays.isNotEmpty()) {
+                        IconButton(onClick = onOpenRecap) {
+                            Icon(
+                                imageVector = AppIcons.Share,
+                                contentDescription = stringResource(R.string.progress_recap),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 },
             )
@@ -144,7 +147,8 @@ private fun ActivityContent(
  *
  * The step goal is the profile's current one and is not snapshotted per day — `step_day` rows are
  * replaced wholesale on every re-sync, so a target stored beside them would be overwritten. The
- * stat says "today's goal" for that reason.
+ * chip names the goal's figure for that reason, and is the only place the hit count is said — a
+ * stat row repeating it was the same number twice on one screen.
  */
 @Composable
 private fun ColumnScope.ActivityBody(
@@ -200,7 +204,6 @@ private fun ColumnScope.ActivityBody(
         rows = listOf(
             StatRow(stringResource(R.string.progress_activity_average), stepStats.averageSteps?.let(::formatSteps) ?: stringResource(R.string.progress_none)),
             StatRow(stringResource(R.string.progress_activity_best), stepStats.bestSteps?.let(::formatSteps) ?: stringResource(R.string.progress_none)),
-            StatRow(stringResource(R.string.progress_activity_hit_goal), stringResource(R.string.progress_of, stepStats.daysHitGoal, stepStats.days)),
             StatRow(stringResource(R.string.progress_activity_burned), stringResource(R.string.progress_kcal, burn.sumOf { it.burnedKcal })),
         ),
     )

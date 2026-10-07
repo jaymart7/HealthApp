@@ -18,7 +18,7 @@ fun goalRelativeTrend(goal: Goal?, deltaKg: Double): TrendDirection = when {
 }
 
 /** [hasPrior] false means there's no entry 7+ days back to compare against — the caller shows
- * "No prior data" rather than a false 0.0 delta. */
+ * "No weigh-in a week earlier" rather than a false 0.0 delta. */
 data class WeightTrendDisplay(val currentKg: Double, val deltaKg: Double, val hasPrior: Boolean)
 
 /** Below this the arrow renders as a neutral dash — the delta is real but too small to call a

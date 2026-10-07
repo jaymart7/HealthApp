@@ -86,11 +86,24 @@ private val STRIP_PRIORITY = listOf(
 private const val MIN_STRIP_CELLS = 2
 
 /**
+ * How many of the layout's leading cards the strip leaves out. They sit straight under it, so a
+ * cell for one said the same figure twice on one screen — "2157 kcal left" in the strip and again
+ * in the ring below it.
+ *
+ * ponytail: a count, not a measurement of the viewport. Measure what is above the fold if a tall
+ * card ever pushes the third one off it.
+ */
+private const val STRIP_SKIPS_LEADING = 3
+
+/**
  * The two or three cards the Today strip mirrors, in priority order.
  *
  * The strip carries **no new data** — every cell restates a card that is on the screen below it,
  * so hiding a card takes its cell with it and nothing can report a figure the user has switched
- * off. One survivor is not a summary, so the strip disappears rather than drawing a lone cell.
+ * off. It restates only cards *further* down, past the [STRIP_SKIPS_LEADING] that are already in
+ * view. One survivor is not a summary, so the strip disappears rather than drawing a lone cell.
  */
-internal fun todayStripCards(visible: List<HomeCard>): List<HomeCard> =
-    STRIP_PRIORITY.filter { it in visible }.take(3).takeIf { it.size >= MIN_STRIP_CELLS }.orEmpty()
+internal fun todayStripCards(visible: List<HomeCard>): List<HomeCard> {
+    val further = visible.drop(STRIP_SKIPS_LEADING)
+    return STRIP_PRIORITY.filter { it in further }.take(3).takeIf { it.size >= MIN_STRIP_CELLS }.orEmpty()
+}

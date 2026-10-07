@@ -55,6 +55,8 @@ class WaterTest {
         assertEquals(3, averages.daysLogged)
         assertEquals(9, averages.bestGlasses)
         assertEquals(1, averages.daysHitGoal)
+        // One day has no best — it is just that day.
+        assertNull(listOf(WaterDay(TODAY, 9)).waterAverages(goalGlasses = 8).bestGlasses)
     }
 
     /** A day exactly on the goal counts as hit, not missed. */

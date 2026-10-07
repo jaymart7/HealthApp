@@ -67,7 +67,8 @@ fun List<WaterDay>.inRange(range: ChartRange, todayEpochDay: Long): List<WaterDa
     filter { it.dateEpochDay >= todayEpochDay - range.days }
 
 /** Null rather than zero on an empty window, so the stat row renders "—" instead of "0" —
- * [ph.mart.healthapp.core.data.fasting.FastingAverages]' rule. */
+ * [ph.mart.healthapp.core.data.fasting.FastingAverages]' rule. [bestGlasses] is null on one logged
+ * day too: a "best" of one is just that day. */
 data class WaterAverages(
     val averageGlasses: Double?,
     val bestGlasses: Int?,
@@ -85,7 +86,7 @@ data class WaterAverages(
  */
 fun List<WaterDay>.waterAverages(goalGlasses: Int): WaterAverages = WaterAverages(
     averageGlasses = takeIf { it.isNotEmpty() }?.let { days -> days.sumOf { it.glasses }.toDouble() / days.size },
-    bestGlasses = maxOfOrNull { it.glasses },
+    bestGlasses = takeIf { it.size > 1 }?.maxOf { it.glasses },
     daysHitGoal = count { it.glasses >= goalGlasses },
     daysLogged = size,
 )

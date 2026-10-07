@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -45,7 +46,7 @@ fun WaterCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = stringResource(R.string.home_water_count, glasses, goalGlasses, waterVolumeLabel(glasses, unit)),
+                text = pluralStringResource(R.plurals.home_water_count, goalGlasses, glasses, goalGlasses, waterVolumeLabel(glasses, unit)),
                 style = MaterialTheme.typography.titleSmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurface,
             )
