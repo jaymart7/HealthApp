@@ -5,6 +5,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.net.URLDecoder
+import java.util.GregorianCalendar
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -13,32 +15,27 @@ import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.Nutrients
 
 /**
- * Steps arrive as intra-day buckets, so two of these land on one local day and one on the next.
- * The last has no interval and must be dropped, exactly as an undated workout is.
+ * A steps roll-up: one reconciled total per civil day. The second day walked nothing, the third
+ * carries no total and the fourth no date — only the first is a day worth writing.
  */
-private const val STEPS = """
+private const val STEPS_ROLLUP = """
 {
-  "dataPoints": [
+  "rollupDataPoints": [
     {
-      "name": "users/me/dataTypes/steps/dataPoints/s1",
-      "steps": {
-        "interval": { "startTime": "2026-04-20T08:00:00Z", "endTime": "2026-04-20T09:00:00Z" },
-        "count": 2200
-      }
+      "civilStartTime": { "date": { "year": 2026, "month": 4, "day": 20 } },
+      "civilEndTime": { "date": { "year": 2026, "month": 4, "day": 21 } },
+      "steps": { "countSum": "8412" }
     },
     {
-      "name": "users/me/dataTypes/steps/dataPoints/s2",
-      "steps": {
-        "interval": { "startTime": "2026-04-20T14:00:00Z", "endTime": "2026-04-20T15:00:00Z" },
-        "count": "3100"
-      }
+      "civilStartTime": { "date": { "year": 2026, "month": 4, "day": 21 } },
+      "steps": { "countSum": "0" }
     },
     {
-      "name": "users/me/dataTypes/steps/dataPoints/s3",
-      "steps": { "count": 900 }
-    }
-  ],
-  "nextPageToken": "steps-2"
+      "civilStartTime": { "date": { "year": 2026, "month": 4, "day": 22 } },
+      "steps": {}
+    },
+    { "steps": { "countSum": "500" } }
+  ]
 }
 """
 
@@ -123,38 +120,24 @@ private const val NIGHTS = """
 }
 """
 
-private const val HEART = """
+private const val HEART_ROLLUP = """
 {
-  "dataPoints": [
+  "rollupDataPoints": [
     {
-      "name": "users/me/dataTypes/heart-rate/dataPoints/h1",
-      "heartRate": {
-        "sampleTime": { "physicalTime": "2026-04-20T06:30:00Z" },
-        "beatsPerMinute": 62
-      }
+      "civilStartTime": { "date": { "year": 2026, "month": 4, "day": 20 } },
+      "heartRate": { "beatsPerMinuteAvg": 68.4, "beatsPerMinuteMin": 52, "beatsPerMinuteMax": 141 }
     },
     {
-      "name": "users/me/dataTypes/heart-rate/dataPoints/h2",
-      "heartRate": {
-        "physicalTime": "2026-04-20T18:30:00Z",
-        "bpm": "74"
-      }
-    },
-    {
-      "name": "users/me/dataTypes/heart-rate/dataPoints/h3",
-      "heartRate": { "beatsPerMinute": 80 }
-    },
-    {
-      "name": "users/me/dataTypes/heart-rate/dataPoints/h4",
-      "heartRate": {
-        "sampleTime": { "physicalTime": "2026-04-20T20:00:00Z" },
-        "beatsPerMinute": 0
-      }
+      "civilStartTime": { "date": { "year": 2026, "month": 4, "day": 21 } },
+      "heartRate": {}
     }
-  ],
-  "nextPageToken": "heart-2"
+  ]
 }
 """
+
+/** The app's day key for a local calendar date, taken at noon so no zone can move it. */
+private fun localDay(year: Int, month: Int, day: Int): Long =
+    epochDayOf(GregorianCalendar(year, month - 1, day, 12, 0).timeInMillis)
 
 class GoogleHealthApiTest {
 
@@ -214,7 +197,8 @@ class GoogleHealthApiTest {
         val body = nutritionLogBody(packet, dayStartMillis = 0L)
 
         assertTrue(body.contains("\"nutrient\":\"DIETARY_FIBER\""))
-        assertTrue(body.contains("\"nutrient\":\"TOTAL_SUGARS\""))
+        // `SUGAR`, the reference's name — `TOTAL_SUGARS` is not one, and failed the whole meal.
+        assertTrue(body.contains("\"nutrient\":\"SUGAR\""))
         // The array carries grams, and sodium is the app's one milligram figure.
         assertTrue(body.contains("\"nutrient\":\"SODIUM\""))
         assertTrue(body.contains("\"grams\":0.48"))
@@ -242,7 +226,21 @@ class GoogleHealthApiTest {
 
     @Test
     fun `the created data point's name is what gets linked`() {
-        assertEquals("users/me/x/1", parseCreatedName("""{"name":"users/me/x/1"}"""))
+        // `create` answers with an Operation; the point is its `response`.
+        val operation = """
+            {"name":"operations/op-1","done":true,"response":{
+            "@type":"type.googleapis.com/google.devicesandservices.health.v4.DataPoint",
+            "name":"users/me/dataTypes/nutrition-log/dataPoints/p1"}}
+        """.trimIndent()
+        assertEquals("users/me/dataTypes/nutrition-log/dataPoints/p1", parseCreatedName(operation))
+        // A bare point still links.
+        assertEquals(
+            "users/me/dataTypes/hydration-log/dataPoints/p2",
+            parseCreatedName("""{"name":"users/me/dataTypes/hydration-log/dataPoints/p2"}"""),
+        )
+        // A pending operation names only itself, and that is no handle to delete a point by.
+        assertNull(parseCreatedName("""{"name":"operations/op-2","done":false}"""))
+        assertNull(parseCreatedName("{}"))
         assertNull(parseCreatedName("nope"))
     }
 
@@ -300,16 +298,23 @@ class GoogleHealthApiTest {
     }
 
     @Test
-    fun `a steps page keeps its buckets and drops the undated one`() {
-        val page = parseStepsPage(STEPS)
+    fun `a steps roll-up keeps the days that walked and drops what it cannot date`() {
+        assertEquals(mapOf(localDay(2026, 4, 20) to 8412), parseStepsRollup(STEPS_ROLLUP))
+        assertEquals(emptyMap<Long, Int>(), parseStepsRollup("not json"))
+    }
 
-        assertEquals("steps-2", page.nextPageToken)
-        assertEquals(2, page.items.size)
-        assertEquals("users/me/dataTypes/steps/dataPoints/s1", page.items[0].remoteName)
-        assertEquals(2200, page.items[0].count)
-        // A count that came through as a quoted string still parses.
-        assertEquals(3100, page.items[1].count)
-        assertEquals(0, parseStepsPage("not json").items.size)
+    @Test
+    fun `a roll-up asks for whole local days, months counted from one`() {
+        val day = localDay(2026, 4, 20)
+        val body = dailyRollUpBody(fromDay = day, toDayExclusive = day + 14)
+
+        assertTrue(body.contains(""""start":{"date":{"year":2026,"month":4,"day":20}}"""))
+        assertTrue(body.contains(""""end":{"date":{"year":2026,"month":5,"day":4}}"""))
+        assertTrue(body.contains(""""windowSizeDays":1"""))
+        assertEquals(
+            "https://health.googleapis.com/v4/users/me/dataTypes/heart-rate/dataPoints:dailyRollUp",
+            dailyRollUpUrl(HEART_RATE),
+        )
     }
 
     @Test
@@ -334,29 +339,34 @@ class GoogleHealthApiTest {
 
         assertTrue(url.startsWith("https://health.googleapis.com/v4/users/me/dataTypes/exercise/dataPoints"))
         assertTrue(url.contains("pageSize=25"))
-        assertTrue(url.contains("filter=interval.start_time+%3E%3D+%221970-01-01T00%3A00%3A00Z%22"))
         assertTrue(!url.contains("pageToken"))
-
-        // A point sample filters on its own field, not on a session interval.
+        // A session other than sleep can only be filtered on its civil start: the device's wall
+        // clock, no offset. Which wall-clock time 0L is moves with the test JVM's zone.
         assertTrue(
-            dataPointsUrl(HealthDataType.Weight, 0L)
-                .contains("filter=physical_time+%3E%3D+%221970-01-01T00%3A00%3A00Z%22"),
+            Regex("""exercise\.interval\.civil_start_time >= "\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d"$""")
+                .matches(URLDecoder.decode(url.substringAfter("filter="), "UTF-8")),
+        )
+
+        // Every field carries its type's prefix — a bare `interval.start_time` is a 400.
+        assertTrue(
+            URLDecoder.decode(dataPointsUrl(HealthDataType.Weight, 0L), "UTF-8")
+                .contains("filter=weight.sample_time.physical_time >= \"1970-01-01T00:00:00Z\""),
+        )
+        // Sleep is the one session filtered on its end.
+        assertTrue(
+            URLDecoder.decode(dataPointsUrl(HealthDataType.Sleep, 0L), "UTF-8")
+                .contains("filter=sleep.interval.end_time >= \"1970-01-01T00:00:00Z\""),
         )
         assertTrue(dataPointsUrl(HealthDataType.Exercise, 0L, pageToken = "a b").contains("pageToken=a+b"))
     }
 
     @Test
-    fun `a heart page reads either timestamp shape and drops what it cannot place or trust`() {
-        val page = parseHeartPage(HEART)
-
-        assertEquals("heart-2", page.nextPageToken)
-        // h3 has no timestamp and h4 reads zero: an unplaceable sample and a broken one.
-        assertEquals(2, page.items.size)
-        assertEquals("users/me/dataTypes/heart-rate/dataPoints/h1", page.items[0].remoteName)
-        assertEquals(62, page.items[0].bpm)
-        // The flat `physicalTime` fallback, with a bpm that came through as a quoted string.
-        assertEquals(74, page.items[1].bpm)
-        assertEquals(0, parseHeartPage("not json").items.size)
+    fun `a heart roll-up keeps the day's mean and lowest beat`() {
+        val day = localDay(2026, 4, 20)
+        assertEquals(
+            mapOf(day to HeartDay(dateEpochDay = day, averageBpm = 68, minBpm = 52)),
+            parseHeartRollup(HEART_ROLLUP),
+        )
     }
 
     @Test

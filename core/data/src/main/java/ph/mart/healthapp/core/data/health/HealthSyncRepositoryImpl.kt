@@ -275,8 +275,8 @@ internal class HealthSyncRepositoryImpl(
         HealthMetric.Exercise -> HealthDataType.Exercise.id
         HealthMetric.Weight -> HealthDataType.Weight.id
         HealthMetric.Sleep -> HealthDataType.Sleep.id
-        HealthMetric.Steps -> HealthDataType.Steps.id
-        HealthMetric.Heart -> HealthDataType.Heart.id
+        HealthMetric.Steps -> STEPS
+        HealthMetric.Heart -> HEART_RATE
         HealthMetric.BloodPressure -> null
         HealthMetric.Menstruation -> null
     }
@@ -312,7 +312,7 @@ internal class HealthSyncRepositoryImpl(
         }
         // The two aggregating types keep their own bookkeeping and record no link — see importSteps.
         if (records.steps.isNotEmpty()) written += writeSteps(stepTotals(records.steps), weightKg)
-        if (records.heart.isNotEmpty()) written += writeHeart(records.heart)
+        if (records.heart.isNotEmpty()) written += writeHeart(aggregateHeartByDay(records.heart).values)
         return written
     }
 
@@ -429,39 +429,27 @@ internal class HealthSyncRepositoryImpl(
 
     /**
      * Steps are the one imported type that doesn't go through [importAll], because they aggregate:
-     * the API reports intra-day buckets and `step_day` holds a daily total, so there is no
-     * one-remote-point-to-one-local-row relationship for `health_link` to record. The cursor is
-     * `MAX(date)` in `step_day` instead — still derived from rows actually written, which is the
-     * property that makes the link table's own cursor safe.
+     * `step_day` holds a daily total, so there is no one-remote-point-to-one-local-row relationship
+     * for `health_link` to record. The cursor is `MAX(date)` in `step_day` instead — still derived
+     * from rows actually written, which is the property that makes the link table's own cursor safe.
      *
-     * Days are summed and **replaced** rather than accumulated, so re-querying an overlapping
-     * window is idempotent and a bucket the watch later revises corrects itself. That is also why
-     * nothing is written until every page has landed: a half-read window would replace a good
-     * total with a low one.
+     * One `dailyRollUp` request for the whole window — see [STEPS] for why not `list`. Days are
+     * **replaced** rather than accumulated, so re-querying an overlapping window is idempotent and a
+     * total the watch later revises corrects itself.
      */
     private suspend fun importSteps(token: String): Outcome {
         val weightKg = latestWeightKg() ?: return Outcome.Wrote(0)
-
-        val since = stepsWindowStart()
-        var pageToken: String? = null
-        var totals: Map<Long, Int> = emptyMap()
-
-        repeat(MAX_PAGES) {
-            val url = dataPointsUrl(HealthDataType.Steps, sinceMillis = since, pageToken = pageToken)
-            val page = when (val response = fetch(url, token)) {
-                is HealthResponse.Ok -> parseStepsPage(response.body)
-                HealthResponse.Forbidden -> {
-                    cachedToken = null
-                    return Outcome.Revoked
-                }
-
-                HealthResponse.AccountNotLinked -> return Outcome.NotLinked
-                HealthResponse.Unauthorized, HealthResponse.Rejected, HealthResponse.Failed ->
-                    return Outcome.Failed
+        val body = dailyRollUpBody(epochDayOf(stepsWindowStart()), todayEpochDay() + 1)
+        val totals = when (val response = post(token, dailyRollUpUrl(STEPS), body)) {
+            is HealthResponse.Ok -> parseStepsRollup(response.body)
+            HealthResponse.Forbidden -> {
+                cachedToken = null
+                return Outcome.Revoked
             }
 
-            totals = stepTotals(page.items, into = totals)
-            pageToken = page.nextPageToken ?: return Outcome.Wrote(writeSteps(totals, weightKg))
+            HealthResponse.AccountNotLinked -> return Outcome.NotLinked
+            HealthResponse.Unauthorized, HealthResponse.Rejected, HealthResponse.Failed ->
+                return Outcome.Failed
         }
         return Outcome.Wrote(writeSteps(totals, weightKg))
     }
@@ -475,12 +463,9 @@ internal class HealthSyncRepositoryImpl(
         progressRepository.observeWeightEntries().first().maxByOrNull { it.dateEpochDay }?.weightKg
             ?: profileRepository.observeProfile().first()?.weightKg
 
-    /** Buckets to daily totals — the fold both providers' step reads go through. */
-    private fun stepTotals(
-        buckets: List<RemoteSteps>,
-        into: Map<Long, Int> = emptyMap(),
-    ): Map<Long, Int> {
-        val totals = into.toMutableMap()
+    /** Health Connect's step buckets to daily totals. */
+    private fun stepTotals(buckets: List<RemoteSteps>): Map<Long, Int> {
+        val totals = mutableMapOf<Long, Int>()
         buckets.forEach { bucket ->
             val day = epochDayOf(bucket.timeMillis)
             totals[day] = (totals[day] ?: 0) + bucket.count
@@ -509,33 +494,33 @@ internal class HealthSyncRepositoryImpl(
     }
 
     /**
-     * Heart rate aggregates the way steps do — intra-day samples in, one row per day out — so it
-     * takes the same shape: no `health_link` row, `MAX(date)` as the cursor, a day-aligned window,
-     * and nothing written until every page has landed, so a half-read window cannot replace a good
-     * day's average with a fragment of one. Days are replaced rather than merged, which makes a
-     * re-sync idempotent.
+     * Heart rate aggregates the way steps do — one row per day out — so it takes the same shape:
+     * no `health_link` row, `MAX(date)` as the cursor, a day-aligned window read through
+     * `dailyRollUp`, and days replaced rather than merged, which makes a re-sync idempotent. The
+     * roll-up refuses a heart-rate range over [HEART_ROLLUP_MAX_DAYS], so the window is read in
+     * chunks — and nothing is written until every chunk has landed, so a half-read window cannot
+     * replace a good day's average with nothing.
      *
      * **This one type can neither revoke nor fail the sync, and that divergence is deliberate.**
      * Every other type reads a scope `HEALTH_SCOPES` explicitly requests, so a 403 there really
      * does mean the user revoked it from myaccount.google.com. Heart rate rides
-     * `health_metrics_and_measurements.readonly` on the assumption that a BPM reading is a health
-     * metric — an assumption no live account has confirmed. If it is wrong the API answers 403 on
-     * every sync: reporting that as a revocation would drop a perfectly good connection to "needs
-     * consent" forever, and reporting it as a failure would put "Couldn't reach Google Health" on
-     * the Connections screen after every sync that had nothing new to import. So [sync] reads the
-     * items on success and discards every other outcome — a wrong guess costs the card and
-     * nothing else. Do not "fix" this into consistency with the other four before the scope is
-     * pinned against a live response.
+     * `health_metrics_and_measurements.readonly`, which the reference now names as heart rate's
+     * scope but no live account has confirmed. If it is wrong the API answers 403 on every sync:
+     * reporting that as a revocation would drop a perfectly good connection to "needs consent"
+     * forever, and reporting it as a failure would put "Couldn't reach Google Health" on the
+     * Connections screen after every sync that had nothing new to import. So [sync] reads the
+     * items on success and discards every other outcome — a wrong guess costs the card and nothing
+     * else. Do not "fix" this into consistency with the other four before a live response has
+     * confirmed the scope.
      */
     private suspend fun importHeart(token: String): Outcome {
-        val since = heartWindowStart()
-        var pageToken: String? = null
-        val samples = mutableListOf<RemoteHeart>()
-
-        repeat(MAX_PAGES) {
-            val url = dataPointsUrl(HealthDataType.Heart, sinceMillis = since, pageToken = pageToken)
-            val page = when (val response = fetch(url, token)) {
-                is HealthResponse.Ok -> parseHeartPage(response.body)
+        val end = todayEpochDay() + 1
+        var from = epochDayOf(heartWindowStart())
+        val days = mutableMapOf<Long, HeartDay>()
+        while (from < end) {
+            val to = minOf(from + HEART_ROLLUP_MAX_DAYS, end)
+            when (val response = post(token, dailyRollUpUrl(HEART_RATE), dailyRollUpBody(from, to))) {
+                is HealthResponse.Ok -> days += parseHeartRollup(response.body)
                 // An unlinked account is the one answer heart rate does not get to swallow: it is
                 // true of every type, so letting it read as "no heart data" would hide the reason
                 // the other four failed too.
@@ -544,17 +529,14 @@ internal class HealthSyncRepositoryImpl(
                 HealthResponse.Rejected, HealthResponse.Failed,
                 -> return Outcome.Failed
             }
-
-            samples += page.items
-            pageToken = page.nextPageToken ?: return Outcome.Wrote(writeHeart(samples))
+            from = to
         }
-        return Outcome.Wrote(writeHeart(samples))
+        return Outcome.Wrote(writeHeart(days.values))
     }
 
     /** Returns the days written, so both legs can add it to one count. */
-    private suspend fun writeHeart(samples: List<RemoteHeart>): Int {
-        val days = aggregateHeartByDay(samples)
-        days.values.forEach { day ->
+    private suspend fun writeHeart(days: Collection<HeartDay>): Int {
+        days.forEach { day ->
             heartDao.upsert(
                 HeartDayEntity(date = day.dateEpochDay, averageBpm = day.averageBpm, minBpm = day.minBpm),
             )
@@ -599,7 +581,7 @@ internal class HealthSyncRepositoryImpl(
 
     /** Data points whose diary row is gone. Chunked, because batchDelete caps per request. */
     private suspend fun pushDeletions(token: String, liveEntryIds: Set<Long>): Push {
-        val orphans = links.links(pushed = true)
+        val orphans = links.cloudLinks(pushed = true)
             .filter { it.localTable == FOOD_TABLE && it.localId !in liveEntryIds }
         if (orphans.isEmpty()) return Push.Ok
 
@@ -724,11 +706,10 @@ internal class HealthSyncRepositoryImpl(
      * to remove.
      */
     private suspend fun post(token: String, url: String, body: String): HealthResponse {
-        val first = healthPost(url, token, body)
+        val current = cachedToken ?: token
+        val first = healthPost(url, current, body)
         if (first != HealthResponse.Unauthorized) return first
-        val refreshed = (auth.authorize() as? HealthAuthResult.Granted)?.accessToken
-            ?: return HealthResponse.Unauthorized
-        cachedToken = refreshed
+        val refreshed = refreshToken(current) ?: return HealthResponse.Unauthorized
         return healthPost(url, refreshed, body)
     }
 
@@ -783,12 +764,24 @@ internal class HealthSyncRepositoryImpl(
      * ordinary case, not an error.
      */
     private suspend fun fetch(url: String, token: String): HealthResponse {
-        val first = healthGet(url, token)
+        val current = cachedToken ?: token
+        val first = healthGet(url, current)
         if (first != HealthResponse.Unauthorized) return first
-        val refreshed = (auth.authorize() as? HealthAuthResult.Granted)?.accessToken
-            ?: return HealthResponse.Unauthorized
-        cachedToken = refreshed
+        val refreshed = refreshToken(current) ?: return HealthResponse.Unauthorized
         return healthGet(url, refreshed)
+    }
+
+    /**
+     * The one refresh both retries share. [stale] is cleared from Play services' cache first:
+     * `authorize()` hands back a cached token until it expires, so without the clear a token Google
+     * just refused was the one the retry got again.
+     *
+     * The callers read [cachedToken] before the token they were handed, so one refresh serves the
+     * rest of the sync instead of every later call meeting the same 401 first.
+     */
+    private suspend fun refreshToken(stale: String): String? {
+        auth.clearToken(stale)
+        return (auth.authorize() as? HealthAuthResult.Granted)?.accessToken?.also { cachedToken = it }
     }
 
     /**
@@ -840,7 +833,7 @@ internal class HealthSyncRepositoryImpl(
             if (token == null) {
                 sentDeleted = false
             } else {
-                links.links(pushed = true)
+                links.cloudLinks(pushed = true)
                     .groupBy { it.dataType }
                     .forEach { (dataType, group) ->
                         group.chunked(BATCH_DELETE_SIZE).forEach { chunk ->
@@ -850,20 +843,27 @@ internal class HealthSyncRepositoryImpl(
                         }
                     }
             }
+            // The sent links go even when the remote delete failed — the disconnect is what the user
+            // asked for, the token is revoked below, and a link with nothing left to authorise is
+            // not a retry handle. Which is why the failure is *reported* rather than stored: see
+            // the return value.
+            links.deleteCloudLinks(pushed = true)
         }
         if (deleteImported) {
-            links.links(pushed = false).forEach { deleteImportedRow(it) }
+            links.cloudLinks(pushed = false).forEach { deleteImportedRow(it) }
+            links.deleteCloudLinks(pushed = false)
             // No links to walk: step_day and heart_day are their own bookkeeping, so they are
-            // cleared wholesale.
-            stepDao.clear()
-            heartDao.clear()
+            // cleared wholesale — but only where the cloud owns them. A table Health Connect is
+            // granted is Health Connect's, and this is the Google Health disconnect.
+            val connectOwns = connect.state().granted
+            if (HealthMetric.Steps !in connectOwns) stepDao.clear()
+            if (HealthMetric.Heart !in connectOwns) heartDao.clear()
         }
-        // The links go either way: keeping them would make a later reconnect skip data the user
-        // asked us to forget, and keeping them without the rows would point at nothing. That holds
-        // even when the remote delete failed — the disconnect is what the user asked for, the token
-        // is revoked below, and a link with nothing left to authorise is not a retry handle. Which
-        // is why the failure is *reported* rather than stored: see the return value.
-        links.clear()
+        // A link is dropped only alongside what it points at. Keeping one the user did not ask to
+        // delete is what stops a reconnect duplicating: dropped, a reconnect re-imported 30 days of
+        // workouts as fresh rows and re-sent 30 days of meals. And only the cloud's own links are
+        // touched — Health Connect's share the table, and clearing them used to make its next sync
+        // import every workout a second time.
         cachedToken?.let { auth.revoke(it) }
         cachedToken = null
         return sentDeleted

@@ -31,7 +31,8 @@ private const val CONNECT_NAME_PREFIX = "hc:"
  * the same six in this order. [connectDataType] is what a Health Connect import writes into
  * `health_link.dataType`: distinct from [HealthDataType]'s ids on purpose, so the two providers'
  * cursors (`MAX(remoteTimeMillis)` per type) are independent and revoking one cannot advance the
- * other past data it never wrote.
+ * other past data it never wrote. The `hc/` prefix is load-bearing: `HealthLinkDao.cloudLinks` is
+ * how a Google Health disconnect leaves Health Connect's links alone.
  *
  * [Steps] and [Heart] carry a [connectDataType] for completeness but never record a link: both
  * aggregate to one row per day, which is bookkeeping enough — see `importSteps`.

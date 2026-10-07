@@ -5,6 +5,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -15,6 +16,7 @@ import kotlin.math.roundToInt
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArrayBuilder
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -26,6 +28,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import ph.mart.healthapp.core.data.epochDayOf
+import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
@@ -51,6 +54,9 @@ private const val UG_PER_G = 1_000_000.0
 internal const val SESSION_PAGE_SIZE = 25
 
 internal const val SAMPLE_PAGE_SIZE = 500
+
+/** `dailyRollUp` refuses a heart-rate range longer than this; steps allow 90 days. */
+internal const val HEART_ROLLUP_MAX_DAYS = 14
 
 /**
  * How far back a first sync reaches. A month of history is enough to make the diary and the
@@ -187,11 +193,6 @@ private fun HttpURLConnection.readError(): String =
 internal val healthJson = Json { ignoreUnknownKeys = true }
 
 /**
- * The data types FitPulse touches, each with the filter field its record shape uses: sessions
- * (exercise, sleep) are bounded by `interval.start_time`, point samples (weight) by
- * `physical_time`. Adding a type here is the whole of adding a type.
- */
-/**
  * The two write targets. Kept apart from [HealthDataType] on purpose: the nutrition scope is
  * `writeonly`, so these can be created and deleted but never listed, and giving them a filter
  * field would imply otherwise.
@@ -242,7 +243,7 @@ internal fun nutritionLogBody(
                     // rejected.
                     val n = entry.nutrients
                     if (n.fiberG > 0) nutrient("DIETARY_FIBER", n.fiberG)
-                    if (n.sugarG > 0) nutrient("TOTAL_SUGARS", n.sugarG)
+                    if (n.sugarG > 0) nutrient("SUGAR", n.sugarG)
                     // The array's quantity carries grams, so every figure the app stores in
                     // milligrams or micrograms converts rather than inventing a unit field.
                     if (n.sodiumMg > 0) nutrient("SODIUM", n.sodiumMg / MG_PER_G)
@@ -258,10 +259,12 @@ internal fun nutritionLogBody(
 }
 
 /**
- * ponytail: `DIETARY_FIBER`, `TOTAL_SUGARS` and `SODIUM` are unverified — the v4 reference names
- * a `Nutrient` enum but publishes none of its values. An unknown one fails the *whole* meal, so
- * `pushMeals` retries once with `micronutrients = false`; that is what makes guessing safe. Pin
- * the three against a live response and both this flag and that retry can go.
+ * Every name here is checked against the reference's published `Nutrient` enum. The sugar one used
+ * to be `TOTAL_SUGARS`, which is not in it (`SUGAR` is), and an unknown name fails the *whole*
+ * meal — every sugary meal was rejected once, then resent stripped of its micronutrients.
+ *
+ * ponytail: `pushMeals` still retries a rejection once with `micronutrients = false`. Retire the
+ * flag and the retry once a live `create` with micronutrients has succeeded.
  */
 private fun JsonArrayBuilder.nutrient(name: String, grams: Number) {
     add(
@@ -283,8 +286,22 @@ internal fun hydrationLogBody(millilitres: Int, dayStartMillis: Long): String = 
     }
 }.toString()
 
-/** `dataPoints.create` answers with the created point; its `name` is what we record. */
-internal fun parseCreatedName(body: String): String? = parseRoot(body)?.string("name")
+/**
+ * The created point's resource name — what we record. `dataPoints.create` answers with a
+ * long-running `Operation`, not the point, so the name is `response.name`. Reading the top-level
+ * `name` found nothing: every meal that landed was taken for a failure, no link was recorded, and
+ * the next sync sent it again — a duplicate in Google Health per sync. An operation's own `name`
+ * (`operations/…`) is refused, because a link keyed by it could never be batch-deleted; a bare
+ * point is accepted in case the API ever answers with one.
+ *
+ * ponytail: an operation still pending (`done: false`) carries no response, so that meal is not
+ * linked and goes out again next sync. Poll `operations.get` if that is ever seen live.
+ */
+internal fun parseCreatedName(body: String): String? {
+    val root = parseRoot(body) ?: return null
+    return (root["response"] as? JsonObject).string("name")
+        ?: root.string("name")?.takeIf { "/dataPoints/" in it }
+}
 
 private fun MealType.remoteName(): String = when (this) {
     MealType.Breakfast -> "BREAKFAST"
@@ -300,23 +317,35 @@ private fun MealType.hourOfDay(): Int = when (this) {
     MealType.Snacks -> 16
 }
 
+/**
+ * The types read through `dataPoints.list`, each with the filter field the reference accepts for
+ * it. The field must carry the type's own prefix — a bare `interval.start_time` is a 400 — and
+ * each record shape gets a different one: a session other than sleep can only be filtered on its
+ * *civil* start ([civil]), sleep only on its end, and a point sample on `sample_time.physical_time`.
+ */
 internal enum class HealthDataType(
     val id: String,
     val filterField: String,
     val pageSize: Int,
+    val civil: Boolean = false,
 ) {
-    Exercise("exercise", "interval.start_time", SESSION_PAGE_SIZE),
-    Sleep("sleep", "interval.start_time", SESSION_PAGE_SIZE),
-    Weight("weight", "physical_time", SAMPLE_PAGE_SIZE),
-    Steps("steps", "interval.start_time", SAMPLE_PAGE_SIZE),
+    Exercise("exercise", "exercise.interval.civil_start_time", SESSION_PAGE_SIZE, civil = true),
 
-    /**
-     * Filtered by `physical_time` rather than an interval: a BPM reading is a point sample, like
-     * [Weight], not a session. Unlike every other entry here it rides a scope FitPulse requested
-     * for something else — see `importHeart`, which is why its 403 is not treated as a revocation.
-     */
-    Heart("heart-rate", "physical_time", SAMPLE_PAGE_SIZE),
+    /** Filtered on its end, which is never before the start the cursor is taken from. */
+    Sleep("sleep", "sleep.interval.end_time", SESSION_PAGE_SIZE),
+    Weight("weight", "weight.sample_time.physical_time", SAMPLE_PAGE_SIZE),
 }
+
+/**
+ * Steps and heart rate are read through `dataPoints:dailyRollUp`, not `list`: the roll-up hands
+ * back one total per day reconciled across sources, where `list` returns every source's raw
+ * points — a phone and a watch counting the same walk summed to twice the steps, the bug Health
+ * Connect's reader had too — and 30 days of minute buckets would not fit in the page budget.
+ */
+internal const val STEPS = "steps"
+
+/** Rides `health_metrics_and_measurements.readonly` — see `importHeart`. */
+internal const val HEART_RATE = "heart-rate"
 
 /**
  * One page of `dataPoints.list`, filtered to the window we don't already have. The filter is
@@ -328,7 +357,8 @@ internal fun dataPointsUrl(
     sinceMillis: Long,
     pageToken: String? = null,
 ): String {
-    val filter = "${dataType.filterField} >= \"${rfc3339(sinceMillis)}\""
+    val since = if (dataType.civil) civilDateTime(sinceMillis) else rfc3339(sinceMillis)
+    val filter = "${dataType.filterField} >= \"$since\""
     return buildString {
         append("$BASE/${dataType.id}/dataPoints")
         append("?pageSize=${dataType.pageSize}")
@@ -342,6 +372,66 @@ private val rfc3339Format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.
 }
 
 internal fun rfc3339(millis: Long): String = rfc3339Format.format(Date(millis))
+
+/**
+ * The device's wall-clock time, no offset — what a `civil_*` filter field takes. Built per call so
+ * a timezone change mid-process is honoured: a [SimpleDateFormat] keeps the zone it was made in.
+ */
+internal fun civilDateTime(millis: Long): String =
+    SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).format(Date(millis))
+
+/** `dataPoints:dailyRollUp` — a POST, though it only reads. */
+internal fun dailyRollUpUrl(dataType: String): String = "$BASE/$dataType/dataPoints:dailyRollUp"
+
+/** One-day windows over local days [fromDay, toDayExclusive), as `CivilDateTime`s. */
+internal fun dailyRollUpBody(fromDay: Long, toDayExclusive: Long): String = buildJsonObject {
+    putJsonObject("range") {
+        putJsonObject("start") { putCivilDate(fromDay) }
+        putJsonObject("end") { putCivilDate(toDayExclusive) }
+    }
+    put("windowSizeDays", 1)
+}.toString()
+
+private fun JsonObjectBuilder.putCivilDate(epochDay: Long) {
+    val calendar = Calendar.getInstance().apply { timeInMillis = epochDayStartMillis(epochDay) }
+    putJsonObject("date") {
+        put("year", calendar.get(Calendar.YEAR))
+        put("month", calendar.get(Calendar.MONTH) + 1)
+        put("day", calendar.get(Calendar.DAY_OF_MONTH))
+    }
+}
+
+/** A roll-up point's `civilStartTime.date`, as the app's own day key. */
+private fun JsonObject.civilEpochDay(): Long? {
+    val date = this["civilStartTime"]?.jsonObject?.get("date")?.jsonObject ?: return null
+    val year = date.number("year")?.toInt() ?: return null
+    val month = date.number("month")?.toInt() ?: return null
+    val day = date.number("day")?.toInt() ?: return null
+    val calendar = Calendar.getInstance().apply {
+        clear()
+        set(year, month - 1, day)
+    }
+    return epochDayOf(calendar.timeInMillis)
+}
+
+private fun rollupPoints(body: String): List<JsonObject> =
+    parseRoot(body)?.get("rollupDataPoints")?.jsonArray.orEmpty().mapNotNull { it as? JsonObject }
+
+/** A day's reconciled step total. A day with no steps is left out rather than written as zero. */
+internal fun parseStepsRollup(body: String): Map<Long, Int> = rollupPoints(body).mapNotNull { point ->
+    val day = point.civilEpochDay() ?: return@mapNotNull null
+    val steps = point["steps"]?.jsonObject.number("countSum")?.roundToInt() ?: return@mapNotNull null
+    if (steps <= 0) null else day to steps
+}.toMap()
+
+/** A day's mean and lowest beat, the two figures `heart_day` holds. */
+internal fun parseHeartRollup(body: String): Map<Long, HeartDay> = rollupPoints(body).mapNotNull { point ->
+    val day = point.civilEpochDay() ?: return@mapNotNull null
+    val heart = point["heartRate"]?.jsonObject ?: return@mapNotNull null
+    val average = heart.number("beatsPerMinuteAvg")?.roundToInt() ?: return@mapNotNull null
+    val min = heart.number("beatsPerMinuteMin")?.roundToInt() ?: return@mapNotNull null
+    if (average <= 0 || min <= 0) null else day to HeartDay(dateEpochDay = day, averageBpm = average, minBpm = min)
+}.toMap()
 
 /**
  * RFC-3339 in, epoch millis out. `DatatypeFactory` rather than [SimpleDateFormat] because the API
@@ -404,9 +494,9 @@ internal data class RemoteWeight(
 ) : RemotePoint
 
 /**
- * One bucket of steps. The API reports steps intra-day rather than as a daily total, so several
- * of these fold into one `step_day` row — which is why steps are the one imported type that does
- * not ride `health_link`: a bucket has no stable identity worth keying a link by.
+ * One bucket of steps, as Health Connect's reader hands them over — the cloud reads a daily
+ * roll-up instead (see [STEPS]). Several fold into one `step_day` row, which is why steps do not
+ * ride `health_link`: a bucket has no stable identity worth keying a link by.
  */
 internal data class RemoteSteps(
     override val remoteName: String,
@@ -415,9 +505,9 @@ internal data class RemoteSteps(
 ) : RemotePoint
 
 /**
- * One heart-rate sample. Like [RemoteSteps] these fold into one row per day, which is why heart
- * rate is the second imported type that does not ride `health_link`: a single beat count has no
- * identity worth keying a link by.
+ * One heart-rate sample from Health Connect. Like [RemoteSteps] these fold into one row per day,
+ * which is why heart rate is the second imported type that does not ride `health_link`: a single
+ * beat count has no identity worth keying a link by.
  */
 internal data class RemoteHeart(
     override val remoteName: String,
@@ -541,66 +631,6 @@ internal fun parseSleepPage(body: String): Page<RemoteSleep> {
         )
     }
     return Page(nights, root.string("nextPageToken"))
-}
-
-/**
- * Steps come back as intervals carrying a count. The caller groups them by local day and sums.
- *
- * ponytail: the count is read from `count`, then `steps`, then `delta`, because the reference and
- * the wire have used more than one name for it and this module has no way to try a live account.
- * Pin it to one field once a real response has been captured — same outstanding job as
- * `parseWeightPage`'s timestamp.
- */
-internal fun parseStepsPage(body: String): Page<RemoteSteps> {
-    val root = parseRoot(body) ?: return Page(emptyList(), null)
-
-    val buckets = root["dataPoints"]?.jsonArray.orEmpty().mapNotNull { element ->
-        val point = element as? JsonObject ?: return@mapNotNull null
-        val remoteName = point.string("name") ?: return@mapNotNull null
-        val steps = point["steps"]?.jsonObject ?: return@mapNotNull null
-        // An undated bucket cannot be placed on a day, so it is dropped rather than invented —
-        // the same treatment parseExercisePage gives a workout with no interval.
-        val start = parseRfc3339(steps["interval"]?.jsonObject.string("startTime"))
-            ?: return@mapNotNull null
-        val count = (steps.number("count") ?: steps.number("steps") ?: steps.number("delta"))
-            ?.roundToInt() ?: return@mapNotNull null
-        if (count <= 0) return@mapNotNull null
-
-        RemoteSteps(remoteName = remoteName, timeMillis = start, count = count)
-    }
-    return Page(buckets, root.string("nextPageToken"))
-}
-
-/**
- * Heart rate comes back as point samples carrying a beat count. The caller groups them by local
- * day and folds them with [aggregateHeartByDay].
- *
- * ponytail: both reads hedge, for the same reason `parseWeightPage` and `parseStepsPage` do — the
- * timestamp from `sampleTime.physicalTime`, then a flat `physicalTime`, then an interval start;
- * the value from `beatsPerMinute`, then `bpm`, then `value`. This module has no way to try a live
- * account. Pin each to one path once a real response has been captured.
- */
-internal fun parseHeartPage(body: String): Page<RemoteHeart> {
-    val root = parseRoot(body) ?: return Page(emptyList(), null)
-
-    val samples = root["dataPoints"]?.jsonArray.orEmpty().mapNotNull { element ->
-        val point = element as? JsonObject ?: return@mapNotNull null
-        val remoteName = point.string("name") ?: return@mapNotNull null
-        val heart = point["heartRate"]?.jsonObject ?: return@mapNotNull null
-        // An undated sample cannot be placed on a day, so it is dropped rather than invented —
-        // the same treatment parseStepsPage gives a bucket with no interval.
-        val time = parseRfc3339(
-            heart["sampleTime"]?.jsonObject.string("physicalTime")
-                ?: heart.string("physicalTime")
-                ?: heart["interval"]?.jsonObject.string("startTime"),
-        ) ?: return@mapNotNull null
-        val bpm = (heart.number("beatsPerMinute") ?: heart.number("bpm") ?: heart.number("value"))
-            ?.roundToInt() ?: return@mapNotNull null
-        if (bpm <= 0) return@mapNotNull null
-
-        RemoteHeart(remoteName = remoteName, timeMillis = time, bpm = bpm)
-    }
-    return Page(samples, root.string("nextPageToken"))
 }
 
 /**

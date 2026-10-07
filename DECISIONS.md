@@ -5389,15 +5389,22 @@ Connect.
   advance past data it never wrote), and `pushed` separates "delete what we imported" from
   "delete what we sent". It stays out of the data export for the same reason saved meals do: a
   restored backup on another device has no relationship to those remote names.
-- **Steps are the first of two types that don't ride `health_link`.** The API reports intra-day buckets
-  and FitPulse stores a daily total, so there is no one-point-to-one-row relationship for a link
-  to record. `MAX(date)` in `step_day` is the cursor instead — still derived from rows actually
-  written, which is the property that made the link table's cursor safe. Consequences worth
-  keeping: the window is *day-aligned* (`epochDayStartMillis(latest - 1)`, not a millisecond
-  offset), because a mid-day boundary would return a partial day; each re-queried day is summed
-  and **replaced**, so a re-sync is idempotent and a revised bucket self-corrects; nothing is
-  written until every page lands, so a half-read window can't replace a good total with a
-  fragment; and Profile's "N items imported" doesn't count step days.
+- **Steps are the first of two types that don't ride `health_link`.** FitPulse stores a daily
+  total, so there is no one-point-to-one-row relationship for a link to record. `MAX(date)` in
+  `step_day` is the cursor instead — still derived from rows actually written, which is the
+  property that made the link table's cursor safe. Consequences worth keeping: the window is
+  *day-aligned* (`epochDayStartMillis(latest - 1)`, not a millisecond offset), because a mid-day
+  boundary would return a partial day; each re-queried day is **replaced**, so a re-sync is
+  idempotent and a revised total self-corrects; and Profile's "N items imported" doesn't count
+  step days.
+- **Steps and heart rate are read through `dataPoints:dailyRollUp`, never `list`.** `list` returns
+  every source's raw points, so a phone and a watch counting the same walk summed to double — the
+  bug Health Connect's reader had and fixed the same way, by asking the provider for its own
+  reconciled daily figure. It also could not finish: 20 pages of 500 is 10,000 points, short of 30
+  days of minute buckets, and the loop then wrote whatever partial day it had stopped in. One roll-up
+  request returns one point per civil day (`countSum`; `beatsPerMinuteAvg`/`Min`). The roll-up
+  refuses a heart-rate range over 14 days, so heart's window is read in 14-day chunks and written
+  only once every chunk has landed.
 - **`step_day.burnedKcal` is computed at import and scaled at read.** Stored, not recomputed —
   the same rule `exercise_entry` follows, so a later weigh-in can't rewrite what a past day
   burned. It prices the day's *whole* step count at one weight (latest weigh-in, else the
@@ -5413,20 +5420,20 @@ Connect.
 - **Steps are not a streak domain and not exported**, same reasoning as sleep and `health_link`
   respectively. `step_day` is import-only telemetry with no manual write path; `StepsRepository`
   is read-only and has no `observeLoggedDays()`.
-- **Heart rate takes the step shape, not the `health_link` one**, and for the same reason: the
-  API reports intra-day samples and `heart_day` stores one row per local day, so there is no
-  point-to-row relationship a link could key. `MAX(date)` in `heart_day` is the cursor, the window
-  is day-aligned, days are replaced rather than merged, and nothing is written until every page
-  lands. Not a streak domain, not exported, no manual write path — sleep and steps again.
+- **Heart rate takes the step shape, not the `health_link` one**, and for the same reason:
+  `heart_day` stores one row per local day, so there is no point-to-row relationship a link could
+  key. `MAX(date)` in `heart_day` is the cursor, the window is day-aligned, days are replaced rather
+  than merged, and nothing is written until every chunk lands. Not a streak domain, not exported,
+  no manual write path — sleep and steps again.
 - **A heart 403 is neither a revocation nor a sync failure.** Every other type reads a scope
   `HEALTH_SCOPES` explicitly requests, so a 403 there really is a revocation. Heart rate rides
-  `health_metrics_and_measurements.readonly` on the *assumption* that a BPM reading is a health
-  metric, and no live account has confirmed it. Reporting a wrong guess as a revocation would drop
+  `health_metrics_and_measurements.readonly`, which the reference's scope table now names as heart
+  rate's — but no live account has confirmed it. Reporting a wrong guess as a revocation would drop
   a good connection to "needs consent" forever; reporting it as a failure would put "Couldn't
   reach Google Health" on the Connections screen after every sync with nothing new to import. So
   `sync()` takes heart's items on success and discards every other outcome — a wrong guess costs
-  the card and nothing else. Don't make this consistent with the other four until the scope is
-  pinned.
+  the card and nothing else. Don't make this consistent with the other four until a live response
+  has pinned the scope.
 - **`minBpm` is the day's lowest reading, never a resting heart rate**, and is labelled "Lowest"
   everywhere it appears. FitPulse aggregates whatever samples the watch happened to take; calling
   a minimum "resting" would claim a measurement nobody made. The day's other figure is a mean of
@@ -5459,8 +5466,26 @@ Connect.
   each *finish*, rather than letting the deadline cut one off and report a failure.
 - **The micronutrient retry fires only on a rejection a smaller body could fix.** `create()` used to
   collapse a 403, a 404, a timeout and a rejected body all into `null`, so the second attempt (which
-  exists to drop the three unverified nutrient names) doubled the cost of every failure it could not
-  possibly help. It returns the `HealthResponse` now, and only `Rejected` earns the retry.
+  drops the micronutrients) doubled the cost of every failure it could not possibly help. It
+  returns the `HealthResponse` now, and only `Rejected` earns the retry. The names were guesses
+  until the reference published the `Nutrient` enum, and one was wrong: `TOTAL_SUGARS`, where the
+  enum says `SUGAR`, so every meal with any sugar was rejected and resent stripped of fiber, sodium
+  and the rest. All seven are checked against the enum now; the retry stays until a live `create`
+  with micronutrients has succeeded.
+- **A sent point's name is the operation's `response.name`.** `dataPoints.create` answers with a
+  long-running `Operation`, not the point, and `parseCreatedName` read the top-level `name` — which
+  is absent. So every meal that landed (200) was taken for a failure: no link, and the next sync
+  sent it again. Caught live on 2026-10-07, the day the emulator account was linked — two syncs
+  had already left duplicates in that Google Health account, which FitPulse cannot find to delete
+  (the nutrition scope is write-only, so nothing can be listed). An operation's own `operations/…`
+  name is refused rather than linked, because `batchDelete` could never act on it.
+- **A `list` filter names its type, and each record shape has its own field.** The reference only
+  accepts `{type}.interval.start_time`-style fields, and sessions are narrower still: exercise
+  filters on `exercise.interval.civil_start_time` (wall-clock, no offset — formatted per call so a
+  timezone change is honoured), sleep on `sleep.interval.end_time`, weight on
+  `weight.sample_time.physical_time`. The bare `interval.start_time` and `physical_time` this
+  shipped with are 400s, so once an account was linked every import would have reported "Couldn't
+  reach Google Health". The unlinked emulator account hid it: `ACCOUNT_NOT_LINKED` answers first.
 - **Every response is drained and nothing calls `disconnect()`.** `HttpURLConnection` only returns a
   socket to its keep-alive pool once the stream is read to the end, and `disconnect()` closes the
   socket outright. Leaving error bodies unread and disconnecting meant a fresh TLS handshake per
@@ -5522,16 +5547,31 @@ Connect.
   than through it and so had no retry at all: `cachedToken` lives as long as the process and a
   Google access token does not, so *any* call can be the one that meets an expired one. On
   `pushDeletions` that cost a sync cycle. On `disconnect` it meant the batch delete 401'd, the
-  response was dropped, and `links.clear()` then threw away the only handle to rows the user had
+  response was dropped, and the links were then thrown away — the only handle to rows the user had
   just asked us to remove. A new POST call site goes through `post()`.
+- **A refused token is cleared from Play services' cache before anything asks again.**
+  `authorize()` hands back Play services' cached token until it expires, so the 401 retry could get
+  the very token that was just refused, and after `disconnect()` revoked one the screen re-asked,
+  got the revoked token back and said "Connected" for up to an hour. `GoogleHealthAuth.clearToken`
+  runs before every retry's re-authorize and after every revoke. Both retries also read
+  `cachedToken` before the token they were handed, so one refresh serves the rest of the sync.
 - **`disconnect()` returns whether the remote half actually happened.** The local half is this
   app's own database and always succeeds, so it has no answer to give; the remote half does. The
-  links are still cleared and the token still revoked on a failure — the disconnect is what was
-  asked for, and a link with nothing left to authorise is not a retry handle — so the failure is
-  *reported* rather than stored: `messageIsError`, and a sentence naming the account the rows are
-  still in. **Rows left behind on Google's side after the user ticked the box is the one outcome
+  sent links are still dropped and the token still revoked on a failure — the disconnect is what
+  was asked for, and a link with nothing left to authorise is not a retry handle — so the failure
+  is *reported* rather than stored: `messageIsError`, and a sentence naming the account the rows
+  are still in. **Rows left behind on Google's side after the user ticked the box is the one outcome
   the screen must not report as done**, which is exactly what the CASA assessment looks for and
   what the code did before.
+- **A Google Health disconnect touches only the cloud's own links, and drops a link only with
+  what it points at.** Health Connect's links share `health_link` under `hc/` data types, and
+  `disconnect()` used to clear the whole table: "delete imported" took Health Connect's workouts,
+  weigh-ins and step days with it, and *unticked* it still dropped every link, so the next Health
+  Connect sync re-imported 30 days of workouts as fresh rows. Leaving "delete sent" unticked
+  dropped the pushed links too, so a reconnect re-sent 30 days of meals. So `cloudLinks()` /
+  `deleteCloudLinks()` filter on the prefix, imported links go only with "delete imported" (after
+  their rows), sent links only with "delete sent", and `step_day` / `heart_day` are cleared only
+  for a metric Health Connect is not granted — a table it is granted is its own.
 
 ### Localization
 

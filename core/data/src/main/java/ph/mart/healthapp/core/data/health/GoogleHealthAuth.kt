@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
+import com.google.android.gms.auth.api.identity.ClearTokenRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Tasks
@@ -60,6 +61,13 @@ interface GoogleHealthAuth {
 
     /** Drops the grant on Google's side. Best-effort — a failure still disconnects locally. */
     suspend fun revoke(accessToken: String)
+
+    /**
+     * Drops [accessToken] from Play services' own cache. [authorize] hands back a cached token
+     * until it expires, so without this a token Google already refused — revoked, or answered 401
+     * — is the one the next call gets again.
+     */
+    suspend fun clearToken(accessToken: String)
 }
 
 internal class GoogleHealthAuthImpl(private val context: Context) : GoogleHealthAuth {
@@ -101,6 +109,16 @@ internal class GoogleHealthAuthImpl(private val context: Context) : GoogleHealth
     override suspend fun revoke(accessToken: String) {
         withContext(Dispatchers.IO) {
             healthPost("https://oauth2.googleapis.com/revoke?token=$accessToken", token = null, body = "")
+        }
+        // Otherwise the screen re-asks `authorize()`, gets the revoked token back, and says
+        // "Connected" for up to an hour.
+        clearToken(accessToken)
+    }
+
+    override suspend fun clearToken(accessToken: String) {
+        withContext(Dispatchers.IO) {
+            val request = ClearTokenRequest.builder().setToken(accessToken).build()
+            runCatching { Tasks.await(Identity.getAuthorizationClient(context).clearToken(request)) }
         }
     }
 }

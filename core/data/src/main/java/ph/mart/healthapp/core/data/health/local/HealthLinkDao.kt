@@ -16,8 +16,13 @@ internal interface HealthLinkDao {
     @Query("SELECT MAX(remoteTimeMillis) FROM health_link WHERE dataType = :dataType AND pushed = 0")
     suspend fun latestImportedTime(dataType: String): Long?
 
-    @Query("SELECT * FROM health_link WHERE pushed = :pushed")
-    suspend fun links(pushed: Boolean): List<HealthLinkEntity>
+    /**
+     * The Google Health API's own links. Health Connect's share this table under `hc/`-prefixed
+     * data types (`HealthMetric.connectDataType`), and nothing the cloud leg does — pushing,
+     * deleting, disconnecting — may touch those.
+     */
+    @Query("SELECT * FROM health_link WHERE pushed = :pushed AND dataType NOT LIKE 'hc/%'")
+    suspend fun cloudLinks(pushed: Boolean): List<HealthLinkEntity>
 
     /** Every imported link of one type, for the Health Connect handover to sift — see
      *  `supersededByConnect`, which does the windowing in Kotlin so it stays JVM-testable. */
@@ -34,6 +39,7 @@ internal interface HealthLinkDao {
     @Query("SELECT COUNT(*) FROM health_link WHERE pushed = 0")
     suspend fun importedCount(): Int
 
-    @Query("DELETE FROM health_link")
-    suspend fun clear()
+    /** [cloudLinks]' rows, gone — what a Google Health disconnect drops. */
+    @Query("DELETE FROM health_link WHERE pushed = :pushed AND dataType NOT LIKE 'hc/%'")
+    suspend fun deleteCloudLinks(pushed: Boolean)
 }
