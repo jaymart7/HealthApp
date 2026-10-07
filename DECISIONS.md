@@ -549,6 +549,11 @@ rather than needing a counter patched.
   the delete — the diary's Undo would otherwise restore a row pointing at nothing. The scale is the
   one thing that differs from a progress photo, which is stored as captured: one of those is taken
   a fortnight, and one of these is taken three times a day.
+  - **The cap counts files, not rows** — `photoPaths()` groups by path. An edit supersedes its row
+    and an Undo re-inserts one, so both leave a soft-deleted row and a live one on a single file;
+    counted per row, that file spent two of the 500 and an older photo was pruned early. Nothing was
+    ever left dangling — `clearPhotos` matches by path, so it nulls every row on a pruned file — the
+    cost was only the slots.
 - **Meal photos are not exported and not cloud-backed-up.** `ExportFoodEntry` simply has no photo
   field, so `EXPORT_SCHEMA_VERSION` does not move — a path is meaningless on another device and the
   export has never carried an image. `meal_photos/` joins `progress_photos/` in the two backup-rule

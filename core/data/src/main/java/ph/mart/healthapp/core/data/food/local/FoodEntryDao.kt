@@ -99,8 +99,15 @@ internal interface FoodEntryDao {
     fun observeWithPhoto(limit: Int): Flow<List<FoodEntryEntity>>
 
     /** Every path on disk, newest first — **including soft-deleted rows**, whose files are still
-     * there and still have to be reclaimable. What the prune counts down from. */
-    @Query("SELECT photoPath FROM food_entry WHERE photoPath IS NOT NULL ORDER BY date DESC, loggedAt DESC")
+     * there and still have to be reclaimable. What the prune counts down from.
+     *
+     * One entry per *file*, not per row: an edit supersedes its row and an undo re-inserts one,
+     * and both leave a soft-deleted row and a live one on the same path. Counted per row, that
+     * file spent two of the cap's slots and an older photo was pruned early. */
+    @Query(
+        "SELECT photoPath FROM food_entry WHERE photoPath IS NOT NULL " +
+            "GROUP BY photoPath ORDER BY MAX(date) DESC, MAX(loggedAt) DESC",
+    )
     suspend fun photoPaths(): List<String>
 
     /** Forgets an aged-out photo. The meal itself is untouched — a row whose picture was pruned is
