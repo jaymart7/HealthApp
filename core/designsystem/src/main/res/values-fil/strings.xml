@@ -93,7 +93,7 @@
     <string name="ds_health_reads">Ang binabasa at isinusulat ng FitPulse</string>
     <string name="ds_health_scope_activity">Mga workout at hakbang</string>
     <string name="ds_health_scope_activity_line">Pinapalaki ang budget mo sa calories</string>
-    <string name="ds_health_scope_body">Timbang, mga sukat at tibok ng puso</string>
+    <string name="ds_health_scope_body">Timbang at tibok ng puso</string>
     <string name="ds_health_scope_body_line">Totoong pagtimbang ang gamit ng trend mo</string>
     <string name="ds_health_scope_sleep">Tulog</string>
     <string name="ds_health_scope_sleep_line">Kagabi, katabi ng araw mo</string>

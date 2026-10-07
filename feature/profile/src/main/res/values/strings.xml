@@ -322,11 +322,17 @@
     <string name="profile_health_deleted_sent">" What FitPulse sent was deleted from Google Health."</string>
     <string name="profile_health_delete_sent_failed">" What FitPulse sent could not be deleted from Google Health — you can remove it from your Google Health account."</string>
     <string name="profile_health_up_to_date">Up to date.</string>
-    <string name="profile_health_imported">Imported %1$d items.</string>
+    <plurals name="profile_health_imported">
+        <item quantity="one">Imported %1$d item.</item>
+        <item quantity="other">Imported %1$d items.</item>
+    </plurals>
     <string name="profile_health_not_now">Not now</string>
     <string name="profile_health_connected">Connected</string>
     <string name="profile_health_nothing_imported">Nothing imported yet. Sync to pull in your workouts.</string>
-    <string name="profile_health_items_imported">%1$d items imported from your watch and connected apps.</string>
+    <plurals name="profile_health_items_imported">
+        <item quantity="one">%1$d item imported from your watch and connected apps.</item>
+        <item quantity="other">%1$d items imported from your watch and connected apps.</item>
+    </plurals>
     <string name="profile_health_syncing">Syncing…</string>
     <string name="profile_health_sync_now">Sync now</string>
     <string name="profile_health_disconnect">Disconnect</string>

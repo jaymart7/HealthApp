@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -57,7 +58,7 @@ private fun HealthMessage.resolve(): String = when (this) {
         if (items == 0) {
             stringResource(R.string.profile_health_up_to_date)
         } else {
-            stringResource(R.string.profile_health_imported, items)
+            pluralStringResource(R.plurals.profile_health_imported, items, items)
         }
 
     is HealthMessage.Disconnected -> buildString {

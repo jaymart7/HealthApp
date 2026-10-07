@@ -243,12 +243,13 @@ degrade-gracefully rule, not a secret to work around. `.github/workflows/build.y
 
 ## Backlog
 
-**Google Health — the emulator account is linked now; reads are still unexercised.** As of
-2026-10-07 the emulator's account answers `dataPoints.create` with 200 rather than
-`400 ACCOUNT_NOT_LINKED`. Two syncs before `parseCreatedName` was fixed left duplicate meals in that
-account, and FitPulse cannot delete them (the nutrition scope cannot list) — remove them from the
-Google Health / Fitbit app. Health Connect is granted every type there, so the cloud *read* legs
-never run on the emulator: revoke a Health Connect type to exercise its cloud read.
+**Google Health — the emulator's test user is linked.** `jaymart.araga7@gmail.com` is a test user
+on the consent screen (the Cloud project is in *Testing*), signed up for Google Health, and on
+2026-10-07 every leg answered live: the three `list` reads, both roll-ups, `create` and
+`batchDelete`. Two syncs before `parseCreatedName` was fixed left duplicate meals in that account,
+which FitPulse cannot delete (the nutrition scope cannot list) — remove them in the Google Health /
+Fitbit app. A sync writes real data there, so log test meals deliberately. Health Connect, once
+granted a type, takes that type's read off the cloud leg — leave it ungranted to test a cloud read.
 
 **Google Health — verification.** Not done. The Cloud project is settled
 (`app/google-services.json` points at `fitpulse-8d951`, the same project Firebase AI Logic runs
@@ -256,19 +257,10 @@ in) and the Android OAuth clients now exist — two `client_type: 1` entries car
 and release SHA-1. What is left: the consent screen branded for FitPulse, per-scope
 justifications submitted, and a CASA Letter of Validation.
 
-**Google Health — what one live sync still has to confirm.** The reference now publishes the
-`Nutrient` enum, the `list` filter fields and the record shapes, and the code follows them; steps
-and heart rate read `dailyRollUp` rather than guessing at raw-point field names. What is left
-needs one live response of each:
-
-- A meal sync that leaves a `health_link` row confirms `parseCreatedName`'s `response.name` read —
-  the create answers 200 live, but the body shape is the reference's, not a capture.
-
-- A meal `create` with micronutrients succeeding retires `nutritionLogBody`'s `micronutrients`
-  flag *and* `pushMeals`' retry.
-- One weight page retires `parseWeightPage`'s flat `physicalTime` fallback.
-- A heart roll-up answering 200 confirms the `health_metrics_and_measurements` scope the
-  reference names, which is what lets `sync()` treat a heart 403 like every other type's.
+**Google Health — four nutrients never sent live.** `CALCIUM`, `POTASSIUM`, `VITAMIN_D` and
+`IRON` are the reference's own names, but no live create has carried one yet (a meal's figure must
+be non-zero to go out). An unknown name fails the whole meal — and with the retry gone it would
+fail it every sync — so the first scanned packet that has them is worth watching in the sync result.
 
 **Health Connect — the Play Console data-types declaration form.** A separate obligation from
 the OAuth work above, and cheaper: no CASA, and no per-scope justification. `READ_MENSTRUATION`

@@ -9,7 +9,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
-import javax.xml.datatype.DatatypeFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -94,26 +93,24 @@ internal sealed interface HealthResponse {
     data object AccountNotLinked : HealthResponse
 
     /**
-     * A 4xx the request itself is responsible for. Distinct from [Failed] because only this one
-     * makes a second attempt with a smaller body worth the round trip — see `pushMeals`.
+     * No usable answer: a timeout, a dropped connection, a 5xx, or a 4xx the request itself caused.
+     * Only a later sync can help. A rejected body used to be its own case, for the retry without
+     * micronutrients `pushMeals` made; with every nutrient name confirmed that retry went, and
+     * nothing told the two apart any more.
      */
-    data object Rejected : HealthResponse
-
-    /** No usable answer: a timeout, a dropped connection, a 5xx. Only a later sync can help. */
     data object Failed : HealthResponse
 }
 
 /**
  * `ACCOUNT_NOT_LINKED` is a `google.rpc.ErrorInfo` reason — a reserved token that appears in a
  * response for exactly one reason, which is why matching the raw body beats parsing a shape the v4
- * reference does not pin down (the `Nutrient` names in this file hedge for the same reason).
+ * reference does not pin down.
  */
 private const val ACCOUNT_NOT_LINKED = "ACCOUNT_NOT_LINKED"
 
 /** Which kind of refusal a non-2xx answer is. Split out so a JVM test can reach the decision. */
 internal fun errorResponse(code: Int, body: String): HealthResponse = when {
     body.contains(ACCOUNT_NOT_LINKED) -> HealthResponse.AccountNotLinked
-    code in 400..499 -> HealthResponse.Rejected
     else -> HealthResponse.Failed
 }
 
@@ -221,15 +218,11 @@ internal fun batchDeleteBody(remoteNames: List<String>): String = buildJsonObjec
 internal fun nutritionLogBody(
     entry: FoodEntry,
     dayStartMillis: Long,
-    micronutrients: Boolean = true,
 ): String {
     val start = dayStartMillis + entry.mealType.hourOfDay() * 60 * 60 * 1000L
     return buildJsonObject {
         putJsonObject("nutritionLog") {
-            putJsonObject("interval") {
-                put("startTime", rfc3339(start))
-                put("endTime", rfc3339(start + 30 * 60 * 1000L))
-            }
+            putJsonObject("interval") { putLocalInterval(start, start + 30 * 60 * 1000L) }
             put("foodDisplayName", entry.name)
             put("mealType", entry.mealType.remoteName())
             putJsonObject("energy") { put("kcal", entry.calories) }
@@ -237,21 +230,18 @@ internal fun nutritionLogBody(
             putJsonObject("totalFat") { put("grams", entry.fatG) }
             putJsonArray("nutrients") {
                 nutrient("PROTEIN", entry.proteinG)
-                if (micronutrients) {
-                    // Zero means unknown-or-none everywhere else in the app, so it is omitted
-                    // rather than asserted — and every field left out is one fewer that can be
-                    // rejected.
-                    val n = entry.nutrients
-                    if (n.fiberG > 0) nutrient("DIETARY_FIBER", n.fiberG)
-                    if (n.sugarG > 0) nutrient("SUGAR", n.sugarG)
-                    // The array's quantity carries grams, so every figure the app stores in
-                    // milligrams or micrograms converts rather than inventing a unit field.
-                    if (n.sodiumMg > 0) nutrient("SODIUM", n.sodiumMg / MG_PER_G)
-                    if (n.calciumMg > 0) nutrient("CALCIUM", n.calciumMg / MG_PER_G)
-                    if (n.potassiumMg > 0) nutrient("POTASSIUM", n.potassiumMg / MG_PER_G)
-                    if (n.vitaminDUg > 0) nutrient("VITAMIN_D", n.vitaminDUg / UG_PER_G)
-                    if (n.ironUg > 0) nutrient("IRON", n.ironUg / UG_PER_G)
-                }
+                // Zero means unknown-or-none everywhere else in the app, so it is omitted rather
+                // than asserted.
+                val n = entry.nutrients
+                if (n.fiberG > 0) nutrient("DIETARY_FIBER", n.fiberG)
+                if (n.sugarG > 0) nutrient("SUGAR", n.sugarG)
+                // The array's quantity carries grams, so every figure the app stores in
+                // milligrams or micrograms converts rather than inventing a unit field.
+                if (n.sodiumMg > 0) nutrient("SODIUM", n.sodiumMg / MG_PER_G)
+                if (n.calciumMg > 0) nutrient("CALCIUM", n.calciumMg / MG_PER_G)
+                if (n.potassiumMg > 0) nutrient("POTASSIUM", n.potassiumMg / MG_PER_G)
+                if (n.vitaminDUg > 0) nutrient("VITAMIN_D", n.vitaminDUg / UG_PER_G)
+                if (n.ironUg > 0) nutrient("IRON", n.ironUg / UG_PER_G)
             }
             putJsonObject("serving") { put("amount", entry.portionAmount) }
         }
@@ -259,12 +249,10 @@ internal fun nutritionLogBody(
 }
 
 /**
- * Every name here is checked against the reference's published `Nutrient` enum. The sugar one used
- * to be `TOTAL_SUGARS`, which is not in it (`SUGAR` is), and an unknown name fails the *whole*
- * meal — every sugary meal was rejected once, then resent stripped of its micronutrients.
- *
- * ponytail: `pushMeals` still retries a rejection once with `micronutrients = false`. Retire the
- * flag and the retry once a live `create` with micronutrients has succeeded.
+ * Every name here is checked against the reference's published `Nutrient` enum, and a live create
+ * carrying protein, fiber, sugar and sodium has been accepted. The sugar one used to be
+ * `TOTAL_SUGARS`, which is not in the enum (`SUGAR` is), and an unknown name fails the *whole*
+ * meal — which is what the retry without micronutrients that used to sit in `pushMeals` was for.
  */
 private fun JsonArrayBuilder.nutrient(name: String, grams: Number) {
     add(
@@ -278,13 +266,26 @@ private fun JsonArrayBuilder.nutrient(name: String, grams: Number) {
 /** A day's glasses as one hydration event. See `pushHydration` for why it's a whole day. */
 internal fun hydrationLogBody(millilitres: Int, dayStartMillis: Long): String = buildJsonObject {
     putJsonObject("hydrationLog") {
-        putJsonObject("interval") {
-            put("startTime", rfc3339(dayStartMillis + 12 * 60 * 60 * 1000L))
-            put("endTime", rfc3339(dayStartMillis + 12 * 60 * 60 * 1000L + 1000L))
-        }
+        val noon = dayStartMillis + 12 * 60 * 60 * 1000L
+        putJsonObject("interval") { putLocalInterval(noon, noon + 1000L) }
         putJsonObject("amountConsumed") { put("milliliters", millilitres) }
     }
 }.toString()
+
+/**
+ * An interval with the device's UTC offset on each end. Without them Google takes the offset as
+ * zero and derives the civil time from UTC: a 12:00 lunch in Manila showed at 04:00, and anywhere
+ * east of UTC+8 an 08:00 breakfast landed on the previous day.
+ */
+private fun JsonObjectBuilder.putLocalInterval(startMillis: Long, endMillis: Long) {
+    put("startTime", rfc3339(startMillis))
+    put("startUtcOffset", utcOffset(startMillis))
+    put("endTime", rfc3339(endMillis))
+    put("endUtcOffset", utcOffset(endMillis))
+}
+
+/** The device zone's offset at [millis], as a protobuf Duration (`"28800s"`, `"-18000s"`). */
+internal fun utcOffset(millis: Long): String = "${TimeZone.getDefault().getOffset(millis) / 1000}s"
 
 /**
  * The created point's resource name — what we record. `dataPoints.create` answers with a
@@ -434,15 +435,31 @@ internal fun parseHeartRollup(body: String): Map<Long, HeartDay> = rollupPoints(
 }.toMap()
 
 /**
- * RFC-3339 in, epoch millis out. `DatatypeFactory` rather than [SimpleDateFormat] because the API
- * returns offsets and fractional seconds interchangeably, and it is already in the platform —
- * `java.time` needs API 26 and this module builds to minSdk 24 with no desugaring.
+ * RFC-3339 in, epoch millis out: `2026-09-15T17:46:19.843429Z`, `…T18:00:00+02:00`. The API sends
+ * offsets and any number of fractional digits interchangeably, so [SimpleDateFormat] (fixed `SSS`)
+ * cannot read it, and `java.time` needs API 26 where this module builds to minSdk 24 with no
+ * desugaring.
+ *
+ * It used `javax.xml.datatype.DatatypeFactory`, which passes every JVM test and does not exist on
+ * Android — `newInstance()` throws "Provider org.apache.xerces…DatatypeFactoryImpl not found" — so
+ * on a phone every timestamp read null and every cloud workout, weigh-in and night was dropped.
  */
-private val datatypeFactory by lazy { DatatypeFactory.newInstance() }
+private val rfc3339Pattern =
+    Regex("""(\d{4})-(\d\d)-(\d\d)[Tt ](\d\d):(\d\d):(\d\d)(?:\.(\d+))?(?:([Zz])|([+-])(\d\d):(\d\d))""")
 
-internal fun parseRfc3339(value: String?): Long? = value?.let {
-    runCatching { datatypeFactory.newXMLGregorianCalendar(it).toGregorianCalendar().timeInMillis }
-        .getOrNull()
+internal fun parseRfc3339(value: String?): Long? {
+    val g = rfc3339Pattern.matchEntire(value ?: return null)?.groupValues ?: return null
+    val utc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+        clear()
+        set(g[1].toInt(), g[2].toInt() - 1, g[3].toInt(), g[4].toInt(), g[5].toInt(), g[6].toInt())
+    }
+    val millis = g[7].padEnd(3, '0').take(3).toInt()
+    val offsetMinutes = when {
+        g[8].isNotEmpty() -> 0
+        g[9] == "-" -> -(g[10].toInt() * 60 + g[11].toInt())
+        else -> g[10].toInt() * 60 + g[11].toInt()
+    }
+    return utc.timeInMillis + millis - offsetMinutes * 60_000L
 }
 
 /** A protobuf Duration string — `"1800s"`, sometimes `"1800.5s"`. */
@@ -569,11 +586,8 @@ internal fun parseExercisePage(body: String): Page<RemoteExercise> {
 }
 
 /**
- * Weight is a point sample rather than a session: `sampleTime.physicalTime` and `weightGrams`.
- *
- * ponytail: the timestamp is read from `sampleTime.physicalTime` first and a bare `physicalTime`
- * second, because the reference documents the nested form and the wire has been known to flatten
- * it. Pin it to one path once a real response has been captured from a live account.
+ * Weight is a point sample rather than a session: `sampleTime.physicalTime` and `weightGrams` —
+ * the nested form the reference documents and a live response confirmed.
  */
 internal fun parseWeightPage(body: String): Page<RemoteWeight> {
     val root = parseRoot(body) ?: return Page(emptyList(), null)
@@ -582,8 +596,7 @@ internal fun parseWeightPage(body: String): Page<RemoteWeight> {
         val point = element as? JsonObject ?: return@mapNotNull null
         val remoteName = point.string("name") ?: return@mapNotNull null
         val weight = point["weight"]?.jsonObject ?: return@mapNotNull null
-        val sampleTime = weight["sampleTime"]?.jsonObject
-        val time = parseRfc3339(sampleTime.string("physicalTime") ?: weight.string("physicalTime"))
+        val time = parseRfc3339(weight["sampleTime"]?.jsonObject.string("physicalTime"))
             ?: return@mapNotNull null
         val grams = weight.number("weightGrams") ?: return@mapNotNull null
         // A zero or negative weigh-in is a broken scale reading, not a measurement.

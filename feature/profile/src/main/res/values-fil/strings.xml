@@ -275,11 +275,17 @@
     <string name="profile_health_deleted_sent">" Na-delete sa Google Health ang ipinadala ng FitPulse."</string>
     <string name="profile_health_delete_sent_failed">" Hindi ma-delete sa Google Health ang ipinadala ng FitPulse — puwede mo itong tanggalin sa Google Health account mo."</string>
     <string name="profile_health_up_to_date">Updated na.</string>
-    <string name="profile_health_imported">Na-import ang %1$d item.</string>
+    <plurals name="profile_health_imported">
+        <item quantity="one">Na-import ang %1$d item.</item>
+        <item quantity="other">Na-import ang %1$d item.</item>
+    </plurals>
     <string name="profile_health_not_now">Hindi ngayon</string>
     <string name="profile_health_connected">Nakakonekta</string>
     <string name="profile_health_nothing_imported">Wala pang na-import. Mag-sync para makuha ang mga workout mo.</string>
-    <string name="profile_health_items_imported">%1$d item ang na-import mula sa relo mo at mga nakakonektang app.</string>
+    <plurals name="profile_health_items_imported">
+        <item quantity="one">%1$d item ang na-import mula sa relo mo at mga nakakonektang app.</item>
+        <item quantity="other">%1$d item ang na-import mula sa relo mo at mga nakakonektang app.</item>
+    </plurals>
     <string name="profile_health_syncing">Nagsi-sync…</string>
     <string name="profile_health_sync_now">Mag-sync ngayon</string>
     <string name="profile_health_disconnect">Idiskonekta</string>

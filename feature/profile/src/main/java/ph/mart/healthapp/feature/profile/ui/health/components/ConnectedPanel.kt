@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -38,7 +39,7 @@ internal fun ConnectedPanel(
                     text = if (importedItems == 0) {
                         stringResource(R.string.profile_health_nothing_imported)
                     } else {
-                        stringResource(R.string.profile_health_items_imported, importedItems)
+                        pluralStringResource(R.plurals.profile_health_items_imported, importedItems, importedItems)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

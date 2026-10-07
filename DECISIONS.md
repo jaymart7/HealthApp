@@ -5404,7 +5404,9 @@ Connect.
   days of minute buckets, and the loop then wrote whatever partial day it had stopped in. One roll-up
   request returns one point per civil day (`countSum`; `beatsPerMinuteAvg`/`Min`). The roll-up
   refuses a heart-rate range over 14 days, so heart's window is read in 14-day chunks and written
-  only once every chunk has landed.
+  only once every chunk has landed. A re-queried day whose figures have not moved is neither
+  rewritten nor counted — every sync re-reads yesterday and today, and counting them put "Imported
+  2 items" on the screen after a sync that brought nothing new.
 - **`step_day.burnedKcal` is computed at import and scaled at read.** Stored, not recomputed —
   the same rule `exercise_entry` follows, so a later weigh-in can't rewrite what a past day
   burned. It prices the day's *whole* step count at one weight (latest weigh-in, else the
@@ -5425,15 +5427,11 @@ Connect.
   key. `MAX(date)` in `heart_day` is the cursor, the window is day-aligned, days are replaced rather
   than merged, and nothing is written until every chunk lands. Not a streak domain, not exported,
   no manual write path — sleep and steps again.
-- **A heart 403 is neither a revocation nor a sync failure.** Every other type reads a scope
-  `HEALTH_SCOPES` explicitly requests, so a 403 there really is a revocation. Heart rate rides
-  `health_metrics_and_measurements.readonly`, which the reference's scope table now names as heart
-  rate's — but no live account has confirmed it. Reporting a wrong guess as a revocation would drop
-  a good connection to "needs consent" forever; reporting it as a failure would put "Couldn't
-  reach Google Health" on the Connections screen after every sync with nothing new to import. So
-  `sync()` takes heart's items on success and discards every other outcome — a wrong guess costs
-  the card and nothing else. Don't make this consistent with the other four until a live response
-  has pinned the scope.
+- **A heart 403 is a revocation like every other type's.** Heart rate rides
+  `health_metrics_and_measurements.readonly`, the scope weight reads. That was a guess, and until
+  it was confirmed `sync()` swallowed every heart outcome so a wrong guess could cost only the card.
+  A live roll-up answered 200 on 2026-10-07, so heart rate now revokes, fails and reports exactly as
+  the other four do.
 - **`minBpm` is the day's lowest reading, never a resting heart rate**, and is labelled "Lowest"
   everywhere it appears. FitPulse aggregates whatever samples the watch happened to take; calling
   a minimum "resting" would claim a measurement nobody made. The day's other figure is a mean of
@@ -5450,8 +5448,7 @@ Connect.
   reach Google Health", which sends the user to check their connection instead of to
   fitbit.google.com. So `HealthResponse.AccountNotLinked` is matched on the `ErrorInfo` reason (a
   reserved token; matching the raw body beats parsing a shape the v4 reference doesn't pin down),
-  every leg returns it rather than swallowing it — **including heart rate**, whose whole exemption
-  above is about a scope guess and has nothing to say about an account — and `sync()` returns
+  every leg returns it rather than swallowing it, and `sync()` returns
   `HealthSyncResult.NotLinked` on the first one. It outranks a Health Connect count that already
   landed, unlike the consent branches beside it: the count is on the panel regardless, and burying
   the one thing the user can act on is how this cost a minute a tap in the first place.
@@ -5464,14 +5461,13 @@ Connect.
   so the next sync resumes where this one reached. The cap is the same argument applied to the push
   leg, which is one sequential request per unsent row: it drains a backlog across several syncs that
   each *finish*, rather than letting the deadline cut one off and report a failure.
-- **The micronutrient retry fires only on a rejection a smaller body could fix.** `create()` used to
-  collapse a 403, a 404, a timeout and a rejected body all into `null`, so the second attempt (which
-  drops the micronutrients) doubled the cost of every failure it could not possibly help. It
-  returns the `HealthResponse` now, and only `Rejected` earns the retry. The names were guesses
-  until the reference published the `Nutrient` enum, and one was wrong: `TOTAL_SUGARS`, where the
-  enum says `SUGAR`, so every meal with any sugar was rejected and resent stripped of fiber, sodium
-  and the rest. All seven are checked against the enum now; the retry stays until a live `create`
-  with micronutrients has succeeded.
+- **A meal goes out with every nutrient it has, once.** The names were guesses until the reference
+  published the `Nutrient` enum, and one was wrong: `TOTAL_SUGARS`, where the enum says `SUGAR`, so
+  every meal with any sugar was rejected — and resent, by a retry that existed for exactly that,
+  stripped of fiber, sodium and the rest. All seven are checked against the enum now, and a live
+  create carrying protein, fiber, sugar and sodium was accepted, so the retry and its
+  `micronutrients` flag are gone, and with them `HealthResponse.Rejected`: a rejected body was its
+  own case only so the retry could tell it from a timeout.
 - **A sent point's name is the operation's `response.name`.** `dataPoints.create` answers with a
   long-running `Operation`, not the point, and `parseCreatedName` read the top-level `name` — which
   is absent. So every meal that landed (200) was taken for a failure: no link, and the next sync
@@ -5479,6 +5475,17 @@ Connect.
   had already left duplicates in that Google Health account, which FitPulse cannot find to delete
   (the nutrition scope is write-only, so nothing can be listed). An operation's own `operations/…`
   name is refused rather than linked, because `batchDelete` could never act on it.
+- **A sent interval carries the device's UTC offset.** Without `startUtcOffset`/`endUtcOffset`
+  Google takes the offset as zero and derives the civil time from UTC, so a 12:00 lunch in Manila
+  sat at 04:00 — and east of UTC+8, an 08:00 breakfast landed on the previous day. Seen live: the
+  created point came back with `"startUtcOffset": "0s"` and a civil hour of 4.
+- **Timestamps are parsed by hand, because `DatatypeFactory` does not exist on Android.**
+  `parseRfc3339` used `javax.xml.datatype.DatatypeFactory` — present on every JVM, so every test
+  passed — and on a phone `newInstance()` throws "Provider org.apache.xerces…DatatypeFactoryImpl
+  not found". Inside `runCatching` that read as "no timestamp", and every cloud workout, weigh-in
+  and night was dropped without a trace. A regex over the RFC-3339 shape plus a UTC `Calendar`
+  replaces it: any number of fractional digits (the live weigh-in had six) and any offset, with no
+  `java.time`, which needs API 26.
 - **A `list` filter names its type, and each record shape has its own field.** The reference only
   accepts `{type}.interval.start_time`-style fields, and sessions are narrower still: exercise
   filters on `exercise.interval.civil_start_time` (wall-clock, no offset — formatted per call so a
@@ -5486,6 +5493,7 @@ Connect.
   `weight.sample_time.physical_time`. The bare `interval.start_time` and `physical_time` this
   shipped with are 400s, so once an account was linked every import would have reported "Couldn't
   reach Google Health". The unlinked emulator account hid it: `ACCOUNT_NOT_LINKED` answers first.
+  All three answered 200 live on 2026-10-07, and so did both roll-ups.
 - **Every response is drained and nothing calls `disconnect()`.** `HttpURLConnection` only returns a
   socket to its keep-alive pool once the stream is read to the end, and `disconnect()` closes the
   socket outright. Leaving error bodies unread and disconnecting meant a fresh TLS handshake per
@@ -5523,6 +5531,10 @@ Connect.
   `HealthDisclosurePanel` in `:core:designsystem` because onboarding (step 5 of 6) and Profile →
   Connections both show it, and `connect()` is the only path from it to Google's consent prompt.
   It must stay in the normal flow, carry nothing unrelated, and name each scope's purpose.
+- **A scope row names what FitPulse reads, not what the scope could reach.** The
+  `health_metrics_and_measurements` row said "Weight, measurements and heart rate", but nothing
+  imports a body measurement from Google Health; the row is "Weight and heart rate". A disclosure
+  that claims more than the code does is what a verification reviewer reads as over-collection.
 - **Four glyph rows, not four two-line bullets — and the fourth one writes.** The panel is now a
   one-line row per scope in `HEALTH_SCOPES` order plus three assurance rows, ~180 words down to
   ~70: trust comes from being scannable, and a wall of grey prose above two buttons is what a

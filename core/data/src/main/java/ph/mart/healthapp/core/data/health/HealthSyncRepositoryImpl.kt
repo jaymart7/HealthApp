@@ -200,10 +200,13 @@ internal class HealthSyncRepositoryImpl(
                 Outcome.Failed -> failed = true
             }
         }
-        // The one type that cannot fail the sync — see importHeart. Its scope is a guess, and a
-        // wrong one has to cost the card, not a permanent error on the Connections screen.
         if (HealthMetric.Heart in cloud) {
-            (importHeart(token) as? Outcome.Wrote)?.let { imported += it.items }
+            when (val result = importHeart(token)) {
+                is Outcome.Wrote -> imported += result.items
+                Outcome.Revoked -> return HealthSyncResult.NeedsConsent(pendingIntent = null)
+                Outcome.NotLinked -> return HealthSyncResult.NotLinked
+                Outcome.Failed -> failed = true
+            }
         }
 
         // Push last: an import that worked is worth reporting even if the outbound leg didn't.
@@ -448,7 +451,7 @@ internal class HealthSyncRepositoryImpl(
             }
 
             HealthResponse.AccountNotLinked -> return Outcome.NotLinked
-            HealthResponse.Unauthorized, HealthResponse.Rejected, HealthResponse.Failed ->
+            HealthResponse.Unauthorized, HealthResponse.Failed ->
                 return Outcome.Failed
         }
         return Outcome.Wrote(writeSteps(totals, weightKg))
@@ -473,15 +476,20 @@ internal class HealthSyncRepositoryImpl(
         return totals
     }
 
-    /** Returns the days written, so both legs can add it to one count. */
-    private suspend fun writeSteps(totals: Map<Long, Int>, weightKg: Double): Int {
-        totals.forEach { (day, steps) ->
+    /**
+     * Returns the days that changed, so both legs can add it to one count. A day the window
+     * re-queries but whose total has not moved is neither rewritten nor counted: every sync
+     * re-reads yesterday and today, and counting those made the screen say "Imported 2 items"
+     * after a sync that brought nothing new.
+     */
+    private suspend fun writeSteps(totals: Map<Long, Int>, weightKg: Double): Int =
+        totals.count { (day, steps) ->
+            if (stepDao.observeForDate(day).first()?.steps == steps) return@count false
             stepDao.upsert(
                 StepDayEntity(date = day, steps = steps, burnedKcal = stepsBurnedKcal(steps, weightKg)),
             )
+            true
         }
-        return totals.size
-    }
 
     /**
      * Day-aligned, unlike [windowStart]: a window that starts mid-morning would return a partial
@@ -501,17 +509,8 @@ internal class HealthSyncRepositoryImpl(
      * chunks — and nothing is written until every chunk has landed, so a half-read window cannot
      * replace a good day's average with nothing.
      *
-     * **This one type can neither revoke nor fail the sync, and that divergence is deliberate.**
-     * Every other type reads a scope `HEALTH_SCOPES` explicitly requests, so a 403 there really
-     * does mean the user revoked it from myaccount.google.com. Heart rate rides
-     * `health_metrics_and_measurements.readonly`, which the reference now names as heart rate's
-     * scope but no live account has confirmed. If it is wrong the API answers 403 on every sync:
-     * reporting that as a revocation would drop a perfectly good connection to "needs consent"
-     * forever, and reporting it as a failure would put "Couldn't reach Google Health" on the
-     * Connections screen after every sync that had nothing new to import. So [sync] reads the
-     * items on success and discards every other outcome — a wrong guess costs the card and nothing
-     * else. Do not "fix" this into consistency with the other four before a live response has
-     * confirmed the scope.
+     * It rides `health_metrics_and_measurements.readonly`, the scope weight reads — confirmed by a
+     * live roll-up answering 200 — so a 403 here is a revocation like any other type's.
      */
     private suspend fun importHeart(token: String): Outcome {
         val end = todayEpochDay() + 1
@@ -521,28 +520,27 @@ internal class HealthSyncRepositoryImpl(
             val to = minOf(from + HEART_ROLLUP_MAX_DAYS, end)
             when (val response = post(token, dailyRollUpUrl(HEART_RATE), dailyRollUpBody(from, to))) {
                 is HealthResponse.Ok -> days += parseHeartRollup(response.body)
-                // An unlinked account is the one answer heart rate does not get to swallow: it is
-                // true of every type, so letting it read as "no heart data" would hide the reason
-                // the other four failed too.
+                HealthResponse.Forbidden -> {
+                    cachedToken = null
+                    return Outcome.Revoked
+                }
+
                 HealthResponse.AccountNotLinked -> return Outcome.NotLinked
-                HealthResponse.Forbidden, HealthResponse.Unauthorized,
-                HealthResponse.Rejected, HealthResponse.Failed,
-                -> return Outcome.Failed
+                HealthResponse.Unauthorized, HealthResponse.Failed -> return Outcome.Failed
             }
             from = to
         }
         return Outcome.Wrote(writeHeart(days.values))
     }
 
-    /** Returns the days written, so both legs can add it to one count. */
-    private suspend fun writeHeart(days: Collection<HeartDay>): Int {
-        days.forEach { day ->
-            heartDao.upsert(
-                HeartDayEntity(date = day.dateEpochDay, averageBpm = day.averageBpm, minBpm = day.minBpm),
-            )
+    /** Returns the days that changed — [writeSteps]' rule, for the same reason. */
+    private suspend fun writeHeart(days: Collection<HeartDay>): Int =
+        days.count { day ->
+            val row = HeartDayEntity(date = day.dateEpochDay, averageBpm = day.averageBpm, minBpm = day.minBpm)
+            if (heartDao.observeForDate(day.dateEpochDay).first() == row) return@count false
+            heartDao.upsert(row)
+            true
         }
-        return days.size
-    }
 
     /** Day-aligned for the same reason [stepsWindowStart] is: a window starting mid-morning would
      * return a partial day, and the replace-in-full write would turn a full day's average into an
@@ -615,21 +613,7 @@ internal class HealthSyncRepositoryImpl(
             .take(MAX_PUSH_PER_SYNC)
             .forEach { entry ->
                 val dayStart = epochDayStartMillis(entry.dateEpochDay)
-                // A rejected body would otherwise strand the meal forever: no link is recorded, so
-                // every later sync retries it and fails again. The second attempt drops the three
-                // unverified nutrient names — see `nutritionLogBody`.
-                //
-                // Only [HealthResponse.Rejected] earns it. It used to fire on *every* null, which
-                // meant a timeout cost two round trips instead of one and an unlinked account cost
-                // two per meal, all the way down the diary.
-                var response = create(token, NUTRITION_LOG, nutritionLogBody(entry, dayStart))
-                if (response == HealthResponse.Rejected) {
-                    response = create(
-                        token,
-                        NUTRITION_LOG,
-                        nutritionLogBody(entry, dayStart, micronutrients = false),
-                    )
-                }
+                val response = create(token, NUTRITION_LOG, nutritionLogBody(entry, dayStart))
                 if (response == HealthResponse.AccountNotLinked) return Push.NotLinked
                 val created = (response as? HealthResponse.Ok)?.let { parseCreatedName(it.body) }
                 if (created == null) {
@@ -749,7 +733,7 @@ internal class HealthSyncRepositoryImpl(
                 }
 
                 HealthResponse.AccountNotLinked -> return Outcome.NotLinked
-                HealthResponse.Unauthorized, HealthResponse.Rejected, HealthResponse.Failed ->
+                HealthResponse.Unauthorized, HealthResponse.Failed ->
                     return if (imported > 0) Outcome.Wrote(imported) else Outcome.Failed
             }
 

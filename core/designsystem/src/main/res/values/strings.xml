@@ -110,7 +110,7 @@
     <string name="ds_health_reads">What FitPulse reads and writes</string>
     <string name="ds_health_scope_activity">Workouts and steps</string>
     <string name="ds_health_scope_activity_line">Raises your calorie budget</string>
-    <string name="ds_health_scope_body">Weight, measurements and heart rate</string>
+    <string name="ds_health_scope_body">Weight and heart rate</string>
     <string name="ds_health_scope_body_line">Your trend uses real weigh-ins</string>
     <string name="ds_health_scope_sleep">Sleep</string>
     <string name="ds_health_scope_sleep_line">Last night, alongside your day</string>

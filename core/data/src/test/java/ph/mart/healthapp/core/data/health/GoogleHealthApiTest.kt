@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.URLDecoder
 import java.util.GregorianCalendar
+import java.util.TimeZone
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.epochDayStartMillis
 import ph.mart.healthapp.core.data.exercise.ExerciseType
@@ -202,20 +203,35 @@ class GoogleHealthApiTest {
         // The array carries grams, and sodium is the app's one milligram figure.
         assertTrue(body.contains("\"nutrient\":\"SODIUM\""))
         assertTrue(body.contains("\"grams\":0.48"))
+    }
 
-        // The fallback the push retries with drops exactly those three and nothing else.
-        val pinned = nutritionLogBody(packet, dayStartMillis = 0L, micronutrients = false)
-        assertFalse(pinned.contains("DIETARY_FIBER"))
-        assertFalse(pinned.contains("SODIUM"))
-        assertTrue(pinned.contains("\"nutrient\":\"PROTEIN\""))
+    /** Without the offset Google placed a Manila lunch at 04:00 — seen live on 2026-10-07. */
+    @Test
+    fun `a sent interval carries the device's offset so its civil time is the logged one`() {
+        val zone = TimeZone.getDefault()
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Manila"))
+            val meal = FoodEntry(
+                name = "Rice",
+                mealType = MealType.Lunch,
+                portionAmount = 1.0,
+                portionUnit = "cup",
+                calories = 200,
+                proteinG = 4,
+                carbsG = 45,
+                fatG = 0,
+            )
+            val body = nutritionLogBody(meal, dayStartMillis = 0L)
+            assertTrue(body.contains("\"startUtcOffset\":\"28800s\""))
+            assertTrue(body.contains("\"endUtcOffset\":\"28800s\""))
+            assertTrue(hydrationLogBody(millilitres = 250, dayStartMillis = 0L).contains("\"startUtcOffset\":\"28800s\""))
 
-        // A quick add measures none of the three, so it already sends the fallback's body —
-        // which is what makes the retry a no-op for everything but a scanned packet.
-        val quickAdd = packet.copy(nutrients = Nutrients(fiberG = 0, sugarG = 0, sodiumMg = 0))
-        assertEquals(
-            nutritionLogBody(quickAdd, 0L, micronutrients = false),
-            nutritionLogBody(quickAdd, 0L),
-        )
+            TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"))
+            // January, so standard time: five hours behind.
+            assertEquals("-18000s", utcOffset(0L))
+        } finally {
+            TimeZone.setDefault(zone)
+        }
     }
 
     @Test
@@ -399,7 +415,7 @@ class GoogleHealthApiTest {
      * the whole breaker turns on recognising it — see [HealthResponse.AccountNotLinked].
      */
     @Test
-    fun `an unlinked account is told apart from a rejected body and from a server failure`() {
+    fun `an unlinked account is told apart from every other refusal`() {
         val notLinked = """
             {"error":{"code":400,"message":"The account is not linked to Google Health.",
             "status":"FAILED_PRECONDITION","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo",
@@ -407,19 +423,35 @@ class GoogleHealthApiTest {
         """.trimIndent()
         assertEquals(HealthResponse.AccountNotLinked, errorResponse(400, notLinked))
 
-        // A 4xx the body is responsible for: the one case worth a second, smaller attempt.
+        // Anything else — a rejected body, a 404, a 5xx — only a later sync can help.
         assertEquals(
-            HealthResponse.Rejected,
+            HealthResponse.Failed,
             errorResponse(400, """{"error":{"message":"Invalid value at nutrients[3].name"}}"""),
         )
-        assertEquals(HealthResponse.Rejected, errorResponse(404, ""))
-
-        // A 5xx or an answerless response is neither: only a later sync can help.
+        assertEquals(HealthResponse.Failed, errorResponse(404, ""))
         assertEquals(HealthResponse.Failed, errorResponse(500, ""))
         assertEquals(HealthResponse.Failed, errorResponse(503, """{"error":{"message":"overloaded"}}"""))
 
         // The reason outranks the status code — the account is unlinked however it is reported.
         assertEquals(HealthResponse.AccountNotLinked, errorResponse(503, """{"reason":"ACCOUNT_NOT_LINKED"}"""))
+    }
+
+    /**
+     * The parser itself, because the one it replaced passed every JVM test and threw on every
+     * phone. The first case is a live weigh-in's timestamp: six fractional digits.
+     */
+    @Test
+    fun `an RFC-3339 time reads any fraction and any offset`() {
+        assertEquals(1_789_494_379_843L, parseRfc3339("2026-09-15T17:46:19.843429Z"))
+        assertEquals(0L, parseRfc3339("1970-01-01T00:00:00Z"))
+        assertEquals(500L, parseRfc3339("1970-01-01T00:00:00.5Z"))
+        assertEquals(parseRfc3339("2026-04-21T16:00:00Z"), parseRfc3339("2026-04-21T18:00:00+02:00"))
+        assertEquals(parseRfc3339("2026-04-21T23:30:00Z"), parseRfc3339("2026-04-21T18:00:00-05:30"))
+        // What the list filter sends comes back as the same instant.
+        assertEquals(1_789_494_379_000L, parseRfc3339(rfc3339(1_789_494_379_000L)))
+        assertNull(parseRfc3339("2026-04-21"))
+        assertNull(parseRfc3339("not a time"))
+        assertNull(parseRfc3339(null))
     }
 
     @Test
