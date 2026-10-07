@@ -178,6 +178,19 @@ rather than needing a counter patched.
     `isStale` compared it against the plain divide, so from late March to late October in London
     every snapshot read as a day old and the stale note sat over the watch all summer. `ClockTest`
     pins a London summer day to the phone's figure.
+- **`todayFlow` re-checks the day every minute rather than sleeping until midnight.** The single
+  wait shipped first, and it is wrong on a phone: `delay` runs on a monotonic clock that stops in
+  deep sleep. A phone locked at 22:00 with the process alive woke at 07:00 with roughly two hours
+  of the wait left to count in *awake* time — and until it had, every `forToday` reader (Home's
+  cards, water, steps, supplements, mood, cycle, heart), the diary's midnight follow and the
+  snapshot `TodaySnapshotSource` pushes to the widget and the watch all stayed on yesterday. A
+  clock or time-zone change stalled the same way, the wait having been computed for the old clock.
+  - `nextDayCheckMillis` caps the wait at a minute and keeps the 1ms floor against a busy-spin;
+    `EpochDayTest` holds both ends. A minute is the longest a woken phone shows yesterday.
+  - **`distinctUntilChanged()` is load-bearing, not tidiness.** `forToday` is a `flatMapLatest`, so
+    a re-emitted same day would restart every today-bound Room query once a minute.
+  - Not an `ACTION_DATE_CHANGED` receiver: that is a second clock to keep in step with this one,
+    and a registration to hold, for an improvement from a minute to an instant.
 - **Diary date navigation:** forward stepping stops at today (there are no
   planned meals), and system back from a past day returns to today rather than
   leaving the tab.

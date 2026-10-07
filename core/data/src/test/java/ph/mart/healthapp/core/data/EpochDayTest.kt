@@ -15,7 +15,8 @@ import org.junit.Test
  * [todayFlow] is a timer, so there is the wait it computes: a zero or negative delay turns the
  * loop into a busy-spin that emits forever and pins a core — and it is computed by subtracting
  * `now` from a `Calendar` walked forward a day, which is exactly the sort of arithmetic that lands
- * on the wrong side of the boundary.
+ * on the wrong side of the boundary. Its ceiling matters as much as its floor: a wait as long as
+ * the night is a wait deep sleep stops counting, so the phone wakes on yesterday.
  *
  * [epochDayOf] is the key every dated table in the module uses, so there is the property that
  * makes it a key at all: **one local day, one value, and the next day the next value.** That held
@@ -48,6 +49,27 @@ class EpochDayTest {
         assertTrue("expected a positive wait, was $wait", wait > 0)
         // A day, plus room for the DST transition that makes one 25 hours long.
         assertTrue("expected under 26h, was $wait", wait <= 26 * 60 * 60 * 1000L)
+    }
+
+    @Test
+    fun `the day is re-checked within a minute, however far off midnight is`() {
+        val today = todayEpochDay()
+        val noon = epochDayStartMillis(today) + 12 * 60 * 60 * 1000L
+        assertEquals(DAY_CHECK_MILLIS, nextDayCheckMillis(today, noon))
+    }
+
+    @Test
+    fun `a midnight closer than the ceiling is waited for exactly`() {
+        val today = todayEpochDay()
+        val fiveSecondsBefore = epochDayStartMillis(today + 1) - 5_000
+        assertEquals(5_000L, nextDayCheckMillis(today, fiveSecondsBefore))
+    }
+
+    @Test
+    fun `a midnight already passed waits 1ms rather than spinning`() {
+        val today = todayEpochDay()
+        val afterMidnight = epochDayStartMillis(today + 1) + 5_000
+        assertEquals(1L, nextDayCheckMillis(today, afterMidnight))
     }
 
     @Test

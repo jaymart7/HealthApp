@@ -4,6 +4,7 @@ import java.util.Calendar
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 
@@ -112,9 +113,12 @@ fun weekdayIndex(epochDay: Long): Int {
  * midnight showed yesterday's water while `setToday()` wrote today's row — a tap that visibly did
  * nothing.
  *
- * The delay is computed off [epochDayStartMillis], so it stays right across DST rather than
- * assuming a day is 86,400,000ms. Doze can defer the wake-up; the day is recomputed whenever it
- * does fire, so a late one self-corrects instead of drifting.
+ * The day is re-checked at least once a minute ([nextDayCheckMillis]), not once at midnight, and
+ * only a change is emitted — every [forToday] reader is a `flatMapLatest`, so a repeat would
+ * restart its Room query. One long wait was a real bug too: `delay` runs on a monotonic clock that
+ * stops in deep sleep, so a phone locked at 22:00 woke with two hours of the wait still to count,
+ * and Home, the diary and the widget's snapshot all stayed on yesterday until it had. A clock or
+ * time-zone change stalled the same way, the wait having been computed for the old clock.
  *
  * The home-screen widget does not use this — Glance holds no live flow, and its
  * `updatePeriodMillis` is what restarts its queries over midnight.
@@ -123,9 +127,20 @@ fun todayFlow(): Flow<Long> = flow {
     while (true) {
         val today = todayEpochDay()
         emit(today)
-        delay((epochDayStartMillis(today + 1) - System.currentTimeMillis()).coerceAtLeast(1L))
+        delay(nextDayCheckMillis(today, System.currentTimeMillis()))
     }
-}
+}.distinctUntilChanged()
+
+/**
+ * How long [todayFlow] sleeps before looking again: until the next local midnight, computed off
+ * [epochDayStartMillis] so a DST day is not assumed to be 86,400,000ms — but never longer than
+ * [DAY_CHECK_MILLIS], and never under 1ms, which would turn the loop into a busy-spin.
+ */
+internal fun nextDayCheckMillis(today: Long, nowMillis: Long): Long =
+    (epochDayStartMillis(today + 1) - nowMillis).coerceIn(1L, DAY_CHECK_MILLIS)
+
+/** A minute of awake time: the longest a woken phone can show yesterday. */
+internal const val DAY_CHECK_MILLIS = 60_000L
 
 /**
  * The wrapper every today-only overload is written in terms of: `observeToday() =
