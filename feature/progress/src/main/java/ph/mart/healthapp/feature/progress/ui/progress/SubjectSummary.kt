@@ -238,7 +238,7 @@ fun summarize(
                 value = formatDecimals(average, decimals = 1),
                 unit = phrase(R.string.progress_summary_unit_glasses_avg),
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.glasses }),
-                footnote = phrase(R.string.progress_summary_water_goal_days, averages.daysHitGoal, averages.daysLogged),
+                footnote = plural(R.plurals.progress_summary_water_goal_days, averages.daysLogged, averages.daysHitGoal, averages.daysLogged),
             )
         }
 

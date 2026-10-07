@@ -259,7 +259,7 @@ class SubjectSummaryTest {
         val days = listOf(WaterDay(TODAY - 13, 9), WaterDay(TODAY - 6, 6), WaterDay(TODAY, 3))
         val summary = summaryFor(Subject.Water, ProgressUiState(waterDays = days, waterGoalGlasses = 8))
         assertEquals("6.0", summary.value)
-        assertEquals(phrase(R.string.progress_summary_water_goal_days, 1, 3), summary.footnote)
+        assertEquals(plural(R.plurals.progress_summary_water_goal_days, 3, 1, 3), summary.footnote)
         assertEquals(SubjectPreview.Bars(listOf(9, 6, 3)), summary.preview)
     }
 

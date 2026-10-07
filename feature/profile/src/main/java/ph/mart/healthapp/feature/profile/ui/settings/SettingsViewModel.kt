@@ -73,7 +73,8 @@ class SettingsViewModel(
         profileRepository.saveProfile(profile.withReminder(kind, enabled))
     }
 
-    fun setDarkTheme(enabled: Boolean) = intent {
+    /** Null is "follow the device" — a real choice, not just the value before the first tap. */
+    fun setDarkTheme(enabled: Boolean?) = intent {
         val profile = state.profile ?: return@intent
         profileRepository.saveProfile(profile.copy(darkThemeOn = enabled))
     }

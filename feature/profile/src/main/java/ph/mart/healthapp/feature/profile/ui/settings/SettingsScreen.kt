@@ -6,7 +6,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -212,7 +211,7 @@ private fun SettingsContent(
     message: String?,
     messageIsError: Boolean,
     onSelectUnit: (UnitSystem) -> Unit,
-    onSetDarkTheme: (Boolean) -> Unit,
+    onSetDarkTheme: (Boolean?) -> Unit,
     onSelectMascot: (MascotCharacter) -> Unit,
     onSelectMascotPalette: (MascotPalette) -> Unit,
     onExport: () -> Unit,
@@ -237,10 +236,8 @@ private fun SettingsContent(
         ) {
             SectionHeader(label = stringResource(R.string.profile_settings_display))
             SettingsUnitsSection(unit = profile.preferredUnit, onSelect = onSelectUnit)
-            // null profile field means "follow the device", so resolve it here rather than in the
-            // section — same expression MainActivity uses to pick the scheme.
             SettingsAppearanceSection(
-                darkTheme = profile.darkThemeOn ?: isSystemInDarkTheme(),
+                darkTheme = profile.darkThemeOn,
                 onSetDarkTheme = onSetDarkTheme,
                 mascot = mascotCharacterOf(profile.mascotName),
                 onSelectMascot = onSelectMascot,

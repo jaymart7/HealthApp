@@ -164,8 +164,11 @@
     <string name="profile_backup_confirm">Restore</string>
 
     <!-- Appearance -->
-    <string name="profile_dark_mode">Dark mode</string>
-    <string name="profile_dark_mode_sub">Use the dark colour scheme instead of following your device.</string>
+    <string name="profile_dark_mode">Theme</string>
+    <string name="profile_dark_mode_sub">Device follows your phone\'s own setting.</string>
+    <string name="profile_theme_device">Device</string>
+    <string name="profile_theme_light">Light</string>
+    <string name="profile_theme_dark">Dark</string>
     <string name="profile_buddy">Buddy</string>
     <string name="profile_buddy_sub">Who greets you on Home and turns up across the app.</string>
     <string name="profile_colour">Colour</string>

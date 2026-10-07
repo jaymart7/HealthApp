@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -56,6 +57,8 @@ import ph.mart.healthapp.core.designsystem.component.AppTopBar
 import ph.mart.healthapp.core.designsystem.component.FullScreenState
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotState
+import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.component.formatDayMonth
 import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -162,6 +165,14 @@ private fun WeightContent(
                         icon = { MascotAvatar(state = MascotState.Sleepy, size = 64.dp) },
                         heading = stringResource(R.string.progress_empty_weight_heading),
                         body = stringResource(R.string.progress_empty_weight_body),
+                        // Blood pressure's reason: the sheet it opens is already on this screen.
+                        actions = {
+                            PrimaryButton(
+                                label = stringResource(R.string.progress_weight_log),
+                                onClick = { state.editDateEpochDay = today },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        },
                     )
                 }
             } else {
@@ -191,6 +202,15 @@ private fun WeightContent(
                                 state = state,
                             )
                         }
+                    }
+                    // The page's own door onto the sheet. Keyed on today like a record row, so a day
+                    // that already has a weigh-in opens it for correction rather than a duplicate.
+                    item {
+                        PrimaryButton(
+                            label = stringResource(R.string.progress_weight_log),
+                            onClick = { state.editDateEpochDay = today },
+                            modifier = Modifier.padding(top = 12.dp),
+                        )
                     }
                     item {
                         Text(
@@ -259,13 +279,19 @@ private fun ColumnScope.WeightBody(
     state: WeightState,
 ) {
     val range = state.range
-    val current = entries.maxByOrNull { it.dateEpochDay }?.weightKg ?: return
+    val latest = entries.maxByOrNull { it.dateEpochDay } ?: return
+    val current = latest.weightKg
     val filtered = entries.inRange(range)
     val windowDelta = filtered.firstOrNull()?.let { current - it.weightKg }
 
     HeroValue(
         value = formatOneDecimal(current.kgToDisplayUnit(unit)),
-        caption = stringResource(R.string.progress_weight_today, unit.weightUnitLabel()),
+        // The newest reading is not always today's — an imported one can be weeks old.
+        caption = if (latest.dateEpochDay == todayEpochDay()) {
+            stringResource(R.string.progress_weight_today, unit.weightUnitLabel())
+        } else {
+            stringResource(R.string.progress_weight_on, unit.weightUnitLabel(), formatDayMonth(latest.dateEpochDay))
+        },
     )
 
     FactChipRow(

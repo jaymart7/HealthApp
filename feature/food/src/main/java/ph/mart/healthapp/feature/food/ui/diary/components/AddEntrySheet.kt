@@ -122,7 +122,9 @@ internal fun AddEntrySheet(
         // Rows run the sheet's full width so their pressed state does too; every other block pads
         // itself by the same 16dp the gutter would have applied.
         horizontalPadding = 0.dp,
-        expanded = view == AddEntryView.Search,
+        // Every state, not just Search: Browse is taller than half the screen, and left at the
+        // partial stop its pinned "Add it yourself" sat under the gesture bar.
+        expanded = true,
         // The search state brings its own scroller and wants the height handed to it, which is the
         // whole point of it being a state rather than a panel.
         scrollable = view != AddEntryView.Search,

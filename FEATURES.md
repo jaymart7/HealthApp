@@ -346,15 +346,17 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
   card that still opens its page; a group with nothing tracked collapses to one expandable row.
 - Detail page: a toolbar with back and the recap share, hero figure, fact chips, one chart card
   holding its own 1M/3M/6M/1Y range toggle and legend, and stat rows. The range is remembered per subject for the session. Empty subjects get a mascot page
-  and no call to action — except Cycle, Blood pressure and Measurements, whose log sheets are on
-  the page itself.
-- Weight: daily line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
+  and no call to action — except Weight, Cycle, Blood pressure and Measurements, whose log sheets
+  are on the page itself.
+- Weight: a hero naming the reading's own day ("68 kg · Sep 16") unless it is today's, a daily
+  line + 7-day average + dashed goal marker, axis labels pinned to the gridlines,
   goal chip, a BMI chip naming its WHO band, and an insight card carrying the projection and the
   energy check-in — the app's only insight card fed by two sources. Tapping it opens the check-in
   over the page. Under it, **When you weigh in**: once the log holds twelve timed weigh-ins that
   really split into an earlier and a later habit, the two averages and the day count behind each —
   a comparison of the user's own readings, never a claim about the body. Then **Records**: every
-  weigh-in in the chart's window, newest first, each row showing its time beside its date and
+  weigh-in in the chart's window under a **Log weight** button (today's sheet, or today's reading to
+  correct when there is one), newest first, each row showing its time beside its date and
   opening the log sheet on it to edit the figure or delete it — an imported row shows where it
   came from instead of a delete, and the list pages twenty at a time as you scroll.
 - Food: the week's calorie bank (the Home card's figures, unranged — the week is the week), then

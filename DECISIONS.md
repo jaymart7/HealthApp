@@ -1045,9 +1045,10 @@ rather than needing a counter patched.
 ### Theme, mascot & colour
 
 - **`Profile.darkThemeOn` is nullable and null means follow the device.** A plain `false`
-  default would force light on a phone already in dark mode; the Profile switch resolves it
-  with `darkThemeOn ?: isSystemInDarkTheme()`, the same expression `MainActivity` uses to pick
-  the scheme. Contrast stays system-driven.
+  default would force light on a phone already in dark mode. Settings draws it as a three-way
+  Device / Light / Dark toggle over null / false / true: the switch it replaced could only write
+  true or false, so its first tap retired "follow the device" for good. `MainActivity` resolves it
+  with `darkThemeOn ?: isSystemInDarkTheme()` to pick the scheme. Contrast stays system-driven.
 - **The mascot pick rides the theme, and `Profile` stores its *name*.** `MascotAvatar` has ~16 call
   sites across five feature modules, all writing `MascotAvatar(state = …)`; threading a character
   through them would be a sixteen-file diff for a value that is constant app-wide. So `AppTheme`
@@ -1633,6 +1634,14 @@ rather than needing a counter patched.
   off disk would be earning nothing. The clamp is what makes it safe: at the end of the list the
   count stops moving, so a page whose last row is on screen can keep asking. It never falls below
   one page either, or three weigh-ins in a month would strand the year's list at three rows.
+- **The Weight page carries its own Log weight button, over Records and in its empty state.** When
+  the FAB became one AI field, "weight is logged on its Progress page" stayed the rule (see
+  **Launcher shortcuts & the quick-action sheet**), but the page had no door onto the sheet — only a
+  record row, which corrects. A new weigh-in was reachable through the launcher shortcut or a
+  sentence and nothing else. The button opens the sheet keyed on today, a record row's own shape, so
+  a day that already has a reading opens it for correction rather than a second row. Blood
+  pressure's precedent: the sheet is already on the page, so this adds no entry point to the app,
+  and the empty state stops pointing at a button that left.
 - **A record row opens the log sheet on its date; the sheet is the one place a weigh-in is changed
   or removed.** `LogWeightSheet` takes an optional `WeightEntry` and seeds its form from it — the
   repository upserts by date, so saving *is* the edit, with no second write path to keep in step.

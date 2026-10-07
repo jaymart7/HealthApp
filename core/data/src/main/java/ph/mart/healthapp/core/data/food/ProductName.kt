@@ -13,7 +13,7 @@ package ph.mart.healthapp.core.data.food
  */
 internal fun brandedName(brand: String?, description: String?): String? {
     val name = description?.normalizeCase()?.takeIf { it.isNotEmpty() } ?: return null
-    val brandName = brand?.normalizeCase().orEmpty()
+    val brandName = brand?.normalizeCase(keepAcronyms = true).orEmpty()
     return when {
         brandName.isEmpty() -> name
         name.startsWith(brandName, ignoreCase = true) -> name
@@ -27,11 +27,20 @@ internal fun brandedName(brand: String?, description: String?): String? {
  * FDC shouts its branded descriptions ("SPICY SWEET CHILI FLAVORED TORTILLA CHIPS") while its
  * Foundation rows are ordinary prose ("Broccoli, raw"), so only the all-caps ones are recased —
  * title-casing everything would turn "Broccoli, raw" into "Broccoli, Raw".
+ *
+ * [keepAcronyms] is for brands, where a short all-caps word is an initialism rather than shouting:
+ * "USDA" and "KFC" stay as they are instead of reading "Usda" and "Kfc".
  */
-private fun String.normalizeCase(): String {
+private fun String.normalizeCase(keepAcronyms: Boolean = false): String {
     val trimmed = trim()
     if (trimmed != trimmed.uppercase()) return trimmed
     return trimmed.split(' ').joinToString(" ") { word ->
-        word.lowercase().replaceFirstChar(Char::uppercaseChar)
+        if (keepAcronyms && word.length <= MAX_ACRONYM_LENGTH) word
+        else word.lowercase().replaceFirstChar(Char::uppercaseChar)
     }
 }
+
+/** Four letters covers USDA and KFC; a longer all-caps brand ("DORITOS") is shouting. ponytail: a
+ * length guess, so a shouted four-letter brand ("OREO") keeps its capitals — a list of known
+ * initialisms if one reads wrong. */
+private const val MAX_ACRONYM_LENGTH = 4

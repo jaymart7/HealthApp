@@ -151,7 +151,7 @@
     <string name="ds_week_budget_banked">kcal na naipon</string>
     <string name="ds_week_budget_over">kcal na lampas</string>
     <string name="ds_week_budget_days">%1$d sa %2$d araw ang na-log</string>
-    <string name="ds_week_budget_empty">Wala pang na-log ngayong linggo.</string>
+    <string name="ds_week_budget_empty">Wala pang tapos na araw ngayong linggo.</string>
     <string name="ds_week_budget_even">%1$s · %2$d kada araw para pantay sa dulo</string>
     <string name="ds_week_budget_floor">Iyan ang %1$d kcal na floor, hindi ang kuwenta — mas malaki na ang kulang ng linggo kaysa kayang bawiin ng isang araw.</string>
     <plurals name="ds_week_budget_left">

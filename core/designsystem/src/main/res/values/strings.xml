@@ -173,7 +173,7 @@
     <string name="ds_week_budget_banked">kcal banked</string>
     <string name="ds_week_budget_over">kcal over</string>
     <string name="ds_week_budget_days">%1$d of %2$d days logged</string>
-    <string name="ds_week_budget_empty">Nothing logged yet this week.</string>
+    <string name="ds_week_budget_empty">No finished days yet this week.</string>
     <string name="ds_week_budget_even">%1$s · %2$d a day to finish even</string>
     <string name="ds_week_budget_floor">That is the %1$d kcal floor, not the arithmetic — the week is further behind than one day can repay.</string>
     <plurals name="ds_week_budget_left">

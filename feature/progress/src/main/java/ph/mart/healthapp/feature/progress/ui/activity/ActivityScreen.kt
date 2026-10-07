@@ -16,6 +16,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -161,7 +162,7 @@ private fun ColumnScope.ActivityBody(
 
     HeroValue(value = stepStats.averageSteps?.let(::formatSteps) ?: stringResource(R.string.progress_none), caption = stringResource(R.string.progress_activity_hero))
     FactChipRow(
-        chips = listOf(FactChip(stringResource(R.string.progress_activity_goal_days, stepStats.daysHitGoal, stepStats.days, formatSteps(stepGoal)))),
+        chips = listOf(FactChip(pluralStringResource(R.plurals.progress_activity_goal_days, stepStats.days, stepStats.daysHitGoal, stepStats.days, formatSteps(stepGoal)))),
     )
     ChartCard(
         title = stringResource(R.string.progress_activity_steps),
@@ -190,6 +191,9 @@ private fun ColumnScope.ActivityBody(
             bars = burn.map { DayBar(it.dateEpochDay, it.burnedKcal) },
             fromEpochDay = from,
             toEpochDay = today,
+            // Without a floor a 20 kcal walk filled the canvas. ponytail: a fixed 500 kcal, until
+            // the chart labels its axis and the floor can go.
+            minAxisValue = 500,
         )
     }
     StatRowsCard(

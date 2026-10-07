@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import ph.mart.healthapp.core.designsystem.R
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
@@ -53,7 +54,8 @@ fun MacroInputGroup(
     val totalKcal = (proteinKcal + carbsKcal + fatKcal).coerceAtLeast(1)
     val percentFormat = stringResource(R.string.ds_macro_percent)
     fun label(base: String, kcal: Int) =
-        if (showPercentages) percentFormat.format(base, kcal * 100 / totalKcal) else base
+        // Rounded, as the target header rounds: truncating read a 30/40/30 split as 29/40/29.
+        if (showPercentages) percentFormat.format(base, (kcal * 100.0 / totalKcal).roundToInt()) else base
 
     val protein = stringResource(R.string.ds_macro_protein)
     val carbs = stringResource(R.string.ds_macro_carbs)

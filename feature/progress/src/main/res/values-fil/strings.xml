@@ -139,6 +139,7 @@
     <string name="progress_pattern_fasting_calories_title">Pag-aayuno → kinabukasan</string>
     <string name="progress_pattern_fasting_calories">Sa %1$d araw pagkatapos mong maabot ang layunin sa ayuno, %2$s ang kinain mo; sa iba pang %3$d, %4$s.</string>
     <string name="progress_weight_today">%1$s ngayon</string>
+    <string name="progress_weight_on">%1$s · %2$s</string>
     <string name="progress_weight_in_span">%1$s %2$s sa loob ng %3$s · %4$s</string>
     <string name="progress_weight_to_goal">%1$s %2$s bago ang layunin</string>
     <string name="progress_weight_bmi">BMI %1$s · %2$s</string>
@@ -215,7 +216,10 @@
     <string name="progress_heart_days">Mga araw na naitala</string>
     <string name="progress_heart_bpm">%1$d bpm</string>
     <string name="progress_activity_hero">hakbang kada araw</string>
-    <string name="progress_activity_goal_days">%1$d sa %2$d araw ang umabot sa %3$s</string>
+    <plurals name="progress_activity_goal_days">
+        <item quantity="one">%1$d sa %2$d araw ang umabot sa %3$s</item>
+        <item quantity="other">%1$d sa %2$d araw ang umabot sa %3$s</item>
+    </plurals>
     <string name="progress_activity_steps">Hakbang</string>
     <string name="progress_activity_goal">Layunin %1$s</string>
     <string name="progress_activity_burned_title">Calories na nasunog</string>
@@ -409,7 +413,7 @@
     <string name="progress_weight_delete_title">I-delete ang pagtimbang na ito?</string>
     <string name="progress_weight_delete_body">Mawawala ito sa chart, sa trend at sa mga average.</string>
     <string name="progress_empty_weight_heading">Wala pang na-log na timbang</string>
-    <string name="progress_empty_weight_body">I-log ang timbang mo mula sa button sa anumang tab at lalabas dito ang trend mo.</string>
+    <string name="progress_empty_weight_body">I-log ang timbang mo at lalabas dito ang trend mo.</string>
     <string name="progress_empty_photos_heading">Wala pang progress photo</string>
     <string name="progress_empty_photos_body">Lalabas dito ang mga kuhang idadagdag mo, naka-grupo kada buwan, handang ikumpara.</string>
     <string name="progress_empty_measurements_heading">Wala pang sukat</string>
@@ -530,7 +534,10 @@
     <string name="progress_summary_kcal_over">%1$d kcal lampas sa target</string>
     <string name="progress_summary_on_target">Nasa target</string>
     <string name="progress_summary_unit_glasses_avg">baso avg</string>
-    <string name="progress_summary_water_goal_days">%1$d sa %2$d araw ang umabot sa layunin</string>
+    <plurals name="progress_summary_water_goal_days">
+        <item quantity="one">%1$d sa %2$d araw ang umabot sa layunin</item>
+        <item quantity="other">%1$d sa %2$d araw ang umabot sa layunin</item>
+    </plurals>
     <string name="progress_summary_unit_avg">avg</string>
     <string name="progress_summary_fast_goals">%1$d sa %2$d layunin ang naabot</string>
     <plurals name="progress_summary_days_logged">

@@ -150,6 +150,7 @@
 
     <!-- Weight page -->
     <string name="progress_weight_today">%1$s today</string>
+    <string name="progress_weight_on">%1$s · %2$s</string>
     <string name="progress_weight_in_span">%1$s %2$s in %3$s · %4$s</string>
     <string name="progress_weight_to_goal">%1$s %2$s to goal</string>
     <string name="progress_weight_bmi">BMI %1$s · %2$s</string>
@@ -234,7 +235,10 @@
     <string name="progress_heart_days">Days recorded</string>
     <string name="progress_heart_bpm">%1$d bpm</string>
     <string name="progress_activity_hero">steps a day</string>
-    <string name="progress_activity_goal_days">%1$d of %2$d days hit %3$s</string>
+    <plurals name="progress_activity_goal_days">
+        <item quantity="one">%1$d of %2$d day hit %3$s</item>
+        <item quantity="other">%1$d of %2$d days hit %3$s</item>
+    </plurals>
     <string name="progress_activity_steps">Steps</string>
     <string name="progress_activity_goal">Goal %1$s</string>
     <string name="progress_activity_burned_title">Calories burned</string>
@@ -445,7 +449,7 @@
     <string name="progress_weight_delete_body">It disappears from the chart, the trend and the averages.</string>
     <!-- Empty subject pages -->
     <string name="progress_empty_weight_heading">No weight logged yet</string>
-    <string name="progress_empty_weight_body">Log your weight from the button on any tab and your trend shows up here.</string>
+    <string name="progress_empty_weight_body">Log a weigh-in and your trend shows up here.</string>
     <string name="progress_empty_photos_heading">No progress photos yet</string>
     <string name="progress_empty_photos_body">Shots you add show up here, grouped by month, ready to compare.</string>
     <string name="progress_empty_measurements_heading">No measurements yet</string>
@@ -577,7 +581,10 @@
     <string name="progress_summary_kcal_over">%1$d kcal over target</string>
     <string name="progress_summary_on_target">On target</string>
     <string name="progress_summary_unit_glasses_avg">glasses avg</string>
-    <string name="progress_summary_water_goal_days">%1$d of %2$d days hit goal</string>
+    <plurals name="progress_summary_water_goal_days">
+        <item quantity="one">%1$d of %2$d day hit goal</item>
+        <item quantity="other">%1$d of %2$d days hit goal</item>
+    </plurals>
     <string name="progress_summary_unit_avg">avg</string>
     <string name="progress_summary_fast_goals">%1$d of %2$d goals hit</string>
     <plurals name="progress_summary_days_logged">

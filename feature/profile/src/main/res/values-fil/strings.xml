@@ -139,8 +139,11 @@
     <string name="profile_backup_title">I-restore ang backup na ito?</string>
     <string name="profile_backup_body">Papalitan ang lahat ng nasa device na ito ng mga na-log noong isinulat ang backup. Hindi gagalawin ang mga larawan.</string>
     <string name="profile_backup_confirm">I-restore</string>
-    <string name="profile_dark_mode">Dark mode</string>
-    <string name="profile_dark_mode_sub">Gamitin ang madilim na kulay sa halip na sundin ang device mo.</string>
+    <string name="profile_dark_mode">Tema</string>
+    <string name="profile_dark_mode_sub">Sinusundan ng Device ang sariling setting ng phone mo.</string>
+    <string name="profile_theme_device">Device</string>
+    <string name="profile_theme_light">Maliwanag</string>
+    <string name="profile_theme_dark">Madilim</string>
     <string name="profile_buddy">Kasama</string>
     <string name="profile_buddy_sub">Ang bumabati sa iyo sa Home at lumalabas sa buong app.</string>
     <string name="profile_colour">Kulay</string>
