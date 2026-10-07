@@ -23,6 +23,7 @@ import java.time.Period
 import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlin.reflect.KClass
+import kotlinx.coroutines.CancellationException
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.epochDayOf
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
@@ -285,13 +286,23 @@ internal class HealthConnectSourceImpl(private val context: Context) : HealthCon
 /**
  * Runs [read] only for a metric the caller asked for, and swallows its failure into an empty list —
  * the per-type independence [HealthConnectSource.read] promises, in one place rather than six.
+ *
+ * A cancellation is rethrown, the rule every AI call site here follows: `runCatching` used to
+ * swallow it, so a sync the user walked away from — or that hit `SYNC_DEADLINE_MILLIS` — kept
+ * reading every remaining type, and the one it was cut off in reported as "no data".
  */
 private suspend fun <T> Map<HealthMetric, Long>.on(
     metric: HealthMetric,
     read: suspend (Long) -> List<T>,
 ): List<T> {
     val since = this[metric] ?: return emptyList()
-    return runCatching { read(since) }.getOrDefault(emptyList())
+    return try {
+        read(since)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        emptyList()
+    }
 }
 
 /**
