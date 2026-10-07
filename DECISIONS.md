@@ -2012,7 +2012,9 @@ rather than needing a counter patched.
   target (or building toward a lighter one) left Progress saying "6 kg to go" in the direction the
   budget was steering away from, with nothing saying the two disagreed. `Goal.disagreesWith()`
   draws one `error` line under the target on About you — the calorie floor's warn-don't-block
-  rule. Neither value is changed for the user: either one may be the one they meant.
+  rule. It measures from the latest weigh-in, the figure the header's "to go" uses, and names it
+  in the line: the "Current weight" row right above is the onboarding figure logging never moves,
+  and a bare "above your current weight" under 82 kg read as wrong for a 74 kg target. Neither value is changed for the user: either one may be the one they meant.
 - **Targets are editable from Profile, and a manual calorie target reprices the split.** The four
   `Profile` overrides used to be reachable only from onboarding's Confirm step, which left a user
   who wanted a different target with no path but a reinstall — Goals is now an editable card, like
@@ -4974,8 +4976,8 @@ rather than needing a counter patched.
 - **`DayBarChart` names its top gridline, and only that one.** With no value anywhere on the axis,
   a bar had no size you could read: the Activity burn chart drew a 20 kcal day at full height.
   `axisLabel` formats the axis maximum in the caller's own words ("12,900", "8h 0m", "640 kcal")
-  in a band above the grid, so it never sits on a bar, and the burn chart's interim 500 kcal floor
-  went with it. One label rather than four: the gridlines are thirds of it, and four labels on a
+  in a band above the grid, so it never sits on a bar. The burn chart keeps its 500 kcal floor
+  anyway: labelled "20 kcal", a full-height bar still read as a big day at a glance. One label rather than four: the gridlines are thirds of it, and four labels on a
   200dp card are a column of numbers competing with the bars. Cycle passes none — flow levels are
   named, not counted. The weight chart's labels now share one format per axis; formatOneDecimal
   per label had drawn "74 / 72.0 / 70.0 / 68".

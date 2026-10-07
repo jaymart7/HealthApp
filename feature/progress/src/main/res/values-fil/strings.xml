@@ -545,7 +545,10 @@
         <item quantity="other">%d araw na na-log</item>
     </plurals>
     <string name="progress_summary_unit_steps">hakbang</string>
-    <string name="progress_summary_steps_goal">Average kada araw · %1$d sa %2$d ang umabot sa layunin</string>
+    <plurals name="progress_summary_steps_goal">
+        <item quantity="one">Average kada araw · %1$d sa %2$d araw ang umabot sa layunin</item>
+        <item quantity="other">Average kada araw · %1$d sa %2$d araw ang umabot sa layunin</item>
+    </plurals>
     <plurals name="progress_summary_workouts">
         <item quantity="one">workout</item>
         <item quantity="other">workout</item>

@@ -68,7 +68,10 @@
     <string name="food_today">Today</string>
     <string name="food_yesterday">Yesterday</string>
     <string name="food_water">Water</string>
-    <string name="food_water_count">%1$d / %2$d · %3$s</string>
+    <plurals name="food_water_count">
+        <item quantity="one">%1$d / %2$d glass · %3$s</item>
+        <item quantity="other">%1$d / %2$d glasses · %3$s</item>
+    </plurals>
     <string name="food_section_filtered">No matches here.</string>
     <string name="food_empty_today">Nothing logged yet today.</string>
     <string name="food_empty_past">Nothing was logged on this day.</string>

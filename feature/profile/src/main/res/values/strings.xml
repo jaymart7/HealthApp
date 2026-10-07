@@ -76,8 +76,8 @@
     <string name="profile_about_weight_sub">What your target is worked out from. Logging a weigh-in doesn\'t change it.</string>
     <string name="profile_about_target">Target weight</string>
     <string name="profile_about_target_sub">Drives the goal line on Progress</string>
-    <string name="profile_about_target_mismatch_lose">Above your current weight, but your goal is to lose weight.</string>
-    <string name="profile_about_target_mismatch_build">Below your current weight, but your goal is to build muscle.</string>
+    <string name="profile_about_target_mismatch_lose">Above your latest weigh-in of %1$s %2$s, but your goal is to lose weight.</string>
+    <string name="profile_about_target_mismatch_build">Below your latest weigh-in of %1$s %2$s, but your goal is to build muscle.</string>
     <string name="profile_about_goal_title">Goal</string>
     <string name="profile_about_activity_title">Activity level</string>
     <string name="profile_about_result_label">Worked out from these numbers</string>

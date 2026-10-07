@@ -592,7 +592,10 @@
         <item quantity="other">%d days logged</item>
     </plurals>
     <string name="progress_summary_unit_steps">steps</string>
-    <string name="progress_summary_steps_goal">Daily average · %1$d of %2$d hit goal</string>
+    <plurals name="progress_summary_steps_goal">
+        <item quantity="one">Daily average · %1$d of %2$d day hit goal</item>
+        <item quantity="other">Daily average · %1$d of %2$d days hit goal</item>
+    </plurals>
     <plurals name="progress_summary_workouts">
         <item quantity="one">workout</item>
         <item quantity="other">workouts</item>

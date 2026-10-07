@@ -37,7 +37,9 @@ import ph.mart.healthapp.core.data.profile.displayUnitToCm
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.lengthUnitLabel
+import ph.mart.healthapp.core.data.profile.trendVsSevenDaysAgo
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.progress.WeightEntry
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.SelectableCard
@@ -72,6 +74,7 @@ fun AboutYouScreen(viewModel: ProfileViewModel = koinViewModel()) {
     val uiState by viewModel.collectAsState()
     AboutYouContent(
         profile = uiState.profile,
+        weightEntries = uiState.weightEntries,
         onSetSex = viewModel::setSex,
         onSetAge = viewModel::setAge,
         onSetHeightCm = viewModel::setHeightCm,
@@ -86,6 +89,7 @@ fun AboutYouScreen(viewModel: ProfileViewModel = koinViewModel()) {
 @Composable
 private fun AboutYouContent(
     profile: Profile?,
+    weightEntries: List<WeightEntry>,
     onSetSex: (Sex) -> Unit,
     onSetAge: (Int) -> Unit,
     onSetHeightCm: (Double) -> Unit,
@@ -175,7 +179,10 @@ private fun AboutYouContent(
                 // Warn, don't block — the calorie floor's rule. A heavier target under "Losing
                 // weight" left Progress saying "6 kg to go" in a direction the budget was steering
                 // away from, and nothing said the two disagreed.
-                if (profile.goal.disagreesWith(profile.weightKg, profile.targetWeightKg)) {
+                // Against what you weigh *now* — the latest weigh-in, the figure the Profile header's
+                // "to go" is measured from — not the row above, which logging never moves.
+                val nowKg = weightEntries.trendVsSevenDaysAgo(fallbackKg = profile.weightKg).currentKg
+                if (profile.goal.disagreesWith(nowKg, profile.targetWeightKg)) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(bottom = 12.dp),
@@ -193,6 +200,10 @@ private fun AboutYouContent(
                                 } else {
                                     R.string.profile_about_target_mismatch_build
                                 },
+                                // Named, because the row above says something else: "Current
+                                // weight" is the onboarding figure, and this is not measured from it.
+                                formatOneDecimal(nowKg.kgToDisplayUnit(unit)),
+                                unit.weightUnitLabel(),
                             ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
@@ -278,6 +289,7 @@ private const val UNSET = "—"
 private fun AboutYouScreenPreview() {
     AppTheme {
         AboutYouContent(
+            weightEntries = emptyList(),
             profile = Profile(
                 sex = Sex.Male,
                 age = 26,
@@ -306,6 +318,7 @@ private fun AboutYouScreenPreview() {
 private fun AboutYouScreenImperialPreview() {
     AppTheme {
         AboutYouContent(
+            weightEntries = emptyList(),
             profile = Profile(
                 sex = Sex.Female,
                 age = 31,

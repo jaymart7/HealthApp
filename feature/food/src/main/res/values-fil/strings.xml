@@ -60,7 +60,10 @@
     <string name="food_today">Ngayon</string>
     <string name="food_yesterday">Kahapon</string>
     <string name="food_water">Tubig</string>
-    <string name="food_water_count">%1$d / %2$d · %3$s</string>
+    <plurals name="food_water_count">
+        <item quantity="one">%1$d / %2$d baso · %3$s</item>
+        <item quantity="other">%1$d / %2$d baso · %3$s</item>
+    </plurals>
     <string name="food_section_filtered">Walang tugma rito.</string>
     <string name="food_empty_today">Wala pang na-log ngayong araw.</string>
     <string name="food_empty_past">Walang na-log sa araw na ito.</string>

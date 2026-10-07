@@ -282,7 +282,7 @@ fun summarize(
                 value = formatSteps(average),
                 unit = phrase(R.string.progress_summary_unit_steps),
                 preview = SubjectPreview.Bars(days.takeLast(PREVIEW_POINTS).map { it.steps }),
-                footnote = phrase(R.string.progress_summary_steps_goal, averages.daysHitGoal, averages.days),
+                footnote = plural(R.plurals.progress_summary_steps_goal, averages.days, averages.daysHitGoal, averages.days),
             )
         }
 

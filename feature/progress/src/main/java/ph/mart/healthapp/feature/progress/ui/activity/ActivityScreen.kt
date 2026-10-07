@@ -198,6 +198,9 @@ private fun ColumnScope.ActivityBody(
             bars = burn.map { DayBar(it.dateEpochDay, it.burnedKcal) },
             fromEpochDay = from,
             toEpochDay = today,
+            // A floor as well as the label: named "20 kcal", a full-height bar still read as a big
+            // day at a glance. ponytail: a fixed 500 kcal, not derived from the profile.
+            minAxisValue = 500,
             axisLabel = { res.getString(R.string.progress_kcal, it) },
         )
     }
