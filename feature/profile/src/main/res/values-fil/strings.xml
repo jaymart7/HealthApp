@@ -65,6 +65,8 @@
     <string name="profile_about_weight_sub">Mula rito kinukuwenta ang target mo. Hindi ito nababago ng pag-log ng pagtimbang.</string>
     <string name="profile_about_target">Target weight</string>
     <string name="profile_about_target_sub">Ito ang goal line sa Progreso</string>
+    <string name="profile_about_target_mismatch_lose">Mas mabigat sa kasalukuyang timbang mo, pero ang layunin mo ay magbawas ng timbang.</string>
+    <string name="profile_about_target_mismatch_build">Mas magaan sa kasalukuyang timbang mo, pero ang layunin mo ay magpalaki ng muscle.</string>
     <string name="profile_about_goal_title">Layunin</string>
     <string name="profile_about_activity_title">Antas ng aktibidad</string>
     <string name="profile_about_result_label">Kinuwenta mula sa mga numerong ito</string>

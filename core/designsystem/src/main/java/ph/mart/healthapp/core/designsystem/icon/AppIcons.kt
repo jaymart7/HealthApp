@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.outlined.AddAPhoto
 import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.Chair
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Delete
@@ -127,7 +128,12 @@ object AppIcons {
     /** The packaged-food lookup could not be reached. Never the offline state: a local list
      * answering with no network is the feature, and only a *failed* ask gets a glyph. */
     val CloudOff: ImageVector = Icons.Outlined.CloudOff
+    /** Something the AI made or will make — an insight, an estimate, an idea, a lookup. Not the way
+     * to the coach: that is [AskCoach], so the sparkle keeps one meaning. */
     val AiSparkle: ImageVector = Icons.Filled.AutoAwesome
+    /** Every door that opens the coach with a question — Home's Ask, the diary's header, a subject
+     * page's top bar. */
+    val AskCoach: ImageVector = Icons.Outlined.ChatBubbleOutline
     val ChevronDown: ImageVector = Icons.Filled.KeyboardArrowDown
     val ChevronUp: ImageVector = Icons.Filled.KeyboardArrowUp
     val ChevronLeft: ImageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft

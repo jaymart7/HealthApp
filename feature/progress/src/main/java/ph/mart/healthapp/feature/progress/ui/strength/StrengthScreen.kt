@@ -170,6 +170,7 @@ private fun ColumnScope.StrengthBody(
             bars = series.map { DayBar(it.dateEpochDay, it.volumeKg.toInt()) },
             fromEpochDay = from,
             toEpochDay = today,
+            axisLabel = { volumeLabel(it.toDouble(), unit) },
         )
     }
     StatRowsCard(

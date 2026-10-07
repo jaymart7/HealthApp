@@ -17,11 +17,13 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.progress.WeightPoint
+import ph.mart.healthapp.core.designsystem.component.formatDecimals
 import ph.mart.healthapp.core.designsystem.component.formatMonth
-import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
@@ -90,6 +92,10 @@ fun WeightProgressChart(
         fun xFor(index: Int): Float =
             if (points.size == 1) plotLeft + plotWidth / 2f else plotLeft + index / (points.size - 1).toFloat() * plotWidth
 
+        // One format for the whole axis, not one per label: formatOneDecimal left whole values
+        // whole and gave the rest a decimal, which drew "74 / 72.0 / 70.0 / 68" down one axis.
+        val gridValues = List(GRIDLINES) { row -> valueAt(inset + usable / (GRIDLINES - 1) * row) }
+        val decimals = if (gridValues.all { abs(it - it.roundToInt()) < 0.05 }) 0 else 1
         repeat(GRIDLINES) { row ->
             val y = inset + usable / (GRIDLINES - 1) * row
             drawLine(
@@ -98,7 +104,7 @@ fun WeightProgressChart(
                 end = Offset(size.width, y),
                 strokeWidth = 1.dp.toPx(),
             )
-            val label = measurer.measure(formatOneDecimal(valueAt(y)), labelStyle)
+            val label = measurer.measure(formatDecimals(gridValues[row], decimals), labelStyle)
             drawText(
                 textLayoutResult = label,
                 topLeft = Offset(gutter - label.size.width, y - label.size.height / 2f),

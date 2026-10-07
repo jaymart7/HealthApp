@@ -165,6 +165,7 @@ private fun ColumnScope.FastingBody(
             toEpochDay = today,
             minAxisValue = FULL_DAY_MINUTES,
             goalValue = goalHours * 60,
+            axisLabel = ::formatDuration,
         )
     }
     StatRowsCard(

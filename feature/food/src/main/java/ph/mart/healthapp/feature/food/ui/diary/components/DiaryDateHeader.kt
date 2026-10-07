@@ -198,7 +198,7 @@ private fun RowScope.DateControls(
     val coachSource = stringResource(R.string.food_ask_coach_source, dayLabel)
     IconButton(onClick = { onAskCoach(coachQuestion, coachSource) }, modifier = Modifier.size(48.dp)) {
         Icon(
-            imageVector = AppIcons.AiSparkle,
+            imageVector = AppIcons.AskCoach,
             contentDescription = stringResource(R.string.food_ask_coach),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )

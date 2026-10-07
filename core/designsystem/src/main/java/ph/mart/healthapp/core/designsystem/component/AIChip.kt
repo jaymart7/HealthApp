@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
@@ -26,7 +27,12 @@ enum class AIChipVariant { Default, OnAccent }
  * `tertiaryContainer` is used as a background in the app.
  */
 @Composable
-fun AIChip(label: String, variant: AIChipVariant, modifier: Modifier = Modifier) {
+fun AIChip(
+    label: String,
+    variant: AIChipVariant,
+    modifier: Modifier = Modifier,
+    icon: ImageVector = AppIcons.AiSparkle,
+) {
     val (containerColor, contentColor) = when (variant) {
         AIChipVariant.Default -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
         AIChipVariant.OnAccent -> MaterialTheme.colorScheme.surfaceContainerLowest to MaterialTheme.colorScheme.tertiary
@@ -41,7 +47,7 @@ fun AIChip(label: String, variant: AIChipVariant, modifier: Modifier = Modifier)
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(imageVector = AppIcons.AiSparkle, contentDescription = null, modifier = Modifier.size(14.dp))
+            Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(14.dp))
             Spacer(modifier = Modifier.size(4.dp))
             Text(text = label, style = MaterialTheme.typography.labelMedium)
         }

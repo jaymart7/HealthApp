@@ -1,11 +1,22 @@
 package ph.mart.healthapp.core.data.profile
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ph.mart.healthapp.core.data.progress.WeightEntry
 
 class WeightTrendTest {
+
+    @Test
+    fun `a target on the wrong side of the goal disagrees, and maintain never does`() {
+        assertTrue(Goal.Lose.disagreesWith(currentKg = 68.0, targetKg = 74.0))
+        assertFalse(Goal.Lose.disagreesWith(currentKg = 80.0, targetKg = 74.0))
+        assertTrue(Goal.Build.disagreesWith(currentKg = 80.0, targetKg = 74.0))
+        assertFalse(Goal.Build.disagreesWith(currentKg = 68.0, targetKg = 74.0))
+        assertFalse(Goal.Maintain.disagreesWith(currentKg = 68.0, targetKg = 74.0))
+        assertFalse(Goal.Lose.disagreesWith(currentKg = 68.0, targetKg = null))
+    }
 
     @Test
     fun `prior weight is the newest entry at least 7 days back, not the previous entry`() {

@@ -162,6 +162,7 @@ private fun ColumnScope.SleepBody(nights: List<SleepNight>, state: SleepState) {
             fromEpochDay = from,
             toEpochDay = today,
             minAxisValue = FULL_NIGHT_MINUTES,
+            axisLabel = ::formatDuration,
         )
     }
     StatRowsCard(

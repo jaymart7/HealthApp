@@ -1320,8 +1320,10 @@ rather than needing a counter patched.
   up sad *and* neutral *and* happy to reach "good" says the wrong thing; the redesign reversed that
   deliberately. Every other tappable row on Home — energy, water, cycle flow, supplements — fills up
   to its value, and one row that looked identical and answered a tap differently was the odd one
-  out. The glyphs already carry the difference between a 2 and a 5, so the fill does not have to.
-  Tapping the level you are on still clears it, on every row.
+  out. The glyphs carry the difference between a 2 and a 5, so the fill does not have to — which
+  was only true of the faces until energy's five identical bolts became batteries that fill with
+  the level. The middle faces are still close at 24dp, so each row also names the level picked
+  under its label. Tapping the level you are on still clears it, on every row.
 - **Sleep has no stage bar, and never will without a schema change.** `SleepNight` carries
   `minutesAsleep` and nothing else; neither health leg imports Deep/REM/Light/Awake. The redesign
   asked for a four-segment bar and it was dropped rather than faked — which also closed the colour
@@ -2006,6 +2008,11 @@ rather than needing a counter patched.
 
 ### Targets & editing an entry
 
+- **A target weight that contradicts the goal warns and does not block.** Losing toward a heavier
+  target (or building toward a lighter one) left Progress saying "6 kg to go" in the direction the
+  budget was steering away from, with nothing saying the two disagreed. `Goal.disagreesWith()`
+  draws one `error` line under the target on About you — the calorie floor's warn-don't-block
+  rule. Neither value is changed for the user: either one may be the one they meant.
 - **Targets are editable from Profile, and a manual calorie target reprices the split.** The four
   `Profile` overrides used to be reachable only from onboarding's Confirm step, which left a user
   who wanted a different target with no path but a reinstall — Goals is now an editable card, like
@@ -4948,8 +4955,8 @@ rather than needing a counter patched.
   switch) is *not* snapshotted per day, so raising it re-scores every past day's "hit". Forced,
   not sloppy: `step_day` rows belong to the watch and `StepDayDao.upsert` REPLACEs them wholesale
   on every re-sync, so a target parked beside them would be overwritten by the next import. The
-  Progress stat is therefore labelled "Hit today's goal", and the goal line moves under bars
-  already drawn — the one place in the app where that is allowed.
+  Progress chip therefore names the goal's figure ("3 of 7 days hit 10,000"), and the goal line
+  moves under bars already drawn — the one place in the app where that is allowed.
 - **The Activity tab draws two charts because steps and kcal share no axis.** Steps come from
   `step_day` (import-only, sparse, windowed anchored to today like sleep and heart) and the burn
   series from `burnSeries()` in `:core:data/health/Activity.kt`, which folds `step_day` and
@@ -4964,6 +4971,14 @@ rather than needing a counter patched.
   which is deliberately not zero-based. Mood, Nutrition and Supplements keep their own canvases —
   two series with a legend, a target line over a dense series, and percentages. A fifth near-copy
   of the same `Canvas` is the thing to avoid, not a fourth parameter on `DayBarChart`.
+- **`DayBarChart` names its top gridline, and only that one.** With no value anywhere on the axis,
+  a bar had no size you could read: the Activity burn chart drew a 20 kcal day at full height.
+  `axisLabel` formats the axis maximum in the caller's own words ("12,900", "8h 0m", "640 kcal")
+  in a band above the grid, so it never sits on a bar, and the burn chart's interim 500 kcal floor
+  went with it. One label rather than four: the gridlines are thirds of it, and four labels on a
+  200dp card are a column of numbers competing with the bars. Cycle passes none — flow levels are
+  named, not counted. The weight chart's labels now share one format per axis; formatOneDecimal
+  per label had drawn "74 / 72.0 / 70.0 / 68".
 
 ### Adaptive layout
 

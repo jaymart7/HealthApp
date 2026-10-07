@@ -67,7 +67,7 @@ internal fun AskCoachAction(subject: Subject, onAskCoach: (question: String, sou
     val source = stringResource(subject.label)
     IconButton(onClick = { onAskCoach(text, source) }) {
         Icon(
-            imageVector = AppIcons.AiSparkle,
+            imageVector = AppIcons.AskCoach,
             contentDescription = stringResource(R.string.progress_ask_coach),
             tint = MaterialTheme.colorScheme.onSurface,
         )

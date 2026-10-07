@@ -16,6 +16,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -146,6 +147,7 @@ private fun ColumnScope.WaterBody(
     val today = todayEpochDay()
     val from = today - range.days
     val inWindow = days.inRange(range, today)
+    val res = LocalResources.current
     val averages = inWindow.waterAverages(goalGlasses)
 
     HeroValue(
@@ -174,6 +176,7 @@ private fun ColumnScope.WaterBody(
             // card on its own — the reading Fasting's `FULL_DAY_MINUTES` gives that chart.
             minAxisValue = goalGlasses,
             goalValue = goalGlasses,
+            axisLabel = { res.getString(R.string.progress_water_glasses, it) },
         )
     }
     StatRowsCard(

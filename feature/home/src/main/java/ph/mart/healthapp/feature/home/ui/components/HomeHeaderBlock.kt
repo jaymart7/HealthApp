@@ -129,7 +129,11 @@ private fun GreetingRow(greeting: String, greetingSub: String, onOpenCoach: () -
                 .clearAndSetSemantics { contentDescription = spoken },
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp)) {
-                AIChip(label = stringResource(R.string.home_ask_short), variant = AIChipVariant.Default)
+                AIChip(
+                    label = stringResource(R.string.home_ask_short),
+                    variant = AIChipVariant.Default,
+                    icon = AppIcons.AskCoach,
+                )
             }
         }
     }

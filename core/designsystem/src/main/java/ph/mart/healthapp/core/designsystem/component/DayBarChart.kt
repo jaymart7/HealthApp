@@ -12,9 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
+import ph.mart.healthapp.core.designsystem.theme.tabularNums
 
 /** One day's figure, in whatever unit the caller measures in. */
 data class DayBar(val dateEpochDay: Long, val value: Int)
@@ -35,6 +38,11 @@ data class DayBar(val dateEpochDay: Long, val value: Int)
  * of small figures reads as small rather than filling the canvas the way an auto-ranged axis would
  * let it. [goalValue] adds the dashed line a target-bearing series is judged against, drawn last so
  * it reads over the bars it judges.
+ *
+ * [axisLabel] names the top gridline's value, in the caller's own words ("12,900", "8h 0m"), in a band
+ * above it so it never sits on a bar. Without it a bar had no size you could read — a 20 kcal day
+ * and a 2,000 kcal day drew the same full height. Null draws no band: Cycle's flow levels are a
+ * scale with names, not a figure.
  */
 @Composable
 fun DayBarChart(
@@ -43,11 +51,14 @@ fun DayBarChart(
     toEpochDay: Long,
     minAxisValue: Int = 0,
     goalValue: Int? = null,
+    axisLabel: ((Int) -> String)? = null,
     modifier: Modifier = Modifier,
 ) {
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val barColor = MaterialTheme.colorScheme.primary
     val goalColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val labelStyle = MaterialTheme.typography.labelSmall.tabularNums.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val measurer = rememberTextMeasurer()
 
     Canvas(modifier = modifier.fillMaxWidth().height(200.dp)) {
         val slots = (toEpochDay - fromEpochDay + 1).toInt()
@@ -60,10 +71,14 @@ fun DayBarChart(
             minAxisValue,
             goalValue ?: 0,
         ).coerceAtLeast(1).toFloat()
-        fun yFor(value: Int): Float = size.height - (value / maxValue * size.height)
+        val label = axisLabel?.let { measurer.measure(it(maxValue.toInt()), labelStyle) }
+        val plotTop = label?.let { it.size.height + 4.dp.toPx() } ?: 0f
+        val plotHeight = size.height - plotTop
+        fun yFor(value: Int): Float = size.height - (value / maxValue * plotHeight)
 
+        label?.let { drawText(it, topLeft = Offset(0f, 0f)) }
         repeat(4) { row ->
-            val y = size.height / 3f * row
+            val y = plotTop + plotHeight / 3f * row
             drawLine(gridColor, start = Offset(0f, y), end = Offset(size.width, y), strokeWidth = 1.dp.toPx())
         }
 
@@ -105,7 +120,13 @@ private fun DayBarChartPreview() {
     AppTheme {
         Surface {
             Column(modifier = Modifier.padding(16.dp)) {
-                DayBarChart(bars = bars, fromEpochDay = today - 6, toEpochDay = today, minAxisValue = 480)
+                DayBarChart(
+                    bars = bars,
+                    fromEpochDay = today - 6,
+                    toEpochDay = today,
+                    minAxisValue = 480,
+                    axisLabel = { "${it / 60} h" },
+                )
             }
         }
     }
@@ -127,6 +148,7 @@ private fun DayBarChartGoalPreview() {
                     toEpochDay = today,
                     minAxisValue = 10_000,
                     goalValue = 10_000,
+                    axisLabel = { "%,d".format(it) },
                 )
             }
         }

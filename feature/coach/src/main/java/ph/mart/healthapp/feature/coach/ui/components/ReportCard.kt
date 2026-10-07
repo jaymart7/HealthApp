@@ -23,6 +23,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -300,6 +301,7 @@ private fun ReportSection.headline(report: Report, recap: Recap): String? = when
 private fun ReportSection.Detail(report: Report, recap: Recap) {
     val today = report.calories.lastOrNull()?.dateEpochDay
         ?: report.steps.lastOrNull()?.dateEpochDay
+    val res = LocalResources.current
     when (this) {
         ReportSection.Nutrition -> {
             if (today != null) {
@@ -310,6 +312,7 @@ private fun ReportSection.Detail(report: Report, recap: Recap) {
                     // The target as the dashed line, which is the only thing a calorie bar is
                     // judged against — and the same figure the Nutrition tab draws it at.
                     goalValue = recap.targets?.calories,
+                    axisLabel = { res.getString(R.string.coach_report_kcal, it) },
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }
@@ -329,6 +332,7 @@ private fun ReportSection.Detail(report: Report, recap: Recap) {
                     toEpochDay = today,
                     minAxisValue = report.stepGoal,
                     goalValue = report.stepGoal,
+                    axisLabel = ::formatSteps,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
             }

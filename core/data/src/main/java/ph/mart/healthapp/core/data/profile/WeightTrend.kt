@@ -17,6 +17,18 @@ fun goalRelativeTrend(goal: Goal?, deltaKg: Double): TrendDirection = when {
     else -> if (deltaKg > 0) TrendDirection.OnTrack else TrendDirection.OffTrack
 }
 
+/**
+ * True when [targetKg] sits on the wrong side of [currentKg] for the goal — losing toward a heavier
+ * target, building toward a lighter one. Maintain has no direction, so it never disagrees. Both
+ * are the user's to set, so this only ever warns; the projection simply finds no date.
+ */
+fun Goal.disagreesWith(currentKg: Double, targetKg: Double?): Boolean = when {
+    targetKg == null -> false
+    this == Goal.Lose -> targetKg > currentKg
+    this == Goal.Build -> targetKg < currentKg
+    else -> false
+}
+
 /** [hasPrior] false means there's no entry 7+ days back to compare against — the caller shows
  * "No weigh-in a week earlier" rather than a false 0.0 delta. */
 data class WeightTrendDisplay(val currentKg: Double, val deltaKg: Double, val hasPrior: Boolean)

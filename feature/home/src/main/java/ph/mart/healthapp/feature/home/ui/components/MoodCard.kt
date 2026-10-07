@@ -9,13 +9,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Battery1Bar
+import androidx.compose.material.icons.filled.Battery3Bar
+import androidx.compose.material.icons.filled.Battery4Bar
+import androidx.compose.material.icons.filled.Battery6Bar
+import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.SentimentDissatisfied
 import androidx.compose.material.icons.filled.SentimentNeutral
 import androidx.compose.material.icons.filled.SentimentSatisfied
 import androidx.compose.material.icons.filled.SentimentVeryDissatisfied
 import androidx.compose.material.icons.filled.SentimentVerySatisfied
-import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +54,16 @@ private val MoodFaces = listOf(
     Icons.Filled.SentimentVerySatisfied,
 )
 
+/** A battery that fills with the level, so each step carries its own height the way the faces do.
+ * Five identical bolts said nothing until one was lit. */
+private val EnergyGlyphs = listOf(
+    Icons.Filled.Battery1Bar,
+    Icons.Filled.Battery3Bar,
+    Icons.Filled.Battery4Bar,
+    Icons.Filled.Battery6Bar,
+    Icons.Filled.BatteryFull,
+)
+
 /**
  * The day's reflection: how you felt, and how much you had in the tank. Both rows are 1–5 and
  * 0 means untouched, so logging one without the other is a first-class state rather than a
@@ -61,8 +74,9 @@ private val MoodFaces = listOf(
  * supplements. Mood used to be a single choice on the argument that lighting up sad *and* neutral
  * *and* happy to reach "good" says the wrong thing; the redesign reversed that deliberately. Every
  * other tappable row on Home is a meter, and one row that looked identical and answered a tap
- * differently was the odd one out — the glyphs already carry the difference between a 2 and a 5,
- * so the fill does not have to.
+ * differently was the odd one out — the glyphs carry the difference between a 2 and a 5, so the
+ * fill does not have to. At 24dp the middle three faces are close, so the picked level is also
+ * named under the row's label.
  *
  * Feature-local rather than `:core:designsystem`: Home is the only screen that logs mood.
  */
@@ -90,6 +104,7 @@ fun MoodCard(
         ScaleRow(
             label = stringResource(R.string.home_mood_mood),
             level = mood,
+            levelName = levelLabels.getOrNull(mood - 1),
             icon = { index -> MoodFaces[index] },
             describe = { level -> moodDescriptions[level - 1] },
             onSelect = onSetMood,
@@ -97,7 +112,8 @@ fun MoodCard(
         ScaleRow(
             label = stringResource(R.string.home_mood_energy),
             level = energy,
-            icon = { index -> if (index < energy) Icons.Filled.Bolt else Icons.Outlined.Bolt },
+            levelName = levelLabels.getOrNull(energy - 1),
+            icon = { index -> EnergyGlyphs[index] },
             describe = { level -> energyDescriptions[level - 1] },
             onSelect = onSetEnergy,
             modifier = Modifier.padding(top = 4.dp),
@@ -120,6 +136,7 @@ fun MoodCard(
 private fun ScaleRow(
     label: String,
     level: Int,
+    levelName: String?,
     icon: (Int) -> ImageVector,
     describe: (Int) -> String,
     onSelect: (Int) -> Unit,
@@ -131,12 +148,20 @@ private fun ScaleRow(
     val count = MoodLevel.entries.size
 
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(NAME_WIDTH),
-        )
+        Column(modifier = Modifier.width(NAME_WIDTH)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (levelName != null) {
+                Text(
+                    text = levelName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
             MoodLevel.entries.forEachIndexed { index, entry ->
                 val fill = stepFillProgress(

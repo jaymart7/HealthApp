@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -30,6 +32,7 @@ import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
 import ph.mart.healthapp.core.data.profile.dailyTargets
+import ph.mart.healthapp.core.data.profile.disagreesWith
 import ph.mart.healthapp.core.data.profile.displayUnitToCm
 import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
@@ -39,6 +42,7 @@ import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
 import ph.mart.healthapp.core.designsystem.component.SelectableCard
 import ph.mart.healthapp.core.designsystem.component.formatOneDecimal
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.profile.R
@@ -168,6 +172,33 @@ private fun AboutYouContent(
                     onIncrement = { onSetTargetWeightKg((target + WEIGHT_STEP).displayUnitToKg(unit)) },
                     onDecrement = { onSetTargetWeightKg((target - WEIGHT_STEP).displayUnitToKg(unit)) },
                 )
+                // Warn, don't block — the calorie floor's rule. A heavier target under "Losing
+                // weight" left Progress saying "6 kg to go" in a direction the budget was steering
+                // away from, and nothing said the two disagreed.
+                if (profile.goal.disagreesWith(profile.weightKg, profile.targetWeightKg)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 12.dp),
+                    ) {
+                        Icon(
+                            imageVector = AppIcons.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(
+                            text = stringResource(
+                                if (profile.goal == Goal.Lose) {
+                                    R.string.profile_about_target_mismatch_lose
+                                } else {
+                                    R.string.profile_about_target_mismatch_build
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
             }
 
             SectionHeader(label = stringResource(R.string.profile_about_goal_title))
