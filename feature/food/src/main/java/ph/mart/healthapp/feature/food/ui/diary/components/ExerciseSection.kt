@@ -56,7 +56,6 @@ import ph.mart.healthapp.feature.food.ui.shared.components.SwipeToDeleteRow
 internal fun ExerciseSection(
     entries: List<ExerciseEntry>,
     expanded: Boolean,
-    dayIsEmpty: Boolean,
     onToggle: () -> Unit,
     onAdd: () -> Unit,
     onDeleteEntry: (ExerciseEntry) -> Unit,
@@ -86,14 +85,6 @@ internal fun ExerciseSection(
             exit = shrinkVertically(tween(Motion.State, easing = Motion.Standard)),
         ) {
             Column(modifier = Modifier.padding(bottom = 4.dp)) {
-                if (entries.isEmpty() && !dayIsEmpty) {
-                    Text(
-                        text = stringResource(R.string.food_section_empty),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = EntryIndent, end = 16.dp, bottom = 8.dp),
-                    )
-                }
                 entries.forEach { entry ->
                     key(entry.id) {
                         SwipeableExerciseRow(
@@ -187,7 +178,6 @@ private fun ExerciseSectionPreview() {
                     ),
                 ),
                 expanded = true,
-                dayIsEmpty = false,
                 onToggle = {},
                 onAdd = {},
                 onDeleteEntry = {},
@@ -206,7 +196,6 @@ private fun ExerciseSectionEmptyPreview() {
             ExerciseSection(
                 entries = emptyList(),
                 expanded = true,
-                dayIsEmpty = false,
                 onToggle = {},
                 onAdd = {},
                 onDeleteEntry = {},

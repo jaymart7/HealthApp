@@ -157,6 +157,12 @@ private fun HealthConnectionContent(
                 onOpenPlayStore = onAllowConnect,
             )
 
+            // One filled button on the screen. Health Connect's Allow (or Update) while it has
+            // nothing granted — it is the provider that wins — and Google Health's otherwise.
+            val connect = uiState.connect
+            val connectAsks = connect is HealthConnectState.UpdateRequired ||
+                (connect is HealthConnectState.Available && connect.granted.isEmpty())
+
             // Resolved once, here: the ViewModel names which message applies, this turns it
             // into words — see [HealthMessage].
             val message = uiState.message?.resolve()
@@ -168,6 +174,7 @@ private fun HealthConnectionContent(
                     messageIsError = uiState.messageIsError,
                     onSync = onSync,
                     onDisconnect = { onConfirmDisconnect(true) },
+                    syncPrimary = !connectAsks,
                 )
 
                 // Checking shows the disclosure with its button disabled rather than a spinner:
@@ -186,6 +193,7 @@ private fun HealthConnectionContent(
                     busy = uiState.busy,
                     message = message,
                     messageIsError = uiState.messageIsError,
+                    connectPrimary = !connectAsks,
                 )
             }
         }

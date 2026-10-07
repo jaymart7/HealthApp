@@ -48,10 +48,9 @@ internal val SectionCorner = RoundedCornerShape(16.dp)
  * yet" directly beneath a header still reporting 325 kcal, which is a straight contradiction and
  * blames the diary for what the user's own filter did.
  *
- * [dayIsEmpty] suppresses that line entirely. On a bare day `EmptyDiaryDay` speaks once for the
- * whole screen; this line is for a single empty section on an otherwise populated day. Without the
- * flag the two both fire, which is the state the mascot block was added to replace and never
- * actually did.
+ * A section with nothing logged is its header alone. It used to add a "Nothing here yet" line under
+ * it, and on a day with one meal logged that was three cards saying the same sentence; a header with
+ * no subtotal and a **+** already says it. On a bare day `EmptyDiaryDay` speaks once for the screen.
  */
 @Composable
 internal fun MealSection(
@@ -60,7 +59,6 @@ internal fun MealSection(
     subtotalKcal: Int,
     expanded: Boolean,
     filteredOut: Boolean,
-    dayIsEmpty: Boolean,
     onToggle: () -> Unit,
     onAdd: () -> Unit,
     onSave: (() -> Unit)?,
@@ -87,11 +85,9 @@ internal fun MealSection(
         ) {
             Column(modifier = Modifier.padding(bottom = 4.dp)) {
                 val editEntry = stringResource(R.string.food_edit_entry)
-                if (entries.isEmpty() && !dayIsEmpty) {
+                if (filteredOut) {
                     Text(
-                        text = stringResource(
-                            if (filteredOut) R.string.food_section_filtered else R.string.food_section_empty,
-                        ),
+                        text = stringResource(R.string.food_section_filtered),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = EntryIndent, end = 16.dp, bottom = 8.dp),
@@ -147,7 +143,6 @@ private fun MealSectionPreview() {
                 subtotalKcal = 150,
                 expanded = true,
                 filteredOut = false,
-                dayIsEmpty = false,
                 onToggle = {},
                 onAdd = {},
                 onSave = {},
@@ -169,7 +164,6 @@ private fun MealSectionEmptyPreview() {
                 subtotalKcal = 0,
                 expanded = true,
                 filteredOut = false,
-                dayIsEmpty = false,
                 onToggle = {},
                 onAdd = {},
                 // Nothing logged means nothing to snapshot — the header hides its save affordance.
@@ -194,34 +188,9 @@ private fun MealSectionFilteredPreview() {
                 subtotalKcal = 480,
                 expanded = true,
                 filteredOut = true,
-                dayIsEmpty = false,
                 onToggle = {},
                 onAdd = {},
                 onSave = {},
-                onDeleteEntry = {},
-                onEditEntry = {},
-            )
-        }
-    }
-}
-
-/** A bare day: the card still renders, its "+" is still reachable, and it says nothing — the
- * mascot block between Lunch and Dinner is the one line that speaks. */
-@PreviewLightDark
-@Composable
-private fun MealSectionDayEmptyPreview() {
-    AppTheme {
-        Surface {
-            MealSection(
-                mealType = MealType.Snacks,
-                entries = emptyList(),
-                subtotalKcal = 0,
-                expanded = true,
-                filteredOut = false,
-                dayIsEmpty = true,
-                onToggle = {},
-                onAdd = {},
-                onSave = null,
                 onDeleteEntry = {},
                 onEditEntry = {},
             )
@@ -243,7 +212,6 @@ private fun MealSectionCollapsedPreview() {
                 subtotalKcal = 250,
                 expanded = false,
                 filteredOut = false,
-                dayIsEmpty = false,
                 onToggle = {},
                 onAdd = {},
                 onSave = {},

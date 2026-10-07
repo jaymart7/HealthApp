@@ -181,9 +181,9 @@ ranked by the daily loop, not grouped by kind.
   its results. Searching never blanks the list — the rows stay and two skeletons appear at the
   tail. Tapping a result opens it for review — meal, portion, calories, macros and micronutrients,
   all corrigible — and logging it from there writes a copy onto the day the diary was showing.
-  Reached from a link at the foot of the diary, which carries the day's filter query with it.
+  Reached from the diary header's ⋮ menu, which carries the day's filter query with it.
   Capped at 200 hits; the copy never inherits the source row's meal photo.
-- Copy a day — a link at the foot of the diary opens a calendar, then a sheet listing what that
+- Copy a day — an item in the diary header's ⋮ menu opens a calendar, then a sheet listing what that
   day held: each meal section with its item count and calories, water, and the day's workouts.
   Tick what to bring over and it lands on the day being shown. Copied plates leave their photos
   behind, a copied workout re-estimates its own steps, and water is set rather than added.
@@ -228,11 +228,11 @@ ranked by the daily loop, not grouped by kind.
 - Water row in the diary; water goal and glass size configurable.
 - A note on the day — one free-text note per day (500 chars), under its own rule at the foot of
   the diary. A day with a note draws it as a card you tap to edit; a day without one carries an
-  "Add a note" link beside Search and Copy. Written to the day being shown, never to today, and
+  "Add a note" item in the header's ⋮ menu, beside Search and Copy. Written to the day being shown, never to today, and
   saving an empty field is the delete. It exports, and the coach's `get_day` reads it; it is on no
   chart, in no recap, on no shared picture and in no copied day.
-- Share the day — a PNG card of the day's summary bar and its per-meal totals, from a link at
-  the foot of the diary. Absolute date, no food names.
+- Share the day — a PNG card of the day's summary bar and its per-meal totals, from the diary
+  header's ⋮ menu. Absolute date, no food names.
 - Meal ideas — a route above the tab (no bottom bar, no FAB), reached from the add-entry sheet:
   AI suggestions sized to the day's remaining calories, with an offline fallback built from the
   user's own recents and recipes; picking one returns to the diary and seeds the add sheet,
@@ -343,7 +343,8 @@ Badges as a summary row under the grids. Cycle is the one subject a setting can 
 - Overview: week recap ("Across everything"), one insight card carrying the goal projection, the
   Patterns card, four grouped grids of subject cards — value, a 26dp preview (sparkline, day bars or a photo strip) and
   a trend line — then the Badges row. A subject with nothing logged draws as a dashed "Nothing yet"
-  card that still opens its page; a group with nothing tracked collapses to one expandable row.
+  card that still opens its page, folded behind a "Not started yet" row naming it until tapped; a
+  group with nothing tracked collapses to one expandable row.
 - Detail page: a toolbar with back and the recap share, hero figure, fact chips, one chart card
   holding its own 1M/3M/6M/1Y range toggle and legend, and stat rows. The range is remembered per subject for the session. Empty subjects get a mascot page
   and no call to action and no share — except Weight, Cycle, Blood pressure and Measurements, whose log sheets
@@ -694,6 +695,9 @@ pushes — meals and water.
 Health Connect wins per type; the cloud fills the gaps. One `sync()` runs both, so precedence is
 decided in one place. Both connection states are live, never stored flags. First sync backfills
 30 days, and a handover retires the cloud rows inside that window so nothing lands twice.
+
+Both live on one screen, **Health data** (Profile → Connections), each under its own heading, with
+one filled button: Health Connect's Allow while it has nothing granted, Google Health's otherwise.
 
 ## Reminders
 

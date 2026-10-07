@@ -3,10 +3,8 @@ package ph.mart.healthapp.feature.food.ui.diary.components
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -15,7 +13,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -27,7 +24,6 @@ import ph.mart.healthapp.core.data.food.dailyTotals
 import ph.mart.healthapp.core.data.health.dayBurnedKcal
 import ph.mart.healthapp.core.data.profile.DailyTargets
 import ph.mart.healthapp.core.designsystem.component.DockedFabContentPadding
-import ph.mart.healthapp.core.designsystem.component.TextButton
 import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.food.R
@@ -81,6 +77,24 @@ internal fun DiaryBody(
     // label is resolved through the context rather than with `stringResource`.
     val context = LocalContext.current
 
+    val dayIsEmpty = uiState.entries.isEmpty() && uiState.exercise.isEmpty()
+    // Search, copy and the note are always offered, including on a bare day: a day with nothing on
+    // it is exactly when you want to look backwards, exactly when you want yesterday again, and
+    // exactly when what happened is the only record there will be. Sharing is not — there is no day
+    // to share yet. The note is offered only while the day has none: once it has one, its card is
+    // the door. The search carries the day's filter query along, so a word already typed into the
+    // header survives the step up to every day.
+    val dayActions = buildList {
+        add(DayAction(stringResource(R.string.food_history_link), AppIcons.Search) { onOpenHistory(uiState.selectedDate, state.searchQuery) })
+        add(DayAction(stringResource(R.string.food_copy_link), AppIcons.Copy) { state.copyPickerOpen = true })
+        if (uiState.note.isBlank()) {
+            add(DayAction(stringResource(R.string.food_note_add), AppIcons.Edit) { state.openNoteSheet(current = "") })
+        }
+        if (!dayIsEmpty && uiState.targets != null) {
+            add(DayAction(stringResource(R.string.food_share_day), AppIcons.Share) { state.shareOpen = true })
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         DiaryDateHeader(
             selectedDate = uiState.selectedDate,
@@ -94,6 +108,7 @@ internal fun DiaryBody(
             },
             query = state.searchQuery,
             onQueryChange = { state.searchQuery = it },
+            dayActions = dayActions,
             modifier = Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp),
         )
         uiState.targets?.let { targets ->
@@ -115,7 +130,6 @@ internal fun DiaryBody(
             )
         }
 
-        val dayIsEmpty = uiState.entries.isEmpty() && uiState.exercise.isEmpty()
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -174,9 +188,6 @@ internal fun DiaryBody(
                     // The section has food in it and the filter hid all of it — a
                     // different sentence from a section with nothing in it.
                     filteredOut = mealEntries.isNotEmpty() && visibleEntries.isEmpty(),
-                    // On a bare day the mascot below speaks once for the whole screen, so
-                    // the per-section line stays quiet rather than repeating it four times.
-                    dayIsEmpty = dayIsEmpty,
                     onToggle = { state.toggleExpanded(mealType) },
                     onAdd = { state.openSheet(mealType) },
                     // Nothing logged here yet means nothing to snapshot — the whole
@@ -216,7 +227,6 @@ internal fun DiaryBody(
                 entries = uiState.exercise,
                 unit = uiState.unit,
                 expanded = state.exerciseExpanded,
-                dayIsEmpty = dayIsEmpty,
                 onToggle = { state.exerciseExpanded = !state.exerciseExpanded },
                 onAdd = { onLogExercise(uiState.selectedDate, 0) },
                 // Every row reopens in the same sheet; a workout with sets goes on to the strength
@@ -236,50 +246,11 @@ internal fun DiaryBody(
             )
 
             // What the day was, in the user's own words — under its own rule, and only when there
-            // is something to read. The link below is the way in on a day with no note.
+            // is something to read. The header's overflow is the way in on a day with no note.
             DayNoteBlock(
                 note = uiState.note,
                 onEdit = { state.openNoteSheet(uiState.note) },
             )
-
-            // Four doors at the foot of the scroll rather than in the date header — that row
-            // already carries three 48dp buttons and a label it goes out of its way to protect at
-            // large font scales. Home's "Rearrange your Home" link is the shape. The row wraps
-            // rather than shrinking, so a large font scale costs a line and not a label.
-            //
-            // Search, copy and the note are always here, including on a bare day: a day with
-            // nothing on it is exactly when you want to look backwards, exactly when you want
-            // yesterday again, and exactly when what happened is the only record there will be.
-            // Sharing is not — there is no day to share yet. The search carries the day's
-            // filter query along, so a word already typed into the header survives the step up to
-            // every day.
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            ) {
-                TextButton(
-                    label = stringResource(R.string.food_history_link),
-                    onClick = { onOpenHistory(uiState.selectedDate, state.searchQuery) },
-                )
-                TextButton(
-                    label = stringResource(R.string.food_copy_link),
-                    onClick = { state.copyPickerOpen = true },
-                )
-                // Only while the day has no note. Once it has one the card above is the door, and
-                // two ways into the same sheet on the same screen is one too many.
-                if (uiState.note.isBlank()) {
-                    TextButton(
-                        label = stringResource(R.string.food_note_add),
-                        onClick = { state.openNoteSheet(current = "") },
-                    )
-                }
-                if (!dayIsEmpty && uiState.targets != null) {
-                    TextButton(
-                        label = stringResource(R.string.food_share_day),
-                        onClick = { state.shareOpen = true },
-                    )
-                }
-            }
         }
     }
 }

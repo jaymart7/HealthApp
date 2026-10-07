@@ -18,6 +18,7 @@ import ph.mart.healthapp.core.data.health.HealthConnectState
 import ph.mart.healthapp.core.data.health.HealthMetric
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.PrimaryButton
+import ph.mart.healthapp.core.designsystem.component.SecondaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 
@@ -95,14 +96,23 @@ internal fun HealthConnectPanel(
                             }
                     }
                 }
-                PrimaryButton(
-                    label = stringResource(
-                        if (state.granted.isEmpty()) R.string.profile_connect_allow else R.string.profile_connect_change,
-                    ),
-                    onClick = onAllow,
-                    enabled = !busy,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                // Filled only while nothing is allowed — then it is the screen's one filled button.
+                // Changing a grant already made is a second visit, not the next step.
+                if (state.granted.isEmpty()) {
+                    PrimaryButton(
+                        label = stringResource(R.string.profile_connect_allow),
+                        onClick = onAllow,
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                } else {
+                    SecondaryButton(
+                        label = stringResource(R.string.profile_connect_change),
+                        onClick = onAllow,
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
 
             HealthConnectState.Checking, HealthConnectState.Unsupported -> Unit

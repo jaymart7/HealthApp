@@ -38,9 +38,8 @@ import ph.mart.healthapp.feature.food.ui.shared.defaultMealTypeForNow
  * banner with four empty cards under it. Every "+" stays reachable and nothing here stands
  * between the user and logging.
  *
- * Sleepy, not Idle: the day has not started. It is also the only mascot state on this screen, so
- * the per-section "Nothing here yet." lines are suppressed while it is showing — see
- * [MealSection]'s `dayIsEmpty`, which is what finally made this block's own KDoc true.
+ * Sleepy, not Idle: the day has not started. It is also the only line on this screen that says the
+ * day is empty — an empty section is its header alone.
  */
 @Composable
 internal fun EmptyDiaryDay(isToday: Boolean, modifier: Modifier = Modifier) {

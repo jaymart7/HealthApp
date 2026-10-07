@@ -99,8 +99,8 @@
     <string name="profile_layout_row_sub">Piliin kung alin ang lalabas, at sa anong pagkakasunod</string>
     <string name="profile_settings_reminders_row">Mga paalala</string>
     <string name="profile_settings_reminders_row_sub">Pag-log ng pagkain, pagtimbang, tubig, pag-aayuno at ang lingguhang recap</string>
-    <string name="profile_connections_health">Google Health</string>
-    <string name="profile_connections_health_sub">Mag-import ng workout, pagtimbang at tulog; ipadala ang pagkain at tubig mo</string>
+    <string name="profile_connections_health">Data ng kalusugan</string>
+    <string name="profile_connections_health_sub">Health Connect at Google Health: workout, pagtimbang at tulog papasok, pagkain at tubig palabas</string>
     <string name="profile_reminder_meals">Pag-log ng pagkain</string>
     <string name="profile_reminder_meals_sub">Nagpapaalala nang 3 beses kada araw</string>
     <string name="profile_reminder_weigh_in">Araw ng pagtimbang</string>
@@ -297,6 +297,7 @@
     <string name="profile_health_delete_imported">I-delete ang mga workout, pagtimbang at tulog na na-import mula sa Google Health</string>
     <string name="profile_health_delete_sent">I-delete ang mga pagkain at tubig na ipinadala ng FitPulse sa Google Health</string>
     <string name="profile_connect_title">Health Connect</string>
+    <string name="profile_health_cloud_title">Google Health</string>
     <string name="profile_connect_body">Binabasa ng FitPulse ang mga workout, timbang, tulog, hakbang, tibok ng puso at presyon ng dugo mo mula sa Health Connect, sa phone mo — walang account at walang internet. Ginagamit ito para taasan ang budget mo sa calories, subaybayan ang takbo ng timbang mo at ipakita ang tulog, tibok ng puso at mga reading mo. Binabasa lang ang mga araw ng regla habang naka-on ang cycle tracking sa Profile. Walang isinusulat pabalik ang FitPulse.</string>
     <string name="profile_connect_needs_update">Kailangang i-update ang Health Connect bago ito mabasa ng FitPulse.</string>
     <string name="profile_connect_update">I-update ang Health Connect</string>

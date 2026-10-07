@@ -45,6 +45,7 @@
     <string name="food_ask_coach_question">%1$s: kumusta ako?</string>
     <string name="food_ask_coach_source">Diary, %1$s</string>
     <string name="food_filter_open">I-filter ang mga pagkain ng araw na ito</string>
+    <string name="food_day_more">Iba pa para sa araw na ito</string>
     <string name="food_filter_close">Isara ang filter</string>
     <string name="food_say_what_you_ate">Sabihin ang kinain</string>
     <string name="food_chip_say">Sabihin</string>
@@ -60,7 +61,6 @@
     <string name="food_yesterday">Kahapon</string>
     <string name="food_water">Tubig</string>
     <string name="food_water_count">%1$d / %2$d · %3$s</string>
-    <string name="food_section_empty">Wala pang laman.</string>
     <string name="food_section_filtered">Walang tugma rito.</string>
     <string name="food_empty_today">Wala pang na-log ngayong araw.</string>
     <string name="food_empty_past">Walang na-log sa araw na ito.</string>

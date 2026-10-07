@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -18,12 +20,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -60,8 +66,10 @@ internal fun diaryDateLabel(epochDay: Long, today: Long): Phrase = when (epochDa
  * walk Tuesday forward to today.
  *
  * The filter used to be a pinned row of its own beneath this one, which cost the diary a third
- * pinned block for a control most days never touch. It is a 48dp icon here and becomes the row
- * when tapped, so the header's height is the same in both states and nothing below it moves.
+ * pinned block for a control most days never touch. It is the first item of the day's overflow and
+ * becomes the row when picked, so the header's height is the same in both states and nothing below
+ * it moves. The overflow also holds [dayActions] — search, copy, note and share, the four text links
+ * that used to wrap at the foot of the scroll, where they were the last thing anyone reached.
  * Closing is the caller's job to make destructive — it clears the query, because a filter you can
  * no longer see is a filter you will not remember hiding rows behind.
  */
@@ -76,6 +84,7 @@ internal fun DiaryDateHeader(
     onFilterExpandedChange: (Boolean) -> Unit,
     query: String,
     onQueryChange: (String) -> Unit,
+    dayActions: List<DayAction>,
     modifier: Modifier = Modifier,
 ) {
     Crossfade(
@@ -100,6 +109,7 @@ internal fun DiaryDateHeader(
                     onOpenCalendar = onOpenCalendar,
                     onAskCoach = onAskCoach,
                     onOpenFilter = { onFilterExpandedChange(true) },
+                    dayActions = dayActions,
                 )
             }
         }
@@ -114,6 +124,7 @@ private fun RowScope.DateControls(
     onOpenCalendar: (() -> Unit)?,
     onAskCoach: (question: String, source: String) -> Unit,
     onOpenFilter: () -> Unit,
+    dayActions: List<DayAction>,
 ) {
     IconButton(onClick = { onSelectDate(selectedDate - 1) }, modifier = Modifier.size(48.dp)) {
         Icon(
@@ -192,12 +203,37 @@ private fun RowScope.DateControls(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    IconButton(onClick = onOpenFilter, modifier = Modifier.size(48.dp)) {
-        Icon(
-            imageVector = AppIcons.Filter,
-            contentDescription = stringResource(R.string.food_filter_open),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    DayOverflow(
+        actions = listOf(DayAction(stringResource(R.string.food_filter_open), AppIcons.Filter, onOpenFilter)) + dayActions,
+    )
+}
+
+/** One entry in the day's overflow. */
+internal class DayAction(val label: String, val icon: ImageVector, val onClick: () -> Unit)
+
+@Composable
+private fun DayOverflow(actions: List<DayAction>) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
+            Icon(
+                imageVector = AppIcons.MoreVert,
+                contentDescription = stringResource(R.string.food_day_more),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            actions.forEach { action ->
+                DropdownMenuItem(
+                    text = { Text(action.label) },
+                    leadingIcon = { Icon(action.icon, contentDescription = null) },
+                    onClick = {
+                        open = false
+                        action.onClick()
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -241,6 +277,7 @@ private fun DiaryDateHeaderPreview() {
                 onFilterExpandedChange = {},
                 query = "",
                 onQueryChange = {},
+                dayActions = emptyList(),
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
         }
@@ -264,6 +301,7 @@ private fun DiaryDateHeaderPastPreview() {
                 onFilterExpandedChange = {},
                 query = "",
                 onQueryChange = {},
+                dayActions = emptyList(),
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
         }
@@ -287,6 +325,7 @@ private fun DiaryDateHeaderTwoPanePreview() {
                 onFilterExpandedChange = {},
                 query = "",
                 onQueryChange = {},
+                dayActions = emptyList(),
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
         }
@@ -310,6 +349,7 @@ private fun DiaryDateHeaderFilteringPreview() {
                 onFilterExpandedChange = {},
                 query = "yog",
                 onQueryChange = {},
+                dayActions = emptyList(),
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
         }

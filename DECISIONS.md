@@ -200,9 +200,8 @@ rather than needing a counter patched.
   *subtotals* only: a shared image is read by people the diary was never written for, so how the
   day went travels and what was eaten does not. `DiarySummaryBar` is rendered verbatim inside it,
   for the reason `RecapCard` is: two layouts for one set of figures is two places for them to
-  disagree. The link sits at the foot of the scroll rather than in the date header — that row
-  already carries three 48dp buttons and a label it goes out of its way to protect at large font
-  scales — and it is absent on a day with nothing logged.
+  disagree. It sits in the date header's ⋮ menu (see *The day's actions share one overflow*), and
+  it is absent on a day with nothing logged.
 - **`ShareImageSheet` lives in `:core:designsystem`, and that move was forced rather than tidy.**
   The capture-and-share pair was `:feature:progress`'s while the recap and the photo strip were the
   only pictures the app shared; the diary's day card is the third, `:feature:*` modules never
@@ -243,6 +242,18 @@ rather than needing a counter patched.
   *before* anything is written. The empty parts draw disabled rather than being left out, so the
   sheet reads as a report of that day — a missing Dinner row would look like the sheet forgot about
   dinner, where a disabled one says the day had none.
+- **An empty meal is its header alone.** Each empty section used to add "Nothing here yet." under
+  its header, so a day with lunch logged drew three cards saying the same sentence. A header with
+  no subtotal and a **+** already says it; the one line that stays is the filter's "hidden by your
+  filter", because that one says something the header cannot. The exercise block follows suit.
+- **The day's actions share one overflow, in place of the filter icon.** Search, Copy, Add a note
+  and Share were four text links wrapping at the foot of the scroll — under every meal, the
+  exercise block and the note, so the last thing on the screen anyone reached, and a fourth tier
+  of "do something" under the chips, the meal **+**s and the FAB. They moved into a ⋮ menu that
+  took the filter icon's 48dp slot, with the filter as its first item, so the header carries the
+  same five buttons and its label keeps the room it protects at large font scales. It also puts
+  the two searches — this day's foods, and every day — next to each other, where the difference
+  between them is visible.
 - **Two calendars, not one with a mode.** The date header's calendar moves the diary; the copy
   picker names a source and leaves the day where it is. They also live differently: at ≥840dp the
   first is a permanent pane and the second is still a sheet. The day being shown is drawn selected
@@ -658,8 +669,8 @@ rather than needing a counter patched.
   does, and it is a route because it has its own query, its own Room read and its own ViewModel —
   which is what `CLAUDE.md` says earns a flow package. (Meal ideas was the overlay this was once
   contrasted against; it is a route too now, for the chrome rather than for a ViewModel — see
-  **Meal ideas & talk-to-log**.) The door sits at the
-  foot of the scroll beside "Share the day", and unlike that one it is drawn on an **empty** day
+  **Meal ideas & talk-to-log**.) The door sits in the date header's ⋮ menu beside "Share the
+  day", and unlike that one it is offered on an **empty** day
   too: a day with nothing on it is exactly when you want to look backwards. It carries
   `FoodScreenState.searchQuery` along, so a word already typed into the header isn't typed twice.
 - **The history search is a suspend one-shot, and its results do not live-update.** Every other
@@ -5307,6 +5318,12 @@ consequence of that.
 The local provider, and the one that wins. Everything here exists because there are now *two*
 providers for the same six types, and two writers for one table is the failure to design against.
 
+- **The screen is "Health data", with a heading per provider and one filled button.** It was
+  titled "Google Health" and opened on Health Connect, the cloud card under it had no heading of
+  its own, and Allow and Sync now were both filled. Health Connect's Allow (or Update) is the filled
+  one while it has nothing granted, because it is the provider that wins; once it has a grant,
+  Change drops to outlined and Google Health's Connect or Sync now takes the fill.
+  `HealthDisclosurePanel` grew `connectPrimary` for that and onboarding never passes it.
 - **Precedence, never a merge.** `cloudMetrics()` in `:core:data/health/HealthConnect.kt` is the
   whole rule: Health Connect owns every type it is granted, the Google Health API owns the rest,
   and `sync()` decides it once so the two legs can never both write a table. There is deliberately

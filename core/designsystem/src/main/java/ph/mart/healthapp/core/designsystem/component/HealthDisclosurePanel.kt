@@ -75,6 +75,9 @@ private val ASSURANCES = listOf(
  * device cannot offer the grant at all, which is not the user's mistake either, so neither state
  * uses an error colour anywhere.
  *
+ * [connectPrimary] false draws Connect as an outlined button: Profile's health screen has one filled
+ * button, and while Health Connect has nothing granted that one is Health Connect's.
+ *
  * [actions] is false where the caller pins the two buttons itself — onboarding's step puts them in
  * its bottom bar and draws [HealthDisclosureActions] there. Profile cannot: its copy of the panel
  * is one of several in a scroll, and the screen has no bottom bar to pin anything to.
@@ -92,6 +95,7 @@ fun HealthDisclosurePanel(
     messageIsError: Boolean = false,
     actions: Boolean = true,
     busy: Boolean = false,
+    connectPrimary: Boolean = true,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = modifier.fillMaxWidth()) {
         if (title != null) {
@@ -195,6 +199,7 @@ fun HealthDisclosurePanel(
                 connectEnabled = connectEnabled,
                 declined = declined,
                 busy = busy,
+                connectPrimary = connectPrimary,
             )
         }
     }
@@ -217,6 +222,7 @@ fun HealthDisclosureActions(
     connectEnabled: Boolean = true,
     declined: Boolean = false,
     busy: Boolean = false,
+    connectPrimary: Boolean = true,
 ) {
     // "Skip for now" implies a choice the user still has. Once the grant is impossible or already
     // refused, the only honest label on the way out is "Continue" — this substitutes it rather
@@ -259,12 +265,21 @@ fun HealthDisclosureActions(
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
-            PrimaryButton(
-                label = connect,
-                onClick = onConnect,
-                enabled = connectEnabled && !busy,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (connectPrimary) {
+                PrimaryButton(
+                    label = connect,
+                    onClick = onConnect,
+                    enabled = connectEnabled && !busy,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                SecondaryButton(
+                    label = connect,
+                    onClick = onConnect,
+                    enabled = connectEnabled && !busy,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             SecondaryButton(
                 label = dismiss,
                 onClick = onDismiss,

@@ -118,8 +118,8 @@
     <string name="profile_layout_row_sub">Choose which ones show, and in what order</string>
     <string name="profile_settings_reminders_row">Reminders</string>
     <string name="profile_settings_reminders_row_sub">Meal logging, weigh-ins, water, fasting and the weekly recap</string>
-    <string name="profile_connections_health">Google Health</string>
-    <string name="profile_connections_health_sub">Import workouts, weigh-ins and sleep; send your food and water</string>
+    <string name="profile_connections_health">Health data</string>
+    <string name="profile_connections_health_sub">Health Connect and Google Health: workouts, weigh-ins and sleep in, food and water out</string>
 
     <!-- Reminders -->
     <string name="profile_reminder_meals">Meal logging</string>
@@ -346,6 +346,7 @@
 
     <!-- Health Connect -->
     <string name="profile_connect_title">Health Connect</string>
+    <string name="profile_health_cloud_title">Google Health</string>
     <string name="profile_connect_body">FitPulse reads your workouts, weight, sleep, steps, heart rate and blood pressure from Health Connect, on your phone — no account and no internet connection. It is used to raise your calorie budget, track your weight trend and show your sleep, heart rate and readings. Period days are read only while cycle tracking is on in Profile. FitPulse writes nothing back.</string>
     <string name="profile_connect_needs_update">Health Connect needs updating before FitPulse can read from it.</string>
     <string name="profile_connect_update">Update Health Connect</string>

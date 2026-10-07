@@ -116,7 +116,7 @@ private fun NavKey?.title(): String = when (this) {
     )
     is VoiceLogRoute -> stringResource(R.string.app_title_voice_log)
     is MealIdeasRoute -> stringResource(R.string.app_title_meal_ideas)
-    HealthConnectionRoute -> stringResource(R.string.app_title_google_health)
+    HealthConnectionRoute -> stringResource(R.string.app_title_health_data)
     FoodLibraryRoute -> stringResource(R.string.app_title_food_library)
     RoutinesRoute -> stringResource(R.string.app_title_routines)
     SupplementsRoute -> stringResource(R.string.app_title_supplements)

@@ -26,8 +26,16 @@ internal fun ConnectedPanel(
     messageIsError: Boolean,
     onSync: () -> Unit,
     onDisconnect: () -> Unit,
+    syncPrimary: Boolean = true,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
+        // Health Connect's panel above carries its own heading; without this one the cloud
+        // provider's card read as a continuation of it.
+        Text(
+            text = stringResource(R.string.profile_health_cloud_title),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
         AppCard {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
@@ -57,12 +65,12 @@ internal fun ConnectedPanel(
                 },
             )
         }
-        PrimaryButton(
-            label = stringResource(if (busy) R.string.profile_health_syncing else R.string.profile_health_sync_now),
-            onClick = onSync,
-            enabled = !busy,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        val syncLabel = stringResource(if (busy) R.string.profile_health_syncing else R.string.profile_health_sync_now)
+        if (syncPrimary) {
+            PrimaryButton(label = syncLabel, onClick = onSync, enabled = !busy, modifier = Modifier.fillMaxWidth())
+        } else {
+            SecondaryButton(label = syncLabel, onClick = onSync, enabled = !busy, modifier = Modifier.fillMaxWidth())
+        }
         SecondaryButton(
             label = stringResource(R.string.profile_health_disconnect),
             onClick = onDisconnect,
