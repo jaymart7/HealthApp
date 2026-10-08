@@ -50,9 +50,9 @@ import ph.mart.healthapp.feature.profile.ui.shared.components.SavedThingRow
  * Edit and delete only. Starting a routine needs a workout in progress and a day to log it on,
  * and Profile has neither — the same division the food library draws against the add-entry sheet.
  * "New routine" opens [NewRoutineSheet]: describe the routine, Gemini designs it, save it here.
- * [onBuildFromWorkout] is that sheet's manual path — a blank strength screen and its "Save as
- * routine". It used to be the FAB itself, which landed users on a workout *logger* whose primary
- * button logs today's session and saves no routine at all.
+ * [onBuildFromWorkout] is that sheet's manual path — the strength screen's set list in its routine
+ * mode, whose pinned "Save routine" lands the new card back here and logs nothing. It used to open
+ * the plain workout *logger*, whose primary button logged today's session and saved no routine.
  *
  * A screen FAB where Supplements docks a bar, by choice — at ≥840dp it sits beside the rail's own.
  * `DECISIONS.md` → **Training, strength & routines** has the call.

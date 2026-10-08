@@ -3839,8 +3839,16 @@ rather than needing a counter patched.
     name and every lift named. "Change" still returns to the request, for a design that missed
     whole. No load field, for `RoutineLift`'s reason.
   - **The strength screen is still the manual and offline path**, as "Build from a workout instead"
-    under the field. The catch it always had — backing out after "Save as routine" asks to discard
-    the unlogged session — now only meets users who chose that path.
+    under the field — but in its own mode now (`StrengthWorkoutRoute.buildRoutine`), because the
+    catch above survived the move: the user who chose that path still met "Save workout" enabled on
+    a blank screen, logged a 30-minute nothing to today's diary, and found no routine. In routine
+    mode the pinned button is **Save routine** — enabled once a set is down, it opens
+    `SaveRoutineSheet` for the name, saves, and pops back to the list — and the session's
+    tools go: no volume card, describe field, rest timer or Details (a routine keeps no load, no
+    duration and no note), and no inline "Save as routine", which is the pinned button's job. The
+    describe field goes too because the sheet one back away *is* the AI path. Popping straight after
+    `OnSaveRoutine` is safe because `LogExerciseViewModel` is activity-scoped: no ViewModelStore
+    entry decorator, so the insert outlives the route.
   - It stays a **screen-level `DockedFab`**, the call `SupplementsScreen`'s KDoc argued against: at
     ≥840dp it sits beside the rail's collapsed FAB. The user chose it knowing that.
 - **The training plan is one `Int` column on `routine`, not a `routine_day` table.** A weekday
@@ -3965,6 +3973,12 @@ rather than needing a counter patched.
   do. A new workout keeps all four, except that its volume card now waits for a first set — "0
   sets · 0 lifted" over an empty list was noise. Save sits in a pinned bar on both, the sheets'
   `bottomBar` argument: a long session's save must not cost a scroll past every set.
+- **A new workout's Save waits for a set; a correction's doesn't.** `isValid()` is only
+  `minutes > 0` and a blank form starts at 30, so the screen opened with Save already lit and one
+  tap logged half an hour of nothing. The plain duration-and-kcal strength entry is still real —
+  it is the log sheet's, through its own Save — so the screen asks for a set only on a *new*
+  workout. A correction keeps `isValid()` alone, or a row logged before sets existed could not be
+  fixed here.
 - **A set is corrected by tapping it, not by deleting it.** Every row carried a bin, so one stray tap
   lost a set with no way back, and fixing a typo cost a delete and a re-add at the *end* of the
   list. A row now loads its set into the editor ("Editing set 2 of Bench press", the row

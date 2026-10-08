@@ -28,6 +28,7 @@
     <string name="app_title_edit">Edit</string>
     <string name="app_title_edit_workout">Edit workout</string>
     <string name="app_title_strength_workout">Strength workout</string>
+    <string name="app_title_new_routine">New routine</string>
     <string name="app_title_meal_ideas">Meal ideas</string>
     <string name="app_title_voice_log">Say what you ate</string>
     <string name="app_title_health_data">Health data</string>

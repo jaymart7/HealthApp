@@ -23,7 +23,11 @@ import ph.mart.healthapp.feature.training.R
  * authored by naming a session that already exists, not built from nothing in an editor.
  *
  * [liftCount] and [setCount] are there so the user can see what they are about to keep. Saving the
- * routine does not log the workout: the two buttons at the bottom of the screen still do that.
+ * routine does not log the workout: on a live session the two buttons at the bottom of the screen
+ * still do that, and on Profile's routine builder nothing logs it at all.
+ *
+ * Save waits for a lift as well as a name: unnamed sets fold away in `toRoutineLifts()`, and a
+ * routine of nothing is not one.
  */
 @Composable
 internal fun SaveRoutineSheet(
@@ -47,7 +51,7 @@ internal fun SaveRoutineSheet(
         )
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             AppTextField(value = name, onValueChange = onNameChange, placeholder = stringResource(R.string.training_routine_placeholder))
-            PrimaryButton(label = stringResource(R.string.training_save), onClick = onSave, enabled = name.isNotBlank(), modifier = Modifier.fillMaxWidth())
+            PrimaryButton(label = stringResource(R.string.training_save), onClick = onSave, enabled = name.isNotBlank() && liftCount > 0, modifier = Modifier.fillMaxWidth())
         }
     }
 }

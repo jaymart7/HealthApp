@@ -88,6 +88,8 @@ private const val NOT_EDITING = -1
  * the route carries an id, not the row. [routineId] is the same shape for the opposite direction:
  * a routine to start from, which Home's training-plan card and the log sheet's chips name.
  * [draft] is the log sheet's form as it stood when it handed over — see [StrengthWorkoutRoute].
+ * [buildRoutine] turns the screen into Profile's routine builder: the set list and its editor,
+ * with a pinned "Save routine" that names it and goes back — no workout is logged.
  */
 @Composable
 fun StrengthWorkoutScreen(
@@ -95,6 +97,7 @@ fun StrengthWorkoutScreen(
     editingId: Long,
     routineId: Long = 0,
     draft: LogExerciseForm? = null,
+    buildRoutine: Boolean = false,
     onExit: () -> Unit,
     onSaved: (creditedKcal: Int) -> Unit = {},
     viewModel: LogExerciseViewModel = koinViewModel(),
@@ -161,6 +164,7 @@ fun StrengthWorkoutScreen(
         uiState = uiState,
         dateEpochDay = dateEpochDay,
         editingId = editingId.takeIf { it > 0 },
+        buildRoutine = buildRoutine,
         onExit = onExit,
         onEvent = viewModel::handleEvent,
         seed = seed,
@@ -217,6 +221,7 @@ private fun StrengthWorkoutContent(
     editingId: Long?,
     onExit: () -> Unit,
     onEvent: (LogExerciseEvent) -> Unit,
+    buildRoutine: Boolean = false,
     // Defaulted for the previews, which have no ViewModel to hold them — the sheet's `describe`
     // and `onEstimate` defaults, for the same reason.
     seed: LogExerciseForm = uiState.strengthSeed(),
@@ -227,6 +232,9 @@ private fun StrengthWorkoutContent(
 ) {
     val form = state.form.withEstimate(uiState.weightKg)
     val correcting = editingId != null
+    // A live session: the running total, the sentence and the rest timer. Neither a correction
+    // nor a routine being built is one — a routine keeps no loads, no duration and no rests.
+    val session = !correcting && !buildRoutine
 
     // The in-progress set. Three primitives rather than a saver: each is Bundle-native on its own,
     // and the draft is worth keeping across a rotation for the same reason the form is. Blank,
@@ -258,8 +266,8 @@ private fun StrengthWorkoutContent(
     var routineName by rememberSaveable { mutableStateOf("") }
     var routineSheetOpen by rememberSaveable { mutableStateOf(false) }
     var savedRoutineName by rememberSaveable { mutableStateOf<String?>(null) }
-    // Adding or removing a set makes it a different workout, so it can be saved again.
-    LaunchedEffect(form.sets.size) { savedRoutineName = null }
+    // Adding, removing or correcting a set makes it a different workout, so it can be saved again.
+    LaunchedEffect(form.sets) { savedRoutineName = null }
 
     fun setDraft(set: StrengthSet) {
         draftName = set.exerciseName
@@ -327,14 +335,15 @@ private fun StrengthWorkoutContent(
                     // sentence to say, no rest to time. The set list and its editor are the whole
                     // job, so the session tools below are a new workout's only. The total waits for
                     // a first set — "0 sets · 0 lifted" over an empty list is noise, not a figure.
-                    if (!correcting && form.sets.isNotEmpty()) {
+                    if (session && form.sets.isNotEmpty()) {
                         VolumeSummary(sets = form.sets, unit = uiState.preferredUnit)
                     }
 
                     // Appends rather than replaces, so it is offered whatever is already down.
                     // First, because saying the session is the quick path and the editor below is
-                    // the correction.
-                    if (!correcting) {
+                    // the correction. Not on a routine: the New routine sheet that opened it is
+                    // the AI path, one back away.
+                    if (session) {
                         DescribeExerciseField(
                             text = describe.text,
                             parsing = uiState.parsing,
@@ -394,7 +403,7 @@ private fun StrengthWorkoutContent(
                         },
                     )
 
-                    if (!correcting) {
+                    if (session) {
                         RestTimerCard(
                             endAtMillis = restEndAt,
                             durationSeconds = restSeconds,
@@ -440,16 +449,20 @@ private fun StrengthWorkoutContent(
                         modifier = Modifier.bringIntoViewRequester(editorRequester),
                     )
 
-                    WorkoutDetailsDisclosure(minutes = form.minutes, burnedKcal = form.burnedKcal) {
-                        ExerciseFormFields(
-                            form = form,
-                            weightKg = uiState.weightKg,
-                            onFormChange = { state.form = it },
-                            showTypeChips = false,
-                        )
+                    // A routine keeps none of these — the name is asked for when it is saved.
+                    if (!buildRoutine) {
+                        WorkoutDetailsDisclosure(minutes = form.minutes, burnedKcal = form.burnedKcal) {
+                            ExerciseFormFields(
+                                form = form,
+                                weightKg = uiState.weightKg,
+                                onFormChange = { state.form = it },
+                                showTypeChips = false,
+                            )
+                        }
                     }
 
-                    if (form.sets.isNotEmpty()) {
+                    // On a routine this is the pinned button's job.
+                    if (!buildRoutine && form.sets.isNotEmpty()) {
                         SecondaryButton(
                             label = savedRoutineName?.let { stringResource(R.string.training_strength_saved_routine, it) }
                                 ?: stringResource(R.string.training_strength_save_routine),
@@ -475,14 +488,30 @@ private fun StrengthWorkoutContent(
                                 modifier = Modifier.weight(1f),
                             )
                         }
-                        PrimaryButton(
-                            label = stringResource(R.string.training_strength_save_workout),
-                            onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
-                            // The same guard the sheet uses: a workout is still a duration. A
-                            // session with no sets saves as the plain strength entry it always was.
-                            enabled = form.isValid(),
-                            modifier = Modifier.weight(1f),
-                        )
+                        if (buildRoutine) {
+                            // Names it first, in the sheet "Save as routine" opens — the screen
+                            // has no name field of its own.
+                            PrimaryButton(
+                                label = stringResource(R.string.training_routine_save),
+                                onClick = {
+                                    routineName = form.name.trim()
+                                    routineSheetOpen = true
+                                },
+                                enabled = form.sets.toRoutineLifts().isNotEmpty(),
+                                modifier = Modifier.weight(1f),
+                            )
+                        } else {
+                            PrimaryButton(
+                                label = stringResource(R.string.training_strength_save_workout),
+                                onClick = { onEvent(LogExerciseEvent.OnSave(form, dateEpochDay, editingId)) },
+                                // The sheet's guard, plus a set for a new workout: a blank screen
+                                // must not log 30 minutes of nothing. A set-less strength entry is
+                                // the sheet's own Save; a correction keeps the sheet's rule, so a
+                                // row logged before sets existed stays fixable.
+                                enabled = form.isValid() && (correcting || form.sets.isNotEmpty()),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                 }
             }
@@ -499,6 +528,10 @@ private fun StrengthWorkoutContent(
                         onEvent(LogExerciseEvent.OnSaveRoutine(routineName, lifts))
                         savedRoutineName = routineName.trim()
                         routineSheetOpen = false
+                        // Back to Workout routines, where the new card is waiting. Safe to pop
+                        // at once: the ViewModel is the activity's, so the insert outlives this
+                        // route.
+                        if (buildRoutine) onExit()
                     },
                 )
             }
@@ -506,10 +539,10 @@ private fun StrengthWorkoutContent(
             if (discardOpen) {
                 DiscardConfirmDialog(
                     title = stringResource(
-                        if (editingId == null) {
-                            R.string.training_strength_discard_new
-                        } else {
-                            R.string.training_strength_discard_edit
+                        when {
+                            buildRoutine -> R.string.training_strength_discard_routine
+                            editingId == null -> R.string.training_strength_discard_new
+                            else -> R.string.training_strength_discard_edit
                         },
                     ),
                     body = stringResource(R.string.training_not_saved),
@@ -646,6 +679,32 @@ private fun StrengthWorkoutScreenEmptyPreview() {
             editingId = null,
             onExit = {},
             onEvent = {},
+        )
+    }
+}
+
+/** Profile's "Build from a workout instead": the set list, its editor and Start from — no session
+ * tools, no Details — with Save routine pinned, enabled once a set is down. */
+@PreviewLightDark
+@Composable
+private fun StrengthWorkoutScreenBuildRoutinePreview() {
+    AppTheme {
+        StrengthWorkoutContent(
+            uiState = LogExerciseUiState(
+                weightKg = 74.0,
+                recentLifts = listOf("Bench press", "Squat"),
+                strengthLoaded = true,
+                seedRoutine = Routine(
+                    id = 1,
+                    name = "Push day",
+                    lifts = listOf(RoutineLift("Bench press", sets = 3, reps = 8), RoutineLift("Dip", sets = 2, reps = 10)),
+                ),
+            ),
+            dateEpochDay = 0,
+            editingId = null,
+            onExit = {},
+            onEvent = {},
+            buildRoutine = true,
         )
     }
 }

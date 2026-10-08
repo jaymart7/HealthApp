@@ -26,6 +26,7 @@
     <string name="app_title_edit">I-edit</string>
     <string name="app_title_edit_workout">I-edit ang workout</string>
     <string name="app_title_strength_workout">Strength workout</string>
+    <string name="app_title_new_routine">Bagong routine</string>
     <string name="app_title_meal_ideas">Mga ideya sa pagkain</string>
     <string name="app_title_voice_log">Sabihin ang kinain</string>
     <string name="app_title_health_data">Data ng kalusugan</string>

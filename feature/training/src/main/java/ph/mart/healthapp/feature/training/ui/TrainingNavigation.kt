@@ -19,13 +19,18 @@ import kotlinx.serialization.Serializable
  * rides the key the way `MealIdeasRoute`'s request does — nothing stored to resolve, and re-asking
  * the model on arrival would spend a second call on a sentence already answered. The screen starts
  * from it but still measures "unsaved" against the row or the blank it would otherwise have
- * opened on, so a carried change is never dropped by a quiet back. */
+ * opened on, so a carried change is never dropped by a quiet back.
+ *
+ * [buildRoutine] is Profile's "Build from a workout instead": the same set list and editor, but
+ * the pinned button saves a routine and logs nothing — a routine authored there must not also
+ * land in today's diary. */
 @Serializable
 data class StrengthWorkoutRoute(
     val dateEpochDay: Long,
     val editingId: Long = 0,
     val routineId: Long = 0,
     val draft: LogExerciseForm? = null,
+    val buildRoutine: Boolean = false,
 ) : NavKey
 
 /**
@@ -44,6 +49,7 @@ fun EntryProviderScope<NavKey>.trainingEntries(
             editingId = key.editingId,
             routineId = key.routineId,
             draft = key.draft,
+            buildRoutine = key.buildRoutine,
             onExit = onExitFlow,
             onSaved = onSaved,
         )

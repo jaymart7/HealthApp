@@ -45,8 +45,10 @@
     <string name="training_strength_save_routine">Save as routine</string>
     <string name="training_strength_saved_routine">Saved as \"%1$s\"</string>
     <string name="training_strength_save_workout">Save workout</string>
+    <string name="training_routine_save">Save routine</string>
     <string name="training_strength_discard_new">Discard this workout?</string>
     <string name="training_strength_discard_edit">Discard these changes?</string>
+    <string name="training_strength_discard_routine">Discard this routine?</string>
     <plurals name="training_strength_sets">
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>

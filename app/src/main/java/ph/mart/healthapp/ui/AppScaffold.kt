@@ -112,7 +112,11 @@ private fun NavKey?.title(): String = when (this) {
         if (savedMealId == null && foodName == null) R.string.app_title_add_to_library else R.string.app_title_edit,
     )
     is StrengthWorkoutRoute -> stringResource(
-        if (this.editingId > 0) R.string.app_title_edit_workout else R.string.app_title_strength_workout,
+        when {
+            buildRoutine -> R.string.app_title_new_routine
+            editingId > 0 -> R.string.app_title_edit_workout
+            else -> R.string.app_title_strength_workout
+        },
     )
     is VoiceLogRoute -> stringResource(R.string.app_title_voice_log)
     is MealIdeasRoute -> stringResource(R.string.app_title_meal_ideas)
@@ -570,9 +574,10 @@ fun AppScaffold(
                             onOpenSavedMeal = { id -> topLevelBackStack.add(LibraryItemRoute(savedMealId = id)) },
                             onOpenFood = { name -> topLevelBackStack.add(LibraryItemRoute(foodName = name)) },
                             onOpenRoutines = { topLevelBackStack.add(RoutinesRoute) },
-                            // Day 0 is today. The New routine sheet's manual path: a blank
-                            // session whose "Save as routine" authors it from real sets.
-                            onBuildFromWorkout = { topLevelBackStack.add(StrengthWorkoutRoute(0)) },
+                            // The New routine sheet's manual path: the strength screen's set list,
+                            // whose pinned button saves a routine and logs no workout. The day is
+                            // unused there, since nothing lands in the diary.
+                            onBuildFromWorkout = { topLevelBackStack.add(StrengthWorkoutRoute(0, buildRoutine = true)) },
                             onOpenSupplements = { topLevelBackStack.add(SupplementsRoute) },
                             onOpenSupplementScan = { topLevelBackStack.add(SupplementScanRoute) },
                             onOpenHomeLayout = { topLevelBackStack.add(HomeLayoutRoute) },

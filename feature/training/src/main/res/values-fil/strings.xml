@@ -41,8 +41,10 @@
     <string name="training_strength_save_routine">I-save bilang routine</string>
     <string name="training_strength_saved_routine">Na-save bilang \"%1$s\"</string>
     <string name="training_strength_save_workout">I-save ang workout</string>
+    <string name="training_routine_save">I-save ang routine</string>
     <string name="training_strength_discard_new">Itapon ang workout na ito?</string>
     <string name="training_strength_discard_edit">Itapon ang mga pagbabagong ito?</string>
+    <string name="training_strength_discard_routine">Itapon ang routine na ito?</string>
     <plurals name="training_strength_sets">
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d set</item>

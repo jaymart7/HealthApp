@@ -45,7 +45,7 @@ import ph.mart.healthapp.feature.profile.ui.routine.NewRoutineState
  * "Change" goes back to the request instead, for when the whole design missed.
  *
  * "Build from a workout instead" is the manual path and the whole offline degrade — the strength
- * screen's "Save as routine", which is how a routine was authored before this sheet existed.
+ * screen's set list in routine mode, whose pinned "Save routine" names it and comes back here.
  *
  * Back steps one level, the predictive-back rule: a design in flight is cancelled, a preview
  * returns to the request with its text kept, and only the describe step lets the sheet's own

@@ -313,7 +313,8 @@ see `DECISIONS.md`.
   chips from recent sessions, last-lifted load shown per lift — and picking a lift with history
   fills in last time's reps and load. **Tap a set to correct it**: it loads into the editor for
   **Update set**, **Remove set** or Cancel; back leaves the set edit first. Save is pinned at the
-  foot of the screen.
+  foot of the screen, and on a new workout waits for a first set — a set-less strength entry is
+  the log sheet's own Save.
 - **Describe your sets** — "What did you lift?" heads the strength screen, always open: a
   sentence, typed or dictated, becomes sets appended to the list. A load said with no unit is in
   the user's own unit, applied on-device — only the sentence is sent. New workouts only — a
@@ -669,8 +670,10 @@ panes at ≥840dp.
   you named — and the sheet previews them under an "AI designed" chip, every part still editable:
   the name, each lift's name, sets and reps on steppers, remove a lift or add one. "Change" goes
   back to the request, "Save routine" adds it to the list. Weekdays you named land in its Plan. "Build from
-  a workout instead" is the manual and offline path — a blank strength screen and its "Save as
-  routine". Back steps out of a design in flight, then the preview, then the sheet. Tapping a card
+  a workout instead" is the manual and offline path — the strength screen's set list titled **New
+  routine**, with no rest timer, Details or describe field, and a pinned **Save routine** (enabled
+  once a set is down) that names it, adds it to the list and comes back; nothing is logged to the
+  diary. Back steps out of a design in flight, then the preview, then the sheet. Tapping a card
   opens **Edit routine**: the name, every lift on the same steppers, and the weekday plan, all
   editable; Save replaces it (it moves to the top), Delete sits small to Save's left and asks first.
 - Data export / import — JSON, `EXPORT_SCHEMA_VERSION` 22, import is all-or-nothing.
