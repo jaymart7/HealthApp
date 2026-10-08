@@ -100,7 +100,7 @@
     <string name="ds_health_scope_nutrition">Nutrisyon at hydration</string>
     <string name="ds_health_scope_nutrition_line">Ang mga pagkain at tubig na nila-log mo, ibinabalik</string>
     <string name="ds_health_assure_write">Ang mga pagkain at tubig lang na nila-log mo ang isinusulat pabalik. Walang ibang nagbabago sa Google Health.</string>
-    <string name="ds_health_assure_device">Naka-store sa device na ito. Hindi ibinebenta, hindi ibinabahagi.</string>
+    <string name="ds_health_assure_device">Naka-store sa device na ito. Hindi ibinebenta o ginagamit sa ads. Sa Gemini lang ibinabahagi, para sa coach at sa insight mo araw-araw.</string>
     <string name="ds_health_assure_undo">Idiskonekta at i-delete ito anumang oras mula sa Profile.</string>
     <string name="ds_health_continue">Magpatuloy</string>
     <string name="ds_health_connect">Ikonekta ang Google Health</string>

@@ -117,7 +117,7 @@
     <string name="ds_health_scope_nutrition">Nutrition and hydration</string>
     <string name="ds_health_scope_nutrition_line">The meals and water you log, sent back</string>
     <string name="ds_health_assure_write">Only the meals and water you log are written back. Nothing else in Google Health changes.</string>
-    <string name="ds_health_assure_device">Stored on this device. Never sold, never shared.</string>
+    <string name="ds_health_assure_device">Stored on this device. Never sold or used for ads. Shared only with Gemini, for the coach and your daily insight.</string>
     <string name="ds_health_assure_undo">Disconnect and delete it any time from Profile.</string>
     <string name="ds_health_continue">Continue</string>
     <string name="ds_health_connect">Connect Google Health</string>

@@ -5594,6 +5594,14 @@ Connect.
   requests `nutrition.writeonly`, so that would have been false. The assurance reads "only the
   meals and water you log are written back" instead. **One row per requested scope stays the
   rule** — if a scope is added or dropped, this panel changes with it.
+- **The device assurance names Gemini, because "never shared" stopped being true.** Once the coach
+  was given every figure, steps, sleep, heart rate and weight — rows this leg imports — reached
+  Gemini through `get_day`/`get_history`, and Home's insight sends a weight change. The Health API
+  policy allows a transfer that provides a user-facing feature *with the user's consent*, and the
+  disclosure is that consent, so the line now says where the data goes: "Shared only with Gemini,
+  for the coach and your daily insight." A disclosure that claims less sharing than the code does
+  fails verification as surely as one that claims more collection. It holds only while the Firebase
+  project is on the paid Gemini tier — the free tier may use prompts to improve Google's products.
 - **Neither the unavailable nor the declined state is an error.** A device without Play services is
   a fact about the device and a decline is an answer, so both take a `surfaceContainerHigh` strip
   and an `onSurfaceVariant` glyph, never `error`. Declined additionally swaps the two actions'
