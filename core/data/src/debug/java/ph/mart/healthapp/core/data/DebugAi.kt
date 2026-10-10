@@ -38,7 +38,7 @@ import ph.mart.healthapp.core.data.supplement.SupplementScanRepository
  * repositories are more than a boolean's worth of code to keep out of a release build by
  * convention, and the release twin of this file keeps them out by construction.
  */
-private const val USE_REAL_AI = false
+private const val USE_REAL_AI = true
 
 /**
  * The ten fakes exist so a debug build can be *iterated on*, not merely run cheaply.
