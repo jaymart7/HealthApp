@@ -23,6 +23,18 @@ android {
             "FDC_API_KEY",
             "\"${providers.gradleProperty("fdcApiKey").orNull.orEmpty()}\"",
         )
+
+        // The Google Health cloud leg, off for release until its OAuth consent screen is verified:
+        // an unverified app in Testing answers everyone off the test-user list with "Access
+        // blocked". Debug keeps it, since the emulator's account is a test user. Flip the default
+        // once verification lands — see GOOGLE_HEALTH_ENABLED in health/HealthSyncRepository.kt.
+        buildConfigField("boolean", "GOOGLE_HEALTH_ENABLED", "false")
+    }
+
+    buildTypes {
+        debug {
+            buildConfigField("boolean", "GOOGLE_HEALTH_ENABLED", "true")
+        }
     }
 
     buildFeatures {

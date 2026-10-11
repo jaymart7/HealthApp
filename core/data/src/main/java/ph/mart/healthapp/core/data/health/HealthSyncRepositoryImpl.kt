@@ -144,6 +144,10 @@ internal class HealthSyncRepositoryImpl(
         var imported = syncConnect(granted)
         val cloud = cloudMetrics(granted)
 
+        // A build without the cloud leg stops at the local one: no OAuth round trip whose only
+        // possible answer is a consent nobody off the test list can give — see GOOGLE_HEALTH_ENABLED.
+        if (!GOOGLE_HEALTH_ENABLED) return HealthSyncResult.Imported(imported)
+
         // Health Connect needs no network, so an offline sync that answered locally is a sync that
         // worked. Offline is only the whole answer when there was no local leg to run.
         if (!networkMonitor.isOnline()) {

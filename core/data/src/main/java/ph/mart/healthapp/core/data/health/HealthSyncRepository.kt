@@ -3,6 +3,17 @@ package ph.mart.healthapp.core.data.health
 import android.app.PendingIntent
 import android.content.Intent
 import androidx.activity.result.contract.ActivityResultContract
+import ph.mart.healthapp.core.data.BuildConfig
+
+/**
+ * Whether the Google Health cloud leg is offered at all — onboarding's step 5 and its half of the
+ * Health data screen. **Off in release until the OAuth consent screen is verified**: the Cloud
+ * project is in Testing, and an unverified app's consent page is "Access blocked" for everyone off
+ * the test-user list, which is every real user, two minutes into the app. Health Connect is
+ * untouched by it, and so is a grant that already exists. On in debug, where the emulator's
+ * account is a test user. Set in `core/data/build.gradle.kts`.
+ */
+val GOOGLE_HEALTH_ENABLED: Boolean = BuildConfig.GOOGLE_HEALTH_ENABLED
 
 /** What the Profile card and the onboarding step render. */
 sealed interface HealthConnection {

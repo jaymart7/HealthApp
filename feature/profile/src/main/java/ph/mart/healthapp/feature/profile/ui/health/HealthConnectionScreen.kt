@@ -9,11 +9,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -27,10 +29,12 @@ import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.data.health.GOOGLE_HEALTH_ENABLED
 import ph.mart.healthapp.core.data.health.HealthConnectState
 import ph.mart.healthapp.core.data.health.HealthConnection
 import ph.mart.healthapp.core.data.health.HealthMetric
 import ph.mart.healthapp.core.designsystem.component.HealthDisclosurePanel
+import ph.mart.healthapp.core.designsystem.component.PrimaryButton
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.health.components.ConnectedPanel
@@ -166,7 +170,11 @@ private fun HealthConnectionContent(
             // Resolved once, here: the ViewModel names which message applies, this turns it
             // into words — see [HealthMessage].
             val message = uiState.message?.resolve()
-            when (val connection = uiState.connection) {
+            // Google Health's half is gone from a build that cannot offer it — see
+            // GOOGLE_HEALTH_ENABLED — except over a grant that already exists, which keeps its
+            // Disconnect.
+            val connection = uiState.connection
+            if (GOOGLE_HEALTH_ENABLED || connection is HealthConnection.Connected) when (connection) {
                 is HealthConnection.Connected -> ConnectedPanel(
                     importedItems = connection.importedItems,
                     busy = uiState.busy,
@@ -195,6 +203,31 @@ private fun HealthConnectionContent(
                     messageIsError = uiState.messageIsError,
                     connectPrimary = !connectAsks,
                 )
+            } else {
+                // With no cloud half on screen, its sync row and result line move under Health
+                // Connect: they lived in the cloud panel, so without them a phone that allowed
+                // Health Connect once could never read it again, and never heard how a sync went.
+                if (message != null) {
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (uiState.messageIsError) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
+                if (connect is HealthConnectState.Available && connect.granted.isNotEmpty()) {
+                    PrimaryButton(
+                        label = stringResource(
+                            if (uiState.busy) R.string.profile_health_syncing else R.string.profile_health_sync_now,
+                        ),
+                        onClick = onSync,
+                        enabled = !uiState.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
 

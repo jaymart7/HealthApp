@@ -5464,6 +5464,24 @@ providers for the same six types, and two writers for one table is the failure t
 
 ### Google Health
 
+- **The cloud leg is off in release until verification lands — `GOOGLE_HEALTH_ENABLED`.** The
+  Cloud project is in Testing with an unverified consent screen, and onboarding's step 5 put its
+  Connect button in front of every new user, two minutes in: anyone off the test-user list got
+  Google's "Access blocked" page. A `buildConfigField` in `:core:data` (debug on, release off) is
+  the one switch, read from `health/HealthSyncRepository.kt`; flipping the default is the whole
+  change once verification is done. Off, it takes out: onboarding's step 5 (`stepAfter`/`stepBefore`
+  step over it and `ONBOARDING_STEPS` drops to 5, so Confirm still reads as the last step), Google
+  Health's half of Health data (except over a grant that already exists, which keeps its
+  Disconnect), and `sync()`'s cloud leg, which stops after Health Connect rather than making an
+  OAuth round trip whose only answer is a consent nobody can give.
+  - **Health Connect gained the sync row the cloud panel used to carry.** "Sync now" and the result
+    line lived only in `ConnectedPanel`, so a phone with Health Connect alone could import once, on
+    Allow, and never again short of re-confirming its permissions — with the cloud hidden, that is
+    every release install. Under Health Connect, with the cloud block not drawn, the message and a
+    filled Sync now (Change is already outlined once a grant exists) now draw in its place.
+  - The five strings that sent people to "Connect Google Health" — the Activity, Sleep and Heart
+    empty states, the Connections row and the Home layout note for watch cards — name Health
+    Connect instead, which is true in both builds: it is the provider that wins.
 The four requested scopes are Restricted, so the app is capped at 100 users until it passes
 OAuth App Verification plus an annual CASA/OWASP-ASVS assessment. Everything below exists
 because of that, not because it was the nicest design available. Health Connect now covers the

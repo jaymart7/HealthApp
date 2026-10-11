@@ -92,7 +92,8 @@ slide between them and back never clearing a thing.
 - Dietary preference (four-value enum; read only by meal ideas): the one optional step, outlined
   cards and a tonal Next, with Skip in the header.
 - Google Health disclosure + connect step (step 5 of 6, before Confirm): one glyph row per
-  requested scope and three assurance rows, with unavailable and declined states.
+  requested scope and three assurance rows, with unavailable and declined states. **Debug builds
+  only** — release skips it (five steps) until the OAuth consent screen is verified.
 - Confirm targets: the calorie figure at 57sp with its derivation printed under it
   ("1,961 kcal maintenance − 500 for steady loss"), Mifflin–St Jeor + 30/40/30 macro split,
   editable, 1200/1500 kcal warn-don't-block floor, and a 900ms celebration on finish.
@@ -704,6 +705,8 @@ decided in one place. Both connection states are live, never stored flags. First
 
 Both live on one screen, **Health data** (Profile → Connections), each under its own heading, with
 one filled button: Health Connect's Allow while it has nothing granted, Google Health's otherwise.
+**Release builds hide the Google Health leg** (`GOOGLE_HEALTH_ENABLED`) until verification, and
+Health Connect then carries its own Sync now and result line.
 
 ## Reminders
 

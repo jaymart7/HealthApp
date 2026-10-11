@@ -50,6 +50,7 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.OnboardingForm
+import ph.mart.healthapp.feature.onboarding.ui.shared.components.ONBOARDING_STEPS
 import ph.mart.healthapp.feature.onboarding.ui.shared.components.OnboardingStep
 
 /** How long the macro bar takes to draw itself once the flow is finished. */
@@ -92,7 +93,8 @@ internal fun ConfirmTargetsScreen(
     }
 
     OnboardingStep(
-        step = 6,
+        // Always the last step, however many there are — see ONBOARDING_STEPS.
+        step = ONBOARDING_STEPS,
         mascotState = if (isCelebrating) MascotState.Celebrating else MascotState.Idle,
         mascotSize = if (isCelebrating) 48.dp else 32.dp,
         line = stringResource(

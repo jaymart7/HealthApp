@@ -36,6 +36,7 @@ import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import ph.mart.healthapp.core.data.health.GOOGLE_HEALTH_ENABLED
 import ph.mart.healthapp.feature.onboarding.R
 import ph.mart.healthapp.feature.onboarding.ui.health.HealthConnectScreen
 import ph.mart.healthapp.feature.onboarding.ui.onboarding.components.ActivityScreen
@@ -56,6 +57,12 @@ private const val TRANSITION_MS = 300
 /** How long an announcement stays in the live region: long enough for TalkBack to have read it,
  * short enough that the same words can be announced again, and not left behind as a swipe stop. */
 private const val ANNOUNCEMENT_CLEAR_MS = 1000L
+
+/** Step 5 is Google Health's, and a build with [GOOGLE_HEALTH_ENABLED] off steps over it in both
+ * directions — Dietary's Next and Skip, Confirm's back arrow and the system back alike. */
+private fun stepAfter(step: Int) = if (step == 4 && !GOOGLE_HEALTH_ENABLED) 6 else step + 1
+
+private fun stepBefore(step: Int) = if (step == 6 && !GOOGLE_HEALTH_ENABLED) 4 else step - 1
 
 /**
  * Hosts the whole 7-step wizard. No Nav3 here — back is a plain `step - 1` with no branching, so a
@@ -112,7 +119,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
         state = backHandlerState,
         isBackEnabled = state.step > 0,
         // Back during the hold goes back from the step you were on, with the selection intact.
-        onBackCompleted = { goTo(state.step - 1) },
+        onBackCompleted = { goTo(stepBefore(state.step)) },
     )
 
     // A string built in a click callback, so it reads through `LocalContext` rather than reaching
@@ -180,9 +187,9 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
                     },
                     onSkip = {
                         state.form = state.form.copy(dietaryPreference = null)
-                        goTo(5)
+                        goTo(stepAfter(4))
                     },
-                    onNext = { goTo(5) },
+                    onNext = { goTo(stepAfter(4)) },
                     onBack = { goTo(3) },
                 )
 
@@ -193,7 +200,7 @@ fun OnboardingScreen(viewModel: OnboardingViewModel = koinViewModel()) {
                     isCelebrating = uiState.isCelebrating,
                     onFormChange = { state.form = it },
                     onFinish = { viewModel.handleEvent(OnboardingEvent.OnFinish(state.form)) },
-                    onBack = { goTo(5) },
+                    onBack = { goTo(stepBefore(6)) },
                 )
             }
         }

@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ph.mart.healthapp.core.data.health.GOOGLE_HEALTH_ENABLED
 import ph.mart.healthapp.core.designsystem.component.BubbleTail
 import ph.mart.healthapp.core.designsystem.component.MascotAvatar
 import ph.mart.healthapp.core.designsystem.component.MascotSpeechBubble
@@ -41,8 +42,9 @@ import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.tabularNums
 import ph.mart.healthapp.feature.onboarding.R
 
-/** Welcome is the root and is not one of them. */
-const val ONBOARDING_STEPS = 6
+/** Welcome is the root and is not one of them. Five where Google Health's step is skipped — see
+ * [GOOGLE_HEALTH_ENABLED] — so Confirm still reads as the last step, never "Step 6 of 6" after 4. */
+val ONBOARDING_STEPS = if (GOOGLE_HEALTH_ENABLED) 6 else 5
 
 /** Above this the step count needs a line of its own, the toggles stack and the ruler fields go to
  * a column — the point where the one-row app bar stops fitting beside a 28sp headline. */

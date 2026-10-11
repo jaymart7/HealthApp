@@ -83,7 +83,7 @@
     <string name="ds_card_macros">Macros</string>
     <string name="ds_card_progress_photo">Progress photo</string>
     <string name="ds_card_week_budget">Budget ng linggo</string>
-    <string name="ds_card_note_watch">Lalabas kapag nag-sync na ang Google Health</string>
+    <string name="ds_card_note_watch">Lalabas kapag nag-sync na ang Health Connect</string>
     <string name="ds_card_note_workout">Lalabas kapag may nakatakdang araw ang isang routine</string>
     <string name="ds_card_note_blood_pressure">Lalabas kapag nag-log ka ng reading</string>
     <string name="ds_card_note_cycle">Lalabas kapag naka-on ang cycle tracking sa Profile</string>

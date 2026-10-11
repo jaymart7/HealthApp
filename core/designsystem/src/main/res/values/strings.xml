@@ -98,7 +98,7 @@
     <string name="ds_card_macros">Macros</string>
     <string name="ds_card_progress_photo">Progress photo</string>
     <string name="ds_card_week_budget">Week budget</string>
-    <string name="ds_card_note_watch">Shows once Google Health has synced</string>
+    <string name="ds_card_note_watch">Shows once Health Connect has synced</string>
     <string name="ds_card_note_workout">Shows once a routine has days set</string>
     <string name="ds_card_note_blood_pressure">Shows once you log a reading</string>
     <string name="ds_card_note_cycle">Shows once cycle tracking is on in Profile</string>

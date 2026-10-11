@@ -121,7 +121,7 @@
     <string name="profile_settings_reminders_row">Reminders</string>
     <string name="profile_settings_reminders_row_sub">Meal logging, weigh-ins, water, fasting and the weekly recap</string>
     <string name="profile_connections_health">Health data</string>
-    <string name="profile_connections_health_sub">Health Connect and Google Health: workouts, weigh-ins and sleep in, food and water out</string>
+    <string name="profile_connections_health_sub">Workouts, weigh-ins, steps and sleep from Health Connect</string>
 
     <!-- Reminders -->
     <string name="profile_reminder_meals">Meal logging</string>

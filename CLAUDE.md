@@ -251,7 +251,10 @@ which FitPulse cannot delete (the nutrition scope cannot list) — remove them i
 Fitbit app. A sync writes real data there, so log test meals deliberately. Health Connect, once
 granted a type, takes that type's read off the cloud leg — leave it ungranted to test a cloud read.
 
-**Google Health — verification.** Not done. The Cloud project is settled
+**Google Health — verification.** Not done, so release builds hide the whole cloud leg —
+onboarding's step 5, its half of Health data and `sync()`'s cloud pass — behind
+`GOOGLE_HEALTH_ENABLED` (`core/data/build.gradle.kts`: debug on, release off). Flip the default
+when this lands. The Cloud project is settled
 (`app/google-services.json` points at `fitpulse-8d951`, the same project Firebase AI Logic runs
 in) and the Android OAuth clients now exist — two `client_type: 1` entries carrying the debug
 and release SHA-1. What is left: the consent screen branded for FitPulse, per-scope

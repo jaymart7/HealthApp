@@ -102,7 +102,7 @@
     <string name="profile_settings_reminders_row">Mga paalala</string>
     <string name="profile_settings_reminders_row_sub">Pag-log ng pagkain, pagtimbang, tubig, pag-aayuno at ang lingguhang recap</string>
     <string name="profile_connections_health">Data ng kalusugan</string>
-    <string name="profile_connections_health_sub">Health Connect at Google Health: workout, pagtimbang at tulog papasok, pagkain at tubig palabas</string>
+    <string name="profile_connections_health_sub">Workout, pagtimbang, hakbang at tulog mula sa Health Connect</string>
     <string name="profile_reminder_meals">Pag-log ng pagkain</string>
     <string name="profile_reminder_meals_sub">Nagpapaalala nang 3 beses kada araw</string>
     <string name="profile_reminder_weigh_in">Araw ng pagtimbang</string>
