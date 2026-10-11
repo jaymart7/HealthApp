@@ -14,6 +14,9 @@ import ph.mart.healthapp.core.data.food.MealType
 fun defaultMealTypeForNow(): MealType {
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     return when {
+        // After midnight is still the night's eating — a late snack or a night-shift meal, not
+        // breakfast. Filing it as breakfast also silenced the 08:00 breakfast reminder.
+        hour < 5 -> MealType.Snacks
         hour < 11 -> MealType.Breakfast
         hour < 15 -> MealType.Lunch
         hour < 21 -> MealType.Dinner

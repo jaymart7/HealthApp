@@ -851,6 +851,11 @@ rather than needing a counter patched.
 
 ### The add-entry sheet
 
+- **Midnight to 05:00 defaults to Snacks, not Breakfast.** `defaultMealTypeForNow()` filed
+  everything before 11:00 as breakfast, so a 1 AM snack — or a night-shift worker's meal — landed
+  in Breakfast, and the meal reminder, which stays quiet once a breakfast is logged, never asked
+  about the real one at 08:00. Five is the line because nobody's breakfast is earlier and nobody's
+  late snack is later often enough to matter; the slot is a default the toggle overrides anyway.
 - **Three states, not one column.** The sheet was five same-weight blocks — recipes, saved meals,
   recents, a search, then the form — with Add underneath all of it, which put the commit two screens
   down and said nothing about where to look. It is now **Browse** ("which food?"), **Form** ("how
@@ -1810,9 +1815,8 @@ rather than needing a counter patched.
   "so a re-star doesn't depend on the original diary row still being there" — so authoring a food
   from the add-entry form needed a write path and nothing else: `setFavorite()` is that path, and
   starring a diary row is authoring-by-example. The original spec asked for custom foods to be
-  searchable while starred favorites stayed out, which needs a column to tell them apart; the
-  builder is still `fallbackToDestructiveMigration(dropAllTables = true)`, so that column costs
-  every install's database, and a second concept whose only difference is which surface it appears
+  searchable while starred favorites stayed out, which needs a column to tell them apart — a
+  schema bump and a migration for every install's database — and a second concept whose only difference is which surface it appears
   on is not worth one. The collapse also closes an existing hole: a starred food past the
   newest-`MAX_SUGGESTIONS` window used to be out of view *and* out of reach of its own star.
   Custom foods stay **out of the export**, the rule saved meals, recipes and routines follow.

@@ -306,6 +306,23 @@ storing HC-derived data off-device. Settle it with the two items above rather th
 the answer is either that the user's own Auto Backup is in scope, or a `<cloud-backup>` exclusion
 for the database.
 
+**Found by the 2026-10-11 real-world audit and left for their own sessions:**
+- *Health data only syncs when asked.* Nothing calls `sync()` but the Health data screen and
+  onboarding, so Home's Steps, Sleep and Heart cards hold whatever the last manual Sync brought in.
+  A Health Connect pass when the app comes to the foreground (local, no network) is the fix; the
+  "no background job" argument in `HealthSyncRepository` is about the cloud leg.
+- *No Filipino food offline.* `COMMON_FOODS` is ~120 Western staples with no Tagalog names, so
+  "adobo" or "kanin" finds nothing without a network. Figures must be looked up (FNRI PhilFCT,
+  USDA FNDDS), never estimated.
+- *Crossing UTC re-dates history.* The epoch-day key is local midnight in UTC days — D−1 east of
+  UTC, D west of it — so Manila ↔ US/Europe shifts every past row by a day. Needs a Room migration
+  over every dated table and an export version bump.
+- *The library is not exported.* Custom foods, recipes, saved meals and routines are lost on a phone
+  switch that Auto Backup doesn't carry.
+- *Reminder hours are fixed* (meals 8/13/19), which is wrong for shift workers.
+- *Play Integrity quota.* Limited-use App Check tokens spend one attestation per AI request
+  against a default 10k/day; request a raise before the user count makes the AI go quiet.
+
 ## Composable structure & previews
 
 - **File breakdown:** a screen's composable is `ScreenName.kt`; its
