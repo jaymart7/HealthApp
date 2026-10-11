@@ -708,7 +708,8 @@ one filled button: Health Connect's Allow while it has nothing granted, Google H
 Ten WorkManager notifications behind seven Profile switches: three meal reminders · weigh-in
 (Mondays) · progress photo (fortnightly) · two water checks · supplements · training day · weekly
 recap (Sundays 19:00). Plus a one-shot fasting-goal notification (an eighth switch), derived off
-the active fast rather than scheduled periodically. The two water checks carry a **+1 glass**
+the active fast rather than scheduled periodically. On Android 13+ the notification permission is
+asked for once per launch, straight after onboarding, while any reminder is on and it isn't granted. The two water checks carry a **+1 glass**
 action button — the only action button in the app; tapping it logs the glass without opening
 anything and cancels the notification. The weekly recap is the only one whose tap does more than
 pick a tab: it lands on Progress **with the recap overlay already open**, and stays quiet on a week

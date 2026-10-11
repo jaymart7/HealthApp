@@ -2409,6 +2409,17 @@ rather than needing a counter patched.
 
 ### Reminders & notifications
 
+- **The notification permission is asked for the moment the app is past onboarding, not behind a
+  switch.** The meal and weigh-in reminders default on, and `RemindersScreen` only requested
+  `POST_NOTIFICATIONS` when a switch was turned *on* — which those two never are, being on already.
+  So on Android 13+ every new install had two reminders switched on and silent: `ReminderWorker`
+  read the missing grant as "stay quiet", correctly, forever. `AskForNotifications` in `AppRoot`
+  asks once per launch while any reminder is on and the grant is missing, and stores nothing:
+  Android stops showing the dialog itself after two refusals, so a second "already asked" flag would
+  only be a second record of what the system already enforces. New users meet it straight after
+  onboarding, which is the moment the reminders it serves come into force; upgraders meet it once
+  on their next launch. A refusal changes no switch — Reminders' banner still says why they're
+  quiet, and still opens the system page.
 - **`shouldNotify` may throw, and `doWork` catches it — the predicate was extracted to stop an
   early return killing the chain, and a throw is the same death by another door.** The schedule
   here is a chain of one-shots, each run booking the next as its last act, which is what lets a
