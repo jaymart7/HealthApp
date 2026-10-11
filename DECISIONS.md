@@ -46,6 +46,25 @@ Keep these — each one was argued once and is easy to "fix" back into a bug.
 
 ### The day's calorie budget
 
+- **Mifflin–St Jeor prices off the latest weigh-in, not the onboarding weight.** `tdee()` read
+  `Profile.weightKg`, which only onboarding and About you ever wrote — logging a weigh-in never
+  touched it, and About you's sublabel said so. So a target set at 90 kg stayed 90 kg's target at
+  80 kg, about 150 kcal/day too generous, which a user reads as a plateau. `observeProfile()` now
+  joins the newest `weight_entry` in as `Profile.latestWeighInKg` (read-time, never stored —
+  `toEntity()` drops it), and `tdee()` reads `currentWeightKg`, the weigh-in else the profile's
+  figure. One line in `tdee()` re-prices all of `dailyTargets()`'s callers; none of them changed.
+  - **`weightKg` keeps its meaning: the journey's start.** `weightProgressKg` uses it when the log
+    holds one entry, so overwriting it with the latest weigh-in would have zeroed the weight badge
+    for exactly that user. A derived field beside it is what keeps both readings true.
+  - **About you's "Current weight" writes a weigh-in for today**, correcting today's row in place
+    (note and time kept). Writing the profile instead would edit a figure the target no longer
+    reads the moment any weigh-in exists — a stepper that visibly does nothing.
+  - **Onboarding logs the weight it was given as the first weigh-in**, into an empty log only, so
+    the Weight chart and the projection have a day-one point. It is a measurement the user just
+    stated, not one invented: the objection that kept About you from writing one was about a row
+    that was *not* a weigh-in, and that row no longer exists.
+  - A manual calorie override is still a pin — weigh-ins move the computed figure, never an override,
+    which is what "Reset to calculated" is for.
 - **`budgetKcal()` is the only place burned calories fold into the day**, and
   `Profile.addExerciseToBudget` (default on) can switch that credit off —
   `calculateDailyTargets()` already applies an activity multiplier, so crediting
@@ -2013,8 +2032,8 @@ rather than needing a counter patched.
   budget was steering away from, with nothing saying the two disagreed. `Goal.disagreesWith()`
   draws one `error` line under the target on About you — the calorie floor's warn-don't-block
   rule. It measures from the latest weigh-in, the figure the header's "to go" uses, and names it
-  in the line: the "Current weight" row right above is the onboarding figure logging never moves,
-  and a bare "above your current weight" under 82 kg read as wrong for a 74 kg target. Neither value is changed for the user: either one may be the one they meant.
+  in the line, so the warning reads on its own rather than leaning on the "Current weight" row
+  above it. Neither value is changed for the user: either one may be the one they meant.
 - **Targets are editable from Profile, and a manual calorie target reprices the split.** The four
   `Profile` overrides used to be reachable only from onboarding's Confirm step, which left a user
   who wanted a different target with no path but a reinstall — Goals is now an editable card, like
@@ -5245,8 +5264,8 @@ editable after onboarding. The split is what fixed both halves of that.
   `TREND_ARROW_DEADBAND_KG` takes the flat glyph and the neutral tone rather than a confident
   arrow. It reads the *logged* weight (`trendVsSevenDaysAgo`), falling back to `Profile.weightKg`
   only when the log is empty, because the onboarding figure stops being true the first time anyone
-  steps on a scale — which is also why About you's "Current weight" row says so rather than
-  claiming to be the latest weigh-in.
+  steps on a scale. About you's "Current weight" row is that same latest weigh-in now, and editing
+  it logs today's — see **The day's calorie budget**.
 - **Cycle stays on Profile.** It is a fact about the person, it *creates* surfaces (a Home card, a
   Progress page) rather than restyling existing ones, and a privacy-sensitive switch should not be
   two levels deep. The line that appears when it goes on is the other half of the privacy

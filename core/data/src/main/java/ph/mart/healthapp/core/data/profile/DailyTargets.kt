@@ -59,9 +59,9 @@ fun calculateDailyTargets(profile: Profile): DailyTargets {
 
 private fun tdee(profile: Profile): Double {
     val bmr = if (profile.sex == Sex.Male) {
-        10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5
+        10 * profile.currentWeightKg + 6.25 * profile.heightCm - 5 * profile.age + 5
     } else {
-        10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161
+        10 * profile.currentWeightKg + 6.25 * profile.heightCm - 5 * profile.age - 161
     }
     return bmr * (ACTIVITY_MULTIPLIER[profile.activityLevel] ?: 1.2)
 }

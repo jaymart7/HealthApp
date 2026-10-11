@@ -87,6 +87,16 @@ class DailyTargetsTest {
     }
 
     @Test
+    fun `the latest weigh-in prices the target, not the onboarding weight`() {
+        val onboarded = profile(sex = Sex.Male, weightKg = 90.0, goal = Goal.Lose)
+        assertEquals(
+            calculateDailyTargets(profile(sex = Sex.Male, weightKg = 80.0, goal = Goal.Lose)),
+            calculateDailyTargets(onboarded.copy(latestWeighInKg = 80.0)),
+        )
+        assertEquals(90.0, onboarded.currentWeightKg, 0.0)
+    }
+
+    @Test
     fun `belowFloor only trips under the safety floor`() {
         val base = profile(sex = Sex.Male)
         assertTrue(base.copy(calorieOverrideKcal = MALE_CALORIE_FLOOR - 1).dailyTargets().belowFloor)

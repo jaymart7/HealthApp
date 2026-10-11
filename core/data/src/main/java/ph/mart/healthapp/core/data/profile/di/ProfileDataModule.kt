@@ -7,5 +7,5 @@ import ph.mart.healthapp.core.data.profile.ProfileRepositoryImpl
 
 val profileDataModule = module {
     single { get<AppDatabase>().profileDao() }
-    single<ProfileRepository> { ProfileRepositoryImpl(get()) }
+    single<ProfileRepository> { ProfileRepositoryImpl(get(), get()) }
 }

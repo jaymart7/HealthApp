@@ -12,7 +12,10 @@ import ph.mart.healthapp.core.data.profile.Goal
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.round1
+import ph.mart.healthapp.core.data.nowMinuteOfDay
 import ph.mart.healthapp.core.data.progress.ProgressRepository
+import ph.mart.healthapp.core.data.progress.WeightEntry
+import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.data.water.WATER_GOAL_GLASSES
 
 /** What About you will let a body figure be nudged to. Wide enough to be nobody's problem and
@@ -131,15 +134,17 @@ class ProfileViewModel(
     }
 
     /**
-     * The *profile's* weight — the onboarding figure Mifflin–St Jeor runs on, not a weigh-in. It
-     * deliberately writes no `WeightEntry`: the header reads the log for what you weigh today and
-     * falls back to this only when the log is empty, so logging a weigh-in through the FAB is
-     * still the one way to put a point on the Progress chart. Editing it here corrects the number
-     * the target is computed from without inventing a measurement that never happened.
+     * "Current weight" is the latest weigh-in — the figure Mifflin–St Jeor prices off — so saying
+     * what you weigh here *is* a weigh-in, today's. It writes the log rather than the profile:
+     * `Profile.weightKg` is the onboarding start that `weightProgressKg` measures from, and once a
+     * weigh-in exists a profile write would never reach the target anyway. Today's row is corrected
+     * in place, its note and time kept, rather than stamped anew on every nudge.
      */
     fun setCurrentWeightKg(kg: Double) = intent {
-        val profile = state.profile ?: return@intent
-        profileRepository.saveProfile(profile.copy(weightKg = round1(kg.coerceIn(WEIGHT_KG))))
+        val today = todayEpochDay()
+        val entry = state.weightEntries.firstOrNull { it.dateEpochDay == today }
+            ?: WeightEntry(dateEpochDay = today, weightKg = kg, minuteOfDay = nowMinuteOfDay())
+        progressRepository.upsertWeightEntry(entry.copy(weightKg = round1(kg.coerceIn(WEIGHT_KG))))
     }
 
     /** Null clears it, which is a real state: Progress's goal line, its goal chip and Home's

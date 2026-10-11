@@ -90,7 +90,21 @@ data class Profile(
      * is holding the phone.
      */
     val cycleTrackingOn: Boolean? = null,
+    /**
+     * The newest weigh-in, joined in by `observeProfile()` at read time and never stored — null
+     * before the first one. [weightKg] stays what onboarding (or About you, before any weigh-in)
+     * recorded, and so the start of the journey `weightProgressKg` measures from; this is where the
+     * journey is now. See [currentWeightKg].
+     */
+    val latestWeighInKg: Double? = null,
 )
+
+/**
+ * What the user weighs as far as the app knows: the latest weigh-in, else the profile's own
+ * figure. Mifflin–St Jeor prices off this — a target computed at 90 kg and never re-priced is ~150
+ * kcal/day too generous by 80 kg, which reads to the user as a plateau.
+ */
+val Profile.currentWeightKg: Double get() = latestWeighInKg ?: weightKg
 
 interface ProfileRepository {
     fun observeProfile(): Flow<Profile?>

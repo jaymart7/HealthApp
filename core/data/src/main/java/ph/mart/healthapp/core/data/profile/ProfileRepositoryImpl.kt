@@ -1,13 +1,22 @@
 package ph.mart.healthapp.core.data.profile
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import ph.mart.healthapp.core.data.profile.local.ProfileDao
 import ph.mart.healthapp.core.data.profile.local.ProfileEntity
+import ph.mart.healthapp.core.data.progress.local.WeightEntryDao
 
-internal class ProfileRepositoryImpl(private val dao: ProfileDao) : ProfileRepository {
+internal class ProfileRepositoryImpl(
+    private val dao: ProfileDao,
+    private val weightDao: WeightEntryDao,
+) : ProfileRepository {
 
-    override fun observeProfile(): Flow<Profile?> = dao.observe().map { it?.toProfile() }
+    /** The latest weigh-in rides along on every read, so every `dailyTargets()` caller re-prices
+     * off it with no change of its own. `toEntity()` drops it again — it is a join, not a column. */
+    override fun observeProfile(): Flow<Profile?> =
+        combine(dao.observe(), weightDao.observeLatestKg()) { entity, latestKg ->
+            entity?.toProfile()?.copy(latestWeighInKg = latestKg)
+        }
 
     override suspend fun saveProfile(profile: Profile) {
         dao.upsert(profile.toEntity())

@@ -620,7 +620,9 @@ panes at ≥840dp.
   applied from the energy check-in; a manual calorie target reprices the split.
 - Metric/imperial toggles; water glass size and daily goal; fasting goal hours; step goal.
 - Sex, age, height, current weight, **target weight**, goal and activity level all editable on
-  About you — no save button, and the result card reprices as you nudge. A target on the wrong
+  About you — no save button, and the result card reprices as you nudge. Current weight *is* the
+  latest weigh-in: the calorie target re-prices off every new one, and nudging it here logs
+  today's. Onboarding's weight becomes the first weigh-in. A target on the wrong
   side of the goal (heavier while losing, lighter while building) gets a warning line, never a block.
 - Light / dark / follow-device; mascot character row and a colour row opening the 35-swatch sheet.
 - One row family across all three "Your stuff" lists — supplements, food library, routines: a

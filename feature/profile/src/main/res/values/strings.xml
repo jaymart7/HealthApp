@@ -73,7 +73,7 @@
     <string name="profile_about_age_unit">years</string>
     <string name="profile_about_height">Height</string>
     <string name="profile_about_weight">Current weight</string>
-    <string name="profile_about_weight_sub">What your target is worked out from. Logging a weigh-in doesn\'t change it.</string>
+    <string name="profile_about_weight_sub">Your latest weigh-in, and what your target is worked out from. Changing it here logs today\'s weigh-in.</string>
     <string name="profile_about_target">Target weight</string>
     <string name="profile_about_target_sub">Drives the goal line on Progress</string>
     <string name="profile_about_target_mismatch_lose">Above your latest weigh-in of %1$s %2$s, but your goal is to lose weight.</string>

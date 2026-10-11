@@ -31,6 +31,7 @@ import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.Sex
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
+import ph.mart.healthapp.core.data.profile.currentWeightKg
 import ph.mart.healthapp.core.data.profile.dailyTargets
 import ph.mart.healthapp.core.data.profile.disagreesWith
 import ph.mart.healthapp.core.data.profile.displayUnitToCm
@@ -153,7 +154,7 @@ private fun AboutYouContent(
                     onDecrement = { onSetHeightCm((height - HEIGHT_STEP).displayUnitToCm(unit)) },
                 )
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                val weight = profile.weightKg.kgToDisplayUnit(unit)
+                val weight = profile.currentWeightKg.kgToDisplayUnit(unit)
                 StepperRow(
                     label = stringResource(R.string.profile_about_weight),
                     sublabel = stringResource(R.string.profile_about_weight_sub),
@@ -167,7 +168,7 @@ private fun AboutYouContent(
                 // when it is null — so the first nudge seeds from the current weight rather than
                 // from zero. ponytail: no way back to unset once set; a clear affordance is the
                 // upgrade if anyone asks for one.
-                val target = (profile.targetWeightKg ?: profile.weightKg).kgToDisplayUnit(unit)
+                val target = (profile.targetWeightKg ?: profile.currentWeightKg).kgToDisplayUnit(unit)
                 StepperRow(
                     label = stringResource(R.string.profile_about_target),
                     sublabel = stringResource(R.string.profile_about_target_sub),
@@ -200,8 +201,8 @@ private fun AboutYouContent(
                                 } else {
                                     R.string.profile_about_target_mismatch_build
                                 },
-                                // Named, because the row above says something else: "Current
-                                // weight" is the onboarding figure, and this is not measured from it.
+                                // Named, so the line stands on its own: it is measured from the
+                                // logged weight, the same figure "Current weight" above shows.
                                 formatOneDecimal(nowKg.kgToDisplayUnit(unit)),
                                 unit.weightUnitLabel(),
                             ),

@@ -62,7 +62,7 @@
     <string name="profile_about_age_unit">taon</string>
     <string name="profile_about_height">Taas</string>
     <string name="profile_about_weight">Kasalukuyang timbang</string>
-    <string name="profile_about_weight_sub">Mula rito kinukuwenta ang target mo. Hindi ito nababago ng pag-log ng pagtimbang.</string>
+    <string name="profile_about_weight_sub">Ang huli mong pagtimbang, at mula rito kinukuwenta ang target mo. Kapag binago mo ito rito, ila-log ito bilang pagtimbang ngayong araw.</string>
     <string name="profile_about_target">Target weight</string>
     <string name="profile_about_target_sub">Ito ang goal line sa Progreso</string>
     <string name="profile_about_target_mismatch_lose">Mas mabigat sa huling timbang mo na %1$s %2$s, pero ang layunin mo ay magbawas ng timbang.</string>
