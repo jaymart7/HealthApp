@@ -1224,6 +1224,14 @@ rather than needing a counter patched.
 
 ### Home
 
+- **The water row counts past the goal.** `WaterGlassRow` drew exactly `goal` glasses, and tapping
+  glass *n* sets the count to *n* — so Home and the diary, the two places a glass is logged by
+  hand, could not record a ninth glass on an eight-glass goal. A hot day or a long run stored as
+  eight skewed every water average and "best day" after it. At the goal the row now grows one "+"
+  after the last glass instead of a glass per glass, which keeps the meter one line at any count;
+  the count beside it says how far past the goal the day went, and tapping the last glass sets it
+  back to the goal, the row's existing undo. The widget, the watch and the water notification still
+  stop at the goal through `addGlass()`: they are glances and nudges toward a target, not the log.
 - **Home draws its cards from the first launch; there is no day-one screen any more.** A loaded
   state with nothing logged used to replace the whole tab with "Let's log your first meal", which
   hid the calorie ring onboarding had just computed and every card that exists to *take* the first

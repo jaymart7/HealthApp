@@ -226,7 +226,8 @@ ranked by the daily loop, not grouped by kind.
   where the model named the words it could not pin down ("a slice"), the opened row quotes them
   back; a notice above counts how many. Remove lives in the opened row, Discard is a word beside
   Log in the docked bar, and a one-row parse offers "Say it again" back to the sentence.
-- Water row in the diary; water goal and glass size configurable.
+- Water row in the diary; water goal and glass size configurable. The glass row (here and on Home)
+  grows a "+" at the goal, so a day can log more water than its target.
 - A note on the day — one free-text note per day (500 chars), under its own rule at the foot of
   the diary. A day with a note draws it as a card you tap to edit; a day without one carries an
   "Add a note" item in the header's ⋮ menu, beside Search and Copy. Written to the day being shown, never to today, and

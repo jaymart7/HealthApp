@@ -34,6 +34,7 @@
 
     <!-- Water -->
     <string name="ds_water_set">Set %1$d of %2$d glasses</string>
+    <string name="ds_water_add_more">Add another glass, %1$d so far</string>
 
     <!-- Date and time pickers, and the calendar -->
     <string name="ds_date">Date</string>

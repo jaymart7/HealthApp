@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.designsystem.R
+import ph.mart.healthapp.core.designsystem.icon.AppIcons
 import ph.mart.healthapp.core.designsystem.theme.AppTheme
 import ph.mart.healthapp.core.designsystem.theme.Motion
 import ph.mart.healthapp.core.designsystem.theme.rememberFillDirection
@@ -35,7 +36,8 @@ private val GLASS_ICON = 24.dp
 /**
  * One tappable glass per [goal]; the first [glasses] of them are filled. Tapping glass *n* sets
  * the count to *n*, and tapping the last filled glass clears it — so a miscount is corrected in
- * the same gesture that made it, without a separate undo control.
+ * the same gesture that made it, without a separate undo control. From the goal on, a trailing
+ * "+" adds one more, so the day can record more water than its target.
  *
  * Stateless and unit-free: the caller owns the count and formats the volume label. Shared because
  * both Home and the food diary show it, per CLAUDE.md's ≥2-screens rule.
@@ -99,6 +101,27 @@ fun WaterGlassRow(glasses: Int, goal: Int, onSetGlasses: (Int) -> Unit, modifier
                 )
             }
         }
+        // At the goal the row grows one "+" after the last glass rather than stopping: a hot day or
+        // a long run is more water, and a meter that refused the ninth glass recorded eight. Past
+        // it, the count beside the row says how far; a mistaken extra is undone the usual way, by
+        // tapping the last glass, which sets the count back to the goal.
+        if (glasses >= goal) {
+            val addDescription = stringResource(R.string.ds_water_add_more, glasses)
+            IconButton(
+                onClick = { onSetGlasses(glasses + 1) },
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .clearAndSetSemantics { contentDescription = addDescription },
+            ) {
+                Icon(
+                    imageVector = AppIcons.Add,
+                    contentDescription = null,
+                    tint = filledTint,
+                    modifier = Modifier.size(GLASS_ICON),
+                )
+            }
+        }
     }
 }
 
@@ -121,6 +144,7 @@ private fun WaterGlassRowPreview() {
                 WaterGlassRow(glasses = 0, goal = 8, onSetGlasses = {})
                 WaterGlassRow(glasses = 5, goal = 8, onSetGlasses = {})
                 WaterGlassRow(glasses = 8, goal = 8, onSetGlasses = {})
+                WaterGlassRow(glasses = 10, goal = 8, onSetGlasses = {})
                 WaterGlassRow(glasses = 12, goal = 14, onSetGlasses = {})
             }
         }

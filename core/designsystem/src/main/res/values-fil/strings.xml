@@ -28,6 +28,7 @@
     <string name="ds_badge_earned">%1$s, nakuha na</string>
     <string name="ds_badge_not_earned">%1$s, hindi pa nakukuha</string>
     <string name="ds_water_set">Itakda sa %1$d ng %2$d baso</string>
+    <string name="ds_water_add_more">Magdagdag pa ng baso, %1$d na</string>
 
     <string name="ds_date">Petsa</string>
     <string name="ds_time">Oras</string>
