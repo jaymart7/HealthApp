@@ -193,6 +193,7 @@
     <string name="coach_receipt_calories">Calories</string>
     <string name="coach_receipt_minutes">Minutes</string>
     <string name="coach_receipt_burned">Burned</string>
+    <string name="coach_receipt_sets">Sets</string>
     <string name="coach_receipt_weight">Weight</string>
     <string name="coach_receipt_dose">Dose</string>
     <string name="coach_receipt_reading">Reading</string>
@@ -240,6 +241,7 @@
     </plurals>
     <string name="coach_proposal_changed_food">Changed: %1$s, %2$d kcal.</string>
     <string name="coach_proposal_changed_exercise">Changed: %1$s, %2$d min.</string>
+    <string name="coach_proposal_changed_counted">Changed: %1$s.</string>
     <string name="coach_proposal_removed_entry">Removed: %1$s.</string>
     <string name="coach_proposal_changed_water">Water set to %1$s.</string>
     <plurals name="coach_proposal_changed_items">
@@ -316,6 +318,7 @@
     <string name="coach_proposal_logged_food">Logged: %1$s, %2$d kcal.</string>
     <string name="coach_proposal_logged_water">Logged: %1$s.</string>
     <string name="coach_proposal_logged_exercise">Logged: %1$s, %2$d min.</string>
+    <string name="coach_proposal_logged_counted">Logged: %1$s, %2$d kcal burned.</string>
     <string name="coach_proposal_logged_weight">Logged: %1$s.</string>
     <string name="coach_proposal_logged_supplement">Logged: %1$s.</string>
     <string name="coach_proposal_logged_mood">Recorded: %1$s.</string>

@@ -265,11 +265,11 @@ internal fun fakeParse(text: String): List<RecognizedFood> = offlineFoods(text)
 internal class FakeExerciseParseRepository : ExerciseParseRepository {
     override suspend fun parse(text: String, unit: UnitSystem): ExerciseParseResult {
         delay(FAKE_LATENCY_MS)
-        // Dictated lifts win, the way the real prompt sets Strength for them — and a canned hour,
-        // because the first number in "bench 3x8" is a set count, not a duration.
+        // Dictated lifts win, the way the real prompt sets Strength for them — counted, so no
+        // duration: the first number in "bench 3x8" is a set count, not one.
         val sets = fakeStrengthParse(text, unit)
         val activity = if (sets.isNotEmpty()) {
-            ParsedExercise(type = ExerciseType.Strength, name = "", minutes = FAKE_SESSION_MINUTES, sets = sets)
+            ParsedExercise(type = ExerciseType.Strength, name = "", minutes = null, sets = sets)
         } else {
             fakeExerciseParse(text)
         }
@@ -291,9 +291,6 @@ internal class FakeExerciseParseRepository : ExerciseParseRepository {
         return fakeRoutineDesign(request)?.let(RoutineDesignResult::Success) ?: RoutineDesignResult.NothingDesigned
     }
 }
-
-/** What [FakeExerciseParseRepository] gives a session of dictated lifts. */
-private const val FAKE_SESSION_MINUTES = 60
 
 /** Words that make a request sound like a routine, for [fakeRoutineDesign]'s canned answer. */
 private val FAKE_ROUTINE_WORDS = Regex("""(?i)\b(push|pull|legs?|upper|lower|full|body|day|workout|routine)\b""")
@@ -368,7 +365,7 @@ internal fun fakeRecipeParse(text: String): RecipeParseResult {
 }
 
 internal class FakeQuickLogRepository : QuickLogRepository {
-    override suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap?): QuickLogResult {
+    override suspend fun parse(turns: List<QuickLogTurn>, unit: UnitSystem, photo: Bitmap?): QuickLogResult {
         delay(FAKE_LATENCY_MS)
         if (photo == null) return fakeQuickLog(turns)
         // The plate the camera fake would have seen, plus whatever the words add; a photo is never

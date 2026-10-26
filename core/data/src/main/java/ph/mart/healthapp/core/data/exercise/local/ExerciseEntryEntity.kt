@@ -7,6 +7,8 @@ import androidx.room3.PrimaryKey
  * [burnedKcal] is stored as logged, not recomputed on read — the user can overwrite the MET
  * estimate, and a later weigh-in must not silently rewrite what a past workout burned.
  *
+ * [minutes] is null on a counted workout — sets, no duration; see `ExerciseEntry.minutes`.
+ *
  * [steps] is what this activity contributed to the day's pedometer count: the watch's own figure
  * for an imported workout, an estimate for one logged by hand. It exists so the step credit can
  * subtract movement the workout has already been paid for.
@@ -18,7 +20,7 @@ internal data class ExerciseEntryEntity(
     val name: String,
     val date: Long,
     val loggedAt: Long,
-    val minutes: Int,
+    val minutes: Int?,
     val burnedKcal: Int,
     val steps: Int = 0,
     val isDeleted: Boolean = false,

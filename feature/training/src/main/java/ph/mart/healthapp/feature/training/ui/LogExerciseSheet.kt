@@ -116,7 +116,7 @@ fun LogExerciseSheet(
                     // asking for the lifts a second time there.
                     // Merged onto the form rather than replacing it, the cardio branch's
                     // `withParsed`: a note or a burn already typed travels on with the sets.
-                    val draft = state.form.withParsed(result.activity).copy(sets = result.activity.sets)
+                    val draft = state.form.withParsed(result.activity).withSets(result.activity.sets)
                     openStrength(StrengthWorkoutRoute(dateEpochDay, draft = draft))
                 } else {
                     // `withEstimate` is the caller's, and it is what prices the parse: on a new
@@ -352,8 +352,11 @@ private fun LogExerciseContent(
                 // sub-view, and hands the form over with it: whatever was typed here is still
                 // there on the other side.
                 if (form.type == ExerciseType.Strength) {
+                    val resources = LocalResources.current
                     ExerciseSetsRow(
-                        summary = form.sets.summaryLabel(uiState.preferredUnit)?.resolve(LocalResources.current),
+                        // A counted workout's burn has no stepper, so it rides on its sets' line.
+                        summary = form.sets.summaryLabel(uiState.preferredUnit)?.resolve(resources)
+                            ?.let { "$it · ${stringResource(R.string.training_strength_kcal, form.burnedKcal)}" },
                         onClick = { onOpenStrength(StrengthWorkoutRoute(dateEpochDay, editing?.id ?: 0, draft = form)) },
                     )
                 }
@@ -368,8 +371,8 @@ private val PREVIEW_WORKOUT = ExerciseEntry(
     id = 3,
     type = ExerciseType.Strength,
     name = "Push day",
-    minutes = 45,
-    burnedKcal = 260,
+    minutes = null,
+    burnedKcal = 12,
     sets = listOf(
         StrengthSet("Bench press", 8, 60.0),
         StrengthSet("Bench press", 8, 62.5),

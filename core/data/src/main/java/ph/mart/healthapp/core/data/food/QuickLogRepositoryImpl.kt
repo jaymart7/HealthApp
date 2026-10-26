@@ -12,17 +12,21 @@ import org.json.JSONArray
 import org.json.JSONObject
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
-import ph.mart.healthapp.core.data.exercise.PARSED_EXERCISE_SCHEMA
-import ph.mart.healthapp.core.data.exercise.REP_COUNTED_MINUTES
+import ph.mart.healthapp.core.data.exercise.DESCRIBED_EXERCISE_SCHEMA
+import ph.mart.healthapp.core.data.exercise.TIMED_OR_COUNTED
+import ph.mart.healthapp.core.data.exercise.parsedSets
 import ph.mart.healthapp.core.data.exercise.readActivity
+import ph.mart.healthapp.core.data.exercise.readLifts
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.generate
 import ph.mart.healthapp.core.data.replyLanguageLine
 
 /**
  * [MealParseRepositoryImpl]'s shape with both parses' schemas nested in one reply: the food items
- * are [RECOGNIZED_FOOD_SCHEMA] and the activities are `PARSED_EXERCISE_SCHEMA`, read back by the
- * same two functions, so a meal typed here and one typed on talk-to-log land identically.
+ * are [RECOGNIZED_FOOD_SCHEMA] and the activities are `DESCRIBED_EXERCISE_SCHEMA`, read back by the
+ * same functions, so a meal typed here and one typed on talk-to-log land identically — and so do a
+ * workout typed here and one typed on the log sheet, sets and all.
  */
 internal class QuickLogRepositoryImpl(
     // Read for the saved foods the sentence names — see `MyFoods.kt`.
@@ -53,7 +57,7 @@ internal class QuickLogRepositoryImpl(
         },
     )
 
-    override suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap?): QuickLogResult = try {
+    override suspend fun parse(turns: List<QuickLogTurn>, unit: UnitSystem, photo: Bitmap?): QuickLogResult = try {
         val mayAsk = turns.mayAsk()
         val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
         val mine = foodRepository.observeMyFoods().first().namedIn(said)
@@ -72,7 +76,10 @@ internal class QuickLogRepositoryImpl(
             question = body.optString("question"),
             foods = parseRecognizedFoods(body.optJSONArray("foods") ?: JSONArray()).preferMyFoods(mine),
             activities = body.optJSONArray("activities")?.let { array ->
-                (0 until array.length()).map { readActivity(array.getJSONObject(it)) }
+                (0 until array.length()).map { i ->
+                    val activity = array.getJSONObject(i)
+                    readActivity(activity, parsedSets(readLifts(activity), unit))
+                }
             }.orEmpty(),
             mayAsk = mayAsk,
             mealType = body.optString("mealType"),
@@ -96,7 +103,7 @@ private val QUICK_LOG_SCHEMA = Schema.obj(
             description = "One short follow-up question, only when allowed and truly needed",
         ),
         "foods" to Schema.array(RECOGNIZED_FOOD_SCHEMA),
-        "activities" to Schema.array(PARSED_EXERCISE_SCHEMA),
+        "activities" to Schema.array(DESCRIBED_EXERCISE_SCHEMA),
         "mealType" to Schema.enumeration(
             values = MealType.entries.map { it.name },
             description = "Only when they named the meal, e.g. \"for lunch\"",
@@ -112,8 +119,8 @@ private val QUICK_LOG_SCHEMA = Schema.obj(
     optionalProperties = listOf("question", "mealType", "waterGlasses", "weight"),
 )
 
-/** A full food list plus a few activities and a question. */
-private const val MAX_QUICK_LOG_TOKENS = MAX_FOOD_LIST_TOKENS + 400
+/** A full food list plus a few activities, their lifts, and a question. */
+private const val MAX_QUICK_LOG_TOKENS = MAX_FOOD_LIST_TOKENS + 600
 
 /** The same answer plus the thinking headroom plate recognition carries — see [photoModel]. */
 private const val MAX_QUICK_LOG_PHOTO_TOKENS = MAX_QUICK_LOG_TOKENS + 400
@@ -168,10 +175,13 @@ private fun promptFor(
             "cooking fat they did not mention. Set confidence to \"low\" for any item whose " +
             "portion or identity you are unsure of, otherwise \"high\"; on a \"low\" item only, " +
             "set uncertainAbout to their words you could not pin down. " +
-            "Activities: pick the closest type from the list, with the duration in minutes as " +
-            "they gave it; set name to a short note in their own words, or leave it out. Do not " +
-            "estimate calories burned — the app works that out from their own weight. " +
-            REP_COUNTED_MINUTES + " " +
+            "Activities: pick the closest type from the list. A timed one has its duration in " +
+            "minutes as they gave it; a counted one lists its lifts, one entry per lift at one " +
+            "load, reading \"3x8\" as 3 sets of 8 reps and reps with no set count as 1 set, with " +
+            "the weight as they said it (0 for bodyweight) and unit only if they said kg or lb. " +
+            "Set name to a short note in their own words, or leave it out. Do not estimate " +
+            "calories burned — the app works that out from their own weight. " +
+            TIMED_OR_COUNTED + " " +
             "Set mealType only if they said which meal it was. " +
             "Water: if they said how many glasses of plain water they drank, set waterGlasses and " +
             "do not also list it as a food. Weight: if they stated their own body weight, set weight " +

@@ -200,7 +200,7 @@ private fun ColumnScope.StrengthBody(
 private fun entriesPreview(today: Long): List<ExerciseEntry> = listOf(
     ExerciseEntry(
         id = 1, dateEpochDay = today - 5, type = ExerciseType.Strength,
-        minutes = 50, burnedKcal = 290,
+        minutes = null, burnedKcal = 12,
         sets = listOf(
             StrengthSet("Squat", 5, 100.0),
             StrengthSet("Squat", 5, 102.5),
@@ -209,7 +209,7 @@ private fun entriesPreview(today: Long): List<ExerciseEntry> = listOf(
     ),
     ExerciseEntry(
         id = 2, dateEpochDay = today - 1, type = ExerciseType.Strength,
-        minutes = 45, burnedKcal = 260,
+        minutes = null, burnedKcal = 8,
         sets = listOf(
             StrengthSet("Bench press", 8, 62.5),
             StrengthSet("Dip", 12, 0.0),

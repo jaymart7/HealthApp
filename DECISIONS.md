@@ -4015,9 +4015,11 @@ rather than needing a counter patched.
   do. A new workout keeps all four, except that its volume card now waits for a first set — "0
   sets · 0 lifted" over an empty list was noise. Save sits in a pinned bar on both, the sheets'
   `bottomBar` argument: a long session's save must not cost a scroll past every set.
-- **A new workout's Save waits for a set; a correction's doesn't.** `isValid()` is only
+- **A new workout's Save waits for a set; a correction's doesn't.** `isValid()` was only
   `minutes > 0` and a blank form starts at 30, so the screen opened with Save already lit and one
-  tap logged half an hour of nothing. The plain duration-and-kcal strength entry is still real —
+  tap logged half an hour of nothing. (A counted form is now valid on its sets alone — see *An
+  activity is timed or counted* — so the set requirement is what guards a new one.) The plain
+  duration-and-kcal strength entry is still real —
   it is the log sheet's, through its own Save — so the screen asks for a set only on a *new*
   workout. A correction keeps `isValid()` alone, or a row logged before sets existed could not be
   fixed here.
@@ -4068,26 +4070,44 @@ rather than needing a counter patched.
   already settled that a model handed a duration invents a calorie figure and the app owns
   `estimateBurnedKcal()` instead. That was written for the coach's tool call; the describe panel is
   the second path under it, and here the rule is enforced by the **schema** rather than by a prompt
-  asking nicely — `PARSED_EXERCISE_SCHEMA` has three properties and none of them is a burn, so
-  there is nowhere for a figure to arrive. What comes back is type, note and minutes; `withParsed`
+  asking nicely — the activity schema (now `DESCRIBED_EXERCISE_SCHEMA`) has no property that is a
+  burn, so there is nowhere for a figure to arrive. What comes back is type, note and minutes (or
+  lifts); `withParsed`
   leaves `burnedEdited` alone and `withEstimate` prices it at the user's own latest weigh-in, so a
   described run and a typed one of the same length are the same number and the weight that made it
   never leaves the device. `parsedExercise` is the trust boundary and it deliberately **rejects** a
   type the model invented rather than bucketing it into `Other`: the type is what the burn is
   computed from, so a guessed one would price a workout nobody described.
-- **A rep-counted exercise is never asked how long it took.** "10 push ups" was asked for a
-  duration by the quick log, drafted one by the coach only after asking, and on the log sheet came
-  back as 0 minutes — which `parsedExercise` reads as "no workout" and answered with "try naming
-  how long for". Nobody times ten push-ups, so only a timed activity (a run, a walk, a swim) needs
-  its length said. Every AI path that drafts a workout carries one shared sentence,
-  `REP_COUNTED_MINUTES`: give `MINUTES_PER_SET` (2) per set, reps with no set count being one set.
-  On the log sheet the sets are in hand, so `parsedExercise` also times a 0-minute answer off them
-  on-device rather than trusting the model to comply. `minutes` stays above zero everywhere because
-  the burn is MET × minutes and `isValid()`, the diary and the charts all read it. Two minutes is one
-  set and its rest, the short end of the routine designer's "2 to 3", and like every duration here
-  it is in the form to correct. *Known gap:* the strength screen opened directly still starts at the
-  form's default 30 minutes. A `minutesEdited` latch that follows the sets is the upgrade if that
-  gets reported.
+- **An activity is timed or counted, never both.** Cardio, classes and holds are measured by the
+  clock — walking, jogging, running, cycling, swimming, rowing, hiking, dancing, sports, yoga,
+  stretching, HIIT, a plank — and keep their minutes. Strength and bodyweight work is written the
+  way trainers write it, in sets and reps — push-ups, pull-ups, squats, lunges, burpees, dips,
+  every lift — and has **no duration at all**: `ExerciseEntry.minutes` is null (database v41,
+  export v23), and the diary, the quick log, the coach card and the strength screen show sets
+  where a timed row shows minutes. `isCounted(type, sets)` is the one rule — **Strength with
+  sets** — held on the type as well as the sets, so no parse can turn a jog into reps; a Strength
+  row with no sets ("45 minutes of weights", an imported watch session) stays timed. It replaced a
+  first attempt that timed reps at two minutes a set, which still printed "2 min" under ten
+  push-ups nobody had timed.
+  - **The burn follows the reps.** A set costs `ExerciseType.Strength`'s MET over `REP_SECONDS`
+    (3) a rep, at the body's weight **plus** the load (`StrengthSet.burnedKcal`): ten push-ups at
+    70 kg ≈ 3 kcal, bench 8 × 60 kg at 80 kg ≈ 5. A workout's burn is the sum of its rounded sets,
+    so the per-set figures the strength screen draws always add up to the total. There is no kcal
+    stepper on a counted workout — it would only let the figure drift from the sets. A corrected
+    workout keeps its logged figure until a set changes (`withSets` releases the latch), so no
+    past day moves on its own. The routine editor prices each lift the same way, at the user's
+    weight and the loads a started routine would open at (`Routine.toSets`), so stepping a rep
+    moves its calories there too. *ponytail:* one tempo and one MET for every lift; a per-lift
+    factor is the upgrade if the figures are reported off.
+  - **Every AI path asks the same question.** `TIMED_OR_COUNTED` is one paragraph carried by the
+    log sheet, the quick log and the coach's `log_exercise`, and all three now answer in lifts —
+    the quick log reads `DESCRIBED_EXERCISE_SCHEMA` (the separate lift-less schema is gone) and the
+    coach's tool takes a `lifts` array, its loads in the user's unit until `resolve` converts them.
+    None of them asks how long a counted exercise took. The coach may rename a counted row but not
+    give it minutes or another type.
+  - **The migration drops the minutes of every logged workout that has sets** and keeps its burn,
+    so the history reads the new way without any day's budget changing. A new workout on the
+    strength screen starts at zero minutes, so it prices nothing before its first set.
 - **The sentence leads the sheet, and the form is one tap behind it.** It began as a collapsed
   "Describe it instead" button that swapped a panel in over the form, which put the quick path one
   tap behind the slow one and stacked type chips, two steppers and a Save under a single field. The
@@ -4097,16 +4117,16 @@ rather than needing a counter patched.
   help — and Save lives inside it, so nothing can be logged that was not looked at. The form is
   not a back level: it opens *below* a field that stays on screen, so there is no view to return
   to, and back during a parse is the sheet's one sub-level. The strength screen's field lost its
-  swap-in the same way, and its note, duration and burn fold into one **Details** line under the
-  set editor: on that screen they are what nobody came to type, the burn re-estimates itself off
-  the duration anyway, and the line keeps both figures in sight so a form that will not save never
-  hides why.
+  swap-in the same way, and its note and burn fold into one **Details** line under the set editor:
+  on that screen they are what nobody came to type, and the burn is the sets' own. A duration
+  joins them only when correcting a strength row logged without sets, and then the line keeps it
+  in sight so a form that will not save never hides why.
 - **A sentence that names lifts goes on to the strength screen, parse and all.** One call, not
   two: the sheet's parse answers in its own `DESCRIBED_EXERCISE_SCHEMA` — the activity's three
   fields plus an optional `lifts`, the strength parse's own row — read back through the same two
   trust boundaries (`parsedExercise`, `parsedSets`), the user's unit applied on-device and never
-  sent. A schema of its own because `PARSED_EXERCISE_SCHEMA` is also the quick log's, which wants
-  no lifts. Non-empty sets close the sheet and push `StrengthWorkoutRoute(draft = …)`: **the
+  sent. (It had a schema of its own while the quick log wanted no lifts; now the quick log reads
+  this one too.) Non-empty sets close the sheet and push `StrengthWorkoutRoute(draft = …)`: **the
   parse rides the key**, as `MealIdeasRoute`'s request does — it is a reading of a sentence, not a
   row, so there is nothing stored to resolve, and re-asking the model on arrival would spend a
   second call on an answered sentence. It merges onto the sheet's form first (`withParsed` plus

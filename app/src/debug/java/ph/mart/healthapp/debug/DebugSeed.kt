@@ -42,6 +42,7 @@ import ph.mart.healthapp.core.data.supplement.isDueOn
 import ph.mart.healthapp.core.data.water.WaterDay
 import ph.mart.healthapp.core.data.water.WaterRepository
 import ph.mart.healthapp.core.data.epochDayStartMillis
+import ph.mart.healthapp.core.data.exercise.burnedKcal
 import ph.mart.healthapp.core.data.todayEpochDay
 
 /** Flip to false to leave a fresh debug install empty. Debug source set only — nothing to guard
@@ -190,16 +191,18 @@ private suspend fun ExerciseRepository.seedStrength(today: Long) {
     val weeks = listOf(60.0, 62.5, 62.5, 65.0)
     weeks.forEachIndexed { index, benchKg ->
         val day = today - (weeks.size - 1 - index) * 7L - 1
+        val sets = List(3) { StrengthSet("Bench press", reps = 8, weightKg = benchKg) } +
+            List(3) { StrengthSet("Overhead press", reps = 8, weightKg = benchKg - 25) } +
+            List(2) { StrengthSet("Dip", reps = 12, weightKg = 0.0) }
         addEntry(
             ExerciseEntry(
                 dateEpochDay = day,
                 type = ExerciseType.Strength,
                 name = "Push day",
-                minutes = 50,
-                burnedKcal = estimateBurnedKcal(ExerciseType.Strength, 50, seedProfile.weightKg),
-                sets = List(3) { StrengthSet("Bench press", reps = 8, weightKg = benchKg) } +
-                    List(3) { StrengthSet("Overhead press", reps = 8, weightKg = benchKg - 25) } +
-                    List(2) { StrengthSet("Dip", reps = 12, weightKg = 0.0) },
+                // Counted: the sets are the workout, and they are what it is priced from.
+                minutes = null,
+                burnedKcal = sets.burnedKcal(seedProfile.weightKg),
+                sets = sets,
             ),
         )
     }

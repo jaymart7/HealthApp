@@ -60,15 +60,15 @@ sealed interface ExerciseParseResult {
  *
  * [name] may be empty, which is what [ExerciseEntry] means by "call it by its type".
  *
- * [sets] is the log sheet's alone — the quick log and the coach read one activity and never fill
- * it, which is why it is defaulted. Non-empty is what sends the sheet on to the strength screen,
+ * [minutes] is null and [sets] non-empty on a counted workout ([isCounted]); a timed one has
+ * minutes and no sets. On the log sheet non-empty sets are what send it on to the strength screen,
  * and the whole parse rides that route's key, hence [Serializable].
  */
 @Serializable
 data class ParsedExercise(
     val type: ExerciseType,
     val name: String,
-    val minutes: Int,
+    val minutes: Int?,
     val sets: List<StrengthSet> = emptyList(),
 )
 
@@ -80,21 +80,19 @@ const val MAX_EXERCISE_NAME_CHARS = 60
 const val MAX_EXERCISE_MINUTES = 600
 
 /**
- * What a rep-counted exercise said without a duration is timed at: one set and its rest, the short
- * end of the routine designer's "2 to 3 minutes per set". Ten push-ups take seconds, and asking how
- * long they took is a question nobody can answer — only a timed activity needs its length said.
+ * The one paragraph every AI path that drafts a workout carries — the log sheet, the quick log and
+ * the coach's `log_exercise` — so all three split timed from counted the way [isCounted] does, and
+ * none of them asks a push-up how long it took or turns a jog into reps. The lists are how trainers
+ * write each kind down: cardio, classes and holds by the clock, resistance work by the rep.
  */
-const val MINUTES_PER_SET = 2
-
-/**
- * The one sentence every AI path that drafts a workout carries — the log sheet, the quick log and
- * the coach's `log_exercise` — so none of them asks a push-up how long it took.
- */
-internal const val REP_COUNTED_MINUTES =
-    "For an exercise counted in reps or sets rather than time (push-ups, squats, sit-ups, lifts), " +
-        "never ask how long it took and never give 0 minutes for it: give $MINUTES_PER_SET minutes " +
-        "per set, counting reps with no set count as one set. Only a timed activity like a run, " +
-        "walk or swim needs its duration."
+internal const val TIMED_OR_COUNTED =
+    "Decide how each activity is measured. Timed, in minutes: walking, jogging, running, " +
+        "cycling, swimming, rowing, hiking, dancing, sports, yoga, stretching, HIIT or circuit " +
+        "classes, and holds like a plank. Counted in reps, never timed: strength and bodyweight " +
+        "exercises such as push-ups, pull-ups, sit-ups, squats, lunges, burpees, dips and any " +
+        "lift — set type to Strength, list them in lifts, and set minutes to 0. Never ask how " +
+        "long a counted exercise took. If they gave only a time for one (\"20 minutes of " +
+        "weights\"), it is timed and has no lifts."
 
 /**
  * The whole of the trust boundary on the model's parse — everything the sheet seeds a form with
@@ -108,10 +106,12 @@ internal const val REP_COUNTED_MINUTES =
  * validate identically — an unknown type is rejected rather than folded into [ExerciseType.Other],
  * because a type the model made up is a claim about the burn the app is about to compute.
  *
- * Null is [ExerciseParseResult.NoActivityFound]: a sentence naming nothing physical comes back
- * with zero minutes, and zero minutes is not a shorter workout, it is not one — unless it came with
- * [sets]. A rep-counted session said without a duration is timed at [MINUTES_PER_SET] a set rather
- * than refused for it, which is the log sheet's alone: the coach and the quick log carry no sets.
+ * A Strength activity with [sets] is **counted** ([isCounted]) and has no minutes, whatever the
+ * model put there. Anything else is **timed**: it needs a real duration, and lifts that rode along
+ * on a jog are dropped rather than turning it into reps — the type decides, not the lifts.
+ *
+ * Null is [ExerciseParseResult.NoActivityFound]: a timed sentence naming nothing physical comes
+ * back with zero minutes, and zero minutes is not a shorter workout, it is not one.
  */
 fun parsedExercise(
     type: String?,
@@ -121,8 +121,8 @@ fun parsedExercise(
 ): ParsedExercise? {
     val activity = ExerciseType.entries.firstOrNull { it.name.equals(type, ignoreCase = true) }
         ?: return null
-    val duration = (minutes?.takeIf { it > 0 } ?: (sets.size * MINUTES_PER_SET))
-        .takeIf { it in 1..MAX_EXERCISE_MINUTES } ?: return null
+    val counted = isCounted(activity, sets)
+    val duration = if (counted) null else minutes?.takeIf { it in 1..MAX_EXERCISE_MINUTES } ?: return null
     return ParsedExercise(
         type = activity,
         // The model's prose, and it becomes a diary row's title — the field `loggable()` strips
@@ -130,7 +130,7 @@ fun parsedExercise(
         // field here whose surplus costs nothing, and the user is looking at it before it saves.
         name = stripMarkdown(name.orEmpty()).trim().take(MAX_EXERCISE_NAME_CHARS).trim(),
         minutes = duration,
-        sets = sets,
+        sets = if (counted) sets else emptyList(),
     )
 }
 

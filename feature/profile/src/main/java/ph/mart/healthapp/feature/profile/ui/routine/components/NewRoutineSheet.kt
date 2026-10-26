@@ -60,6 +60,7 @@ internal fun NewRoutineSheet(
     onSave: (Routine) -> Unit,
     onBuildFromWorkout: () -> Unit,
     onDismiss: () -> Unit,
+    kcalOf: (RoutineLift) -> Int,
 ) {
     AppBottomSheet(title = stringResource(R.string.profile_routines_new), onDismiss = onDismiss) {
         val draft = state.draft
@@ -84,6 +85,7 @@ internal fun NewRoutineSheet(
                 onDraftChange = { state.draft = it },
                 onChange = { state.draft = null },
                 onSave = { onSave(draft.trimmed()) },
+                kcalOf = kcalOf,
             )
         }
     }
@@ -169,10 +171,11 @@ private fun PreviewStep(
     onDraftChange: (Routine) -> Unit,
     onChange: () -> Unit,
     onSave: () -> Unit,
+    kcalOf: (RoutineLift) -> Int,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         AIChip(label = stringResource(R.string.profile_routine_design_chip), variant = AIChipVariant.Default)
-        RoutineFields(draft = draft, onDraftChange = onDraftChange)
+        RoutineFields(draft = draft, onDraftChange = onDraftChange, kcalOf = kcalOf)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
             SecondaryButton(
                 label = stringResource(R.string.profile_routine_design_change),
@@ -212,6 +215,7 @@ private fun NewRoutineSheetDescribePreview() {
             onSave = {},
             onBuildFromWorkout = {},
             onDismiss = {},
+            kcalOf = { it.sets * it.reps / 3 },
         )
     }
 }
@@ -229,6 +233,7 @@ private fun NewRoutineSheetDesigningPreview() {
             onSave = {},
             onBuildFromWorkout = {},
             onDismiss = {},
+            kcalOf = { it.sets * it.reps / 3 },
         )
     }
 }
@@ -250,6 +255,7 @@ private fun NewRoutineSheetNothingPreview() {
             onSave = {},
             onBuildFromWorkout = {},
             onDismiss = {},
+            kcalOf = { it.sets * it.reps / 3 },
         )
     }
 }
@@ -266,6 +272,7 @@ private fun NewRoutineSheetPreviewStepPreview() {
             onSave = {},
             onBuildFromWorkout = {},
             onDismiss = {},
+            kcalOf = { it.sets * it.reps / 3 },
         )
     }
 }

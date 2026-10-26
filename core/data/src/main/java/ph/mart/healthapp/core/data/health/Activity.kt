@@ -25,7 +25,8 @@ fun burnSeries(steps: List<StepDay>, exercise: List<ExerciseEntry>): List<BurnDa
             dateEpochDay = day,
             burnedKcal = dayBurnedKcal(entries, stepsByDay[day]),
             workouts = entries.size,
-            minutes = entries.sumOf { it.minutes },
+            // A counted workout has sets, not a duration, and adds none.
+            minutes = entries.sumOf { it.minutes ?: 0 },
         )
     }
 }

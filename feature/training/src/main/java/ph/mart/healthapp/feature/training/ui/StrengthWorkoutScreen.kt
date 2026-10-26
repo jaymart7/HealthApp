@@ -140,7 +140,7 @@ fun StrengthWorkoutScreen(
             // the one place that does and these sets were lifted before anyone typed them.
             is LogExerciseSideEffect.SetsParsed -> when (val result = effect.result) {
                 is StrengthParseResult.Success -> {
-                    state.form = state.form.copy(sets = state.form.sets + result.sets)
+                    state.form = state.form.withSets(state.form.sets + result.sets)
                     describe.clear()
                 }
 
@@ -194,16 +194,26 @@ fun StrengthWorkoutScreen(
  */
 internal fun LogExerciseUiState.strengthSeed(): LogExerciseForm =
     editing?.toLogExerciseForm()
-        ?: seedRoutine?.let { LogExerciseForm(type = ExerciseType.Strength, name = it.name, sets = it.toSets(lastLoads)) }
-        ?: LogExerciseForm(type = ExerciseType.Strength)
+        ?: seedRoutine?.let {
+            LogExerciseForm(type = ExerciseType.Strength, name = it.name, minutes = 0, sets = it.toSets(lastLoads))
+        }
+        // No duration: a new workout here is counted, and the blank form's 30 minutes would price
+        // half an hour of lifting before a single set was down.
+        ?: LogExerciseForm(type = ExerciseType.Strength, minutes = 0)
 
 /**
- * Where the form begins: the sheet's [draft] when it handed one over — a typed note, a corrected
- * duration, a sentence's sets — and the [seed] otherwise. Strength either way: this screen draws
- * no type chips, so saving sets against a Run is the one outcome a missing chip row could cause.
+ * Where the form begins: the sheet's [draft] when it handed one over — a typed note, a sentence's
+ * sets — and the [seed] otherwise. Strength either way: this screen draws no type chips, so saving
+ * sets against a Run is the one outcome a missing chip row could cause.
+ *
+ * A duration the sheet carried over is dropped unless [seed] has one of its own, which only a
+ * correction of a row logged without sets does: everything else here is counted, and a stray 30
+ * minutes would price the workout before its first set.
  */
-internal fun strengthStart(seed: LogExerciseForm, draft: LogExerciseForm?): LogExerciseForm =
-    (draft ?: seed).copy(type = ExerciseType.Strength)
+internal fun strengthStart(seed: LogExerciseForm, draft: LogExerciseForm?): LogExerciseForm {
+    val start = (draft ?: seed).copy(type = ExerciseType.Strength)
+    return if (seed.minutes == 0) start.copy(minutes = 0) else start
+}
 
 /**
  * True when this form says something [seed] doesn't — what decides whether back has to ask.
@@ -288,11 +298,11 @@ private fun StrengthWorkoutContent(
     fun commit(set: StrengthSet) {
         if (editedSet != null) {
             val sets = form.sets.mapIndexed { i, old -> if (i == editingSet) set else old }
-            state.form = form.copy(sets = sets)
+            state.form = form.withSets(sets)
             stopEditingSet(sets)
             return
         }
-        state.form = form.copy(sets = form.sets + set)
+        state.form = form.withSets(form.sets + set)
         if (restSeconds > 0) restEndAt = System.currentTimeMillis() + restSeconds * 1000L
     }
 
@@ -387,7 +397,7 @@ private fun StrengthWorkoutContent(
                                     } else {
                                         uiState.routines.firstOrNull { it.name == name }?.toSets(uiState.lastLoads)
                                     }
-                                    if (sets != null) state.form = form.copy(sets = sets)
+                                    if (sets != null) state.form = form.withSets(sets)
                                 },
                             )
                         }
@@ -396,6 +406,7 @@ private fun StrengthWorkoutContent(
                     StrengthSetList(
                         sets = form.sets,
                         unit = uiState.preferredUnit,
+                        bodyKg = uiState.weightKg,
                         selected = editingSet,
                         onSelect = { index ->
                             editingSet = index
@@ -442,21 +453,24 @@ private fun StrengthWorkoutContent(
                         },
                         onRemove = {
                             val sets = form.sets.filterIndexed { i, _ -> i != editingSet }
-                            state.form = form.copy(sets = sets)
+                            state.form = form.withSets(sets)
                             stopEditingSet(sets)
                         },
                         onCancelEdit = { stopEditingSet() },
                         modifier = Modifier.bringIntoViewRequester(editorRequester),
                     )
 
-                    // A routine keeps none of these — the name is asked for when it is saved.
+                    // A routine keeps none of these — the name is asked for when it is saved. Timed only
+                    // when correcting a row logged without sets; everything else here is counted.
                     if (!buildRoutine) {
-                        WorkoutDetailsDisclosure(minutes = form.minutes, burnedKcal = form.burnedKcal) {
+                        val timed = correcting && form.sets.isEmpty()
+                        WorkoutDetailsDisclosure(minutes = form.minutes.takeIf { timed }, burnedKcal = form.burnedKcal) {
                             ExerciseFormFields(
                                 form = form,
                                 weightKg = uiState.weightKg,
                                 onFormChange = { state.form = it },
                                 showTypeChips = false,
+                                timed = timed,
                             )
                         }
                     }
@@ -606,8 +620,8 @@ private fun StrengthWorkoutScreenPreview() {
                     id = 1,
                     type = ExerciseType.Strength,
                     name = "Push day",
-                    minutes = 45,
-                    burnedKcal = 260,
+                    minutes = null,
+                    burnedKcal = 12,
                     sets = listOf(
                         StrengthSet("Bench press", 8, 60.0),
                         StrengthSet("Bench press", 8, 62.5),
@@ -637,8 +651,8 @@ private fun StrengthWorkoutScreenEditingSetPreview() {
                     id = 1,
                     type = ExerciseType.Strength,
                     name = "Push day",
-                    minutes = 45,
-                    burnedKcal = 260,
+                    minutes = null,
+                    burnedKcal = 12,
                     sets = listOf(
                         StrengthSet("Bench press", 8, 60.0),
                         StrengthSet("Bench press", 8, 62.5),
@@ -669,8 +683,8 @@ private fun StrengthWorkoutScreenEmptyPreview() {
                 lastWorkout = ExerciseEntry(
                     id = 9,
                     type = ExerciseType.Strength,
-                    minutes = 45,
-                    burnedKcal = 260,
+                    minutes = null,
+                    burnedKcal = 4,
                     sets = listOf(StrengthSet("Squat", 5, 100.0)),
                 ),
                 routines = listOf(Routine(id = 1, name = "Push day", lifts = emptyList())),

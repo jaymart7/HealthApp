@@ -199,6 +199,8 @@
     <string name="profile_routine_design_remove">Tanggalin ang %1$s</string>
     <string name="profile_routine_design_sets_of">set ng %1$s</string>
     <string name="profile_routine_design_reps_of">rep ng %1$s</string>
+    <string name="profile_routine_kcal">~%1$d kcal</string>
+    <string name="profile_routine_kcal_total">~%1$d kcal bawat workout, sa timbang mo at huling load</string>
     <string name="profile_supplements_empty_heading">Wala pang laman</string>
     <string name="profile_supplements_empty_body">Idagdag ang iniinom mo at lalabas ito sa Home araw-araw.</string>
     <plurals name="profile_supplements_count">

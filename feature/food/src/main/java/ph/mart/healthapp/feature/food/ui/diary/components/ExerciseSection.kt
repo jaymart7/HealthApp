@@ -127,15 +127,19 @@ private fun SwipeableExerciseRow(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                    text = listOfNotNull(
-                        stringResource(R.string.food_exercise_row, entry.minutes),
-                        entry.name.takeIf { it.isNotBlank() },
+                // A counted workout has no duration, so a nameless one has no first line at all —
+                // its sets, below, are what it is.
+                val detail = listOfNotNull(
+                    entry.minutes?.let { stringResource(R.string.food_exercise_row, it) },
+                    entry.name.takeIf { it.isNotBlank() },
+                ).joinToString(" · ")
+                if (detail.isNotEmpty()) {
+                    Text(
+                        text = detail,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                        .joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                }
                 // What was lifted, on its own line — a strength row's whole point, and the only
                 // thing that distinguishes it from the cardio rows above it.
                 if (entry.sets.isNotEmpty()) {
@@ -168,8 +172,8 @@ private fun ExerciseSectionPreview() {
                         id = 3,
                         type = ExerciseType.Strength,
                         name = "Push day",
-                        minutes = 45,
-                        burnedKcal = 260,
+                        minutes = null,
+                        burnedKcal = 14,
                         sets = listOf(
                             StrengthSet("Bench press", 8, 60.0),
                             StrengthSet("Bench press", 8, 62.5),

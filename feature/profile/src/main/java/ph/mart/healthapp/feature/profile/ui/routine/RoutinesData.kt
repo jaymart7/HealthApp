@@ -6,6 +6,8 @@ import androidx.compose.ui.res.stringResource
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineDesignResult
 import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.burnedKcal
+import ph.mart.healthapp.core.data.exercise.toSets
 import ph.mart.healthapp.core.data.exercise.totalSets
 import ph.mart.healthapp.feature.profile.R
 import ph.mart.healthapp.feature.profile.ui.shared.components.Figure
@@ -19,6 +21,10 @@ data class RoutinesUiState(
     val routines: List<Routine> = emptyList(),
     /** A New routine design is in flight — `LogExerciseUiState.parsing`'s flag, one screen over. */
     val designing: Boolean = false,
+    /** The latest weigh-in, else the profile's — what the editor's calories are priced at. */
+    val bodyKg: Double = 70.0,
+    /** Each lift's last top-set load, by `liftKey` — where a started routine opens. */
+    val lastLoads: Map<String, Double> = emptyMap(),
 ) {
     /** Distinguishes "nothing saved" from "not loaded yet" for the empty state, exactly as
      * `FoodLibraryUiState` does — a mascot that flashes before the rows arrive reads as a bug. */
@@ -38,6 +44,15 @@ internal fun Routine.figures(): List<Figure> = listOf(
     Figure(lifts.size.toString(), pluralStringResource(R.plurals.profile_routine_lifts_unit, lifts.size)),
     Figure(totalSets().toString(), pluralStringResource(R.plurals.profile_routine_sets_unit, totalSets())),
 )
+
+/**
+ * What one lift of a routine burns if it is started today: its sets at the load last lifted —
+ * bodyweight for a lift with no history, `Routine.toSets`' own rule, reused rather than restated —
+ * priced at the user's weight. So a rep or a set added in the editor is calories on the line under
+ * it, exactly as the strength screen will price that set.
+ */
+fun RoutinesUiState.liftKcal(lift: RoutineLift): Int =
+    Routine(id = 0, name = "", lifts = listOf(lift)).toSets(lastLoads).burnedKcal(bodyKg)
 
 /** "Bench press 3×8, Dip 2×10" — the row's third line. The lifts are already loaded, so naming
  * them costs nothing, and a routine you can't see the lifts of is one you delete blind. */

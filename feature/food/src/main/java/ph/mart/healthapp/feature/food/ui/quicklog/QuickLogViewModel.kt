@@ -9,7 +9,7 @@ import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
-import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
+import ph.mart.healthapp.core.data.exercise.activityBurnedKcal
 import ph.mart.healthapp.core.data.food.FoodRepository
 import ph.mart.healthapp.core.data.food.MAX_PARSE_CHARS
 import ph.mart.healthapp.core.data.food.QuickLogRepository
@@ -95,7 +95,7 @@ class QuickLogViewModel(
             val online = networkMonitor.isOnline()
             // Offline, a photo cannot be read at all — the words are all there is to match.
             val result = if (online) {
-                quickLogRepository.parse(turns, photo)
+                quickLogRepository.parse(turns, state.unit, photo)
             } else {
                 val said = turns.filter { it.fromUser }.joinToString(" ") { it.text }
                 offlineQuickLog(said, foodRepository.observeMyFoods().first())
@@ -109,7 +109,10 @@ class QuickLogViewModel(
                             type = activity.type,
                             name = activity.name,
                             minutes = activity.minutes,
-                            burnedKcal = estimateBurnedKcal(activity.type, activity.minutes, state.weightKg),
+                            burnedKcal = activityBurnedKcal(
+                                activity.type, activity.minutes, activity.sets, state.weightKg,
+                            ),
+                            sets = activity.sets,
                         )
                     },
                     mealType = result.mealType,

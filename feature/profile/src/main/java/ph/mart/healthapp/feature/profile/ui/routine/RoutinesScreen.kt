@@ -192,6 +192,7 @@ private fun RoutinesContent(
                 onEvent(RoutinesEvent.OnCancelDesign)
                 newRoutine.close()
             },
+            kcalOf = uiState::liftKcal,
         )
     }
 
@@ -207,6 +208,7 @@ private fun RoutinesContent(
                 editing = null
             },
             onDismiss = { editing = null },
+            kcalOf = uiState::liftKcal,
         )
     }
 }

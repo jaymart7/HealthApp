@@ -29,7 +29,7 @@ internal class ExerciseRepositoryImpl(private val dao: ExerciseEntryDao) : Exerc
         // Filled here rather than at each call site so no write path can forget it. Manual
         // logging never knows a step count; the import supplies the watch's own, which is
         // non-zero and so wins over the estimate.
-        val steps = entry.steps.takeIf { it > 0 } ?: estimatedSteps(entry.type, entry.minutes)
+        val steps = entry.steps.takeIf { it > 0 } ?: estimatedSteps(entry.type, entry.minutes ?: 0)
         return dao.insertWithSets(
             entry.copy(steps = steps).toEntity(date = date, loggedAt = System.currentTimeMillis()),
             entry.sets.toEntities(),

@@ -34,17 +34,18 @@ import ph.mart.healthapp.feature.training.R
 import ph.mart.healthapp.feature.training.ui.LogExerciseForm
 
 /**
- * The strength screen's note, duration and burn, folded to one line. On that screen they are the
- * figures nobody came to type — the sets are — and the burn re-estimates itself off the duration
- * anyway, so the summary is enough until something in it is wrong. Collapsed by default, and the
- * summary keeps both figures in sight so a form that will not save never hides why.
+ * The strength screen's note and burn, folded to one line. On that screen they are the figures
+ * nobody came to type — the sets are — and the burn is the sets' own, so the summary is enough
+ * until the note needs writing. Collapsed by default. [minutes] is null on a counted workout, which
+ * is every new one; only a correction of a row logged without sets is timed, and then the summary
+ * keeps its duration in sight so a form that will not save never hides why.
  *
  * `DoseNutrientFields`' disclosure, one module over: a header row that is the whole tap target, a
  * chevron that turns, and the content beneath it. [initiallyExpanded] is for the preview.
  */
 @Composable
 internal fun WorkoutDetailsDisclosure(
-    minutes: Int,
+    minutes: Int?,
     burnedKcal: Int,
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = false,
@@ -69,7 +70,11 @@ internal fun WorkoutDetailsDisclosure(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = stringResource(R.string.training_strength_details_summary, minutes, burnedKcal),
+                text = if (minutes == null) {
+                    stringResource(R.string.training_strength_kcal, burnedKcal)
+                } else {
+                    stringResource(R.string.training_strength_details_summary, minutes, burnedKcal)
+                },
                 style = MaterialTheme.typography.bodySmall.tabularNums,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(end = 8.dp),
@@ -87,29 +92,33 @@ internal fun WorkoutDetailsDisclosure(
     }
 }
 
-/** The fields the strength screen folds in here, at the summary's own figures. */
+/** The fields the strength screen folds in here, at the summary's own figures — [timed] only for a
+ * correction of a row logged without sets. */
 @Composable
-private fun PreviewFields() {
+private fun PreviewFields(timed: Boolean) {
     ExerciseFormFields(
         form = LogExerciseForm(type = ExerciseType.Strength, minutes = 45, burnedKcal = 260, burnedEdited = true),
         weightKg = 74.0,
         onFormChange = {},
         showTypeChips = false,
+        timed = timed,
     )
 }
 
+/** A counted workout, the usual case: the burn is the sets', and there is no duration. */
 @PreviewLightDark
 @Composable
 private fun WorkoutDetailsDisclosurePreview() {
     AppTheme {
         Surface {
-            WorkoutDetailsDisclosure(minutes = 45, burnedKcal = 260, modifier = Modifier.padding(16.dp)) {
-                PreviewFields()
+            WorkoutDetailsDisclosure(minutes = null, burnedKcal = 14, modifier = Modifier.padding(16.dp)) {
+                PreviewFields(timed = false)
             }
         }
     }
 }
 
+/** A correction of a strength row logged by duration alone, opened: the steppers it still has. */
 @PreviewLightDark
 @Composable
 private fun WorkoutDetailsDisclosureExpandedPreview() {
@@ -121,7 +130,7 @@ private fun WorkoutDetailsDisclosureExpandedPreview() {
                 initiallyExpanded = true,
                 modifier = Modifier.padding(16.dp),
             ) {
-                PreviewFields()
+                PreviewFields(timed = true)
             }
         }
     }

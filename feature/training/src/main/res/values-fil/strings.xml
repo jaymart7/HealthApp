@@ -32,6 +32,7 @@
     <string name="training_strength_last_workout">Huling workout</string>
     <string name="training_strength_details">Mga detalye</string>
     <string name="training_strength_details_summary">%1$d min · %2$d kcal</string>
+    <string name="training_strength_kcal">%1$d kcal</string>
     <string name="training_strength_details_show">Ipakita ang mga detalye</string>
     <string name="training_strength_details_hide">Itago ang mga detalye</string>
     <string name="training_strength_describe_prompt">Ano ang binuhat mo?</string>

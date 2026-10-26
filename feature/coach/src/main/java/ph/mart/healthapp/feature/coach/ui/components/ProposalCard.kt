@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -41,6 +42,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.weekdayLabel
 import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.summaryLabel
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.health.formatBpm
 import ph.mart.healthapp.core.data.mood.MoodLevel
@@ -51,6 +53,7 @@ import ph.mart.healthapp.core.data.profile.weightUnitLabel
 import ph.mart.healthapp.core.data.health.formatDuration
 import ph.mart.healthapp.core.data.progress.MeasurementPart
 import ph.mart.healthapp.core.data.progress.unitLabel
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.todayEpochDay
 import ph.mart.healthapp.core.designsystem.component.AppCard
 import ph.mart.healthapp.core.designsystem.component.formatDayMonth
@@ -374,12 +377,21 @@ private fun SingleProposal(action: CoachAction) {
             ProposalKicker(stringResource(R.string.coach_proposal_exercise_title))
             ProposalHeadline(activityName(action))
             ReceiptPanel {
-                ReceiptHeadline(
-                    label = stringResource(R.string.coach_receipt_minutes),
-                    value = action.minutes.toString(),
-                    unit = stringResource(R.string.coach_unit_min),
-                )
-                // The app's own MET estimate off the user's latest weigh-in, never the model's —
+                // Timed or counted: a run's figure is its minutes, a session of push-ups its sets.
+                val minutes = action.minutes
+                if (minutes != null) {
+                    ReceiptHeadline(
+                        label = stringResource(R.string.coach_receipt_minutes),
+                        value = minutes.toString(),
+                        unit = stringResource(R.string.coach_unit_min),
+                    )
+                } else {
+                    ReceiptLine(
+                        label = stringResource(R.string.coach_receipt_sets),
+                        value = action.sets.summaryLabel(action.unit)?.resolve(LocalResources.current).orEmpty(),
+                    )
+                }
+                // The app's own estimate off the user's latest weigh-in, never the model's —
                 // labelled "burned" so it can never be read as calories eaten.
                 ReceiptLine(
                     label = stringResource(R.string.coach_receipt_burned),
@@ -785,8 +797,9 @@ private fun actionName(action: CoachAction): String = when (action) {
 private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.LogFood -> stringResource(R.string.coach_proposal_row_kcal, action.calories)
     is CoachAction.LogWater -> null
-    is CoachAction.LogExercise ->
-        stringResource(R.string.coach_proposal_exercise_body, action.minutes, action.burnedKcal)
+    is CoachAction.LogExercise -> action.minutes
+        ?.let { stringResource(R.string.coach_proposal_exercise_body, it, action.burnedKcal) }
+        ?: stringResource(R.string.coach_proposal_row_kcal, action.burnedKcal)
     // No figures to show: a saved meal carries a name until `resolve()` gives it its rows.
     is CoachAction.LogSavedMeal -> null
     is CoachAction.LogWeight -> weightChange(action)
@@ -804,8 +817,9 @@ private fun rowDetail(action: CoachAction): String? = when (action) {
     is CoachAction.EditFood -> action.before?.let { before ->
         action.after?.let { stringResource(R.string.coach_proposal_edit_row, before.calories, it.calories) }
     }
-    is CoachAction.EditExercise -> action.before?.let { before ->
-        action.after?.let { stringResource(R.string.coach_proposal_edit_minutes_row, before.minutes, it.minutes) }
+    // A counted row's edit is its name alone (`editedExercise`), so it has no figure to move.
+    is CoachAction.EditExercise -> action.before?.minutes?.let { before ->
+        action.after?.minutes?.let { stringResource(R.string.coach_proposal_edit_minutes_row, before, it) }
     }
     is CoachAction.DeleteFood, is CoachAction.DeleteExercise -> stringResource(R.string.coach_proposal_delete_row)
     is CoachAction.SetWater -> stringResource(R.string.coach_proposal_was, waterAmount(action.previous))
@@ -828,8 +842,9 @@ private fun foodLine(entry: FoodEntry): String = stringResource(
 private fun exerciseName(entry: ExerciseEntry): String = entry.name.ifEmpty { stringResource(entry.type.label) }
 
 @Composable
-private fun exerciseLine(entry: ExerciseEntry): String =
-    stringResource(R.string.coach_proposal_exercise_body, entry.minutes, entry.burnedKcal)
+private fun exerciseLine(entry: ExerciseEntry): String = entry.minutes
+    ?.let { stringResource(R.string.coach_proposal_exercise_body, it, entry.burnedKcal) }
+    ?: stringResource(R.string.coach_proposal_row_kcal, entry.burnedKcal)
 
 /**
  * The line appended to the persisted answer, so reopening the chat still shows what was logged.
@@ -845,8 +860,9 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
             stringResource(R.string.coach_proposal_logged_food, single.name, single.calories)
         single is CoachAction.LogWater ->
             stringResource(R.string.coach_proposal_logged_water, waterAmount(single.glasses))
-        single is CoachAction.LogExercise ->
-            stringResource(R.string.coach_proposal_logged_exercise, activityName(single), single.minutes)
+        single is CoachAction.LogExercise -> single.minutes
+            ?.let { stringResource(R.string.coach_proposal_logged_exercise, activityName(single), it) }
+            ?: stringResource(R.string.coach_proposal_logged_counted, activityName(single), single.burnedKcal)
         single is CoachAction.LogWeight ->
             stringResource(R.string.coach_proposal_logged_weight, weightAmount(single))
         single is CoachAction.LogSupplement ->
@@ -874,8 +890,10 @@ private fun loggedLineFor(actions: List<CoachAction>): String {
         single is CoachAction.OpenScreen -> ""
         single is CoachAction.EditFood -> single.after
             ?.let { stringResource(R.string.coach_proposal_changed_food, it.name, it.calories) }.orEmpty()
-        single is CoachAction.EditExercise -> single.after
-            ?.let { stringResource(R.string.coach_proposal_changed_exercise, exerciseName(it), it.minutes) }.orEmpty()
+        single is CoachAction.EditExercise -> single.after?.let { after ->
+            after.minutes?.let { stringResource(R.string.coach_proposal_changed_exercise, exerciseName(after), it) }
+                ?: stringResource(R.string.coach_proposal_changed_counted, exerciseName(after))
+        }.orEmpty()
         single is CoachAction.DeleteFood ->
             stringResource(R.string.coach_proposal_removed_entry, single.entry?.name.orEmpty())
         single is CoachAction.DeleteExercise ->

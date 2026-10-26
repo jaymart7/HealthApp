@@ -191,6 +191,17 @@ internal val STEPS: Map<Int, List<String>> = mapOf(
         // before the coach could draw a report drew none, and null is what that reads as.
         "ALTER TABLE `chat_message` ADD COLUMN `report` INTEGER",
     ),
+    40 to listOf(
+        // SQLite cannot drop a NOT NULL, so `minutes` turns nullable by rebuilding the table, the
+        // way step 33 rebuilt `food_search_query`. Then every logged strength session with sets
+        // loses its duration: it is counted in reps now, and its stored burn is kept as logged so
+        // no past day's budget moves.
+        "CREATE TABLE IF NOT EXISTS `exercise_entry_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `name` TEXT NOT NULL, `date` INTEGER NOT NULL, `loggedAt` INTEGER NOT NULL, `minutes` INTEGER, `burnedKcal` INTEGER NOT NULL, `steps` INTEGER NOT NULL, `isDeleted` INTEGER NOT NULL)",
+        "INSERT INTO `exercise_entry_new` (`id`, `type`, `name`, `date`, `loggedAt`, `minutes`, `burnedKcal`, `steps`, `isDeleted`) SELECT `id`, `type`, `name`, `date`, `loggedAt`, `minutes`, `burnedKcal`, `steps`, `isDeleted` FROM `exercise_entry`",
+        "DROP TABLE `exercise_entry`",
+        "ALTER TABLE `exercise_entry_new` RENAME TO `exercise_entry`",
+        "UPDATE `exercise_entry` SET `minutes` = NULL WHERE `type` = 'Strength' AND `id` IN (SELECT `entryId` FROM `strength_set`)",
+    ),
 )
 
 internal val MIGRATIONS: Array<Migration> =

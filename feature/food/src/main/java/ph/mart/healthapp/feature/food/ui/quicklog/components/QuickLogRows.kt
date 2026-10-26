@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,11 +47,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.summaryLabel
 import ph.mart.healthapp.core.data.food.MealType
 import ph.mart.healthapp.core.data.food.RecognitionConfidence
 import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
+import ph.mart.healthapp.core.data.resolve
 import ph.mart.healthapp.core.data.water.waterVolumeLabel
 import ph.mart.healthapp.core.designsystem.R as DsR
 import ph.mart.healthapp.core.designsystem.component.SegmentedToggle
@@ -361,7 +364,9 @@ internal fun otherRows(
                 icon = exercise.type.icon(),
                 name = stringResource(exercise.type.label),
                 detail = listOfNotNull(
-                    stringResource(R.string.food_exercise_row, exercise.minutes),
+                    // A counted workout has no duration to show — what was lifted stands in for it.
+                    exercise.minutes?.let { stringResource(R.string.food_exercise_row, it) }
+                        ?: exercise.sets.summaryLabel(unit)?.resolve(LocalResources.current),
                     exercise.name.takeIf { it.isNotBlank() },
                 ).joinToString(" · "),
                 value = exercise.burnedKcal.toString(),

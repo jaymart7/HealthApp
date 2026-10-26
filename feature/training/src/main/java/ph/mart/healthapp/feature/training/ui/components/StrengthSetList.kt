@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import ph.mart.healthapp.core.data.exercise.StrengthSet
+import ph.mart.healthapp.core.data.exercise.burnedKcal
 import ph.mart.healthapp.core.data.exercise.loadLabel
 import ph.mart.healthapp.core.data.exercise.volumeKg
 import ph.mart.healthapp.core.data.exercise.volumeLabel
@@ -45,11 +46,16 @@ import ph.mart.healthapp.feature.training.R
  * its neighbour, and there is no bin on every row: one stray tap used to delete a set with no way
  * back, and fixing a typo cost a delete and a re-add at the end of the list. [selected] is the set
  * the editor is holding, drawn so the user can see which one they are changing.
+ *
+ * Every set says what it burned, and every lift its total, priced at [bodyKg] plus the load
+ * (`StrengthSet.burnedKcal`) — so a rep added in the editor shows up as calories on the row it
+ * changed, and the rows add up to the workout's total in Details.
  */
 @Composable
 internal fun StrengthSetList(
     sets: List<StrengthSet>,
     unit: UnitSystem,
+    bodyKg: Double,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     selected: Int = -1,
@@ -79,15 +85,18 @@ internal fun StrengthSetList(
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    // A bodyweight lift moves no load, and "0 kg" beside it read as a mistake.
-                    val volume = indexed.map { it.value }.volumeKg()
-                    if (volume > 0) {
-                        Text(
-                            text = volumeLabel(volume, unit),
-                            style = MaterialTheme.typography.labelMedium.tabularNums,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    // A bodyweight lift moves no load, and "0 kg" beside it read as a mistake — but it
+                    // still burned something, so the lift's calories are always there.
+                    val lift = indexed.map { it.value }
+                    val volume = lift.volumeKg()
+                    Text(
+                        text = listOfNotNull(
+                            volumeLabel(volume, unit).takeIf { volume > 0 },
+                            stringResource(R.string.training_strength_kcal, lift.burnedKcal(bodyKg)),
+                        ).joinToString(" · "),
+                        style = MaterialTheme.typography.labelMedium.tabularNums,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 indexed.forEachIndexed { position, (index, set) ->
                     Row(
@@ -116,6 +125,12 @@ internal fun StrengthSetList(
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
                         )
+                        Text(
+                            text = stringResource(R.string.training_strength_kcal, set.burnedKcal(bodyKg)),
+                            style = MaterialTheme.typography.bodySmall.tabularNums,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 12.dp),
+                        )
                         Icon(
                             imageVector = AppIcons.Edit,
                             contentDescription = null,
@@ -141,6 +156,7 @@ private fun StrengthSetListPreview() {
                     StrengthSet("Pull-up", 10, 0.0),
                 ),
                 unit = UnitSystem.Metric,
+                bodyKg = 74.0,
                 onSelect = {},
                 selected = 1,
                 modifier = Modifier.padding(16.dp),
@@ -158,6 +174,7 @@ private fun StrengthSetListEmptyPreview() {
             StrengthSetList(
                 sets = emptyList(),
                 unit = UnitSystem.Metric,
+                bodyKg = 74.0,
                 onSelect = {},
                 modifier = Modifier.padding(16.dp),
             )

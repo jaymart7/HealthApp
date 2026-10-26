@@ -3,6 +3,7 @@ package ph.mart.healthapp.core.data.coach
 import kotlinx.coroutines.flow.Flow
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.food.FoodEntry
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
@@ -78,20 +79,27 @@ sealed interface CoachAction {
     ) : CoachAction
 
     /**
-     * [burnedKcal] is **not** the model's figure — it is `estimateBurnedKcal()`'s, filled in from
+     * [burnedKcal] is **not** the model's figure — it is `activityBurnedKcal()`'s, filled in from
      * the user's own latest weigh-in once the call has parsed. A model asked for a calorie burn
-     * invents one, and the app already owns the MET arithmetic that the log-exercise sheet uses;
-     * this way a coach-drafted run and a hand-logged one of the same length price identically,
-     * and the weight that priced it never leaves the device.
+     * invents one, and the app already owns the arithmetic that the log-exercise sheet uses; this
+     * way a coach-drafted run and a hand-logged one of the same length price identically, and the
+     * weight that priced it never leaves the device.
+     *
+     * Timed or counted, `ExerciseEntry.minutes`' split: a run has [minutes] and no [sets], a
+     * session of push-ups has [sets] and null minutes. The sets' loads are in kilograms once
+     * resolved — the parse reads them in the user's own unit and `resolve` converts them once, and
+     * stamps [unit] so the card can print them back in it.
      *
      * [name] may be empty, which is what [ExerciseEntry] means by "call it by its type".
      */
     data class LogExercise(
         val type: ExerciseType,
         val name: String,
-        val minutes: Int,
+        val minutes: Int?,
         val burnedKcal: Int,
         val dateEpochDay: Long = 0,
+        val sets: List<StrengthSet> = emptyList(),
+        val unit: UnitSystem = UnitSystem.Metric,
     ) : CoachAction
 
     /**

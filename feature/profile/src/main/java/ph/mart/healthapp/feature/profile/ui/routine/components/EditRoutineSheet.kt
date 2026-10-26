@@ -44,11 +44,12 @@ internal fun EditRoutineSheet(
     onSave: (Routine) -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit,
+    kcalOf: (RoutineLift) -> Int,
 ) {
     var draft by remember(routine.id) { mutableStateOf(routine) }
     AppBottomSheet(title = stringResource(R.string.profile_routine_edit), onDismiss = onDismiss) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            RoutineFields(draft = draft, onDraftChange = { draft = it })
+            RoutineFields(draft = draft, onDraftChange = { draft = it }, kcalOf = kcalOf)
             RoutinePlanZone(days = draft.days, onDaysChange = { draft = draft.copy(days = it) })
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -90,6 +91,7 @@ private fun EditRoutineSheetPreview() {
             onSave = {},
             onDelete = {},
             onDismiss = {},
+            kcalOf = { it.sets * it.reps / 3 },
         )
     }
 }

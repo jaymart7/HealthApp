@@ -10,7 +10,8 @@ import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.StrengthParseResult
 import ph.mart.healthapp.core.data.exercise.StrengthSet
-import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
+import ph.mart.healthapp.core.data.exercise.activityBurnedKcal
+import ph.mart.healthapp.core.data.exercise.isCounted
 import ph.mart.healthapp.core.data.profile.UnitSystem
 
 /**
@@ -60,7 +61,11 @@ data class LogExerciseUiState(
 
 /**
  * [burnedEdited] latches the moment the user touches the kcal stepper: after that, changing the
- * type or duration must not silently overwrite the number they chose.
+ * type or duration must not silently overwrite the number they chose. A counted workout has no
+ * stepper — its burn is its sets' — so there the latch only holds a corrected row's logged figure
+ * until [withSets] changes what was lifted.
+ *
+ * [minutes] is a timed activity's; on a counted one ([isCounted]) it is ignored and saved as none.
  *
  * Serializable because it rides [StrengthWorkoutRoute.draft]: the sheet hands the strength screen
  * the form as it stands, so a note or a duration typed before "Sets" is tapped is not lost.
@@ -84,12 +89,25 @@ data class LogExerciseForm(
 const val MINUTES_STEP = 5
 const val KCAL_STEP = 10
 
-/** Re-estimates unless the user has taken the kcal field over. The single place the form's two
- * halves are kept in sync, so the sheet never has to remember to call both. */
-fun LogExerciseForm.withEstimate(weightKg: Double): LogExerciseForm =
-    if (burnedEdited) this else copy(burnedKcal = estimateBurnedKcal(type, minutes, weightKg))
+/** Timed or counted — `ExerciseEntry.minutes`' split, read off the form. */
+val LogExerciseForm.isCounted: Boolean get() = isCounted(type, sets)
 
-fun LogExerciseForm.isValid(): Boolean = minutes > 0
+/** Re-estimates unless the user has taken the kcal field over. The single place the form's two
+ * halves are kept in sync, so the sheet never has to remember to call both. A counted workout is
+ * priced by its sets, so more reps or more load is more burn. */
+fun LogExerciseForm.withEstimate(weightKg: Double): LogExerciseForm =
+    if (burnedEdited) this else copy(burnedKcal = activityBurnedKcal(type, minutes, sets, weightKg))
+
+/**
+ * The one way the strength screen changes what was lifted, and it **releases the latch**: the burn
+ * follows the sets, so a corrected workout that held its logged figure is repriced the moment a
+ * set is added, changed or removed. Untouched, it keeps the figure it was logged with.
+ */
+fun LogExerciseForm.withSets(sets: List<StrengthSet>): LogExerciseForm = copy(sets = sets, burnedEdited = false)
+
+/** A counted workout needs nothing more — the strength screen asks for a set on a new one. A timed
+ * one needs a duration. */
+fun LogExerciseForm.isValid(): Boolean = isCounted || minutes > 0
 
 /**
  * Inverse of [toExerciseEntry], for reopening a logged activity to correct it.
@@ -102,7 +120,9 @@ fun LogExerciseForm.isValid(): Boolean = minutes > 0
 fun ExerciseEntry.toLogExerciseForm(): LogExerciseForm = LogExerciseForm(
     type = type,
     name = name,
-    minutes = minutes,
+    // A counted workout has none; zero rather than the blank form's 30, so emptying its set list
+    // leaves a form that will not save until it is given a real duration or a set.
+    minutes = minutes ?: 0,
     burnedKcal = burnedKcal,
     burnedEdited = true,
     steps = steps,
@@ -111,6 +131,8 @@ fun ExerciseEntry.toLogExerciseForm(): LogExerciseForm = LogExerciseForm(
 
 /**
  * What a parsed sentence does to the form: the three fields the model answered, and nothing else.
+ * A counted parse has no minutes and leaves the form's alone; its sets are the caller's, through
+ * [withSets].
  *
  * [LogExerciseForm.burnedEdited] is deliberately left alone rather than set. On a new form it is
  * false, so the caller's [withEstimate] prices the parsed type and duration at the user's own
@@ -121,7 +143,7 @@ fun ExerciseEntry.toLogExerciseForm(): LogExerciseForm = LogExerciseForm(
 fun LogExerciseForm.withParsed(activity: ParsedExercise): LogExerciseForm = copy(
     type = activity.type,
     name = activity.name,
-    minutes = activity.minutes,
+    minutes = activity.minutes ?: minutes,
 )
 
 /** [dateEpochDay] 0 leaves the stamping to the repository, which means today. */
@@ -129,7 +151,7 @@ fun LogExerciseForm.toExerciseEntry(dateEpochDay: Long = 0): ExerciseEntry = Exe
     dateEpochDay = dateEpochDay,
     type = type,
     name = name.trim(),
-    minutes = minutes,
+    minutes = minutes.takeUnless { isCounted },
     burnedKcal = burnedKcal,
     steps = steps,
     sets = sets.map { it.copy(exerciseName = it.exerciseName.trim()) },

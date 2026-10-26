@@ -88,10 +88,11 @@ class ExportTest {
         ExerciseEntry(id = 3, dateEpochDay = 20_001, type = ExerciseType.Run, name = "Riverside", minutes = 32, burnedKcal = 324, steps = 4_180),
         // A strength session's sets are history, not convenience data — the workout is meaningless
         // in a backup without them. The bodyweight set is the interesting one: 0 kg is a real
-        // value here, and a round trip that silently dropped it would lose a set.
+        // value here, and a round trip that silently dropped it would lose a set. Counted, so no
+        // minutes — the null has to come back null rather than as a missing-field failure.
         ExerciseEntry(
             id = 4, dateEpochDay = 20_002, type = ExerciseType.Strength, name = "Push day",
-            minutes = 45, burnedKcal = 260,
+            minutes = null, burnedKcal = 9,
             sets = listOf(
                 StrengthSet("Bench press", reps = 8, weightKg = 62.5),
                 StrengthSet("Dip", reps = 12, weightKg = 0.0),

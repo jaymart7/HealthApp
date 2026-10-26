@@ -342,6 +342,7 @@ internal class CoachRepositoryImpl(
                     name = it.name,
                     minutes = it.minutes,
                     burnedKcal = it.burnedKcal,
+                    sets = it.sets,
                 ),
             )
         }

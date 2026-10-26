@@ -159,45 +159,13 @@ private fun designPromptFor(request: String): String = buildString {
     )
 }
 
-/** [PARSED_EXERCISE_SCHEMA]'s three fields, held apart so [DESCRIBED_EXERCISE_SCHEMA] can add to
- * them without the quick log's copy changing. */
-private val ACTIVITY_PROPERTIES = mapOf(
-    "type" to Schema.enumeration(
-        values = ExerciseType.entries.map { it.name },
-        description = "The kind of activity. Use Other when none of the rest fit.",
-    ),
-    "minutes" to Schema.integer(
-        description = "How long it lasted, in minutes. 0 if they named no physical activity.",
-    ),
-    "name" to Schema.string(
-        description = "A short note in their own words — where or how. Omit it entirely if " +
-            "they said nothing beyond the activity itself.",
-    ),
-)
-
-/**
- * Three fields, and the absent fourth is the point: there is nowhere in this schema to put a
- * calorie burn, so the model cannot volunteer one and no prompt has to forbid it. See
- * [ParsedExercise].
- *
- * `type` is an enumeration over [ExerciseType]'s own entry names rather than a free string, which
- * is what makes `Other` a *choice* the model makes instead of the bucket a typo falls into.
- */
-internal val PARSED_EXERCISE_SCHEMA = Schema.obj(
-    ACTIVITY_PROPERTIES,
-    // The one optional property, [RECOGNIZED_FOOD_SCHEMA]'s `uncertainAbout` reasoning: required,
-    // a model with nothing to add here adds something anyway, and an invented note on a plain run
-    // is worse than no note at all.
-    optionalProperties = listOf("name"),
-)
-
 /**
  * The object in, an activity out. Every read is an `opt*` with a default and the judgement is
  * [parsedExercise]'s, which is the thing that decides whether this was a workout at all.
  *
  * Takes the object rather than the response text because the quick log reads the same shape out
- * of an array nested in its own reply. [sets] are the log sheet's, already through [parsedSets],
- * and are what times a rep-counted session the sentence gave no duration for.
+ * of an array nested in its own reply. [sets] are this object's own lifts, already through
+ * [parsedSets] — what makes a Strength activity counted rather than timed.
  */
 internal fun readActivity(body: JSONObject, sets: List<StrengthSet> = emptyList()): ParsedExercise? =
     parsedExercise(
@@ -214,8 +182,8 @@ internal fun readActivity(body: JSONObject, sets: List<StrengthSet> = emptyList(
  *   user has to notice and correct.
  * - **The note is theirs, never invented.** It is the one free-text field, and a model that fills
  *   it in when they gave nothing writes prose into a diary row.
- * - **Reps are not timed by the user.** [REP_COUNTED_MINUTES]: "10 push ups" is a lift, and a
- *   model that answers 0 minutes for it is caught by [parsedExercise] timing it off its sets.
+ * - **Timed or counted, never both.** [TIMED_OR_COUNTED]: a jog keeps its minutes, "10 push ups"
+ *   is a lift with none, and [parsedExercise] holds the model to it whatever it answers.
  * - **No medical advice**, for the reason every other prompt here gives.
  */
 private fun promptFor(sentence: String): String = buildString {
@@ -228,21 +196,20 @@ private fun promptFor(sentence: String): String = buildString {
     appendLine(sentence)
     appendLine()
     appendLine(
-        "Pick the single closest type from the list, and give the duration in minutes exactly as " +
-            "they gave it — do not round it up or invent one they did not say. If they gave no " +
-            "duration, estimate the shortest plausible one for what they described. Set name to a " +
+        "Pick the single closest type from the list. For a timed activity, give the duration in " +
+            "minutes exactly as they gave it — do not round it up or invent one they did not say; " +
+            "if they gave none, estimate the shortest plausible one. Set name to a " +
             "short note in their own words about where or how, and leave it out entirely if they " +
             "said nothing beyond the activity. If they named no physical activity at all, set " +
             "minutes to 0. Do not estimate calories burned — the app works that out from their " +
-            "own weight. Give no medical advice, no diagnosis, and no training-safety judgements. " +
-            REP_COUNTED_MINUTES,
+            "own weight. Give no medical advice, no diagnosis, and no training-safety judgements.",
     )
     appendLine()
+    appendLine(TIMED_OR_COUNTED)
+    appendLine()
     appendLine(
-        "If they named strength exercises with sets, reps or a weight — bodyweight ones like " +
-            "push-ups too — set type to Strength and " +
-            "list them in lifts: one entry per lift at one load, in the order they said them. " +
-            "Read \"3x8\" as 3 sets of 8 reps, and reps with no set count as 1 set. Give the " +
+        "List counted exercises in lifts: one entry per lift at one load, in the order they " +
+            "said them. Read \"3x8\" as 3 sets of 8 reps, and reps with no set count as 1 set. Give the " +
             "weight exactly as they said it, and 0 for bodyweight or when they gave none. Set unit " +
             "only if they said kg or lb (or pounds, kilos). Do not add lifts, sets, reps or " +
             "weights they did not say. If they named no lifts, leave lifts out.",
@@ -270,7 +237,7 @@ private val LIFTS_PROPERTY = Schema.array(
 )
 
 /**
- * One object per lift at one load, and — like [PARSED_EXERCISE_SCHEMA] — no calorie field
+ * One object per lift at one load, and — like [DESCRIBED_EXERCISE_SCHEMA] — no calorie field
  * anywhere in it. `sets` is a count rather than a row per set, because "3x8" is how a session is
  * said and expanding it is [parsedSets]' job, not the model's tokens.
  *
@@ -280,15 +247,37 @@ private val LIFTS_PROPERTY = Schema.array(
 internal val PARSED_SETS_SCHEMA = Schema.obj(mapOf("lifts" to LIFTS_PROPERTY))
 
 /**
- * The log sheet's answer: [PARSED_EXERCISE_SCHEMA]'s activity plus an optional `lifts`, read back
- * by [readActivity] and [readLifts] exactly as the two halves are on their own. A schema of its own
- * because the activity one is also the quick log's, which wants no lifts. Still no calorie field.
+ * One activity — the log sheet's answer and each of the quick log's — read back by [readActivity]
+ * and [readLifts]. A timed one fills `minutes`; a counted one fills `lifts` and leaves `minutes` at
+ * 0, the split [TIMED_OR_COUNTED] asks for and [parsedExercise] holds the model to.
  *
- * `lifts` is optional where `name` is, for the opposite reason: a run has none, and a required
- * list is one a model fills.
+ * The absent field is the point: there is nowhere in this schema to put a calorie burn, so the
+ * model cannot volunteer one and no prompt has to forbid it. See [ParsedExercise]. `type` is an
+ * enumeration over [ExerciseType]'s own entry names rather than a free string, which is what makes
+ * `Other` a *choice* the model makes instead of the bucket a typo falls into.
+ *
+ * `name` is optional for [RECOGNIZED_FOOD_SCHEMA][ph.mart.healthapp.core.data.food.RECOGNIZED_FOOD_SCHEMA]'s
+ * `uncertainAbout` reasoning — required, a model with nothing to add adds something anyway, and an
+ * invented note on a plain run is worse than none. `lifts` is optional for the same reason: a run
+ * has none, and a required list is one a model fills.
  */
 internal val DESCRIBED_EXERCISE_SCHEMA = Schema.obj(
-    ACTIVITY_PROPERTIES + ("lifts" to LIFTS_PROPERTY),
+    mapOf(
+        "type" to Schema.enumeration(
+            values = ExerciseType.entries.map { it.name },
+            description = "The kind of activity. Strength for anything counted in reps. Use " +
+                "Other when none of the rest fit.",
+        ),
+        "minutes" to Schema.integer(
+            description = "How long a timed activity lasted, in minutes. 0 for a counted one, and " +
+                "0 if they named no physical activity.",
+        ),
+        "name" to Schema.string(
+            description = "A short note in their own words — where or how. Omit it entirely if " +
+                "they said nothing beyond the activity itself.",
+        ),
+        "lifts" to LIFTS_PROPERTY,
+    ),
     optionalProperties = listOf("name", "lifts"),
 )
 

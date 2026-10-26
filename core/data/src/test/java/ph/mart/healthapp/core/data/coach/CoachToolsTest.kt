@@ -20,6 +20,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
+import ph.mart.healthapp.core.data.exercise.StrengthSet
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
 import ph.mart.healthapp.core.data.exercise.weekStart
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
@@ -189,6 +190,36 @@ class CoachToolsTest {
         assertEquals(30, action.minutes)
         assertEquals("Morning run", action.name)
         assertEquals(0, action.burnedKcal)
+    }
+
+    /** "10 push ups": counted, so lifts and no minutes — the coach never asks how long they took. */
+    @Test
+    fun `a counted exercise call carries its sets and no minutes`() {
+        val pushUps = JsonObject(mapOf("lift" to JsonPrimitive("Push-ups"), "reps" to JsonPrimitive(10)))
+        val action = parseAction(
+            TOOL_LOG_EXERCISE,
+            args("type" to "Strength", "minutes" to 0) + ("lifts" to JsonArray(listOf(pushUps))),
+        ) as CoachAction.LogExercise
+        assertNull(action.minutes)
+        assertEquals(listOf(StrengthSet("Push-ups", reps = 10, weightKg = 0.0)), action.sets)
+    }
+
+    /** A jog keeps its minutes: lifts sent with a timed type are dropped, and a timed call with no
+     * duration still fails. A lift with no reps fails the whole draft, `log_food`'s rule. */
+    @Test
+    fun `a timed exercise call keeps its minutes and takes no sets`() {
+        val pushUps = JsonObject(mapOf("lift" to JsonPrimitive("Push-ups"), "reps" to JsonPrimitive(10)))
+        val run = parseAction(
+            TOOL_LOG_EXERCISE,
+            args("type" to "Run", "minutes" to 30) + ("lifts" to JsonArray(listOf(pushUps))),
+        ) as CoachAction.LogExercise
+        assertEquals(30, run.minutes)
+        assertEquals(emptyList<StrengthSet>(), run.sets)
+        assertNull(parseAction(TOOL_LOG_EXERCISE, args("type" to "Run", "minutes" to 0)))
+        val noReps = JsonObject(mapOf("lift" to JsonPrimitive("Push-ups")))
+        assertNull(
+            parseAction(TOOL_LOG_EXERCISE, args("type" to "Strength") + ("lifts" to JsonArray(listOf(noReps)))),
+        )
     }
 
     /** An empty name is what `ExerciseEntry` means by "call it by its type", so a nameless call is
@@ -1704,6 +1735,19 @@ class CoachToolsTest {
         assertNull(editedExercise(CoachAction.EditExercise(entryId = 7, minutes = 45), run, weightKg = null))
         // A rename alone keeps the burn, and needs no weight.
         assertEquals(300, editedExercise(CoachAction.EditExercise(entryId = 7, name = "Park run"), run, null)!!.burnedKcal)
+    }
+
+    /** A counted workout has no duration to change and no other type to become — its sets would end
+     * up on a swim. Its name is the one thing the coach may edit. */
+    @Test
+    fun `a counted workout's edit is its name alone`() {
+        val pushUps = ExerciseEntry(
+            id = 8, type = ExerciseType.Strength, minutes = null, burnedKcal = 3,
+            sets = listOf(StrengthSet("Push-ups", 10, 0.0)),
+        )
+        assertNull(editedExercise(CoachAction.EditExercise(entryId = 8, minutes = 10), pushUps, 70.0))
+        assertNull(editedExercise(CoachAction.EditExercise(entryId = 8, type = ExerciseType.Swim), pushUps, 70.0))
+        assertEquals("Morning set", editedExercise(CoachAction.EditExercise(entryId = 8, name = "Morning set"), pushUps, 70.0)!!.name)
     }
 
     @Test

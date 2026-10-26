@@ -5,6 +5,7 @@ import ph.mart.healthapp.core.data.coach.MAX_ACTION_GLASSES
 import ph.mart.healthapp.core.data.coach.MAX_ACTION_WEIGHT
 import ph.mart.healthapp.core.data.coach.MIN_ACTION_WEIGHT
 import ph.mart.healthapp.core.data.exercise.ParsedExercise
+import ph.mart.healthapp.core.data.profile.UnitSystem
 import ph.mart.healthapp.core.data.profile.round1
 import ph.mart.healthapp.core.data.stripMarkdown
 
@@ -21,8 +22,9 @@ import ph.mart.healthapp.core.data.stripMarkdown
  */
 interface QuickLogRepository {
     /** [photo] is the plate, when the user attached one — sent with every turn of that
-     * conversation, since the model is stateless and the words are about it. */
-    suspend fun parse(turns: List<QuickLogTurn>, photo: Bitmap? = null): QuickLogResult
+     * conversation, since the model is stateless and the words are about it. [unit] is
+     * `ExerciseParseRepository.parse`'s: applied on-device to a load said without one, never sent. */
+    suspend fun parse(turns: List<QuickLogTurn>, unit: UnitSystem, photo: Bitmap? = null): QuickLogResult
 }
 
 /** One line of the conversation — the user's words, or a question the model asked back. */

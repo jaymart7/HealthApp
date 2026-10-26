@@ -41,19 +41,25 @@ class ExerciseParseTest {
         assertNull(parsedExercise("Run", "", null))
     }
 
-    /** "10 push ups" names no duration and nobody could give one, so its sets time it instead. */
+    /** "10 push ups" is counted: it has no minutes, whatever the model put there. */
     @Test
-    fun `a rep-counted session with no duration is timed by its sets`() {
+    fun `a strength session with sets is counted and has no minutes`() {
         val pushUps = listOf(StrengthSet("Push-ups", 10, 0.0))
         val parsed = parsedExercise("Strength", "", 0, pushUps)
-        assertEquals(MINUTES_PER_SET, parsed?.minutes)
+        assertNull(parsed?.minutes)
         assertEquals(pushUps, parsed?.sets)
+        // A duration the model added anyway does not make it timed.
+        assertNull(parsedExercise("Strength", "", 20, pushUps)?.minutes)
     }
 
+    /** A jog keeps its minutes: lifts that rode along on a timed type are dropped, not obeyed. */
     @Test
-    fun `a said duration wins over the sets`() {
-        val sets = List(3) { StrengthSet("Bench", 8, 60.0) }
-        assertEquals(20, parsedExercise("Strength", "", 20, sets)?.minutes)
+    fun `a timed activity keeps its minutes and never takes sets`() {
+        val parsed = parsedExercise("Run", "", 30, listOf(StrengthSet("Push-ups", 10, 0.0)))
+        assertEquals(30, parsed?.minutes)
+        assertEquals(emptyList<StrengthSet>(), parsed?.sets)
+        // And with no duration it is still no workout, sets or not.
+        assertNull(parsedExercise("Run", "", 0, listOf(StrengthSet("Push-ups", 10, 0.0))))
     }
 
     @Test

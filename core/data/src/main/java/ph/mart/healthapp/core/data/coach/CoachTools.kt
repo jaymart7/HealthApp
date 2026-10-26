@@ -32,16 +32,24 @@ import ph.mart.healthapp.core.data.cycle.periods
 import ph.mart.healthapp.core.data.exercise.ExerciseEntry
 import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.ExerciseType
+import ph.mart.healthapp.core.data.exercise.MAX_EXERCISE_NAME_CHARS
+import ph.mart.healthapp.core.data.exercise.MAX_PARSED_LOAD_KG
+import ph.mart.healthapp.core.data.exercise.MAX_PARSED_REPS
+import ph.mart.healthapp.core.data.exercise.MAX_PARSED_SET_COUNT
+import ph.mart.healthapp.core.data.exercise.MAX_PARSED_SETS
 import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_LIFTS
 import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_REPS
 import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_SETS
-import ph.mart.healthapp.core.data.exercise.REP_COUNTED_MINUTES
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.RoutineRepository
+import ph.mart.healthapp.core.data.exercise.StrengthSet
+import ph.mart.healthapp.core.data.exercise.TIMED_OR_COUNTED
+import ph.mart.healthapp.core.data.exercise.activityBurnedKcal
 import ph.mart.healthapp.core.data.exercise.dayLabel
 import ph.mart.healthapp.core.data.exercise.isPlannedOn
 import ph.mart.healthapp.core.data.exercise.estimateBurnedKcal
+import ph.mart.healthapp.core.data.exercise.isCounted
 import ph.mart.healthapp.core.data.exercise.totalBurnedKcal
 import ph.mart.healthapp.core.data.fasting.DEFAULT_FAST_GOAL_HOURS
 import ph.mart.healthapp.core.data.fasting.FastSession
@@ -80,6 +88,7 @@ import ph.mart.healthapp.core.data.mood.MoodRepository
 import ph.mart.healthapp.core.data.profile.Profile
 import ph.mart.healthapp.core.data.profile.ProfileRepository
 import ph.mart.healthapp.core.data.profile.cmToDisplayUnit
+import ph.mart.healthapp.core.data.profile.displayUnitToKg
 import ph.mart.healthapp.core.data.profile.kgToDisplayUnit
 import ph.mart.healthapp.core.data.profile.lengthUnitLabel
 import ph.mart.healthapp.core.data.profile.weightUnitLabel
@@ -396,22 +405,38 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
             name = TOOL_LOG_EXERCISE,
             description = "Propose adding an activity to today's diary. This does NOT log it: the " +
                 "user sees what you proposed and taps to confirm. Do not estimate the calories " +
-                "burned — the app works that out from their own weight.",
+                "burned — the app works that out from their own weight. $TIMED_OR_COUNTED",
             parameters = mapOf(
                 "type" to Schema.enumeration(
                     values = ExerciseType.entries.map { it.name },
-                    description = "The kind of activity. Use Other when none of the rest fit.",
+                    description = "The kind of activity. Strength for anything counted in reps. " +
+                        "Use Other when none of the rest fit.",
                 ),
                 "minutes" to Schema.integer(
-                    description = "How long it lasted, in minutes. Maximum $MAX_ACTION_MINUTES. " +
-                        REP_COUNTED_MINUTES,
+                    description = "How long a timed activity lasted, in minutes. Maximum " +
+                        "$MAX_ACTION_MINUTES. 0 for a counted one.",
                 ),
                 "name" to Schema.string(
                     description = "What to call it, e.g. 'Morning run'. Optional — leave it out " +
                         "and it is named after its type.",
                 ),
+                "lifts" to Schema.array(
+                    Schema.obj(
+                        mapOf(
+                            "lift" to Schema.string(description = "The exercise, e.g. 'Push-ups'."),
+                            "sets" to Schema.integer(description = "Sets of it at this load."),
+                            "reps" to Schema.integer(description = "Reps in each set."),
+                            "weight" to Schema.double(
+                                description = "The load in the user's own unit. 0 for bodyweight.",
+                            ),
+                        ),
+                    ),
+                    description = "A counted activity's lifts, one entry per lift at one load. " +
+                        "Leave it out for a timed one.",
+                ),
                 "days_ago" to draftDaysAgoSchema,
             ),
+            optionalParameters = listOf("lifts"),
         ),
         FunctionDeclaration(
             name = TOOL_LOG_WATER,
@@ -1028,14 +1053,20 @@ private fun draftDay(args: Map<String, JsonElement>, today: Long): Long? {
 
 /**
  * The burn is left at zero here and priced afterwards by [CoachToolbox.weightKg] — this function
- * stays pure, and the figure on the card is the app's MET arithmetic rather than the model's
- * guess. A name is optional: empty is what [ExerciseEntry] means by "call it by its type".
+ * stays pure, and the figure on the card is the app's arithmetic rather than the model's guess. A
+ * name is optional: empty is what [ExerciseEntry] means by "call it by its type".
+ *
+ * `parsedExercise`'s split: a Strength call with lifts is **counted** and has no minutes whatever
+ * the model sent; anything else is **timed** and needs a real duration, and lifts sent with a run
+ * are dropped rather than turning it into reps.
  */
 private fun parseLogExercise(args: Map<String, JsonElement>, today: Long): CoachAction.LogExercise? {
     val type = args.string("type")
         ?.let { raw -> ExerciseType.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) } }
         ?: return null
-    val minutes = args.int("minutes")?.takeIf { it in 1..MAX_ACTION_MINUTES } ?: return null
+    val sets = args.liftSets() ?: return null
+    val counted = isCounted(type, sets)
+    val minutes = if (counted) null else args.int("minutes")?.takeIf { it in 1..MAX_ACTION_MINUTES } ?: return null
     val name = args.string("name")?.trim()?.takeIf { it.length <= MAX_NAME_CHARS }.orEmpty()
     val date = draftDay(args, today) ?: return null
     return CoachAction.LogExercise(
@@ -1044,7 +1075,31 @@ private fun parseLogExercise(args: Map<String, JsonElement>, today: Long): Coach
         minutes = minutes,
         burnedKcal = 0,
         dateEpochDay = date,
+        sets = if (counted) sets else emptyList(),
     )
+}
+
+/**
+ * `log_exercise`'s lifts, each held to the bounds a parsed session is — but one bad lift fails the
+ * draft rather than being dropped, the rule a meal of `log_food` calls follows. Empty when there
+ * are none. Each load is **as the user said it**, in their own unit: [resolve] is where it becomes
+ * kilograms, `LogWeight`'s one-conversion rule.
+ */
+private fun Map<String, JsonElement>.liftSets(): List<StrengthSet>? {
+    val array = when (val raw = this["lifts"]) {
+        null, is JsonNull -> return emptyList()
+        is JsonArray -> raw
+        else -> return null
+    }
+    return array.flatMap { element ->
+        val lift = element as? JsonObject ?: return null
+        val name = lift.string("lift")?.trim()
+            ?.takeIf { it.isNotEmpty() && it.length <= MAX_EXERCISE_NAME_CHARS } ?: return null
+        val count = (lift.int("sets") ?: 1).takeIf { it in 1..MAX_PARSED_SET_COUNT } ?: return null
+        val reps = lift.int("reps")?.takeIf { it in 1..MAX_PARSED_REPS } ?: return null
+        val load = (lift.double("weight") ?: 0.0).takeIf { it >= 0 } ?: return null
+        List(count) { StrengthSet(exerciseName = name, reps = reps, weightKg = load) }
+    }.takeIf { it.size <= MAX_PARSED_SETS }
 }
 
 private fun parseLogFood(args: Map<String, JsonElement>, today: Long): CoachAction.LogFood? {
@@ -1393,7 +1448,10 @@ internal fun formatHistory(
             "nothing logged"
         }
         val activity = training[date]?.let {
-            ", ${it.sumOf { entry -> entry.minutes }} min activity, ${it.totalBurnedKcal()} kcal burned"
+            // A counted workout has sets, not minutes, so a day of push-ups says its burn alone.
+            val minutes = it.sumOf { entry -> entry.minutes ?: 0 }
+            val timed = if (minutes > 0) "$minutes min activity, " else ""
+            ", $timed${it.totalBurnedKcal()} kcal burned"
         }.orEmpty()
         val walk = walked[date]?.let { ", ${formatSteps(it.steps)} steps" }.orEmpty()
         val night = slept[date]?.let { ", slept ${formatDuration(it.minutesAsleep)}" }.orEmpty()
@@ -2058,8 +2116,14 @@ internal class CoachToolbox(
  * parse does — a weigh-in the app doesn't have, or a name that is in no library.
  */
 internal suspend fun CoachAction.resolve(toolbox: CoachToolbox): List<CoachAction>? = when (this) {
-    is CoachAction.LogExercise -> toolbox.weightKg()
-        ?.let { listOf(copy(burnedKcal = estimateBurnedKcal(type, minutes, it))) }
+    // The lifts arrive in the user's unit and leave in kilograms, here and only here; a load past
+    // any real one after that fails the turn, `parsedSets`' ceiling.
+    is CoachAction.LogExercise -> toolbox.weightKg()?.let { weightKg ->
+        val unit = toolbox.unitSystem()
+        val kgSets = sets.map { it.copy(weightKg = it.weightKg.displayUnitToKg(unit)) }
+        listOf(copy(sets = kgSets, unit = unit, burnedKcal = activityBurnedKcal(type, minutes, kgSets, weightKg)))
+            .takeIf { kgSets.none { it.weightKg > MAX_PARSED_LOAD_KG } }
+    }
     is CoachAction.LogSavedMeal -> toolbox.savedMealRows(name, mealType, dateEpochDay)
     // Never null: a weigh-in needs no history to be recorded, so a first one still drafts — it
     // simply draws no change line.
@@ -2134,12 +2198,15 @@ internal fun editedExercise(
     before: ExerciseEntry,
     weightKg: Double?,
 ): ExerciseEntry? {
+    // A counted workout has no duration to change, and a new type would leave its sets on a swim —
+    // the strength screen's own argument for drawing no type chips. Only its name is the coach's.
+    if (before.isCounted && (edit.minutes != null || (edit.type ?: before.type) != before.type)) return null
     val type = edit.type ?: before.type
     val minutes = edit.minutes ?: before.minutes
     val burned = if (type == before.type && minutes == before.minutes) {
         before.burnedKcal
     } else {
-        estimateBurnedKcal(type, minutes, weightKg ?: return null)
+        estimateBurnedKcal(type, minutes ?: return null, weightKg ?: return null)
     }
     val after = before.copy(type = type, minutes = minutes, name = edit.name ?: before.name, burnedKcal = burned)
     return after.takeIf { it != before }

@@ -80,10 +80,12 @@ internal data class FitPulseExport(
  * null on every row written before it, which is the same silence a synced row carries; 21 added
  * [FitPulseExport.dayNotes]; 22 added the supplements' scanned per-dose figures and
  * [ExportSupplement.panel] — zero and empty on every row written before the scan existed, which
- * reads as the supplement nobody scanned that it is.
+ * reads as the supplement nobody scanned that it is; 23 let [ExportExercise.minutes] be null, a
+ * strength session counted in reps — the bump is so a v22 build meets the version gate's plain
+ * message rather than a missing-field failure halfway through an import.
  * Every addition is defaulted, so a v1 file still imports — the version gate only rejects files
  * from the future. */
-internal const val EXPORT_SCHEMA_VERSION = 22
+internal const val EXPORT_SCHEMA_VERSION = 23
 
 @Serializable
 internal data class ExportProfile(
@@ -173,7 +175,8 @@ internal data class ExportExercise(
     val dateEpochDay: Long,
     val type: String,
     val name: String = "",
-    val minutes: Int,
+    /** Null on a counted workout — sets, no duration (v23). Every older file has one. */
+    val minutes: Int? = null,
     val burnedKcal: Int,
     val steps: Int = 0,
     val sets: List<ExportStrengthSet> = emptyList(),

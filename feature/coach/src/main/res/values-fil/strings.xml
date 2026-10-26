@@ -108,6 +108,7 @@
     <string name="coach_receipt_calories">Calories</string>
     <string name="coach_receipt_minutes">Minuto</string>
     <string name="coach_receipt_burned">Nasunog</string>
+    <string name="coach_receipt_sets">Mga set</string>
     <string name="coach_receipt_weight">Timbang</string>
     <string name="coach_receipt_dose">Dose</string>
     <string name="coach_receipt_reading">Reading</string>
@@ -143,6 +144,7 @@
     </plurals>
     <string name="coach_proposal_changed_food">Binago: %1$s, %2$d kcal.</string>
     <string name="coach_proposal_changed_exercise">Binago: %1$s, %2$d min.</string>
+    <string name="coach_proposal_changed_counted">Binago: %1$s.</string>
     <string name="coach_proposal_removed_entry">Tinanggal: %1$s.</string>
     <string name="coach_proposal_changed_water">Itinakda ang tubig sa %1$s.</string>
     <plurals name="coach_proposal_changed_items">
@@ -206,6 +208,7 @@
     <string name="coach_proposal_logged_food">Na-log: %1$s, %2$d kcal.</string>
     <string name="coach_proposal_logged_water">Na-log: %1$s.</string>
     <string name="coach_proposal_logged_exercise">Na-log: %1$s, %2$d min.</string>
+    <string name="coach_proposal_logged_counted">Na-log: %1$s, %2$d kcal ang nasunog.</string>
     <string name="coach_proposal_logged_weight">Na-log: %1$s.</string>
     <string name="coach_proposal_logged_supplement">Na-log: %1$s.</string>
     <string name="coach_proposal_logged_mood">Naitala: %1$s.</string>

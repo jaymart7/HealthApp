@@ -63,6 +63,8 @@ class LogExerciseFormTest {
         )
         val entry = LogExerciseForm(type = ExerciseType.Strength, minutes = 45, sets = sets).toExerciseEntry()
 
+        // Counted: whatever the form's minutes said, the row has none.
+        assertEquals(null, entry.minutes)
         assertEquals(listOf("Bench press", "Dip"), entry.sets.map { it.exerciseName })
         assertEquals(sets.map { it.reps to it.weightKg }, entry.sets.map { it.reps to it.weightKg })
         assertEquals(entry.sets, entry.toLogExerciseForm().sets)
@@ -104,7 +106,8 @@ class LogExerciseFormTest {
     }
 
     /** The sheet's draft is where the strength screen starts — a typed note, a sentence's sets —
-     * and it is Strength whatever the sheet or the model called it. */
+     * and it is Strength whatever the sheet or the model called it. A new workout is counted, so a
+     * duration the sheet carried is dropped rather than priced. */
     @Test
     fun `the strength screen starts from the sheet's draft, as Strength`() {
         val sets = listOf(StrengthSet("Bench press", 8, 60.0), StrengthSet("Bench press", 8, 60.0))
@@ -114,8 +117,45 @@ class LogExerciseFormTest {
 
         assertEquals(ExerciseType.Strength, start.type)
         assertEquals("gym", start.name)
-        assertEquals(50, start.minutes)
+        assertEquals(0, start.minutes)
         assertEquals(sets, start.sets)
+    }
+
+    /** A blank strength screen burns nothing: the half hour a blank form starts at used to price
+     * 175 kcal of lifting before a single set was down. */
+    @Test
+    fun `a new strength workout burns nothing until a set is down`() {
+        val start = strengthStart(LogExerciseUiState().strengthSeed(), LogExerciseForm())
+        assertEquals(0, start.withEstimate(weightKg = 70.0).burnedKcal)
+    }
+
+    /** The user's ask, and the point of the change: more reps is more burn, with no stepper. */
+    @Test
+    fun `a counted workout is priced by its reps and its load`() {
+        val ten = LogExerciseForm(type = ExerciseType.Strength).withSets(listOf(StrengthSet("Push-ups", 10, 0.0)))
+        val twenty = ten.withSets(listOf(StrengthSet("Push-ups", 20, 0.0)))
+        val loaded = ten.withSets(listOf(StrengthSet("Push-ups", 10, 20.0)))
+
+        // MET 5 × 70 kg × 30 s.
+        assertEquals(3, ten.withEstimate(weightKg = 70.0).burnedKcal)
+        assertEquals(6, twenty.withEstimate(weightKg = 70.0).burnedKcal)
+        assertEquals(4, loaded.withEstimate(weightKg = 70.0).burnedKcal)
+        assertTrue(ten.isValid())
+    }
+
+    /** A corrected workout keeps the figure it was logged with until a set changes; then the burn
+     * follows the sets, at today's weight — the latch [withSets] releases. */
+    @Test
+    fun `changing a corrected workout's sets reprices it`() {
+        val workout = ExerciseEntry(
+            type = ExerciseType.Strength,
+            minutes = null,
+            burnedKcal = 99,
+            sets = listOf(StrengthSet("Push-ups", 10, 0.0)),
+        ).toLogExerciseForm()
+
+        assertEquals(99, workout.withEstimate(weightKg = 70.0).burnedKcal)
+        assertEquals(6, workout.withSets(workout.sets + workout.sets).withEstimate(weightKg = 70.0).burnedKcal)
     }
 
     /** No draft: the row being corrected, or a started routine, exactly as before. */
@@ -139,10 +179,11 @@ class LogExerciseFormTest {
     }
 
     /** The quirk this guards: a duration corrected in the sheet before "Sets" was tapped has to
-     * make back ask, or it is dropped without a word. */
+     * make back ask, or it is dropped without a word. Only a strength row logged by duration alone
+     * has one to correct — a counted row's is none. */
     @Test
     fun `a duration corrected in the sheet is unsaved on the strength screen`() {
-        val editing = logged.copy(type = ExerciseType.Strength, sets = listOf(StrengthSet("Squat", 5, 100.0)))
+        val editing = logged.copy(type = ExerciseType.Strength)
         val seed = LogExerciseUiState(editing = editing).strengthSeed()
 
         assertFalse(strengthStart(seed, editing.toLogExerciseForm()).unsavedAgainst(seed, weightKg = 74.0))

@@ -294,9 +294,10 @@ see `DECISIONS.md`.
   form — type, duration, MET-estimated burn (editable; stops re-estimating once touched). A
   cardio sentence ("45 minute run along the river") fills that form in and opens it for review; a
   sentence that names lifts ("bench 3x8 at 60, squats 5x5 at 100") goes straight on to the strength
-  screen with its sets, duration and note already filled, and back there asks before dropping it.
-  A rep-counted one ("10 push ups") is never asked how long, here or in the quick log or the coach:
-  it is timed at 2 minutes a set.
+  screen with its sets and note already filled, and back there asks before dropping it.
+  **Timed or counted:** a jog, a swim, yoga or HIIT keeps its minutes; push-ups, squats and every
+  lift are counted in sets and reps with **no duration anywhere** — not asked here, in the quick
+  log or by the coach, and not shown in the diary.
   Offline, failed or nothing found each say so under the field and open the form. The burn stays
   the app's: the model is never asked for one and the schema has nowhere to put one, so a
   described run and a typed one of the same length price identically off the user's own latest
@@ -315,7 +316,10 @@ see `DECISIONS.md`.
   switch off, on a correction to a past row, and under a 50 kcal floor.
 - Strength workouts: a full set editor (lift name, reps, weight in the user's unit), lift-name
   chips from recent sessions, last-lifted load shown per lift — and picking a lift with history
-  fills in last time's reps and load. **Tap a set to correct it**: it loads into the editor for
+  fills in last time's reps and load. **Every set shows its calories**, every lift its total, and
+  the workout's burn is their sum — priced from reps and body weight plus load, so more reps or
+  more weight is more burn. The routine editor shows each lift's calories and the routine's total
+  the same way, moving as sets and reps are stepped. **Tap a set to correct it**: it loads into the editor for
   **Update set**, **Remove set** or Cancel; back leaves the set edit first. Save is pinned at the
   foot of the screen, and on a new workout waits for a first set — a set-less strength entry is
   the log sheet's own Save.

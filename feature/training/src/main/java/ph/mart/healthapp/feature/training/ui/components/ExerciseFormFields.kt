@@ -17,6 +17,7 @@ import ph.mart.healthapp.feature.training.R
 import ph.mart.healthapp.feature.training.ui.KCAL_STEP
 import ph.mart.healthapp.feature.training.ui.LogExerciseForm
 import ph.mart.healthapp.feature.training.ui.MINUTES_STEP
+import ph.mart.healthapp.feature.training.ui.isCounted
 import ph.mart.healthapp.feature.training.ui.withEstimate
 
 /**
@@ -26,6 +27,9 @@ import ph.mart.healthapp.feature.training.ui.withEstimate
  *
  * [showTypeChips] is false on the strength screen: the type is Strength by definition there, and a
  * chip row that could switch it would leave a set list attached to a swim.
+ *
+ * [timed] draws the duration and the burn steppers. A counted workout has neither: it has no
+ * duration, and its burn is its sets' (`withEstimate`), so the note is all that is left here.
  */
 @Composable
 internal fun ExerciseFormFields(
@@ -34,6 +38,7 @@ internal fun ExerciseFormFields(
     onFormChange: (LogExerciseForm) -> Unit,
     modifier: Modifier = Modifier,
     showTypeChips: Boolean = true,
+    timed: Boolean = !form.isCounted,
 ) {
     // Re-estimating on every change is what keeps the burn honest until the user takes the field
     // over; `withEstimate` is a no-op after that, so no caller has to remember the rule.
@@ -51,6 +56,7 @@ internal fun ExerciseFormFields(
             value = form.name,
             onValueChange = { onFormChange(form.copy(name = it)) },
         )
+        if (!timed) return@Column
         NumericStepperField(
             label = stringResource(R.string.training_exercise_duration),
             value = "${form.minutes}",

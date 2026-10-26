@@ -37,9 +37,12 @@ import ph.mart.healthapp.feature.profile.R
  * A routine as fields: its name, then every lift with its sets and reps, removable, and "Add lift"
  * under them. What [NewRoutineSheet]'s preview and [EditRoutineSheet] both draw, so a designed
  * routine and an edited one are held to the same bounds by the same controls.
+ *
+ * [kcalOf] prices one lift (`RoutinesUiState.liftKcal`): each lift shows its calories and the
+ * routine its total, both moving the moment a set or a rep is stepped.
  */
 @Composable
-internal fun RoutineFields(draft: Routine, onDraftChange: (Routine) -> Unit) {
+internal fun RoutineFields(draft: Routine, onDraftChange: (Routine) -> Unit, kcalOf: (RoutineLift) -> Int) {
     fun setLift(index: Int, lift: RoutineLift) =
         onDraftChange(draft.copy(lifts = draft.lifts.mapIndexed { i, it -> if (i == index) lift else it }))
 
@@ -53,6 +56,7 @@ internal fun RoutineFields(draft: Routine, onDraftChange: (Routine) -> Unit) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             LiftEditor(
                 lift = lift,
+                kcal = kcalOf(lift),
                 onChange = { setLift(index, it) },
                 onRemove = { onDraftChange(draft.copy(lifts = draft.lifts.filterIndexed { i, _ -> i != index })) },
             )
@@ -63,6 +67,13 @@ internal fun RoutineFields(draft: Routine, onDraftChange: (Routine) -> Unit) {
             enabled = draft.lifts.size < MAX_ROUTINE_LIFTS,
             icon = AppIcons.Add,
         )
+        if (draft.lifts.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.profile_routine_kcal_total, draft.lifts.sumOf(kcalOf)),
+                style = MaterialTheme.typography.bodySmall.tabularNums,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -73,7 +84,7 @@ internal fun RoutineFields(draft: Routine, onDraftChange: (Routine) -> Unit) {
  * to what a designed one is.
  */
 @Composable
-private fun LiftEditor(lift: RoutineLift, onChange: (RoutineLift) -> Unit, onRemove: () -> Unit) {
+private fun LiftEditor(lift: RoutineLift, kcal: Int, onChange: (RoutineLift) -> Unit, onRemove: () -> Unit) {
     // A just-added row has no name yet, and "Remove " tells a screen reader nothing.
     val liftLabel = lift.exerciseName.ifBlank { stringResource(R.string.profile_routine_design_lift) }
     val removeLabel = stringResource(R.string.profile_routine_design_remove, liftLabel)
@@ -111,6 +122,13 @@ private fun LiftEditor(lift: RoutineLift, onChange: (RoutineLift) -> Unit, onRem
                 modifier = Modifier.weight(1f),
             )
         }
+        Text(
+            text = stringResource(R.string.profile_routine_kcal, kcal),
+            style = MaterialTheme.typography.labelMedium.tabularNums,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -177,6 +195,7 @@ private fun RoutineFieldsPreview() {
                         ),
                     ),
                     onDraftChange = {},
+                    kcalOf = { it.sets * it.reps / 3 },
                 )
             }
         }

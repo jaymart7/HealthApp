@@ -5,9 +5,13 @@ import kotlinx.coroutines.Job
 import org.orbitmvi.orbit.OrbitContainerHost
 import org.orbitmvi.orbit.viewmodel.orbitContainer
 import ph.mart.healthapp.core.data.exercise.ExerciseParseRepository
+import ph.mart.healthapp.core.data.exercise.ExerciseRepository
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineRepository
+import ph.mart.healthapp.core.data.exercise.lastPerformances
 import ph.mart.healthapp.core.data.network.NetworkMonitor
+import ph.mart.healthapp.core.data.profile.ProfileRepository
+import ph.mart.healthapp.core.data.profile.currentWeightKg
 
 /**
  * `FoodLibraryViewModel`'s twin, one domain over: reads the unlimited list and writes what this
@@ -18,6 +22,8 @@ class RoutinesViewModel(
     private val routineRepository: RoutineRepository,
     private val exerciseParseRepository: ExerciseParseRepository,
     private val networkMonitor: NetworkMonitor,
+    private val profileRepository: ProfileRepository,
+    private val exerciseRepository: ExerciseRepository,
 ) : ViewModel(), OrbitContainerHost<RoutinesUiState, RoutinesUiState, RoutinesSideEffect> {
 
     /** `LogExerciseViewModel.parseJob`'s reason: cancelling the design must not cancel the list. */
@@ -25,6 +31,8 @@ class RoutinesViewModel(
 
     override val container = orbitContainer<RoutinesUiState, RoutinesSideEffect>(RoutinesUiState()) {
         observeRoutines()
+        observeWeight()
+        loadLastLoads()
     }
 
     /** Asked at the moment of the tap, `LogExerciseViewModel.isOnline`'s rule — the offline line is
@@ -46,6 +54,20 @@ class RoutinesViewModel(
         routineRepository.observeRoutines().collect { routines ->
             reduce { state.copy(routines = routines) }
         }
+    }
+
+    /** What the editor's calories are priced at — the latest weigh-in, else the profile's own. */
+    private fun observeWeight() = intent {
+        profileRepository.observeProfile().collect { profile ->
+            reduce { state.copy(bodyKg = profile?.currentWeightKg ?: state.bodyKg) }
+        }
+    }
+
+    /** Read once: the loads a started routine would open at, which is what the estimate assumes.
+     * A workout logged while this screen is open moves them by a plate at most. */
+    private fun loadLastLoads() = intent {
+        val loads = exerciseRepository.recentStrengthEntries().lastPerformances().mapValues { it.value.topSet.weightKg }
+        reduce { state.copy(lastLoads = loads) }
     }
 
     private fun onDelete(id: Long) = intent {
