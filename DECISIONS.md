@@ -4075,6 +4075,19 @@ rather than needing a counter patched.
   never leaves the device. `parsedExercise` is the trust boundary and it deliberately **rejects** a
   type the model invented rather than bucketing it into `Other`: the type is what the burn is
   computed from, so a guessed one would price a workout nobody described.
+- **A rep-counted exercise is never asked how long it took.** "10 push ups" was asked for a
+  duration by the quick log, drafted one by the coach only after asking, and on the log sheet came
+  back as 0 minutes — which `parsedExercise` reads as "no workout" and answered with "try naming
+  how long for". Nobody times ten push-ups, so only a timed activity (a run, a walk, a swim) needs
+  its length said. Every AI path that drafts a workout carries one shared sentence,
+  `REP_COUNTED_MINUTES`: give `MINUTES_PER_SET` (2) per set, reps with no set count being one set.
+  On the log sheet the sets are in hand, so `parsedExercise` also times a 0-minute answer off them
+  on-device rather than trusting the model to comply. `minutes` stays above zero everywhere because
+  the burn is MET × minutes and `isValid()`, the diary and the charts all read it. Two minutes is one
+  set and its rest, the short end of the routine designer's "2 to 3", and like every duration here
+  it is in the form to correct. *Known gap:* the strength screen opened directly still starts at the
+  form's default 30 minutes. A `minutesEdited` latch that follows the sets is the upgrade if that
+  gets reported.
 - **The sentence leads the sheet, and the form is one tap behind it.** It began as a collapsed
   "Describe it instead" button that swapped a panel in over the form, which put the quick path one
   tap behind the slow one and stacked type chips, two steppers and a Save under a single field. The

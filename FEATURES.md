@@ -295,6 +295,8 @@ see `DECISIONS.md`.
   cardio sentence ("45 minute run along the river") fills that form in and opens it for review; a
   sentence that names lifts ("bench 3x8 at 60, squats 5x5 at 100") goes straight on to the strength
   screen with its sets, duration and note already filled, and back there asks before dropping it.
+  A rep-counted one ("10 push ups") is never asked how long, here or in the quick log or the coach:
+  it is timed at 2 minutes a set.
   Offline, failed or nothing found each say so under the field and open the form. The burn stays
   the app's: the model is never asked for one and the schema has nowhere to put one, so a
   described run and a typed one of the same length price identically off the user's own latest

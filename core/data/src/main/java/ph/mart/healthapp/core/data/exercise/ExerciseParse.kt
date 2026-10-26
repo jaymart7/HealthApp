@@ -80,6 +80,23 @@ const val MAX_EXERCISE_NAME_CHARS = 60
 const val MAX_EXERCISE_MINUTES = 600
 
 /**
+ * What a rep-counted exercise said without a duration is timed at: one set and its rest, the short
+ * end of the routine designer's "2 to 3 minutes per set". Ten push-ups take seconds, and asking how
+ * long they took is a question nobody can answer — only a timed activity needs its length said.
+ */
+const val MINUTES_PER_SET = 2
+
+/**
+ * The one sentence every AI path that drafts a workout carries — the log sheet, the quick log and
+ * the coach's `log_exercise` — so none of them asks a push-up how long it took.
+ */
+internal const val REP_COUNTED_MINUTES =
+    "For an exercise counted in reps or sets rather than time (push-ups, squats, sit-ups, lifts), " +
+        "never ask how long it took and never give 0 minutes for it: give $MINUTES_PER_SET minutes " +
+        "per set, counting reps with no set count as one set. Only a timed activity like a run, " +
+        "walk or swim needs its duration."
+
+/**
  * The whole of the trust boundary on the model's parse — everything the sheet seeds a form with
  * passes through here.
  *
@@ -92,12 +109,20 @@ const val MAX_EXERCISE_MINUTES = 600
  * because a type the model made up is a claim about the burn the app is about to compute.
  *
  * Null is [ExerciseParseResult.NoActivityFound]: a sentence naming nothing physical comes back
- * with zero minutes, and zero minutes is not a shorter workout, it is not one.
+ * with zero minutes, and zero minutes is not a shorter workout, it is not one — unless it came with
+ * [sets]. A rep-counted session said without a duration is timed at [MINUTES_PER_SET] a set rather
+ * than refused for it, which is the log sheet's alone: the coach and the quick log carry no sets.
  */
-fun parsedExercise(type: String?, name: String?, minutes: Int?): ParsedExercise? {
+fun parsedExercise(
+    type: String?,
+    name: String?,
+    minutes: Int?,
+    sets: List<StrengthSet> = emptyList(),
+): ParsedExercise? {
     val activity = ExerciseType.entries.firstOrNull { it.name.equals(type, ignoreCase = true) }
         ?: return null
-    val duration = minutes?.takeIf { it in 1..MAX_EXERCISE_MINUTES } ?: return null
+    val duration = (minutes?.takeIf { it > 0 } ?: (sets.size * MINUTES_PER_SET))
+        .takeIf { it in 1..MAX_EXERCISE_MINUTES } ?: return null
     return ParsedExercise(
         type = activity,
         // The model's prose, and it becomes a diary row's title — the field `loggable()` strips
@@ -105,6 +130,7 @@ fun parsedExercise(type: String?, name: String?, minutes: Int?): ParsedExercise?
         // field here whose surplus costs nothing, and the user is looking at it before it saves.
         name = stripMarkdown(name.orEmpty()).trim().take(MAX_EXERCISE_NAME_CHARS).trim(),
         minutes = duration,
+        sets = sets,
     )
 }
 

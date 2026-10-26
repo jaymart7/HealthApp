@@ -13,6 +13,7 @@ import org.json.JSONObject
 import ph.mart.healthapp.core.data.aiModel
 import ph.mart.healthapp.core.data.AI_THINKING
 import ph.mart.healthapp.core.data.exercise.PARSED_EXERCISE_SCHEMA
+import ph.mart.healthapp.core.data.exercise.REP_COUNTED_MINUTES
 import ph.mart.healthapp.core.data.exercise.readActivity
 import ph.mart.healthapp.core.data.logAiFailure
 import ph.mart.healthapp.core.data.generate
@@ -170,6 +171,7 @@ private fun promptFor(
             "Activities: pick the closest type from the list, with the duration in minutes as " +
             "they gave it; set name to a short note in their own words, or leave it out. Do not " +
             "estimate calories burned — the app works that out from their own weight. " +
+            REP_COUNTED_MINUTES + " " +
             "Set mealType only if they said which meal it was. " +
             "Water: if they said how many glasses of plain water they drank, set waterGlasses and " +
             "do not also list it as a food. Weight: if they stated their own body weight, set weight " +
@@ -179,8 +181,8 @@ private fun promptFor(
     if (mayAsk) {
         appendLine(
             "If a detail that would change the estimate a lot is missing — how much of a food " +
-                "whose portion varies widely, like rice, pasta or \"some chips\", or how long an " +
-                "activity lasted — set question to ONE short question (under 15 words) asking " +
+                "whose portion varies widely, like rice, pasta or \"some chips\", or how long a timed " +
+                "activity like a run lasted — set question to ONE short question (under 15 words) asking " +
                 "for it, and return both lists empty. Do not ask about anything a typical " +
                 "serving answers well enough.",
         )

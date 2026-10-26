@@ -41,6 +41,21 @@ class ExerciseParseTest {
         assertNull(parsedExercise("Run", "", null))
     }
 
+    /** "10 push ups" names no duration and nobody could give one, so its sets time it instead. */
+    @Test
+    fun `a rep-counted session with no duration is timed by its sets`() {
+        val pushUps = listOf(StrengthSet("Push-ups", 10, 0.0))
+        val parsed = parsedExercise("Strength", "", 0, pushUps)
+        assertEquals(MINUTES_PER_SET, parsed?.minutes)
+        assertEquals(pushUps, parsed?.sets)
+    }
+
+    @Test
+    fun `a said duration wins over the sets`() {
+        val sets = List(3) { StrengthSet("Bench", 8, 60.0) }
+        assertEquals(20, parsedExercise("Strength", "", 20, sets)?.minutes)
+    }
+
     @Test
     fun `a duration past the ceiling is rejected`() {
         assertEquals(MAX_EXERCISE_MINUTES, parsedExercise("Walk", "", MAX_EXERCISE_MINUTES)?.minutes)

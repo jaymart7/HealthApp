@@ -35,6 +35,7 @@ import ph.mart.healthapp.core.data.exercise.ExerciseType
 import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_LIFTS
 import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_REPS
 import ph.mart.healthapp.core.data.exercise.MAX_ROUTINE_SETS
+import ph.mart.healthapp.core.data.exercise.REP_COUNTED_MINUTES
 import ph.mart.healthapp.core.data.exercise.Routine
 import ph.mart.healthapp.core.data.exercise.RoutineLift
 import ph.mart.healthapp.core.data.exercise.RoutineRepository
@@ -402,7 +403,8 @@ internal val COACH_TOOLS: Tool = Tool.functionDeclarations(
                     description = "The kind of activity. Use Other when none of the rest fit.",
                 ),
                 "minutes" to Schema.integer(
-                    description = "How long it lasted, in minutes. Maximum $MAX_ACTION_MINUTES.",
+                    description = "How long it lasted, in minutes. Maximum $MAX_ACTION_MINUTES. " +
+                        REP_COUNTED_MINUTES,
                 ),
                 "name" to Schema.string(
                     description = "What to call it, e.g. 'Morning run'. Optional — leave it out " +

@@ -71,7 +71,7 @@ internal class ExerciseParseRepositoryImpl : ExerciseParseRepository {
         // whether this was a workout at all, and [parsedSets] what survives of the lifts.
         val activity = response.text?.let { body ->
             val json = JSONObject(body)
-            readActivity(json)?.copy(sets = parsedSets(readLifts(json), unit))
+            readActivity(json, parsedSets(readLifts(json), unit))
         }
         // Null means the sentence named nothing physical — a real answer with its own line on the
         // sheet, not a failure to retry.
@@ -196,13 +196,15 @@ internal val PARSED_EXERCISE_SCHEMA = Schema.obj(
  * [parsedExercise]'s, which is the thing that decides whether this was a workout at all.
  *
  * Takes the object rather than the response text because the quick log reads the same shape out
- * of an array nested in its own reply.
+ * of an array nested in its own reply. [sets] are the log sheet's, already through [parsedSets],
+ * and are what times a rep-counted session the sentence gave no duration for.
  */
-internal fun readActivity(body: JSONObject): ParsedExercise? =
+internal fun readActivity(body: JSONObject, sets: List<StrengthSet> = emptyList()): ParsedExercise? =
     parsedExercise(
         type = body.optString("type"),
         name = body.optString("name"),
         minutes = body.optInt("minutes"),
+        sets = sets,
     )
 
 /**
@@ -212,6 +214,8 @@ internal fun readActivity(body: JSONObject): ParsedExercise? =
  *   user has to notice and correct.
  * - **The note is theirs, never invented.** It is the one free-text field, and a model that fills
  *   it in when they gave nothing writes prose into a diary row.
+ * - **Reps are not timed by the user.** [REP_COUNTED_MINUTES]: "10 push ups" is a lift, and a
+ *   model that answers 0 minutes for it is caught by [parsedExercise] timing it off its sets.
  * - **No medical advice**, for the reason every other prompt here gives.
  */
 private fun promptFor(sentence: String): String = buildString {
@@ -230,11 +234,13 @@ private fun promptFor(sentence: String): String = buildString {
             "short note in their own words about where or how, and leave it out entirely if they " +
             "said nothing beyond the activity. If they named no physical activity at all, set " +
             "minutes to 0. Do not estimate calories burned — the app works that out from their " +
-            "own weight. Give no medical advice, no diagnosis, and no training-safety judgements.",
+            "own weight. Give no medical advice, no diagnosis, and no training-safety judgements. " +
+            REP_COUNTED_MINUTES,
     )
     appendLine()
     appendLine(
-        "If they named strength exercises with sets, reps or a weight, set type to Strength and " +
+        "If they named strength exercises with sets, reps or a weight — bodyweight ones like " +
+            "push-ups too — set type to Strength and " +
             "list them in lifts: one entry per lift at one load, in the order they said them. " +
             "Read \"3x8\" as 3 sets of 8 reps, and reps with no set count as 1 set. Give the " +
             "weight exactly as they said it, and 0 for bodyweight or when they gave none. Set unit " +
